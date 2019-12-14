@@ -1,6 +1,7 @@
 #ifndef CASM_CoordCluster
 #define CASM_CoordCluster
 
+#include <memory>
 #include <vector>
 
 #include "casm/clex/HasCanonicalForm.hh"
@@ -115,6 +116,7 @@ namespace CASM {
   public:
 
     typedef Structure PrimType;
+    typedef std::shared_ptr<const PrimType> PrimType_ptr;
     typedef typename traits<CoordCluster<CoordType>>::Element Element;
     typedef typename traits<CoordCluster<CoordType>>::InvariantsType InvariantsType;
     typedef typename traits<CoordCluster<CoordType>>::size_type size_type;

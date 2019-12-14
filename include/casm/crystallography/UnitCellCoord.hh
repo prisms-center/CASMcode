@@ -38,14 +38,14 @@ namespace CASM {
     public:
       UnitCell(void) : Eigen::Vector3l() {}
 
-      UnitCell(Index a, Index b, Index c) : Eigen::Vector3l(a, b, c) {}
-
-      // This constructor allows you to construct MyVectorType from Eigen expressions
-      template <typename OtherDerived>
-      UnitCell(const Eigen::MatrixBase<OtherDerived> &other) : Eigen::Vector3l(other) {
+      /// Construct from integral fractional values, relative to the tiling unit.
+      template<typename OtherDerived>
+      UnitCell(const Eigen::MatrixBase<OtherDerived> &integral_coordinate) : Eigen::Vector3l(integral_coordinate) {
       }
 
-      /// Convert lattice point to a unitcell by rounding fractional coordinates
+      UnitCell(Index a, Index b, Index c) : UnitCell(Eigen::Vector3l(a, b, c)) {}
+
+      /// Convert lattice point to a unitcell
       static UnitCell from_coordinate(Coordinate const &lattice_point);
 
       /// Convert a Cartesian coordinate into a unitcell by rounding fractional coordinates to the provided lattice
@@ -124,7 +124,7 @@ namespace CASM {
       typedef BasicStructure<Site> PrimType;
 
       UnitCellCoord(Index _sublat, const UnitCell &_unitcell) : m_unitcell(_unitcell), m_sublat(_sublat) {
-        if(this->sublattice() < 0) {
+        if(!valid_index(_sublat)) {
           throw std::runtime_error("Error in UnitCellCoord. Construction requires a positive sublattice index.");
         }
       }
@@ -145,10 +145,6 @@ namespace CASM {
 
       const UnitCell &unitcell() const {
         return m_unitcell;
-      }
-
-      Index unitcell(Index i) const {
-        return m_unitcell[i];
       }
 
       Index sublattice() const {
@@ -202,7 +198,7 @@ namespace CASM {
       if(i == 0) {
         return m_sublat;
       }
-      return unitcell(i - 1);
+      return unitcell()[i - 1];
     }
 
     inline UnitCellCoord &UnitCellCoord::operator+=(UnitCell frac) {

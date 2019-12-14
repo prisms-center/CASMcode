@@ -100,7 +100,7 @@ TEST(BasicStructureSiteTest, ClusterographyTest) {
     {
       std::vector<PrimPeriodicOrbit<IntegralCluster>> asym_unit;
       make_prim_periodic_asymmetric_unit(
-        prim,
+        prim_ptr,
         alloy_sites_filter,
         crystallography_tol,
         std::back_inserter(asym_unit),
@@ -114,7 +114,7 @@ TEST(BasicStructureSiteTest, ClusterographyTest) {
     {
       std::vector<PrimPeriodicOrbit<IntegralCluster>> orbits;
       make_prim_periodic_orbits(
-        prim,
+        prim_ptr,
         j["bspecs"],
         alloy_sites_filter,
         crystallography_tol,

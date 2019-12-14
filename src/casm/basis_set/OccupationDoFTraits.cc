@@ -7,6 +7,7 @@
 #include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/clex/ClexBasis.hh"
 #include "casm/clex/NeighborList.hh"
+#include <memory>
 
 namespace CASM {
   namespace DoFType {
@@ -236,7 +237,14 @@ namespace CASM {
       std::stringstream stream;
       std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
       std::ostream nullstream(0);
-      make_prim_periodic_asymmetric_unit(_prim,
+
+      //TODO: This is a temporary fix to avoid changing the interface of OccupationDoFTraits. What can
+      //happen is making these functions take a shared_ptr, but what *really* needs to happen is fixing all
+      //the classes and functions (such as those in SymCompare) that are requesting Structures when all they
+      //really need is SymRepIDs. I can't fix all that right now though, so check this out:
+      //it's a shared pointer to an existing Structure, that has a custom destructor that does nothing.
+      auto _prim_ptr = std::shared_ptr<const Structure>(&_prim, [](const Structure *) {});
+      make_prim_periodic_asymmetric_unit(_prim_ptr,
                                          CASM_TMP::ConstantFunctor<bool>(true),
                                          TOL,
                                          std::back_inserter(asym_unit),
@@ -271,7 +279,14 @@ namespace CASM {
       std::stringstream stream;
       std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
       std::ostream nullstream(0);
-      make_prim_periodic_asymmetric_unit(_prim,
+
+      //TODO: This is a temporary fix to avoid changing the interface of OccupationDoFTraits. What can
+      //happen is making these functions take a shared_ptr, but what *really* needs to happen is fixing all
+      //the classes and functions (such as those in SymCompare) that are requesting Structures when all they
+      //really need is SymRepIDs. I can't fix all that right now though, so check this out:
+      //it's a shared pointer to an existing Structure, that has a custom destructor that does nothing.
+      auto _prim_ptr = std::shared_ptr<const Structure>(&_prim, [](const Structure *) {});
+      make_prim_periodic_asymmetric_unit(_prim_ptr,
                                          CASM_TMP::ConstantFunctor<bool>(true),
                                          TOL,
                                          std::back_inserter(asym_unit),
@@ -332,7 +347,14 @@ namespace CASM {
 
       std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
       std::ostream nullstream(0);
-      make_prim_periodic_asymmetric_unit(_prim,
+
+      //TODO: This is a temporary fix to avoid changing the interface of OccupationDoFTraits. What can
+      //happen is making these functions take a shared_ptr, but what *really* needs to happen is fixing all
+      //the classes and functions (such as those in SymCompare) that are requesting Structures when all they
+      //really need is SymRepIDs. I can't fix all that right now though, so check this out:
+      //it's a shared pointer to an existing Structure, that has a custom destructor that does nothing.
+      auto _prim_ptr = std::shared_ptr<const Structure>(&_prim, [](const Structure *) {});
+      make_prim_periodic_asymmetric_unit(_prim_ptr,
                                          CASM_TMP::ConstantFunctor<bool>(true),
                                          TOL,
                                          std::back_inserter(asym_unit),

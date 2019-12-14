@@ -32,8 +32,8 @@ namespace CASM {
     std::vector<DoFKey> const &global_keys,
     Index max_poly_order) const;
 
-  ClexBasis::ClexBasis(Structure const &_prim, jsonParser const &_bspecs) :
-    m_prim_ptr(&_prim),
+  ClexBasis::ClexBasis(PrimType_ptr _prim_ptr, jsonParser const &_bspecs) :
+    m_prim_ptr(_prim_ptr),
     m_basis_builder(std::unique_ptr<ClexBasisBuilder>(new InvariantPolyBasisBuilder("invariant_poly"))),
     m_bspecs(_bspecs) {
 
@@ -76,8 +76,12 @@ namespace CASM {
 
   //************************************************************
 
-  Structure const &ClexBasis::prim() const {
+  const ClexBasis::PrimType &ClexBasis::prim() const {
     return *m_prim_ptr;
+  }
+
+  ClexBasis::PrimType_ptr ClexBasis::shared_prim() const {
+    return m_prim_ptr;
   }
 
   /// \brief Total number of basis sites in primitive cell
@@ -107,7 +111,7 @@ namespace CASM {
   void ClexBasis::_populate_site_bases() {
     std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
     std::ostream nullstream(0);
-    make_prim_periodic_asymmetric_unit(prim(),
+    make_prim_periodic_asymmetric_unit(shared_prim(),
                                        CASM_TMP::ConstantFunctor<bool>(true),
                                        TOL,
                                        std::back_inserter(asym_unit),

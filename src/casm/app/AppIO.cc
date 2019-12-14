@@ -865,7 +865,7 @@ namespace CASM {
     }
   }
 
-  void print_site_basis_funcs(Structure const &prim,
+  void print_site_basis_funcs(std::shared_ptr<const Structure> prim_ptr,
                               ClexBasis const &clex_basis,
                               Log &out,
                               Index indent_space,
@@ -875,12 +875,13 @@ namespace CASM {
     std::ostream nullstream(0);
     COORD_MODE printer_mode(mode);
     std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
-    make_prim_periodic_asymmetric_unit(prim,
+    make_prim_periodic_asymmetric_unit(prim_ptr,
                                        CASM_TMP::ConstantFunctor<bool>(true),
                                        TOL,
                                        std::back_inserter(asym_unit),
                                        nullstream);
 
+    const Structure &prim = *prim_ptr;
 
     for(auto const &dofset : clex_basis.site_bases()) {
       out << indent << indent << "Site basis functions for DoF \"" << dofset.first << "\":\n";
@@ -944,7 +945,7 @@ namespace CASM {
 
   }
 
-  void write_site_basis_funcs(Structure const &prim,
+  void write_site_basis_funcs(std::shared_ptr<const Structure> prim_ptr,
                               ClexBasis const &clex_basis,
                               jsonParser &json) {
 
@@ -962,16 +963,16 @@ namespace CASM {
     //   ],
 
     jsonParser &sitef = json["site_functions"];
-    sitef = jsonParser::array(prim.basis().size(), jsonParser::object());
+    sitef = jsonParser::array(prim_ptr->basis().size(), jsonParser::object());
 
     std::ostream nullstream(0);
     std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
-    make_prim_periodic_asymmetric_unit(prim,
+    make_prim_periodic_asymmetric_unit(prim_ptr,
                                        CASM_TMP::ConstantFunctor<bool>(true),
                                        TOL,
                                        std::back_inserter(asym_unit),
                                        nullstream);
-
+    const Structure &prim = *prim_ptr;
 
     for(auto const &dofset : clex_basis.site_bases()) {
       for(Index no = 0; no < asym_unit.size(); no++) {

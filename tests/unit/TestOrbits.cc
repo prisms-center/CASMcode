@@ -16,7 +16,7 @@ namespace test {
     try {
       // Make PrimPeriodicIntegralClusterOrbit
       make_prim_periodic_orbits(
-        primclex.prim(),
+        primclex.shared_prim(),
         specs,
         alloy_sites_filter,
         primclex.crystallography_tol(),

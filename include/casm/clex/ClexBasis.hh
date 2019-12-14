@@ -32,10 +32,15 @@ namespace CASM {
     typedef std::vector<BasisSet> BSetOrbit;
     typedef std::vector<BSetOrbit>::const_iterator BSetOrbitIterator;
 
-    /// \brief Initialize from Structure, in order to get Site DoF and global DoF info
-    ClexBasis(Structure const &_prim, jsonParser const &_bspecs);
+    typedef Structure PrimType;
+    typedef std::shared_ptr<const Structure> PrimType_ptr;
 
-    Structure const &prim() const;
+    /// \brief Initialize from Structure, in order to get Site DoF and global DoF info
+    ClexBasis(PrimType_ptr _prim_ptr, jsonParser const &_bspecs);
+
+    PrimType const &prim() const;
+
+    PrimType_ptr shared_prim() const;
 
     /// \brief Total number of basis sites in primitive cell
     Index n_sublat() const;
@@ -108,7 +113,7 @@ namespace CASM {
     /// \brief Performs heavy lifting for populating site bases in m_site_bases
     void _populate_site_bases();
 
-    Structure const *m_prim_ptr;
+    PrimType_ptr m_prim_ptr;
 
     /// \brief pointer to class that constructs cluster functions
     notstd::cloneable_ptr<ClexBasisBuilder> m_basis_builder;

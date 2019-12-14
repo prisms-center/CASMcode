@@ -48,7 +48,7 @@ TEST(SubOrbitsTest, ZrOProj) {
   jsonParser bspecs {bspecs_path};
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
-    primclex.prim(),
+    primclex.shared_prim(),
     bspecs,
     alloy_sites_filter,
     primclex.crystallography_tol(),
@@ -284,7 +284,7 @@ TEST(SubOrbitsTest, FCCTernaryProj) {
   jsonParser bspecs {bspecs_path};
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
-    primclex.prim(),
+    primclex.shared_prim(),
     bspecs,
     alloy_sites_filter,
     primclex.crystallography_tol(),
@@ -493,7 +493,7 @@ TEST(SubOrbitsTest, L12Proj) {
   jsonParser bspecs {bspecs_path};
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
-    primclex.prim(),
+    primclex.shared_prim(),
     bspecs,
     alloy_sites_filter,
     primclex.crystallography_tol(),

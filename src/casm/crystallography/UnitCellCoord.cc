@@ -1,14 +1,9 @@
-#include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/basis_set/DoF.hh"
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/Site.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/misc/CASM_math.hh"
-#include "casm/symmetry/SymBasisPermute.hh"
-#include "casm/symmetry/SymOp.hh"
-#include <functional>
 
 namespace CASM {
   namespace xtal {
@@ -53,12 +48,9 @@ namespace CASM {
       coord_in_prim.cart() = coord.cart();
 
       for(Index b = 0; b < prim.basis().size(); ++b) {
-        auto coord_distance_to_basis_site = coord_in_prim - prim.basis()[b];
-        auto rounded_distance = coord_distance_to_basis_site;
-        rounded_distance.frac() = round(coord_distance_to_basis_site.const_frac());
-
-        if((coord_distance_to_basis_site - rounded_distance).const_cart().norm() < tol) {
-          return UnitCellCoord(b, lround(coord_distance_to_basis_site.const_frac()));
+        if(coord_in_prim.min_dist(prim.basis(b)) < tol) {
+          UnitCell coord_unitcell(lround(coord_in_prim.const_frac() - prim.basis(b).const_frac()));
+          return UnitCellCoord(b, coord_unitcell);
         }
       }
 
@@ -108,14 +100,14 @@ namespace CASM {
   }
 
   /// \brief Read from json [b, i, j, k], assuming fill_value.unit() is already set
-  void from_json(UnitCellCoord &fill_value, const jsonParser &read_json) {
+  void from_json(xtal::UnitCellCoord &fill_value, const jsonParser &read_json) {
 
     auto b = read_json[0].get<Index>();
     auto i = read_json[1].get<Index>();
     auto j = read_json[2].get<Index>();
     auto k = read_json[3].get<Index>();
 
-    fill_value = UnitCellCoord(b, i, j, k);
+    fill_value = xtal::UnitCellCoord(b, i, j, k);
 
     return;
   }

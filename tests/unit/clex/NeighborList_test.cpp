@@ -150,7 +150,7 @@ TEST(NeighborListTest, Proj) {
   jsonParser bspecs_json(proj.bspecs());
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   double crystallography_tol = TOL;
-  make_prim_periodic_orbits(prim,
+  make_prim_periodic_orbits(primclex.shared_prim(),
                             bspecs_json,
                             alloy_sites_filter,
                             crystallography_tol,

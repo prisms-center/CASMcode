@@ -186,7 +186,7 @@ namespace CASM {
   /// \brief Generate the asymmetric unit, including all sites
   template<typename OrbitOutputIterator>
   OrbitOutputIterator make_prim_periodic_asymmetric_unit(
-    const Structure &prim,
+    std::shared_ptr<const Structure> prim_ptr,
     const std::function<bool (Site)> &site_filter,
     double xtal_tol,
     OrbitOutputIterator result,
@@ -195,7 +195,7 @@ namespace CASM {
   /// \brief Generate Orbit<IntegralCluster> by specifying max cluster length for each branch
   template<typename OrbitOutputIterator>
   OrbitOutputIterator make_prim_periodic_orbits(
-    const Structure &prim,
+    std::shared_ptr<const Structure> prim_ptr,
     const std::vector<double> &max_length,
     const std::vector<IntegralCluster> &custom_generators,
     const std::function<bool (Site)> &site_filter,
@@ -206,7 +206,7 @@ namespace CASM {
   /// \brief Generate Orbit<IntegralCluster> from bspecs.json-type JSON input file
   template<typename OrbitOutputIterator>
   OrbitOutputIterator make_prim_periodic_orbits(
-    const Structure &prim,
+    std::shared_ptr<const Structure> prim_ptr,
     const jsonParser &bspecs,
     const std::function<bool (Site)> &site_filter,
     double xtal_tol,
