@@ -195,6 +195,23 @@ namespace CASM {
     }
   };
 
+  // \brief Build 30x30 symmetry representation for an unrolled pair of d-orbital occupation matrices
+  class dOrbitalOccupationSymRepBuilder : public TimeReversalSymRepBuilderBase {
+    public:
+        dOrbitalOccupationSymRepBuilder() : TimeReversalSymRepBuilderBase("dOrbitalOccupation"){}
+    
+        Eigen::MatrixXd symop_to_matrix(Eigen::Ref<const Eigen::Matrix3d> const &_matrix,
+                                            Eigen::Ref<const Eigen::Vector3d> const &_tau,
+                                            bool time_reversal,
+                                            Index dim) const override
+        {return Eigen::MatrixXd();}
+
+    private:
+        SymRepBuilderInterface *_clone() const override {
+         return new dOrbitalOccupationSymRepBuilder();
+        }
+  };
+
   // Named constructors for all previously defined SymRepBuilders
   namespace SymRepBuilder {
     inline
