@@ -4,11 +4,11 @@
 #include <string>
 #include <ctime>
 #include "casm/global/eigen.hh"
+#include "casm/casm_io/FileData.hh"
 #include "casm/casm_io/enum/io_traits.hh"
 #include "casm/casm_io/enum/stream_io.hh"
 
 namespace CASM {
-
   /// \brief Data structure stored in PropertiesDatabase
   ///
   /// - Use documentation here as reference for reading/writing 'properties.calc.json'
@@ -24,7 +24,8 @@ namespace CASM {
     /// If no relaxation, from == to
     std::string to;
 
-    std::time_t timestamp;
+    /// Path to properties file and time of last write
+    FileData file_data;
 
     /// Raw & unmapped calculated properties, as from properties.calc.json:
     ///

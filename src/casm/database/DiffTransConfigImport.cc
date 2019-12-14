@@ -59,18 +59,18 @@ namespace CASM {
       map_result_inserter result) const {
 
       ConfigIO::Result res;
-      res.pos = p;
+      res.properties.path = p;
 
 
       //if(hint != db_config().end()) {
       //hint_config = notstd::make_unique<Kinetics::DiffTransConfiguration>(*hint);
       if(hint_config) {
-        res.map_result.props.from = hint_config->name();
+        res.properties.from = hint_config->name();
       }
 
       // do mapping
       DiffTransConfigMapperResult map_result;
-      map_result = m_difftransconfigmapper->import_structure_occupation(res.pos, hint_config.get());
+      map_result = m_difftransconfigmapper->import_structure_occupation(res.properties.path, hint_config.get());
       if(!map_result.success) {
         res.fail_msg = map_result.fail_msg;
         *result++ = std::move(res);
@@ -95,25 +95,25 @@ namespace CASM {
       }
       Kinetics::DiffTransConfigInsertResult insert_result = map_result.config->insert();
       res.is_new_config = insert_result.insert_canonical;
-      res.map_result.props.to = insert_result.canonical_it->name();
+      res.properties.to = insert_result.canonical_it->name();
 
       // read in raw unmapped data and put into res
       //if(!prop_path.empty()) {
-      //std::tie(res.map_result.props.unmapped, res.has_data, res.has_complete_data) = read_calc_properties<Kinetics::DiffTransConfiguration>(primclex(), prop_path);
+      //std::tie(res.properties.unmapped, res.has_data, res.has_complete_data) = read_calc_properties<Kinetics::DiffTransConfiguration>(primclex(), prop_path);
       //}
 
 
 
       // copy relaxation properties from best config mapping into 'mapped' props
       std::cerr << "Commented out part that gets DiffTransConfig properties\n";
-      //res.map_result.props.mapped[insert_result.canonical_it.name()] = map_result.relaxation_properties;
+      //res.properties.mapped[insert_result.canonical_it.name()] = map_result.relaxation_properties;
 
       //These two aren't really being used yet
-      //res.map_result.props.mapped["cart_op"] = map_result.cart_op;
+      //res.properties.mapped["cart_op"] = map_result.cart_op;
       //This is a hack right now because default conflict score looks for minimum
       // relaxed_energy which doesn't make sense for diff_trans_config
-      //res.map_result.props.scalar("relaxed_energy") = map_result.kra;
-      res.map_result.props.scalar("kra") = map_result.kra;
+      //res.properties.scalar("relaxed_energy") = map_result.kra;
+      res.properties.scalar("kra") = map_result.kra;
 
 
 

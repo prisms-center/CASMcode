@@ -12,6 +12,7 @@
 #include "casm/crystallography/LatticeMap.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
+#include "casm/basis_set/DoFTraits.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/database/ScelDatabase.hh"
@@ -19,7 +20,7 @@
 namespace CASM {
 
   namespace Local {
-    int permute_dist(std::vector<Index> const &_perm) {
+    static int _permute_dist(std::vector<Index> const &_perm) {
       int result(0);
       for(int i = 0; i < _perm.size(); ++i) {
         result += std::abs(int(_perm[i] - i));
@@ -29,8 +30,14 @@ namespace CASM {
 
     //*******************************************************************************************
 
+    /// \brief Find symop (as PermuteIterator) that gives the most 'faithful' equivalent mapping
+    /// This means that
+    ///   (1) the site permutation is as close to identity as possible (i.e., maximal character)
+    ///   (2) ties at (1) are broken by ensuring _node.isometry is proper and close to zero rotation (i.e., maximal character*determinant)
+    ///   (3) if (1) and (2) are ties, then we minimize _node.translation.norm()
+
     template<typename IterType>
-    static IterType strictest_equivalent(IterType begin, IterType end, MappingNode const &_node) {
+    static IterType _strictest_equivalent(IterType begin, IterType end, MappingNode const &_node) {
       SymOp op(_node.isometry(), _node.translation(), false, _node.tol());
       SymOp t_op;
       IterType best_it = begin;
@@ -40,7 +47,7 @@ namespace CASM {
       double best_char = op.matrix().trace();
       double best_dist = op.tau().norm();
       int best_det = sgn(round(op.matrix().determinant()));
-      int best_pdist = permute_dist(_node.permutation);
+      int best_pdist = _permute_dist(_node.permutation);
 
       Coordinate tau(_node.lat_node.parent.scel_lattice());
       while(begin != end) {
@@ -50,7 +57,7 @@ namespace CASM {
         if(tdet > best_det) {
           best_det = tdet;
           best_char = tdet * t_op.matrix().trace();
-          best_pdist = permute_dist(begin->combined_permute() * _node.permutation);
+          best_pdist = _permute_dist(begin->combined_permute() * _node.permutation);
           tau.cart() = t_op.tau();
           tau.voronoi_within();
           best_dist = tau.const_cart().norm();
@@ -59,7 +66,7 @@ namespace CASM {
         else if(tdet == best_det) {
           tchar = tdet * t_op.matrix().trace();
           if(almost_equal(tchar, best_char)) {
-            tpdist = permute_dist(begin->combined_permute() * _node.permutation);
+            tpdist = _permute_dist(begin->combined_permute() * _node.permutation);
             if(tpdist > best_pdist) {
               best_det = tdet;
               best_char = tchar;
@@ -84,7 +91,7 @@ namespace CASM {
           else if(tchar > best_char) {
             best_det = tdet;
             best_char = tchar;
-            best_pdist = permute_dist(begin->combined_permute() * _node.permutation);
+            best_pdist = _permute_dist(begin->combined_permute() * _node.permutation);
             tau.cart() = t_op.tau();
             tau.voronoi_within();
             best_dist = tau.const_cart().norm();
@@ -118,13 +125,6 @@ namespace CASM {
     return result;
   }
 
-  //*******************************************************************************************
-  SimpleStructure PrimStrucMapCalculator::resolve_setting(MappingNode const &_node,
-                                                          SimpleStructure const &_child_struc) const {
-
-    throw std::runtime_error("ConfigMapping::resolve_setting is not implemented!");
-    return _child_struc;
-  }
   //*******************************************************************************************
   namespace ConfigMapping {
 
@@ -212,10 +212,40 @@ namespace CASM {
 
   //*******************************************************************************************
   /// \brief Initializes configdof corresponding to a mapping (encoded by _node) of _child_struc onto _pclex
-  ConfigDoF to_configdof(MappingNode const _node, SimpleStructure const &_child_struc, Supercell const  &_scel) {
-    std::cerr << "to_configdof not fully implemented\n";
-    exit(1);
-    return _scel.zero_configdof(TOL);
+  std::pair<ConfigDoF, std::set<std::string> > to_configdof(SimpleStructure const &_child_struc, Supercell const  &_scel) {
+    SimpleStructure::Info const &c_info(_child_struc.mol_info);
+    std::pair<ConfigDoF, std::set<std::string> > result(_scel.zero_configdof(TOL), {});
+    PrimClex::PrimType const &prim(_scel.prim());
+    Index i = 0;
+    for(Index b = 0; b < prim.basis().size(); ++b) {
+      for(Index l = 0; l < _scel.volume(); ++l, ++i) {
+        Index j = 0;
+        for(; j < prim.basis(b).occupant_dof().size(); ++j) {
+          if(c_info.names[i] == prim.basis(b).occupant_dof()[j]) {
+            result.first.occ(i) = j;
+            break;
+          }
+        }
+        if(j == prim.basis(b).occupant_dof().size())
+          throw std::runtime_error("Attempting to initialize ConfigDoF from SimpleStructure. Species '"
+                                   + c_info.names[i] + "' is not allowed on sublattice " + std::to_string(b));
+      }
+    }
+
+    for(auto const &dof : result.first.global_dofs()) {
+      auto val = DoFType::traits(dof.first).find_values(_child_struc.properties);
+      result.first.global_dof(dof.first).from_standard_values(val.first);
+      result.second.insert(val.second.begin(), val.second.end());
+    }
+
+    for(auto const &dof : result.first.local_dofs()) {
+      auto val = DoFType::traits(dof.first).find_values(c_info.properties);
+      result.first.local_dof(dof.first).from_standard_values(val.first);
+      result.second.insert(val.second.begin(), val.second.end());
+    }
+
+
+    return result;
   }
   //*******************************************************************************************
 
@@ -290,22 +320,21 @@ namespace CASM {
         best_cost = config_maps.begin()->cost;
         const Supercell &scel(hint_ptr->supercell());
         for(auto const &map : config_maps) {
-          SimpleStructure oriented_struc = struc_mapper().calculator().resolve_setting(map, child_struc);
-          ConfigDoF tdof = to_configdof(map, oriented_struc, scel);
-          Configuration tconfig(scel, jsonParser(), tdof);
+          SimpleStructure resolved_struc = struc_mapper().calculator().resolve_setting(map, child_struc);
+          auto tdof = to_configdof(map, resolved_struc, scel);
+          Configuration tconfig(scel, jsonParser(), tdof.first);
+          PermuteIterator perm_it = scel.sym_info().permute_begin();
           if(strict()) {
             // Strictness transformation reduces permutation swaps, translation magnitude, and isometry character
-            PermuteIterator it_strict = Local::strictest_equivalent(scel.sym_info().permute_begin(), scel.sym_info().permute_end(), map);
-            MappingNode tnode = copy_apply(it_strict, map);
-            tconfig.apply_sym(it_strict);
-            result.maps.emplace(std::make_pair(tnode, std::make_pair(ConfigMapperResult::MapData(""), std::move(tconfig))));
+            perm_it = Local::_strictest_equivalent(scel.sym_info().permute_begin(), scel.sym_info().permute_end(), map);
           }
           else {
-            PermuteIterator it_canon = tconfig.to_canonical();
-            MappingNode tnode = copy_apply(it_canon, map);
-            tconfig.apply_sym(it_canon);
-            result.maps.emplace(std::make_pair(tnode, std::make_pair(ConfigMapperResult::MapData(""), std::move(tconfig))));
+            perm_it = tconfig.to_canonical();
           }
+          tconfig.apply_sym(perm_it);
+          MappingNode resolved_node = copy_apply(perm_it, map);
+          resolved_struc = struc_mapper().calculator().resolve_setting(resolved_node, child_struc);
+          result.maps.emplace(resolved_node, ConfigMapperResult::Individual(std::move(tconfig), std::move(resolved_struc), std::move(tdof.second)));
         }
       }
       //\End routine A
@@ -318,22 +347,21 @@ namespace CASM {
     // Refactor into external routine A. This is too annoying with the current way that supercells are managed
     for(auto const &map : struc_maps) {
       std::shared_ptr<Supercell> shared_scel = std::make_shared<Supercell>(&primclex(), map.lat_node.parent.scel_lattice());
-      SimpleStructure oriented_struc = struc_mapper().calculator().resolve_setting(map, child_struc);
-      ConfigDoF tdof = to_configdof(map, oriented_struc, *shared_scel);
-      Configuration tconfig(shared_scel, jsonParser(), tdof);
+      SimpleStructure resolved_struc = struc_mapper().calculator().resolve_setting(map, child_struc);
+      auto tdof = to_configdof(map, resolved_struc, *shared_scel);
+      Configuration tconfig(shared_scel, jsonParser(), tdof.first);
+      PermuteIterator perm_it = shared_scel->sym_info().permute_begin();
       if(strict()) {
         // Strictness transformation reduces permutation swaps, translation magnitude, and isometry character
-        PermuteIterator it_strict = Local::strictest_equivalent(shared_scel->sym_info().permute_begin(), shared_scel->sym_info().permute_end(), map);
-        MappingNode tnode = copy_apply(it_strict, map);
-        tconfig.apply_sym(it_strict);
-        result.maps.emplace(std::make_pair(tnode, std::make_pair(ConfigMapperResult::MapData(""), std::move(tconfig))));
+        perm_it = Local::_strictest_equivalent(shared_scel->sym_info().permute_begin(), shared_scel->sym_info().permute_end(), map);
       }
       else {
-        PermuteIterator it_canon = tconfig.to_canonical();
-        MappingNode tnode = copy_apply(it_canon, map);
-        tconfig.apply_sym(it_canon);
-        result.maps.emplace(std::make_pair(tnode, std::make_pair(ConfigMapperResult::MapData(""), std::move(tconfig))));
+        perm_it = tconfig.to_canonical();
       }
+      tconfig.apply_sym(perm_it);
+      MappingNode resolved_node = copy_apply(perm_it, map);
+      resolved_struc = struc_mapper().calculator().resolve_setting(resolved_node, child_struc);
+      result.maps.emplace(resolved_node, ConfigMapperResult::Individual(std::move(tconfig), std::move(resolved_struc), std::move(tdof.second)));
     }
     //\End routine A
 

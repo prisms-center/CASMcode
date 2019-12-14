@@ -115,6 +115,10 @@ namespace CASM {
       return m_argument_table[15].first;
     }
 
+    std::string ArgHandler::dof() {
+      return m_argument_table[16].first;
+    }
+
     void ArgHandler::void_to_bash(std::vector<std::string> &arguments) {
       return;
     }
@@ -275,6 +279,16 @@ namespace CASM {
       return;
     }
 
+    void ArgHandler::dof_to_bash(std::vector<std::string> &arguments) {
+      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
+        const DirectoryStructure dir = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log()).dir();
+        //for(auto &item : dir.all_property()) {
+        //arguments.push_back(item);
+        //}
+      }
+      return;
+    }
+
     /**
      * This construction right here determines what the value_name of the boost options
      * should be named. It is through these strings that bash completion can
@@ -297,7 +311,8 @@ namespace CASM {
       std::make_pair("<clex>", ARG_TYPE::CLEX),
       std::make_pair("<ref>", ARG_TYPE::REF),
       std::make_pair("<eci>", ARG_TYPE::ECI),
-      std::make_pair("<property>", ARG_TYPE::PROPERTY)
+      std::make_pair("<property>", ARG_TYPE::PROPERTY),
+      std::make_pair("<dof>", ARG_TYPE::DOF)
     });
 
 
@@ -358,6 +373,10 @@ namespace CASM {
       return m_selection_paths;
     }
 
+    const fs::path &OptionHandlerBase::file_path() const {
+      return m_file_path;
+    }
+
     const std::string &OptionHandlerBase::verbosity_str() const {
       return m_verbosity_str;
     }
@@ -416,6 +435,11 @@ namespace CASM {
       return from_string<COORD_TYPE>(coordtype_str());
     }
 
+    ///Returns the names of the DoF type names for add_dofs_suboption()
+    const std::vector<std::string> &OptionHandlerBase::dof_strs() const {
+      return m_dof_strs;
+    }
+
     void OptionHandlerBase::add_selection_suboption(const fs::path &_default) {
       m_desc.add_options()
       ("selection,c",
@@ -467,6 +491,14 @@ namespace CASM {
        po::value<std::vector<fs::path> >(&m_selection_paths)->value_name(ArgHandler::path()),
        (std::string("Only consider the selected configurations of the given selection files. ") +
         standard_singleline_enum_help<DB::SELECTION_TYPE>("", "filename")).c_str());
+      return;
+    }
+
+    void OptionHandlerBase::add_file_path_suboption(const fs::path &_default) {
+      m_desc.add_options()
+      ("path,P",
+       po::value<fs::path>(&m_file_path)->default_value(_default)->value_name(ArgHandler::path()),
+       std::string("Path to directory in which to run the command. ").c_str());
       return;
     }
 
@@ -546,7 +578,7 @@ namespace CASM {
     }
 
     void OptionHandlerBase::add_settings_suboption(bool required) {
-      std::string help_str = "Settings input file specifying which parameters should be used. See 'casm format --" + m_tag + "'.";
+      std::string help_str = "Settings input file specifying which parameters should be used. See 'casm format --" + tag() + "'.";
 
       if(required) {
         m_desc.add_options()
@@ -561,7 +593,7 @@ namespace CASM {
     }
 
     void OptionHandlerBase::add_input_suboption(bool required) {
-      std::string help_str = "String specifying input settings. See 'casm format --" + m_tag + "'.";
+      std::string help_str = "String specifying input settings. See 'casm format --" + tag() + "'.";
 
       if(required) {
         m_desc.add_options()
@@ -660,6 +692,17 @@ namespace CASM {
                                                singleline_help<COORD_TYPE>()).c_str());
       return;
     }
+
+    ///Add a --dofs suboption to specify DoF Types
+    void OptionHandlerBase::add_dofs_suboption() {
+      std::string help_str;
+      help_str = "One or more DoF types to use casm " + m_tag + " with, such as 'disp' or 'EAstrain'";
+      m_desc.add_options()
+      ("dofs", po::value<std::vector<std::string> >(&m_dof_strs)->multitoken()->value_name(ArgHandler::dof()), help_str.c_str());
+      return;
+    }
+
+
 
     void OptionHandlerBase::add_dry_run_suboption(std::string msg) {
       m_desc.add_options()

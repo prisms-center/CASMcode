@@ -13,6 +13,8 @@ namespace CASM {
       AnisoValTraits::selective_dynamics(),
       AnisoValTraits::magspin(),
       AnisoValTraits::magmom(),
+      AnisoValTraits::strain("B"),
+      AnisoValTraits::strain("U"),
       AnisoValTraits::strain("EA"),
       AnisoValTraits::strain("GL"),
       AnisoValTraits::strain("H"),

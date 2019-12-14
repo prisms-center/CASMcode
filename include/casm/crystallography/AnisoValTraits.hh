@@ -39,6 +39,8 @@ namespace CASM {
 
     ///\brief Named constructor for global strain AnisoValTraits
     /// @param _metric specifies which strain metric. Choices are:
+    ///  - "U"  : Right-stretch tensor
+    ///  - "B"  : Biot
     ///  - "GL" : Green-Lagrange
     ///  - "AE" : Almansi-Euler
     ///  - "H"  : Hencky

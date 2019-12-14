@@ -69,9 +69,9 @@ namespace CASM {
         for(auto &res : tvec) {
           results.push_back(res);
           // if mapped && has data, insert
-          if(!res.map_result.props.to.empty() && res.has_data) {
+          if(!res.properties.to.empty() && res.has_data) {
             // insert data:
-            db_props().insert(res.map_result.props);
+            db_props().insert(res.properties);
           }
         }
 
@@ -108,25 +108,25 @@ namespace CASM {
 
       for(long i = 0; i < results.size(); ++i) {
         const auto &res = results[i];
-        if(res.map_result.props.to.empty()) {
+        if(res.properties.to.empty()) {
           fail.push_back(res);
         }
         else {
-          if(all_to.find(res.map_result.props.to) == all_to.end()) {
-            all_to.insert(std::make_pair(res.map_result.props.to, 0));
+          if(all_to.find(res.properties.to) == all_to.end()) {
+            all_to.insert(std::make_pair(res.properties.to, 0));
           }
-          all_to[res.map_result.props.to]++;
+          all_to[res.properties.to]++;
           success.push_back(res);
         }
       }
 
       for(long i = 0; i < results.size(); ++i) {
         const auto &res = results[i];
-        if(all_to[res.map_result.props.to] > 1) {
+        if(all_to[res.properties.to] > 1) {
           conflict.push_back(res);
-          if(res.map_result.props.from != res.map_result.props.to) {
+          if(res.properties.from != res.properties.to) {
             unstable.push_back(res);
-            if(!selection.is_selected(res.map_result.props.to)) {
+            if(!selection.is_selected(res.properties.to)) {
               unselected.push_back(res);
             }
           }

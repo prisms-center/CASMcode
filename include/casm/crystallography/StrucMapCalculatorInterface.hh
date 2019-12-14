@@ -77,6 +77,10 @@ namespace CASM {
         return _struc.info(m_species_mode);
       }
 
+      SimpleStructure::Info &struc_info(SimpleStructure &_struc) const {
+        return _struc.info(m_species_mode);
+      }
+
       SimpleStructure const &parent() const {
         return m_parent;
       }

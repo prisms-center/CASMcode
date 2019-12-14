@@ -75,9 +75,9 @@ namespace CASM {
 
     namespace ConfigIO {
 
-      GenericDatumFormatter<std::string, ConfigIO::Result> pos() {
-        return GenericDatumFormatter<std::string, Result>("pos", "", [&](const Result & res) {
-          return res.pos.string();
+      GenericDatumFormatter<std::string, ConfigIO::Result> path() {
+        return GenericDatumFormatter<std::string, Result>("path", "", [&](const Result & res) {
+          return res.properties.file_data.path();
         });
       }
 
@@ -90,19 +90,19 @@ namespace CASM {
       /// Use 'from_configname' as 'configname'
       GenericDatumFormatter<std::string, ConfigIO::Result> configname() {
         return GenericDatumFormatter<std::string, Result>("configname", "", [&](const Result & res) {
-          return res.map_result.props.from;
+          return res.properties.from;
         });
       }
 
       GenericDatumFormatter<std::string, ConfigIO::Result> from_configname() {
         return GenericDatumFormatter<std::string, Result>("from_configname", "", [&](const Result & res) {
-          return res.map_result.props.from;
+          return res.properties.from;
         });
       }
 
       GenericDatumFormatter<std::string, ConfigIO::Result> to_configname() {
         return GenericDatumFormatter<std::string, Result>("to_configname", "", [&](const Result & res) {
-          return res.map_result.props.to;
+          return res.properties.to;
         });
       }
 
@@ -123,10 +123,10 @@ namespace CASM {
                  "preexisting_data",
                  "",
         [&](const Result & res) {
-          return data_results.find(res.map_result.props.from)->second.preexisting;
+          return data_results.find(res.properties.from)->second.preexisting;
         },
         [&](const Result & res) {
-          return data_results.find(res.map_result.props.from) != data_results.end();
+          return data_results.find(res.properties.from) != data_results.end();
         });
       }
 
@@ -135,10 +135,10 @@ namespace CASM {
                  "import_data",
                  "",
         [&](const Result & res) {
-          return data_results.find(res.map_result.props.from)->second.last_insert == res.pos;
+          return data_results.find(res.properties.from)->second.last_insert == res.properties.file_data.path();
         },
         [&](const Result & res) {
-          return data_results.count(res.map_result.props.from) != 0;
+          return data_results.count(res.properties.from) != 0;
         });
       }
 
@@ -147,7 +147,7 @@ namespace CASM {
                  "import_additional_files",
                  "",
         [&](const Result & res) {
-          auto it = data_results.find(res.map_result.props.from);
+          auto it = data_results.find(res.properties.from);
           if(it != data_results.end()) {
             return it->second.copy_more;
           }
@@ -159,10 +159,10 @@ namespace CASM {
         return GenericDatumFormatter<double, Result>(
                  "lattice_deformation_cost", "",
         [&](const Result & res) {
-          return res.map_result.props.scalar("lattice_deformation_cost");
+          return res.properties.scalar("lattice_deformation_cost");
         },
         [&](const Result & res) {
-          return res.map_result.props.has_scalar("lattice_deformation_cost");
+          return res.properties.has_scalar("lattice_deformation_cost");
         });
       }
 
@@ -170,10 +170,10 @@ namespace CASM {
         return GenericDatumFormatter<double, Result>(
                  "basis_deformation_cost", "",
         [&](const Result & res) {
-          return res.map_result.props.scalar("basis_deformation_cost");
+          return res.properties.scalar("basis_deformation_cost");
         },
         [&](const Result & res) {
-          return res.map_result.props.has_scalar("basis_deformation_cost");
+          return res.properties.has_scalar("basis_deformation_cost");
         });
       }
 
@@ -181,10 +181,10 @@ namespace CASM {
         return GenericDatumFormatter<double, Result>(
                  "relaxed_energy", "",
         [&](const Result & res) {
-          return res.map_result.props.scalar("relaxed_energy");
+          return res.properties.scalar("relaxed_energy");
         },
         [&](const Result & res) {
-          return res.map_result.props.has_scalar("relaxed_energy");
+          return res.properties.has_scalar("relaxed_energy");
         });
       }
 
@@ -192,7 +192,7 @@ namespace CASM {
         return GenericDatumFormatter<double, Result>(
                  "score", "",
         [&](const Result & res) {
-          return db_props.score(res.map_result.props);
+          return db_props.score(res.properties);
         },
         [&](const Result & res) {
           return res.has_data;
@@ -203,10 +203,10 @@ namespace CASM {
         return GenericDatumFormatter<double, Result>(
                  "best_score", "",
         [&](const Result & res) {
-          return db_props.best_score(res.map_result.props.to);
+          return db_props.best_score(res.properties.to);
         },
         [&](const Result & res) {
-          return db_props.find_via_to(res.map_result.props.to) != db_props.end();
+          return db_props.find_via_to(res.properties.to) != db_props.end();
         });
       }
 
@@ -214,10 +214,10 @@ namespace CASM {
         return GenericDatumFormatter<bool, Result>(
                  "is_best", "",
         [&](const Result & res) {
-          return res.map_result.props.from == db_props.relaxed_from(res.map_result.props.to);
+          return res.properties.from == db_props.relaxed_from(res.properties.to);
         },
         [&](const Result & res) {
-          return db_props.find_via_to(res.map_result.props.to) != db_props.end();
+          return db_props.find_via_to(res.properties.to) != db_props.end();
         });
       }
 
@@ -248,7 +248,7 @@ namespace CASM {
         PropertiesDatabase &db_props) {
 
         dict.insert(
-          pos(),
+          path(),
           fail_msg(),
           configname(),
           from_configname(),
@@ -356,9 +356,8 @@ namespace CASM {
       fs::path prop_path = calc_properties_path(configname, primclex());
       if(!prop_path.empty()) {
         auto it = db_props().find_via_from(configname);
-        if(it != db_props().end()
-           && it->timestamp == fs::last_write_time(prop_path)) {
-          return true;
+        if(it != db_props().end()) {
+          return it->file_data == FileData(prop_path);
         }
       }
       return false;

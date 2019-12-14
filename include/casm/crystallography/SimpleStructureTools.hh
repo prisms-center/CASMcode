@@ -71,7 +71,8 @@ namespace CASM {
 
     /// \brief Construct from Configuration
     SimpleStructure make_simple_structure(Configuration const &_config,
-                                          std::vector<DoFKey> const &_which_dofs = {});
+                                          std::vector<DoFKey> const &_which_dofs = {},
+                                          bool relaxed = false);
 
     /// \brief Construct from ConfigDoF _dof belonging to provided Supercell _scel
     SimpleStructure make_simple_structure(Supercell const &_scel,

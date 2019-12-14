@@ -1,4 +1,5 @@
 #include "casm/crystallography/SimpleStructure.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 
 
 namespace CASM {
@@ -15,6 +16,16 @@ namespace CASM {
         permute.insert(permute.end(), name.second.begin(), name.second.end());
       }
       return permute;
+    }
+
+    //***************************************************************************
+
+    void SimpleStructure::within(double tol) {
+      if(mol_info.size())
+        mol_info.coords -= lat_column_mat * Eigen::floor(((lat_column_mat.inverse() * mol_info.coords).array() + tol).matrix()).eval();
+      if(atom_info.size())
+        atom_info.coords -= lat_column_mat * Eigen::floor(((lat_column_mat.inverse() * atom_info.coords).array() + tol).matrix()).eval();
+
     }
 
     //***************************************************************************

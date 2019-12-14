@@ -71,15 +71,18 @@ namespace CASM {
         SimpleStructure::Info result;
         result.resize(_info.size()*mult);
 
-        result.coords = _info.coords.replicate(1, mult);
+        for(Index i = 0; i < _info.size(); ++i)
+          result.coords.block(0, i * mult, 3, mult) = _info.cart_coord(i).replicate(1, mult);
 
         for(auto const &p : _info.properties) {
-          result.properties[p.first] = p.second.replicate(1, mult);
+          auto it = result.properties.emplace(p.first, Eigen::MatrixXd(p.second.rows(), mult * p.second.cols())).first;
+          for(Index i = 0; i < p.second.cols(); ++i)
+            result.coords.block(0, i * mult, p.second.rows(), mult) = p.second.col(i).replicate(1, mult);
         }
 
         Index l = 0;
-        for(Index g = 0; g < mult; ++g) {
-          for(Index b = 0; b < _info.size(); ++b) {
+        for(Index b = 0; b < _info.size(); ++b) {
+          for(Index g = 0; g < mult; ++g) {
             result.names[l++] = _info.names[b];
           }
         }
@@ -104,9 +107,16 @@ namespace CASM {
       Index nm = _sstruc.mol_info.size();
       Index na = _sstruc.atom_info.size();
 
-      for(Index g = 0; g < grid.size(); ++g) {
-        result.mol_info.coords.block(0, g * nm, 3, nm).colwise() += grid.scel_coord(g).const_cart();
-        result.atom_info.coords.block(0, g * na, 3, na).colwise() += grid.scel_coord(g).const_cart();
+      Index i = 0;
+      for(Index m = 0; m < nm; ++m) {
+        for(Index g = 0; g < grid.size(); ++g, ++i) {
+          result.mol_info.cart_coord(i) += grid.scel_coord(g).const_cart();
+        }
+      }
+      for(Index a = 0; a < na; ++a) {
+        for(Index g = 0; g < grid.size(); ++g, ++i) {
+          result.atom_info.cart_coord(i) += grid.scel_coord(g).const_cart();
+        }
       }
 
       return result;
@@ -123,7 +133,7 @@ namespace CASM {
       Eigen::VectorXi _mol_occ;
       _mol_occ.resize(_struc.basis().size());
       for(Index b = 0; b < _struc.basis().size(); ++b) {
-        result.mol_info.coord(b) = _struc.basis(b).const_cart();
+        result.mol_info.cart_coord(b) = _struc.basis(b).const_cart();
         result.mol_info.names.push_back(_struc.basis(b).occ_name());
         _mol_occ[b] = _struc.basis(b).occupant_dof().value();
       }
@@ -145,7 +155,7 @@ namespace CASM {
 
       for(Index b = 0, l = 0; b < _dof.n_sublat(); ++b) {
         for(Index v = 0; v < _dof.n_vol(); ++v, ++l) {
-          result.mol_info.coord(l) = _scel.coord(l).const_cart();
+          result.mol_info.cart_coord(l) = _scel.coord(l).const_cart();
           std::string mol_name = _scel.prim().basis()[ b ].occupant_dof()[_dof.occ(l)].name();
           result.mol_info.names.push_back(std::move(mol_name));
         }
@@ -189,7 +199,7 @@ namespace CASM {
           Molecule const &molref = _reference.basis(b).occupant_dof()[_mol_occ[s]];
           //std::cout << "(b,v): (" << b << ", " << v << "); molref.size() = " << molref.size() << "\n";
           for(Index ms = 0; ms < molref.size(); ++ms, ++a) {
-            _sstruc.atom_info.coord(a) = _sstruc.mol_info.coord(s) + molref.atom(ms).cart();
+            _sstruc.atom_info.cart_coord(a) = _sstruc.mol_info.cart_coord(s) + molref.atom(ms).cart();
             _sstruc.atom_info.names[a] = molref.atom(ms).name();
           }
         }
@@ -318,14 +328,14 @@ namespace CASM {
       {
         jsonParser &tjson = supplement[prefix + "atom_coords"].put_array();
         for(Index i : atom_permute) {
-          tjson.push_back(_struc.atom_info.coord(i), jsonParser::as_array());
+          tjson.push_back(_struc.atom_info.cart_coord(i), jsonParser::as_array());
         }
       }
 
       {
         jsonParser &tjson = supplement[prefix + "mol_coords"].put_array();
         for(Index i : mol_permute) {
-          tjson.push_back(_struc.mol_info.coord(i), jsonParser::as_array());
+          tjson.push_back(_struc.mol_info.cart_coord(i), jsonParser::as_array());
         }
       }
       return supplement;

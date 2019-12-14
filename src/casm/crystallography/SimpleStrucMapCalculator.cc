@@ -1,6 +1,7 @@
 #include "casm/crystallography/SimpleStrucMapCalculator.hh"
 #include "casm/crystallography/StrucMapping.hh"
 #include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/AnisoValTraits.hh"
 
 namespace CASM {
   namespace xtal {
@@ -37,7 +38,7 @@ namespace CASM {
       // Try translating child atom at i_trans onto each chemically compatible site of parent
       for(Index j = 0; j < _allowed_species().size(); ++j) {
         if(_allowed_species()[j].count(sp)) {
-          translation.cart() = p_info.coord(j) - c_info.coord(i_trans);
+          translation.cart() = p_info.cart_coord(j) - c_info.cart_coord(i_trans);
           translation.voronoi_within();
           result.push_back(translation.const_cart());
         }
@@ -48,26 +49,93 @@ namespace CASM {
 
     //*******************************************************************************************
 
-    /// \brief Creates copy of _child_struc by applying isometry, lattice transformation, translation, and site permutation of _node
+    /// \brief Creates copy of _child_struc by applying isometry, similarity, translation, and site permutation of _node
+    /// Result has all sites within the unit cell
     SimpleStructure SimpleStrucMapCalculator::resolve_setting(MappingNode const &_node, SimpleStructure const &_child_struc) const {
       SimpleStructure::Info const &c_info(this->struc_info(_child_struc));
+      SimpleStructure::Info const &p_info(this->struc_info(this->parent()));
+      PrimGrid const &cgrid = _node.lat_node.child;
+      PrimGrid const &pgrid = _node.lat_node.parent;
+
+      Index csize = c_info.size();
+      Index psize = p_info.size();
 
       SimpleStructure result;
-      result.mol_info.resize(_node.permutation.size());
-      Eigen::MatrixXd coords = _node.lat_node.stretch * _node.lat_node.isometry * c_info.coords;
-      coords.colwise() += _node.basis_node.translation;
-      PrimGrid const &cgrid = _node.lat_node.child;
-      Index nmol = _child_struc.mol_info.size();
-      for(Index i = 0; i < _node.permutation.size(); ++i) {
-        Index j = _node.permutation[i];
-        if(j < (nmol * cgrid.size())) {
-          result.mol_info.coord(i) = coords.col(j % nmol) + cgrid.scel_coord(j / nmol).const_cart();
-          result.mol_info.names[i] = _child_struc.mol_info.names[j % nmol];
+
+      // Resolve setting of deformed lattice vectors
+      // Symmetric deformation of parent lattice that takes it to de-rotated child lattice:
+      Eigen::Matrix3d U = (_node.lat_node.stretch).inverse(); // * _node.lat_node.isometry).inverse();
+      result.lat_column_mat = U * pgrid.scel_lattice().lat_column_mat();
+
+      // Match number of sites in result to number of sites in supercell of parent
+      SimpleStructure::Info &r_info(this->struc_info(result));
+      r_info.resize(_node.permutation.size());
+
+      // transform and expand the coordinates of child to fill the resolved structure
+      {
+
+        //Eigen::MatrixXd coords = _node.lat_node.stretch * _node.lat_node.isometry * c_info.coords;
+        //Eigen::MatrixXd coords = (_node.lat_node.isometry*c_info.coords.colwise() + F*_node.basis_node.translation;
+
+        for(Index i = 0; i < _node.permutation.size(); ++i) {
+          Index j = _node.permutation[i];
+          if(j < (csize * cgrid.size())) {
+            //r_info.cart_coord(i) = coords.col(j % csize) + cgrid.scel_coord(j / csize).const_cart();
+            r_info.names[i] = _child_struc.mol_info.names[j / cgrid.size()];
+          }
+          else {
+            r_info.cart_coord(i) = U * (p_info.cart_coord(i / pgrid.size()) + pgrid.scel_coord(i % pgrid.size()).const_cart() + _node.disp(i));
+          }
         }
+        result.within();
+      }//End coordinate transform
+
+
+      // Transform and expand properties of child to fill resolved structure
+      // global properties first
+      for(auto const &el : _child_struc.properties) {
+        Eigen::MatrixXd trans = AnisoValTraits(el.first).symop_to_matrix(_node.lat_node.isometry,
+                                                                         U * _node.basis_node.translation,
+                                                                         _node.basis_node.time_reversal);
+        result.properties.emplace(el.first, trans * el.second);
       }
 
-      std::cerr << "SimpleStrucMapCalculator::resolve_setting() not implemented!\n";
-      exit(1);
+      // site properties second
+      for(auto const &el : c_info.properties) {
+        Eigen::MatrixXd trans = AnisoValTraits(el.first).symop_to_matrix(_node.lat_node.isometry,
+                                                                         U * _node.basis_node.translation,
+                                                                         _node.basis_node.time_reversal);
+        Eigen::MatrixXd tprop = trans * el.second;
+
+        auto it = r_info.properties.emplace(el.first, Eigen::MatrixXd(el.second.rows(), r_info.size())).first;
+        for(Index i = 0; i < _node.permutation.size(); ++i) {
+          Index j = _node.permutation[i];
+          if(j < (csize * cgrid.size())) {
+            (it->second).col(i) = tprop.col(j / cgrid.size());
+          }
+        }
+      }// End properties transform
+
+      // Add new global property -- right stretch tensor of child relative to parent:
+      {
+        // Use AnisoValTraits constructor to get dimension, etc--will throw exception if "Ustrain" is not recognized
+        AnisoValTraits ttraits("Ustrain");
+        Eigen::VectorXd Uvec(ttraits.dim());
+        //Do conversion here for now, since StrainConverter is outside crystallography module.
+        Uvec << U(0, 0), U(1, 1), U(2, 2), sqrt(2.)*U(1, 2), sqrt(2.)*U(0, 2), sqrt(2.)*U(0, 1);
+        result.properties["ttraits.name()"] = Uvec;
+      }
+
+      // Add new global property -- isometry
+      {
+        AnisoValTraits ttraits("isometry");
+        //unroll to 9-element vector
+        result.properties[ttraits.name()] = Eigen::Map<const Eigen::VectorXd>(_node.lat_node.isometry.data(), ttraits.dim());
+      }
+
+      // Add new local property -- site displacement of child relative to parent, at parent strain state
+      r_info.properties["disp"] = _node.displacement;
+
       return result;
     }
     //***************************************************************************************************
@@ -119,13 +187,13 @@ namespace CASM {
         // IDEAL coordinate to the RELAXED coordinate
         if(_node.permutation[i] < cN) {
 
-          Coordinate child_coord(c_info.coord(_node.permutation[i] / cgrid.size())
+          Coordinate child_coord(c_info.cart_coord(_node.permutation[i] / cgrid.size())
                                  + cgrid.scel_coord(_node.permutation[i] % cgrid.size()).const_cart()
                                  + _node.basis_node.translation,
                                  pgrid.scel_lattice(), CART);
 
           Coordinate parent_coord = pgrid.scel_coord(i % pgrid.size());
-          parent_coord.cart() += p_info.coord(i / pgrid.size());
+          parent_coord.cart() += p_info.cart_coord(i / pgrid.size());
           child_coord.min_dist(parent_coord, disp_coord);
           //std::cout << "\nMap " << _node.permutation[i] << "->" << i << "\n"
           //        << "Child coord (" << _node.permutation[i] % cgrid.size()<< ", "<< _node.permutation[i] / cgrid.size() << "): "
@@ -200,7 +268,7 @@ namespace CASM {
 
         // For each sublattice, loop over lattice points, 'n'. 'ac' tracks linear index of atoms in child supercell
         for(Index lc = 0; lc < cgrid.size(); ++lc, ++ac) {
-          Coordinate child_coord(c_info.coord(bc) + cgrid.scel_coord(lc).const_cart() + translation, pgrid.scel_lattice(), CART);
+          Coordinate child_coord(c_info.cart_coord(bc) + cgrid.scel_coord(lc).const_cart() + translation, pgrid.scel_lattice(), CART);
           // loop through all the sites in the parent supercell
           Index ap = 0;
           for(Index bp = 0; bp < p_info.size(); ++bp) {
@@ -208,7 +276,7 @@ namespace CASM {
               ap += pgrid.size();
               continue;
             }
-            Coordinate parent_coord(p_info.coord(bp), pgrid.scel_lattice(), CART);
+            Coordinate parent_coord(p_info.cart_coord(bp), pgrid.scel_lattice(), CART);
 
             for(Index lp = 0; lp < pgrid.size(); ++lp, ++ap) {
               cost_matrix(ap, ac) = (parent_coord + pgrid.scel_coord(lp)).min_dist2(child_coord, metric);

@@ -544,7 +544,7 @@ namespace CASM {
           auto map_res = configmapper.import_structure(make_simple_structure(super));
 
           if(map_res.success()) {
-            auto insert_res = (map_res.maps.begin()->second).second.insert();
+            auto insert_res = (map_res.maps.begin()->second).config.insert();
             Configuration imported_config = *insert_res.canonical_it;
 
             if(insert_res.insert_canonical) {

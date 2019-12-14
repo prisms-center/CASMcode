@@ -468,10 +468,32 @@ namespace CASM {
 }
 
 namespace Eigen {
+  /// \brief Round Eigen::MatrixXd
+  ///
+  /// \returns an Eigen:MatrixXd
+  ///
+  /// \param M Eigen::MatrixXd to be rounded
+  ///
+  /// For each coefficient, sets \code M(i,j) = boost::math::floor(Mdouble(i, j)) \endcode
+  ///
+  namespace Local {
+    template<typename T>
+    struct _Floor {
+      T operator()(T val)const {
+        return floor(val);
+      }
+    };
+  }
+  template<typename Derived>
+  CwiseUnaryOp<Local::_Floor<typename Derived::Scalar>, const Derived >
+  floor(const MatrixBase<Derived> &val) {
+    return val.unaryExpr(Local::_Floor<typename Derived::Scalar>());
+  }
+
 
   /// \brief Equivalent to almost_zero(double(val.norm()), tol);
   template <typename Derived>
-  bool almost_zero(const Eigen::MatrixBase<Derived> &val, double tol = CASM::TOL) {
+  bool almost_zero(const MatrixBase<Derived> &val, double tol = CASM::TOL) {
     return val.isZero(tol);
   }
 

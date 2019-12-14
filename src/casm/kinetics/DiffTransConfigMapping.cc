@@ -19,7 +19,6 @@
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/kinetics/DiffTransConfiguration.hh"
 #include "casm/kinetics/DiffTransConfigInterpolation.hh"
-#include "casm/crystallography/jsonStruc.hh"
 #include "casm/symmetry/Orbit.hh"
 #include "casm/symmetry/OrbitDecl.hh"
 #include "casm/symmetry/OrbitGeneration.hh"

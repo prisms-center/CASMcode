@@ -93,7 +93,7 @@ namespace CASM {
       int width = 12;
       width = print_matrix_width(sout, m_struc.lat_column_mat.transpose(), width);
       for(Index i : atom) {
-        Eigen::Vector3d vec = c2f * info.coord(i);
+        Eigen::Vector3d vec = c2f * info.cart_coord(i);
         width = print_matrix_width(sout, vec.transpose(), width);
       }
       Eigen::IOFormat format(prec, width + 1);
@@ -141,7 +141,7 @@ namespace CASM {
 
       // print all coordinates, and seletive dynamics settings, and atom names if applicable
       for(Index i : atom) {
-        sout << sout.indent_str() << (c2f * info.coord(i)).transpose().format(format);
+        sout << sout.indent_str() << (c2f * info.cart_coord(i)).transpose().format(format);
 
         /*
         if(m_sel_dynamics) {

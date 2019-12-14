@@ -2,7 +2,6 @@
 #define CASM_ConfigMapping
 
 #include "casm/global/definitions.hh"
-#include "casm/database/MappedProperties.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/crystallography/SimpleStrucMapCalculator.hh"
@@ -40,28 +39,17 @@ namespace CASM {
     class ImportOption;
   }
 
-  //TO IMPLEMENT
-  /// \brief Find symop (as PermuteIterator) that gives the most 'faithful' equivalent mapping
-  /// This means that
-  ///   (1) the site permutation is as close to identity as possible (i.e., maximal character)
-  ///   (2) ties at (1) are broken by ensuring _node.isometry is proper and close to zero rotation (i.e., maximal character*determinant)
-  ///   (3) if (1) and (2) are ties, then we minimize _node.translation.norm()
 
   /// \brief Reorders the permutation and compounds the spatial isometry (rotation + translation) of _node with that of _it
   MappingNode copy_apply(PermuteIterator const &_it, MappingNode const &_node, bool transform_cost_mat = true);
 
   /// \brief Initializes configdof corresponding to a mapping (encoded by _node) of _child_struc onto _pclex
-  ConfigDoF to_configdof(MappingNode const _node, SimpleStructure const &_child_struc, Supercell const  &_scel);
-  //\TO IMPLEMENT
+  std::pair<ConfigDoF, std::set<std::string> > to_configdof(MappingNode const _node, SimpleStructure const &_child_struc, Supercell const  &_scel);
 
   class PrimStrucMapCalculator : public SimpleStrucMapCalculator {
   public:
     PrimStrucMapCalculator(BasicStructure<Site> const &_prim,
                            SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM);
-
-    /// \brief Creates copy of _child_struc by applying isometry, lattice transformation, translation, and site permutation of _node
-    SimpleStructure resolve_setting(MappingNode const &_node,
-                                    SimpleStructure const &_child_struc) const override;
 
   private:
     /// \brief Make an exact copy of the calculator (including any initialized members)
@@ -78,19 +66,23 @@ namespace CASM {
   /// Data structure holding results of ConfigMapper algorithm
   struct ConfigMapperResult {
     enum class HintStatus { None, Derivative, Equivalent, Identical};
-
-    struct MapData {
-      MapData(std::string _name,
-              HintStatus _hint_status = HintStatus::None) :
-        name(std::move(_name)),
+    struct Individual {
+      Individual(Configuration _config,
+                 SimpleStructure _resolved_struc,
+                 std::set<std::string> _dof_managed,
+                 HintStatus _hint_status = HintStatus::None) :
+        config(std::move(_config)),
+        resolved_struc(std::move(_resolved_struc)),
+        dof_properties(std::move(_dof_managed)),
         hint_status(_hint_status) {}
 
-      std::string name;
-      MappedProperties props;
+      // list of properties that are handled by DoFs and are thus not considered properties
+      Configuration config;
+      SimpleStructure resolved_struc;
+      std::set<std::string> dof_properties;
       HintStatus hint_status;
     };
 
-    using Individual = std::pair<MapData, Configuration>;
     ConfigMapperResult() {}
 
     bool success() const {

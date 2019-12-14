@@ -48,9 +48,11 @@ namespace CASM {
     json.put_obj();
     json["from"] = obj.from;
     json["to"] = obj.to;
+    json["path"] = obj.file_data.path();
+    json["timestamp"] = obj.file_data.timestamp();
     json["global"] = obj.global;
     json["site"] = obj.site;
-    json["timestamp"] = obj.timestamp;
+
     return json;
   }
 
@@ -59,7 +61,7 @@ namespace CASM {
     from_json(obj.to, json["to"]);
     from_json(obj.global, json["global"]);
     from_json(obj.site, json["site"]);
-    from_json(obj.timestamp, json["timestamp"]);
+    obj.file_data = FileData(json["path"].get<std::string>(), json["timestamp"].get<std::time_t>());
     return json;
   }
 

@@ -3,11 +3,11 @@
 
 #include <boost/filesystem.hpp>
 #include "casm/global/definitions.hh"
-#include "casm/clex/ConfigMapping.hh"
+//#include "casm/clex/ConfigMapping.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/dataformatter/DataFormatter.hh"
 #include "casm/casm_io/dataformatter/DataFormatterTools.hh"
-
+#include "include/casm/database/MappedProperties.hh"
 
 
 // To be specialized for calculable 'ConfigType' classes:
@@ -88,18 +88,13 @@ namespace CASM {
       struct Result {
 
         Result() :
-          pos(""),
-          map_result(""),
           has_data(false),
           has_complete_data(false),
           is_new_config(false),
           fail_msg("") {}
 
-        // structure or properties.calc.json location as input
-        fs::path pos;
-
         // Set 'to'/'from' as empty strings if no mapping possible
-        ConfigMapperResult::MapData map_result;
+        MappedProperties properties;
 
         // If a properties.calc.json file is found in standard locations
         bool has_data;
