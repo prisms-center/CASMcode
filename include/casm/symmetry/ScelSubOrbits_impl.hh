@@ -43,6 +43,7 @@ namespace CASM {
       // if test_it is max
       if(std::none_of(subgroup_begin, subgroup_end, lambda)) {
         // apply to prototype and construct suborbit
+        auto copy_apply = typename traits<Element>::copy_apply_f_type(scel.primclex().shared_prim());
         *result++ = copy_apply(test_it.sym_op(), element);
       }
     }
@@ -86,6 +87,7 @@ namespace CASM {
       // if test_it is max
       if(std::none_of(subgroup_begin, subgroup_end, lambda)) {
         // apply to prototype and construct suborbit
+        auto copy_apply = typename traits<Element>::copy_apply_f_type(scel.primclex().shared_prim());
         *result++ = copy_apply(test_it->sym_op(), element);
       }
     }

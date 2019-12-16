@@ -9,14 +9,22 @@ namespace CASM {
     class UnitCellCoord;
   }
 
+  namespace sym {
+    class CopyApplyDefault_f;
+  }
+
   namespace Kinetics {
     class DiffusionTransformation;
     class DiffTransInvariants;
     typedef PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> PrimPeriodicDiffTransSymCompare;
     typedef ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> ScelPeriodicDiffTransSymCompare;
   }
+
   typedef Kinetics::PrimPeriodicDiffTransSymCompare PrimPeriodicDiffTransSymCompare;
   typedef Kinetics::ScelPeriodicDiffTransSymCompare ScelPeriodicDiffTransSymCompare;
+
+  template <typename Base>
+  class CopyApplyDefault_crtp;
 
   /// Traits necessary for SymCompare
   template<>
@@ -25,6 +33,10 @@ namespace CASM {
     typedef typename Kinetics::DiffusionTransformation MostDerived;
     typedef typename Kinetics::DiffTransInvariants InvariantsType;
     static xtal::UnitCellCoord position(const Kinetics::DiffusionTransformation &diff_trans);
+    static std::string name;
+    template<typename Base>
+    using copy_apply_crtp_type = CopyApplyDefault_crtp<Base>;
+    typedef sym::CopyApplyDefault_f copy_apply_f_type;
   };
 
   /// Specialization gives required for DatabaseTypeOrbit

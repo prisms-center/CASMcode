@@ -29,7 +29,7 @@ TEST(DiffTransConfigurationTest, Test0) {
 
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
-    primclex.prim(),
+    primclex.shared_prim(),
     bspecs,
     alloy_sites_filter,
     primclex.crystallography_tol(),
@@ -96,7 +96,8 @@ TEST(DiffTransConfigurationTest, Test0) {
 
   it = it.begin_next_fg_op();
   Configuration new_config = copy_apply(it, make_attachable(trans, config));
-  Kinetics::ScelPeriodicDiffTransSymCompare symcompare(config.supercell().prim_grid(),
+  Kinetics::ScelPeriodicDiffTransSymCompare symcompare(config.primclex().shared_prim(),
+                                                       config.supercell().prim_grid(),
                                                        config.supercell().crystallography_tol());
   Kinetics::DiffusionTransformation new_trans =
     symcompare.prepare(copy_apply(it.sym_op(), trans));

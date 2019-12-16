@@ -2,6 +2,7 @@
 #define CASM_Configuration
 
 #include <map>
+#include <memory>
 
 #include "casm/misc/Comparisons.hh"
 #include "casm/symmetry/PermuteIterator.hh"
@@ -448,7 +449,16 @@ namespace CASM {
   /// Write the config.json file to config_json_path
   void write_config_json(Configuration const &_config);
 
-  Configuration sub_configuration(Supercell &sub_scel,
+  /// \brief Returns the sub-configuration that fills a particular Supercell
+  ///
+  /// \param sub_scel_ptr The Supercell of the sub-configuration
+  /// \param super_config The super-configuration
+  /// \param origin The UnitCell indicating the which unit cell in the
+  ///        super-configuration is the origin in sub-configuration
+  ///
+  /// - Copies DoF from the super-configuration directly into the sub-configuration
+  ///
+  Configuration sub_configuration(std::shared_ptr<Supercell> sub_scel_ptr,
                                   const Configuration &super_config,
                                   const UnitCell &origin = UnitCell(0, 0, 0));
 

@@ -8,8 +8,22 @@
 #include "casm/global/definitions.hh"
 
 namespace CASM {
+  namespace sym {
+    //TODO: These could be template specializations of what's in symmetry/SymTools.hh
+    //but I'm not sure how we're generalizing the apply/copy_apply stuff yet
+
+    /// \brief Apply SymOp to a Lattice
+    xtal::Lattice &apply(const xtal::SymOp &op, xtal::Lattice &lat);
+
+    /// \brief Copy and apply SymOp to a Lattice
+    xtal::Lattice copy_apply(const xtal::SymOp &op, xtal::Lattice lat_copy);
+
+    template <typename ExternSymOp>
+    xtal::Lattice copy_apply(const ExternSymOp &op, const xtal::Lattice &lat) {
+      return copy_apply(adapter::Adapter<xtal::SymOp, ExternSymOp>()(op), lat);
+    }
+  }
   namespace xtal {
-    class Lattice;
 
     /// \brief Construct indices of the subgroup that leaves a lattice unchanged
     std::vector<Index> invariant_subgroup_indices(const Lattice &lat, SymOpVector const &super_grp);
@@ -35,8 +49,8 @@ namespace CASM {
       return result;
     }
 
-    //TODO
-    //Unimplemented. Is this the same as cart2frac and frac2cart?
+    // TODO
+    // Unimplemented. Is this the same as cart2frac and frac2cart?
     /// Convert a Cartesian symmetry operation representation to fractional
     /* Eigen::Matrix3i symmetry_matrix_to_frac(const Lattice &lat, const Eigen::Matrix3d &cart_matrix); */
     /// Convert a fractional symmetry operation representation to Cartesian
@@ -45,16 +59,17 @@ namespace CASM {
     /// \brief Return a copy of the given lattice, which obeys the symmetry of the given group \param enforced_group
     Lattice symmetrize(const Lattice &lat, const std::vector<SymOp> &enforced_group);
 
-    //TODO
-    //Why does this routine take a tolerance, if the lattice itself has a tolerance?
-    //Should we get rid of the tolerance inside of lattice?
+    // TODO
+    // Why does this routine take a tolerance, if the lattice itself has a tolerance?
+    // Should we get rid of the tolerance inside of lattice?
     /// \brief Return a copy of the given lattice, which obeys the symmetry of its point group, when generated
     /// within the tolerance \param point_group_tolerance
     Lattice symmetrize(const Lattice &lat, double point_group_tolerance);
 
     /// Relax the vectors of the given lattice such that it obeys the symmetry of the given group,
     /// where the symmetry operations are given in fractional representations
-    /* Lattice symmetrized_with_fractional(const Lattice& lat, const std::vector<Eigen::Matrix3i> &fractional_point_group); */
+    /* Lattice symmetrized_with_fractional(const Lattice& lat, const std::vector<Eigen::Matrix3i> &fractional_point_group);
+     */
 
     /// \brief Populate \param point_group with the point group of this lattice
     /// \param point_group should be empty
@@ -67,17 +82,6 @@ namespace CASM {
     /// \param pg_tol can be increased to find point group of lattice vectors
     /// that are slightly distorted due to numerical noise
     std::vector<SymOp> make_point_group(Lattice const &_lat, double _tol);
-
-    /// \brief Apply SymOp to a Lattice
-    Lattice &apply(const SymOp &op, Lattice &lat);
-
-    /// \brief Copy and apply SymOp to a Lattice
-    Lattice copy_apply(const SymOp &op, const Lattice &lat);
-
-    template <typename ExternSymOp>
-    Lattice copy_apply(const ExternSymOp &op, const Lattice &lat) {
-      return copy_apply(adapter::Adapter<SymOp, ExternSymOp>()(op), lat);
-    }
 
     //************************************************************************************************************************//
 
@@ -95,7 +99,7 @@ namespace CASM {
 
       std::pair<bool, Eigen::Matrix3d> res;
       for(auto it = begin; it != end; ++it) {
-        res = is_superlattice(scel, copy_apply(*it, unit), tol);
+        res = is_superlattice(scel, sym::copy_apply(*it, unit), tol);
         if(res.first) {
           return std::make_pair(it, res.second);
         }
@@ -117,7 +121,7 @@ namespace CASM {
       for(auto it = ++begin; it != end; ++it) {
         Lattice tmp_best = make_superduperlattice(best, *it);
         for(auto op_it = op_begin; op_it != op_end; ++op_it) {
-          Lattice test = make_superduperlattice(best, copy_apply(*op_it, *it));
+          Lattice test = make_superduperlattice(best, sym::copy_apply(*op_it, *it));
           if(std::abs(volume(test)) < std::abs(volume(tmp_best))) {
             tmp_best = test;
           }
@@ -128,35 +132,36 @@ namespace CASM {
     }
 
   } // namespace xtal
+
 } // namespace CASM
 
 namespace CASM {
   namespace xtal {
-    ///Given a symmetry group, the basis of the structure will have
-    ///each operation applied to it. The resulting set of basis
-    ///from performing these operations will be averaged out,
-    ///yielding a new average basis.
-    template<typename StructureType>
+    /// Given a symmetry group, the basis of the structure will have
+    /// each operation applied to it. The resulting set of basis
+    /// from performing these operations will be averaged out,
+    /// yielding a new average basis.
+    template <typename StructureType>
     StructureType symmetrize(const StructureType &structure, const std::vector<SymOp> &enforced_group) {
-      //All your sites need to be within
+      // All your sites need to be within
       auto symmetrized_structure = structure;
       symmetrized_structure.reset();
 
-      //First make a copy of your current basis
-      //This copy will eventually become the new average basis.
+      // First make a copy of your current basis
+      // This copy will eventually become the new average basis.
       auto avg_basis = structure.basis();
 
-      //Loop through given symmetry group an fill a temporary "operated basis"
+      // Loop through given symmetry group an fill a temporary "operated basis"
       decltype(avg_basis) operbasis;
 
-      //Loop through given symmetry group an fill a temporary "operated basis"
+      // Loop through given symmetry group an fill a temporary "operated basis"
       for(Index rf = 0; rf < enforced_group.size(); rf++) {
         operbasis.clear();
         for(Index b = 0; b < symmetrized_structure.basis().size(); b++) {
-          operbasis.push_back(enforced_group[rf]*symmetrized_structure.basis()[b]);
+          operbasis.push_back(enforced_group[rf] * symmetrized_structure.basis()[b]);
         }
-        //Now that you have a transformed basis, find the closest mapping of atoms
-        //Then average the distance and add it to the average basis
+        // Now that you have a transformed basis, find the closest mapping of atoms
+        // Then average the distance and add it to the average basis
         for(Index b = 0; b < symmetrized_structure.basis().size(); b++) {
           double smallest = 1000000;
           Coordinate bshift(symmetrized_structure.lattice()), tshift(symmetrized_structure.lattice());
@@ -170,14 +175,13 @@ namespace CASM {
           bshift.cart() *= (1.0 / enforced_group.size());
           avg_basis[b] += bshift;
         }
-
       }
       symmetrized_structure.set_basis(avg_basis);
-      symmetrized_structure.update();    //TODO: Do we want this?
+      symmetrized_structure.update(); // TODO: Do we want this?
       return symmetrized_structure;
     }
 
-    template<typename StructureType, typename ExternSymOpVector>
+    template <typename StructureType, typename ExternSymOpVector>
     StructureType symmetrize(const StructureType &structure, const ExternSymOpVector &enforced_group) {
       return xtal::symmetrize(structure, adapter::Adapter<SymOpVector, ExternSymOpVector>()(enforced_group));
     }

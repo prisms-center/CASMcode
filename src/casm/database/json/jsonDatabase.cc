@@ -500,7 +500,8 @@ namespace CASM {
       auto end = json["prototypes"].end();
       for(auto it = json["prototypes"].begin(); it != end; ++it) {
         Kinetics::DiffusionTransformation trans = jsonConstructor<Kinetics::DiffusionTransformation>::from_json(*it, primclex().prim());
-        PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> symcompare(primclex().crystallography_tol());
+
+        PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> symcompare(this->primclex().shared_prim(), primclex().crystallography_tol());
         auto result = m_orbit_list.emplace(trans, primclex().prim().factor_group(), symcompare, &primclex());
         this->set_id(*(result.first), it.name());
         _on_insert_or_emplace(result, false);
@@ -630,7 +631,7 @@ namespace CASM {
     jsonDatabase<PrimPeriodicDiffTransOrbit>::search(const Kinetics::DiffusionTransformation &diff_trans) const {
 
       const auto &g = prim().factor_group();
-      PrimPeriodicDiffTransSymCompare sym_compare(crystallography_tol());
+      PrimPeriodicDiffTransSymCompare sym_compare(this->primclex().shared_prim(), crystallography_tol());
       CanonicalGenerator<PrimPeriodicDiffTransOrbit> gen(g, sym_compare);
       auto canon_diff_trans = gen(diff_trans);
       auto f = [&](const PrimPeriodicDiffTransOrbit & orbit) {

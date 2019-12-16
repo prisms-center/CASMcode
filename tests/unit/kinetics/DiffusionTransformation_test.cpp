@@ -71,8 +71,8 @@ TEST(DiffusionTransformationTest, BasicsTest0) {
     EXPECT_EQ(true, true);
     EXPECT_EQ(diff_trans.occ_transform().size(), 0);
 
-    UnitCellCoord uccoordA(prim, 3, 1, 1, 1);
-    UnitCellCoord uccoordB(prim, 2, 1, 1, 2);
+    UnitCellCoord uccoordA(3, 1, 1, 1);
+    UnitCellCoord uccoordB(2, 1, 1, 2);
     Index iVa = 0;
     Index iO = 1;
 
@@ -146,7 +146,7 @@ TEST(DiffusionTransformationTest, BasicsTest0) {
     EXPECT_EQ(
       other.invariant_subgroup(
         prim.factor_group(),
-        PrimPeriodicDiffTransSymCompare(primclex)).size(), 12);
+        PrimPeriodicDiffTransSymCompare(primclex.shared_prim(), primclex.crystallography_tol())).size(), 12);
     EXPECT_EQ(other.invariant_subgroup(background_scel).size(), 12);
   }
 
@@ -165,7 +165,7 @@ TEST(DiffusionTransformationTest, SpeedTest0) {
 
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
-    primclex.prim(),
+    primclex.shared_prim(),
     bspecs,
     alloy_sites_filter,
     primclex.crystallography_tol(),
@@ -173,7 +173,7 @@ TEST(DiffusionTransformationTest, SpeedTest0) {
     primclex.log());
 
   const auto &generating_grp = primclex.prim().factor_group();
-  PrimPeriodicDiffTransSymCompare sym_compare {primclex.crystallography_tol()};
+  PrimPeriodicDiffTransSymCompare sym_compare {primclex.shared_prim(), primclex.crystallography_tol()};
 
   OrbitGenerators<PrimPeriodicDiffTransOrbit> generators {generating_grp, sym_compare};
 
@@ -201,7 +201,7 @@ TEST(DiffusionTransformationTest, SpeedTest1) {
 
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
-    primclex.prim(),
+    primclex.shared_prim(),
     bspecs,
     alloy_sites_filter,
     primclex.crystallography_tol(),
@@ -236,7 +236,7 @@ TEST(DiffusionTransformationTest, EnumTest0) {
 
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
-    primclex.prim(),
+    primclex.shared_prim(),
     bspecs,
     alloy_sites_filter,
     primclex.crystallography_tol(),

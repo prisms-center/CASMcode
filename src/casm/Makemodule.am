@@ -157,6 +157,7 @@ libcasm_la_SOURCES = \
     include/casm/clusterography/ClusterSymCompare.hh\
     include/casm/clusterography/ClusterSymCompare_impl.hh\
     include/casm/clusterography/CoordCluster.hh\
+    include/casm/clusterography/CoordClusterTraits.hh\
     include/casm/clusterography/GenericCluster.hh\
     include/casm/clusterography/IntegralCluster.hh\
     include/casm/clusterography/IntegralCluster_impl.hh\
@@ -204,6 +205,7 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/SymTools.hh\
     include/casm/crystallography/SymType.hh\
     include/casm/crystallography/UnitCellCoord.hh\
+    include/casm/crystallography/UnitCellCoordTraits.hh\
     include/casm/crystallography/io/VaspIO.hh\
     include/casm/crystallography/jsonStruc.hh\
     include/casm/database/Cache.hh\
@@ -666,6 +668,7 @@ libcasm_la_SOURCES = \
     include/casm/strain/StrainConverter.hh\
     include/casm/symmetry/ConfigSubOrbits.hh\
     include/casm/symmetry/ConfigSubOrbits_impl.hh\
+    include/casm/symmetry/ElementSymApply.hh\
     include/casm/symmetry/EnumEquivalents.hh\
     include/casm/symmetry/InvariantSubgroup.hh\
     include/casm/symmetry/InvariantSubgroup_impl.hh\
@@ -801,6 +804,7 @@ libcasm_la_SOURCES = \
     src/casm/clex/Supercell_functions.cc\
     src/casm/clusterography/ClusterOrbits.cc\
     src/casm/clusterography/ClusterSpecsParser.cc\
+    src/casm/clusterography/ClusterSymCompareSpecializations.cc\
     src/casm/clusterography/IntegralCluster.cc\
     src/casm/completer/Complete.cc\
     src/casm/completer/Handlers.cc\
@@ -829,6 +833,7 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/SymTools.cc\
     src/casm/crystallography/SymType.cc\
     src/casm/crystallography/UnitCellCoord.cc\
+    src/casm/crystallography/UnitCellCoordTraits.cc\
     src/casm/crystallography/io/VaspIO.cc\
     src/casm/database/ConfigData.cc\
     src/casm/database/ConfigDatabase.cc\
@@ -964,4 +969,4 @@ libcasm_la_LIBADD = \
 libcasm_la_LDFLAGS = \
     $(BOOST_LDFLAGS)\
     -avoid-version
-src/casm/version/autoversion.lo: .FORCE
+

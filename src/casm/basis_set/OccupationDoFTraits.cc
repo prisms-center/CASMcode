@@ -7,6 +7,7 @@
 #include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/clex/ClexBasis.hh"
 #include "casm/clex/NeighborList.hh"
+#include <memory>
 
 namespace CASM {
   namespace DoFType {
@@ -91,12 +92,12 @@ namespace CASM {
       //std::cout << "Using " << func_type << " site basis functions." << std::endl << std::endl;
 
       for(Index i = 0; i < _asym_unit.size(); i++) {
-        Site const &_site = _asym_unit[i].prototype()[0].sublat_site();
+        Site const &_site = _asym_unit[i].prototype()[0].sublattice_site(_prim);
 
         if(_site.occupant_dof().size() < 2)
           continue;
 
-        Index b_ind = _asym_unit[i].prototype()[0].sublat();
+        Index b_ind = _asym_unit[i].prototype()[0].sublattice();
 
 
         std::vector<double> tprob;
@@ -141,15 +142,15 @@ namespace CASM {
 
         result[b_ind].construct_orthonormal_discrete_functions(_site.occupant_dof(),
                                                                tprob,
-                                                               _asym_unit[i].prototype()[0].sublat(),
+                                                               _asym_unit[i].prototype()[0].sublattice(),
                                                                SymGroup(_asym_unit[i].equivalence_map(0).first,
                                                                         _asym_unit[i].equivalence_map(0).second));
         //std::cout << "_asym_unit[" << i << "].size() = " << _asym_unit[i].size() << "\n";
         for(Index ne = 1; ne < _asym_unit[i].size(); ne++) {
-          result[_asym_unit[i][ne][0].sublat()] = result[b_ind];
-          result[_asym_unit[i][ne][0].sublat()].apply_sym(_asym_unit[i].equivalence_map()[ne][0]);
-          result[_asym_unit[i][ne][0].sublat()].accept(OccFuncBasisIndexer(_asym_unit[i][ne][0].sublat()));
-          result[_asym_unit[i][ne][0].sublat()].set_dof_IDs({_asym_unit[i][ne][0].sublat()});
+          result[_asym_unit[i][ne][0].sublattice()] = result[b_ind];
+          result[_asym_unit[i][ne][0].sublattice()].apply_sym(_asym_unit[i].equivalence_map()[ne][0]);
+          result[_asym_unit[i][ne][0].sublattice()].accept(OccFuncBasisIndexer(_asym_unit[i][ne][0].sublattice()));
+          result[_asym_unit[i][ne][0].sublattice()].set_dof_IDs({_asym_unit[i][ne][0].sublattice()});
         }
       }
 
@@ -173,7 +174,7 @@ namespace CASM {
         //Put neighborhood in a sensible order:
         std::map<Index, std::set<Index> > sublat_nhood;
         for(auto const &ucc : nbor.second) {
-          sublat_nhood[ucc.sublat()].insert(_nlist.neighbor_index(ucc));
+          sublat_nhood[ucc.sublattice()].insert(_nlist.neighbor_index(ucc));
           //std::cout << "ucc : " << ucc << "; n: " << _nlist.neighbor_index(ucc)  << "\n";
         }
 
@@ -209,7 +210,7 @@ namespace CASM {
       std::map<Index, std::set<Index> > tot_nhood;
       for(auto const &nbor : _nhood)
         for(auto const &ucc : nbor.second)
-          tot_nhood[ucc.sublat()].insert(_nlist.neighbor_index(ucc));
+          tot_nhood[ucc.sublattice()].insert(_nlist.neighbor_index(ucc));
 
       for(auto const &nbor : tot_nhood) {
         Index b = nbor.first;
@@ -236,20 +237,27 @@ namespace CASM {
       std::stringstream stream;
       std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
       std::ostream nullstream(0);
-      make_prim_periodic_asymmetric_unit(_prim,
+
+      //TODO: This is a temporary fix to avoid changing the interface of OccupationDoFTraits. What can
+      //happen is making these functions take a shared_ptr, but what *really* needs to happen is fixing all
+      //the classes and functions (such as those in SymCompare) that are requesting Structures when all they
+      //really need is SymRepIDs. I can't fix all that right now though, so check this out:
+      //it's a shared pointer to an existing Structure, that has a custom destructor that does nothing.
+      auto _prim_ptr = std::shared_ptr<const Structure>(&_prim, [](const Structure *) {});
+      make_prim_periodic_asymmetric_unit(_prim_ptr,
                                          CASM_TMP::ConstantFunctor<bool>(true),
                                          TOL,
                                          std::back_inserter(asym_unit),
                                          nullstream);
 
       for(Index no = 0; no < asym_unit.size(); no++) {
-        Index nb = asym_unit[no][0][0].sublat();
+        Index nb = asym_unit[no][0][0].sublattice();
         if(_site_bases[nb].size() == 0)
           continue;
         stream <<
                indent << "// Occupation Function tables for basis sites in asymmetric unit " << no << ":\n";
         for(Index ne = 0; ne < asym_unit[no].size(); ne++) {
-          nb = asym_unit[no][ne][0].sublat();
+          nb = asym_unit[no][ne][0].sublattice();
           stream <<
                  indent << "//   - basis site " << nb << ":\n";
           for(Index f = 0; f < _site_bases[nb].size(); f++) {
@@ -271,7 +279,14 @@ namespace CASM {
       std::stringstream stream;
       std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
       std::ostream nullstream(0);
-      make_prim_periodic_asymmetric_unit(_prim,
+
+      //TODO: This is a temporary fix to avoid changing the interface of OccupationDoFTraits. What can
+      //happen is making these functions take a shared_ptr, but what *really* needs to happen is fixing all
+      //the classes and functions (such as those in SymCompare) that are requesting Structures when all they
+      //really need is SymRepIDs. I can't fix all that right now though, so check this out:
+      //it's a shared pointer to an existing Structure, that has a custom destructor that does nothing.
+      auto _prim_ptr = std::shared_ptr<const Structure>(&_prim, [](const Structure *) {});
+      make_prim_periodic_asymmetric_unit(_prim_ptr,
                                          CASM_TMP::ConstantFunctor<bool>(true),
                                          TOL,
                                          std::back_inserter(asym_unit),
@@ -279,13 +294,13 @@ namespace CASM {
 
 
       for(Index no = 0; no < asym_unit.size(); no++) {
-        Index nb = asym_unit[no][0][0].sublat();
+        Index nb = asym_unit[no][0][0].sublattice();
         if(_site_bases[nb].size() == 0)
           continue;
 
 
         for(Index ne = 0; ne < asym_unit[no].size(); ne++) {
-          nb = asym_unit[no][ne][0].sublat();
+          nb = asym_unit[no][ne][0].sublattice();
 
           stream <<
                  indent << "// Occupation Function evaluators and accessors for basis site " << nb << ":\n";
@@ -332,7 +347,14 @@ namespace CASM {
 
       std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
       std::ostream nullstream(0);
-      make_prim_periodic_asymmetric_unit(_prim,
+
+      //TODO: This is a temporary fix to avoid changing the interface of OccupationDoFTraits. What can
+      //happen is making these functions take a shared_ptr, but what *really* needs to happen is fixing all
+      //the classes and functions (such as those in SymCompare) that are requesting Structures when all they
+      //really need is SymRepIDs. I can't fix all that right now though, so check this out:
+      //it's a shared pointer to an existing Structure, that has a custom destructor that does nothing.
+      auto _prim_ptr = std::shared_ptr<const Structure>(&_prim, [](const Structure *) {});
+      make_prim_periodic_asymmetric_unit(_prim_ptr,
                                          CASM_TMP::ConstantFunctor<bool>(true),
                                          TOL,
                                          std::back_inserter(asym_unit),
@@ -340,7 +362,7 @@ namespace CASM {
 
       for(const auto &asym : asym_unit) {
         for(const auto &equiv : asym) {
-          Index nb = equiv[0].sublat();
+          Index nb = equiv[0].sublattice();
           for(Index f = 0; f < _site_bases[nb].size(); f++) {
 
             for(Index s = 0; s < _prim.basis()[nb].occupant_dof().size(); s++) {

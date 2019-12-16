@@ -68,14 +68,14 @@ namespace CASM {
 #define  PRIM_PERIODIC_CLUSTER_ORBITS_INST(INSERTER) \
   \
   template INSERTER make_prim_periodic_asymmetric_unit<INSERTER>( \
-    const IntegralCluster::PrimType &prim, \
+    const IntegralCluster::PrimType_ptr prim_ptr, \
     const std::function<bool (Site)> &site_filter, \
     double xtal_tol, \
     INSERTER result, \
     std::ostream &status); \
   \
   template INSERTER make_prim_periodic_orbits<INSERTER>( \
-    const IntegralCluster::PrimType &prim, \
+    const IntegralCluster::PrimType_ptr prim_ptr, \
     const std::vector<double> &max_length, \
     const std::vector<IntegralCluster> &custom_generators, \
     const std::function<bool (Site)> &site_filter, \
@@ -84,7 +84,7 @@ namespace CASM {
     std::ostream &status); \
   \
   template INSERTER make_prim_periodic_orbits<INSERTER>( \
-    const IntegralCluster::PrimType &prim, \
+    const IntegralCluster::PrimType_ptr prim_ptr, \
     const jsonParser &bspecs, \
     const std::function<bool (Site)> &site_filter, \
     double xtal_tol, \

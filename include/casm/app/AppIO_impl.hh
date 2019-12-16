@@ -14,6 +14,7 @@
 
 #include "casm/database/Selection_impl.hh"
 #include "casm/symmetry/SymInfo.hh"
+#include "casm/symmetry/SymTools.hh"
 #include "casm/symmetry/InvariantSubgroup_impl.hh"
 
 
@@ -169,13 +170,13 @@ namespace CASM {
       if(opt.coord_type == INTEGRAL) {
         out << coord;
         out << " ";
-        coord.site().occupant_dof().print(out);
+        coord.site(*prim_ptr).occupant_dof().print(out);
         out << std::flush;
       }
       else {
-        coord.site().print(out);
+        coord.site(*prim_ptr).print(out);
       }
-      out << "  basis_index: " << coord.sublat() << "  clust_index: " << np++ << " ";
+      out << "  basis_index: " << coord.sublattice() << "  clust_index: " << np++ << " ";
       if(opt.delim)
         out << opt.delim;
       out << std::flush;

@@ -4,12 +4,14 @@
 #include "casm/symmetry/ScelOrbitGeneration.hh"
 #include "casm/clex/Supercell.hh"
 
+#include "casm/clex/PrimClex.hh"
+
 namespace CASM {
 
   template<typename _ElementType>
   ScelCanonicalGenerator<_ElementType>::ScelCanonicalGenerator(const Supercell &_scel) :
     m_scel(&_scel),
-    m_sym_compare(_scel.prim_grid(), _scel.crystallography_tol()) {}
+    m_sym_compare(_scel.primclex().shared_prim(), _scel.prim_grid(), _scel.crystallography_tol()) {}
 
   template<typename _ElementType>
   const Supercell &ScelCanonicalGenerator<_ElementType>::supercell() const {
@@ -33,7 +35,7 @@ namespace CASM {
     auto end = supercell().sym_info().permute_end();
     m_to_canonical = it;
     while(it != end) {
-      auto test = m_sym_compare.prepare(copy_apply(it, e));
+      auto test = m_sym_compare.prepare(m_sym_compare.copy_apply(it.sym_op(), e));
       if(m_sym_compare.compare(result, test)) {
         result = test;
         m_to_canonical = it;
@@ -55,7 +57,7 @@ namespace CASM {
     auto it = begin;
     m_to_canonical = *it;
     while(it != end) {
-      auto test = m_sym_compare.prepare(copy_apply(*it, e));
+      auto test = m_sym_compare.prepare(m_sym_compare.copy_apply(it.sym_op(), e));
       if(m_sym_compare.compare(result, test)) {
         result = test;
         m_to_canonical = *it;
@@ -82,7 +84,7 @@ namespace CASM {
   ScelIsCanonical<_ElementType>::ScelIsCanonical(
     const Supercell &_scel) :
     m_scel(&_scel),
-    m_sym_compare(_scel.prim_grid(), _scel.crystallography_tol()) {}
+    m_sym_compare(_scel.primclex().shared_prim(), _scel.prim_grid(), _scel.crystallography_tol()) {}
 
   template<typename _ElementType>
   const Supercell &ScelIsCanonical<_ElementType>::supercell() const {
@@ -108,8 +110,8 @@ namespace CASM {
     const Element &e,
     PermuteIteratorIt begin,
     PermuteIteratorIt end) const {
-    auto less_than = [&](const PermuteIterator & op) {
-      auto test = m_sym_compare.prepare(copy_apply(op, e));
+    auto less_than = [&](const PermuteIterator & it) {
+      auto test = m_sym_compare.prepare(m_sym_compare.copy_apply(it.sym_op(), e));
       return m_sym_compare.compare(e, test);
     };
 

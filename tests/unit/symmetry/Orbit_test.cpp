@@ -51,42 +51,42 @@ TEST(OrbitTest, Test0) {
 
   {
     IntegralCluster generating_element(prim);
-    generating_element.elements().push_back(UnitCellCoord(prim, 0, 0, 0, 0));
-    PrimPeriodicSymCompare<IntegralCluster> sym_compare(primclex);
+    generating_element.elements().emplace_back(0, 0, 0, 0);
+    PrimPeriodicSymCompare<IntegralCluster> sym_compare(primclex.shared_prim(), primclex.crystallography_tol());
     PrimPeriodicOrbit<IntegralCluster> orbit(generating_element, g, sym_compare);
     EXPECT_EQ(orbit.size(), 2);
   }
 
   {
     IntegralCluster generating_element(prim);
-    generating_element.elements().push_back(UnitCellCoord(prim, 1, 0, 0, 0));
-    PrimPeriodicSymCompare<IntegralCluster> sym_compare(primclex);
+    generating_element.elements().emplace_back(1, 0, 0, 0);
+    PrimPeriodicSymCompare<IntegralCluster> sym_compare(primclex.shared_prim(), primclex.crystallography_tol());
     PrimPeriodicOrbit<IntegralCluster> orbit(generating_element, g, sym_compare);
     EXPECT_EQ(orbit.size(), 2);
   }
 
   {
     IntegralCluster generating_element(prim);
-    generating_element.elements().push_back(UnitCellCoord(prim, 2, 0, 0, 0));
-    PrimPeriodicSymCompare<IntegralCluster> sym_compare(primclex);
+    generating_element.elements().emplace_back(2, 0, 0, 0);
+    PrimPeriodicSymCompare<IntegralCluster> sym_compare(primclex.shared_prim(), primclex.crystallography_tol());
     PrimPeriodicOrbit<IntegralCluster> orbit(generating_element, g, sym_compare);
     EXPECT_EQ(orbit.size(), 2);
   }
 
   {
     IntegralCluster generating_element(prim);
-    generating_element.elements().push_back(UnitCellCoord(prim, 2, 0, 0, 0));
-    generating_element.elements().push_back(UnitCellCoord(prim, 3, 0, 0, 0));
-    PrimPeriodicSymCompare<IntegralCluster> sym_compare(primclex);
+    generating_element.elements().emplace_back(2, 0, 0, 0);
+    generating_element.elements().emplace_back(3, 0, 0, 0);
+    PrimPeriodicSymCompare<IntegralCluster> sym_compare(primclex.shared_prim(), primclex.crystallography_tol());
     PrimPeriodicOrbit<IntegralCluster> orbit(generating_element, g, sym_compare);
     EXPECT_EQ(orbit.size(), 2);
   }
 
   {
     IntegralCluster generating_element(prim);
-    generating_element.elements().push_back(UnitCellCoord(prim, 0, 0, 0, 0));
-    generating_element.elements().push_back(UnitCellCoord(prim, 1, 0, 1, 0));
-    PrimPeriodicSymCompare<IntegralCluster> sym_compare(primclex);
+    generating_element.elements().emplace_back(0, 0, 0, 0);
+    generating_element.elements().emplace_back(1, 0, 1, 0);
+    PrimPeriodicSymCompare<IntegralCluster> sym_compare(primclex.shared_prim(), primclex.crystallography_tol());
     PrimPeriodicOrbit<IntegralCluster> orbit(generating_element, g, sym_compare);
     EXPECT_EQ(orbit.size(), 6);
   }
@@ -102,8 +102,8 @@ TEST(OrbitTest, Test0) {
     EXPECT_EQ(true, true);
     EXPECT_EQ(diff_trans.occ_transform().size(), 0);
 
-    UnitCellCoord uccoordA(prim, 2, 0, 0, 0);
-    UnitCellCoord uccoordB(prim, 3, 0, 0, 0);
+    UnitCellCoord uccoordA(2, 0, 0, 0);
+    UnitCellCoord uccoordB(3, 0, 0, 0);
     Index iVa = 0;
     Index iO = 1;
 
@@ -120,7 +120,7 @@ TEST(OrbitTest, Test0) {
     EXPECT_EQ(diff_trans.is_valid_species_traj(), true);
     EXPECT_EQ(diff_trans.is_valid(), true);
 
-    PrimPeriodicDiffTransSymCompare sym_compare(primclex);
+    PrimPeriodicDiffTransSymCompare sym_compare(primclex.shared_prim(), primclex.crystallography_tol());
     PrimPeriodicDiffTransOrbit orbit(diff_trans, g, sym_compare, &primclex);
     EXPECT_EQ(orbit.size(), 2);
   }
@@ -143,7 +143,7 @@ TEST(OrbitTest, Test1) {
 
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
-    primclex.prim(),
+    primclex.shared_prim(),
     bspecs,
     alloy_sites_filter,
     primclex.crystallography_tol(),

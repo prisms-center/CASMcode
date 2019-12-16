@@ -12,6 +12,7 @@ namespace CASM {
         m_config.supercell(),
         m_prim_config.supercell(),
         m_prim_config_fg.begin(),
-        m_prim_config_fg.end())) {}
+        m_prim_config_fg.end())) {
+  }
 
 }

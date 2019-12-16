@@ -1,14 +1,17 @@
 #ifndef CASM_CoordCluster
 #define CASM_CoordCluster
 
+#include <memory>
 #include <vector>
 
-#include "casm/symmetry/PermuteIterator.hh"
-#include "casm/clusterography/GenericCluster.hh"
-#include "casm/clusterography/ClusterInvariants.hh"
-#include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/crystallography/Coordinate.hh"
 #include "casm/clex/HasCanonicalForm.hh"
+#include "casm/clusterography/ClusterInvariants.hh"
+#include "casm/clusterography/CoordClusterTraits.hh"
+#include "casm/clusterography/GenericCluster.hh"
+#include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/symmetry/PermuteIterator.hh"
+#include "casm/symmetry/SymTools.hh"
 
 namespace CASM {
 
@@ -19,7 +22,9 @@ namespace CASM {
     class Coordinate;
     template<typename Base>
     struct Translatable;
+    class UnitCellCoord;
   }
+
   using xtal::Structure;
   using xtal::Coordinate;
   using xtal::Translatable;
@@ -105,22 +110,13 @@ namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   template<typename CoordType>
-  struct traits<CoordCluster<CoordType>> {
-    typedef CoordType Element;
-    typedef ClusterInvariants<CoordCluster<CoordType>> InvariantsType;
-    static CoordType position(const CoordCluster<CoordType> &clust);
-    typedef unsigned int size_type;
-  };
-
-  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  template<typename CoordType>
   class CoordCluster : public
-    CanonicalForm<ElementWiseSymApply<GenericCoordCluster<CRTPBase<CoordCluster<CoordType>>>>> {
+    CanonicalForm<GenericCoordCluster<CRTPBase<CoordCluster<CoordType>>>> {
 
   public:
 
     typedef Structure PrimType;
+    typedef std::shared_ptr<const PrimType> PrimType_ptr;
     typedef typename traits<CoordCluster<CoordType>>::Element Element;
     typedef typename traits<CoordCluster<CoordType>>::InvariantsType InvariantsType;
     typedef typename traits<CoordCluster<CoordType>>::size_type size_type;
@@ -153,7 +149,7 @@ namespace CASM {
     friend GenericCoordCluster<CRTPBase<CoordCluster<CoordType>>>;
 
     Coordinate coordinate_impl(size_type i) const {
-      return static_cast<Coordinate>(this->element(i));
+      return this->element(i).coordinate(*(this->m_prim_ptr));
     }
 
   private:
@@ -162,13 +158,6 @@ namespace CASM {
     const PrimType *m_prim_ptr;
 
   };
-
-  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  template<typename CoordType>
-  CoordType traits<CoordCluster<CoordType>>::position(const CoordCluster<CoordType> &clust) {
-    return clust[0];
-  }
 
 }
 

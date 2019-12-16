@@ -15,7 +15,8 @@ namespace CASM {
     Database<PrimPeriodicDiffTransOrbit>::search(const Kinetics::DiffusionTransformation &diff_trans) const {
 
       const auto &g = prim().factor_group();
-      PrimPeriodicDiffTransSymCompare sym_compare(crystallography_tol());
+
+      PrimPeriodicDiffTransSymCompare sym_compare(this->primclex().shared_prim(), crystallography_tol());
       return diff_trans.find_sym_equivalent(
                prototype_iterator(begin()),
                prototype_iterator(end()),

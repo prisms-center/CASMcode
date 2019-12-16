@@ -23,10 +23,6 @@ namespace CASM {
       to_value(_to_value),
       uccoord(_uccoord) {}
 
-    const UnitCellCoord::UnitType &OccupationTransformation::prim() const {
-      return uccoord.unit();
-    }
-
     const UnitCellCoord OccupationTransformation::coord() const {
       return uccoord;
     }
@@ -39,12 +35,12 @@ namespace CASM {
       return to_value;
     }
 
-    const Molecule &OccupationTransformation::from_mol() const {
-      return this->uccoord.sublat_site().occupant_dof()[from_value];
+    const Molecule &OccupationTransformation::from_mol(const PrimType &prim) const {
+      return this->uccoord.sublattice_site(prim).occupant_dof()[from_value];
     }
 
-    const Molecule &OccupationTransformation::to_mol() const {
-      return this->uccoord.sublat_site().occupant_dof()[to_value];
+    const Molecule &OccupationTransformation::to_mol(const PrimType &prim) const {
+      return this->uccoord.sublattice_site(prim).occupant_dof()[to_value];
     }
 
     bool OccupationTransformation::operator<(const OccupationTransformation &B) const {
@@ -53,11 +49,6 @@ namespace CASM {
 
     OccupationTransformation &OccupationTransformation::operator+=(UnitCell frac) {
       uccoord += frac;
-      return *this;
-    }
-
-    OccupationTransformation &OccupationTransformation::apply_sym(const SymOp &op) {
-      uccoord.apply_sym(op);
       return *this;
     }
 
@@ -81,15 +72,18 @@ namespace CASM {
     }
 
     /// \brief Print OccupationTransformation to stream, using default Printer<Kinetics::OccupationTransformation>
-    std::ostream &operator<<(std::ostream &sout, const OccupationTransformation &trans) {
+    /* std::ostream &operator<<(std::ostream &sout, const OccupationTransformation &trans) { */
+    std::ostream &operator<<(std::ostream &sout, const std::pair<const OccupationTransformation *, const OccupationTransformation::PrimType *> &trans_and_prim) {
+      const auto &trans = *trans_and_prim.first;
+      const auto &prim = *trans_and_prim.second;
       Printer<Kinetics::OccupationTransformation> printer;
       Log out(sout);
-      printer.print(trans, out);
+      printer.print(trans, prim, out);
       return sout;
     }
   }
 
-  std::map<std::string, Index> empty_species_count(const UnitCellCoord::UnitType &prim) {
+  std::map<std::string, Index> empty_species_count(const OccupationTransformation::PrimType &prim) {
     auto species = struc_species(prim);
     std::map<std::string, Index> _species_count;
     for(const std::string &s : species) {
@@ -99,14 +93,14 @@ namespace CASM {
   }
 
   template<typename OccTransfIt>
-  std::map<std::string, Index> from_species_count(OccTransfIt begin, OccTransfIt end) {
+  std::map<std::string, Index> from_species_count(const OccupationTransformation::PrimType &prim, OccTransfIt begin, OccTransfIt end) {
     if(begin == end) {
       return std::map<std::string, Index>();
     }
-    std::map<std::string, Index> _species_count = empty_species_count(begin->prim());
+    std::map<std::string, Index> _species_count = empty_species_count(prim);
     for(; begin != end; ++begin) {
       const OccupationTransformation &t = *begin;
-      const Molecule &mol = t.uccoord.sublat_site().occupant_dof()[t.from_value];
+      const Molecule &mol = t.uccoord.sublattice_site(prim).occupant_dof()[t.from_value];
       for(const AtomPosition &species_pos : mol.atoms()) {
         _species_count[species_pos.name()]++;
       }
@@ -116,21 +110,23 @@ namespace CASM {
   typedef std::vector<OccupationTransformation>::iterator OccTransfVecIt;
   typedef std::vector<OccupationTransformation>::const_iterator OccTransfVecConstIt;
   template std::map<std::string, Index> from_species_count<OccTransfVecIt>(
+    const OccupationTransformation::PrimType &prim,
     OccTransfVecIt begin,
     OccTransfVecIt end);
   template std::map<std::string, Index> from_species_count<OccTransfVecConstIt>(
+    const OccupationTransformation::PrimType &prim,
     OccTransfVecConstIt begin,
     OccTransfVecConstIt end);
 
   template<typename OccTransfIt>
-  std::map<std::string, Index> to_species_count(OccTransfIt begin, OccTransfIt end) {
+  std::map<std::string, Index> to_species_count(const OccupationTransformation::PrimType &prim, OccTransfIt begin, OccTransfIt end) {
     if(begin == end) {
       return std::map<std::string, Index>();
     }
-    std::map<std::string, Index> _species_count = empty_species_count(begin->prim());
+    std::map<std::string, Index> _species_count = empty_species_count(prim);
     for(; begin != end; ++begin) {
       const OccupationTransformation &t = *begin;
-      const Molecule &mol = t.uccoord.sublat_site().occupant_dof()[t.to_value];
+      const Molecule &mol = t.uccoord.sublattice_site(prim).occupant_dof()[t.to_value];
       for(const AtomPosition &species_pos : mol.atoms()) {
         _species_count[species_pos.name()]++;
       }
@@ -138,9 +134,11 @@ namespace CASM {
     return _species_count;
   }
   template std::map<std::string, Index> to_species_count<OccTransfVecIt>(
+    const OccupationTransformation::PrimType &prim,
     OccTransfVecIt begin,
     OccTransfVecIt end);
   template std::map<std::string, Index> to_species_count<OccTransfVecConstIt>(
+    const OccupationTransformation::PrimType &prim,
     OccTransfVecConstIt begin,
     OccTransfVecConstIt end);
 
@@ -153,9 +151,9 @@ namespace CASM {
     return json;
   }
 
-  Kinetics::OccupationTransformation jsonConstructor<Kinetics::OccupationTransformation>::from_json(const jsonParser &json, const UnitCellCoord::UnitType &prim) {
+  Kinetics::OccupationTransformation jsonConstructor<Kinetics::OccupationTransformation>::from_json(const jsonParser &json, const OccupationTransformation::PrimType &prim) {
     return Kinetics::OccupationTransformation(
-             jsonConstructor<UnitCellCoord>::from_json(json["uccoord"], prim),
+             jsonConstructor<UnitCellCoord>::from_json(json["uccoord"]),
              json["from_value"].get<Index>(),
              json["to_value"].get<Index>());
   }
@@ -167,7 +165,7 @@ namespace CASM {
 
   const std::string Printer<Kinetics::OccupationTransformation>::element_name = "OccupationTransformation";
 
-  void Printer<Kinetics::OccupationTransformation>::print(const Kinetics::OccupationTransformation &trans, Log &out) {
+  void Printer<Kinetics::OccupationTransformation>::print(const Kinetics::OccupationTransformation &trans, const Element::PrimType &prim, Log &out) {
     if(!out.print()) {
       return;
     }
@@ -175,12 +173,25 @@ namespace CASM {
 
     out << out.indent_str();
     out << trans.uccoord << " : ";
-    out << trans.from_value << " (" << trans.from_mol().name() << ")";
+    out << trans.from_value << " (" << trans.from_mol(prim).name() << ")";
     out << "  ->  ";
-    out << trans.to_value << " (" << trans.to_mol().name() << ")";
+    out << trans.to_value << " (" << trans.to_mol(prim).name() << ")";
     if(this->opt.delim)
       out << this->opt.delim;
     out << std::flush;
   }
+}
 
+#include "casm/symmetry/SymTools.hh"
+namespace CASM {
+  namespace sym {
+    /* template <typename Transform, typename Object, typename... Args> */
+    /* Object &apply(const Transform &transformation, Object &obj, const Args &... args); */
+
+    template<>
+    Kinetics::OccupationTransformation &apply<CASM::SymOp, Kinetics::OccupationTransformation, xtal::Structure>(const SymOp &op, Kinetics::OccupationTransformation &occ_trans, const xtal::Structure &prim) {
+      sym::apply(op, occ_trans.uccoord, prim);
+      return occ_trans;
+    }
+  }
 }
