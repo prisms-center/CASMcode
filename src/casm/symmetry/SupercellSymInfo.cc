@@ -54,7 +54,7 @@ namespace CASM {
   }
 
 
-  SymGroupRepID make_permutation_representation(const SymGroup &group, const xtal::LinearIndexConverter bijk_index_converter, const Structure &prim) {
+  SymGroupRepID make_permutation_representation(const SymGroup &group, const xtal::LinearIndexConverter bijk_index_converter, const Lattice &prim_lattice, const SymGroupRepID &prim_symrep_ID) {
     SymGroupRepID perm_rep_ID = group.allocate_representation();
     long total_sites = bijk_index_converter.total_sites();
     for(Index operation_ix = 0; operation_ix < group.size(); ++operation_ix) {
@@ -62,7 +62,7 @@ namespace CASM {
       std::vector<Index> permutation(total_sites);
       for(Index old_l = 0; old_l < total_sites; ++old_l) {
         const UnitCellCoord &old_ucc = bijk_index_converter[old_l];
-        UnitCellCoord new_ucc = sym::copy_apply(operation, old_ucc, prim);
+        UnitCellCoord new_ucc = sym::copy_apply(operation, old_ucc, prim_lattice, prim_symrep_ID);
         Index new_l = bijk_index_converter[new_ucc];
         permutation[new_l] = old_l;
       }
@@ -83,7 +83,7 @@ namespace CASM {
   //       SymOps of m_factor_group
   SymGroupRep::RemoteHandle const &SupercellSymInfo::site_permutation_symrep() const {
     if(m_site_perm_symrep.empty()) {
-      m_site_perm_symrep = SymGroupRep::RemoteHandle(factor_group(), prim_grid().make_permutation_representation(factor_group(), basis_permutation_symrep().symrep_ID()));
+      m_site_perm_symrep = SymGroupRep::RemoteHandle(this->factor_group(), make_permutation_representation(this->factor_group(), this->unitcellcoord_index_converter(), this->prim_lattice(), this->basis_permutation_symrep().symrep_ID()));
     }
 
     return m_site_perm_symrep;
