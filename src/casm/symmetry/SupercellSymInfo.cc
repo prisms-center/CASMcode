@@ -11,6 +11,30 @@
 
 namespace CASM {
 
+  std::vector<Permutation> make_translation_permutations(const Eigen::Matrix3l &transformation_matrix, int basis_sites_in_prim) {
+    xtal::LinearIndexConverter bijk_index_converter(transformation_matrix, basis_sites_in_prim);
+    xtal::LatticePointIndexConverter ijk_index_converter(transformation_matrix);
+    std::vector<Permutation> translation_permutations;
+
+    //Loops over lattice points
+    for(Index translation_ix = 0; translation_ix < ijk_index_converter.total_sites(); ++translation_ix) {
+      std::vector<Index> single_translation_permutation(bijk_index_converter.total_sites(), -1);
+      UnitCell translation_uc = ijk_index_converter[translation_ix];
+
+      //Loops over all the sites
+      for(Index old_site_ix = 0; old_site_ix < bijk_index_converter.total_sites(); ++old_site_ix) {
+        UnitCellCoord old_site_ucc = bijk_index_converter[old_site_ix];
+        Index new_site_ix = bijk_index_converter[old_site_ucc + translation_uc];
+
+        single_translation_permutation[new_site_ix] = old_site_ix;
+      }
+      //You should have given a permutation value to every single site
+      assert(std::find(single_translation_permutation.begin(), single_translation_permutation.end(), -1) == single_translation_permutation.end());
+      translation_permutations.push_back(Permutation(single_translation_permutation));
+    }
+    return translation_permutations;
+  }
+
   SupercellSymInfo::SupercellSymInfo(Lattice const &_prim_lat,
                                      Lattice const &_super_lat,
                                      Index num_sites_in_prim,
@@ -22,6 +46,7 @@ namespace CASM {
     m_supercell_superlattice(_prim_lat, _super_lat),
     m_unitcell_to_index_converter(m_supercell_superlattice.transformation_matrix()),
     m_unitcellcoord_to_index_converter(m_supercell_superlattice.transformation_matrix(), num_sites_in_prim),
+    m_translation_permutations(make_translation_permutations(this->superlattice().transformation_matrix(), num_sites_in_prim)),
     m_prim_grid(_prim_lat, _super_lat, num_sites_in_prim),
     m_factor_group(sym::invariant_subgroup(_prim_factor_group, _super_lat)),
     m_basis_perm_symrep(factor_group(), basis_permutation_symrep_ID),
@@ -54,7 +79,7 @@ namespace CASM {
   }
 
 
-  SymGroupRepID make_permutation_representation(const SymGroup &group, const xtal::LinearIndexConverter bijk_index_converter, const Lattice &prim_lattice, const SymGroupRepID &prim_symrep_ID) {
+  SymGroupRepID make_permutation_representation(const SymGroup &group, const xtal::LinearIndexConverter &bijk_index_converter, const Lattice &prim_lattice, const SymGroupRepID &prim_symrep_ID) {
     SymGroupRepID perm_rep_ID = group.allocate_representation();
     long total_sites = bijk_index_converter.total_sites();
     for(Index operation_ix = 0; operation_ix < group.size(); ++operation_ix) {

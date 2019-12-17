@@ -1,19 +1,22 @@
 #include "casm/symmetry/PermuteIterator.hh"
 
 #include "casm/crystallography/PrimGrid.hh"
+#include "casm/crystallography/LinearIndexConverter.hh"
 #include "casm/crystallography/PrimGrid.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/external/Eigen/src/Core/Matrix.h"
+#include <vector>
 
 namespace CASM {
+
 
   PermuteIterator::PermuteIterator() {}
 
   PermuteIterator::PermuteIterator(const PermuteIterator &iter) :
     m_sym_info(iter.m_sym_info),
-    m_trans_permute(&(m_sym_info->prim_grid().translation_permutations())),
+    m_trans_permute(&(m_sym_info->translation_permutations())),
     m_factor_group_index(iter.m_factor_group_index),
     m_translation_index(iter.m_translation_index) {
 
@@ -23,7 +26,7 @@ namespace CASM {
                                    Index _factor_group_index,
                                    Index _translation_index) :
     m_sym_info(&_sym_info),
-    m_trans_permute(&(m_sym_info->prim_grid().translation_permutations())),
+    m_trans_permute(&(m_sym_info->translation_permutations())),
     m_factor_group_index(_factor_group_index),
     m_translation_index(_translation_index) {
   }

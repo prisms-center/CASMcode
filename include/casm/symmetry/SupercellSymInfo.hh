@@ -9,6 +9,7 @@
 #include "casm/symmetry/SymGroupRepID.hh"
 #include "casm/basis_set/DoFDecl.hh"
 #include "casm/crystallography/PrimGrid.hh"
+#include <vector>
 
 namespace CASM {
   namespace xtal {
@@ -68,6 +69,10 @@ namespace CASM {
       return m_unitcellcoord_to_index_converter;
     }
 
+    const std::vector<Permutation> &translation_permutations() const {
+      return m_translation_permutations;
+    }
+
     SymGroup const &factor_group() const {
       return m_factor_group;
     }
@@ -93,7 +98,7 @@ namespace CASM {
     }
 
     Eigen::Matrix3l transformation_matrix() const {
-      return xtal::make_transformation_matrix(this->prim_lattice(), this->supercell_lattice(), CASM::TOL);
+      return this->superlattice().transformation_matrix();
     }
 
     /// \brief Begin iterator over pure translational permutations
@@ -124,6 +129,10 @@ namespace CASM {
     //TODO: See TODO comment for m_unitcell_to_index_converter
     /// Converts between bijk (UnitCellCoord) values and their corresponding linear index
     xtal::LinearIndexConverter m_unitcellcoord_to_index_converter;
+
+    //TODO: See TODO comment for m_unitcell_to_index_converter
+    /// Stores the permutations associated with making translations from a lattice point to the origin
+    std::vector<Permutation> m_translation_permutations;
 
     // m_factor_group is factor group of the super cell, found by identifying the subgroup of
     // (*this).prim().factor_group() that leaves the supercell lattice vectors unchanged

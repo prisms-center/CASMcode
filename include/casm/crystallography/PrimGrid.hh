@@ -147,17 +147,6 @@ namespace CASM {
 
       SymGroupRepID make_permutation_representation(const SymGroup &group, SymGroupRepID basis_permute_rep) const;
 
-    public:
-      PrimGrid(const Lattice &p_lat, const Lattice &s_lat, Index NB = 1);
-      PrimGrid(const Lattice &p_lat,
-               const Lattice &s_lat,
-               const Eigen::Ref<const PrimGrid::matrix_type> &U,
-               const Eigen::Ref<const PrimGrid::matrix_type> &Smat,
-               Index NB);
-
-
-
-
       // Returns Array of permutations.  Permutation 'l' describes the effect of translating PrimGrid site 'l'
       // to the origin.  NB is the number of primitive-cell basis sites. -- keep public for now
       std::vector<Permutation > make_translation_permutations(Index NB) const;
@@ -178,6 +167,18 @@ namespace CASM {
       const Permutation &translation_permutation(Index i) const {
         return translation_permutations()[i];
       }
+
+    public:
+      PrimGrid(const Lattice &p_lat, const Lattice &s_lat, Index NB = 1);
+      PrimGrid(const Lattice &p_lat,
+               const Lattice &s_lat,
+               const Eigen::Ref<const PrimGrid::matrix_type> &U,
+               const Eigen::Ref<const PrimGrid::matrix_type> &Smat,
+               Index NB);
+
+
+
+
 
       CASM::SymOp sym_op(Index l) const;
     };

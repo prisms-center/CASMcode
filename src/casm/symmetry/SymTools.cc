@@ -52,26 +52,17 @@ namespace CASM {
       return mutating_ucc;
     }
 
+    //TODO: ClusterSymCompare strikes again. We should eventually remove these calls that accept a primitive structure in favor
+    //of the ones that take the minimun amount of necessary data (i.e. lattice and SymGroupRepID)
     template<>
     xtal::UnitCellCoord copy_apply<CASM::SymOp, xtal::UnitCellCoord, xtal::Structure>(const CASM::SymOp &op, xtal::UnitCellCoord copied_ucc, const xtal::Structure &prim) {
-
-      // transform using stored SymBasisPermute representation
-      const SymBasisPermute &rep = *op.get_basis_permute_rep(prim.basis_permutation_symrep_ID());
-      xtal::UnitCell new_unitcell = rep.matrix() * copied_ucc.unitcell() + rep[copied_ucc.sublattice()].unitcell();
-      auto new_sublattice = rep[copied_ucc.sublattice()].sublattice();
-
-      // additional translations (such as needed for supercell factor groups),
-      // are stored in SymOp::integral_tau() (in cartesian coordinates)
-      // this converts that to fractional coordinates and adds it to the unitcell()
-      new_unitcell += lround(prim.lattice().inv_lat_column_mat() * op.integral_tau());
-
-      return xtal::UnitCellCoord(new_sublattice, new_unitcell);
+      sym::apply(op, copied_ucc, prim.lattice(), prim.basis_permutation_symrep_ID());
+      return copied_ucc;
     }
 
     template<>
     xtal::UnitCellCoord &apply<CASM::SymOp, xtal::UnitCellCoord, xtal::Structure>(const CASM::SymOp &op, xtal::UnitCellCoord &mutating_ucc, const xtal::Structure &prim) {
-      auto ucc_after_apply = copy_apply(op, mutating_ucc, prim);
-      std::swap(ucc_after_apply, mutating_ucc);
+      sym::apply(op, mutating_ucc, prim.lattice(), prim.basis_permutation_symrep_ID());
       return mutating_ucc;
     }
 

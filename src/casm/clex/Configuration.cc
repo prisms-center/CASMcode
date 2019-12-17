@@ -1517,7 +1517,7 @@ namespace CASM {
     // So we can tile the decoration of the motif config onto the supercell correctly
     /* PrimGrid prim_grid(oriented_motif_lat, m_scel->lattice());  // ???? This isn't doing what the comment above says */
 
-    auto oriended_motif_lattice_points=xtal::make_lattice_points(oriented_motif_lat, m_scel->lattice(), TOL);
+    auto oriended_motif_lattice_points = xtal::make_lattice_points(oriented_motif_lat, m_scel->lattice(), TOL);
 
     const Structure &prim = m_scel->prim();
     m_index_table.resize(m_motif_scel->num_sites());
@@ -1526,11 +1526,11 @@ namespace CASM {
     for(Index s = 0 ; s < m_motif_scel->num_sites() ; s++) {
 
       // apply symmetry to re-orient and find unit cell coord
-      UnitCellCoord oriented_uccoord = sym::copy_apply(*m_op, m_motif_scel->uccoord(s), prim);
+      UnitCellCoord oriented_uccoord = sym::copy_apply(*m_op, m_motif_scel->uccoord(s), prim.lattice(), prim.basis_permutation_symrep_ID());
 
       // for each unit cell of the oriented motif in the supercell, copy the occupation
-      for(const UnitCell& oriented_motif_uc : oriended_motif_lattice_points) {
-      UnitCell oriented_motif_uc_relative_to_prim=oriented_motif_uc.reset_tiling_unit(oriented_motif_lat,prim.lattice());
+      for(const UnitCell &oriented_motif_uc : oriended_motif_lattice_points) {
+        UnitCell oriented_motif_uc_relative_to_prim = oriented_motif_uc.reset_tiling_unit(oriented_motif_lat, prim.lattice());
 
         Index prim_motif_tile_ind = m_scel->sym_info().unitcell_index_converter()[oriented_motif_uc_relative_to_prim];
 
