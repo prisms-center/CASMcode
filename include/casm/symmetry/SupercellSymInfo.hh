@@ -57,10 +57,6 @@ namespace CASM {
       return m_local_dof_symreps.at(_key);
     }
 
-    PrimGrid const &prim_grid() const {
-      return m_prim_grid;
-    }
-
     const xtal::LatticePointIndexConverter &unitcell_index_converter() const {
       return m_unitcell_to_index_converter;
     }
@@ -116,7 +112,6 @@ namespace CASM {
     permute_const_iterator permute_it(Index fg_index, UnitCell trans) const;
 
   private:
-    PrimGrid m_prim_grid;
 
     /// Couples the primitive lattice to the supercell lattice, and knows the transformation matrix
     xtal::Superlattice m_supercell_superlattice;

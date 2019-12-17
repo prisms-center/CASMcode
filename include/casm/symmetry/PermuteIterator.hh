@@ -42,19 +42,11 @@ namespace CASM {
 
     SupercellSymInfo const *m_sym_info;
 
-    /// permutation representation of factor group acting on sites of the supercell
-    //SymGroupRep::RemoteHandle m_fg_permute_rep;
-
-    /// m_prim_grid holds permutation representation of lattice translations acting on sites of the supercell
-    //PrimGrid const *m_prim_grid;
-
-    /// m_trans_permute points to the Array<Permutation> of translation permutations inside of m_prim_grid (to provide faster access)
+    /// m_trans_permute points to the vector<Permutation> of translation permutations inside of m_sym_info (to provide faster access)
     std::vector<Permutation> const *m_trans_permute;
 
     Index m_factor_group_index;
     Index m_translation_index;
-
-    const PrimGrid &prim_grid() const;
 
   public:
 

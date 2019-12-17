@@ -155,10 +155,6 @@ namespace CASM {
   }
 
 
-  const PrimGrid &Supercell::prim_grid() const {
-    return sym_info().prim_grid();
-  }
-
   ///Return number of primitive cells that fit inside of *this
   Index Supercell::volume() const {
     return this->sym_info().unitcell_index_converter().total_sites();

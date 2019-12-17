@@ -31,10 +31,6 @@ namespace CASM {
     m_translation_index(_translation_index) {
   }
 
-  const PrimGrid &PermuteIterator::prim_grid() const {
-    return sym_info().prim_grid();
-  }
-
   PermuteIterator &PermuteIterator::operator=(PermuteIterator iter) {
     swap(*this, iter);
     return *this;

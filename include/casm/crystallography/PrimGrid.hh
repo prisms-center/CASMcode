@@ -170,7 +170,6 @@ namespace CASM {
 
       CASM::SymOp sym_op(Index l) const;
 
-    public:
       PrimGrid(const Lattice &p_lat, const Lattice &s_lat, Index NB = 1);
       PrimGrid(const Lattice &p_lat,
                const Lattice &s_lat,
@@ -178,6 +177,7 @@ namespace CASM {
                const Eigen::Ref<const PrimGrid::matrix_type> &Smat,
                Index NB);
 
+    public:
     };
 
     //TODO:

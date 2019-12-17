@@ -47,7 +47,6 @@ namespace CASM {
     m_unitcell_to_index_converter(m_supercell_superlattice.transformation_matrix()),
     m_unitcellcoord_to_index_converter(m_supercell_superlattice.transformation_matrix(), num_sites_in_prim),
     m_translation_permutations(make_translation_permutations(this->superlattice().transformation_matrix(), num_sites_in_prim)),
-    m_prim_grid(_prim_lat, _super_lat, num_sites_in_prim),
     m_factor_group(sym::invariant_subgroup(_prim_factor_group, _super_lat)),
     m_basis_perm_symrep(factor_group(), basis_permutation_symrep_ID),
     m_has_aniso_occs(false),
@@ -119,16 +118,6 @@ namespace CASM {
   const Permutation &SupercellSymInfo::factor_group_permute(Index i) const {
     return *(site_permutation_symrep()[i]->permutation());
   }
-
-  // PrimGrid populates translation permutations if needed
-  //const Permutation &SupercellSymInfo::translation_permute(Index i) const {
-  //return prim_grid().translation_permutation(i);
-  //}
-
-  // PrimGrid populates translation permutations if needed
-  //const std::vector<Permutation> &SupercellSymInfo::translation_permute() const {
-  //return prim_grid().translation_permutations();
-  // }
 
   /// \brief Begin iterator over translation permutations
   SupercellSymInfo::permute_const_iterator SupercellSymInfo::translate_begin() const {

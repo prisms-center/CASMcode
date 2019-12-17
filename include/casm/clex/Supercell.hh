@@ -100,8 +100,6 @@ namespace CASM {
 
     const PrimClex &primclex() const;
 
-    const PrimGrid &prim_grid() const;
-
     ///Return number of primitive cells that fit inside of *this
     Index volume() const;
 
