@@ -102,7 +102,9 @@ namespace CASM {
   }
 
   SymOp PermuteIterator::sym_op()const {
-    return prim_grid().sym_op(m_translation_index) * sym_info().factor_group()[m_factor_group_index];
+    UnitCell translation_lattice_site = this->sym_info().unitcell_index_converter()[this->translation_index()];
+    SymOp lattice_translation_op = SymOp::translation(make_superlattice_coordinate(translation_lattice_site, this->sym_info().superlattice()).cart());
+    return lattice_translation_op * sym_info().factor_group()[m_factor_group_index];
   }
 
   Index PermuteIterator::permute_ind(Index i) const {
