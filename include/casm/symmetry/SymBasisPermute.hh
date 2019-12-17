@@ -3,12 +3,12 @@
 
 #include <vector>
 #include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/symmetry/SymOp.hh"
 #include "casm/symmetry/SymOpRepresentation.hh"
 
 namespace CASM {
   namespace xtal {
     class Lattice;
-    class UnitCellCoord;
   }
   using xtal::Lattice;
   using xtal::UnitCellCoord;

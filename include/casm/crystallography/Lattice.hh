@@ -224,7 +224,6 @@ namespace CASM {
      * the tiling unit to the superlattice.
      */
 
-    //TODO: Refactor this class into the LatticePointWithin stuff
     class Superlattice {
     private:
 

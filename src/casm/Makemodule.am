@@ -193,7 +193,6 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/LinearIndexConverter.hh\
     include/casm/crystallography/Molecule.hh\
     include/casm/crystallography/Niggli.hh\
-    include/casm/crystallography/PrimGrid.hh\
     include/casm/crystallography/SimpleStrucMapCalculator.hh\
     include/casm/crystallography/SimpleStructure.hh\
     include/casm/crystallography/SimpleStructureTools.hh\
@@ -825,7 +824,6 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/LinearIndexConverter.cc\
     src/casm/crystallography/Molecule.cc\
     src/casm/crystallography/Niggli.cc\
-    src/casm/crystallography/PrimGrid.cc\
     src/casm/crystallography/SimpleStrucMapCalculator.cc\
     src/casm/crystallography/SimpleStructure.cc\
     src/casm/crystallography/SimpleStructureTools.cc\
@@ -973,4 +971,3 @@ libcasm_la_LIBADD = \
 libcasm_la_LDFLAGS = \
     $(BOOST_LDFLAGS)\
     -avoid-version
-
