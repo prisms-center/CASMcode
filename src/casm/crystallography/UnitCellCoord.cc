@@ -86,6 +86,15 @@ namespace CASM {
       return prim.basis()[sublattice()];
     }
 
+    Coordinate make_superlattice_coordinate(const UnitCell &ijk, const Lattice &tiling_unit, const Lattice &superlattice) {
+      Coordinate tcoord = ijk.coordinate(tiling_unit);
+      tcoord.set_lattice(superlattice, CART);
+      return tcoord;
+    }
+
+    Coordinate make_superlattice_coordinate(const UnitCell &ijk, const Superlattice &superlattice) {
+      return make_superlattice_coordinate(ijk, superlattice.prim_lattice(), superlattice.superlattice());
+    }
   } // namespace xtal
 
   /// \brief Print to json as [b, i, j, k]

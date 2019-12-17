@@ -8,17 +8,14 @@
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymGroupRepID.hh"
 #include "casm/basis_set/DoFDecl.hh"
-#include "casm/crystallography/PrimGrid.hh"
 #include <vector>
 
 namespace CASM {
   namespace xtal {
     class Structure;
-    class PrimGrid;
     class UnitCell;
   }
   using xtal::Structure;
-  using xtal::PrimGrid;
   using xtal::UnitCell;
 
   class PermuteIterator;
@@ -117,7 +114,7 @@ namespace CASM {
     xtal::Superlattice m_supercell_superlattice;
 
     //TODO: I don't think this belongs in SupercellSymInfo, but neither did PrimGrid.
-    //I'm keeping the functionality where I found it for now, but it should really get moved somewhere else.
+    //I'm keeping the functionality where I found it for now, but we should consider moving it elsewhere
     /// Converts between ijk (UnitCell) values and their corresponding index in an unrolled vector
     xtal::LatticePointIndexConverter m_unitcell_to_index_converter;
 
@@ -125,7 +122,6 @@ namespace CASM {
     /// Converts between bijk (UnitCellCoord) values and their corresponding linear index
     xtal::LinearIndexConverter m_unitcellcoord_to_index_converter;
 
-    //TODO: See TODO comment for m_unitcell_to_index_converter
     /// Stores the permutations associated with making translations from a lattice point to the origin
     std::vector<Permutation> m_translation_permutations;
 

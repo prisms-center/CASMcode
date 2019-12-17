@@ -9,7 +9,6 @@
 #include <boost/filesystem/fstream.hpp>
 #include "casm/misc/algorithm.hh"
 #include "casm/container/algorithm.hh"
-#include "casm/crystallography/PrimGrid.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/basis_set/DoFTraits.hh"

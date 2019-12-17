@@ -23,7 +23,6 @@
 #include "casm/crystallography/LinearIndexConverter.hh"
 #include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/Molecule.hh"
-#include "casm/crystallography/PrimGrid.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/Structure.hh"
@@ -1512,10 +1511,6 @@ namespace CASM {
 
     // ------- site dof ----------
     Lattice oriented_motif_lat = sym::copy_apply(*m_op, m_motif_scel->lattice());
-
-    // Create a PrimGrid linking the prim and the oriented motif each to the supercell
-    // So we can tile the decoration of the motif config onto the supercell correctly
-    /* PrimGrid prim_grid(oriented_motif_lat, m_scel->lattice());  // ???? This isn't doing what the comment above says */
 
     auto oriended_motif_lattice_points = xtal::make_lattice_points(oriented_motif_lat, m_scel->lattice(), TOL);
 

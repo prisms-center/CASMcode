@@ -16,7 +16,6 @@
 #include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/crystallography/PrimGrid.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/LatticePointWithin.hh"
 #include "casm/basis_set/DoFIsEquivalent.hh"

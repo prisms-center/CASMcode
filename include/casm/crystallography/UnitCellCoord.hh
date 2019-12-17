@@ -11,7 +11,6 @@
 
 namespace CASM {
   class jsonParser;
-  class SymOp;
 
   namespace xtal {
     class Coordinate;
@@ -21,6 +20,7 @@ namespace CASM {
     class Structure;
     class Lattice;
     class UnitCellCoord;
+    class Superlattice;
   }
 
   namespace xtal {
@@ -231,6 +231,11 @@ namespace CASM {
     }
 
     /** @} */
+
+    /// Converts the position of a lattice site into a Coordinate within the superlattice
+    Coordinate make_superlattice_coordinate(const UnitCell &ijk, const Superlattice &superlattice);
+    Coordinate make_superlattice_coordinate(const UnitCell &ijk, const Lattice &tiling_unit, const Lattice &superlattice);
+
   } // namespace xtal
 
   /// \brief Print to json as [b, i, j, k]
@@ -241,7 +246,12 @@ namespace CASM {
 
 } // namespace CASM
 
-// TODO: or do we prefer functors in our own dedicated namespace?
+/* #include "casm/crystallography/Coordinate.hh" */
+namespace CASM {
+  namespace xtal {
+  }
+}
+
 namespace std {
   template <>
   struct hash<CASM::xtal::UnitCell> {

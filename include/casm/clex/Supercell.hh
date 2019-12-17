@@ -4,7 +4,6 @@
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/misc/Comparisons.hh"
 #include "casm/crystallography/Lattice.hh"
-#include "casm/crystallography/PrimGrid.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymGroupRepID.hh"
 #include "casm/symmetry/SupercellSymInfo.hh"

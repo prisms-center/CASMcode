@@ -1,11 +1,10 @@
 #include "casm/symmetry/PermuteIterator.hh"
 
-#include "casm/crystallography/PrimGrid.hh"
-#include "casm/crystallography/LinearIndexConverter.hh"
-#include "casm/crystallography/PrimGrid.hh"
-#include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/clex/Supercell.hh"
 #include "casm/casm_io/json/jsonParser.hh"
+#include "casm/clex/Supercell.hh"
+#include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/LinearIndexConverter.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/external/Eigen/src/Core/Matrix.h"
 #include <vector>
 
