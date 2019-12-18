@@ -54,7 +54,7 @@ namespace CASM {
       return m_local_dof_symreps.at(_key);
     }
 
-    const xtal::LatticePointIndexConverter &unitcell_index_converter() const {
+    const xtal::UnitCellIndexConverter &unitcell_index_converter() const {
       return m_unitcell_to_index_converter;
     }
 
@@ -116,7 +116,7 @@ namespace CASM {
     //TODO: I don't think this belongs in SupercellSymInfo, but neither did PrimGrid.
     //I'm keeping the functionality where I found it for now, but we should consider moving it elsewhere
     /// Converts between ijk (UnitCell) values and their corresponding index in an unrolled vector
-    xtal::LatticePointIndexConverter m_unitcell_to_index_converter;
+    xtal::UnitCellIndexConverter m_unitcell_to_index_converter;
 
     //TODO: See TODO comment for m_unitcell_to_index_converter
     /// Converts between bijk (UnitCellCoord) values and their corresponding linear index

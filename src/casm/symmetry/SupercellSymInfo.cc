@@ -13,7 +13,7 @@ namespace CASM {
 
   std::vector<Permutation> make_translation_permutations(const Eigen::Matrix3l &transformation_matrix, int basis_sites_in_prim) {
     xtal::LinearIndexConverter bijk_index_converter(transformation_matrix, basis_sites_in_prim);
-    xtal::LatticePointIndexConverter ijk_index_converter(transformation_matrix);
+    xtal::UnitCellIndexConverter ijk_index_converter(transformation_matrix);
     std::vector<Permutation> translation_permutations;
 
     //Loops over lattice points

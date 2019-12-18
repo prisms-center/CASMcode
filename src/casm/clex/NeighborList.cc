@@ -224,7 +224,7 @@ namespace CASM {
     m_site(superlattice.size()),
     m_unitcell(superlattice.size()) {
 
-        xtal::LatticePointIndexConverter ijk_index_converter(superlattice.transformation_matrix());
+    xtal::UnitCellIndexConverter ijk_index_converter(superlattice.transformation_matrix());
 
     // use the PrimNeighborList to generate the UnitCell and Site indices for
     //   the neighbors of each UnitCell in the supercell
@@ -236,9 +236,9 @@ namespace CASM {
       for(auto it = prim_nlist.begin(); it != prim_nlist.end(); ++it) {
 
         // get the neighbor unitcell's index
-        UnitCell neighbor_unitcell=ijk_index_converter[i]+*it;
+        UnitCell neighbor_unitcell = ijk_index_converter[i] + *it;
         size_type neighbor_unitcell_index =
-            ijk_index_converter[neighbor_unitcell];
+          ijk_index_converter[neighbor_unitcell];
 
         // store the unitcell index
         m_unitcell[i].push_back(neighbor_unitcell_index);

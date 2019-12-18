@@ -102,7 +102,7 @@ namespace CASM {
     }
 
     /// Access the UnitCellIndexConverter
-    xtal::LatticePointIndexConverter &_unitcell_index_converter() {
+    xtal::UnitCellIndexConverter &_unitcell_index_converter() {
       return *m_unitcell_index_converter;
     }
 
@@ -136,7 +136,7 @@ namespace CASM {
     Counter<Array<int> > m_counter;
 
     /// An ordered set of lattice points (UnitCell) that tile the sub_scel into the ref_scel
-    notstd::cloneable_ptr<xtal::LatticePointIndexConverter> m_unitcell_index_converter;
+    notstd::cloneable_ptr<xtal::UnitCellIndexConverter> m_unitcell_index_converter;
 
     /// m_current->occ(m_index_map[i][j]) = m_sub_scel[i].occ(j)
     std::vector<std::vector<Index> > m_index_map;

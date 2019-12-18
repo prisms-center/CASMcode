@@ -121,10 +121,10 @@ namespace CASM {
      * UnitCell is returned.
      */
 
-    class LatticePointIndexConverter : LinearIndexConverter {
+    class UnitCellIndexConverter : LinearIndexConverter {
     public:
       typedef LinearIndexConverter::matrix_type matrix_type;
-      LatticePointIndexConverter(const matrix_type &transformation_matrix):
+      UnitCellIndexConverter(const matrix_type &transformation_matrix):
         LinearIndexConverter(transformation_matrix, 1) {
       }
 

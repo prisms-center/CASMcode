@@ -229,7 +229,7 @@ namespace CASM {
     }
     m_sub_scel = &(m_sub_config.begin()->supercell());
 
-    m_unitcell_index_converter = notstd::make_cloneable<xtal::LatticePointIndexConverter>(
+    m_unitcell_index_converter = notstd::make_cloneable<xtal::UnitCellIndexConverter>(
                                    xtal::make_transformation_matrix(
                                      _sub_supercell().lattice(),
                                      _target_supercell().lattice(), _target_supercell().lattice().tol())
