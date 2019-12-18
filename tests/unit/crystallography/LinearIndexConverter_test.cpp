@@ -147,24 +147,3 @@ TEST(LinearIndexConverterTest, bad_fall_outside_superlattice_query) {
 
   EXPECT_TRUE(good_catch) << "Constructed with " << total_basis_atoms << " basis atoms";
 }
-
-/* #include "casm/crystallography/PrimGrid.hh" */
-/* TEST(LinearIndexConverterTest, match_to_PrimGrid) { */
-/*   auto fcc_prim =::fcc_lattice(); */
-/*   auto trans_mat =::transformation_matrix(); */
-/*   auto fcc_superlattice = xtal::make_superlattice(::fcc_lattice(), trans_mat); */
-/*   int total_basis_atoms = 10; */
-/*   xtal::LinearIndexConverter ix_bijk_converter(::fcc_lattice(), fcc_superlattice, total_basis_atoms); */
-
-/*   xtal::PrimGrid prim_grid(fcc_prim, fcc_superlattice, total_basis_atoms); */
-
-/*   for(Index i = 0; i < prim_grid.size(); ++i) { */
-/*     auto uc_prim_grid = prim_grid.unitcell(i); */
-/*     UnitCellCoord ucc_prim_grid(prim_grid.sublat(i), uc_prim_grid); */
-
-/*     UnitCellCoord ucc_converter = ix_bijk_converter[i]; */
-
-/*     EXPECT_EQ(ucc_prim_grid, ucc_converter); */
-/*   } */
-/* } */
-

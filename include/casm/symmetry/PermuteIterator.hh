@@ -8,10 +8,6 @@
 #include "casm/misc/Comparisons.hh"
 
 namespace CASM {
-  namespace xtal {
-    class PrimGrid;
-  }
-  using xtal::PrimGrid;
 
   /** \ingroup SymOp
    *  @{
@@ -75,10 +71,6 @@ namespace CASM {
 
     //TODO: Get rid of this?
     SupercellSymInfo const &sym_info() const;
-
-    /// Apply the combined factor_group permutation and translation permutation being pointed at
-    //template<typename T>
-    //ReturnArray<T> permute(const Array<T> &before_array) const;
 
     /// Return the index into m_factor_group_permute of the factor group op being pointed at
     Index factor_group_index() const;

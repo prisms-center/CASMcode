@@ -229,7 +229,6 @@ namespace CASM {
     }
     m_sub_scel = &(m_sub_config.begin()->supercell());
 
-    // construct PrimGrid
     m_unitcell_index_converter = notstd::make_cloneable<xtal::LatticePointIndexConverter>(
                                    xtal::make_transformation_matrix(
                                      _sub_supercell().lattice(),
@@ -237,7 +236,7 @@ namespace CASM {
                                  );
 
     // initialize 'm_counter' to count over all possible sub-config on
-    // each prim_grid site
+    // each lattice point
     m_counter = Counter<Array<int> >(
                   Array<int>(this->_unitcell_index_converter().total_sites(), 0),
                   Array<int>(this->_unitcell_index_converter().total_sites(), sub_config().size() - 1),
@@ -310,13 +309,12 @@ namespace CASM {
 
   /// Fill DoF from sub_config into a Configuration
   ///
-  /// \param counter_val The index of the sub_config on each PrimGrid site
+  /// \param counter_val The index of the sub_config on each lattice point
   /// \param config The Configuration to set the occupation of
   ///
   void SuperConfigEnum::_fill(const Array<int> &counter_val,
                               Configuration &config) {
 
-    // use m_sub_config, prim_grid(), and counter_val to set occupation in config
     if(m_has_occ) {
       m_current->init_occupation();
     }

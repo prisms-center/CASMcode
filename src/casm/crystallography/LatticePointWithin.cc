@@ -62,7 +62,7 @@ namespace CASM {
 
     OrderedLatticePointGenerator::vector_type OrderedLatticePointGenerator::operator()(Index ix) const {
       if(ix < 0 || ix >= this->m_total_lattice_points) {
-        throw std::runtime_error("PrimGrid index out of range! Specified index " + std::to_string(ix) + " when there are " +
+        throw std::runtime_error("Lattice point index out of range! Specified index " + std::to_string(ix) + " when there are " +
                                  std::to_string(m_total_lattice_points) + " lattice sites.");
       }
 

@@ -35,7 +35,7 @@ namespace CASM {
     return *A < *B;
   }
 
-  //Copy constructor is needed for proper initialization of m_prim_grid
+  //Copy constructor is needed for proper initialization of supercell sym info
   Supercell::Supercell(const Supercell &RHS) :
     m_primclex(&RHS.primclex()),
     m_sym_info(make_supercell_sym_info(prim(), RHS.lattice())),
@@ -77,13 +77,12 @@ namespace CASM {
   /// \brief Return the sublattice index for a linear index
   ///
   /// Linear indices are grouped by sublattice, then ordered as determined by
-  /// PrimGrid. This function is equivalent to:
+  /// xtal::OrderedLatticePointGenerator. This function is equivalent to:
   /// \code
   /// linear_index / volume();
   /// \endcode
   Index Supercell::sublat(Index linear_index) const {
     return this->sym_info().unitcellcoord_index_converter()[linear_index].sublattice();
-    /* return prim_grid().sublat(linear_index); */
   }
 
   /// \brief Given a Coordinate and tolerance, return linear index into Configuration
@@ -106,10 +105,7 @@ namespace CASM {
   /// \brief Return the linear index corresponding to integral coordinates
   ///
   /// Linear indices are grouped by sublattice, then ordered as determined by
-  /// PrimGrid. This function is equivalent to:
-  /// \code
-  /// bijk[0] * volume() + prim_grid().find(bijk.unitcell());
-  /// \endcode
+  /// xtal::OrderedLatticePointGenerator.
   Index Supercell::linear_index(const UnitCellCoord &bijk) const {
     return this->sym_info().unitcellcoord_index_converter()[bijk];
   }
@@ -124,10 +120,7 @@ namespace CASM {
   /// \brief Return the integral coordinates corresponding to a linear index
   ///
   /// Linear indices are grouped by sublattice, then ordered as determined by
-  /// PrimGrid. This function is equivalent to:
-  /// \code
-  /// UnitCellCoord(prim(), sublat(linear_index), prim_grid().unitcell(linear_index % volume()))
-  /// \endcode
+  /// xtal::OrderedLatticePointGenerator.
   UnitCellCoord Supercell::uccoord(Index linear_index) const {
     return this->sym_info().unitcellcoord_index_converter()[linear_index];
   }
