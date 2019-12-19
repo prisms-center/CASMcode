@@ -17,13 +17,13 @@ namespace CASM {
     Eigen::Matrix3l make_transformation_matrix(const Lattice &tiling_unit, const Lattice &superlattice, double tol);
 
     /**
-     * Handles bringing a UnitCell (i,j,k values) within a particular
+     * Handles bringing an integral coordinate (i,j,k value) within a particular
      * superlattice. Provide the tiling unit and superlattice at construction,
-     * and use this class to bring any external UnitCell within the
-     * superlattice
+     * and use this class to bring any external UnitCell or UnitCellCoord within the
+     * superlattice.
      */
 
-    class LatticePointWithin_f {
+    class IntegralCoordinateWithin_f {
     public:
       typedef Eigen::Matrix<long, 3, 3> matrix_type;
       typedef Eigen::Matrix<long, 3, 1> vector_type;
@@ -32,22 +32,22 @@ namespace CASM {
       /// into the desired superlattice. Lattice points (UnitCell) with fractional
       /// coordinates relative to the tiling unit will then be brought into
       /// the superlattice.
-      LatticePointWithin_f(const matrix_type &superlattice_transformation_matrix)
+      IntegralCoordinateWithin_f(const matrix_type &superlattice_transformation_matrix)
         : m_transformation_matrix(superlattice_transformation_matrix),
           m_transformation_matrix_adjugate(adjugate(superlattice_transformation_matrix)),
           m_total_lattice_points_in_superlattice(superlattice_transformation_matrix.determinant()) {
         _throw_if_bad_transformation_matrix(this->m_transformation_matrix);
       }
 
-      LatticePointWithin_f(const Eigen::Matrix3i &superlattice_transformation_matrix)
-        : LatticePointWithin_f(matrix_type(superlattice_transformation_matrix.cast<long>())) {
+      IntegralCoordinateWithin_f(const Eigen::Matrix3i &superlattice_transformation_matrix)
+        : IntegralCoordinateWithin_f(matrix_type(superlattice_transformation_matrix.cast<long>())) {
       }
 
       /// Specify the tiling unit, and the superlattice into which lattice points (UnitCells)
       /// should be brought within. The superlattice must be an integer transformation of
       /// the tiling unit
-      LatticePointWithin_f(const Lattice &tiling_unit, const Lattice &superlattice)
-        : LatticePointWithin_f(make_transformation_matrix(tiling_unit, superlattice, TOL)) {
+      IntegralCoordinateWithin_f(const Lattice &tiling_unit, const Lattice &superlattice)
+        : IntegralCoordinateWithin_f(make_transformation_matrix(tiling_unit, superlattice, TOL)) {
       }
 
       /// Brings the given lattice point within the superlattice
@@ -83,7 +83,7 @@ namespace CASM {
      * in the list in constant time.
      *
      * If you want to convert between linear index and bijk (UnitCellCoord) quickly, you probably
-     * want to be using the LinearIndexConverter class instead of this.
+     * want to be using the UnitCellCoordIndexConverter class instead of this.
      *
      * The original algorithm for constant time evaluation of the linear index that makes this
      * class possible was developed by John C. Thomas and is described below:
@@ -125,8 +125,8 @@ namespace CASM {
 
     class OrderedLatticePointGenerator {
     public:
-      typedef LatticePointWithin_f::matrix_type matrix_type;
-      typedef LatticePointWithin_f::vector_type vector_type;
+      typedef IntegralCoordinateWithin_f::matrix_type matrix_type;
+      typedef IntegralCoordinateWithin_f::vector_type vector_type;
 
       /// Construct with the transformation matrix that takes the tiling unit to the superlattice
       OrderedLatticePointGenerator(const matrix_type &transformation_matrix);
@@ -144,7 +144,7 @@ namespace CASM {
       long int m_total_lattice_points;
 
       // Can map ijk values within the supercell
-      LatticePointWithin_f m_bring_within_f;
+      IntegralCoordinateWithin_f m_bring_within_f;
 
       /// The Smith Normal Form decomposition is: trans_mat = U*S*V, with det(U)=det(V)=1; S is diagonal
       matrix_type m_smith_normal_U;

@@ -22,13 +22,13 @@ namespace CASM {
      * UnitCellCoord is returned.
      */
 
-    class LinearIndexConverter {
+    class UnitCellCoordIndexConverter {
     public:
       typedef OrderedLatticePointGenerator::matrix_type matrix_type;
 
       /// Initialize with the transformation that defines how to convert from the tiling unit (prim)
       /// to the superlattice, and the number of basis sites in the primitive cell
-      LinearIndexConverter(const matrix_type &transformation_matrix, int basis_sites_in_prim)
+      UnitCellCoordIndexConverter(const matrix_type &transformation_matrix, int basis_sites_in_prim)
         : m_linear_index_to_bijk(_make_all_ordered_bijk_values(OrderedLatticePointGenerator(transformation_matrix), basis_sites_in_prim)),
           m_basis_sites_in_prim(basis_sites_in_prim),
           m_automatically_bring_bijk_within(true),
@@ -47,8 +47,8 @@ namespace CASM {
 
       /// Initialize with the primitie tiling unit, the superlattice, and the number of basis sites
       /// in the primitive unit
-      LinearIndexConverter(const Lattice &tiling_unit, const Lattice &superlattice, int basis_sites_in_prim)
-        : LinearIndexConverter(make_transformation_matrix(tiling_unit, superlattice, TOL), basis_sites_in_prim) {
+      UnitCellCoordIndexConverter(const Lattice &tiling_unit, const Lattice &superlattice, int basis_sites_in_prim)
+        : UnitCellCoordIndexConverter(make_transformation_matrix(tiling_unit, superlattice, TOL), basis_sites_in_prim) {
       }
 
       /// Prevent the index converter from bringing UnitCellCoord within the supercell when querying for the index
@@ -89,7 +89,7 @@ namespace CASM {
       bool m_automatically_bring_bijk_within;
 
       /// Functor to bring UnitCellCoord values back into the superlattice
-      LatticePointWithin_f m_bring_within_f;
+      IntegralCoordinateWithin_f m_bring_within_f;
 
       /// Throws exception if the specified index is out of the allowed range
       void _throw_if_incompatible_index(Index ix) const;
@@ -121,31 +121,31 @@ namespace CASM {
      * UnitCell is returned.
      */
 
-    class UnitCellIndexConverter : LinearIndexConverter {
+    class UnitCellIndexConverter : UnitCellCoordIndexConverter {
     public:
-      typedef LinearIndexConverter::matrix_type matrix_type;
+      typedef UnitCellCoordIndexConverter::matrix_type matrix_type;
       UnitCellIndexConverter(const matrix_type &transformation_matrix):
-        LinearIndexConverter(transformation_matrix, 1) {
+        UnitCellCoordIndexConverter(transformation_matrix, 1) {
       }
 
-      using LinearIndexConverter::always_bring_within;
-      using LinearIndexConverter::never_bring_within;
-      using LinearIndexConverter::total_sites;
+      using UnitCellCoordIndexConverter::always_bring_within;
+      using UnitCellCoordIndexConverter::never_bring_within;
+      using UnitCellCoordIndexConverter::total_sites;
 
       /// Bring the given UnitCell into the superlattice using lattice translations
       UnitCell bring_within(const UnitCell &ijk) const {
-        return LinearIndexConverter::bring_within(UnitCellCoord(0, ijk)).unitcell();
+        return UnitCellCoordIndexConverter::bring_within(UnitCellCoord(0, ijk)).unitcell();
       }
 
       /// Given the linear index, retreive the corresponding UnitCell
       const UnitCell &operator[](Index ix) const {
-        return LinearIndexConverter::operator[](ix).unitcell();
+        return UnitCellCoordIndexConverter::operator[](ix).unitcell();
       }
 
       /// Given the UnitCell, retreive its corresponding linear index.
       /// If applicable, brings the UnitCell within the superlattice
       Index operator[](const UnitCell &ijk) const {
-        return LinearIndexConverter::operator[](UnitCellCoord(0, ijk));
+        return UnitCellCoordIndexConverter::operator[](UnitCellCoord(0, ijk));
       }
 
     private:
@@ -153,6 +153,30 @@ namespace CASM {
       //Secretly cache things to "speed things up" if you're *really* that concerned about the UnitCellCoord
       //copies slowing you down. Don't implement this until you've profiled it.
     };
+
+    /**
+     * These templates are just for syntactic convenience.
+     * The template class LinearIndexConverter can be used for both
+     * UnitCell and UnitCellCoord types, by specializing the
+     * desired type as a template argument.
+     */
+
+    template<typename IntegralCoordinateType>
+    struct _LinearIndexConverter {
+    };
+
+    template<>
+    struct _LinearIndexConverter<UnitCell> {
+      typedef UnitCellIndexConverter type;
+    };
+
+    template<>
+    struct _LinearIndexConverter<UnitCellCoord> {
+      typedef UnitCellCoordIndexConverter type;
+    };
+
+    template<typename IntegralCoordinateType>
+    using LinearIndexConverter = typename _LinearIndexConverter<IntegralCoordinateType>::type;
 
   } // namespace xtal
 } // namespace CASM

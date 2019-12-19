@@ -58,7 +58,7 @@ namespace CASM {
       return m_unitcell_to_index_converter;
     }
 
-    const xtal::LinearIndexConverter &unitcellcoord_index_converter() const {
+    const xtal::UnitCellCoordIndexConverter &unitcellcoord_index_converter() const {
       return m_unitcellcoord_to_index_converter;
     }
 
@@ -120,7 +120,7 @@ namespace CASM {
 
     //TODO: See TODO comment for m_unitcell_to_index_converter
     /// Converts between bijk (UnitCellCoord) values and their corresponding linear index
-    xtal::LinearIndexConverter m_unitcellcoord_to_index_converter;
+    xtal::UnitCellCoordIndexConverter m_unitcellcoord_to_index_converter;
 
     /// Stores the permutations associated with making translations from a lattice point to the origin
     std::vector<Permutation> m_translation_permutations;

@@ -29,7 +29,7 @@ namespace {
 
   xtal::Lattice hcp_lattice();
 
-  xtal::LatticePointWithin_f::matrix_type transformation_matrix() {
+  xtal::IntegralCoordinateWithin_f::matrix_type transformation_matrix() {
     Eigen::Matrix3l transformation_matrix;
     transformation_matrix << 1, 0, 3, 1, 1, -2, 1, 2, 0;
     return transformation_matrix;
@@ -39,14 +39,14 @@ namespace {
 
 TEST(LatticePointWithinTest, construct_via_int_transformation) {
   auto trans_mat = transformation_matrix();
-  xtal::LatticePointWithin_f bring_within(trans_mat);
+  xtal::IntegralCoordinateWithin_f bring_within(trans_mat);
 }
 
 TEST(LatticePointWithinTest, construct_via_transformation) {
   Eigen::Matrix3l trans_mat;
   trans_mat << 1, 0, 3, 1, 1, -2, 1, 2, 0;
 
-  xtal::LatticePointWithin_f bring_within(trans_mat);
+  xtal::IntegralCoordinateWithin_f bring_within(trans_mat);
 }
 
 TEST(LatticePointWithinTest, construct_via_bad_transformation) {
@@ -55,7 +55,7 @@ TEST(LatticePointWithinTest, construct_via_bad_transformation) {
 
   bool good_catch = false;
   try {
-    xtal::LatticePointWithin_f bring_within(trans_mat);
+    xtal::IntegralCoordinateWithin_f bring_within(trans_mat);
   }
   catch(const std::runtime_error &e) {
     good_catch = true;
@@ -68,7 +68,7 @@ TEST(LatticePointWithinTest, construct_via_superlattice) {
   auto trans_mat = transformation_matrix();
   auto fcc_superlattice = xtal::make_superlattice(::fcc_lattice(), trans_mat);
 
-  xtal::LatticePointWithin_f bring_within(::fcc_lattice(), fcc_superlattice);
+  xtal::IntegralCoordinateWithin_f bring_within(::fcc_lattice(), fcc_superlattice);
 }
 
 TEST(LatticePointWithinTest, construct_via_bad_superlattice) {
@@ -77,7 +77,7 @@ TEST(LatticePointWithinTest, construct_via_bad_superlattice) {
 
   bool good_catch = false;
   try {
-    xtal::LatticePointWithin_f bring_within(::bcc_lattice(), fcc_superlattice);
+    xtal::IntegralCoordinateWithin_f bring_within(::bcc_lattice(), fcc_superlattice);
   }
   catch(const std::runtime_error &e) {
     good_catch = true;
@@ -88,7 +88,7 @@ TEST(LatticePointWithinTest, construct_via_bad_superlattice) {
 
 TEST(LatticePointWithinTest, lattice_point_within_doest_change) {
   auto trans_mat = transformation_matrix();
-  xtal::LatticePointWithin_f bring_within(trans_mat);
+  xtal::IntegralCoordinateWithin_f bring_within(trans_mat);
 
   std::vector<Eigen::Vector3l> all_sites_within;
   all_sites_within.emplace_back(0, 0, 0);
@@ -117,7 +117,7 @@ TEST(LatticePointWithinTest, bring_within_consistent_with_coordinate) {
   auto fcc_lat =::fcc_lattice();
   auto fcc_superlattice = xtal::make_superlattice(fcc_lat, trans_mat);
 
-  xtal::LatticePointWithin_f bring_within(::fcc_lattice(), fcc_superlattice);
+  xtal::IntegralCoordinateWithin_f bring_within(::fcc_lattice(), fcc_superlattice);
 
   std::vector<Eigen::Vector3l> sites_outside;
   sites_outside.emplace_back(35, 28, -84);

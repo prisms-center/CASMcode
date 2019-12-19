@@ -12,7 +12,7 @@
 namespace CASM {
 
   std::vector<Permutation> make_translation_permutations(const Eigen::Matrix3l &transformation_matrix, int basis_sites_in_prim) {
-    xtal::LinearIndexConverter bijk_index_converter(transformation_matrix, basis_sites_in_prim);
+    xtal::UnitCellCoordIndexConverter bijk_index_converter(transformation_matrix, basis_sites_in_prim);
     xtal::UnitCellIndexConverter ijk_index_converter(transformation_matrix);
     std::vector<Permutation> translation_permutations;
 
@@ -78,7 +78,7 @@ namespace CASM {
   }
 
 
-  SymGroupRepID make_permutation_representation(const SymGroup &group, const xtal::LinearIndexConverter &bijk_index_converter, const Lattice &prim_lattice, const SymGroupRepID &prim_symrep_ID) {
+  SymGroupRepID make_permutation_representation(const SymGroup &group, const xtal::UnitCellCoordIndexConverter &bijk_index_converter, const Lattice &prim_lattice, const SymGroupRepID &prim_symrep_ID) {
     SymGroupRepID perm_rep_ID = group.allocate_representation();
     long total_sites = bijk_index_converter.total_sites();
     for(Index operation_ix = 0; operation_ix < group.size(); ++operation_ix) {

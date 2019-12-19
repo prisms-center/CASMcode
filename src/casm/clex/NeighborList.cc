@@ -245,7 +245,7 @@ namespace CASM {
 
         // calculate and store the site indices for all sites in the neighbor unitcell that are requested
         // - Depends on Configuration sites being stored in blocks by sublattice and unitcell indices
-        //   determined by the LinearIndexConverter ordering
+        //   determined by the UnitCellCoordIndexConverter ordering
         for(auto b_it = prim_nlist.sublat_indices().begin(); b_it != prim_nlist.sublat_indices().end(); ++b_it) {
           m_site[i].push_back((*b_it) * m_prim_grid_size +
                               neighbor_unitcell_index);

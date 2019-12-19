@@ -20,7 +20,7 @@ namespace CASM {
     class Structure;
     class Coordinate;
     class UnitCellCoord;
-    class LatticePointWithin_f;
+    class IntegralCoordinateWithin_f;
   }
   using xtal::BasicStructure;
   using xtal::Site;
@@ -176,7 +176,7 @@ namespace CASM {
   std::string canonical_scelname(const Structure &prim, const Lattice &superlat);
 
   namespace xtal {
-    LatticePointWithin_f make_bring_within_f(const Supercell &scel);
+    IntegralCoordinateWithin_f make_bring_within_f(const Supercell &scel);
   }
 
   /** @} */

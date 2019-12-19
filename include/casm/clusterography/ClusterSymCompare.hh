@@ -224,7 +224,7 @@ public:
       ///
       /// \param tol Tolerance for invariants_compare of site-to-site distances
       ///
-      ScelPeriodicSymCompare(PrimType_ptr prim_ptr, const xtal::LatticePointWithin_f &bring_within_f, double tol);
+      ScelPeriodicSymCompare(PrimType_ptr prim_ptr, const xtal::IntegralCoordinateWithin_f &bring_within_f, double tol);
 
       /// \brief Return tolerance
     double tol() const {
@@ -250,7 +250,7 @@ private:
       return *m_prim;
     }
 
-    xtal::LatticePointWithin_f m_bring_within_f;
+    xtal::IntegralCoordinateWithin_f m_bring_within_f;
 
     double m_tol;
 
@@ -288,7 +288,7 @@ public:
       ///
       /// \param tol Tolerance for invariants_compare of site-to-site distances
       ///
-      WithinScelSymCompare(PrimType_ptr prim_ptr, const xtal::LatticePointWithin_f &bring_within_f, double tol);
+      WithinScelSymCompare(PrimType_ptr prim_ptr, const xtal::IntegralCoordinateWithin_f &bring_within_f, double tol);
 
       /// \brief Return tolerance
     double tol() const {
@@ -317,7 +317,7 @@ private:
       return *m_prim;
     }
 
-    xtal::LatticePointWithin_f m_bring_within_f;
+    xtal::IntegralCoordinateWithin_f m_bring_within_f;
 
     double m_tol;
 
