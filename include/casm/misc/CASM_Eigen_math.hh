@@ -8,6 +8,7 @@
 #include <type_traits>
 #include <boost/math/special_functions/round.hpp>
 
+#include "casm/external/Eigen/CASM_AddOns"
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
 #include "casm/misc/CASM_math.hh"

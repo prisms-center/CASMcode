@@ -5,9 +5,9 @@
 #include "casm/kinetics/DiffTransConfigMapping.hh"
 #include "casm/kinetics/DiffTransConfiguration.hh"
 #include "casm/app/DirectoryStructure.hh"
-#include "casm/app/import.hh"
-#include "casm/app/update.hh"
-#include "casm/app/rm.hh"
+//#include "casm/app/import.hh"
+//#include "casm/app/update.hh"
+//#include "casm/app/rm.hh"
 #include "casm/database/DiffTransConfigDatabase.hh"
 #include "casm/database/PropertiesDatabase.hh"
 #include "casm/database/Selection_impl.hh"
@@ -15,7 +15,7 @@
 #include "casm/database/Update_impl.hh"
 #include "casm/database/ScelDatabase.hh"
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
-#include "casm/basis_set/DoF.hh"
+//#include "casm/basis_set/DoF.hh"
 
 
 namespace CASM {
@@ -265,7 +265,7 @@ namespace CASM {
 
 
       std::vector<std::string> col = {
-        "configname", "selected", "pos", "has_data", "has_complete_data",
+        "configname", "selected", "path", "has_data", "has_complete_data",
         "import_data", "import_additional_files", "score", "best_score"
       };
 

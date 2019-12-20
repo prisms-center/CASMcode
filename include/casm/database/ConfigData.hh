@@ -11,7 +11,6 @@
 
 
 // To be specialized for calculable 'ConfigType' classes:
-//   StructureMap<ConfigType>::map(fs::path, DatabaseIterator<ConfigType> hint, inserter result)
 //   Import<ConfigType>::desc
 //   Import<ConfigType>::run
 //   Import<ConfigType>::_import_formatter
@@ -36,6 +35,8 @@ namespace CASM {
                       bool _ideal = false,
                       bool _strict = false,
                       bool _primitive_only = false,
+                      bool _fix_volume = false,
+                      bool _fix_lattice = false,
                       std::vector<std::string> _forced_lattices = {},
                       std::string _filter = "",
                       double _cost_tol = CASM::TOL,
@@ -46,6 +47,8 @@ namespace CASM {
         ideal(_ideal),
         strict(_strict),
         primitive_only(_primitive_only),
+        fix_volume(_fix_volume),
+        fix_lattice(_fix_lattice),
         forced_lattices(_forced_lattices),
         filter(_filter),
         cost_tol(_cost_tol),
@@ -61,6 +64,8 @@ namespace CASM {
       bool ideal;
       bool strict;
       bool primitive_only;
+      bool fix_volume;
+      bool fix_lattice;
       std::vector<std::string> forced_lattices;
       std::string filter;
       double cost_tol;
@@ -125,12 +130,9 @@ namespace CASM {
         fs::path last_insert;
       };
 
-      GenericDatumFormatter<std::string, Result> pos();
+      GenericDatumFormatter<std::string, Result> path();
 
       GenericDatumFormatter<std::string, Result> fail_msg();
-
-      /// Use 'from_configname' as 'configname'
-      GenericDatumFormatter<std::string, Result> configname();
 
       GenericDatumFormatter<std::string, Result> from_configname();
 
@@ -157,6 +159,8 @@ namespace CASM {
       GenericDatumFormatter<double, Result> best_score();
 
       GenericDatumFormatter<bool, Result> is_best();
+
+      GenericDatumFormatter<bool, Result> is_new_config();
 
       GenericDatumFormatter<bool, Result> selected();
 
@@ -253,6 +257,7 @@ namespace CASM {
     // To be specialized for ConfigType (no default implemenation exists)
     template<typename ConfigType>
     class StructureMap;
+
     /*
       template<typename ConfigType>
       class StructureMap {

@@ -109,13 +109,8 @@ namespace CASM {
 
       DB::Selection<Configuration> config_select(primclex.db<Configuration>(), selection);
       for(const auto &config : config_select.selected()) {
-        if(!fs::exists(dir.POS(config.name()))) {
-          write_pos(config);
-        }
-
-        if(!fs::exists(dir.config_json(config.name()))) {
-          write_config_json(config);
-        }
+        write_pos(config);
+        write_config_json(config);
 
         Popen process;
 

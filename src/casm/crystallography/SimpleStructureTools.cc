@@ -25,7 +25,7 @@ namespace CASM {
         if(json.contains(sp + "s_per_type")) {
           std::vector<Index> ntype = json[sp + "s_per_type"].get<std::vector<Index> >();
 
-          std::vector<std::string> type = json[sp + "s_type"].get<std::vector<std::string> >();
+          std::vector<std::string> type = json[sp + "_type"].get<std::vector<std::string> >();
 
           for(Index i = 0; i < ntype.size(); ++i) {
             for(Index j = 0; j < ntype[i]; ++j) {
@@ -33,8 +33,8 @@ namespace CASM {
             }
           }
         }
-        else if(json.contains(sp + "_types")) {
-          from_json(sp_info.names, json[sp + "_types"]);
+        else if(json.contains(sp + "_type")) {
+          from_json(sp_info.names, json[sp + "_type"]);
         }
         else
           return;
@@ -113,6 +113,7 @@ namespace CASM {
           result.mol_info.cart_coord(i) += grid.scel_coord(g).const_cart();
         }
       }
+      i = 0;
       for(Index a = 0; a < na; ++a) {
         for(Index g = 0; g < grid.size(); ++g, ++i) {
           result.atom_info.cart_coord(i) += grid.scel_coord(g).const_cart();
@@ -131,11 +132,16 @@ namespace CASM {
       result.mol_info.coords.resize(3, _struc.basis().size());
       result.mol_info.names.reserve(_struc.basis().size());
       Eigen::VectorXi _mol_occ;
-      _mol_occ.resize(_struc.basis().size());
+      _mol_occ.setZero(_struc.basis().size());
       for(Index b = 0; b < _struc.basis().size(); ++b) {
         result.mol_info.cart_coord(b) = _struc.basis(b).const_cart();
-        result.mol_info.names.push_back(_struc.basis(b).occ_name());
-        _mol_occ[b] = _struc.basis(b).occupant_dof().value();
+
+        //Not sure what to do if occupant isn't specified.
+        //For now, default to first occupant. In future we may decide
+        //to force user to pass mol_occ explicitly
+        if(_struc.basis(b).occupant_dof().is_specified())
+          _mol_occ[b] = _struc.basis(b).occupant_dof().value();
+        result.mol_info.names.push_back(_struc.basis(b).occupant_dof()[_mol_occ[b]].name());
       }
       _atomize(result, _mol_occ, _struc);
       return result;
@@ -167,7 +173,9 @@ namespace CASM {
 
     //***************************************************************************
 
-    SimpleStructure make_simple_structure(Configuration const &_config, std::vector<DoFKey> const &_which_dofs) {
+    SimpleStructure make_simple_structure(Configuration const &_config,
+                                          std::vector<DoFKey> const &_which_dofs,
+                                          bool relaxed) {
       return make_simple_structure(_config.supercell(), _config.configdof(), _which_dofs);
     }
 
@@ -179,14 +187,13 @@ namespace CASM {
       Index N_atoms(0);
 
       Index nb = _reference.basis().size();
-      Index nv = _sstruc.mol_info.names.size() / nb;
+      Index nv = _mol_occ.size() / nb;
       Index s = 0;
       for(Index b = 0; b < nb; ++b) {
         for(Index v = 0; v < nv; ++v, ++s) {
           N_atoms += _reference.basis(b).occupant_dof()[_mol_occ[s]].size();
         }
       }
-
       //std::cout << "Atomizing with N_atom = " << N_atoms << "; nv = " << nv << "; nb = " << nb << "\n";
       _sstruc.atom_info.coords.resize(3, N_atoms);
       _sstruc.atom_info.names.resize(N_atoms);
@@ -283,11 +290,22 @@ namespace CASM {
     jsonParser &to_json(SimpleStructure const &_struc,
                         jsonParser &supplement,
                         std::set<std::string> const &excluded_species,
-                        std::string prefix) {
+                        std::string prefix,
+                        COORD_TYPE mode) {
 
       if(!prefix.empty() && prefix.back() != '_')
         prefix.push_back('_');
 
+      Eigen::Matrix3d c2f_mat;
+      c2f_mat.setIdentity();
+
+      if(mode == FRAC) {
+        supplement["coord_mode"] = "Direct";
+        c2f_mat = _struc.lat_column_mat.inverse();
+      }
+      else {
+        supplement["coord_mode"] = "Cartesian";
+      }
 
       std::vector<Index> atom_permute, mol_permute;
       jsonParser &ajson = supplement["atom_type"].put_array();
@@ -328,14 +346,24 @@ namespace CASM {
       {
         jsonParser &tjson = supplement[prefix + "atom_coords"].put_array();
         for(Index i : atom_permute) {
-          tjson.push_back(_struc.atom_info.cart_coord(i), jsonParser::as_array());
+          if(mode == FRAC) {
+            tjson.push_back(c2f_mat * _struc.atom_info.cart_coord(i), jsonParser::as_array());
+          }
+          else {
+            tjson.push_back(_struc.atom_info.cart_coord(i), jsonParser::as_array());
+          }
         }
       }
 
       {
         jsonParser &tjson = supplement[prefix + "mol_coords"].put_array();
         for(Index i : mol_permute) {
-          tjson.push_back(_struc.mol_info.cart_coord(i), jsonParser::as_array());
+          if(mode == FRAC) {
+            tjson.push_back(c2f_mat * _struc.mol_info.cart_coord(i), jsonParser::as_array());
+          }
+          else {
+            tjson.push_back(_struc.mol_info.cart_coord(i), jsonParser::as_array());
+          }
         }
       }
       return supplement;
@@ -364,7 +392,7 @@ namespace CASM {
         }
 
         COORD_TYPE mode = CART;
-        if(tstr == "direct" || tstr == "Direct") {
+        if(tstr[0] == 'd' || tstr[0] == 'D' || tstr[0] == 'F' || tstr[0] == 'f') {
           mode = FRAC;
           f2c_mat = _struc.lat_column_mat;
         }
@@ -380,7 +408,7 @@ namespace CASM {
             }
           }
           if(json.contains(prefix + "energy")) {
-            _struc.properties["energy"] = json[prefix + "energy"].get<Eigen::MatrixXd>();
+            _struc.properties[prefix + "energy"] = json[prefix + "energy"].get<Eigen::MatrixXd>();
           }
           else if(json.contains("energy")) {
             _struc.properties["energy"] = json["energy"].get<Eigen::MatrixXd>();

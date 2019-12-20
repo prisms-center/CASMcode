@@ -161,6 +161,10 @@ namespace CASM {
       std::vector<Index> assignment;
 
       /// \brief Cost matrix for an assignment problem, which may be a reduced assignment problem if forced_on.size()>0
+      /// cost_mat(i,j) is the cost of mapping child site 'j' onto parent atom 'i'. If parent structure allows vacancies
+      /// cost_mat may have more columns than child sites. These correspond to 'virtual vacancies', which have zero cost
+      /// of mapping onto a parent site that allows vacancies and infinite cost of mapping onto a parent site that does
+      /// not allow vacancies.
       /// In the case of a reduced assignment problem, cost_mat.cols()=icol.size() and cost_mat.rows()=irow.size()
       Eigen::MatrixXd cost_mat;
 
@@ -207,8 +211,15 @@ namespace CASM {
       typedef Eigen::MatrixXd DisplacementMatrix;
 
       // Can treat as a Eigen::VectorXd
-      typedef DisplacementMatrix::ColXpr Displacement;
-      typedef DisplacementMatrix::ConstColXpr ConstDisplacement;
+      using Displacement = DisplacementMatrix::ColXpr;
+      using ConstDisplacement = DisplacementMatrix::ConstColXpr;
+
+      // Label molecules as name and occupant index (optional, default 0)
+      using MoleculeLabel = std::pair<std::string, Index>;
+
+      using MoleculeSet = std::set<Index>;
+
+      using MoleculeMap = std::vector<MoleculeSet>;
 
       /// \brief Static constructor to build an invalid MappingNode, can be used as return value when no valid mapping exists
       static MappingNode invalid();
@@ -260,11 +271,11 @@ namespace CASM {
       }
 
       Displacement disp(Index i) {
-        return displacement.col(i);
+        return atom_displacement.col(i);
       }
 
       ConstDisplacement disp(Index i) const {
-        return displacement.col(i);
+        return atom_displacement.col(i);
       }
 
 
@@ -284,11 +295,17 @@ namespace CASM {
 
       double cost;
 
-      Eigen::MatrixXd displacement;
+      Eigen::MatrixXd atom_displacement;
 
       /// permutation lists indices of sites in input structure, as-read, so that
       /// they constitute particular mapping onto parent structure
-      std::vector<Index> permutation;
+      std::vector<Index> atom_permutation;
+
+      ///  mol_map[j] are indices of relaxed atoms that comprise molecule
+      MoleculeMap mol_map;
+
+      /// list of assigned molecule names
+      std::vector<MoleculeLabel> mol_labels;
 
       bool operator<(MappingNode const &other) const;
     };
@@ -357,7 +374,7 @@ namespace CASM {
       StrucMapper(StrucMapCalculatorInterface const &_calculator,
                   double _strain_weight = 0.5,
                   double _max_volume_change = 0.5,
-                  int _options = robust, // this should actually be a bitwise-OR of StrucMapper::Options
+                  int _options = 0, // this should actually be a bitwise-OR of StrucMapper::Options
                   double _tol = TOL,
                   double _min_va_frac = 0.,
                   double _max_va_frac = 1.);

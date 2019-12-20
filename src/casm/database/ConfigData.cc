@@ -14,6 +14,8 @@ namespace CASM {
       _json["ideal"] = _set.ideal;
       _json["strict"] = _set.strict;
       _json["primitive_only"] = _set.primitive_only;
+      _json["fix_volume"] = _set.fix_volume;
+      _json["fix_lattice"] = _set.fix_lattice;
       if(!_set.forced_lattices.empty())
         _json["forced_lattices"] = _set.forced_lattices;
       if(!_set.filter.empty())
@@ -40,6 +42,12 @@ namespace CASM {
 
       if(_json.contains("primitive_only"))
         _set.primitive_only = _json["primitive_only"].get<bool>();
+
+      if(_json.contains("fix_volume"))
+        _set.fix_volume = _json["fix_volume"].get<bool>();
+
+      if(_json.contains("fix_lattice"))
+        _set.fix_lattice = _json["fix_lattice"].get<bool>();
 
       if(_json.contains("forced_lattices"))
         _set.forced_lattices = _json["forced_lattices"].get<std::vector<std::string> >();
@@ -76,44 +84,43 @@ namespace CASM {
     namespace ConfigIO {
 
       GenericDatumFormatter<std::string, ConfigIO::Result> path() {
-        return GenericDatumFormatter<std::string, Result>("path", "", [&](const Result & res) {
+        return GenericDatumFormatter<std::string, Result>("path", "",
+        [](const Result & res) {
           return res.properties.file_data.path();
         });
       }
 
       GenericDatumFormatter<std::string, ConfigIO::Result> fail_msg() {
-        return GenericDatumFormatter<std::string, Result>("fail_msg", "", [&](const Result & res) {
+        return GenericDatumFormatter<std::string, Result>("fail_msg", "",
+        [](const Result & res) {
           return res.fail_msg;
         });
       }
 
-      /// Use 'from_configname' as 'configname'
-      GenericDatumFormatter<std::string, ConfigIO::Result> configname() {
-        return GenericDatumFormatter<std::string, Result>("configname", "", [&](const Result & res) {
-          return res.properties.from;
-        });
-      }
-
       GenericDatumFormatter<std::string, ConfigIO::Result> from_configname() {
-        return GenericDatumFormatter<std::string, Result>("from_configname", "", [&](const Result & res) {
+        return GenericDatumFormatter<std::string, Result>("from_configname", "",
+        [](const Result & res) {
           return res.properties.from;
         });
       }
 
       GenericDatumFormatter<std::string, ConfigIO::Result> to_configname() {
-        return GenericDatumFormatter<std::string, Result>("to_configname", "", [&](const Result & res) {
+        return GenericDatumFormatter<std::string, Result>("to_configname", "",
+        [](const Result & res) {
           return res.properties.to;
         });
       }
 
       GenericDatumFormatter<bool, ConfigIO::Result> has_data() {
-        return GenericDatumFormatter<bool, Result>("has_data", "", [&](const Result & res) {
+        return GenericDatumFormatter<bool, Result>("has_data", "",
+        [](const Result & res) {
           return res.has_data;
         });
       }
 
       GenericDatumFormatter<bool, ConfigIO::Result> has_complete_data() {
-        return GenericDatumFormatter<bool, Result>("has_complete_data", "", [&](const Result & res) {
+        return GenericDatumFormatter<bool, Result>("has_complete_data", "",
+        [](const Result & res) {
           return res.has_data;
         });
       }
@@ -123,10 +130,8 @@ namespace CASM {
                  "preexisting_data",
                  "",
         [&](const Result & res) {
-          return data_results.find(res.properties.from)->second.preexisting;
-        },
-        [&](const Result & res) {
-          return data_results.find(res.properties.from) != data_results.end();
+          auto it = data_results.find(res.properties.from);
+          return it != data_results.end() && it->second.preexisting;
         });
       }
 
@@ -135,10 +140,8 @@ namespace CASM {
                  "import_data",
                  "",
         [&](const Result & res) {
-          return data_results.find(res.properties.from)->second.last_insert == res.properties.file_data.path();
-        },
-        [&](const Result & res) {
-          return data_results.count(res.properties.from) != 0;
+          auto it = data_results.find(res.properties.from);
+          return it != data_results.end() && it->second.last_insert == res.properties.file_data.path();
         });
       }
 
@@ -158,10 +161,10 @@ namespace CASM {
       GenericDatumFormatter<double, ConfigIO::Result> lattice_deformation_cost() {
         return GenericDatumFormatter<double, Result>(
                  "lattice_deformation_cost", "",
-        [&](const Result & res) {
+        [](const Result & res) {
           return res.properties.scalar("lattice_deformation_cost");
         },
-        [&](const Result & res) {
+        [](const Result & res) {
           return res.properties.has_scalar("lattice_deformation_cost");
         });
       }
@@ -169,10 +172,10 @@ namespace CASM {
       GenericDatumFormatter<double, ConfigIO::Result> basis_deformation_cost() {
         return GenericDatumFormatter<double, Result>(
                  "basis_deformation_cost", "",
-        [&](const Result & res) {
+        [](const Result & res) {
           return res.properties.scalar("basis_deformation_cost");
         },
-        [&](const Result & res) {
+        [](const Result & res) {
           return res.properties.has_scalar("basis_deformation_cost");
         });
       }
@@ -180,10 +183,10 @@ namespace CASM {
       GenericDatumFormatter<double, ConfigIO::Result> relaxed_energy() {
         return GenericDatumFormatter<double, Result>(
                  "relaxed_energy", "",
-        [&](const Result & res) {
+        [](const Result & res) {
           return res.properties.scalar("relaxed_energy");
         },
-        [&](const Result & res) {
+        [](const Result & res) {
           return res.properties.has_scalar("relaxed_energy");
         });
       }
@@ -214,7 +217,7 @@ namespace CASM {
         return GenericDatumFormatter<bool, Result>(
                  "is_best", "",
         [&](const Result & res) {
-          return res.properties.from == db_props.relaxed_from(res.properties.to);
+          return res.properties.from == db_props.find_via_to(res.properties.to)->from;
         },
         [&](const Result & res) {
           return db_props.find_via_to(res.properties.to) != db_props.end();
@@ -223,8 +226,17 @@ namespace CASM {
 
       /// Gives a 'selected' column, set all to false
       GenericDatumFormatter<bool, ConfigIO::Result> selected() {
-        return GenericDatumFormatter<bool, Result>("selected", "", [&](const Result & res) {
+        return GenericDatumFormatter<bool, Result>("selected", "",
+        [](const Result & res) {
           return false;
+        });
+      }
+
+      /// Gives a 'selected' column, set all to false
+      GenericDatumFormatter<bool, ConfigIO::Result> is_new_config() {
+        return GenericDatumFormatter<bool, Result>("is_new_config", "",
+        [](const Result & res) {
+          return res.is_new_config;
         });
       }
 
@@ -250,9 +262,10 @@ namespace CASM {
         dict.insert(
           path(),
           fail_msg(),
-          configname(),
+          //configname(),
           from_configname(),
           to_configname(),
+          is_new_config(),
           has_data(),
           has_complete_data(),
           lattice_deformation_cost(),
@@ -336,6 +349,7 @@ namespace CASM {
       if(!fs::exists(p)) {
         return false;
       }
+      std::cout << "calc_dir: " << p << std::endl;
       return std::distance(fs::directory_iterator(p), fs::directory_iterator());
     }
 

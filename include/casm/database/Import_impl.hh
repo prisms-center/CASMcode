@@ -240,14 +240,14 @@ namespace CASM {
         }
       }
 
-      // list of conflicts (multiple config with same 'from')
+      // list of conflicts (multiple config with same 'to')
       std::map<std::string, std::vector<long> > conflict_count;
       std::vector<ConfigIO::Result> conflict;
       for(long i = 0; i < results.size(); ++i) {
         const auto &res = results[i];
-        auto it = conflict_count.find(res.properties.from);
+        auto it = conflict_count.find(res.properties.to);
         if(it == conflict_count.end()) {
-          conflict_count[res.properties.from] = std::vector<long>(1, i);
+          conflict_count[res.properties.to] = std::vector<long>(1, i);
         }
         else {
           it->second.push_back(i);
@@ -266,15 +266,15 @@ namespace CASM {
       // output a 'batch' file with paths to structures that could not be imported
       if(map_fail.size()) {
 
-        fs::path p = m_report_dir / (prefix + "_map_fail");
+        fs::path p = m_report_dir / (prefix + "_fail");
         fs::ofstream sout(p);
 
         primclex().log() << "WARNING: Could not import " << map_fail.size() << " structures." << std::endl;
         primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
 
         DataFormatterDictionary<ConfigIO::Result> dict;
-        dict.insert(ConfigIO::pos(), ConfigIO::fail_msg());
-        auto formatter = dict.parse({"pos", "fail_msg"});
+        dict.insert(ConfigIO::path(), ConfigIO::fail_msg());
+        auto formatter = dict.parse({"path", "fail_msg"});
         sout << formatter(map_fail.begin(), map_fail.end());
       }
 
@@ -283,7 +283,7 @@ namespace CASM {
 
       if(map_success.size()) {
 
-        fs::path p = m_report_dir / (prefix + "_map_success");
+        fs::path p = m_report_dir / (prefix + "_success");
         fs::ofstream sout(p);
 
         primclex().log() << "Successfully imported " << map_success.size() << " structures." << std::endl;

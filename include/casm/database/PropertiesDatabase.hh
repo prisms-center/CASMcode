@@ -218,19 +218,6 @@ namespace CASM {
       /// \brief Return iterator to pair<from_configname, data> that is from the specified config
       virtual iterator find_via_from(std::string from_configname) const = 0;
 
-
-      /// \brief Name of the configuration that relaxed 'from'->'to'
-      std::string relaxed_to(std::string from_configname) const {
-        return find_via_from(from_configname)->to;
-      }
-
-      /// \brief Name of best scoring configuration that relaxed 'from'->'to'
-      ///
-      /// - Prefers self-mapped
-      std::string relaxed_from(std::string to_configname) const {
-        return find_via_to(to_configname)->from;
-      }
-
       /// \brief Names of all configurations that relaxed 'from'->'to'
       ///
       /// - Empty set if none

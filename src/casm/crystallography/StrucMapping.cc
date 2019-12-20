@@ -32,7 +32,7 @@ namespace CASM {
 
       double basis_cost(const MappingNode &mapped_result, Index Nsites) {
         // mean square displacement distance in deformed coordinate system
-        return (mapped_result.lat_node.stretch.inverse() * mapped_result.displacement).squaredNorm() / double(max(Nsites, Index(1)));
+        return (mapped_result.lat_node.stretch.inverse() * mapped_result.atom_displacement).squaredNorm() / double(max(Nsites, Index(1)));
       }
     }
 
@@ -111,9 +111,10 @@ namespace CASM {
         //Then undeform by inverse of right stretch
         child_struc.deform_coords(_node.stretch());
 
+        Index cN = _node.lat_node.child.size() * _calculator.struc_info(child_struc).size();
 
         //std::cout << "PARTITIONING NODE\n";
-        Index j, jj, currj;
+        Index j, jj, currj, realj;
         Index n = _node.basis_node.assignment.size();
         MappingNode t1(_node),
                     t2(_node);
@@ -138,7 +139,10 @@ namespace CASM {
           // this involves striking row 0 and col currj from t2's cost_mat
           // and augmenting the cost_offset of t2 by the cost of [0,currj]
           currj = n1.assignment[0];
+          realj = n1.icol[currj];
           n2.cost_offset = n1.cost_offset + n1.cost_mat(0, currj);
+
+
 
           // [0,currj] have local context only. We store the forced assignment in forced_on
           // using the original indexing from n1
@@ -168,6 +172,15 @@ namespace CASM {
           }
           //t2 properly initialized; we can now force OFF [0,currj] in t1, and add it to node list
           n1.cost_mat(0, currj) = StrucMapping::big_inf();
+          // IMPORTANT: If realj>=cN, it is a virtual vacancy.
+          // If we exclude a single virtual vacancy from occupying this parent site, the marginal cost
+          // of assigning a different virtual vacancy to the same site is zero, and the mapping is equivalent.
+          // So, we need to exclude ALL virtual vacancies from occupying this parent site:
+          if(realj >= cN) {
+            for(j = n1.icol.size() - 1; j >= 0 && n1.icol[j] >= cN; --j) {
+              n1.cost_mat(0, j) = StrucMapping::big_inf();
+            }
+          }
           n1.assignment.clear();
           p1->is_viable = true;
           p1->calc();
@@ -331,11 +344,11 @@ namespace CASM {
       if(!identical(basis_node, B.basis_node)) {
         return basis_node < B.basis_node;
       }
-      if(permutation != B.permutation)
-        return std::lexicographical_compare(permutation.begin(),
-                                            permutation.end(),
-                                            B.permutation.begin(),
-                                            B.permutation.end());
+      if(atom_permutation != B.atom_permutation)
+        return std::lexicographical_compare(atom_permutation.begin(),
+                                            atom_permutation.end(),
+                                            B.atom_permutation.begin(),
+                                            B.atom_permutation.end());
 
       return false;
     }
@@ -373,12 +386,13 @@ namespace CASM {
     std::pair<Index, Index> StrucMapper::_vol_range(const SimpleStructure &child_struc) const {
       Index min_vol(0), max_vol(0);
       //mapped_result.clear();
+      SimpleStructure::Info const &c_info(calculator().struc_info(child_struc));
 
       if(calculator().fixed_species().size() > 0) {
         std::string tcompon = calculator().fixed_species().begin()->first;
         int ncompon(0);
-        for(Index i = 0; i < child_struc.n_mol(); i++) {
-          if(child_struc.mol_info.names[i] == tcompon)
+        for(std::string const &sp : c_info.names) {
+          if(sp == tcompon)
             ncompon++;
         }
         min_vol = ncompon / int(calculator().fixed_species().begin()->second);
@@ -503,7 +517,7 @@ namespace CASM {
                                          });
 
 
-      Index k2 = k_best_maps_better_than(child_struc, mapping_seed, k, tol());
+      Index k2 = k_best_maps_better_than(child_struc, mapping_seed, k, tol(), -tol(), false, false, true);
       if(k2 == 0) {
         return MappingNode::invalid();
       }
@@ -520,8 +534,12 @@ namespace CASM {
                                                           bool keep_invalid /*=false*/) const {
       auto vols = _vol_range(child_struc);
       int seed_k = 10 + 5 * k;
+      std::cout << "Search vols: " << vols.first << " to " << vols.second << "\n";
       std::set<MappingNode> mapping_seed = _seed_from_vol_range(child_struc, seed_k, vols.first, vols.second);
-      k_best_maps_better_than(child_struc, mapping_seed, k, max_cost, min_cost, keep_invalid);
+      std::cout << "seed size: " << mapping_seed.size() << "\n";
+      std::cout << "k: " << k << "; max_cost: " << max_cost << "\n";
+      bool no_partition = !(robust & options()) && k <= 1;
+      k_best_maps_better_than(child_struc, mapping_seed, k, max_cost, min_cost, keep_invalid, false, no_partition);
       return mapping_seed;
     }
 
@@ -539,8 +557,9 @@ namespace CASM {
       {Lattice(child_struc.lat_column_mat)},
       k,
       max(min_cost, 1e-5));
+      bool no_partition = !(robust & options()) && k <= 1;
       //std::cout << "Seed size: " << mapping_seed.size() << "\n";
-      k_best_maps_better_than(child_struc, mapping_seed, k, max_cost, min_cost, keep_invalid);
+      k_best_maps_better_than(child_struc, mapping_seed, k, max_cost, min_cost, keep_invalid, false, no_partition);
       return mapping_seed;
     }
 
@@ -555,7 +574,8 @@ namespace CASM {
 
       std::set<MappingNode> mapping_seed;
       mapping_seed.emplace(imposed_node, m_strain_weight);
-      k_best_maps_better_than(child_struc, mapping_seed, k, max_cost, min_cost, keep_invalid);
+      bool no_partition = !(robust & options()) && k <= 1;
+      k_best_maps_better_than(child_struc, mapping_seed, k, max_cost, min_cost, keep_invalid, false, no_partition);
       return mapping_seed;
     }
 

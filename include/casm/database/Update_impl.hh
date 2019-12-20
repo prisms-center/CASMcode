@@ -36,7 +36,8 @@ namespace CASM {
           continue;
         }
         std::string name = val.first;
-        fs::path pos = calc_properties_path(name, primclex());
+        fs::path pos = CASM::calc_properties_path(primclex(), name);
+        std::cout <<  "Attempting to update '" << name << "': " << pos << std::endl;
 
         // reasons to update data or not:
         //
@@ -154,7 +155,7 @@ namespace CASM {
 
       if(success.size()) {
 
-        fs::path p = m_report_dir / (prefix + "_map_success");
+        fs::path p = m_report_dir / (prefix + "_success");
         fs::ofstream sout(p);
 
         primclex().log() << "Successfully mapped " << success.size() << " results." << std::endl;
@@ -165,7 +166,7 @@ namespace CASM {
 
       if(conflict.size()) {
 
-        fs::path p = m_report_dir / (prefix + "_map_conflict");
+        fs::path p = m_report_dir / (prefix + "_conflict");
         fs::ofstream sout(p);
 
         primclex().log() << "WARNING: Found " << conflict.size() << " conflicting relaxation results." << std::endl;

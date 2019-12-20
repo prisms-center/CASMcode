@@ -43,12 +43,14 @@ namespace CASM {
   /// \brief Reorders the permutation and compounds the spatial isometry (rotation + translation) of _node with that of _it
   MappingNode copy_apply(PermuteIterator const &_it, MappingNode const &_node, bool transform_cost_mat = true);
 
-  /// \brief Initializes configdof corresponding to a mapping (encoded by _node) of _child_struc onto _pclex
-  std::pair<ConfigDoF, std::set<std::string> > to_configdof(MappingNode const _node, SimpleStructure const &_child_struc, Supercell const  &_scel);
+  /// \brief Initializes configdof from _child_struc, assuming it has been mapped exactly onto onto _scel
+  /// This means that _child_struc has had its setting resolved using struc_mapper().calculator().resolve_setting()
+  std::pair<ConfigDoF, std::set<std::string> > to_configdof(SimpleStructure const &_child_struc, Supercell const  &_scel);
 
   class PrimStrucMapCalculator : public SimpleStrucMapCalculator {
   public:
     PrimStrucMapCalculator(BasicStructure<Site> const &_prim,
+                           std::vector<SymOp> const &symgroup = {},
                            SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM);
 
   private:
@@ -143,7 +145,7 @@ namespace CASM {
     ConfigMapper(PrimClex const &_pclex,
                  double _strain_weight,
                  double _max_volume_change = 0.5,
-                 int _options = StrucMapper::robust, // this should actually be a bitwise-OR of StrucMapper::Options
+                 int _options = 0, // this should actually be a bitwise-OR of StrucMapper::Options
                  double _tol = -1.);
 
 

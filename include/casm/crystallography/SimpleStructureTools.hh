@@ -7,7 +7,7 @@
 #include "casm/external/Eigen/Dense"
 #include "casm/global/definitions.hh"
 #include "casm/basis_set/DoFDecl.hh"
-
+#include "casm/crystallography/CoordinateSystems.hh"
 
 namespace CASM {
   class jsonParser;
@@ -96,7 +96,8 @@ namespace CASM {
     jsonParser &to_json(xtal::SimpleStructure const &_struc,
                         jsonParser &json_supplement,
                         std::set<std::string> const &excluded_species = {"Va", "VA", "va"},
-                        std::string prefix = "");
+                        std::string prefix = "",
+                        COORD_TYPE mode = CART);
 
     /// \brief Read from JSON
     void from_json(xtal::SimpleStructure &_struc, const jsonParser &json, std::string prefix = "");

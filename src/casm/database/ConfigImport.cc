@@ -5,9 +5,9 @@
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/clex/ConfigMapping.hh"
 #include "casm/app/DirectoryStructure.hh"
-#include "casm/app/import.hh"
-#include "casm/app/update.hh"
-#include "casm/app/rm.hh"
+//#include "casm/app/import.hh"
+//#include "casm/app/update.hh"
+//#include "casm/app/rm.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/PropertiesDatabase.hh"
 #include "casm/database/Selection_impl.hh"
@@ -15,7 +15,7 @@
 #include "casm/database/Update_impl.hh"
 #include "casm/database/ScelDatabase.hh"
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
-#include "casm/basis_set/DoF.hh"
+//#include "casm/basis_set/DoF.hh"
 
 namespace CASM {
 
@@ -23,28 +23,32 @@ namespace CASM {
 
   namespace Local {
 
-    static MappedProperties _make_mapped_properties(ConfigMapperResult::Individual const &map) {
+    static MappedProperties _make_mapped_properties(MappingNode const &_node, ConfigMapperResult::Individual const &_map) {
       MappedProperties result;
 
-      for(auto const &prop : map.resolved_struc.properties) {
-        if(!map.dof_properties.count(prop.first)) {
+      for(auto const &prop : _map.resolved_struc.properties) {
+        if(!_map.dof_properties.count(prop.first)) {
           result.global[prop.first] = prop.second;
           // If "*strain" is a property, rather than a DoF, we will also store the lattice
           if(prop.first.find("strain") != std::string::npos) {
-            result.global["latvec"] = map.resolved_struc.lat_column_mat;
+            result.global["latvec"] = _map.resolved_struc.lat_column_mat;
           }
         }
       }
 
-      for(auto const &prop : map.resolved_struc.mol_info.properties) {
-        if(!map.dof_properties.count(prop.first)) {
+      for(auto const &prop : _map.resolved_struc.mol_info.properties) {
+        if(!_map.dof_properties.count(prop.first)) {
           result.site[prop.first] = prop.second;
           // If "disp" is a property, rather than a DoF, we will also store the coordinates
           if(prop.first == "disp") {
-            result.global["coordinate"] = map.resolved_struc.mol_info.coords;
+            result.site["coordinate"] = _map.resolved_struc.mol_info.coords;
           }
         }
       }
+
+      result.scalar("lattice_deformation_cost") = _node.lat_node.cost;
+      result.scalar("basis_deformation_cost") = _node.basis_node.cost;
+      result.scalar("total_cost") = _node.cost;
       return result;
     }
   }
@@ -71,7 +75,7 @@ namespace CASM {
       // -- construct ConfigMapper --
       int map_opt = StrucMapper::none;
       if(m_set.strict) map_opt |= StrucMapper::strict;
-      if(!m_set.ideal) map_opt |= StrucMapper::robust;
+      //if(!m_set.ideal) map_opt |= StrucMapper::robust;
 
       m_configmapper.reset(new ConfigMapper(
                              primclex,
@@ -118,12 +122,20 @@ namespace CASM {
       ConfigMapperResult map_result = m_configmapper->import_structure(sstruc, hint_config.get());
 
       if(!map_result.success()) {
+        std::cout << "NOT SUCCESS\n";
+        res.properties.file_data = p.string();
+
         res.fail_msg = map_result.fail_msg;
         *result++ = std::move(res);
         return result;
       }
 
+      std::cout << "NMAPS: " << map_result.maps.size() << "\n";
+
       if(map_result.n_optimal() > 1) {
+        res.properties.file_data = p.string();
+
+        std::cout << "TOO MANY\n";
         res.fail_msg = "There were " + std::to_string(map_result.n_optimal()) + " optimal mappings, when only one was expected.";
         *result++ = std::move(res);
         return result;
@@ -136,7 +148,7 @@ namespace CASM {
         res.is_new_config = insert_result.insert_canonical;
 
 
-        res.properties = Local::_make_mapped_properties(map.second);
+        res.properties = Local::_make_mapped_properties(map.first, map.second);
         res.properties.file_data = p.string();
         res.properties.to = insert_result.canonical_it.name();
         if(hint_config)
@@ -530,7 +542,7 @@ namespace CASM {
       ConfigIO::default_import_formatters(dict, db_props(), data_results);
 
       std::vector<std::string> col = {
-        "configname", "selected", "pos", "has_data", "has_complete_data",
+        "to_configname", "selected", "path", "is_new_config", "has_data", "has_complete_data",
         "preexisting_data", "import_data", "import_additional_files",
         "score", "best_score", "is_best",
         "lattice_deformation_cost", "basis_deformation_cost",
@@ -570,10 +582,6 @@ namespace CASM {
       }
       used["force"] = force;
 
-      // get input report_dir, check if exists, and create new report_dir.i if necessary
-      fs::path report_dir = primclex.dir().reports_dir() / "update_report";
-      report_dir = create_report_dir(report_dir);
-
       // 'mapping' subsettings are used to construct ConfigMapper and return 'used' settings values
       // still need to figure out how to specify this in general
       jsonParser map_json;
@@ -593,6 +601,11 @@ namespace CASM {
       Log &log = primclex.log();
       log.read("Settings");
       log << used << std::endl << std::endl;
+
+      // get input report_dir, check if exists, and create new report_dir.i if necessary
+      fs::path report_dir = primclex.dir().reports_dir() / "update_report";
+      report_dir = create_report_dir(report_dir);
+
 
       // -- construct Update --
       Update<Configuration> f(
@@ -616,7 +629,7 @@ namespace CASM {
       ConfigIO::default_update_formatters(dict, db_props());
 
       std::vector<std::string> col = {
-        "configname", "selected", "to_configname", "has_data", "has_complete_data",
+        "from_configname", "selected", "to_configname", "has_data", "has_complete_data",
         "score", "best_score", "is_best",
         "lattice_deformation_cost", "basis_deformation_cost",
         "relaxed_energy"

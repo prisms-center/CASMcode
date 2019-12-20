@@ -105,7 +105,7 @@ namespace CASM {
 
       Coordinate t_shift =
         copy_apply(SymOp::point_op(from_node.lat_node.isometry), first_site)
-        - Coordinate(scel_ptr->uccoord(find_index(from_node.permutation, 0)));
+        - Coordinate(scel_ptr->uccoord(find_index(from_node.atom_permutation, 0)));
       t_shift.set_lattice(primclex().prim().lattice(), CART);
 
       //std::cout << "t shift " << t_shift.const_frac() << std::endl;
@@ -129,7 +129,7 @@ namespace CASM {
       //from.print_xyz(std::cout,true);
       //std::cout << "to struc" << std::endl;
       //to.print_xyz(std::cout,true);
-      double uccoord_tol = 1.1 * max(from_node.displacement.colwise().norm().maxCoeff(), to_node.displacement.colwise().norm().maxCoeff()) + cuberoot(abs(scel_ptr->lattice().vol())) * primclex().crystallography_tol();
+      double uccoord_tol = 1.1 * max(from_node.atom_displacement.colwise().norm().maxCoeff(), to_node.atom_displacement.colwise().norm().maxCoeff()) + cuberoot(abs(scel_ptr->lattice().vol())) * primclex().crystallography_tol();
       //std::cout << "uccoord_tol " << uccoord_tol <<std::endl;
       std::vector<Index> moving_atoms = _analyze_atoms_ideal(from,
                                                              to,
@@ -158,7 +158,7 @@ namespace CASM {
       {
         SimpleStructure oriented_struc = mapper.struc_mapper().calculator().resolve_setting(from_node, from_child);
 
-        auto tdof = to_configdof(from_node, oriented_struc, *scel_ptr);
+        auto tdof = to_configdof(oriented_struc, *scel_ptr);
         Configuration from_config(scel_ptr, jsonParser(), tdof.first);
 
         //Configuration from_config(Configuration::zeros(scel_ptr));
