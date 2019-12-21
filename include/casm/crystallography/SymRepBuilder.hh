@@ -204,7 +204,7 @@ namespace CASM {
                                             Eigen::Ref<const Eigen::Vector3d> const &_tau,
                                             bool time_reversal,
                                             Index dim) const override
-        {return Eigen::MatrixXd();}
+        {return Eigen::MatrixXd::Identity(30,30);}
 
     private:
         SymRepBuilderInterface *_clone() const override {

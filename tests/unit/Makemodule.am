@@ -199,6 +199,7 @@ casm_unit_crystallography_SOURCES = \
     tests/unit/crystallography/Site_test.cpp\
     tests/unit/crystallography/Structure_test.cpp\
     tests/unit/crystallography/SuperlatticeEnumerator_test.cpp\
+    tests/unit/crystallography/SymRepBuilder_test.cpp\
     tests/unit/crystallography/UnitCellCoord_test.cpp\
     tests/unit/gtest_main_run_all.cpp
 casm_unit_crystallography_LDADD = \
