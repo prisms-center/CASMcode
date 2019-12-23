@@ -18,6 +18,10 @@ namespace CASM {
     class SimpleStructure;
   }
 
+  namespace ConfigMapping {
+    struct Settings;
+  }
+
   using xtal::SimpleStructure;
 
   class PrimClex;
@@ -37,11 +41,11 @@ namespace CASM {
       using ConfigType = Kinetics::DiffTransConfiguration;
 
       /// Construct with PrimClex and by moving a ConfigMapper
-      StructureMap(MappingSettings const &_set,
-                   std::unique_ptr<Kinetics::DiffTransConfigMapper> mapper);
+      //StructureMap(ConfigMapping::Settings const &_set,
+      //           std::unique_ptr<Kinetics::DiffTransConfigMapper> mapper);
 
       /// Construct with PrimClex and settings (see Import / Update desc)
-      StructureMap(MappingSettings const &_set,
+      StructureMap(ConfigMapping::Settings const &_set,
                    const PrimClex &primclex);
 
       typedef std::back_insert_iterator<std::vector<ConfigIO::Result> > map_result_inserter;
@@ -64,9 +68,7 @@ namespace CASM {
         map_result_inserter result) const;
 
       /// Returns JSON with settings used after combing constructor input and defaults
-      const MappingSettings &settings() const {
-        return m_set;
-      }
+      const ConfigMapping::Settings &settings() const;
 
 
     private:
@@ -76,8 +78,6 @@ namespace CASM {
 
       /// \brief Read SimpleStructure to be imported
       SimpleStructure _make_structure(const fs::path &p) const;
-
-      MappingSettings m_set;
 
       std::unique_ptr<Kinetics::DiffTransConfigMapper> m_difftransconfigmapper;
     };

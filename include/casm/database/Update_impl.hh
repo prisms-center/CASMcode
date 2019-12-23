@@ -37,7 +37,6 @@ namespace CASM {
         }
         std::string name = val.first;
         fs::path pos = CASM::calc_properties_path(primclex(), name);
-        std::cout <<  "Attempting to update '" << name << "': " << pos << std::endl;
 
         // reasons to update data or not:
         //
@@ -58,6 +57,7 @@ namespace CASM {
         if(!has_existing_files(name) || !fs::exists(pos) || (!force && no_change(name))) {
           continue;
         }
+
         // erase existing data (not files), unlinking relaxation mappings && resetting 'best' data
         db_props().erase_via_from(name);
 

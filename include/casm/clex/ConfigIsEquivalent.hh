@@ -22,24 +22,40 @@ namespace CASM {
   public:
     using EquivPtr = notstd::cloneable_ptr<ConfigDoFIsEquivalent::Base>;
 
-    ConfigIsEquivalent(const Configuration &_config, double _tol) :
+    /// Construct with config to be compared against, tolerance for comparison, and (optional) list of DoFs to compare
+    /// if _wich_dofs is empty, all dofs will be compared
+    ConfigIsEquivalent(const Configuration &_config,
+                       double _tol,
+                       std::set<std::string> const &_which_dofs = {"all"}) :
       m_config(&_config) {
 
-      for(auto const &dof : config().configdof().global_dofs())
-        m_global_equivs.push_back(notstd::make_cloneable<ConfigDoFIsEquivalent::Global>(_config, dof.first, _tol));
+      bool all_dofs = false;
+      if(_which_dofs.count("all")) {
+        all_dofs = true;
+      }
 
-      if(config().supercell().sym_info().has_aniso_occs())
-        m_local_equivs.push_back(notstd::make_cloneable<ConfigDoFIsEquivalent::AnisoOccupation>(_config.configdof()));
-      else if(config().supercell().sym_info().has_occupation_dofs())
-        m_local_equivs.push_back(notstd::make_cloneable<ConfigDoFIsEquivalent::Occupation>(_config.configdof()));
+      for(auto const &dof : config().configdof().global_dofs()) {
+        if(all_dofs || _which_dofs.count(dof.first)) {
+          m_global_equivs.push_back(notstd::make_cloneable<ConfigDoFIsEquivalent::Global>(_config, dof.first, _tol));
+        }
+      }
 
-      for(auto const &dof : config().configdof().local_dofs())
-        m_local_equivs.push_back(notstd::make_cloneable<ConfigDoFIsEquivalent::Local>(_config, dof.first, _tol));
+      if(all_dofs || _which_dofs.count("occ")) {
+        if(config().supercell().sym_info().has_aniso_occs())
+          m_local_equivs.push_back(notstd::make_cloneable<ConfigDoFIsEquivalent::AnisoOccupation>(_config.configdof()));
+        else if(config().supercell().sym_info().has_occupation_dofs())
+          m_local_equivs.push_back(notstd::make_cloneable<ConfigDoFIsEquivalent::Occupation>(_config.configdof()));
+      }
 
+      for(auto const &dof : config().configdof().local_dofs()) {
+        if(all_dofs || _which_dofs.count(dof.first)) {
+          m_local_equivs.push_back(notstd::make_cloneable<ConfigDoFIsEquivalent::Local>(_config, dof.first, _tol));
+        }
+      }
     }
 
-    ConfigIsEquivalent(const Configuration &_config) :
-      ConfigIsEquivalent(_config, _config.crystallography_tol()) {}
+    ConfigIsEquivalent(const Configuration &_config, std::set<std::string> const &_which_dofs = {}) :
+      ConfigIsEquivalent(_config, _config.crystallography_tol(), _which_dofs) {}
 
     const Configuration &config() const {
       return *m_config;

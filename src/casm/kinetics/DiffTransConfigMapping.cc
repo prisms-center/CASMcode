@@ -30,20 +30,12 @@ namespace CASM {
     //*******************************************************************************************
 
     DiffTransConfigMapper::DiffTransConfigMapper(const PrimClex &_pclex,
-                                                 double _lattice_weight,
-                                                 double _max_volume_change/*=0.5*/,
-                                                 int options/*=StrucMapper::robust*/,
+                                                 ConfigMapping::Settings const &_settings,
                                                  double _tol/*=TOL*/) :
       m_pclex(&_pclex),
-      m_lattice_weight(_lattice_weight),
-      m_max_volume_change(_max_volume_change),
-      m_min_va_frac(0.),
-      m_max_va_frac(1.),
-      m_options(options),
+      m_settings(_settings),
       m_tol(max(1e-9, _tol)) {
       //squeeze lattice_weight into (0,1] if necessary
-      m_lattice_weight = max(min(_lattice_weight, 1.0), 1e-9);
-      m_max_volume_change = max(m_tol, _max_volume_change);
     }
 
     //*******************************************************************************************
@@ -60,19 +52,9 @@ namespace CASM {
       DiffTransConfigMapperResult result;
       result.structures = _get_structures(pos_path);
       ConfigMapper mapper(primclex(),
-                          lattice_weight(),
-                          m_max_volume_change,
-                          m_options,
+                          this->settings(),
                           primclex().crystallography_tol());
       //Find out which species are moving from which basis site to the other
-      mapper.struc_mapper().set_max_va_frac(m_max_va_frac);
-      mapper.struc_mapper().set_min_va_frac(m_min_va_frac);
-      if(m_restricted) {
-        mapper.struc_mapper().restricted();
-      }
-      if(m_lattices_to_force.size()) {
-        mapper.add_allowed_lattices(m_lattices_to_force);
-      }
       if(hint_ptr != nullptr) {
         Configuration tmp = hint_ptr->from_config().canonical_form();
         std::vector<std::string> scelname;

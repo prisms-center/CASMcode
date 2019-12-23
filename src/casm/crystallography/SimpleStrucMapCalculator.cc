@@ -255,11 +255,6 @@ namespace CASM {
         return false;
       }
       Index residual = pN - cN;
-      std::cout << "pN: " << pN << "; cN: " << cN  << " pgrid.size(): " << pgrid.size() << "; va_allowed: ";
-      for(Index i : this->va_allowed())
-        std::cout << " " << i;
-      std::cout << "\n";
-
       if(residual > this->max_n_va()*pgrid.size()) {
         //std::cout << "Parent cannot accommodate enough vacancies to make mapping possible.\n";
         return false;

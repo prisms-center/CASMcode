@@ -3,7 +3,6 @@
 
 #include <boost/filesystem.hpp>
 #include "casm/global/definitions.hh"
-//#include "casm/clex/ConfigMapping.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/dataformatter/DataFormatter.hh"
 #include "casm/casm_io/dataformatter/DataFormatterTools.hh"
@@ -26,58 +25,6 @@ namespace CASM {
   class Supercell;
 
   namespace DB {
-
-    /// \brief Struct with optional parameters for Config Mapping
-    /// Specifies default parameters for all values, in order to simplify
-    /// parsing from JSON
-    struct MappingSettings {
-      MappingSettings(double _lattice_weight = 0.5,
-                      bool _ideal = false,
-                      bool _strict = false,
-                      bool _primitive_only = false,
-                      bool _fix_volume = false,
-                      bool _fix_lattice = false,
-                      std::vector<std::string> _forced_lattices = {},
-                      std::string _filter = "",
-                      double _cost_tol = CASM::TOL,
-                      double _min_va_frac = 0.,
-                      double _max_va_frac = 0.5,
-                      double _max_vol_change = 0.3) :
-        lattice_weight(_lattice_weight),
-        ideal(_ideal),
-        strict(_strict),
-        primitive_only(_primitive_only),
-        fix_volume(_fix_volume),
-        fix_lattice(_fix_lattice),
-        forced_lattices(_forced_lattices),
-        filter(_filter),
-        cost_tol(_cost_tol),
-        min_va_frac(_min_va_frac),
-        max_va_frac(_max_va_frac),
-        max_vol_change(_max_vol_change) {}
-
-      void set_default() {
-        *this = MappingSettings();
-      }
-
-      double lattice_weight;
-      bool ideal;
-      bool strict;
-      bool primitive_only;
-      bool fix_volume;
-      bool fix_lattice;
-      std::vector<std::string> forced_lattices;
-      std::string filter;
-      double cost_tol;
-      double min_va_frac;
-      double max_va_frac;
-      double max_vol_change;
-
-    };
-
-    jsonParser &to_json(MappingSettings const &_set, jsonParser &_json);
-
-    jsonParser const &from_json(MappingSettings &_set, jsonParser const &_json);
 
     template<typename T> class Selection;
     template<typename ValueType> class Database;

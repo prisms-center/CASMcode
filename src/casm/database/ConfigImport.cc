@@ -4,6 +4,7 @@
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/clex/ConfigMapping.hh"
+#include "casm/clex/io/json/ConfigMapping.hh"
 #include "casm/app/DirectoryStructure.hh"
 //#include "casm/app/import.hh"
 //#include "casm/app/update.hh"
@@ -27,7 +28,7 @@ namespace CASM {
       MappedProperties result;
 
       for(auto const &prop : _map.resolved_struc.properties) {
-        if(!_map.dof_properties.count(prop.first)) {
+        if(!_map.dof_managed_properties.count(prop.first)) {
           result.global[prop.first] = prop.second;
           // If "*strain" is a property, rather than a DoF, we will also store the lattice
           if(prop.first.find("strain") != std::string::npos) {
@@ -37,7 +38,7 @@ namespace CASM {
       }
 
       for(auto const &prop : _map.resolved_struc.mol_info.properties) {
-        if(!_map.dof_properties.count(prop.first)) {
+        if(!_map.dof_managed_properties.count(prop.first)) {
           result.site[prop.first] = prop.second;
           // If "disp" is a property, rather than a DoF, we will also store the coordinates
           if(prop.first == "disp") {
@@ -59,36 +60,27 @@ namespace CASM {
 
     // --- Import<Configuration> ---
 
+    ConfigMapping::Settings const &StructureMap<Configuration>::settings()const {
+      return m_configmapper->settings();
+    }
+
     /// Construct with PrimClex and by moving a ConfigMapper
-    //StructureMap<Configuration>::StructureMap(MappingSettings const &_set,
+    //StructureMap<Configuration>::StructureMap(ConfigMapping::Settings const &_set,
     //                                          std::unique_ptr<ConfigMapper> mapper) :
-    //m_set(_set),
     //m_configmapper(std::move(mapper)) {
 
     //}
 
-    /// Construct with PrimClex and MappingSettings (see Import / Update desc)
-    StructureMap<Configuration>::StructureMap(MappingSettings const &_set,
-                                              const PrimClex &primclex) :
-      m_set(_set) {
+    /// Construct with PrimClex and ConfigMapping::Settings (see Import / Update desc)
+    StructureMap<Configuration>::StructureMap(ConfigMapping::Settings const &_set,
+                                              const PrimClex &primclex) {
+
 
       // -- construct ConfigMapper --
-      int map_opt = StrucMapper::none;
-      if(m_set.strict) map_opt |= StrucMapper::strict;
-      //if(!m_set.ideal) map_opt |= StrucMapper::robust;
-
       m_configmapper.reset(new ConfigMapper(
                              primclex,
-                             m_set.lattice_weight,
-                             m_set.max_vol_change,
-                             map_opt,
+                             _set,
                              primclex.crystallography_tol()));
-      m_configmapper->struc_mapper().set_min_va_frac(m_set.min_va_frac);
-      m_configmapper->struc_mapper().set_max_va_frac(m_set.max_va_frac);
-
-      //If the settings specified at least one lattice, then force that on the configmapper
-      if(m_set.forced_lattices.size())
-        m_configmapper->add_allowed_lattices(m_set.forced_lattices);
     }
 
     /// \brief Specialized import method for ConfigType
@@ -301,13 +293,22 @@ namespace CASM {
       "        allows as few as 0% of sites to be vacant.\n\n"
 
       "    ideal: bool (optional, default=false)\n"
-      "        Assume imported structures are unstrained (ideal) for faster importing.\n"
-      "        Can be slower if used on deformed structures, in which case more \n"
-      "        robust methods will be used\n\n"
+      "        Assume imported structures are in the setting of the ideal crytal.\n"
+      "        This results in faster mapping, but may not identify the ideal mapping.\n"
+      "        If large mapping costs are encountered, try re-running with ideal : false\n\n"
+
+      "    robust: bool (optional, default=false)\n"
+      "        Perform additional checks to determine if mapping is degenerate in cost\n"
+      "        to other mappings, which can occur if the imported structure has symmetry\n"
+      "        that is incompatible with prim.json. Results in slower execution.\n\n"
+
+      "    filter: string (optional) \n"
+      "        Restricts the import to only consider supercells that match a provided\n"
+      "        casm query expression.\n\n"
 
       "    forced_lattices: array of strings (optional) \n"
       "        Restricts the import to only consider supercells provided via a list of\n"
-      "        a list of their conventional names (i.e., \"SCEL2_2_1_1_1_1_0\").\n"
+      "        a list of their conventional names (i.e., \"SCEL2_2_1_1_1_1_0\").\n\n"
 
       "  data: JSON object (optional)\n"
       "      A JSON object containing the following options controlling when calculated \n"
@@ -345,7 +346,7 @@ namespace CASM {
 
       // -- collect input settings --
 
-      MappingSettings map_settings;
+      ConfigMapping::Settings map_settings;
       if(kwargs.contains("mapping"))
         from_json(map_settings, kwargs["mapping"]);
 
@@ -407,13 +408,7 @@ namespace CASM {
       "     - Initial configuration and relaxed configuration \n\n"
       "   - If multiple configurations relax onto a configuration for which there \n"
       "     is no calculation data, the calculation data from the with the lowest \n"
-      "     conflict resolution score is used for the relaxed configuration.\n"
-      "   - Both default and configuration-specific conflict resolution scoring\n"
-      "     method can be set via: \n"
-      "       'casm update --set-default-conflict-score -i <JSON>'\n"
-      "       'casm update --set-default-conflict-score -s <JSON filename>'\n"
-      "       'casm update --set-conflict-score configname -i <JSON>'\n"
-      "       'casm update --set-conflict-score configname -s <JSON filename>'\n"
+      "     conflict resolution score is used for the relaxed configuration.\n\n"
 
       "Settings: \n\n"
 
@@ -421,9 +416,17 @@ namespace CASM {
       "    Force update all specified Configuration, else use timestamps to       \n"
       "    determine which to update. \n"
 
+      "Settings: \n\n"
+
       "  mapping: JSON object (optional)\n"
       "      A JSON object containing the following options controlling the structure-\n"
       "      mapping algorithm:\n"
+
+      "    primitive_only: bool (optional, default=false)\n"
+      "        By convention, primitive configurations are always imported along with \n"
+      "        non-primitive configurations. If false, only the primitive configuration\n"
+      "        will be imported. Note: data from non-primitive configurations is never\n"
+      "        used for primitive configurations.\n\n"
 
       "    lattice_weight: number in range [0.0, 1.0] (optional, default=0.5) \n"
       "        Candidate configurations are compared using \"deformation_cost\" to \n"
@@ -459,17 +462,34 @@ namespace CASM {
       "        allows as few as 0% of sites to be vacant.\n\n"
 
       "    ideal: bool (optional, default=false)\n"
-      "        Assume imported structures are unstrained (ideal) for faster importing.\n"
-      "        Can be slower if used on deformed structures, in which case more \n"
-      "        robust methods will be used\n\n"
+      "        Assume imported structures are in the setting of the ideal crytal.\n"
+      "        This results in faster mapping, but may not identify the ideal mapping.\n"
+      "        If large mapping costs are encountered, try re-running with ideal : false\n\n"
 
-      "Conflict Resolution: \n\n"
+      "    fix_volume: bool (optional, default=false)\n"
+      "        Assume imported structures have the same integer volume as the starting\n"
+      "        configuration. All supercells of this volume are considered for mapping.\n"
+      "        This assumption may fail for systems that allow vacancies, when vacancy\n"
+      "        concentration is high. Increases execution speed in these cases.\n\n"
 
-      "  Which metric should be used to determine which calculation results \n"
-      "  should be used for a particular configuration if multiple results\n"
-      "  map to the same configuration and the self-mapping result is not \n"
-      "  available. Should consist of a \"method\" and method-dependent \n"
-      "  parameters. The \"method\" options and associated parameters are: \n"
+      "    fix_lattice: bool (optional, default=false)\n"
+      "        Assume imported structures have the same lattice as the starting configuration\n"
+      "        Only this supercell will be considered for mapping, but all orientational\n"
+      "        relationships will still be considered. Increases execution speed, especially\n"
+      "        at large supercell volume, but cannot detect relaxation to a different supercell.\n\n"
+
+      "    robust: bool (optional, default=false)\n"
+      "        Perform additional checks to determine if mapping is degenerate in cost\n"
+      "        to other mappings, which can occur if the imported structure has symmetry\n"
+      "        that is incompatible with prim.json. Results in slower execution.\n\n"
+
+      "  data: JSON object (optional)\n"
+      "      A JSON object containing the following options controlling how calculated \n"
+      "      properties are updated. After structural relaxation, a structural that \n"
+      "      began as structure 'A' may map more closely onto a different structure, 'B'\n"
+      "      In some cases, multiple structures may map onto the same 'B', and a scoring\n"
+      "      metric is used to specify which set of calculation data is associated with \n"
+      "      configuration 'B'. The following values determine the scoring metric:\n\n"
 
       "    \"deformation_cost\":\n"
       "       \"lattice_weight\": number, in range [0, 1.0]\n"
@@ -586,7 +606,7 @@ namespace CASM {
       // still need to figure out how to specify this in general
       jsonParser map_json;
       kwargs.get_else(map_json, "mapping", jsonParser());
-      MappingSettings map_settings = map_json.get<MappingSettings>();
+      ConfigMapping::Settings map_settings = map_json.get<ConfigMapping::Settings>();
       map_settings.primitive_only = true;
 
       StructureMap<Configuration> mapper(map_settings, primclex);

@@ -15,6 +15,9 @@ namespace CASM {
   }
   using xtal::SimpleStructure;
 
+  namespace ConfigMapping {
+    struct Settings;
+  }
 
   class ConfigMapper;
   class Configuration;
@@ -31,12 +34,12 @@ namespace CASM {
     public:
 
       /// Construct with PrimClex and by moving a ConfigMapper
-      StructureMap<Configuration>(MappingSettings const &_set,
-                                  std::unique_ptr<ConfigMapper> mapper);
+      //StructureMap<Configuration>(ConfigMapping::Settings const &_set,
+      //                          std::unique_ptr<ConfigMapper> mapper);
 
 
       /// Construct with PrimClex and settings (see Import / Update desc)
-      StructureMap<Configuration>(MappingSettings const &_set,
+      StructureMap<Configuration>(ConfigMapping::Settings const &_set,
                                   const PrimClex &_primclex);
 
 
@@ -60,18 +63,14 @@ namespace CASM {
                               std::unique_ptr<Configuration> const &hint_config,
                               map_result_inserter result) const;
 
-      /// Returns settings used for import
-      const MappingSettings &settings() const {
-        return m_set;
-      }
-
+      /// Returns settings used for mapping
+      const ConfigMapping::Settings &settings() const;
 
     private:
 
       /// \brief Read SimpleStructure to be imported
       SimpleStructure _make_structure(const fs::path &p) const;
 
-      MappingSettings m_set;
       std::unique_ptr<ConfigMapper> m_configmapper;
     };
 

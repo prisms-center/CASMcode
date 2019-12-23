@@ -203,6 +203,8 @@ namespace CASM {
                              Index child_N_atom,
                              double _cost /*=StrucMapping::big_inf()*/) :
       parent(parent_prim, parent_scel),
+      // Transform child_prim lattice to its idealized state using same F.inverse
+      // as below, but inline:
       child(Lattice((parent_scel.lat_column_mat() * child_scel.inv_lat_column_mat())
                     * child_prim.lat_column_mat()),
             parent_scel),
@@ -478,7 +480,11 @@ namespace CASM {
      */
     //*******************************************************************************************
 
-    MappingNode StrucMapper::map_ideal_struc(const SimpleStructure &child_struc, Index k) const {
+    std::set<MappingNode> StrucMapper::map_ideal_struc(const SimpleStructure &child_struc,
+                                                       Index k,
+                                                       double max_cost /*=StrucMapping::big_inf()*/,
+                                                       double min_cost /*=-TOL*/,
+                                                       bool keep_invalid /*=false*/) const {
 
       // xtal::is_superlattice isn't very smart right now, and will return
       // false if the two lattices differ by a rigid rotation
@@ -495,7 +501,7 @@ namespace CASM {
       bool c_lat_is_supercell_of_parent;
       std::tie(c_lat_is_supercell_of_parent, trans_mat) = xtal::is_superlattice(c_lat, Lattice(parent().lat_column_mat), c_lat.tol());
       if(!c_lat_is_supercell_of_parent) {
-        return MappingNode::invalid();
+        return {};
       }
 
       // We know child_struc.lattice() is a supercell of the prim, now we have to
@@ -506,23 +512,15 @@ namespace CASM {
       // We now find a transformation matrix of c_lat so that, after transformation, it is related
       // to derot_c_lat by rigid rotation only. Following line finds R and T such that derot_c_lat = R*c_lat*T
       auto res = xtal::is_equivalent_superlattice(derot_c_lat, c_lat, calculator().point_group().begin(), calculator().point_group().end(), tol());
+      LatticeNode lat_node(Lattice(parent().lat_column_mat, tol()),
+                           derot_c_lat,
+                           c_lat,
+                           Lattice(child_struc.lat_column_mat * res.second.cast<double>(), tol()),
+                           _n_species(child_struc),
+                           0. /*strain_cost is zero in ideal case*/);
 
-      std::set<MappingNode> mapping_seed({MappingNode(LatticeNode(Lattice(parent().lat_column_mat, tol()),
-                                                                  derot_c_lat,
-                                                                  c_lat,
-                                                                  Lattice(child_struc.lat_column_mat * res.second.cast<double>(), tol()),
-                                                                  _n_species(child_struc),
-                                                                  0. /*strain_cost is zero in ideal case*/),
-                                                      m_strain_weight)
-                                         });
+      return map_deformed_struc_impose_lattice_node(child_struc, lat_node, k, max_cost, min_cost, keep_invalid);
 
-
-      Index k2 = k_best_maps_better_than(child_struc, mapping_seed, k, tol(), -tol(), false, false, true);
-      if(k2 == 0) {
-        return MappingNode::invalid();
-      }
-
-      return *(mapping_seed.begin());
     }
 
     //*******************************************************************************************
@@ -533,13 +531,24 @@ namespace CASM {
                                                           double min_cost /*=-TOL*/,
                                                           bool keep_invalid /*=false*/) const {
       auto vols = _vol_range(child_struc);
+      return map_deformed_struc_impose_lattice_vols(child_struc, vols.first, vols.second, k, max_cost, min_cost, keep_invalid);
+    }
+
+    //*******************************************************************************************
+
+    std::set<MappingNode> StrucMapper::map_deformed_struc_impose_lattice_vols(const SimpleStructure &child_struc,
+                                                                              Index min_vol,
+                                                                              Index max_vol,
+                                                                              Index k /*=1*/,
+                                                                              double max_cost /*=StrucMapping::big_inf()*/,
+                                                                              double min_cost /*=-TOL*/,
+                                                                              bool keep_invalid /*=false*/) const {
+
       int seed_k = 10 + 5 * k;
-      std::cout << "Search vols: " << vols.first << " to " << vols.second << "\n";
-      std::set<MappingNode> mapping_seed = _seed_from_vol_range(child_struc, seed_k, vols.first, vols.second);
-      std::cout << "seed size: " << mapping_seed.size() << "\n";
-      std::cout << "k: " << k << "; max_cost: " << max_cost << "\n";
+      std::set<MappingNode> mapping_seed = _seed_from_vol_range(child_struc, seed_k, min_vol, max_vol);
       bool no_partition = !(robust & options()) && k <= 1;
       k_best_maps_better_than(child_struc, mapping_seed, k, max_cost, min_cost, keep_invalid, false, no_partition);
+
       return mapping_seed;
     }
 
@@ -582,27 +591,25 @@ namespace CASM {
     //*******************************************************************************************
 
     std::vector<Lattice> StrucMapper::_lattices_of_vol(Index prim_vol) const {
-      if(!m_restricted) {
-        //If you specified that you wanted certain lattices, return those, otherwise do the
-        //usual enumeration
-        if(this->lattices_constrained()) {
-          //This may very well return an empty vector, saving painful time enumerating things
-          return m_allowed_superlat_map[prim_vol];
-        }
 
-        if(!valid_index(prim_vol)) {
-          throw std::runtime_error("Cannot enumerate lattice of volume " + std::to_string(prim_vol) + ", which is out of bounds.\n");
-        }
-
-        //If we already have candidate lattices for the given volume, return those
-        auto it = m_superlat_map.find(prim_vol);
-        if(it != m_superlat_map.end())
-          return it->second;
+      if(!valid_index(prim_vol)) {
+        throw std::runtime_error("Cannot enumerate lattice of volume " + std::to_string(prim_vol) + ", which is out of bounds.\n");
       }
 
+      //If you specified that you wanted certain lattices, return those, otherwise do the
+      //usual enumeration
+      if(this->lattices_constrained()) {
+        //This may very well return an empty vector, saving painful time enumerating things
+        return m_allowed_superlat_map[prim_vol];
+      }
+
+      //If we already have candidate lattices for the given volume, return those
+      auto it = m_superlat_map.find(prim_vol);
+      if(it != m_superlat_map.end())
+        return it->second;
+
       //We don't have any lattices for the provided volume, enumerate them all!!!
-      std::vector<Lattice> tlat_vec;
-      std::vector<Lattice> &lat_vec = (m_restricted ? tlat_vec : m_superlat_map[prim_vol]);
+      std::vector<Lattice> &lat_vec = m_superlat_map[prim_vol];
 
       auto pg = calculator().point_group();
       SuperlatticeEnumerator enumerator(pg.begin(), pg.end(), Lattice(parent().lat_column_mat),

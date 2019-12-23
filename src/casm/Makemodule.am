@@ -780,7 +780,6 @@ libcasm_la_SOURCES = \
     src/casm/clex/ConfigIONovelty.cc\
     src/casm/clex/ConfigIOStrain.cc\
     src/casm/clex/ConfigIOStrucScore.cc\
-    src/casm/clex/ConfigIsEquivalent.cc\
     src/casm/clex/ConfigMapping.cc\
     src/casm/clex/Configuration.cc\
     src/casm/clex/ConfigurationTraits.cc\
@@ -798,7 +797,6 @@ libcasm_la_SOURCES = \
     src/casm/clex/Supercell.cc\
     src/casm/clex/SupercellIO.cc\
     src/casm/clex/SupercellTraits.cc\
-    src/casm/clex/Supercell_functions.cc\
     src/casm/clusterography/ClusterOrbits.cc\
     src/casm/clusterography/ClusterSpecsParser.cc\
     src/casm/clusterography/IntegralCluster.cc\
@@ -846,7 +844,6 @@ libcasm_la_SOURCES = \
     src/casm/database/ScelDatabase.cc\
     src/casm/database/Selected.cc\
     src/casm/database/Selection.cc\
-    src/casm/database/Update.cc\
     src/casm/database/json/jsonDatabase.cc\
     src/casm/database/json/jsonPropertiesDatabase.cc\
     src/casm/enumerator/EnumInputParser.cc\

@@ -535,11 +535,9 @@ namespace CASM {
 
         if(vm.count("add-canonical")) {
 
-          int map_opt = StrucMapper::none;
           double tol = TOL;
-          double vol_tol = 0.25;
-          double lattice_weight = 0.5;
-          ConfigMapper configmapper(primclex, lattice_weight, vol_tol, map_opt, tol);
+
+          ConfigMapper configmapper(primclex, ConfigMapping::Settings(), tol);
 
           auto map_res = configmapper.import_structure(make_simple_structure(super));
 

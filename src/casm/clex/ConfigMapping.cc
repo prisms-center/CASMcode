@@ -7,6 +7,7 @@
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/ParamComposition.hh"
 #include "casm/strain/StrainConverter.hh"
+#include "casm/clex/ConfigIsEquivalent.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/crystallography/LatticeMap.hh"
@@ -149,14 +150,6 @@ namespace CASM {
         }
         ++i;
       }
-      std::cout << "allowed_species: \n";
-      for(auto const &el : result) {
-        for(auto const &sp : el) {
-          std::cout << sp << "  ";
-        }
-        std::cout << "\n";
-      }
-      std::cout << "\n";
 
       return result;
     }
@@ -285,31 +278,54 @@ namespace CASM {
       auto it = primclex().template db<Supercell>().find(_name);
       if(it == primclex().template db<Supercell>().end())
         throw std::runtime_error("Could not add mapping lattice constraint " + _name + " because no supercell having that name exists in database.\n");
-      struc_mapper().add_allowed_lattice(it->lattice());
+      m_struc_mapper.add_allowed_lattice(it->lattice());
     }
   }
 
 
   //*******************************************************************************************
 
+  void ConfigMapper::clear_allowed_lattices() {
+    m_struc_mapper.clear_allowed_lattices();
+  }
+
+  //*******************************************************************************************
+
   ConfigMapper::ConfigMapper(PrimClex const &_pclex,
-                             double _strain_weight,
-                             double _max_volume_change/*=0.5*/,
-                             int options/*=robust*/,
+                             ConfigMapping::Settings const &_settings,
                              double _tol/*=-1.*/) :
     m_pclex(&_pclex),
     m_struc_mapper(PrimStrucMapCalculator(_pclex.prim(),
                                           _pclex.prim().factor_group()),
-                   _strain_weight,
-                   _max_volume_change,
-                   options,
-                   _tol > 0. ? _tol : _pclex.crystallography_tol()) {
+                   _settings.lattice_weight,
+                   _settings.max_vol_change,
+                   _settings.options(),
+                   _tol > 0. ? _tol : _pclex.crystallography_tol(),
+                   _settings.min_va_frac,
+                   _settings.max_va_frac),
+    m_settings(_settings) {
 
+
+    for(std::string const &scel : settings().forced_lattices) {
+      auto it = _pclex.db<Supercell>().find(scel);
+      if(it == _pclex.db<Supercell>().end())
+        throw std::runtime_error("Cannot restrict mapping to lattice " + scel + ". Superlattice does not exist in project.");
+      m_struc_mapper.add_allowed_lattice(it->lattice());
+    }
+  }
+
+  //*******************************************************************************************
+  ConfigMapperResult ConfigMapper::import_structure(SimpleStructure const &_child_struc,
+                                                    Configuration const *hint_ptr,
+                                                    std::vector<DoFKey> const &_hint_dofs) const {
+
+    return import_structure(_child_struc, settings().k_best, hint_ptr, _hint_dofs);
   }
 
   //*******************************************************************************************
 
   ConfigMapperResult ConfigMapper::import_structure(SimpleStructure const &child_struc,
+                                                    Index k,
                                                     Configuration const *hint_ptr,
                                                     std::vector<DoFKey> const &_hint_dofs) const {
     //std::cout << "Importing:\n";
@@ -323,7 +339,7 @@ namespace CASM {
     double best_cost = xtal::StrucMapping::big_inf();
 
     //bool is_new_config(true);
-
+    double hint_cost;
     if(hint_ptr != nullptr) {
       StrucMapper tmapper(*struc_mapper().calculator().quasi_clone(xtal::make_simple_structure(*hint_ptr, _hint_dofs),
                                                                    make_point_group(hint_ptr->point_group()),
@@ -344,12 +360,11 @@ namespace CASM {
                                                                             Lattice(child_struc.lat_column_mat),
                                                                             Lattice(child_struc.lat_column_mat),
                                                                             child_struc.atom_info.size()),
-                                                                        1);
+                                                                        k);
 
-      std::cout << "CONFIG_MAPS SIZE: " << config_maps.size() << "\n";
       // Refactor into external routine A. This is too annoying with the current way that supercells are managed
       if(!config_maps.empty()) {
-        best_cost = config_maps.begin()->cost;
+        hint_cost = best_cost = config_maps.rbegin()->cost;
         /*const Supercell &scel(hint_ptr->supercell());
         for(auto const &map : config_maps) {
           SimpleStructure resolved_struc = tmapper.calculator().resolve_setting(map, child_struc);
@@ -374,18 +389,49 @@ namespace CASM {
     }
 
 
-    auto struc_maps = struc_mapper().map_deformed_struc(child_struc,
-                                                        1,
-                                                        best_cost + struc_mapper().tol());
+    std::set<MappingNode> struc_maps;
+
+    if(hint_ptr && settings().ideal) {
+      xtal::LatticeNode lat_node(hint_ptr->ideal_lattice(),
+                                 hint_ptr->ideal_lattice(),
+                                 Lattice(child_struc.lat_column_mat),
+                                 Lattice(child_struc.lat_column_mat),
+                                 child_struc.atom_info.size());
+      struc_maps = struc_mapper().map_deformed_struc_impose_lattice_node(child_struc,
+                                                                         lat_node,
+                                                                         k);
+    }
+    else if(hint_ptr && settings().fix_lattice) {
+      struc_maps = struc_mapper().map_deformed_struc_impose_lattice(child_struc,
+                                                                    hint_ptr->ideal_lattice(),
+                                                                    k,
+                                                                    best_cost + struc_mapper().tol());
+    }
+    else if(hint_ptr && settings().fix_volume) {
+      Index vol = hint_ptr->supercell().volume();
+      struc_maps = struc_mapper().map_deformed_struc_impose_lattice_vols(child_struc,
+                                                                         vol,
+                                                                         vol,
+                                                                         k,
+                                                                         best_cost + struc_mapper().tol());
+    }
+    else if(settings().ideal) {
+      struc_maps = struc_mapper().map_ideal_struc(child_struc,
+                                                  k);
+    }
+    else {
+      struc_maps = struc_mapper().map_deformed_struc(child_struc,
+                                                     k,
+                                                     best_cost + struc_mapper().tol());
+    }
     // Refactor into external routine A. This is too annoying with the current way that supercells are managed
-    std::cout << "STRUC_MAPS SIZE: " << struc_maps.size() << "\n";
     for(auto const &map : struc_maps) {
       std::shared_ptr<Supercell> shared_scel = std::make_shared<Supercell>(&primclex(), map.lat_node.parent.scel_lattice());
       SimpleStructure resolved_struc = struc_mapper().calculator().resolve_setting(map, child_struc);
       auto tdof = to_configdof(resolved_struc, *shared_scel);
       Configuration tconfig(shared_scel, jsonParser(), tdof.first);
       PermuteIterator perm_it = shared_scel->sym_info().permute_begin();
-      if(strict()) {
+      if(settings().strict) {
         // Strictness transformation reduces permutation swaps, translation magnitude, and isometry character
         perm_it = Local::_strictest_equivalent(shared_scel->sym_info().permute_begin(), shared_scel->sym_info().permute_end(), map);
       }
@@ -399,15 +445,43 @@ namespace CASM {
     }
     //\End routine A
 
+    if(hint_ptr != nullptr) {
+      ConfigIsEquivalent all_equiv(*hint_ptr);
 
+      ConfigIsEquivalent occ_equiv(*hint_ptr, {"occ"});
 
-    // calculate and store:
-    // - 'relaxation_deformation'
-    // - 'relaxation_displacement'
-    // - cart_op
-    // transform deformation tensor to match canonical form and apply operation to cart_op
-    //result.success = true;
-    std::cout << "TOTAL_MAPS SIZE: " << result.maps.size() << "\n";
+      for(auto &map : result.maps) {
+        map.second.hint_cost = hint_cost;
+
+        if(map.second.config.supercell() != hint_ptr->supercell()) {
+          map.second.hint_status = HintStatus::NewScel;
+          continue;
+        }
+        if(all_equiv(map.second.config)) {
+          map.second.hint_status = HintStatus::Identical;
+          continue;
+        }
+        PermuteIterator perm_begin = map.second.config.supercell().sym_info().permute_begin();
+        PermuteIterator perm_end = map.second.config.supercell().sym_info().permute_end();
+        for(PermuteIterator it = perm_begin; it != perm_end; ++it) {
+          if(all_equiv(it, map.second.config)) {
+            map.second.hint_status = HintStatus::Equivalent;
+            break;
+          }
+        }
+        if(map.second.hint_status == HintStatus::Equivalent)
+          continue;
+        map.second.hint_status = HintStatus::NewOcc;
+        for(PermuteIterator it = perm_begin; it != perm_end; ++it) {
+          if(occ_equiv(it, map.second.config)) {
+            map.second.hint_status = HintStatus::Derivative;
+            break;
+          }
+        }
+
+      }
+    }
+
     return result;
   }
 }

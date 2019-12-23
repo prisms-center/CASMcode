@@ -2,6 +2,8 @@
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/ConfigMapping.hh"
+#include "casm/clex/io/json/ConfigMapping.hh"
 #include "casm/kinetics/DiffTransConfigMapping.hh"
 #include "casm/kinetics/DiffTransConfiguration.hh"
 #include "casm/app/DirectoryStructure.hh"
@@ -20,6 +22,10 @@
 
 namespace CASM {
   namespace DB {
+
+    ConfigMapping::Settings const &StructureMap<Kinetics::DiffTransConfiguration>::settings()const {
+      return m_difftransconfigmapper->settings();
+    }
 
     /// \brief Read BasicStructure<Site> to be imported
     ///
@@ -41,35 +47,24 @@ namespace CASM {
     }
 
     // --- DiffTransConfiguration specializations --------------------------------
-
+    /*
     StructureMap<Kinetics::DiffTransConfiguration>::StructureMap(
-      MappingSettings const &_set,
+      ConfigMapping::Settings const &_set,
       std::unique_ptr<Kinetics::DiffTransConfigMapper> mapper) :
       m_set(_set),
       m_difftransconfigmapper(std::move(mapper)) {}
+    */
 
     StructureMap<Kinetics::DiffTransConfiguration>::StructureMap(
-      MappingSettings const &_set,
-      const PrimClex &primclex) :
-      m_set(_set) {
+      ConfigMapping::Settings const &_set,
+      const PrimClex &primclex) {
+
       // -- construct ConfigMapper --
-      int map_opt = xtal::StrucMapper::Options::none;
-      //if(m_set.rotate) map_opt |= xtal::StrucMapper::Options::rotate;
-      if(m_set.strict) map_opt |= xtal::StrucMapper::Options::strict;
-      if(!m_set.ideal) map_opt |= xtal::StrucMapper::Options::robust;
 
       m_difftransconfigmapper.reset(new Kinetics::DiffTransConfigMapper(
                                       primclex,
-                                      m_set.lattice_weight,
-                                      m_set.max_vol_change,
-                                      map_opt,
+                                      _set,
                                       primclex.crystallography_tol()));
-      m_difftransconfigmapper->set_min_va_frac(m_set.min_va_frac);
-      m_difftransconfigmapper->set_max_va_frac(m_set.max_va_frac);
-
-      //If the settings specified at least one lattice, then force that on the configmapper
-      if(m_set.forced_lattices.size())
-        m_difftransconfigmapper->set_forced_lattices(m_set.forced_lattices);
     }
 
 
@@ -211,7 +206,7 @@ namespace CASM {
 
       // 'mapping' subsettings are used to construct ConfigMapper, and also returns
       // the 'used' settings
-      MappingSettings map_settings;
+      ConfigMapping::Settings map_settings;
       if(kwargs.contains("mapping"))
         from_json(map_settings, kwargs["mapping"]);
 
@@ -323,7 +318,7 @@ namespace CASM {
 
       // 'mapping' subsettings are used to construct ConfigMapper and return 'used' settings values
       // still need to figure out how to specify this in general
-      MappingSettings map_settings;
+      ConfigMapping::Settings map_settings;
       if(kwargs.contains("mapping"))
         from_json(map_settings, kwargs["mapping"]);
 
