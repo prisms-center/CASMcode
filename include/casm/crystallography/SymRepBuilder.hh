@@ -5,6 +5,7 @@
 #include <memory>
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
+#include "casm/external/Eigen/src/unsupported/KroneckerTensorProduct.h"
 
 namespace CASM {
 
@@ -204,7 +205,49 @@ namespace CASM {
                                             Eigen::Ref<const Eigen::Vector3d> const &_tau,
                                             bool time_reversal,
                                             Index dim) const override
-        {return Eigen::MatrixXd::Identity(30,30);}
+        {
+            // Reduction matrix for reference d-orbitals
+            Eigen::MatrixXd P(5, 9);
+            P << 0, 1/sqrt(2), 0, 1/sqrt(2), 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 1/sqrt(2), 0, 1/sqrt(2), 0,
+                 -1/sqrt(6), 0, 0, 0, -1/sqrt(6), 0, 0, 0, 2/sqrt(6),
+                 0, 0, 1/sqrt(2), 0, 0, 0, 1/sqrt(2), 0, 0,
+                 1/sqrt(2), 0, 0, 0, -1/sqrt(2), 0, 0, 0, 0;
+
+            // Reduction matrix for vectorized orbital occupation matrix
+            Eigen::MatrixXd Q(15, 25);
+            Q << 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1/sqrt(2), 0, 0, 0, 1/sqrt(2), 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1/sqrt(2), 0, 0, 0, 0, 0, 0, 0, 1/sqrt(2), 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 1/sqrt(2), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1/sqrt(2), 0, 0, 0,
+                 0, 0, 0, 0, 1/sqrt(2), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1/sqrt(2), 0, 0, 0, 0,
+                 0, 0, 0, 1/sqrt(2), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1/sqrt(2), 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 1/sqrt(2), 0, 0, 0, 0, 0, 0, 0, 1/sqrt(2), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 1/sqrt(2), 0, 0, 0, 1/sqrt(2), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 1/sqrt(2), 0, 0, 0, 1/sqrt(2), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1/sqrt(2), 0, 0, 0, 1/sqrt(2), 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 1/sqrt(2), 0, 0, 0, 0, 0, 0, 0, 1/sqrt(2), 0, 0, 0, 0, 0, 0, 0, 0;
+            
+            Eigen::MatrixXd kron_S_S(9, 9);
+            Eigen::kroneckerProduct(_matrix, _matrix, kron_S_S);
+            Eigen::MatrixXd G = P*kron_S_S*P.transpose(); 
+            Eigen::MatrixXd kron_GT_GT(25, 25);
+            Eigen::kroneckerProduct(G.transpose(), G.transpose(), kron_GT_GT);
+            Eigen::MatrixXd R = Q*kron_GT_GT*Q.transpose();
+            Eigen::MatrixXd W(2,2); 
+            if (time_reversal) { 
+                W << 0, 1, 1, 0;
+            } else {
+                W << 1, 0, 0, 1;
+            }
+            Eigen::MatrixXd result(30, 30);
+            Eigen::kroneckerProduct(W, R, result);
+            return result;
+        }
 
     private:
         SymRepBuilderInterface *_clone() const override {
