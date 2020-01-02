@@ -281,6 +281,11 @@ namespace CASM {
     Rank2TensorSymRepBuilder Rank2Tensor() {
       return Rank2TensorSymRepBuilder();
     }
+
+    inline
+    dOrbitalOccupationSymRepBuilder dOrbitalOccupation() {
+      return dOrbitalOccupationSymRepBuilder();
+    }
   }
 
 }
