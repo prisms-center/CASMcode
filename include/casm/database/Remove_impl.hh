@@ -9,6 +9,7 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/import.hh"
 #include "casm/clex/PrimClex_impl.hh"
+#include "casm/clex/Calculable.hh"
 #include "casm/app/rm.hh"
 
 namespace CASM {
@@ -17,7 +18,7 @@ namespace CASM {
     // --- RemoveT ---
 
     template<typename _ConfigType>
-    RemoveT<_ConfigType>::RemoveT(const PrimClex &primclex, fs::path report_dir, Log &_file_log) :
+    RemoveT<_ConfigType>::RemoveT(const PrimClex &primclex, std::string report_dir, Log &_file_log) :
       ConfigData(primclex, _file_log, TypeTag<ConfigType>()),
       m_report_dir(report_dir) {}
 
@@ -39,7 +40,7 @@ namespace CASM {
       if(fail.size()) {
         _erase_report(fail);
         primclex().log() << "Skipped " << fail.size() << " " << traits<ConfigType>::name << std::endl;
-        primclex().log() << "  See " << m_report_dir / "remove_fail" << std::endl;
+        primclex().log() << "  See " << fs::path(m_report_dir) / "remove_fail" << std::endl;
       }
       db_config<ConfigType>().commit();
     }
@@ -49,18 +50,25 @@ namespace CASM {
     void RemoveT<_ConfigType>::erase_data(const DB::Selection<ConfigType> &selection, bool dry_run) {
       // erase data
       for(const auto &val : selection.data()) {
-        auto it = db_props().find_via_from(val.first);
-        db_props().erase(it);
+        for(auto it = db_props().find_via_to(val.first); it != db_props().end(); it = db_props().find_via_to(val.first)) {
+          db_props().erase(it);
+        }
+        auto it = db_props().find_via_origin(CASM::calc_properties_path(this->primclex(), val.first));
+        if(it != db_props().end()) {
+          db_props().erase(it);
+        }
         rm_files(val.first, dry_run);
       }
-      db_props().commit();
+      if(!dry_run) {
+        db_props().commit();
+      }
     }
 
     /// \brief Removes Configurations and data and files (permanently)
     ///
-    /// - Data are always associated with one 'from' configuration, so the
-    ///   selection here indicates 'from' configurations
-    /// - The 'to' configurations are updated with the new best mapping properties
+    /// - Data are always associated with one 'to' configuration, so the
+    ///   selection here indicates 'to' configurations
+    /// - The 'from' configurations are updated with the new best mapping properties
     template<typename _ConfigType>
     void RemoveT<_ConfigType>::erase_all(const DB::Selection<ConfigType> &selection, bool dry_run) {
 
@@ -75,7 +83,7 @@ namespace CASM {
     void RemoveT<_ConfigType>::_erase_report(const std::vector<std::string> &fail) {
       std::string prefix {"remove_"};
       prefix += traits<ConfigType>::short_name;
-      fs::ofstream file(m_report_dir / (prefix + "_fail"));
+      fs::ofstream file(fs::path(m_report_dir) / (prefix + "_fail"));
       for(const auto &val : fail) {
         file << val << std::endl;
       }
@@ -87,7 +95,7 @@ namespace CASM {
     template<typename ConfigType>
     Remove<ConfigType>::Remove(
       const PrimClex &primclex,
-      fs::path report_dir,
+      std::string report_dir,
       Log &_file_log) :
       RemoveT<ConfigType>(primclex, report_dir, _file_log) {}
 
@@ -119,6 +127,8 @@ namespace CASM {
 
       // -- read selection --
       DB::Selection<ConfigType> selection(primclex, opt.selection_path());
+
+      // Add command-line options
       for(const auto &name : opt.name_strs()) {
         if(primclex.db<ConfigType>().count(name)) {
           selection.data()[name] = true;
@@ -131,7 +141,7 @@ namespace CASM {
       }
 
       // get remove report_dir, check if exists, and create new report_dir.i if necessary
-      fs::path report_dir = primclex.dir().root_dir() / "remove_report";
+      std::string report_dir = (primclex.dir().root_dir() / "remove_report").string();
       report_dir = create_report_dir(report_dir);
 
       // -- erase --

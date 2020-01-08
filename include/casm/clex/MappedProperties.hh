@@ -16,16 +16,17 @@ namespace CASM {
   ///
   struct MappedProperties {
 
-    /// The name of the config that was the starting point for relaxation
-    /// If no relaxation, from == to
-    std::string from;
+    /// path to file that generated this entry
+    std::string origin;
 
     /// The name of the config that was the ending point of relaxation
-    /// If no relaxation, from == to
     std::string to;
 
-    /// Path to properties file and time of last write
-    FileData file_data;
+    /// Path to properties file and time of last write within 'to' configuration's training_data directory
+    FileData native_file_data;
+
+    /// Path to properties file and time of last write within 'from' configuration's training_data directory
+    FileData best_file_data;
 
     /// Raw & unmapped calculated properties, as from properties.calc.json:
     ///
@@ -72,15 +73,6 @@ namespace CASM {
   jsonParser &to_json(const MappedProperties &prop, jsonParser &json);
 
   jsonParser const &from_json(MappedProperties &prop, const jsonParser &json);
-
-
-  /// Compare via A.from < B.from
-  ///
-  /// - Enforces one calculated properties per starting configuration
-  inline bool operator<(const MappedProperties &A, const MappedProperties &B) {
-    return A.from < B.from;
-  }
-
 
   /// Resolve mapping conflicts by 'scoring' the MappedProperties structure
   ///

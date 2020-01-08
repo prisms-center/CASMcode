@@ -21,7 +21,7 @@ namespace CASM {
     static const unsigned char GLOBAL = (1u << 0);
     static const unsigned char UNIT_LENGTH = (1u << 1);
     static const unsigned char DESCRIBES_ORIENTATION = (1u << 2);
-    static const unsigned char DISTRIBUTIVE = (1u << 3);
+    static const unsigned char EXTENSIVE = (1u << 3);
 
     ///\brief Named constructor for uninitialized AnisoValTraits
     static AnisoValTraits null();
@@ -126,8 +126,8 @@ namespace CASM {
       return m_opt;
     }
 
-    bool distributive() const {
-      return m_opt & DISTRIBUTIVE;
+    bool extensive() const {
+      return m_opt & EXTENSIVE;
     }
 
     // Please use !AnisoValTraits::global() instead of implementing AnisoValTraits::local()

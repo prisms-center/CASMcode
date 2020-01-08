@@ -226,7 +226,7 @@ libcasm_la_SOURCES = \
     include/casm/database/DiffTransOrbitDatabase.hh\
     include/casm/database/Import.hh\
     include/casm/database/Import_impl.hh\
-    include/casm/database/MappedProperties.hh\
+    include/casm/clex/MappedProperties.hh\
     include/casm/database/Named.hh\
     include/casm/database/Named_impl.hh\
     include/casm/database/PropertiesDatabase.hh\
@@ -838,7 +838,7 @@ libcasm_la_SOURCES = \
     src/casm/database/DiffTransConfigImport.cc\
     src/casm/database/DiffTransOrbitDatabase.cc\
     src/casm/database/Import.cc\
-    src/casm/database/MappedProperties.cc\
+    src/casm/clex/MappedProperties.cc\
     src/casm/database/PropertiesDatabase.cc\
     src/casm/database/Remove.cc\
     src/casm/database/ScelDatabase.cc\

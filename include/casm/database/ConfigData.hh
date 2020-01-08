@@ -1,12 +1,11 @@
 #ifndef CASM_DB_ConfigData
 #define CASM_DB_ConfigData
 
-#include <boost/filesystem.hpp>
 #include "casm/global/definitions.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/dataformatter/DataFormatter.hh"
 #include "casm/casm_io/dataformatter/DataFormatterTools.hh"
-#include "include/casm/database/MappedProperties.hh"
+#include "casm/clex/MappedProperties.hh"
 
 
 // To be specialized for calculable 'ConfigType' classes:
@@ -32,7 +31,7 @@ namespace CASM {
     class PropertiesDatabase;
 
     /// Create a new report directory to avoid overwriting existing results
-    fs::path create_report_dir(fs::path report_dir);
+    std::string create_report_dir(std::string report_dir);
 
     namespace ConfigIO {
 
@@ -42,11 +41,13 @@ namespace CASM {
         Result() :
           has_data(false),
           has_complete_data(false),
-          is_new_config(false),
-          fail_msg("") {}
+          is_new_config(false) {}
 
         // Set 'to'/'from' as empty strings if no mapping possible
         MappedProperties properties;
+
+        // Path to properties.calc.json or POS file that was imported
+        std::string pos_path;
 
         // If a properties.calc.json file is found in standard locations
         bool has_data;
@@ -68,20 +69,20 @@ namespace CASM {
           preexisting(false),
           copy_data(false),
           copy_more(false),
-          last_insert("") {}
+          is_best(false) {}
 
         // base responsibility:
         bool preexisting;
         bool copy_data;
         bool copy_more;
-        fs::path last_insert;
+        bool is_best;
       };
 
       GenericDatumFormatter<std::string, Result> path();
 
       GenericDatumFormatter<std::string, Result> fail_msg();
 
-      GenericDatumFormatter<std::string, Result> from_configname();
+      GenericDatumFormatter<std::string, Result> data_origin();
 
       GenericDatumFormatter<std::string, Result> to_configname();
 
@@ -132,20 +133,18 @@ namespace CASM {
 
     class ConfigData {
     public:
-      /// \brief Return path to properties.calc.json that will be imported
-      ///        checking a couple possible locations relative to pos_path
+      /// \brief Checks if pos_path can be used to resolve a properties.calc.json, and return its path
+      /// Return path to properties.calc.json or POSCAR-type file that will be imported
+      /// checking a couple possible locations relative to pos_path
       ///
       /// checks:
       /// 1) is a JSON file? is pos_path ends in ".json" or ".JSON", return pos_path
       /// 2) assume pos_path is /path/to/POS, checks for /path/to/calctype.current/properties.calc.json
       /// 3) assume pos_path is /path/to/POS, checks for /path/to/properties.calc.json
-      /// else returns empty path
-      ///
-      static std::string calc_properties_path(fs::path pos_path, PrimClex const &_pclex);
+      /// else returns pos_path
 
-      // If pos_path can be used to resolve a properties.calc.json, return its path.
       // Otherwise return pos_path
-      static fs::path resolve_struc_path(fs::path pos_path, PrimClex const &_pclex);
+      static std::string resolve_struc_path(std::string pos_path, PrimClex const &_pclex);
 
       template<typename ConfigType>
       ConfigData(const PrimClex &_primclex, Log &_file_log, TypeTag<ConfigType>);
@@ -167,17 +166,17 @@ namespace CASM {
       PropertiesDatabase &db_props() const;
 
       /// \brief Path to default calctype training_data directory for config
-      fs::path calc_dir(const std::string configname) const;
+      std::string calc_dir(const std::string configname) const;
 
       /// \brief Return true if there are existing files in the traning_data directory
       ///        for a particular configuration
-      bool has_existing_files(const std::string &from_configname) const;
+      bool has_existing_files(const std::string &to_configname) const;
 
       /// \brief Return true if there are existing files in the traning_data directory
       ///        for a particular configuration
-      bool has_existing_data(const std::string &from_configname) const;
+      bool has_existing_data(const std::string &to_configname) const;
 
-      bool has_existing_data_or_files(const std::string &from_configname) const;
+      bool has_existing_data_or_files(const std::string &to_configname) const;
 
       /// Check if 'properties.calc.json' file has not changed since last read
       bool no_change(const std::string &configname) const;
@@ -188,11 +187,9 @@ namespace CASM {
 
       /// \brief Copy files in the same directory as properties.calc.json into the
       ///        traning_data directory for a particular configuration
-      std::pair<bool, bool> cp_files(
-        const fs::path &pos_path,
-        const std::string &configname,
-        bool dry_run,
-        bool copy_additional_files) const;
+      std::pair<bool, bool> cp_files(ConfigIO::Result &res,
+                                     bool dry_run,
+                                     bool copy_additional_files) const;
 
     private:
       const PrimClex &m_primclex;
@@ -224,7 +221,7 @@ namespace CASM {
       /// - responsible for filling in Result data structure
       /// - If 'hint' is not nullptr, use hint as 'from' config, else 'from' == 'to'
       map_result_inserter map(
-        fs::path p,
+        std::string p,
         DatabaseIterator<ConfigType> hint,
         map_result_inserter result) const;
     };

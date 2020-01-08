@@ -86,26 +86,23 @@ namespace CASM {
     /// \brief Specialized import method for ConfigType
     ///
     /// \param p Path to structure or properties.calc.json file. Not guaranteed to exist or be valid.
-    /// \param hint std::unique_ptr<Configuration> to 'from' config for 'casm update', or 'end' if unknown as with 'casm import'.
+    /// \param hint std::unique_ptr<Configuration> to 'from' config for 'casm update', or null if unknown as with 'casm import'.
     /// \param result Insert iterator of Result objects to output mapping results
     ///
     /// - Should output one or more mapping results from the structure located at specied path
     /// - >1 result handles case of non-primitive configurations
     /// - responsible for filling in Result data structure
-    /// - If 'hint' is not nullptr, use hint as 'from' config, else 'from' == 'to'
     StructureMap<Configuration>::map_result_inserter StructureMap<Configuration>::map(fs::path p,
         std::vector<std::string> const &req_properties,
         std::unique_ptr<Configuration> const &hint_config,
         map_result_inserter result) const {
       // need to set Result data (w/ defaults):
       // - std::string pos = "";
-      // - MappedProperties mapped_props {from:"", to:"", unmapped:{}, mapped:{}};
+      // - MappedProperties mapped_props {origin:"", to:"", unmapped:{}, mapped:{}};
       // - bool has_data = false;
       // - bool has_complete_data = false;
       // - bool is_new_config = false;
       // - std::string fail_msg = "";
-
-      ConfigIO::Result res;
 
       // read from structure file or properties.calc.json file (if exists)
       SimpleStructure sstruc = this->_make_structure(p);
@@ -113,21 +110,17 @@ namespace CASM {
       // do mapping
       ConfigMapperResult map_result = m_configmapper->import_structure(sstruc, hint_config.get());
 
-      if(!map_result.success()) {
-        std::cout << "NOT SUCCESS\n";
-        res.properties.file_data = p.string();
+      ConfigIO::Result res;
+      res.pos_path = p.string();
+      res.properties.best_file_data = p.string();
 
+      if(!map_result.success()) {
         res.fail_msg = map_result.fail_msg;
         *result++ = std::move(res);
         return result;
       }
 
-      std::cout << "NMAPS: " << map_result.maps.size() << "\n";
-
       if(map_result.n_optimal() > 1) {
-        res.properties.file_data = p.string();
-
-        std::cout << "TOO MANY\n";
         res.fail_msg = "There were " + std::to_string(map_result.n_optimal()) + " optimal mappings, when only one was expected.";
         *result++ = std::move(res);
         return result;
@@ -141,10 +134,9 @@ namespace CASM {
 
 
         res.properties = Local::_make_mapped_properties(map.first, map.second);
-        res.properties.file_data = p.string();
         res.properties.to = insert_result.canonical_it.name();
         if(hint_config)
-          res.properties.from = hint_config->name();
+          res.properties.origin = p.string();//hint_config->name();
 
         for(std::string const &propname : req_properties) {
           res.has_data = false;
@@ -166,8 +158,9 @@ namespace CASM {
         // - but don't try to scale the data for the primitive
         if(insert_result.canonical_it != insert_result.primitive_it) {
           ConfigIO::Result prim_res;
-          prim_res.properties.file_data = res.properties.file_data;
-          prim_res.properties.from = insert_result.primitive_it.name();
+          prim_res.pos_path = res.pos_path;
+          prim_res.properties.best_file_data = res.properties.best_file_data;
+          prim_res.properties.origin = "prim:" + res.properties.origin; //insert_result.primitive_it.name();
           prim_res.properties.to = insert_result.primitive_it.name();
           prim_res.is_new_config = insert_result.insert_primitive;
           // at this point, the mapped structure result is complete
@@ -205,7 +198,7 @@ namespace CASM {
       const PrimClex &primclex,
       const StructureMap<Configuration> &mapper,
       ImportSettings const &_set,
-      fs::path const &report_dir,
+      std::string const &report_dir,
       Log &file_log) :
 
       ImportT(primclex, mapper, _set, report_dir, file_log) {}
@@ -355,7 +348,7 @@ namespace CASM {
         from_json(import_settings, kwargs["data"]);
 
       // get input report_dir, check if exists, and create new report_dir.i if necessary
-      fs::path report_dir = primclex.dir().reports_dir() / "import_report";
+      std::string report_dir = (fs::path(primclex.dir().reports_dir()) / "import_report").string();
       report_dir = create_report_dir(report_dir);
 
       // 'mapping' subsettings are used to construct ConfigMapper, and also returns
@@ -579,7 +572,7 @@ namespace CASM {
     Update<Configuration>::Update(
       const PrimClex &primclex,
       const StructureMap<Configuration> &mapper,
-      fs::path const &report_dir) :
+      std::string const &report_dir) :
       UpdateT(primclex, mapper, report_dir) {}
 
     int Update<Configuration>::run(
@@ -623,7 +616,7 @@ namespace CASM {
       log << used << std::endl << std::endl;
 
       // get input report_dir, check if exists, and create new report_dir.i if necessary
-      fs::path report_dir = primclex.dir().reports_dir() / "update_report";
+      std::string report_dir = (fs::path(primclex.dir().reports_dir()) / "update_report").string();
       report_dir = create_report_dir(report_dir);
 
 
@@ -649,7 +642,7 @@ namespace CASM {
       ConfigIO::default_update_formatters(dict, db_props());
 
       std::vector<std::string> col = {
-        "from_configname", "selected", "to_configname", "has_data", "has_complete_data",
+        "data_origin", "selected", "to_configname", "has_data", "has_complete_data",
         "score", "best_score", "is_best",
         "lattice_deformation_cost", "basis_deformation_cost",
         "relaxed_energy"

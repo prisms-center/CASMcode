@@ -95,7 +95,6 @@ namespace CASM {
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
-    const auto &dir = primclex.dir();
 
     try {
       if(!vm.count("config") || (selection == "MASTER")) {

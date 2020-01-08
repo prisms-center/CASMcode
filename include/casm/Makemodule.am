@@ -304,7 +304,7 @@ casm_database_include_HEADERS = \
     include/casm/database/DiffTransOrbitDatabase.hh\
     include/casm/database/Import.hh\
     include/casm/database/Import_impl.hh\
-    include/casm/database/MappedProperties.hh\
+    include/casm/clex/MappedProperties.hh\
     include/casm/database/Named.hh\
     include/casm/database/Named_impl.hh\
     include/casm/database/PropertiesDatabase.hh\

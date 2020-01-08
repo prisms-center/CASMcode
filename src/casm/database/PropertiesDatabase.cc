@@ -2,21 +2,15 @@
 
 namespace CASM {
   namespace DB {
-    /// \brief Compare mapped properties 'from_A' and 'from_B', preferring self-mapped results
+    /// \brief Compare mapped properties 'origin_A' and 'origin_B'
     bool PropertiesDatabase::Compare::operator()(
-      const std::string &from_A,
-      const std::string &from_B) const {
+      const std::string &origin_A,
+      const std::string &origin_B) const {
 
-      if(from_A == from_B) {
+      if(origin_A == origin_B) {
         return false;
       }
-      if(from_A == m_to) {
-        return true;
-      }
-      if(from_B == m_to) {
-        return false;
-      }
-      return m_score(*m_map->find_via_from(from_A)) < m_score(*m_map->find_via_from(from_B));
+      return m_score(*m_map->find_via_origin(origin_A)) < m_score(*m_map->find_via_origin(origin_B));
     }
 
     /// \brief Insert data
@@ -29,20 +23,20 @@ namespace CASM {
         return res;
       }
 
-      // insert 'to' -> 'from' link
-      auto tset = relaxed_from_all(value.to);
-      tset.insert(value.from);
-      _set_relaxed_from_all(value.to, tset);
+      // insert 'to' -> 'origin' link
+      auto tset = all_origins(value.to);
+      tset.insert(value.origin);
+      _set_all_origins(value.to, tset);
 
       return res;
     }
 
-    /// \brief Erase the data 'from' from_configname
+    /// \brief Erase the 'origin' data element at provided iterator
     PropertiesDatabase::iterator PropertiesDatabase::erase(iterator pos) {
 
-      auto tset = relaxed_from_all(pos->to);
-      tset.erase(pos->from);
-      _set_relaxed_from_all(pos->to, tset);
+      auto tset = all_origins(pos->to);
+      tset.erase(pos->origin);
+      _set_all_origins(pos->to, tset);
 
       return _erase(pos);
     }

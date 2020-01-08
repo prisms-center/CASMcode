@@ -145,7 +145,7 @@ namespace CASM {
   AnisoValTraits AnisoValTraits::force() {
     return AnisoValTraits("force",
     {"fx", "fy", "fz"},
-    LOCAL | DISTRIBUTIVE,
+    LOCAL | EXTENSIVE,
     CartesianSymRepBuilder(),
     {},
     {"atomize"},
@@ -178,7 +178,7 @@ namespace CASM {
   AnisoValTraits AnisoValTraits::magspin() {
     return AnisoValTraits("magspin",
     {"sx", "sy", "sz"},
-    LOCAL | DISTRIBUTIVE,
+    LOCAL | EXTENSIVE,
     AngularMomentumSymRepBuilder(),
     {},
     {"atomize"},
@@ -189,7 +189,7 @@ namespace CASM {
   AnisoValTraits AnisoValTraits::magmom() {
     return AnisoValTraits("magmom",
     {"mx", "my", "mz"},
-    LOCAL | UNIT_LENGTH | DISTRIBUTIVE,
+    LOCAL | UNIT_LENGTH | EXTENSIVE,
     TimeReversalSymRepBuilder(),
     {},
     {"atomize"},

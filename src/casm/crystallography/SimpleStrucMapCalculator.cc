@@ -116,7 +116,7 @@ namespace CASM {
             }
             // else -- already checked for improper vacancy conditions above
           }
-          if(ttraits.distributive())
+          if(ttraits.extensive())
             (it->second).col(i) / double(_node.mol_map[i].size());
         }
       }// End properties transform

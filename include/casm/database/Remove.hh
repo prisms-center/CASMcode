@@ -11,7 +11,7 @@ namespace CASM {
 
 
 // To be specialized for calculable 'ConfigType' classes:
-//   StructureMap<ConfigType>::map(fs::path, DatabaseIterator<ConfigType> hint, inserter result)
+//   StructureMap<ConfigType>::map(std::string, DatabaseIterator<ConfigType> hint, inserter result)
 //   Import<ConfigType>::desc
 //   Import<ConfigType>::run
 //   Import<ConfigType>::_import_formatter
@@ -38,7 +38,7 @@ namespace CASM {
       using Logging::log;
       */
 
-      RemoveT(const PrimClex &primclex, fs::path report_dir, Log &_file_log);
+      RemoveT(const PrimClex &primclex, std::string report_dir, Log &_file_log);
 
       /// \brief Erase Configurations that have no data
       void erase(const DB::Selection<ConfigType> &selection, bool dry_run);
@@ -58,14 +58,14 @@ namespace CASM {
 
       void _erase_report(const std::vector<std::string> &fail);
 
-      fs::path m_report_dir;
+      std::string m_report_dir;
     };
 
     // To be specialized for ConfigType (default implementation exists for ConfigTypes)
     template<typename ConfigType>
     class Remove : public RemoveT<ConfigType> {
     public:
-      Remove(const PrimClex &primclex, fs::path report_dir, Log &_file_log);
+      Remove(const PrimClex &primclex, std::string report_dir, Log &_file_log);
       static std::string desc();
       static int run(const PrimClex &, const Completer::RmOption &opt);
     };

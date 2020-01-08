@@ -76,18 +76,18 @@ namespace CASM {
       map_result_inserter result) const {
 
       ConfigIO::Result res;
-      res.properties.file_data = p.string();
+      res.properties.best_file_data = p.string();
+      res.pos_path = p.string();
 
 
       //if(hint != db_config().end()) {
       //hint_config = notstd::make_unique<Kinetics::DiffTransConfiguration>(*hint);
-      if(hint_config) {
-        res.properties.from = hint_config->name();
-      }
+
+      res.properties.origin = p.string();
 
       // do mapping
       DiffTransConfigMapperResult map_result;
-      map_result = m_difftransconfigmapper->import_structure_occupation(res.properties.file_data.path(), hint_config.get());
+      map_result = m_difftransconfigmapper->import_structure_occupation(res.pos_path, hint_config.get());
       if(!map_result.success) {
         res.fail_msg = map_result.fail_msg;
         *result++ = std::move(res);
@@ -145,7 +145,7 @@ namespace CASM {
       const PrimClex &primclex,
       const StructureMap<Kinetics::DiffTransConfiguration> &mapper,
       ImportSettings const  &_set,
-      fs::path const &report_dir,
+      std::string const &report_dir,
       Log &file_log) :
       ImportT(primclex, mapper, _set, report_dir, file_log) {}
 
@@ -201,7 +201,7 @@ namespace CASM {
       jsonParser used;
 
       // get input report_dir, check if exists, and create new report_dir.i if necessary
-      fs::path report_dir = primclex.dir().reports_dir() / "import_report";
+      std::string report_dir = (primclex.dir().reports_dir() / "import_report").string();
       report_dir = create_report_dir(report_dir);
 
       // 'mapping' subsettings are used to construct ConfigMapper, and also returns
@@ -271,7 +271,7 @@ namespace CASM {
     Update<Kinetics::DiffTransConfiguration>::Update(
       const PrimClex &primclex,
       const StructureMap<Kinetics::DiffTransConfiguration> &mapper,
-      fs::path report_dir) :
+      std::string report_dir) :
       UpdateT(primclex, mapper, report_dir) {}
 
     const std::string Update<Kinetics::DiffTransConfiguration>::desc =
@@ -313,7 +313,7 @@ namespace CASM {
       used["force"] = force;
 
       // get input report_dir, check if exists, and create new report_dir.i if necessary
-      fs::path report_dir = primclex.dir().reports_dir() / "update_report";
+      std::string report_dir = (primclex.dir().reports_dir() / "update_report").string();
       report_dir = create_report_dir(report_dir);
 
       // 'mapping' subsettings are used to construct ConfigMapper and return 'used' settings values

@@ -392,7 +392,8 @@ namespace CASM {
     std::set<MappingNode> struc_maps;
 
     if(hint_ptr && settings().ideal) {
-      xtal::LatticeNode lat_node(hint_ptr->ideal_lattice(),
+      std::cout << "DOING THE IDEAL THING\n";
+      xtal::LatticeNode lat_node(hint_ptr->prim().lattice(),
                                  hint_ptr->ideal_lattice(),
                                  Lattice(child_struc.lat_column_mat),
                                  Lattice(child_struc.lat_column_mat),
@@ -424,6 +425,8 @@ namespace CASM {
                                                      k,
                                                      best_cost + struc_mapper().tol());
     }
+
+    std::cout << "struc_maps.size(): " << struc_maps.size() << "\n";
     // Refactor into external routine A. This is too annoying with the current way that supercells are managed
     for(auto const &map : struc_maps) {
       std::shared_ptr<Supercell> shared_scel = std::make_shared<Supercell>(&primclex(), map.lat_node.parent.scel_lattice());

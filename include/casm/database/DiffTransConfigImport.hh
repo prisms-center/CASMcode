@@ -93,7 +93,7 @@ namespace CASM {
         const PrimClex &primclex,
         const StructureMap<ConfigType> &mapper,
         ImportSettings const &_set,
-        fs::path const &report_dir,
+        std::string const &report_dir,
         Log &file_log);
 
       static const std::string desc;
@@ -117,7 +117,7 @@ namespace CASM {
       Update(
         const PrimClex &primclex,
         const StructureMap<ConfigType> &mapper,
-        fs::path report_dir);
+        std::string report_dir);
 
       static const std::string desc;
       static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::UpdateOption &import_opt);

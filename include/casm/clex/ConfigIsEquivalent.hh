@@ -54,7 +54,7 @@ namespace CASM {
       }
     }
 
-    ConfigIsEquivalent(const Configuration &_config, std::set<std::string> const &_which_dofs = {}) :
+    ConfigIsEquivalent(const Configuration &_config, std::set<std::string> const &_which_dofs = {"all"}) :
       ConfigIsEquivalent(_config, _config.crystallography_tol(), _which_dofs) {}
 
     const Configuration &config() const {
