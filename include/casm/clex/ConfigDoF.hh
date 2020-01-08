@@ -51,18 +51,22 @@ namespace CASM {
     ///Initialize with explicit occupation
     //ConfigDoF(const std::vector<int> &_occupation, double _tol = TOL);
 
+    ///\brief Number of sites in the ConfigDoF
     Index size() const {
       return occupation().size();
     }
 
+    ///\brief Integer volume of ConfigDoF
     Index n_vol() const {
       return m_occupation.n_vol();
     }
 
+    /// \brief Number of sublattices in ConfigDoF
     Index n_sublat() const {
       return m_occupation.n_sublat();
     }
 
+    /// \brief tolerance for comparison of continuous DoF values
     double tol() const {
       return m_tol;
     }

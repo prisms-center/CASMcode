@@ -162,8 +162,23 @@ namespace CASM {
       for(Index b = 0, l = 0; b < _dof.n_sublat(); ++b) {
         for(Index v = 0; v < _dof.n_vol(); ++v, ++l) {
           result.mol_info.cart_coord(l) = _scel.coord(l).const_cart();
-          std::string mol_name = _scel.prim().basis()[ b ].occupant_dof()[_dof.occ(l)].name();
-          result.mol_info.names.push_back(std::move(mol_name));
+
+          Molecule const &mol = _scel.prim().basis()[ b ].occupant_dof()[_dof.occ(l)];
+
+          // Fill up the molecule's SpeciesAttributes
+          for(auto const &attr : mol.attributes()) {
+            // Has this attribute been encountered yet??
+            auto it = result.mol_info.properties.find(attr.first);
+            /// If not, initialize it
+            if(it == result.mol_info.properties.end()) {
+              // Iterator now points to initialized matrix
+              it = result.mol_info.properties.emplace(attr.first, Eigen::MatriXd::Zero(attr.second.traits.dim(), _dof.size())).first;
+            }
+            it->second.col(l) = attr.second.value();
+          }
+
+          // Record
+          result.mol_info.names.push_back(mol.name());
         }
       }
 
@@ -180,18 +195,30 @@ namespace CASM {
     }
 
     //***************************************************************************
+    /// \brief Implements the TransformDirective step corresponding to "atomize"
 
-    void _atomize(SimpleStructure &_sstruc,
-                  Eigen::Ref<const Eigen::VectorXi> const &_mol_occ,
-                  BasicStructure<Site> const &_reference) {
+    void _atomize(// The SimpleStructure we are atomizing
+      SimpleStructure &_sstruc,
+      // Occupant indices of the configuration
+      Eigen::Ref<const Eigen::VectorXi> const &_mol_occ,
+      // the primitive structure
+      BasicStructure<Site> const &_reference) {
       Index N_atoms(0);
 
       Index nb = _reference.basis().size();
+
+      // nv integer volume of supercell (number of sites divided number of sublattices
       Index nv = _mol_occ.size() / nb;
       Index s = 0;
       for(Index b = 0; b < nb; ++b) {
         for(Index v = 0; v < nv; ++v, ++s) {
           N_atoms += _reference.basis(b).occupant_dof()[_mol_occ[s]].size();
+
+          // Jonas: Maybe figure out all required attributes here??
+          // Loop over atoms? For each atom track the SpeciesAttributes
+          // Molecule const & mol = _reference.basis(b).occupant_dof()[_mol_occ[s]];
+          // for(auto const & attr : mol.atom(a).attributes())
+          //   attribute_list.insert(attr.first);
         }
       }
       //std::cout << "Atomizing with N_atom = " << N_atoms << "; nv = " << nv << "; nb = " << nb << "\n";
@@ -206,8 +233,18 @@ namespace CASM {
           Molecule const &molref = _reference.basis(b).occupant_dof()[_mol_occ[s]];
           //std::cout << "(b,v): (" << b << ", " << v << "); molref.size() = " << molref.size() << "\n";
           for(Index ms = 0; ms < molref.size(); ++ms, ++a) {
+            // Record position of atom
             _sstruc.atom_info.cart_coord(a) = _sstruc.mol_info.cart_coord(s) + molref.atom(ms).cart();
+            // record name of atom
             _sstruc.atom_info.names[a] = molref.atom(ms).name();
+
+            // Jonas: Initialize atom_info.properties here for *atom* attributes
+            // record attributes of atom
+            // for(auto const & attr : molref.atom(ms).attributes())
+            //   attribute_list.insert(attr.first);
+
+            // TODO: split everything in _sstruc.mol_info.properties into
+            //       _sstruc.atom_info.properties using appropriate extensivity rules
           }
         }
       }
