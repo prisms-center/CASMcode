@@ -422,7 +422,7 @@ namespace CASM {
       // that previously resided at basis(b). As such, for dofs, we use the inverse permutation and
       //   basis()[b].symrep(doftype.name()) = basis()[b].dof(doftype.name()).basis().transpose()
       //                                       * doftype.symop_to_matrix(op)
-      //                                       * basis()[sitemap[b].sublat()].dof(doftype.name().basis())
+      //                                       * basis()[sitemap[b].sublattice()].dof(doftype.name().basis())
       Eigen::MatrixXd trep, trepblock;
       for(Index s = 0; s < m_factor_group.size(); ++s) {
         auto const &op = m_factor_group[s];
@@ -436,7 +436,7 @@ namespace CASM {
 
         for(Index b = 0; b < basis().size(); ++b) {
           // copy_aply(symop,dofref_from) = P.permute(dofref_to);
-          auto const &dofref_to = basis()[sitemap[b].sublat()].occupant_dof();
+          auto const &dofref_to = basis()[sitemap[b].sublattice()].occupant_dof();
           auto const &dofref_from = basis()[b].occupant_dof();
           OccupantDoFIsEquivalent<Molecule> eq(dofref_from);
           //TODO
@@ -466,7 +466,7 @@ namespace CASM {
               continue;
 
             // copy_aply(symop,dofref_from) = dofref_to * U
-            DoFSet const &dofref_to = basis()[sitemap[b].sublat()].dof(dof_dim.first);
+            DoFSet const &dofref_to = basis()[sitemap[b].sublattice()].dof(dof_dim.first);
             DoFSet const &dofref_from = basis()[b].dof(dof_dim.first);
             DoFIsEquivalent eq(dofref_from);
             //TODO

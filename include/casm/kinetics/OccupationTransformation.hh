@@ -6,6 +6,7 @@
 #include "casm/misc/Comparisons.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/app/AppIO.hh"
+#include <functional>
 
 namespace CASM {
   namespace xtal {
@@ -32,6 +33,7 @@ namespace CASM {
       public Comparisons<Translatable<DoFTransformation<CRTPBase<OccupationTransformation>>>> {
 
     public:
+      typedef Structure PrimType;
       /// Constructor Create an OccupationTransformation on a site indicating what the current
       /// occupant is on that site and the one it will change to
       OccupationTransformation(const UnitCellCoord &_uccoord,
@@ -41,10 +43,6 @@ namespace CASM {
       Index from_value;
       Index to_value;
       UnitCellCoord uccoord;
-
-      /// The tiling unit of the infinite crystal that the site of this
-      /// OccupationTransformation lives in
-      const UnitCellCoord::UnitType &prim() const;
 
       /// \brief The UnitCellCoord that is changing occupants
       const UnitCellCoord coord() const;
@@ -56,19 +54,16 @@ namespace CASM {
       const Index to_occ() const;
 
       /// The current occupant of the site
-      const Molecule &from_mol() const;
+      const Molecule &from_mol(const PrimType &prim) const;
 
       /// The future occupant of the site
-      const Molecule &to_mol() const;
+      const Molecule &to_mol(const PrimType &prim) const;
 
       /// Lexicographical comparison of OccupationTransformation for sorting purposes
       bool operator<(const OccupationTransformation &B) const;
 
       /// Rigidly shifts the coordinate of this transformation by a lattice shift
       OccupationTransformation &operator+=(UnitCell Frac);
-
-      /// Applies symmetry to the coordinate of this transformation
-      OccupationTransformation &apply_sym(const SymOp &op);
 
       /// Transform the occupation of config and return a configuration
       /// that is perturbed according to this transformation
@@ -88,20 +83,21 @@ namespace CASM {
     };
 
     /// \brief Print OccupationTransformation to stream, using default Printer<Kinetics::OccupationTransformation>
-    std::ostream &operator<<(std::ostream &sout, const OccupationTransformation &trans);
+    /* std::ostream &operator<<(std::ostream &sout, const OccupationTransformation &trans); */
+    std::ostream &operator<<(std::ostream &sout, const std::pair<const OccupationTransformation *, const OccupationTransformation::PrimType *> &trans_and_prim);
 
   }
 
   /// Returns an empty map for a given infinite crystal
-  std::map<std::string, Index> empty_species_count(const UnitCellCoord::UnitType &prim);
+  std::map<std::string, Index> empty_species_count(const OccupationTransformation::PrimType &prim);
 
   /// Iterates over a vector of Occupation Transformation to give the count map of initial species
   template<typename OccTransfIt>
-  std::map<std::string, Index> from_species_count(OccTransfIt begin, OccTransfIt end);
+  std::map<std::string, Index> from_species_count(const OccupationTransformation::PrimType &prim, OccTransfIt begin, OccTransfIt end);
 
   /// Iterates over a vector of OccupationTransformation to give the count map of final species
   template<typename OccTransfIt>
-  std::map<std::string, Index> to_species_count(OccTransfIt begin, OccTransfIt end);
+  std::map<std::string, Index> to_species_count(const OccupationTransformation::PrimType &prim, OccTransfIt begin, OccTransfIt end);
 
 
   /// \brief Write OccupationTransformation to JSON object
@@ -110,7 +106,7 @@ namespace CASM {
   template<>
   struct jsonConstructor<Kinetics::OccupationTransformation> {
 
-    static Kinetics::OccupationTransformation from_json(const jsonParser &json, const UnitCellCoord::UnitType &prim);
+    static Kinetics::OccupationTransformation from_json(const jsonParser &json, const OccupationTransformation::PrimType &prim);
   };
 
   void from_json(Kinetics::OccupationTransformation &fill_value, const jsonParser &read_json);
@@ -124,7 +120,7 @@ namespace CASM {
     Printer(const OrbitPrinterOptions &_opt = OrbitPrinterOptions()) :
       PrinterBase(_opt) {}
 
-    void print(const Element &element, Log &out);
+    void print(const Element &element, const Element::PrimType &prim, Log &out);
   };
 }
 

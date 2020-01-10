@@ -1,6 +1,7 @@
 #ifndef CASM_AppIO
 #define CASM_AppIO
 
+#include <memory>
 #include <string>
 #include <map>
 #include <boost/filesystem/path.hpp>
@@ -349,11 +350,14 @@ namespace CASM {
   /// \brief Print Orbit<SymCompareType> & ClexBasis, including prototypes and prototype basis functions
   struct ProtoFuncsPrinter : public SitesPrinter {
 
+    typedef xtal::BasicStructure<xtal::Site> PrimType;
+    typedef std::shared_ptr<const PrimType> PrimType_ptr;
+
     ClexBasis const &clex_basis;
 
     std::vector<SubExpressionLabeler> labelers;
 
-    ProtoFuncsPrinter(ClexBasis const &_clex_basis, OrbitPrinterOptions const &_opt = OrbitPrinterOptions());
+    ProtoFuncsPrinter(ClexBasis const &_clex_basis, PrimType_ptr prim_ptr, OrbitPrinterOptions const &_opt = OrbitPrinterOptions());
 
     /// \brief Print to JSON
     ///
@@ -363,6 +367,9 @@ namespace CASM {
 
     template<typename OrbitType>
     jsonParser &to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) const;
+
+  private:
+    PrimType_ptr prim_ptr;
 
   };
 
@@ -395,14 +402,14 @@ namespace CASM {
 
   /// \brief Print site basis functions, as for 'casm bset --functions'
   void print_site_basis_funcs(
-    Structure const &prim,
+    std::shared_ptr<const Structure> prim_ptr,
     ClexBasis const &clex_basis,
     Log &out,
     Index indent_space = 6,
     COORD_TYPE mode = FRAC);
 
   void write_site_basis_funcs(
-    Structure const &prim,
+    std::shared_ptr<const Structure> prim_ptr,
     ClexBasis const &clex_basis,
     jsonParser &json);
 

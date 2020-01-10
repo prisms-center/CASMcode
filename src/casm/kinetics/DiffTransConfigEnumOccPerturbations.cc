@@ -1,5 +1,6 @@
 #include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"
 
+#include "casm/kinetics/DiffusionTransformationTraits.hh"
 #include "casm/kinetics/DiffTransConfiguration_impl.hh"
 #include "casm/symmetry/ConfigSubOrbits_impl.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
@@ -24,6 +25,12 @@ extern "C" {
   }
 }
 
+namespace {
+  using namespace CASM;
+  ScelPeriodicSymCompare<IntegralCluster> _construct_scel_sym_compare(const Supercell &scel) {
+    return ScelPeriodicSymCompare<IntegralCluster>(scel.primclex().shared_prim(), scel.prim_grid(), scel.crystallography_tol());
+  }
+}
 
 namespace CASM {
 
@@ -38,7 +45,7 @@ namespace CASM {
       m_include_unperturbed(true),
       m_skip_subclusters(true),
       m_local_cspecs(local_cspecs),
-      m_scel_sym_compare(_supercell()),
+      m_scel_sym_compare(::_construct_scel_sym_compare(this->_supercell())),
       m_curr(OccPerturbation(_prim())) {
 
       this->_initialize();
@@ -226,7 +233,8 @@ namespace CASM {
         std::vector<PermuteIterator> diff_trans_g {
           dtorbit.prototype().invariant_subgroup(bg_config.supercell())};
         SymGroup diff_trans_sym_g { make_sym_group(diff_trans_g) };
-        ScelPeriodicSymCompare<IntegralCluster> scel_sym_compare {bg_config.supercell()};
+        /* ScelPeriodicSymCompare<IntegralCluster> scel_sym_compare {bg_config.supercell()}; */
+        auto scel_sym_compare =::_construct_scel_sym_compare(bg_config.supercell());
 
         make_local_orbits(
           dtorbit.prototype(),
@@ -607,7 +615,7 @@ namespace CASM {
       /// Construct counter
       Eigen::VectorXi max_count(proto.size());
       for(int i = 0; i < proto.size(); ++i) {
-        max_count(i) = proto.prim().basis()[proto[i].sublat()].occupant_dof().size() - 1;
+        max_count(i) = proto.prim().basis()[proto[i].sublattice()].occupant_dof().size() - 1;
       }
       m_occ_counter = EigenCounter<Eigen::VectorXi>(
                         Eigen::VectorXi::Zero(proto.size()),

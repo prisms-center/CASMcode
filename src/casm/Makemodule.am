@@ -60,6 +60,7 @@ libcasm_la_SOURCES = \
     include/casm/basis_set/PolynomialFunction.hh\
     include/casm/basis_set/StrainDoFTraits.hh\
     include/casm/basis_set/Variable.hh\
+    include/casm/casm_io/FileData.hh\
     include/casm/casm_io/FormatFlag.hh\
     include/casm/casm_io/Help.hh\
     include/casm/casm_io/Log.hh\
@@ -126,6 +127,7 @@ libcasm_la_SOURCES = \
     include/casm/clex/HasPrimClex_impl.hh\
     include/casm/clex/HasSupercell.hh\
     include/casm/clex/HasSupercell_impl.hh\
+    include/casm/clex/MappedProperties.hh\
     include/casm/clex/MappedPropertiesTools.hh\
     include/casm/clex/NeighborList.hh\
     include/casm/clex/Norm.hh\
@@ -146,6 +148,7 @@ libcasm_la_SOURCES = \
     include/casm/clex/Supercell_functions.hh\
     include/casm/clex/Supercell_impl.hh\
     include/casm/clex/io/json/ChemicalReference.hh\
+    include/casm/clex/io/json/ConfigMapping.hh\
     include/casm/clex/json_io.hh\
     include/casm/clusterography/ClusterDecl.hh\
     include/casm/clusterography/ClusterInvariants.hh\
@@ -226,7 +229,6 @@ libcasm_la_SOURCES = \
     include/casm/database/DiffTransOrbitDatabase.hh\
     include/casm/database/Import.hh\
     include/casm/database/Import_impl.hh\
-    include/casm/clex/MappedProperties.hh\
     include/casm/database/Named.hh\
     include/casm/database/Named_impl.hh\
     include/casm/database/PropertiesDatabase.hh\
@@ -784,6 +786,7 @@ libcasm_la_SOURCES = \
     src/casm/clex/Configuration.cc\
     src/casm/clex/ConfigurationTraits.cc\
     src/casm/clex/ECIContainer.cc\
+    src/casm/clex/MappedProperties.cc\
     src/casm/clex/MappedPropertiesTools.cc\
     src/casm/clex/NeighborList.cc\
     src/casm/clex/OrbitFunctionTraits.cc\
@@ -799,6 +802,7 @@ libcasm_la_SOURCES = \
     src/casm/clex/SupercellTraits.cc\
     src/casm/clusterography/ClusterOrbits.cc\
     src/casm/clusterography/ClusterSpecsParser.cc\
+    src/casm/clusterography/ClusterSymCompareSpecializations.cc\
     src/casm/clusterography/IntegralCluster.cc\
     src/casm/completer/Complete.cc\
     src/casm/completer/Handlers.cc\
@@ -827,6 +831,7 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/SymTools.cc\
     src/casm/crystallography/SymType.cc\
     src/casm/crystallography/UnitCellCoord.cc\
+    src/casm/crystallography/UnitCellCoordTraits.cc\
     src/casm/crystallography/io/VaspIO.cc\
     src/casm/database/ConfigData.cc\
     src/casm/database/ConfigDatabase.cc\
@@ -838,7 +843,6 @@ libcasm_la_SOURCES = \
     src/casm/database/DiffTransConfigImport.cc\
     src/casm/database/DiffTransOrbitDatabase.cc\
     src/casm/database/Import.cc\
-    src/casm/clex/MappedProperties.cc\
     src/casm/database/PropertiesDatabase.cc\
     src/casm/database/Remove.cc\
     src/casm/database/ScelDatabase.cc\

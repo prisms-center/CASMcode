@@ -432,7 +432,7 @@ namespace CASM {
         [&](const Coordinate & coord) {
         return test.dist(coord) < max_radius;
         })) {
-          *result++ = UnitCellCoord(unit, test, xtal_tol);
+          *result++ = UnitCellCoord::from_coordinate(unit, test, xtal_tol);
         }
       }
     }
@@ -496,9 +496,9 @@ namespace CASM {
         }
 
         Coordinate test(*it + lat_point);
-        UnitCellCoord tmp(diff_trans.prim(), test, xtal_tol);
+        auto tmp = UnitCellCoord::from_coordinate(diff_trans.prim(), test, xtal_tol);
         if(dist_to_path(diff_trans, tmp) < max_radius && dist_to_path(diff_trans, tmp) > xtal_tol) {
-          *result++ = UnitCellCoord(diff_trans.prim(), test, xtal_tol);
+          *result++ = UnitCellCoord::from_coordinate(diff_trans.prim(), test, xtal_tol);
         }
         if(dist_to_path(diff_trans, tmp) <= xtal_tol) {
           auto spec_it = diff_trans.species_traj().begin();
@@ -508,7 +508,7 @@ namespace CASM {
             }
           }
           if(spec_it == diff_trans.species_traj().end()) {
-            *result++ = UnitCellCoord(diff_trans.prim(), test, xtal_tol);
+            *result++ = UnitCellCoord::from_coordinate(diff_trans.prim(), test, xtal_tol);
           }
         }
       }
@@ -606,7 +606,7 @@ namespace CASM {
       for(int i = 0; i < prim.basis().size(); i++) {
         // create a prototype cluster
         cluster_type test(prim);
-        test.elements().push_back(UnitCellCoord(prim, i, UnitCell(0, 0, 0)));
+        test.elements().emplace_back(i, UnitCell(0, 0, 0));
         generators.insert(test);
       }
 
@@ -881,7 +881,7 @@ namespace CASM {
   ///
   template<typename OrbitOutputIterator>
   OrbitOutputIterator make_prim_periodic_asymmetric_unit(
-    const Structure &prim,
+    std::shared_ptr<const Structure> prim_ptr,
     const std::function<bool (Site)> &site_filter,
     double xtal_tol,
     OrbitOutputIterator result,
@@ -889,19 +889,21 @@ namespace CASM {
 
     typedef PrimPeriodicOrbit<IntegralCluster> orbit_type;
     typedef typename orbit_type::Element cluster_type;
+    typedef PrimPeriodicSymCompare<IntegralCluster> symcompare_type;
 
-    const SymGroup &generating_grp = prim.factor_group();
-    PrimPeriodicSymCompare<IntegralCluster> sym_compare(xtal_tol);
+    const SymGroup &generating_grp = prim_ptr->factor_group();
+
+    symcompare_type sym_compare(prim_ptr, xtal_tol);
 
     std::vector<UnitCellCoord> candidate_sites;
-    for(int i = 0; i < prim.basis().size(); ++i) {
-      if(site_filter(prim.basis()[i])) {
-        candidate_sites.emplace_back(prim, i, 0, 0, 0);
+    for(int i = 0; i < prim_ptr->basis().size(); ++i) {
+      if(site_filter(prim_ptr->basis()[i])) {
+        candidate_sites.emplace_back(i, 0, 0, 0);
       }
     }
 
     OrbitBranchSpecs<orbit_type> specs(
-      prim,
+      *prim_ptr,
       candidate_sites.begin(),
       candidate_sites.end(),
       generating_grp,
@@ -935,19 +937,20 @@ namespace CASM {
   /// \relates IntegralCluster
   template<typename OrbitOutputIterator>
   OrbitOutputIterator make_prim_periodic_orbits(
-    const Structure &prim,
+    std::shared_ptr<const Structure> prim_ptr,
     const std::vector<double> &max_length,
     const std::vector<IntegralCluster> &custom_generators,
     const std::function<bool (Site)> &site_filter,
     double xtal_tol,
     OrbitOutputIterator result,
     std::ostream &status) {
-
     typedef PrimPeriodicOrbit<IntegralCluster> orbit_type;
     typedef typename orbit_type::Element cluster_type;
+    typedef PrimPeriodicSymCompare<IntegralCluster> symcompare_type;
 
-    const SymGroup &generating_grp = prim.factor_group();
-    PrimPeriodicSymCompare<IntegralCluster> sym_compare(xtal_tol);
+    const SymGroup &generating_grp = prim_ptr->factor_group();
+
+    symcompare_type sym_compare(prim_ptr, xtal_tol);
 
     // collect OrbitBranchSpecs here
     std::vector<OrbitBranchSpecs<orbit_type> > specs;
@@ -957,7 +960,7 @@ namespace CASM {
 
     // --- add specs for null cluster orbit ------------------
     if(max_length.size() >= 1) {
-      specs.emplace_back(prim,
+      specs.emplace_back(*prim_ptr,
                          candidate_sites.begin(),
                          candidate_sites.end(),
                          generating_grp,
@@ -970,12 +973,12 @@ namespace CASM {
 
     // --- add specs for asymmetric unit orbit ------------------
     if(max_length.size() >= 2) {
-      for(int i = 0; i < prim.basis().size(); ++i) {
-        if(site_filter(prim.basis()[i])) {
-          candidate_sites.emplace_back(prim, i, 0, 0, 0);
+      for(int i = 0; i < prim_ptr->basis().size(); ++i) {
+        if(site_filter(prim_ptr->basis()[i])) {
+          candidate_sites.emplace_back(i, 0, 0, 0);
         }
       }
-      specs.emplace_back(prim,
+      specs.emplace_back(*prim_ptr,
                          candidate_sites.begin(),
                          candidate_sites.end(),
                          generating_grp,
@@ -990,13 +993,13 @@ namespace CASM {
 
       // construct the neighborhood of sites to consider for the orbit
       candidate_sites.clear();
-      neighborhood(prim, *it, site_filter, std::back_inserter(candidate_sites), xtal_tol);
+      neighborhood(*prim_ptr, *it, site_filter, std::back_inserter(candidate_sites), xtal_tol);
 
       auto max_length_filter = [ = ](const cluster_type & test) {
         return test.invariants().displacement().back() < *it;
       };
 
-      specs.emplace_back(prim,
+      specs.emplace_back(*prim_ptr,
                          candidate_sites.begin(),
                          candidate_sites.end(),
                          generating_grp,
@@ -1028,7 +1031,7 @@ namespace CASM {
   /// \relates IntegralCluster
   template<typename OrbitOutputIterator>
   OrbitOutputIterator make_prim_periodic_orbits(
-    const Structure &prim,
+    std::shared_ptr<const Structure> prim_ptr,
     const jsonParser &bspecs,
     const std::function<bool (Site)> &site_filter,
     double xtal_tol,
@@ -1037,13 +1040,14 @@ namespace CASM {
 
     typedef PrimPeriodicOrbit<IntegralCluster> orbit_type;
     typedef typename orbit_type::Element cluster_type;
+    typedef PrimPeriodicSymCompare<IntegralCluster> symcompare_type;
 
     // read max_length from bspecs
     std::vector<double> max_length = ClusterOrbits_impl::max_length_from_bspecs(bspecs);
 
     // collect custom orbit generating clusters in 'generators'
-    PrimPeriodicSymCompare<IntegralCluster> sym_compare(xtal_tol);
-    OrbitGenerators<orbit_type> generators(prim.factor_group(), sym_compare);
+    symcompare_type sym_compare(prim_ptr, xtal_tol);
+    OrbitGenerators<orbit_type> generators(prim_ptr->factor_group(), sym_compare);
 
     if(bspecs.contains("orbit_specs")) {
 
@@ -1051,7 +1055,7 @@ namespace CASM {
       for(auto it = bspecs["orbit_specs"].begin(); it != bspecs["orbit_specs"].end(); ++it) {
 
         // read orbit generating cluster from bspecs
-        cluster_type input_cluster(prim);
+        cluster_type input_cluster(*prim_ptr);
         from_json(input_cluster, *it, xtal_tol);
 
         // check if subclusters should be included (yes by default)
@@ -1068,7 +1072,7 @@ namespace CASM {
 
     std::vector<cluster_type> custom_generators(generators.elements.begin(), generators.elements.end());
 
-    return make_prim_periodic_orbits(prim, max_length, custom_generators, site_filter, xtal_tol, result, status);
+    return make_prim_periodic_orbits(prim_ptr, max_length, custom_generators, site_filter, xtal_tol, result, status);
 
   }
 

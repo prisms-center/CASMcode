@@ -5,6 +5,7 @@
 #include "casm/database/Import.hh"
 #include "casm/database/ConfigData_impl.hh"
 #include "casm/database/Selection_impl.hh"
+#include "casm/database/PropertiesDatabase.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/import.hh"
 #include "casm/clex/PrimClex_impl.hh"

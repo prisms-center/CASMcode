@@ -44,7 +44,7 @@ namespace CASM {
       EnumInputParser(_primclex, _input, _enum_opt, _path, _required) {
 
       // check "cspecs"
-      PrimPeriodicSymCompare<IntegralCluster> sym_compare(_primclex);
+      PrimPeriodicSymCompare<IntegralCluster>  sym_compare(_primclex.shared_prim(), _primclex.crystallography_tol());
       this->kwargs["cspecs"] = m_cspecs_parser =
                                  std::make_shared<PrimPeriodicClustersByMaxLength>(
                                    _primclex, _primclex.prim().factor_group(), sym_compare, input, relpath("cspecs"), true);
@@ -229,7 +229,7 @@ namespace CASM {
       log.begin<Log::verbose>("Calculate cluster orbits");
       std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
       make_prim_periodic_orbits(
-        primclex.prim(),
+        primclex.shared_prim(),
         parser.cspecs().self, // TODO
         alloy_sites_filter,
         primclex.crystallography_tol(),
@@ -358,7 +358,7 @@ namespace CASM {
       std::vector<Index> init_occ(N * 2, 0);
       std::vector<Index> final_occ(N * 2);
       for(int i = 0; i < N; i++) {
-        final_occ[i] = cluster()[i].site().occupant_dof().size() - 1;
+        final_occ[i] = cluster()[i].site(this->prim()).occupant_dof().size() - 1;
         final_occ[i + N] = final_occ[i];
       }
       std::vector<Index> incr(N * 2, 1);
@@ -388,7 +388,7 @@ namespace CASM {
       for(Index i = 0; i < N; ++i) {
         Index occ = occ_values[i + offset];
         UnitCellCoord uccoord = cluster()[i];
-        Index mol_size = uccoord.site().occupant_dof()[occ].size();
+        Index mol_size = uccoord.site(this->prim()).occupant_dof()[occ].size();
         // for each species
         for(Index j = 0; j < mol_size; ++j) {
           loc.emplace_back(uccoord, occ, j);

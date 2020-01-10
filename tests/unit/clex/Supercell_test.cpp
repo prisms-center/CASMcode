@@ -46,7 +46,7 @@ TEST(SupercellTest, TestSupercellName) {
   {
     // non-standard, transformed cubic FCC unit cell (standard w/ z+'c')
     Lattice lat(c + b - a, a - b + c, 2 * (a + b - c));
-    Lattice rotated_lat = copy_apply(primclex.prim().point_group()[10], lat);
+    Lattice rotated_lat = sym::copy_apply(primclex.prim().point_group()[10], lat);
 
     Supercell scel {&primclex, rotated_lat};
     EXPECT_EQ(true, true);

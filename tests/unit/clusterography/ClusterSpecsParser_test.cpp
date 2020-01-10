@@ -1,24 +1,27 @@
 #include "gtest/gtest.h"
+#include <memory>
 
 /// What is being tested:
 #include "casm/clusterography/ClusterSpecsParser_impl.hh"
 
 /// What is being used to test it:
-#include "casm/crystallography/Molecule.hh"
-#include "casm/crystallography/Structure.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/clusterography/ClusterOrbits_impl.hh"
-#include "casm/clusterography/IntegralCluster.hh"
-#include "casm/clusterography/ClusterSymCompare_impl.hh"
-#include "casm/kinetics/DiffusionTransformation_impl.hh"
-#include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
-#include "casm/casm_io/json/jsonFile.hh"
-#include "casm/completer/Handlers.hh"
 #include "FCCTernaryProj.hh"
-#include "ZrOProj.hh"
+#include "TestConfiguration.hh"
 #include "TestOrbits.hh"
 #include "TestSupercell.hh"
-#include "TestConfiguration.hh"
+#include "ZrOProj.hh"
+#include "casm/casm_io/json/jsonFile.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/clusterography/ClusterSymCompare_impl.hh"
+#include "casm/clusterography/IntegralCluster.hh"
+#include "casm/completer/Handlers.hh"
+#include "casm/crystallography/Molecule.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
+#include "casm/kinetics/DiffusionTransformation_impl.hh"
+#include "casm/misc/CRTPBase.hh"
+#include "casm/symmetry/ElementSymApply.hh"
 
 using namespace CASM;
 
@@ -33,7 +36,7 @@ namespace {
       parser(notstd::make_unique<PrimPeriodicClustersByMaxLength>(
                primclex,
                primclex.prim().factor_group(),
-               PrimPeriodicSymCompare<IntegralCluster>(primclex),
+               PrimPeriodicSymCompare<IntegralCluster>(primclex.shared_prim(), primclex.crystallography_tol()),
                input,
                fs::path(),
                true)) {}
@@ -156,7 +159,6 @@ namespace {
     print_clust(local_pair_orbits.begin(), local_pair_orbits.end(), ts.scel.primclex().log(), orbit_printer);
 
   }
-
 }
 
 TEST(ClusterSpecsParserTest, PrimPeriodicClustersByMaxLengthTest) {
@@ -894,7 +896,7 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest) {
     EXPECT_EQ(parser->custom->data[0].orbit_specs->prototypes[0].include_subclusters, 1);
     EXPECT_EQ(parser->custom->data[0].orbit_specs->prototypes[0].cluster.size(), 1);
 
-    ScelPeriodicDiffTransSymCompare dt_scel_sym_compare(ts.scel);
+    ScelPeriodicDiffTransSymCompare dt_scel_sym_compare(ts.scel.primclex().shared_prim(), ts.scel.prim_grid(), ts.scel.crystallography_tol());
     // checks comparing input phenomenal cluster to test cluster
     // the input custom phenomenal cluster is to.diff_trans_orbits[0].prototype(), so
     // only clusters in orbit to.diff_trans_orbits[0] should be found
@@ -921,7 +923,7 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest) {
             std::vector<PermuteIterator> dt_permute_group = equiv.invariant_subgroup(ts.scel);
             SymGroup dt_group = make_sym_group(dt_permute_group);
             OrbitGenerators<ScelPeriodicIntegralClusterOrbit> test_gen(dt_group, ts.scel_sym_compare);
-            parser->insert_custom_generators(find_res, test_gen);
+            parser->insert_custom_generators(find_res, test_gen, sym::CopyApplyWithPrim_f(primclex.shared_prim()));
 
             if(linear_orbit_index == 0) {
 
@@ -1060,7 +1062,7 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest_Tet) {
     EXPECT_EQ(parser->custom->data[1].orbit_specs->prototypes[0].include_subclusters, 1);
     EXPECT_EQ(parser->custom->data[1].orbit_specs->prototypes[0].cluster.size(), 1);
 
-    ScelPeriodicDiffTransSymCompare dt_scel_sym_compare(ts.scel);
+    ScelPeriodicDiffTransSymCompare dt_scel_sym_compare(ts.scel.primclex().shared_prim(), ts.scel.prim_grid(), ts.scel.crystallography_tol());
     // checks comparing input phenomenal cluster to test cluster
     // the input custom phenomenal cluster is to.diff_trans_orbits[0].prototype(), so
     // 4/6 clusters in orbit to.diff_trans_orbits[0] should match the first custom phenom
@@ -1101,16 +1103,10 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest_Tet) {
             EXPECT_EQ(dt_group.size(), 8);
           }
 
-          //          log << "--- dt_group ---" << std::endl;
-          //          Index op_index = 0;
-          //          for(const auto& op: dt_group) {
-          //            log << op_index++ << ":\n" << std::endl;
-          //            log << "op.matrix(): \n" << op.matrix() << std::endl;
-          //            log << "op.tau(): " << op.tau().transpose() << std::endl << std::endl;
-          //          }
-
           OrbitGenerators<ScelPeriodicIntegralClusterOrbit> test_gen(dt_group, ts.scel_sym_compare);
-          parser->insert_custom_generators(find_res, test_gen);
+          parser->insert_custom_generators(find_res, test_gen, sym::CopyApplyWithPrim_f(primclex.shared_prim()));
+
+
 
           // 2 elements (because default==include_subclusters -> null cluster)
           EXPECT_EQ(test_gen.elements.size(), 2);

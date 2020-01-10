@@ -129,7 +129,7 @@ namespace CASM {
   /// \brief Get neighborlist index of UnitCellCoord @param _ucc, without expanding neighborhood
   PrimNeighborList::Scalar PrimNeighborList::_neighbor_index(UnitCellCoord const &_ucc) const {
     Scalar uc_ind(find_index(m_neighborhood, _ucc.unitcell()));
-    Scalar sublat_dist(find_index(sublat_indices(), _ucc.sublat()));
+    Scalar sublat_dist(find_index(sublat_indices(), _ucc.sublattice()));
 
     return uc_ind * sublat_indices().size() + sublat_dist;
   }

@@ -37,7 +37,7 @@ void lattice_is_equivalent_test() {
     Lattice fcc = Lattice::fcc();
     SymGroup pg = SymGroup::lattice_point_group(fcc);
     for(const auto &op : pg) {
-      EXPECT_TRUE(xtal::is_equivalent(fcc, copy_apply(op, fcc)));
+      EXPECT_TRUE(xtal::is_equivalent(fcc, sym::copy_apply(op, fcc)));
     }
   }
   {
@@ -46,7 +46,7 @@ void lattice_is_equivalent_test() {
     SymGroup pg = SymGroup::lattice_point_group(bcc);
 
     for(const auto &op : pg) {
-      EXPECT_TRUE(xtal::is_equivalent(bcc, copy_apply(op, bcc)));
+      EXPECT_TRUE(xtal::is_equivalent(bcc, sym::copy_apply(op, bcc)));
     }
   }
   {
@@ -55,7 +55,7 @@ void lattice_is_equivalent_test() {
     SymGroup pg = SymGroup::lattice_point_group(cubic);
 
     for(const auto &op : pg) {
-      EXPECT_TRUE(xtal::is_equivalent(cubic, copy_apply(op, cubic)));
+      EXPECT_TRUE(xtal::is_equivalent(cubic, sym::copy_apply(op, cubic)));
     }
   }
   {
@@ -63,7 +63,7 @@ void lattice_is_equivalent_test() {
     SymGroup pg = SymGroup::lattice_point_group(hex);
 
     for(const auto &op : pg) {
-      EXPECT_TRUE(xtal::is_equivalent(hex, copy_apply(op, hex)));
+      EXPECT_TRUE(xtal::is_equivalent(hex, sym::copy_apply(op, hex)));
     }
   }
 }

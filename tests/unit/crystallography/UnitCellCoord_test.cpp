@@ -14,8 +14,8 @@ TEST(UnitCellCoordTest, Test1) {
 
   BasicStructure<Site> prim = test::FCC_ternary_prim();
   {
-    UnitCellCoord uccoord(prim, 0, -1, 1, 1);
-    Eigen::Vector3d vec = uccoord.site().cart();
+    UnitCellCoord uccoord(0, -1, 1, 1);
+    Eigen::Vector3d vec = uccoord.site(prim).cart();
     EXPECT_EQ(almost_equal(vec, Eigen::Vector3d(4., 0., 0.)), true);
   }
 

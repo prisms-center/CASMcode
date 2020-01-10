@@ -5,17 +5,18 @@
 namespace {
   using CASM::xtal::Lattice;
 
-  //TODO
-  //I removed this from the library, because it seems like something that exists solely for generating the point group
-  //If you need this routine somewhere else, go right ahead and put it back in the xtal namespace, and uncomment its
-  //declaration in SymTools.hh
+  // TODO
+  // I removed this from the library, because it seems like something that exists solely for generating the point group
+  // If you need this routine somewhere else, go right ahead and put it back in the xtal namespace, and uncomment its
+  // declaration in SymTools.hh
   /// Relax the vectors of the given lattice such that it obeys the symmetry of the given group,
   /// where the symmetry operations are given in fractional representations
   Lattice symmetrized_with_fractional(const Lattice &lattice, const std::vector<Eigen::Matrix3i> &fractional_point_group) {
     Eigen::Matrix3d tLat2(Eigen::Matrix3d::Zero());
 
     for(const auto &frac_mat : fractional_point_group) {
-      tLat2 += frac_mat.cast<double>().transpose() * lattice.lat_column_mat().transpose() * lattice.lat_column_mat() * frac_mat.cast<double>();
+      tLat2 += frac_mat.cast<double>().transpose() * lattice.lat_column_mat().transpose() * lattice.lat_column_mat() *
+               frac_mat.cast<double>();
     }
     tLat2 /= double(fractional_point_group.size());
 
@@ -35,9 +36,21 @@ namespace {
 
     return Lattice(tLat2, lattice.tol());
   }
-}
+} // namespace
 
 namespace CASM {
+  namespace sym {
+    xtal::Lattice &apply(const xtal::SymOp &op, xtal::Lattice &lat) {
+      lat = Lattice(get_matrix(op) * lat.lat_column_mat(), lat.tol());
+      return lat;
+    }
+
+    xtal::Lattice copy_apply(const xtal::SymOp &op, xtal::Lattice lat_copy) {
+      apply(op, lat_copy);
+      return lat_copy;
+    }
+  } // namespace sym
+
   namespace xtal {
     /// \brief Construct the subgroup that leaves a lattice unchanged
     std::vector<Index> invariant_subgroup_indices(const Lattice &lat, std::vector<SymOp> const &super_grp) {
@@ -50,7 +63,8 @@ namespace CASM {
       Eigen::Matrix3d tLat2(Eigen::Matrix3d::Zero());
       Eigen::Matrix3d frac_mat;
       for(Index ng = 0; ng < enforced_group.size(); ng++) {
-        frac_mat = iround(lattice.inv_lat_column_mat() * get_matrix(enforced_group[ng]) * lattice.lat_column_mat()).cast<double>();
+        frac_mat = iround(lattice.inv_lat_column_mat() * get_matrix(enforced_group[ng]) * lattice.lat_column_mat())
+                   .cast<double>();
         tLat2 += frac_mat.transpose() * lattice.lat_column_mat().transpose() * lattice.lat_column_mat() * frac_mat;
       }
       tLat2 /= double(enforced_group.size());
@@ -85,11 +99,11 @@ namespace CASM {
       std::vector<Eigen::Matrix3i> frac_point_group;
       frac_point_group.reserve(48);
 
-      //Enumerate all possible matrices with elements equal to -1, 0, or 1
-      //These represent operations that reorder lattice vectors or replace one
-      //or more lattice vectors with a face or body diagonal.
+      // Enumerate all possible matrices with elements equal to -1, 0, or 1
+      // These represent operations that reorder lattice vectors or replace one
+      // or more lattice vectors with a face or body diagonal.
 
-      //For this algorithm to work, lattice needs to be in reduced form.
+      // For this algorithm to work, lattice needs to be in reduced form.
       Lattice tlat_reduced(_lat.reduced_cell());
       tlat_reduced.set_tol(tol);
       IsPointGroupOp is_equiv(tlat_reduced);
@@ -120,7 +134,7 @@ namespace CASM {
       result.reserve(frac_point_group.size());
       Eigen::Matrix3d t_cart, t_diff;
       Lattice symlat = symmetrized_with_fractional(tlat_reduced, frac_point_group);
-      //std::cout << "Symmetrized lattice is\n " << symlat.lat_column_mat() << "\n";
+      // std::cout << "Symmetrized lattice is\n " << symlat.lat_column_mat() << "\n";
       for(Eigen::Matrix3i const &frac : frac_point_group) {
         t_cart = symlat.lat_column_mat() * frac.cast<double>() * symlat.inv_lat_column_mat();
         t_diff = t_cart * _lat.lat_column_mat() - _lat.lat_column_mat();
@@ -129,14 +143,7 @@ namespace CASM {
       return result;
     }
 
-    Lattice &apply(const SymOp &op, Lattice &lat) {
-      return lat = Lattice(get_matrix(op) * lat.lat_column_mat(), lat.tol());
-    }
-
-    Lattice copy_apply(const SymOp &op, const Lattice &lat) {
-      return Lattice(get_matrix(op) * lat.lat_column_mat(), lat.tol());
-    }
-
   } // namespace xtal
+
 } // namespace CASM
 

@@ -1,6 +1,7 @@
 #ifndef CASM_ConfigSubOrbits_impl
 #define CASM_ConfigSubOrbits_impl
 
+#include "casm/symmetry/ElementSymApply.hh"
 #include "casm/symmetry/ConfigSubOrbits.hh"
 
 #include "casm/symmetry/InvariantSubgroup_impl.hh"
@@ -8,8 +9,6 @@
 #include "casm/symmetry/ScelSubOrbits_impl.hh"
 
 namespace CASM {
-
-  // --- MakeConfigSubOrbitGenerators ---
 
   template<typename OrbitType, typename ElementOutputIterator>
   ElementOutputIterator MakeConfigSubOrbitGenerators::operator()(
@@ -61,6 +60,7 @@ namespace CASM {
       orbit,
       m_prim_config.prim().factor_group(),
       m_prim_config.supercell().factor_group(),
+      typename traits<Element>::copy_apply_f_type(this->m_config.supercell().primclex().shared_prim()),
       std::back_inserter(scel_suborbit_generators));
 
     // get generating elements for supercell->config orbit splitting

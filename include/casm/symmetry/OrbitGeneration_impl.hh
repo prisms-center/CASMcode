@@ -80,7 +80,7 @@ namespace CASM {
   CanonicalGenerator<_OrbitType>::operator()(const Element &e) const {
     Element result = sym_compare.prepare(e);
     for(const auto &op : generating_group) {
-      auto test = sym_compare.prepare(copy_apply(op, e));
+      auto test = sym_compare.prepare(sym_compare.copy_apply(op, e));
       if(sym_compare.compare(result, test)) {
         result = test;
         m_to_canonical = &op;
@@ -118,7 +118,7 @@ namespace CASM {
              generating_group.begin(),
              generating_group.end(),
     [&](const SymOp & op) {
-      auto test = sym_compare.prepare(copy_apply(op, e));
+      auto test = sym_compare.prepare(sym_compare.copy_apply(op, e));
       return sym_compare.compare(e, test);
     });
   }

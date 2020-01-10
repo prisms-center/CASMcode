@@ -191,7 +191,7 @@ namespace CASM {
 
       // Determine what that site's linear index is and what the sublattice index is
       Index mutating_site = m_site_swaps.variable_sites()[random_variable_site];
-      Index sublat = m_site_swaps.sublat()[random_variable_site];
+      Index sublat = m_site_swaps.sublattice()[random_variable_site];
 
       // Determine the current occupant of the mutating site
       int current_occupant = configdof().occ(mutating_site);
@@ -349,7 +349,7 @@ namespace CASM {
 
         //Transform exchanger index to ConfigDoF index
         Index mutating_site = site_exch.variable_sites()[exch_ind];
-        int sublat = site_exch.sublat()[exch_ind];
+        int sublat = site_exch.sublattice()[exch_ind];
         int current_occupant = config_dof.occ(mutating_site);
 
         //Loop over possible occupants for site that can change

@@ -1,10 +1,12 @@
-#include "casm/clusterography/IntegralCluster.hh"
-#include "casm/casm_io/Log.hh"
-#include "casm/casm_io/json/jsonParser.hh"
-#include "casm/casm_io/container/json_io.hh"
 #include "casm/app/AppIO.hh"
-#include "casm/crystallography/Structure.hh"
+#include "casm/casm_io/Log.hh"
+#include "casm/casm_io/container/json_io.hh"
+#include "casm/casm_io/json/jsonParser.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/clusterography/ClusterInvariants.hh"
 #include "casm/clusterography/ClusterSymCompare_impl.hh"
+#include "casm/clusterography/IntegralCluster.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/global/enum/json_io.hh"
 
 namespace CASM {
@@ -123,8 +125,7 @@ namespace CASM {
     json.get_if(coord_type, "coordinate_mode");
 
     if(coord_type == INTEGRAL) {
-      //UnitCellCoord coord(clust.prim());
-      from_json(clust.elements(), json[name], clust.prim());
+      from_json(clust.elements(), json[name]);
     }
     else {
       clust.elements().clear();
@@ -134,7 +135,7 @@ namespace CASM {
 
         Coordinate tcoord(vcoord, clust.prim().lattice(), coord_type);
 
-        clust.elements().emplace_back(clust.prim(), tcoord, xtal_tol);
+        clust.elements().emplace_back(UnitCellCoord::from_coordinate(clust.prim(), tcoord, xtal_tol));
       }
     }
     return;
@@ -157,4 +158,13 @@ namespace CASM {
     return clust;
   }
 
+  namespace sym {
+    template<>
+    CoordCluster<UnitCellCoord> &apply<SymOp, CoordCluster<UnitCellCoord>, xtal::Structure>(const SymOp &op, CoordCluster<UnitCellCoord> &clust, const xtal::Structure &prim) {
+      for(auto &e : clust) {
+        sym::apply(op, e, prim);
+      }
+      return clust;
+    }
+  }
 }

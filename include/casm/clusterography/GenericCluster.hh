@@ -170,47 +170,6 @@ namespace CASM {
     }
 
   };
-
-
-  /*
-  template<typename Derived>
-  struct traits<ElementWiseSymCluster<Derived> > {
-    typedef typename traits<Derived>::MostDerived MostDerived;
-    typedef typename traits<Derived>::Element Element;
-    typedef typename traits<Derived>::InvariantsType InvariantsType;
-  };
-  */
-
-  /// \brief CRTP-Base cluster class to apply_sym on an element-by-element basis
-  ///
-  /// - Requires:
-  ///   - Element& Element::apply_sym(const SymOp& el);
-  ///
-  /// \ingroup Clusterography
-  ///
-  template<typename Base>
-  class ElementWiseSymApply : public Base {
-
-  public:
-
-    typedef typename Base::MostDerived MostDerived;
-    using Base::derived;
-
-    /// \brief ElementWiseSymCluster applies symmetry element-by-element
-    MostDerived &apply_sym(const SymOp &op) {
-      for(auto &e : derived()) {
-        e.apply_sym(op);
-      }
-      return derived();
-    }
-
-    /// \brief ElementWiseSymCluster applies symmetry element-by-element
-    MostDerived &apply_sym(const PermuteIterator &it) {
-      return apply_sym(it.sym_op());
-    }
-
-  };
-
 }
 
 #endif

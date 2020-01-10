@@ -192,10 +192,11 @@ namespace CASM {
     /// \note Use ClusterEquivalenceParser to determine if custom clusters apply
     /// to a given cluster, and determine 'op'.
     ///
-    template<typename OrbitType>
+    template<typename OrbitType, typename CopyApplySymToElementType>
     OrbitGenerators<OrbitType> &insert_custom_generators(
       const SymOp &op,
-      OrbitGenerators<OrbitType> &custom_generators) const;
+      OrbitGenerators<OrbitType> &custom_generators,
+      const CopyApplySymToElementType &copy_apply) const;
   };
 
   /// \brief Specify equivalence type for customizing input based on a particular phenomenal cluster
@@ -390,11 +391,12 @@ namespace CASM {
     /// Get custom local cluster generators
     ///
     /// \throws std::invalid_argument if find_res.first == custom.end()
-    template<typename OrbitType>
+    template<typename OrbitType, typename CopyApplySymToElementType>
     OrbitGenerators<OrbitType> &
     insert_custom_generators(
       std::pair<custom_specs_iterator, SymOp> find_res,
-      OrbitGenerators<OrbitType> &custom_generators) const;
+      OrbitGenerators<OrbitType> &custom_generators,
+      const CopyApplySymToElementType& copy_apply) const;
 
     // *INDENT-ON*
   };

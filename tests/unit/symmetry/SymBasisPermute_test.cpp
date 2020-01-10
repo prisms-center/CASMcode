@@ -10,6 +10,7 @@
 #include "TestConfiguration.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
+#include "casm/symmetry/SymTools.hh"
 
 using namespace CASM;
 
@@ -41,7 +42,7 @@ TEST(SymBasisPermuteTest, Test0) {
 
   TestConfig0 td(primclex);
 
-  UnitCellCoord u(primclex.prim(), 2, 0, 0, 0);
+  UnitCellCoord u(2, 0, 0, 0);
 
   for(Index l = 0; l < td.config.size(); ++l) {
 
@@ -56,8 +57,8 @@ TEST(SymBasisPermuteTest, Test0) {
       EXPECT_EQ(
         true,
         almost_equal(
-          copy_apply(g[op_i], u.coordinate()).const_cart(),
-          copy_apply(g[op_i], u).coordinate().const_cart(),
+          copy_apply(g[op_i], u.coordinate(primclex.prim())).const_cart(),
+          sym::copy_apply(g[op_i], u, primclex.prim()).coordinate(primclex.prim()).const_cart(),
           primclex.crystallography_tol()));
     }
   }

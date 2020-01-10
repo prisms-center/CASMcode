@@ -7,12 +7,12 @@
 namespace CASM {
 
   template struct ScelIsCanonical<OccPerturbation>;
-  template bool CanonicalForm<ElementWiseSymApply<Kinetics::DoFTransformation<GenericCoordCluster<CRTPBase<CASM::OccPerturbation> > > > >::
+  template bool CanonicalForm<Kinetics::DoFTransformation<GenericCoordCluster<CRTPBase<CASM::OccPerturbation> > > >::
   is_canonical<std::vector<PermuteIterator>::iterator>(
     Supercell const &,
     std::vector<PermuteIterator>::iterator,
     std::vector<PermuteIterator>::iterator) const;
-  template bool CanonicalForm<ElementWiseSymApply<Kinetics::DoFTransformation<GenericCoordCluster<CRTPBase<CASM::OccPerturbation> > > > >::
+  template bool CanonicalForm<Kinetics::DoFTransformation<GenericCoordCluster<CRTPBase<CASM::OccPerturbation> > > > ::
   is_canonical<std::vector<PermuteIterator>::const_iterator>(
     Supercell const &,
     std::vector<PermuteIterator>::const_iterator,
@@ -22,8 +22,8 @@ namespace CASM {
   OccPerturbationInvariants::OccPerturbationInvariants(
     const OccPerturbation &perturb) :
     cluster_invariants(perturb.cluster().invariants()),
-    from_species_count(CASM::from_species_count(perturb.begin(), perturb.end())),
-    to_species_count(CASM::to_species_count(perturb.begin(), perturb.end())) {}
+    from_species_count(CASM::from_species_count(perturb.prim(), perturb.begin(), perturb.end())),
+    to_species_count(CASM::to_species_count(perturb.prim(), perturb.begin(), perturb.end())) {}
 
   /// \brief Check if DiffTransInvariants are equal
   bool almost_equal(const OccPerturbationInvariants &A, const OccPerturbationInvariants &B, double tol) {
@@ -126,7 +126,7 @@ namespace CASM {
   }
 
   Coordinate OccPerturbation::coordinate_impl(size_type i) const {
-    return static_cast<Coordinate>(element(i).uccoord);
+    return this->element(i).uccoord.coordinate(this->prim());
   }
 
 
@@ -166,7 +166,23 @@ namespace CASM {
 
     Printer<Kinetics::OccupationTransformation> printer;
     for(const auto &trans : perturb) {
-      printer.print(trans, out);
+      printer.print(trans, perturb.prim(), out);
+    }
+  }
+}
+
+namespace CASM {
+  namespace sym {
+    /* template <typename Transform, typename Object, typename... Args> */
+    /* Object &apply(const Transform &transformation, Object &obj, const Args &... args); */
+
+    //TODO: These element-wise ones are always the same. Template them somehow?
+    template<>
+    OccPerturbation &apply<CASM::SymOp, OccPerturbation, xtal::Structure>(const SymOp &op, OccPerturbation &mutating_occ_pert, const xtal::Structure &prim) {
+      for(auto &e : mutating_occ_pert) {
+        sym::apply(op, e, prim);
+      }
+      return mutating_occ_pert;
     }
   }
 }
