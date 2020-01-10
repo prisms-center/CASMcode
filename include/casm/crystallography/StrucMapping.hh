@@ -451,15 +451,15 @@ namespace CASM {
       }
 
       ///\brief specify to use filtered lattices for mapping
-      void set_filter(std::function<bool(Lattice const &)> _filter_f) {
-        m_restricted = true;
+      void set_filter(std::function<bool(Lattice const &, Lattice const &)> _filter_f) {
+        m_filtered = true;
         m_filter_f = _filter_f;
         m_superlat_map.clear();
       }
 
       ///\brief specify not to use filtered lattice for mapping
       void unset_filter() {
-        m_restricted = false;
+        m_filtered = false;
         m_superlat_map.clear();
       }
 
@@ -556,9 +556,9 @@ namespace CASM {
       ///\brief returns number of species in a SimpleStructure given the current calculator settings. Use instead of sstruc.n_atom() for consistency
       Index _n_species(SimpleStructure const &sstruc) const;
 
-      //Implement filter as std::function<bool(Lattice const&)> or as polymorphic type or as query (i.e., DataFormatter)
-      bool _filter_lat(Lattice const &_lat)const {
-        return m_filter_f(_lat);
+      //Implement filter as std::function<bool(Lattice const&,Lattice const&)>
+      bool _filter_lat(Lattice const &_parent_lat, Lattice const &_child_lat)const {
+        return m_filter_f(_parent_lat, _child_lat);
       }
 
       std::pair<Index, Index> _vol_range(const SimpleStructure &child_struc) const;
@@ -574,8 +574,8 @@ namespace CASM {
       double m_min_va_frac;
       double m_max_va_frac;
 
-      bool m_restricted;
-      std::function<bool(Lattice const &)> m_filter_f;
+      bool m_filtered;
+      std::function<bool(Lattice const &, Lattice const &)> m_filter_f;
 
       ///Maps the supercell volume to a vector of Lattices with that volume
       mutable LatMapType m_superlat_map;

@@ -8,6 +8,9 @@
 #include "casm/clex/ParamComposition.hh"
 #include "casm/strain/StrainConverter.hh"
 #include "casm/clex/ConfigIsEquivalent.hh"
+#include "casm/app/QueryHandler_impl.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/casm_io/dataformatter/DataStream.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/crystallography/LatticeMap.hh"
@@ -17,8 +20,7 @@
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/database/ScelDatabase.hh"
-//DEBUGGING
-#include "casm/crystallography/io/VaspIO.hh"
+
 namespace CASM {
 
   namespace Local {
@@ -305,6 +307,17 @@ namespace CASM {
                    _settings.max_va_frac),
     m_settings(_settings) {
 
+    if(!settings().filter.empty()) {
+      DataFormatter<Supercell> formatter = _pclex.settings().query_handler<Supercell>().dict().parse(settings().filter);
+      auto filter =
+      [formatter, &_pclex](Lattice const & parent, Lattice const & child)->bool{
+        ValueDataStream<bool> check_stream;
+        check_stream << formatter(Supercell(&_pclex, parent));
+        return check_stream.value();
+      };
+
+      m_struc_mapper.set_filter(filter);
+    }
 
     for(std::string const &scel : settings().forced_lattices) {
       auto it = _pclex.db<Supercell>().find(scel);

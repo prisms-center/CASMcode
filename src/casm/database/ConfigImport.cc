@@ -64,13 +64,6 @@ namespace CASM {
       return m_configmapper->settings();
     }
 
-    /// Construct with PrimClex and by moving a ConfigMapper
-    //StructureMap<Configuration>::StructureMap(ConfigMapping::Settings const &_set,
-    //                                          std::unique_ptr<ConfigMapper> mapper) :
-    //m_configmapper(std::move(mapper)) {
-
-    //}
-
     /// Construct with PrimClex and ConfigMapping::Settings (see Import / Update desc)
     StructureMap<Configuration>::StructureMap(ConfigMapping::Settings const &_set,
                                               const PrimClex &primclex) {
@@ -81,6 +74,7 @@ namespace CASM {
                              primclex,
                              _set,
                              primclex.crystallography_tol()));
+
     }
 
     /// \brief Specialized import method for ConfigType

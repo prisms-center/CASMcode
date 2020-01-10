@@ -33,10 +33,6 @@ namespace CASM {
 
     public:
 
-      /// Construct with PrimClex and by moving a ConfigMapper
-      //StructureMap<Configuration>(ConfigMapping::Settings const &_set,
-      //                          std::unique_ptr<ConfigMapper> mapper);
-
 
       /// Construct with PrimClex and settings (see Import / Update desc)
       StructureMap<Configuration>(ConfigMapping::Settings const &_set,
@@ -72,6 +68,7 @@ namespace CASM {
       SimpleStructure _make_structure(const fs::path &p) const;
 
       std::unique_ptr<ConfigMapper> m_configmapper;
+
     };
 
     /// Configuration-specialized Import
