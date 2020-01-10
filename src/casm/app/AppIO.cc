@@ -408,9 +408,7 @@ namespace CASM {
         ojson[j] = mol_names[i][j];
         if(prim.basis()[i].occupant_dof()[j].name() != mol_names[i][j]
            || !prim.basis()[i].occupant_dof()[j].is_atomic()) {
-          jsonParser &ojson = to_json(prim.basis()[i].occupant_dof()[j], json["species"][mol_names[i][j]], c2f_mat);
-          //if(prim.basis()[i].occupant_dof()[j].name()!=mol_names[i][j])
-          //ojson["name"]=prim.basis()[i].occupant_dof()[j].name();
+          to_json(prim.basis()[i].occupant_dof()[j], json["species"][mol_names[i][j]], c2f_mat);
         }
       }
 

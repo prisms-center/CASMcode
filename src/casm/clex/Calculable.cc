@@ -189,7 +189,7 @@ namespace CASM {
   }
 
   template<typename ConfigType>
-  fs::path calc_properties_path(const ConfigType &config, std::string calctype) {
+  std::string calc_properties_path(const ConfigType &config, std::string calctype) {
     if(calctype == "") {
       calctype = config.primclex().settings().default_clex().calctype;
     }
@@ -197,12 +197,12 @@ namespace CASM {
   }
 
   template<typename ConfigType>
-  fs::path pos_path(const ConfigType &config) {
+  std::string pos_path(const ConfigType &config) {
     return pos_path(config.primclex(), config.name());
   }
 
   template<typename ConfigType>
-  fs::path calc_status_path(const ConfigType &config, std::string calctype) {
+  std::string calc_status_path(const ConfigType &config, std::string calctype) {
     if(calctype == "") {
       calctype = config.primclex().settings().default_clex().calctype;
     }
@@ -220,18 +220,18 @@ namespace CASM {
     });
   }
 
-  fs::path calc_properties_path(const PrimClex &primclex, const std::string &configname, std::string calctype) {
+  std::string calc_properties_path(const PrimClex &primclex, const std::string &configname, std::string calctype) {
     if(calctype == "") {
       calctype = primclex.settings().default_clex().calctype;
     }
-    return primclex.dir().calculated_properties(configname, calctype);
+    return primclex.dir().calculated_properties(configname, calctype).string();
   }
 
-  fs::path pos_path(const PrimClex &primclex, const std::string &configname) {
-    return primclex.dir().POS(configname);
+  std::string pos_path(const PrimClex &primclex, const std::string &configname) {
+    return primclex.dir().POS(configname).string();
   }
 
-  fs::path calc_status_path(const PrimClex &primclex, const std::string &configname, std::string calctype) {
+  std::string calc_status_path(const PrimClex &primclex, const std::string &configname, std::string calctype) {
     if(calctype == "") {
       calctype = primclex.settings().default_clex().calctype;
     }
@@ -258,9 +258,9 @@ namespace CASM {
       int n_images;
       calcjson.get_else<int>(n_images, "n_images", 0);
       fs::path tmp = primclex.dir().calc_status(configname, calctype);
-      return tmp.parent_path() / ("/N_images_" + std::to_string(n_images)) / tmp.filename();
+      return (tmp.parent_path() / ("/N_images_" + std::to_string(n_images)) / tmp.filename()).string();
     }
-    return primclex.dir().calc_status(configname, calctype);
+    return primclex.dir().calc_status(configname, calctype).string();
   }
 
 
@@ -271,9 +271,9 @@ template std::string calc_status(const type &_config,std::string calctype); \
 template std::string failure_type(const type &config,std::string calctype); \
 template bool has_calc_status(const type &config,std::string calctype); \
 template bool has_failure_type(const type &config,std::string calctype); \
-template fs::path calc_properties_path(const type &config,std::string calctype); \
-template fs::path pos_path(const type &config); \
-template fs::path calc_status_path(const type &config,std::string calctype); \
+template std::string calc_properties_path(const type &config,std::string calctype); \
+template std::string pos_path(const type &config); \
+template std::string calc_status_path(const type &config,std::string calctype); \
 template class Calculable<CRTPBase<type>>;
 
   BOOST_PP_SEQ_FOR_EACH(INST_ConfigType, _, CASM_DB_CONFIG_TYPES)

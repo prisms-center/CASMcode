@@ -21,9 +21,14 @@ namespace CASM {
 
     void InitOption::initialize() {
       add_help_suboption();
-
+      add_file_path_suboption();
+      add_configlist_suboption();
+      add_confignames_suboption();
+      add_dofs_suboption();
       m_desc.add_options()
-      ("force,f", "Force using a non-reduced, non-primitive, or left-handed PRIM");
+      ("sub,s", "Initialize a project in sub-directory of an existing project. After initialization, commands executed below the sub-directory will act on the sub-directory project; commmands executed above the sub-directory will act on the original project.")
+      ("generate-prim", "Create prim.json file for specified configuration(s). Each prim.json will be written to the training_data directory of the corresponding configuration.")
+      ("force,f", "Force using a non-reduced, non-primitive, or left-handed PRIM.");
       return;
     }
   }
@@ -81,11 +86,28 @@ namespace CASM {
 
     }
 
+
     fs::path root = fs::current_path();
-    if(!args.root.empty()) {
+    if(!init_opt.file_path().empty()) {
+      root = init_opt.file_path();
+    }
+    else if(!args.root.empty()) {
       root = args.root;
     }
-    if(!find_casmroot(root).empty()) {
+
+    fs::path existing = find_casmroot(root);
+    if(vm.count("sub")) {
+      if(existing == root) {
+        args.log() << "Directory '" << root << "' is already the head directory of a casm project." << std::endl;
+        return ERR_OTHER_PROJ;
+      }
+      if(!root.empty()) {
+        args.log() << "No existing project found. Cannot create sub-directory project at '" << root << "'." << std::endl;
+        return ERR_OTHER_PROJ;
+
+      }
+    }
+    else if(!existing.empty()) {
       args.log() << "Already in a casm project." << std::endl;
       return ERR_OTHER_PROJ;
     }

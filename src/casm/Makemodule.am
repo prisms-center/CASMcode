@@ -205,7 +205,6 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/SymType.hh\
     include/casm/crystallography/UnitCellCoord.hh\
     include/casm/crystallography/io/VaspIO.hh\
-    include/casm/crystallography/jsonStruc.hh\
     include/casm/database/Cache.hh\
     include/casm/database/ConfigData.hh\
     include/casm/database/ConfigData_impl.hh\
@@ -227,7 +226,7 @@ libcasm_la_SOURCES = \
     include/casm/database/DiffTransOrbitDatabase.hh\
     include/casm/database/Import.hh\
     include/casm/database/Import_impl.hh\
-    include/casm/database/MappedProperties.hh\
+    include/casm/clex/MappedProperties.hh\
     include/casm/database/Named.hh\
     include/casm/database/Named_impl.hh\
     include/casm/database/PropertiesDatabase.hh\
@@ -751,6 +750,7 @@ libcasm_la_SOURCES = \
     src/casm/basis_set/Variable.cc\
     src/casm/casm_io/DataFormatter.cc\
     src/casm/casm_io/DataStream.cc\
+    src/casm/casm_io/FileData.cc\
     src/casm/casm_io/FormatFlag.cc\
     src/casm/casm_io/InputParser.cc\
     src/casm/casm_io/Log.cc\
@@ -780,7 +780,6 @@ libcasm_la_SOURCES = \
     src/casm/clex/ConfigIONovelty.cc\
     src/casm/clex/ConfigIOStrain.cc\
     src/casm/clex/ConfigIOStrucScore.cc\
-    src/casm/clex/ConfigIsEquivalent.cc\
     src/casm/clex/ConfigMapping.cc\
     src/casm/clex/Configuration.cc\
     src/casm/clex/ConfigurationTraits.cc\
@@ -798,7 +797,6 @@ libcasm_la_SOURCES = \
     src/casm/clex/Supercell.cc\
     src/casm/clex/SupercellIO.cc\
     src/casm/clex/SupercellTraits.cc\
-    src/casm/clex/Supercell_functions.cc\
     src/casm/clusterography/ClusterOrbits.cc\
     src/casm/clusterography/ClusterSpecsParser.cc\
     src/casm/clusterography/IntegralCluster.cc\
@@ -840,13 +838,12 @@ libcasm_la_SOURCES = \
     src/casm/database/DiffTransConfigImport.cc\
     src/casm/database/DiffTransOrbitDatabase.cc\
     src/casm/database/Import.cc\
-    src/casm/database/MappedProperties.cc\
+    src/casm/clex/MappedProperties.cc\
     src/casm/database/PropertiesDatabase.cc\
     src/casm/database/Remove.cc\
     src/casm/database/ScelDatabase.cc\
     src/casm/database/Selected.cc\
     src/casm/database/Selection.cc\
-    src/casm/database/Update.cc\
     src/casm/database/json/jsonDatabase.cc\
     src/casm/database/json/jsonPropertiesDatabase.cc\
     src/casm/enumerator/EnumInputParser.cc\

@@ -3,7 +3,9 @@
 #include <iomanip>
 #include "casm/casm_io/Log.hh"
 #include "casm/container/algorithm.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/CoordinateSystems.hh"
+#include "casm/crystallography/AnisoValTraits.hh"
 
 namespace CASM {
   namespace VaspIO {
@@ -36,7 +38,9 @@ namespace CASM {
       m_atom_names(true),
       m_sel_dynamics(false),
       m_append_atom_names(true),
-      m_ignore {"VA", "Va", "va"} {}
+      m_ignore {"VA", "Va", "va"} {
+      m_sel_dynamics = _struc.info(m_species_mode).properties.count(AnisoValTraits::selective_dynamics().name());
+    }
 
 
     /// \brief Default sort is by species name
@@ -68,17 +72,16 @@ namespace CASM {
       std::vector<Index> atom;
 
       // Count size of each contiguous block of non-ignored species
-      std::vector<int> atom_count;
+      std::vector<std::pair<std::string, Index> > atom_count;
 
-      Index last = -1;
       for(Index i : m_permute) {
         // if Atom's name is not found in the ignore list, add it to 'atom'
         if(ignore().count(info.names[i]) == 0) {
           atom.push_back(i);
-          if(!valid_index(last) || info.names[i] != info.names[last])
-            atom_count.push_back(0);
-          atom_count.back()++;
-          last = i;
+          if(atom_count.empty() || info.names[i] != atom_count.back().first)
+            atom_count.emplace_back(info.names[i], 0);
+
+          atom_count.back().second++;
         }
       }
 
@@ -93,7 +96,7 @@ namespace CASM {
       int width = 12;
       width = print_matrix_width(sout, m_struc.lat_column_mat.transpose(), width);
       for(Index i : atom) {
-        Eigen::Vector3d vec = c2f * info.coord(i);
+        Eigen::Vector3d vec = c2f * info.cart_coord(i);
         width = print_matrix_width(sout, vec.transpose(), width);
       }
       Eigen::IOFormat format(prec, width + 1);
@@ -116,18 +119,16 @@ namespace CASM {
       // optionally print atom names line
 
       if(m_atom_names) {
-        Index l = 0;
         sout << sout.indent_str();
-        for(Index c : atom_count) {
-          sout << info.names[atom[l]] << " ";
-          l += c;
+        for(auto const &p : atom_count) {
+          sout << p.first << " ";
         }
         sout << "\n";
       }
 
       sout << sout.indent_str();
-      for(int i = 0; i < atom_count.size(); i++) {
-        sout << atom_count[i] << " ";
+      for(auto const &p : atom_count) {
+        sout << p.second << " ";
       }
       sout << "\n";
 
@@ -141,14 +142,15 @@ namespace CASM {
 
       // print all coordinates, and seletive dynamics settings, and atom names if applicable
       for(Index i : atom) {
-        sout << sout.indent_str() << (c2f * info.coord(i)).transpose().format(format);
+        sout << sout.indent_str() << (c2f * info.cart_coord(i)).transpose().format(format);
 
-        /*
+
         if(m_sel_dynamics) {
+          Eigen::Vector3i sd = iround(info.properties.at(AnisoValTraits::selective_dynamics().name()).col(i));
           sout << " ";
           for(Index j = 0; j < 3; ++j)
-            sout << (info.SD(i, j) ? "T " : "F ");
-            }*/
+            sout << (sd[j] ? "T " : "F ");
+        }
 
         if(m_append_atom_names) {
           sout << " " << info.names[i];

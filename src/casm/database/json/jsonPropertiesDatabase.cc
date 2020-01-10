@@ -52,7 +52,7 @@ namespace CASM {
 
       json["conflict_score"].put_obj();
       jsonParser &j = json["conflict_score"];
-      for(const auto &val : m_relaxed_from) {
+      for(const auto &val : m_origins) {
         if(val.second.key_comp().score_method() != m_default_score) {
           j[val.first] = val.second.key_comp().score_method();
         }
@@ -70,7 +70,7 @@ namespace CASM {
 
     void jsonPropertiesDatabase::close() {
       m_data.clear();
-      m_relaxed_from.clear();
+      m_origins.clear();
       m_is_open = false;
     }
 
@@ -92,26 +92,26 @@ namespace CASM {
     ///
     /// - Prefers self-mapped, else best scoring
     jsonPropertiesDatabase::iterator jsonPropertiesDatabase::find_via_to(std::string to_configname) const {
-      auto it = m_relaxed_from.find(to_configname);
-      if(it == m_relaxed_from.end()) {
+      auto it = m_origins.find(to_configname);
+      if(it == m_origins.end()) {
         return end();
       }
-      // it->second is set of all 'from' -> 'to'
-      return find_via_from(*it->second.begin());
+      // it->second is set of all 'origin' -> 'to'
+      return find_via_origin(*it->second.begin());
     }
 
     /// \brief Return iterator to MappedProperties that is from the specified config
-    jsonPropertiesDatabase::iterator jsonPropertiesDatabase::find_via_from(std::string from_configname) const {
-      m_key.from = from_configname;
-      return _iterator(m_data.find(m_key));
+    jsonPropertiesDatabase::iterator jsonPropertiesDatabase::find_via_origin(std::string origin) const {
+      //m_key.from = from_configname;
+      return _iterator(m_data.find(origin));
     }
 
 
-    /// \brief Names of all configurations that relaxed 'from'->'to'
+    /// \brief Names of all configurations that relaxed 'origin'->'to'
     std::set<std::string, PropertiesDatabase::Compare>
-    jsonPropertiesDatabase::relaxed_from_all(std::string to_configname) const {
-      auto it = m_relaxed_from.find(to_configname);
-      if(it == m_relaxed_from.end()) {
+    jsonPropertiesDatabase::all_origins(std::string to_configname) const {
+      auto it = m_origins.find(to_configname);
+      if(it == m_origins.end()) {
         return _make_set(to_configname, m_default_score);
       }
       else {
@@ -124,8 +124,8 @@ namespace CASM {
       std::string to_configname,
       const ScoreMappedProperties &score) {
 
-      auto it = m_relaxed_from.find(to_configname);
-      if(it == m_relaxed_from.end()) {
+      auto it = m_origins.find(to_configname);
+      if(it == m_origins.end()) {
 
         // do nothing if default score
         if(score == m_default_score) {
@@ -133,7 +133,7 @@ namespace CASM {
         }
 
         auto tmp = _make_set(to_configname, score);
-        m_relaxed_from.insert({to_configname, tmp});
+        m_origins.insert({to_configname, tmp});
       }
       else {
         // if no change, return
@@ -143,8 +143,8 @@ namespace CASM {
 
         // construct new set and copy from old set
         auto tmp = _make_set(to_configname, score);
-        for(const auto &from : it->second) {
-          tmp.insert(from);
+        for(const auto &origin : it->second) {
+          tmp.insert(origin);
         }
         it->second = tmp;
       }
@@ -152,37 +152,37 @@ namespace CASM {
 
     jsonPropertiesDatabase::iterator
     jsonPropertiesDatabase::_iterator(
-      std::set<MappedProperties>::const_iterator _it) const {
+      jsonPropertiesDatabaseIterator::base_iterator _it) const {
       return iterator(jsonPropertiesDatabaseIterator(_it));
     }
 
-    /// \brief Private _insert MappedProperties, without modifying 'relaxed_from'
+    /// \brief Private _insert MappedProperties, without modifying 'origins'
     std::pair<jsonPropertiesDatabase::iterator, bool>
     jsonPropertiesDatabase::_insert(const MappedProperties &value) {
-      auto res = m_data.insert(value);
+      auto res = m_data.emplace(value.origin, value);
       return std::make_pair(_iterator(res.first), res.second);
     }
 
-    /// \brief Private _erase MappedProperties, without modifying 'relaxed_from'
+    /// \brief Private _erase MappedProperties, without modifying 'origins'
     jsonPropertiesDatabase::iterator jsonPropertiesDatabase::_erase(iterator pos) {
       auto base_it = static_cast<jsonPropertiesDatabaseIterator *>(pos.get())->base();
       return _iterator(m_data.erase(base_it));
     }
 
-    /// \brief Names of all configurations that relaxed 'from'->'to'
-    void jsonPropertiesDatabase::_set_relaxed_from_all(
+    /// \brief Names of all configurations that relaxed 'origin'->'to'
+    void jsonPropertiesDatabase::_set_all_origins(
       std::string to_configname,
       const std::set<std::string, Compare> &_set) {
 
-      auto it = m_relaxed_from.find(to_configname);
-      if(it == m_relaxed_from.end()) {
+      auto it = m_origins.find(to_configname);
+      if(it == m_origins.end()) {
         if(_set.size()) {
-          m_relaxed_from.insert({to_configname, _set});
+          m_origins.insert({to_configname, _set});
         }
       }
       else {
         if(!_set.size()) {
-          m_relaxed_from.erase(it);
+          m_origins.erase(it);
         }
         else {
           it->second = _set;

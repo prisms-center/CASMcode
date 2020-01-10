@@ -80,14 +80,33 @@ namespace CASM {
     return AnisoValTraits("energy",
     {"E"},
     GLOBAL,
-    SymRepBuilder::Identity());
+    SymRepBuilder::Identity(),
+    {},
+    {},
+    {},
+    true);
+  }
+
+  AnisoValTraits AnisoValTraits::cost() {
+    return AnisoValTraits("cost",
+    {"C"},
+    GLOBAL,
+    SymRepBuilder::Identity(),
+    {},
+    {},
+    {},
+    true);
   }
 
   AnisoValTraits AnisoValTraits::selective_dynamics() {
     return AnisoValTraits("selectivedynamics",
     {"xflag", "yflag", "zflag"},
     LOCAL,
-    SymRepBuilder::Identity());
+    SymRepBuilder::Identity(),
+    {},
+    {},
+    {},
+    true);
   }
 
   AnisoValTraits AnisoValTraits::disp() {
@@ -97,16 +116,52 @@ namespace CASM {
     CartesianSymRepBuilder(),
     {},
     {},
-    {"atomize"});
+    {"atomize"},
+    true);
+  }
+
+  AnisoValTraits AnisoValTraits::coordinate() {
+    return AnisoValTraits("coordinate",
+    {"cx", "cy", "cz"},
+    LOCAL,
+    CartesianSymRepBuilder(),
+    {},
+    {},
+    {"atomize"},
+    true);
+  }
+
+  AnisoValTraits AnisoValTraits::latvec() {
+    return AnisoValTraits("latvec",
+    {"L1x", "L1y", "L1z", "L2x", "L2y", "L2z", "L3x", "L3y", "L3z"},
+    GLOBAL,
+    KroneckerSymRepBuilder<IdentitySymRepBuilder, CartesianSymRepBuilder, 3, 3>("Rank2AsymTensor"),
+    {},
+    {},
+    {"atomize"},
+    true);
   }
 
   AnisoValTraits AnisoValTraits::force() {
     return AnisoValTraits("force",
     {"fx", "fy", "fz"},
-    LOCAL,
+    LOCAL | EXTENSIVE,
     CartesianSymRepBuilder(),
     {},
-    {"atomize"});
+    {"atomize"},
+    {},
+    true);
+  }
+
+  AnisoValTraits AnisoValTraits::isometry() {
+    return AnisoValTraits("isometry",
+    {"S11", "S21", "S31", "S12", "S22", "S32", "S13", "S23", "S33"},
+    GLOBAL,
+    KroneckerSymRepBuilder<IdentitySymRepBuilder, CartesianSymRepBuilder, 3, 3>("Rank2AsymTensor"),
+    {},
+    {"atomize", "disp"},
+    {},
+    true);
   }
 
   AnisoValTraits AnisoValTraits::strain(std::string const &_prefix) {
@@ -115,25 +170,31 @@ namespace CASM {
     GLOBAL,
     Rank2TensorSymRepBuilder(),
     {},
-    {"atomize", "disp"});
+    {"atomize", "disp"},
+    {},
+    true);
   }
 
   AnisoValTraits AnisoValTraits::magspin() {
     return AnisoValTraits("magspin",
     {"sx", "sy", "sz"},
-    LOCAL,
+    LOCAL | EXTENSIVE,
     AngularMomentumSymRepBuilder(),
     {},
-    {"atomize"});
+    {"atomize"},
+    {},
+    true);
   }
 
   AnisoValTraits AnisoValTraits::magmom() {
     return AnisoValTraits("magmom",
     {"mx", "my", "mz"},
-    LOCAL | UNIT_LENGTH,
+    LOCAL | UNIT_LENGTH | EXTENSIVE,
     TimeReversalSymRepBuilder(),
     {},
-    {"atomize"});
+    {"atomize"},
+    {},
+    true);
   }
 
   AnisoValTraits AnisoValTraits::d_orbital_occupation() {

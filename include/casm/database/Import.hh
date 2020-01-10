@@ -75,7 +75,7 @@ namespace CASM {
         const PrimClex &primclex,
         const StructureMap<ConfigType> &mapper,
         ImportSettings const  &_set,
-        fs::path report_dir,
+        std::string report_dir,
         Log &_file_log);
 
       template<typename PathIterator>
@@ -100,7 +100,7 @@ namespace CASM {
 
       ImportSettings m_set;
 
-      fs::path m_report_dir;
+      std::string m_report_dir;
     };
 
 

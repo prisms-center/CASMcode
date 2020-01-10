@@ -44,8 +44,8 @@ xtal::SimpleStructure map_struc1(double a, double d) {
   result.atom_info.resize(2);
   result.atom_info.names[0] = "A";
   result.atom_info.names[1] = "A";
-  result.atom_info.coord(0).setZero();
-  result.atom_info.coord(1).setConstant(d / sqrt(3.));
+  result.atom_info.cart_coord(0).setZero();
+  result.atom_info.cart_coord(1).setConstant(d / sqrt(3.));
   return result;
 }
 

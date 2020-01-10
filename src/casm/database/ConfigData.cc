@@ -1,119 +1,107 @@
 #include "casm/database/ConfigData_impl.hh"
 
-#include <ctime>
+#include <boost/filesystem.hpp>
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/database/PropertiesDatabase.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
 
 namespace CASM {
+  namespace Local {
+    /// \brief Return path to properties.calc.json that will be imported
+    ///        checking a couple possible locations relative to pos_path
+    ///
+    /// checks:
+    /// 1) is a JSON file? is pos_path ends in ".json" or ".JSON", return pos_path
+    /// 2) assume pos_path is /path/to/POS, checks for /path/to/calctype.current/properties.calc.json
+    /// 3) assume pos_path is /path/to/POS, checks for /path/to/properties.calc.json
+    /// else returns empty path
+    ///
+    static std::string _resolve_properties_path(std::string pos_path, PrimClex const &_pclex) {
+
+      // check 1: is a JSON file
+      if(pos_path.find(".json") != std::string::npos || pos_path.find(".JSON") != std::string::npos) {
+        return pos_path;
+      }
+
+      // check 2: /path/to/POS -> /path/to/calctype.current/properties.calc.json
+      {
+        fs::path dft_path = pos_path;
+        dft_path.remove_filename();
+        (dft_path /= ("calctype." + _pclex.settings().default_clex().calctype)) /= "properties.calc.json";
+        if(fs::exists(dft_path)) {
+          return dft_path.string();
+        }
+      }
+
+      // check 3: /path/to/POS -> /path/to/properties.calc.json
+      {
+        fs::path dft_path = pos_path;
+        dft_path.remove_filename();
+        dft_path /= "properties.calc.json";
+        if(fs::exists(dft_path)) {
+          return dft_path.string();
+        }
+      }
+
+      // not found, return empty path
+      return "";
+    }
+  }
+
   namespace DB {
 
-    jsonParser &to_json(MappingSettings const &_set, jsonParser &_json) {
-      _json["lattice_weight"] = _set.lattice_weight;
-      _json["ideal"] = _set.ideal;
-      _json["strict"] = _set.strict;
-      _json["primitive_only"] = _set.primitive_only;
-      if(!_set.forced_lattices.empty())
-        _json["forced_lattices"] = _set.forced_lattices;
-      if(!_set.filter.empty())
-        _json["filter"] = _set.filter;
-      _json["cost_tol"] = _set.cost_tol;
-      _json["min_va_frac"] = _set.min_va_frac;
-      _json["max_va_frac"] = _set.max_va_frac;
-      _json["max_vol_change"] = _set.max_vol_change;
-
-      return _json;
-    }
-
-    jsonParser const &from_json(MappingSettings &_set, jsonParser const &_json) {
-      _set.set_default();
-
-      if(_json.contains("lattice_weight"))
-        _set.lattice_weight = _json["lattice_weight"].get<double>();
-
-      if(_json.contains("ideal"))
-        _set.ideal = _json["ideal"].get<bool>();
-
-      if(_json.contains("strict"))
-        _set.strict = _json["strict"].get<bool>();
-
-      if(_json.contains("primitive_only"))
-        _set.primitive_only = _json["primitive_only"].get<bool>();
-
-      if(_json.contains("forced_lattices"))
-        _set.forced_lattices = _json["forced_lattices"].get<std::vector<std::string> >();
-
-      if(_json.contains("filter"))
-        _set.filter = _json["filter"].get<std::string>();
-
-      if(_json.contains("cost_tol"))
-        _set.cost_tol = _json["cost_tol"].get<double>();
-
-      if(_json.contains("min_va_frac"))
-        _set.min_va_frac = _json["min_va_frac"].get<double>();
-
-      if(_json.contains("max_va_frac"))
-        _set.max_va_frac = _json["max_va_frac"].get<double>();
-
-      if(_json.contains("max_vol_change"))
-        _set.max_vol_change = _json["max_vol_change"].get<double>();
-
-      return _json;
-    }
-
     /// Create a new report directory to avoid overwriting existing results
-    fs::path create_report_dir(fs::path report_dir) {
+    std::string create_report_dir(std::string report_dir) {
       Index i = 0;
-      while(fs::exists(report_dir.string() + "." + std::to_string(i))) {
+      while(fs::exists(report_dir + "." + std::to_string(i))) {
         ++i;
       }
-      report_dir = report_dir.string() + "." + std::to_string(i);
+      report_dir += ("." + std::to_string(i));
       fs::create_directory(report_dir);
       return report_dir;
     }
 
     namespace ConfigIO {
 
-      GenericDatumFormatter<std::string, ConfigIO::Result> pos() {
-        return GenericDatumFormatter<std::string, Result>("pos", "", [&](const Result & res) {
-          return res.pos.string();
+      GenericDatumFormatter<std::string, ConfigIO::Result> path() {
+        return GenericDatumFormatter<std::string, Result>("path", "",
+        [](const Result & res) {
+          return res.properties.best_file_data.path();
         });
       }
 
       GenericDatumFormatter<std::string, ConfigIO::Result> fail_msg() {
-        return GenericDatumFormatter<std::string, Result>("fail_msg", "", [&](const Result & res) {
+        return GenericDatumFormatter<std::string, Result>("fail_msg", "",
+        [](const Result & res) {
           return res.fail_msg;
         });
       }
 
-      /// Use 'from_configname' as 'configname'
-      GenericDatumFormatter<std::string, ConfigIO::Result> configname() {
-        return GenericDatumFormatter<std::string, Result>("configname", "", [&](const Result & res) {
-          return res.map_result.props.from;
-        });
-      }
-
-      GenericDatumFormatter<std::string, ConfigIO::Result> from_configname() {
-        return GenericDatumFormatter<std::string, Result>("from_configname", "", [&](const Result & res) {
-          return res.map_result.props.from;
+      GenericDatumFormatter<std::string, ConfigIO::Result> data_origin() {
+        return GenericDatumFormatter<std::string, Result>("data_origin", "",
+        [](const Result & res) {
+          return res.properties.origin;
         });
       }
 
       GenericDatumFormatter<std::string, ConfigIO::Result> to_configname() {
-        return GenericDatumFormatter<std::string, Result>("to_configname", "", [&](const Result & res) {
-          return res.map_result.props.to;
+        return GenericDatumFormatter<std::string, Result>("to_configname", "",
+        [](const Result & res) {
+          return res.properties.to;
         });
       }
 
       GenericDatumFormatter<bool, ConfigIO::Result> has_data() {
-        return GenericDatumFormatter<bool, Result>("has_data", "", [&](const Result & res) {
+        return GenericDatumFormatter<bool, Result>("has_data", "",
+        [](const Result & res) {
           return res.has_data;
         });
       }
 
       GenericDatumFormatter<bool, ConfigIO::Result> has_complete_data() {
-        return GenericDatumFormatter<bool, Result>("has_complete_data", "", [&](const Result & res) {
+        return GenericDatumFormatter<bool, Result>("has_complete_data", "",
+        [](const Result & res) {
           return res.has_data;
         });
       }
@@ -123,10 +111,9 @@ namespace CASM {
                  "preexisting_data",
                  "",
         [&](const Result & res) {
-          return data_results.find(res.map_result.props.from)->second.preexisting;
-        },
-        [&](const Result & res) {
-          return data_results.find(res.map_result.props.from) != data_results.end();
+          //auto it = data_results.find(res.properties.from);
+          auto it = data_results.find(res.properties.origin);
+          return it != data_results.end() && it->second.preexisting;
         });
       }
 
@@ -135,10 +122,10 @@ namespace CASM {
                  "import_data",
                  "",
         [&](const Result & res) {
-          return data_results.find(res.map_result.props.from)->second.last_insert == res.pos;
-        },
-        [&](const Result & res) {
-          return data_results.count(res.map_result.props.from) != 0;
+          //auto it = data_results.find(res.properties.from);
+          //return it != data_results.end() && it->second.last_insert == res.properties.best_file_data.path();
+          auto it = data_results.find(res.properties.origin);
+          return it != data_results.end() && it->second.is_best;// && it->second.import_data;
         });
       }
 
@@ -147,7 +134,7 @@ namespace CASM {
                  "import_additional_files",
                  "",
         [&](const Result & res) {
-          auto it = data_results.find(res.map_result.props.from);
+          auto it = data_results.find(res.properties.origin);
           if(it != data_results.end()) {
             return it->second.copy_more;
           }
@@ -158,33 +145,33 @@ namespace CASM {
       GenericDatumFormatter<double, ConfigIO::Result> lattice_deformation_cost() {
         return GenericDatumFormatter<double, Result>(
                  "lattice_deformation_cost", "",
-        [&](const Result & res) {
-          return res.map_result.props.scalar("lattice_deformation_cost");
+        [](const Result & res) {
+          return res.properties.scalar("lattice_deformation_cost");
         },
-        [&](const Result & res) {
-          return res.map_result.props.has_scalar("lattice_deformation_cost");
+        [](const Result & res) {
+          return res.properties.has_scalar("lattice_deformation_cost");
         });
       }
 
       GenericDatumFormatter<double, ConfigIO::Result> basis_deformation_cost() {
         return GenericDatumFormatter<double, Result>(
                  "basis_deformation_cost", "",
-        [&](const Result & res) {
-          return res.map_result.props.scalar("basis_deformation_cost");
+        [](const Result & res) {
+          return res.properties.scalar("basis_deformation_cost");
         },
-        [&](const Result & res) {
-          return res.map_result.props.has_scalar("basis_deformation_cost");
+        [](const Result & res) {
+          return res.properties.has_scalar("basis_deformation_cost");
         });
       }
 
       GenericDatumFormatter<double, ConfigIO::Result> relaxed_energy() {
         return GenericDatumFormatter<double, Result>(
                  "relaxed_energy", "",
-        [&](const Result & res) {
-          return res.map_result.props.scalar("relaxed_energy");
+        [](const Result & res) {
+          return res.properties.scalar("relaxed_energy");
         },
-        [&](const Result & res) {
-          return res.map_result.props.has_scalar("relaxed_energy");
+        [](const Result & res) {
+          return res.properties.has_scalar("relaxed_energy");
         });
       }
 
@@ -192,7 +179,7 @@ namespace CASM {
         return GenericDatumFormatter<double, Result>(
                  "score", "",
         [&](const Result & res) {
-          return db_props.score(res.map_result.props);
+          return db_props.score(res.properties);
         },
         [&](const Result & res) {
           return res.has_data;
@@ -203,10 +190,10 @@ namespace CASM {
         return GenericDatumFormatter<double, Result>(
                  "best_score", "",
         [&](const Result & res) {
-          return db_props.best_score(res.map_result.props.to);
+          return db_props.best_score(res.properties.to);
         },
         [&](const Result & res) {
-          return db_props.find_via_to(res.map_result.props.to) != db_props.end();
+          return db_props.find_via_to(res.properties.to) != db_props.end();
         });
       }
 
@@ -214,17 +201,26 @@ namespace CASM {
         return GenericDatumFormatter<bool, Result>(
                  "is_best", "",
         [&](const Result & res) {
-          return res.map_result.props.from == db_props.relaxed_from(res.map_result.props.to);
+          return res.properties.origin == db_props.find_via_to(res.properties.to)->origin;
         },
         [&](const Result & res) {
-          return db_props.find_via_to(res.map_result.props.to) != db_props.end();
+          return db_props.find_via_to(res.properties.to) != db_props.end();
         });
       }
 
       /// Gives a 'selected' column, set all to false
       GenericDatumFormatter<bool, ConfigIO::Result> selected() {
-        return GenericDatumFormatter<bool, Result>("selected", "", [&](const Result & res) {
+        return GenericDatumFormatter<bool, Result>("selected", "",
+        [](const Result & res) {
           return false;
+        });
+      }
+
+      /// Gives a 'selected' column, set all to false
+      GenericDatumFormatter<bool, ConfigIO::Result> is_new_config() {
+        return GenericDatumFormatter<bool, Result>("is_new_config", "",
+        [](const Result & res) {
+          return res.is_new_config;
         });
       }
 
@@ -248,11 +244,12 @@ namespace CASM {
         PropertiesDatabase &db_props) {
 
         dict.insert(
-          pos(),
+          path(),
           fail_msg(),
-          configname(),
-          from_configname(),
+          //configname(),
+          data_origin(),
           to_configname(),
+          is_new_config(),
           has_data(),
           has_complete_data(),
           lattice_deformation_cost(),
@@ -265,50 +262,11 @@ namespace CASM {
       }
     }
 
-    /// \brief Return path to properties.calc.json that will be imported
-    ///        checking a couple possible locations relative to pos_path
-    ///
-    /// checks:
-    /// 1) is a JSON file? is pos_path ends in ".json" or ".JSON", return pos_path
-    /// 2) assume pos_path is /path/to/POS, checks for /path/to/calctype.current/properties.calc.json
-    /// 3) assume pos_path is /path/to/POS, checks for /path/to/properties.calc.json
-    /// else returns empty path
-    ///
-    fs::path ConfigData::calc_properties_path(fs::path pos_path, PrimClex const &_pclex) {
-
-      // check 1: is a JSON file
-      if(pos_path.extension() == ".json" || pos_path.extension() == ".JSON") {
-        return pos_path;
-      }
-
-      // check 2: /path/to/POS -> /path/to/calctype.current/properties.calc.json
-      {
-        fs::path dft_path = pos_path;
-        dft_path.remove_filename();
-        (dft_path /= ("calctype." + _pclex.settings().default_clex().calctype)) /= "properties.calc.json";
-        if(fs::exists(dft_path)) {
-          return dft_path;
-        }
-      }
-
-      // check 3: /path/to/POS -> /path/to/properties.calc.json
-      {
-        fs::path dft_path = pos_path;
-        dft_path.remove_filename();
-        dft_path /= "properties.calc.json";
-        if(fs::exists(dft_path)) {
-          return dft_path;
-        }
-      }
-
-      // not found, return empty path
-      return fs::path();
-    }
 
     // If pos_path can be used to resolve a properties.calc.json, return its path.
     // Otherwise return pos_path
-    fs::path ConfigData::resolve_struc_path(fs::path pos_path, PrimClex const &_pclex) {
-      fs::path p = ConfigData::calc_properties_path(pos_path, _pclex);
+    std::string ConfigData::resolve_struc_path(std::string pos_path, PrimClex const &_pclex) {
+      std::string p = Local::_resolve_properties_path(pos_path, _pclex);
       if(!p.empty())
         pos_path = p;
       return pos_path;
@@ -324,44 +282,45 @@ namespace CASM {
     }
 
     /// \brief Path to default calctype training_data directory for config
-    fs::path ConfigData::calc_dir(const std::string configname) const {
+    std::string ConfigData::calc_dir(const std::string configname) const {
       return primclex().dir().configuration_calc_dir(configname,
-                                                     primclex().settings().default_clex().calctype);
+                                                     primclex().settings().default_clex().calctype).string();
     }
 
     /// \brief Return true if there are existing files in the traning_data directory
     ///        for a particular configuration
-    bool ConfigData::has_existing_files(const std::string &from_configname) const {
-      fs::path p = calc_dir(from_configname);
+    bool ConfigData::has_existing_files(const std::string &to_configname) const {
+      fs::path p = calc_dir(to_configname);
       if(!fs::exists(p)) {
         return false;
       }
       return std::distance(fs::directory_iterator(p), fs::directory_iterator());
     }
 
-    /// \brief Return true if there are existing files in the traning_data directory
-    ///        for a particular configuration
-    bool ConfigData::has_existing_data(const std::string &from_configname) const {
-      return db_props().find_via_from(from_configname) != db_props().end();
+    /// \brief Return true if there is data already associated with a particular configuration
+    bool ConfigData::has_existing_data(const std::string &to_configname) const {
+      return db_props().find_via_to(to_configname) != db_props().end();
     }
 
-    bool ConfigData::has_existing_data_or_files(const std::string &from_configname) const {
-      return has_existing_data(from_configname) || has_existing_files(from_configname);
+    bool ConfigData::has_existing_data_or_files(const std::string &configname) const {
+      return has_existing_data(configname) || has_existing_files(configname);
     }
 
     /// Check if 'properties.calc.json' file has not changed since last read
     ///
     /// - Compares 'data_timestamp' && fs::last_write_time
     bool ConfigData::no_change(const std::string &configname) const {
-      fs::path prop_path = calc_properties_path(configname, primclex());
-      if(!prop_path.empty()) {
-        auto it = db_props().find_via_from(configname);
-        if(it != db_props().end()
-           && it->timestamp == fs::last_write_time(prop_path)) {
-          return true;
-        }
+      FileData tnative(calc_properties_path(primclex(), configname));
+
+      auto it = db_props().find_via_to(configname);
+      if(it != db_props().end()) {
+        FileData tbest = it->best_file_data;
+        if(tbest == it->native_file_data || tbest.exists())
+          tbest.refresh();
+        return it->best_file_data == tbest && it->native_file_data == tnative;
       }
-      return false;
+
+      return tnative.exists();
     }
 
     /// \brief Remove existing files in the traning_data directory for a particular
@@ -390,27 +349,26 @@ namespace CASM {
     /// - did_cp_more: if additional files were found and copied
     ///
     std::pair<bool, bool> ConfigData::cp_files(
-      const fs::path &pos_path,
-      const std::string &configname,
+      ConfigIO::Result &res,
       bool dry_run,
       bool copy_additional_files) const {
 
       bool did_cp(false);
       bool did_cp_more(false);
 
-      fs::path p = calc_dir(configname);
+      fs::path p = calc_dir(res.properties.to);
       if(!fs::exists(p)) {
         if(!dry_run) {
           fs::create_directories(p);
         }
       }
 
-      fs::path calc_props_path = calc_properties_path(pos_path, primclex());
+      fs::path calc_props_path = Local::_resolve_properties_path(res.properties.best_file_data.path(), primclex());
       if(calc_props_path.empty()) {
         return std::make_pair(did_cp, did_cp_more);
       }
 
-      file_log().custom(std::string("Copy calculation files: ") + configname);
+      file_log().custom(std::string("Copy calculation files: ") + res.properties.to);
       if(!copy_additional_files) {
         file_log() << "cp " << calc_props_path << " " << p / "properties.calc.json" << std::endl;
         did_cp = true;
@@ -424,6 +382,7 @@ namespace CASM {
           did_cp_more = true;
         }
       }
+      res.properties.best_file_data = res.properties.native_file_data = FileData((p / "properties.calc.json").string());
       file_log() << std::endl;
       return std::make_pair(did_cp, did_cp_more);
     }
