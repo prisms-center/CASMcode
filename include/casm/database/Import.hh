@@ -35,10 +35,12 @@ namespace CASM {
     /// Specifies default parameters for all values, in order to simplify
     /// parsing from JSON
     struct ImportSettings {
-      ImportSettings(bool _data = false,
+      ImportSettings(bool _import = false,
+                     bool _copy_files = false,
                      bool _additional_files = false,
                      bool _overwrite = false) :
-        data(_data),
+        import(_import),
+        copy_files(_copy_files),
         additional_files(_additional_files),
         overwrite(_overwrite) {}
 
@@ -48,7 +50,11 @@ namespace CASM {
 
       // attempt to import calculation results into database, else just insert
       // configurations w/out data
-      bool data;
+      bool import;
+
+      // attempt to copy properties.calc.json file to training directory of best configuration
+      // else just import data
+      bool copy_files;
 
       // attempt to copy extra files from the directory where the structure is
       // being imported from to the training_data directory
@@ -87,14 +93,14 @@ namespace CASM {
 
     protected:
       /// Allow ConfigType to specialize the report formatting for 'import'
-      virtual DataFormatter<ConfigIO::Result> _import_formatter(
-        const std::map<std::string, ConfigIO::ImportData> &data_results) const = 0;
+      virtual DataFormatter<ConfigIO::Result> _import_formatter() const = 0;
 
     private:
       void _import_report(
-        std::vector<ConfigIO::Result> &results,
-        const std::map<std::string, ConfigIO::ImportData> &data_results);
+        std::vector<ConfigIO::Result> &results)const;
 
+      // Copies file for each element of results that corresponds to a succesful optimal mapping
+      void _copy_files(std::vector<ConfigIO::Result> &results) const;
 
       const StructureMap<ConfigType> &m_structure_mapper;
 
@@ -114,8 +120,7 @@ namespace CASM {
 
     private:
       // Allow ConfigType to specialize the report formatting for 'import'
-      DataFormatter<ConfigIO::Result> _import_formatter(
-        const std::map<std::string, ConfigIO::ImportData> &data_results) const override;
+      DataFormatter<ConfigIO::Result> _import_formatter() const override;
         };*/
 
   }

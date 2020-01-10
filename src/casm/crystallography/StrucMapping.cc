@@ -371,7 +371,8 @@ namespace CASM {
       m_options(_options),
       m_tol(max(1e-9, _tol)),
       m_min_va_frac(0.),
-      m_max_va_frac(1.) {
+      m_max_va_frac(1.),
+      m_restricted(false) {
 
       //ParamComposition param_comp(_pclex.prim());
       m_max_volume_change = max(tol(), _max_volume_change);

@@ -47,14 +47,11 @@ namespace CASM {
   jsonParser &to_json(const MappedProperties &obj, jsonParser &json) {
     json.put_obj();
     json["origin"] = obj.origin;
+    json["init"] = obj.init_config;
     json["to"] = obj.to;
-    if(!obj.best_file_data.empty()) {
-      json["best_path"] = obj.best_file_data.path();
-      json["best_timestamp"] = obj.best_file_data.timestamp();
-    }
-    if(!obj.native_file_data.empty()) {
-      json["native_path"] = obj.native_file_data.path();
-      json["native_timestamp"] = obj.native_file_data.timestamp();
+    if(!obj.file_data.empty()) {
+      json["path"] = obj.file_data.path();
+      json["timestamp"] = obj.file_data.timestamp();
     }
     json["global"] = obj.global;
     json["site"] = obj.site;
@@ -64,13 +61,12 @@ namespace CASM {
 
   jsonParser const &from_json(MappedProperties &obj, const jsonParser &json) {
     from_json(obj.origin, json["origin"]);
+    from_json(obj.init_config, json["init"]);
     from_json(obj.to, json["to"]);
     from_json(obj.global, json["global"]);
     from_json(obj.site, json["site"]);
-    if(json.contains("native_path"))
-      obj.native_file_data = FileData(json["native_path"].get<std::string>(), json["native_timestamp"].get<std::time_t>());
-    if(json.contains("best_path"))
-      obj.best_file_data = FileData(json["best_path"].get<std::string>(), json["best_timestamp"].get<std::time_t>());
+    if(json.contains("path"))
+      obj.file_data = FileData(json["path"].get<std::string>(), json["timestamp"].get<std::time_t>());
     return json;
   }
 

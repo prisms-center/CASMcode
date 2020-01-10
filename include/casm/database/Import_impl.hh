@@ -36,7 +36,7 @@ namespace CASM {
           missing_files = true;
           primclex.err_log()   << "           " << fs::absolute(p) << "\n";
         }
-        *result++ = p;
+        *result++ = fs::absolute(p);
         return true;
       };
 
@@ -103,8 +103,8 @@ namespace CASM {
       std::vector<ConfigIO::Result> results;
 
       // map of data import results
-      //   'configname' -> 'preexisting?, copy_data?, copy_more?, last_import
-      std::map<std::string, ConfigIO::ImportData> data_results;
+      //   'configname' -> 'preexisting?
+      std::map<std::string, bool> preexisting;
 
       Log &log = this->primclex().log();
       auto it = begin;
@@ -142,30 +142,48 @@ namespace CASM {
           //      !better_score:
           //        do not import
           // if could not map, no data, or do not import data, continue
-          if(res.properties.to.empty() || !res.has_data || !settings().data) {
-            continue;
+          if(!res.properties.to.empty() && res.has_data && settings().import) {
+            //std::cout << "res.properties.to: "  << res.properties.to << "; res.has_data: "
+            //<< res.has_data << " settings().import: " << settings.import << "\n";
+            // we will try to import data
+
+            // note if preexisting data before this batch
+            auto p_it = preexisting.find(res.properties.to);
+            if(p_it == preexisting.end()) {
+              p_it = preexisting.emplace(res.properties.to, has_existing_data_or_files(res.properties.to)).first;
+            }
+            res.import_data.preexisting = p_it->second;
+
+            // insert properties
+            db_props().insert(res.properties);
           }
-          // else we will try to import data
-          std::string to_config = res.properties.to;
 
-          std::string origin = res.properties.origin;
-
-          // store info about data import, note if preexisting data before this batch
-          //auto data_res_it = data_results.find();
-          //if(data_res_it == data_results.end()) {
-          auto data_res_it = data_results.insert({origin, ConfigIO::ImportData()}).first;
-          data_res_it->second.preexisting = has_existing_data_or_files(to_config);
-          //}
-
-          // Finally, insert properties
-          db_props().insert(res.properties);
           results.push_back(res);
         }
       }
 
+
       // Copy files as needed/requested
+      this->_copy_files(results);
+
+      this->_import_report(results);
+
+      db_supercell().commit();
+      db_config<ConfigType>().commit();
+      db_props().commit();
+    }
+
+    // *********************************************************************************
+
+    template<typename _ConfigType>
+    void ImportT<_ConfigType>::_copy_files(std::vector<ConfigIO::Result> &results) const {
+      if(!settings().import || !(settings().copy_files || settings().additional_files))
+        return;
+
       for(auto res : results) {
         std::string to_config = res.properties.to;
+        if(to_config.empty())
+          continue;
 
         auto db_it = db_props().find_via_to(to_config);
         std::string origin = db_it->origin;
@@ -173,39 +191,30 @@ namespace CASM {
         if(origin != res.properties.origin)
           continue;
 
-        auto it = data_results.find(origin);
+        // note that this import to configuration is best in case of conflicts
+        res.import_data.is_best = true;
+
 
         // if preexisting data, do not import new data unless overwrite option set
         // if last_insert is not empty, it means the existing data was from this batch and we can overwrite
-        if(it->second.preexisting && !settings().overwrite) {
+        if(res.import_data.preexisting && !settings().overwrite) {
           continue;
         }
-
-        // note which structure is the latest import to configuration in case of conflicts
-        it->second.is_best = true;
 
         db_props().erase(db_it);
         // copy files:
         //   there might be existing files in cases of import conflicts
-        //   cp_files() will update res.properties.best_file_data
+        //   cp_files() will update res.properties.file_data
         rm_files(to_config, false);
-        std::tie(it->second.copy_data, it->second.copy_more) =
-          this->cp_files(res, false, settings().additional_files);
+        this->cp_files(res, false, settings().additional_files);
         db_props().insert(res.properties);
       }
-
-
-      _import_report(results, data_results);
-
-      db_supercell().commit();
-      db_config<ConfigType>().commit();
-      db_props().commit();
     }
 
+    // *********************************************************************************
+
     template<typename _ConfigType>
-    void ImportT<_ConfigType>::_import_report(
-      std::vector<ConfigIO::Result> &results,
-      const std::map<std::string, ConfigIO::ImportData> &data_results) {
+    void ImportT<_ConfigType>::_import_report(std::vector<ConfigIO::Result> &results) const {
 
       // map_fail: could not map
       // map_success: could map
@@ -239,7 +248,7 @@ namespace CASM {
           ++(it->second);
 
           map_success.push_back(res);
-          if(res.has_data && settings().data && db_props().find_via_to(res.properties.to) != db_props().end()
+          if(res.has_data && settings().import && db_props().find_via_to(res.properties.to) != db_props().end()
              && db_props().score(res.properties) < db_props().best_score(res.properties.to)) {
             import_data_fail.push_back(res);
           }
@@ -249,7 +258,7 @@ namespace CASM {
       // list of conflicts (multiple config with same 'to')
       std::vector<ConfigIO::Result> conflict;
       for(auto const &res : results) {
-        if(all_to[res.properties.to] > 1) {
+        if(!res.properties.to.empty() && all_to[res.properties.to] > 1) {
           conflict.push_back(res);
         }
       }
@@ -264,13 +273,13 @@ namespace CASM {
         primclex().log() << "  See detailed report: " << p  << std::endl << std::endl;
 
         DataFormatterDictionary<ConfigIO::Result> dict;
-        dict.insert(ConfigIO::path(), ConfigIO::fail_msg());
-        auto formatter = dict.parse({"path", "fail_msg"});
+        dict.insert(ConfigIO::initial_path(), ConfigIO::fail_msg());
+        auto formatter = dict.parse({"initial_path", "fail_msg"});
         sout << formatter(map_fail.begin(), map_fail.end());
       }
 
       // - pos, config, score_method, import data?, import additional files?, score, best_score, is_preexisting?
-      auto formatter = _import_formatter(data_results);
+      auto formatter = _import_formatter();
 
       if(map_success.size()) {
 

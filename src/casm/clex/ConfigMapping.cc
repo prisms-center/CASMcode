@@ -407,6 +407,9 @@ namespace CASM {
                                                                     hint_ptr->ideal_lattice(),
                                                                     k,
                                                                     best_cost + struc_mapper().tol());
+      if(struc_maps.empty())
+        result.fail_msg = "Unable to map structure using same lattice as " + hint_ptr->name() + ". Try setting \"fix_lattice\" : false.";
+
     }
     else if(hint_ptr && settings().fix_volume) {
       Index vol = hint_ptr->supercell().volume();
@@ -415,18 +418,25 @@ namespace CASM {
                                                                          vol,
                                                                          k,
                                                                          best_cost + struc_mapper().tol());
+      if(struc_maps.empty())
+        result.fail_msg = "Unable to map structure assuming volume = " + std::to_string(vol) + ". Try setting \"fix_volume\" : false.";
+
     }
     else if(settings().ideal) {
       struc_maps = struc_mapper().map_ideal_struc(child_struc,
                                                   k);
+      if(struc_maps.empty())
+        result.fail_msg = "Imported structure has lattice vectors that are not a perfect supercell of PRIM. Try setting \"ideal\" : false.";
     }
     else {
       struc_maps = struc_mapper().map_deformed_struc(child_struc,
                                                      k,
                                                      best_cost + struc_mapper().tol());
+      if(struc_maps.empty())
+        result.fail_msg = "Unable to map structure to prim. May be incompatible structure, or provided settings may be too restrictive.";
     }
 
-    std::cout << "struc_maps.size(): " << struc_maps.size() << "\n";
+    //std::cout << "struc_maps.size(): " << struc_maps.size() << "\n";
     // Refactor into external routine A. This is too annoying with the current way that supercells are managed
     for(auto const &map : struc_maps) {
       std::shared_ptr<Supercell> shared_scel = std::make_shared<Supercell>(&primclex(), map.lat_node.parent.scel_lattice());

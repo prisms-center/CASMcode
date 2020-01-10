@@ -149,7 +149,6 @@ namespace CASM {
     std::vector<std::vector<Index> > m_index_map;
 
     bool m_has_occ;
-    bool m_has_disp;
 
   };
 

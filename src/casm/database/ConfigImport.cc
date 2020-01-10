@@ -103,16 +103,18 @@ namespace CASM {
       // - bool has_complete_data = false;
       // - bool is_new_config = false;
       // - std::string fail_msg = "";
+      ConfigIO::Result res;
+      res.pos_path = p.string();
 
+      if(!fs::exists(res.pos_path)) {
+        res.fail_msg = "Specified file does not exist!";
+      }
       // read from structure file or properties.calc.json file (if exists)
-      SimpleStructure sstruc = this->_make_structure(p);
+      SimpleStructure sstruc = this->_make_structure(res.pos_path);
 
       // do mapping
       ConfigMapperResult map_result = m_configmapper->import_structure(sstruc, hint_config.get());
 
-      ConfigIO::Result res;
-      res.pos_path = p.string();
-      res.properties.best_file_data = p.string();
 
       if(!map_result.success()) {
         res.fail_msg = map_result.fail_msg;
@@ -134,9 +136,13 @@ namespace CASM {
 
 
         res.properties = Local::_make_mapped_properties(map.first, map.second);
+        res.properties.file_data = p.string();
         res.properties.to = insert_result.canonical_it.name();
-        if(hint_config)
-          res.properties.origin = p.string();//hint_config->name();
+        res.properties.origin = p.string();
+
+        if(hint_config) {
+          res.properties.init_config = hint_config->name();
+        }
 
         for(std::string const &propname : req_properties) {
           res.has_data = false;
@@ -159,7 +165,7 @@ namespace CASM {
         if(insert_result.canonical_it != insert_result.primitive_it) {
           ConfigIO::Result prim_res;
           prim_res.pos_path = res.pos_path;
-          prim_res.properties.best_file_data = res.properties.best_file_data;
+          prim_res.properties.file_data = res.properties.file_data;
           prim_res.properties.origin = "prim:" + res.properties.origin; //insert_result.primitive_it.name();
           prim_res.properties.to = insert_result.primitive_it.name();
           prim_res.is_new_config = insert_result.insert_primitive;
@@ -548,14 +554,13 @@ namespace CASM {
 
 
     /// Allow ConfigType to specialize the report formatting for 'import'
-    DataFormatter<ConfigIO::Result> Import<Configuration>::_import_formatter(
-      const std::map<std::string, ConfigIO::ImportData> &data_results) const {
+    DataFormatter<ConfigIO::Result> Import<Configuration>::_import_formatter() const {
 
       DataFormatterDictionary<ConfigIO::Result> dict;
-      ConfigIO::default_import_formatters(dict, db_props(), data_results);
+      ConfigIO::default_import_formatters(dict, db_props());
 
       std::vector<std::string> col = {
-        "to_configname", "selected", "path", "is_new_config", "has_data", "has_complete_data",
+        "initial_path",  "selected", "to_configname", "final_path", "is_new_config", "has_data", "has_complete_data",
         "preexisting_data", "import_data", "import_additional_files",
         "score", "best_score", "is_best",
         "lattice_deformation_cost", "basis_deformation_cost",

@@ -1,4 +1,5 @@
 #include "casm/database/PropertiesDatabase.hh"
+#include "casm/clex/MappedProperties.hh"
 
 namespace CASM {
   namespace DB {

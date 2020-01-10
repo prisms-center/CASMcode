@@ -75,7 +75,7 @@ namespace CASM {
           result.coords.block(0, i * mult, 3, mult) = _info.cart_coord(i).replicate(1, mult);
 
         for(auto const &p : _info.properties) {
-          auto it = result.properties.emplace(p.first, Eigen::MatrixXd(p.second.rows(), mult * p.second.cols())).first;
+          result.properties.emplace(p.first, Eigen::MatrixXd(p.second.rows(), mult * p.second.cols()));
           for(Index i = 0; i < p.second.cols(); ++i)
             result.coords.block(0, i * mult, p.second.rows(), mult) = p.second.col(i).replicate(1, mult);
         }
