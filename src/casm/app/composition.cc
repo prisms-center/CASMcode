@@ -11,7 +11,7 @@
 #include "casm/completer/Handlers.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/BasicStructure.hh"
 
 namespace CASM {
 

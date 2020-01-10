@@ -9,6 +9,7 @@
 
 #include "casm/global/enum.hh"
 #include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/Site.hh"
 #include "casm/basis_set/DoFSet.hh"
 
 namespace CASM {
@@ -29,7 +30,6 @@ namespace CASM {
      */
 
     ///\brief BasicStructure specifies the lattice and atomic basis of a crystal
-    template<typename CoordType>
     class BasicStructure {
     protected:
       Lattice m_lattice;
@@ -38,7 +38,7 @@ namespace CASM {
       std::string m_title;
 
       /// Lattice vectors that specifies periodicity of the crystal
-      std::vector<CoordType> m_basis;
+      std::vector<Site> m_basis;
 
       /// continuous global degrees of freedom
       std::map <DoFKey, DoFSet> m_dof_map;
@@ -67,33 +67,31 @@ namespace CASM {
       /// do not depend on the lattice of 'RHS'
       BasicStructure(const BasicStructure &RHS);
 
-      virtual ~BasicStructure();
+      virtual ~BasicStructure() {};
 
       //  ****Inspectors/Accessors****
 
       /// return basis index of site that matches test_coord, if it is in basis
       /// otherwise, returns basis.size()
-      template<typename CoordType2>
-      Index find(const CoordType2 &test_site) const;
+      Index find(const Site &test_site) const;
 
       /// return basis index of site that matches test_site+shift, if it is in basis
       /// otherwise, returns basis.size()
-      template<typename CoordType2>
-      Index find(const CoordType2 &test_site, const Coordinate &shift) const;
+      Index find(const Site &test_site, const Coordinate &shift) const;
 
       const Lattice &lattice() const {
         return m_lattice;
       }
 
-      const std::vector<CoordType> &basis() const {
+      const std::vector<Site> &basis() const {
         return m_basis;
       }
 
-      const CoordType &basis(Index i) const {
+      const Site &basis(Index i) const {
         return m_basis[i];
       }
 
-      std::vector<CoordType> &set_basis() {
+      std::vector<Site> &set_basis() {
         reset();
         return m_basis;
       }
@@ -110,8 +108,7 @@ namespace CASM {
 
       /// Return the UnitCellCoord corresponding to test_site (i.e., finds the basis index and
       /// the lattice translation)
-      //   template<typename CoordType2>
-      //   UnitCellCoord unit_cell_coord(const CoordType2 &test_site, double tol = TOL)const;
+      //   UnitCellCoord unit_cell_coord(const Site2 &test_site, double tol = TOL)const;
 
       // ****Mutators****
       ;
@@ -121,7 +118,7 @@ namespace CASM {
       /// do not depend on the lattice of 'RHS'
       virtual BasicStructure &operator=(const BasicStructure &RHS);
 
-      /// Use this is the copy interface for things that derive from BasicStructure<>
+      /// Use this is the copy interface for things that derive from BasicStructure
       /// It should be overloaded in derived classes so that all important attributes besides lattice, basis, and title
       /// get copied
       void copy_attributes_from(const BasicStructure &RHS);
@@ -140,7 +137,7 @@ namespace CASM {
       /// Translate all basis sites so that they are inside the unit cell
       void within();
 
-      //CoordType site(const UnitCellCoord &ucc) const;
+      //Site site(const UnitCellCoord &ucc) const;
 
       ///change the lattice and update site coordinates.  Argument 'mode' specifies which mode is preserved
       /// e.g.: struc.set_lattice(new_lat, CART) calculates all Cartesian coordinates,
@@ -156,7 +153,7 @@ namespace CASM {
       }
 
       /// Manually set the basis sites
-      void set_basis(std::vector<CoordType> const &_basis, COORD_TYPE mode = CART);
+      void set_basis(std::vector<Site> const &_basis, COORD_TYPE mode = CART);
 
       /// Clear the basis atoms
       void clear_basis();
@@ -164,7 +161,7 @@ namespace CASM {
       void set_occ(Index basis_ind, int _val);
 
       /// Manually set the basis sites
-      void push_back(CoordType const &_site, COORD_TYPE mode = CART);
+      void push_back(Site const &_site, COORD_TYPE mode = CART);
 
       //  - Symmetry
 
@@ -210,85 +207,64 @@ namespace CASM {
 
       //jsonParser &to_json(jsonParser &json) const;
 
-      // Assumes constructor CoordType::CoordType(Lattice) exists
+      // Assumes constructor Site::Site(Lattice) exists
       //void from_json(const jsonParser &json);
     };
 
-    /* template<typename CoordType> */
-    /* BasicStructure<CoordType> operator*(const CASM::SymOp &LHS, const BasicStructure<CoordType> &RHS); */
+    /* BasicStructure operator*(const CASM::SymOp &LHS, const BasicStructure &RHS); */
 
-    template<typename CoordType>
-    BasicStructure<CoordType> operator*(const Lattice &LHS, const BasicStructure<CoordType> &RHS);
+    BasicStructure operator*(const Lattice &LHS, const BasicStructure &RHS);
 
     //Translation operators -- not yet defined
-    template<typename CoordType>
-    BasicStructure<CoordType> operator+(const Coordinate &LHS, const BasicStructure<CoordType> &RHS);
+    BasicStructure operator+(const Coordinate &LHS, const BasicStructure &RHS);
 
-    template<typename CoordType>
-    BasicStructure<CoordType> operator+(const BasicStructure<CoordType> &LHS, const Coordinate &RHS);
+    BasicStructure operator+(const BasicStructure &LHS, const Coordinate &RHS);
 
-    template<typename CoordType>
-    std::vector<UnitCellCoord> symop_site_map(CASM::SymOp const &_op, BasicStructure<CoordType> const &_struc);
+    std::vector<UnitCellCoord> symop_site_map(CASM::SymOp const &_op, BasicStructure const &_struc);
 
-    template<typename CoordType>
-    std::vector<UnitCellCoord> symop_site_map(CASM::SymOp const &_op, BasicStructure<CoordType> const &_struc, double _tol);
+    std::vector<UnitCellCoord> symop_site_map(CASM::SymOp const &_op, BasicStructure const &_struc, double _tol);
 
     //************************************************************
     /// Returns an Array of each *possible* Molecule in this Structure
-    template<typename CoordType>
-    std::vector<Molecule> struc_molecule(BasicStructure<CoordType> const &_struc);
+    std::vector<Molecule> struc_molecule(BasicStructure const &_struc);
 
     //************************************************************
     /// Returns an Array of each *possible* AtomSpecie in this Structure
-    template<typename CoordType>
-    std::vector<std::string> struc_species(BasicStructure<CoordType> const &_struc);
+    std::vector<std::string> struc_species(BasicStructure const &_struc);
 
     //************************************************************
     /// Returns an Array of each *possible* Molecule in this Structure
-    template<typename CoordType>
-    std::vector<std::string> struc_molecule_name(BasicStructure<CoordType> const &_struc);
+    std::vector<std::string> struc_molecule_name(BasicStructure const &_struc);
 
     //************************************************************
     /// Returns an Array of each *possible* Molecule in this Structure
-    template<typename CoordType>
-    std::vector<std::vector<std::string> > allowed_molecule_unique_names(BasicStructure<CoordType> const &_struc);
+    std::vector<std::vector<std::string> > allowed_molecule_unique_names(BasicStructure const &_struc);
 
     //************************************************************
     /// Returns a vector with a list of allowed molecule names at each site
-    template<typename CoordType>
-    std::vector<std::vector<std::string> > allowed_molecule_names(BasicStructure<CoordType> const &_struc);
+    std::vector<std::vector<std::string> > allowed_molecule_names(BasicStructure const &_struc);
 
     //************************************************************
-    // Assumes constructor CoordType::CoordType(Lattice) exists
-    //template<typename CoordType>
-    //void from_json(BasicStructure<CoordType> &basic, const jsonParser &json);
+    // Assumes constructor Site::Site(Lattice) exists
+    //void from_json(BasicStructure &basic, const jsonParser &json);
 
-    template<typename CoordType>
-    std::vector<DoFKey> all_local_dof_types(BasicStructure<CoordType> const &_struc);
+    std::vector<DoFKey> all_local_dof_types(BasicStructure const &_struc);
 
-    template<typename CoordType>
-    std::vector<DoFKey> continuous_local_dof_types(BasicStructure<CoordType> const &_struc);
+    std::vector<DoFKey> continuous_local_dof_types(BasicStructure const &_struc);
 
-    template<typename CoordType>
-    std::vector<SymGroupRepID> occ_symrep_IDs(BasicStructure<CoordType> const &_struc);
+    std::vector<SymGroupRepID> occ_symrep_IDs(BasicStructure const &_struc);
 
-    template<typename CoordType>
-    std::vector<DoFKey> global_dof_types(BasicStructure<CoordType> const &_struc);
+    std::vector<DoFKey> global_dof_types(BasicStructure const &_struc);
 
-    template<typename CoordType>
-    std::map<DoFKey, Index> local_dof_dims(BasicStructure<CoordType> const &_struc);
+    std::map<DoFKey, Index> local_dof_dims(BasicStructure const &_struc);
 
-    template<typename CoordType>
-    std::map<DoFKey, Index> global_dof_dims(BasicStructure<CoordType> const &_struc);
+    std::map<DoFKey, Index> global_dof_dims(BasicStructure const &_struc);
 
-    template<typename CoordType>
-    std::map<DoFKey, DoFSetInfo> global_dof_info(BasicStructure<CoordType> const &_struc);
+    std::map<DoFKey, DoFSetInfo> global_dof_info(BasicStructure const &_struc);
 
-    template<typename CoordType>
-    std::map<DoFKey, std::vector<DoFSetInfo> > local_dof_info(BasicStructure<CoordType> const &_struc);
+    std::map<DoFKey, std::vector<DoFSetInfo> > local_dof_info(BasicStructure const &_struc);
 
-    template<typename CoordType>
-    Index local_dof_dim(DoFKey const &_name, BasicStructure<CoordType> const &_struc);
+    Index local_dof_dim(DoFKey const &_name, BasicStructure const &_struc);
 
     /** @} */
   }

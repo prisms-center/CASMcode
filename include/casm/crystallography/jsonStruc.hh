@@ -19,7 +19,7 @@ namespace CASM {
     template< bool IsConst >
     class SimpleJSonSiteStructure {
     public:
-      typedef CASM_TMP::ConstSwitch<IsConst, BasicStructure<Site> > StrucType;
+      typedef CASM_TMP::ConstSwitch<IsConst, BasicStructure > StrucType;
       SimpleJSonSiteStructure(StrucType &_struc, const std::string &_prefix = std::string()) :
         m_struc_ptr(&_struc), m_prefix(_prefix) {};
 
@@ -28,11 +28,11 @@ namespace CASM {
         _from_json(*m_struc_ptr, json);
       }
     private:
-      void _from_json(const BasicStructure<Site> &struc, const jsonParser &json) const {
+      void _from_json(const BasicStructure &struc, const jsonParser &json) const {
         std::cerr << "WARNING: Attempting to populate a const Structure/BasicStructure from a JSON object.  This is not allowed.\n";
       }
 
-      void _from_json(BasicStructure<Site> &struc, const jsonParser &json) const;
+      void _from_json(BasicStructure &struc, const jsonParser &json) const;
 
       StrucType *m_struc_ptr;
       std::string m_prefix;
@@ -66,7 +66,7 @@ namespace CASM {
     }
 
     template< bool IsConst >
-    void SimpleJSonSiteStructure<IsConst>::_from_json(BasicStructure<Site> &struc, const jsonParser &json) const {
+    void SimpleJSonSiteStructure<IsConst>::_from_json(BasicStructure &struc, const jsonParser &json) const {
       struc.clear_basis();
       struc.reset();
       try {
@@ -109,12 +109,12 @@ namespace CASM {
     }
 
     inline
-    SimpleJSonSiteStructure<true> simple_json(const BasicStructure<Site> &struc, const std::string &prefix) {
+    SimpleJSonSiteStructure<true> simple_json(const BasicStructure &struc, const std::string &prefix) {
       return SimpleJSonSiteStructure<true>(struc, prefix);
     }
 
     inline
-    SimpleJSonSiteStructure<false> simple_json(BasicStructure<Site> &struc, const std::string &prefix) {
+    SimpleJSonSiteStructure<false> simple_json(BasicStructure &struc, const std::string &prefix) {
       return SimpleJSonSiteStructure<false>(struc, prefix);
     }
 

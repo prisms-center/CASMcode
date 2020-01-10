@@ -7,15 +7,18 @@
 #include <sys/types.h>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
+#include "casm/crystallography/LatticeIsEquivalent.hh"
+#include "casm/crystallography/LatticePointWithin.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/container/algorithm.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/BasicStructure.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/basis_set/DoFIsEquivalent_impl.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymBasisPermute.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
+#include "casm/symmetry/SymPermutation.hh"
 #include "casm/casm_io/Log.hh"
 
 
@@ -24,7 +27,7 @@ namespace CASM {
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Structure::Structure(const fs::path &filepath) : BasicStructure<Site>() {
+    Structure::Structure(const fs::path &filepath) : BasicStructure() {
       if(!fs::exists(filepath)) {
         default_err_log() << "Error in Structure::Structure(const fs::path &filepath)." << std::endl;
         default_err_log() << "  File does not exist at: " << filepath << std::endl;
@@ -38,7 +41,7 @@ namespace CASM {
     //***********************************************************
 
     Structure::Structure(const Structure &RHS) :
-      BasicStructure<Site>(RHS) {
+      BasicStructure(RHS) {
 
       copy_attributes_from(RHS);
 
@@ -51,7 +54,7 @@ namespace CASM {
     //***********************************************************
 
     Structure &Structure::operator=(const Structure &RHS) {
-      BasicStructure<Site>::operator=(RHS);
+      BasicStructure::operator=(RHS);
 
       //Following gets done by base class
       //lattice = RHS.lattice;
@@ -74,7 +77,7 @@ namespace CASM {
 
     void Structure::copy_attributes_from(const Structure &RHS) {
 
-      BasicStructure<Site>::copy_attributes_from(RHS);
+      BasicStructure::copy_attributes_from(RHS);
 
       m_basis_perm_rep_ID = RHS.m_basis_perm_rep_ID; //this *should* work
       //assert(0);
@@ -88,7 +91,7 @@ namespace CASM {
     void Structure::generate_factor_group_slow() const {
       m_factor_group.clear();
       m_factor_group.set_lattice(lattice());
-      BasicStructure<Site>::generate_factor_group_slow(m_factor_group);
+      BasicStructure::generate_factor_group_slow(m_factor_group);
       return;
     }
 
@@ -96,7 +99,7 @@ namespace CASM {
     void Structure::generate_factor_group() const {
       m_factor_group.clear();
       m_factor_group.set_lattice(lattice());
-      BasicStructure<Site>::generate_factor_group(m_factor_group);
+      BasicStructure::generate_factor_group(m_factor_group);
       _generate_basis_symreps();
       _generate_global_symreps();
       return;
@@ -154,7 +157,7 @@ namespace CASM {
         m_lattice.set_tol(i);
 
         factor_group.clear();
-        BasicStructure<Site>::generate_factor_group(factor_group);
+        BasicStructure::generate_factor_group(factor_group);
         factor_group.get_multi_table();
         num_ops.push_back(factor_group.size());
         is_group.push_back(factor_group.is_group(i));

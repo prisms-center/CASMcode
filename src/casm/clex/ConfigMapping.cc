@@ -128,7 +128,7 @@ namespace CASM {
   //*******************************************************************************************
   namespace ConfigMapping {
 
-    xtal::StrucMapping::AllowedSpecies _allowed_species(BasicStructure<Site> const &_prim,
+    xtal::StrucMapping::AllowedSpecies _allowed_species(BasicStructure const &_prim,
                                                         SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM) {
       std::vector<std::unordered_set<std::string> > result(_prim.basis().size());
       Index i = 0;
@@ -219,7 +219,7 @@ namespace CASM {
   }
   //*******************************************************************************************
 
-  PrimStrucMapCalculator::PrimStrucMapCalculator(BasicStructure<Site> const &_prim,
+  PrimStrucMapCalculator::PrimStrucMapCalculator(BasicStructure const &_prim,
                                                  SimpleStructure::SpeciesMode _species_mode/*=StrucMapping::ATOM*/) :
     SimpleStrucMapCalculator(make_simple_structure(_prim),
                              std::vector<SymOp>({

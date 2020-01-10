@@ -11,8 +11,6 @@
 namespace CASM {
   namespace xtal {
     class UnitCellCoord;
-    template <typename CoordType>
-    class BasicStructure;
     class Site;
   } // namespace xtal
   using xtal::UnitCellCoord;

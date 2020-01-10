@@ -13,7 +13,6 @@ namespace CASM {
   namespace xtal {
     class Lattice;
     class Site;
-    template<typename T>
     class BasicStructure;
     struct MappingNode;
     class SimpleStructure;
@@ -56,7 +55,7 @@ namespace CASM {
 
   class PrimStrucMapCalculator : public SimpleStrucMapCalculator {
   public:
-    PrimStrucMapCalculator(BasicStructure<Site> const &_prim,
+    PrimStrucMapCalculator(BasicStructure const &_prim,
                            SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM);
 
     /// \brief Creates copy of _child_struc by applying isometry, lattice transformation, translation, and site permutation of _node
@@ -69,7 +68,7 @@ namespace CASM {
       return new PrimStrucMapCalculator(*this);
     }
 
-    BasicStructure<Site> m_prim;
+    BasicStructure m_prim;
 
   };
 
@@ -160,6 +159,7 @@ namespace CASM {
     }
 
     bool strict() const {
+      //TODO: Fix this warning, is it safe to just use logical '&'?
       return struc_mapper().options() && StrucMapper::strict;
     }
 

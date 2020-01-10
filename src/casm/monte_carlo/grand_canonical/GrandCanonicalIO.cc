@@ -4,7 +4,7 @@
 #include "casm/casm_io/dataformatter/DataFormatter.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonical.hh"
 #include "casm/monte_carlo/MonteIO_impl.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/BasicStructure.hh"
 
 namespace CASM {
   namespace Monte {

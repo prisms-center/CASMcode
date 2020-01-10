@@ -1,7 +1,7 @@
 #include "casm/clex/io/json/ChemicalReference.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/clex/ChemicalReference.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/BasicStructure.hh"
 
 #include "casm/casm_io/container/json_io.hh"
 
@@ -178,7 +178,7 @@ namespace CASM {
   ///   \endcode
   ///
   std::pair<Eigen::VectorXd, std::vector<ChemicalReferenceState> >
-  one_chemical_reference_from_json(BasicStructure<Site> const &prim,
+  one_chemical_reference_from_json(BasicStructure const &prim,
                                    jsonParser const &json) {
 
     typedef std::pair<Eigen::VectorXd, std::vector<ChemicalReferenceState> > ReturnType;
@@ -252,7 +252,7 @@ namespace CASM {
   /// \endcode expected form.
   ChemicalReference jsonConstructor<ChemicalReference>::from_json(
     jsonParser const &json,
-    BasicStructure<Site> const &prim,
+    BasicStructure const &prim,
     double tol) {
 
     std::unique_ptr<ChemicalReference> ref;
@@ -297,7 +297,7 @@ namespace CASM {
   /// \brief Read chemical reference from JSON
   void from_json(ChemicalReference &ref,
                  jsonParser const &json,
-                 BasicStructure<Site> const &prim,
+                 BasicStructure const &prim,
                  double tol) {
     ref = jsonConstructor<ChemicalReference>::from_json(json, prim, tol);
   }

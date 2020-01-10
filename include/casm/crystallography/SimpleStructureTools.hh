@@ -29,7 +29,6 @@ namespace CASM {
 
     class Site;
 
-    template<typename CoordType>
     class BasicStructure;
 
     class TransformDirective {
@@ -47,7 +46,7 @@ namespace CASM {
       bool operator<(TransformDirective const &_other) const;
 
       /// \brief Applies transformation to _struc using information contained in _config
-      void transform(ConfigDoF const  &_config, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const;
+      void transform(ConfigDoF const  &_config, BasicStructure const &_reference, SimpleStructure &_struc) const;
 
     private:
       /// \brief Build m_before object by recursively traversing DoF dependencies
@@ -67,7 +66,7 @@ namespace CASM {
     SimpleStructure make_superstructure(Eigen::Ref<const Eigen::Matrix3i> const &_T, SimpleStructure const &_sstruc);
 
     /// \brief Construct from decorated structure
-    SimpleStructure make_simple_structure(BasicStructure<Site> const &_struc);
+    SimpleStructure make_simple_structure(BasicStructure const &_struc);
 
     /// \brief Construct from Configuration
     SimpleStructure make_simple_structure(Configuration const &_config,
@@ -79,17 +78,17 @@ namespace CASM {
                                           std::vector<DoFKey> const &_which_dofs = {});
 
 
-    std::vector<std::set<Index> > atom_site_compatibility(SimpleStructure const &sstruc, BasicStructure<Site> const &_prim);
-    std::vector<std::set<Index> > mol_site_compatibility(SimpleStructure const &sstruc, BasicStructure<Site> const &_prim);
+    std::vector<std::set<Index> > atom_site_compatibility(SimpleStructure const &sstruc, BasicStructure const &_prim);
+    std::vector<std::set<Index> > mol_site_compatibility(SimpleStructure const &sstruc, BasicStructure const &_prim);
 
     std::vector<std::set<Index> > atom_site_compatibility(SimpleStructure const &sstruc, Configuration const &_config);
     std::vector<std::set<Index> > mol_site_compatibility(SimpleStructure const &sstruc, Configuration const &_config);
 
     /// \brief Imposes DoF values from ConfigDoF _config onto *this, using using any necessary information contained in _reference
-    void _apply_dofs(SimpleStructure &_sstruc, ConfigDoF const &_config, BasicStructure<Site> const &_reference, std::vector<DoFKey> which_dofs);
+    void _apply_dofs(SimpleStructure &_sstruc, ConfigDoF const &_config, BasicStructure const &_reference, std::vector<DoFKey> which_dofs);
 
     /// \brief use information in _reference to initialize atom_info from mol_info
-    void _atomize(SimpleStructure &_sstruc, Eigen::Ref<const Eigen::VectorXi> const &_mol_occ, BasicStructure<Site> const &_reference);
+    void _atomize(SimpleStructure &_sstruc, Eigen::Ref<const Eigen::VectorXi> const &_mol_occ, BasicStructure const &_reference);
 
     /// \brief Output to JSON, excluding any molecular or atomic species contained in 'excluded_species'
     jsonParser &to_json(xtal::SimpleStructure const &_struc,

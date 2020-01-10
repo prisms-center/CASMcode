@@ -37,7 +37,7 @@ namespace CASM {
     }
 
     //  Apply DoF values for this DoF to _struc
-    void DisplacementDoFTraits::apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const {
+    void DisplacementDoFTraits::apply_dof(ConfigDoF const &_dof, BasicStructure const &_reference, SimpleStructure &_struc) const {
       _struc.mol_info.coords += _dof.local_dof(name()).standard_values();
       // Any considerations here for Selective Dynamics?
     }

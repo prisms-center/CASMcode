@@ -113,8 +113,8 @@ namespace CASM {
       //Maybe check coordinate similarity after applying deformations
       //Check the unitcell coordinate within a tolerance of the maxium displacement of any atom in the from config
       //This max_displacement is not considering rigid translational shifts of the structures's basis to the primclex's basis
-      BasicStructure<Site> from = result.structures[0];
-      BasicStructure<Site> to = result.structures[result.structures.size() - 1];
+      BasicStructure from = result.structures[0];
+      BasicStructure to = result.structures[result.structures.size() - 1];
       //std::cout << "unconditioned from struc" << std::endl;
       //from.print_xyz(std::cout,true);
       //std::cout << "unconditioned to struc" << std::endl;
@@ -233,8 +233,8 @@ namespace CASM {
       return result;
     }
 
-    std::vector<Index> DiffTransConfigMapper::_analyze_atoms_ideal(const BasicStructure<Site> &from,
-                                                                   const BasicStructure<Site> &to,
+    std::vector<Index> DiffTransConfigMapper::_analyze_atoms_ideal(const BasicStructure &from,
+                                                                   const BasicStructure &to,
                                                                    const Supercell &scel,
                                                                    double uccoord_tol,
                                                                    std::vector<UnitCellCoord> &from_uccoords,
@@ -287,7 +287,7 @@ namespace CASM {
       return UnitCellCoord::from_coordinate(pclex.prim(), site, tol);
     }
 
-    void DiffTransConfigMapper::_precondition_from_and_to(const Eigen::Matrix3d &cart_op, const Eigen::Matrix3d &strain, const Eigen::Vector3d &trans, BasicStructure<Site> &from, BasicStructure<Site> &to) const {
+    void DiffTransConfigMapper::_precondition_from_and_to(const Eigen::Matrix3d &cart_op, const Eigen::Matrix3d &strain, const Eigen::Vector3d &trans, BasicStructure &from, BasicStructure &to) const {
       from.set_lattice(Lattice(strain.inverse() * (cart_op.transpose()*from.lattice().lat_column_mat())), FRAC);
       from += Coordinate(trans, from.lattice(), CART);
       for(auto &site : from.set_basis()) {
@@ -328,7 +328,7 @@ namespace CASM {
       return final_diff_trans;
     }
 
-    Kinetics::DiffusionTransformation DiffTransConfigMapper::_make_hop(const BasicStructure<Site> &from_struc,
+    Kinetics::DiffusionTransformation DiffTransConfigMapper::_make_hop(const BasicStructure &from_struc,
                                                                        const std::vector<UnitCellCoord> &from_coords,
                                                                        const std::vector<UnitCellCoord> &to_coords,
                                                                        const std::set<UnitCellCoord> &vacancy_from,
@@ -389,14 +389,14 @@ namespace CASM {
     }
 
 
-    std::vector<BasicStructure<Site>> DiffTransConfigMapper::_get_structures(const fs::path &pos_path) const {
-      std::map<Index, BasicStructure<Site>> bins;
-      std::vector<BasicStructure<Site>> images;
+    std::vector<BasicStructure> DiffTransConfigMapper::_get_structures(const fs::path &pos_path) const {
+      std::map<Index, BasicStructure> bins;
+      std::vector<BasicStructure> images;
       if(pos_path.extension() == ".json" || pos_path.extension() == ".JSON") {
         jsonParser all_strucs;
         to_json(pos_path, all_strucs);
         for(auto it =  all_strucs.begin(); it != all_strucs.end(); ++it) {
-          BasicStructure<Site> struc;
+          BasicStructure struc;
           try {
             int img_no = std::stoi(it.name());
             from_json(simple_json(struc, "relaxed_"), *it);
@@ -413,10 +413,10 @@ namespace CASM {
             int img_no = std::stoi(begin->path().filename().string());
             if(fs::is_directory(*begin)) {
               if(fs::is_regular(*begin / "CONTCAR")) {
-                bins.insert(std::make_pair(img_no, BasicStructure<Site>(*begin / "CONTCAR")));
+                bins.insert(std::make_pair(img_no, BasicStructure(*begin / "CONTCAR")));
               }
               else if(fs::is_regular(*begin / "POSCAR")) {
-                bins.insert(std::make_pair(img_no, BasicStructure<Site>(*begin / "POSCAR")));
+                bins.insert(std::make_pair(img_no, BasicStructure(*begin / "POSCAR")));
               }
               else {
                 std::cerr << "NO POSCAR OR CONTCAR FOUND IN " << *begin << std::endl;

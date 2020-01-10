@@ -3,7 +3,7 @@
 #include "casm/app/HamiltonianModules.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/casm_io/container/json_io.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/BasicStructure.hh"
 #include "casm/clex/io/json/ChemicalReference.hh"
 #include "casm/clusterography/ClusterSymCompare.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
@@ -246,7 +246,7 @@ namespace CASM {
     site.set_allowed_occupants(t_occ);
   }
 
-  BasicStructure<Site> read_prim(fs::path filename, double xtal_tol, HamiltonianModules const *_modules) {
+  BasicStructure read_prim(fs::path filename, double xtal_tol, HamiltonianModules const *_modules) {
 
     try {
       jsonParser json(filename);
@@ -260,7 +260,7 @@ namespace CASM {
   }
 
   /// \brief Read prim.json
-  BasicStructure<Site> read_prim(const jsonParser &json, double xtal_tol, HamiltonianModules const *_modules) {
+  BasicStructure read_prim(const jsonParser &json, double xtal_tol, HamiltonianModules const *_modules) {
     HamiltonianModules default_module;
     if(_modules == nullptr)
       _modules = &default_module;
@@ -275,7 +275,7 @@ namespace CASM {
       Lattice lat(latvec_transpose.transpose(), xtal_tol);
 
       // create prim using lat
-      BasicStructure<Site> prim(lat);
+      BasicStructure prim(lat);
 
       // read title
       prim.set_title(json["title"].get<std::string>());
@@ -342,7 +342,7 @@ namespace CASM {
   }
 
   /// \brief Write prim.json to file
-  void write_prim(const BasicStructure<Site> &prim, fs::path filename, COORD_TYPE mode) {
+  void write_prim(const BasicStructure &prim, fs::path filename, COORD_TYPE mode) {
 
     SafeOfstream outfile;
     outfile.open(filename);
@@ -355,7 +355,7 @@ namespace CASM {
   }
 
   /// \brief Write prim.json as JSON
-  void write_prim(const BasicStructure<Site> &prim, jsonParser &json, COORD_TYPE mode) {
+  void write_prim(const BasicStructure &prim, jsonParser &json, COORD_TYPE mode) {
 
     json = jsonParser::object();
 
@@ -477,7 +477,7 @@ namespace CASM {
   ///
   /// See documentation in related function for expected form of the JSON
   ChemicalReference read_chemical_reference(fs::path filename,
-                                            BasicStructure<Site> const &prim,
+                                            BasicStructure const &prim,
                                             double tol) {
     try {
       jsonParser json(filename);
@@ -511,7 +511,7 @@ namespace CASM {
   ///
   /// See one_chemical_reference_from_json for documentation of the \code {...} \endcode expected form.
   ChemicalReference read_chemical_reference(jsonParser const &json,
-                                            BasicStructure<Site> const &prim,
+                                            BasicStructure const &prim,
                                             double tol) {
 
     if(json.find("chemical_reference") == json.end()) {
@@ -707,38 +707,6 @@ namespace CASM {
       curr_key = key;
     }
   }
-
-  // ---------- prim_nlist.json IO -------------------------------------------------------------
-  /*
-    void write_prim_nlist(const Array<UnitCellCoord> &prim_nlist, const fs::path &nlistpath) {
-
-      SafeOfstream outfile;
-      outfile.open(nlistpath);
-      jsonParser nlist_json;
-      nlist_json = prim_nlist;
-      nlist_json.print(outfile.ofstream());
-      outfile.close();
-
-      return;
-    }
-
-    Array<UnitCellCoord> read_prim_nlist(const fs::path &nlistpath, const BasicStructure<Site>& prim) {
-
-      try {
-        jsonParser json(nlistpath);
-        Array<UnitCellCoord> prim_nlist(json.size(), UnitCellCoord(prim));
-        auto nlist_it = prim_nlist.begin();
-        for(auto it=json.begin(); it!=json.end(); ++it) {
-          from_json(*nlist_it++, *it);
-        }
-        return prim_nlist;
-      }
-      catch(...) {
-        std::cerr << "Error reading: " << nlistpath;
-        throw;
-      }
-    }
-  */
 
   // ---------- Orbit<IntegralCluster> & ClexBasis IO ------------------------------------------------------------------
 

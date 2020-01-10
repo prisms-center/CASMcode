@@ -36,7 +36,7 @@ namespace CASM {
 
 
     /// \brief Apply DoF values for this DoF to _struc
-    void StrainDoFTraits::apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const {
+    void StrainDoFTraits::apply_dof(ConfigDoF const &_dof, BasicStructure const &_reference, SimpleStructure &_struc) const {
       Eigen::VectorXd unrolled_metric = _dof.global_dof(name()).standard_values();
       StrainConverter c(m_metric);
       Eigen::Matrix3d F = c.unrolled_strain_metric_to_F(unrolled_metric);
@@ -46,7 +46,7 @@ namespace CASM {
       _struc.atom_info.coords = F * _struc.atom_info.coords;
     }
 
-    jsonParser StrainDoFTraits::dof_to_json(ConfigDoF const &_dof, BasicStructure<Site> const &_reference) const {
+    jsonParser StrainDoFTraits::dof_to_json(ConfigDoF const &_dof, BasicStructure const &_reference) const {
       Eigen::VectorXd unrolled_metric = _dof.global_dof(name()).standard_values();
       StrainConverter c(m_metric);
       Eigen::Matrix3d F = c.unrolled_strain_metric_to_F(unrolled_metric);

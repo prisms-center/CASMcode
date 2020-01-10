@@ -8,7 +8,6 @@
 
 namespace CASM {
   namespace xtal {
-    template<typename CoordType>
     class BasicStructure;
     class Site;
   }
@@ -57,7 +56,7 @@ namespace CASM {
 
   /// \brief Read chemical reference from one of 3 alternative forms
   std::pair<Eigen::VectorXd, std::vector<ChemicalReferenceState> >
-  one_chemical_reference_from_json(BasicStructure<Site> const &prim,
+  one_chemical_reference_from_json(BasicStructure const &prim,
                                    jsonParser const &json);
 
   /// \brief Read chemical reference from JSON
@@ -65,14 +64,14 @@ namespace CASM {
   struct jsonConstructor<ChemicalReference> {
 
     static ChemicalReference from_json(jsonParser const &json,
-                                       BasicStructure<Site> const &prim,
+                                       BasicStructure const &prim,
                                        double tol = 1e-14);
   };
 
   /// \brief Read chemical reference from JSON
   void from_json(ChemicalReference &ref,
                  jsonParser const &json,
-                 BasicStructure<Site> const &prim,
+                 BasicStructure const &prim,
                  double tol = 1e-14);
 
   /** @} */

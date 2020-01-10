@@ -4,7 +4,7 @@
 #include "casm/external/gzstream/gzstream.h"
 #include "casm/crystallography/io/VaspIO.hh"
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
@@ -456,8 +456,8 @@ namespace CASM {
       std::vector<ConfigDoF> trajectory;
 
       // create super structure matching supercell
-      BasicStructure<Site> primstruc = mc.supercell().prim();
-      BasicStructure<Site> superstruc = primstruc.create_superstruc(mc.supercell().lattice());
+      xtal::BasicStructure primstruc = mc.supercell().prim();
+      xtal::BasicStructure superstruc = primstruc.create_superstruc(mc.supercell().lattice());
 
       if(mc.settings().write_json()) {
 

@@ -18,7 +18,7 @@
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clex/MappedPropertiesTools.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/LatticePointWithin.hh"
 #include "casm/crystallography/LinearIndexConverter.hh"
 #include "casm/crystallography/Lattice_impl.hh"

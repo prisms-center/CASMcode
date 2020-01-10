@@ -1,6 +1,6 @@
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/LatticePointWithin.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/Site.hh"
@@ -117,7 +117,7 @@ namespace CASM {
 
     //***************************************************************************
 
-    SimpleStructure make_simple_structure(BasicStructure<Site> const &_struc) {
+    SimpleStructure make_simple_structure(BasicStructure const &_struc) {
       SimpleStructure result;
       result.lat_column_mat = _struc.lattice().lat_column_mat();
 
@@ -168,7 +168,7 @@ namespace CASM {
 
     void _atomize(SimpleStructure &_sstruc,
                   Eigen::Ref<const Eigen::VectorXi> const &_mol_occ,
-                  BasicStructure<Site> const &_reference) {
+                  BasicStructure const &_reference) {
       Index N_atoms(0);
 
       Index nb = _reference.basis().size();
@@ -202,7 +202,7 @@ namespace CASM {
     //***************************************************************************
 
     std::vector<std::set<Index> > mol_site_compatibility(SimpleStructure const &sstruc,
-                                                         BasicStructure<Site> const &_prim) {
+                                                         BasicStructure const &_prim) {
       std::vector<std::set<Index> > result;
       result.reserve(sstruc.mol_info.names.size());
       for(std::string const &sp : sstruc.mol_info.names) {
@@ -236,7 +236,7 @@ namespace CASM {
     //***************************************************************************
 
     std::vector<std::set<Index> > atom_site_compatibility(SimpleStructure const &sstruc,
-                                                          BasicStructure<Site> const &_prim) {
+                                                          BasicStructure const &_prim) {
 
       std::vector<std::set<Index> > result;
       result.reserve(sstruc.atom_info.names.size());
@@ -401,7 +401,7 @@ namespace CASM {
 
     //***************************************************************************
 
-    void _apply_dofs(SimpleStructure &_sstruc, ConfigDoF const &_config, BasicStructure<Site> const &_reference, std::vector<DoFKey> which_dofs) {
+    void _apply_dofs(SimpleStructure &_sstruc, ConfigDoF const &_config, BasicStructure const &_reference, std::vector<DoFKey> which_dofs) {
       std::set<TransformDirective> tformers({TransformDirective("atomize")});
       if(which_dofs.empty()) {
         for(std::string const &dof : continuous_local_dof_types(_reference))
@@ -470,7 +470,7 @@ namespace CASM {
 
     //***************************************************************************
 
-    void TransformDirective::transform(ConfigDoF const  &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const {
+    void TransformDirective::transform(ConfigDoF const  &_dof, BasicStructure const &_reference, SimpleStructure &_struc) const {
       if(m_traits_ptr) {
         if(m_traits_ptr->val_traits().global())
           _struc.properties[m_traits_ptr->name()] = _dof.global_dof(m_traits_ptr->name()).standard_values();

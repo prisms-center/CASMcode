@@ -4,7 +4,6 @@
 #include "casm/clex/ChemicalReference.hh"
 #include "casm/clex/ConfigIO.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/misc/algorithm.hh"
 
 namespace CASM {
@@ -12,7 +11,7 @@ namespace CASM {
   /// \brief Construct global reference via range ChemicalReferenceState
   ///
   template<typename RefStateIterator>
-  ChemicalReference::ChemicalReference(const BasicStructure<Site> &prim,
+  ChemicalReference::ChemicalReference(const BasicStructure &prim,
                                        RefStateIterator begin,
                                        RefStateIterator end,
                                        double tol) :
@@ -79,7 +78,7 @@ namespace CASM {
   ///          each ChemicalReferenceState
   ///
   template<typename RefStateIterator>
-  Eigen::VectorXd ChemicalReference::hyperplane(const BasicStructure<Site> &prim,
+  Eigen::VectorXd ChemicalReference::hyperplane(const BasicStructure &prim,
                                                 RefStateIterator begin,
                                                 RefStateIterator end,
                                                 double tol) {

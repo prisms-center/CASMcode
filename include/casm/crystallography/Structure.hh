@@ -25,7 +25,7 @@ namespace CASM {
      */
 
     ///\brief Structure specifies the lattice and atomic basis of a crystal
-    class Structure : public BasicStructure<Site> {
+    class Structure : public BasicStructure {
     protected: //PROTECTED DATA MEMBERS
 
       /// Group symmetry operations that map the lattice and basis of Structure onto themselves,
@@ -51,9 +51,9 @@ namespace CASM {
     public: //PUBLIC METHODS
 
       //  ****Constructors****
-      Structure() : BasicStructure<Site>() {}
-      explicit Structure(const Lattice &init_lat) : BasicStructure<Site>(init_lat) {}
-      explicit Structure(const BasicStructure<Site> &base) : BasicStructure<Site>(base) {}
+      Structure() : BasicStructure() {}
+      explicit Structure(const Lattice &init_lat) : BasicStructure(init_lat) {}
+      explicit Structure(const BasicStructure &base) : BasicStructure(base) {}
       explicit Structure(const fs::path &filepath);
 
       /// Have to explicitly define the copy constructor so that factor_group

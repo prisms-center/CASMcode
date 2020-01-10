@@ -19,10 +19,10 @@ namespace CASM {
                                                  jsonParser const &_bspecs) const override;
 
       /// \brief Serialize strain DoF values from ConfigDoF
-      jsonParser dof_to_json(ConfigDoF const &_dof, BasicStructure<Site> const &_reference) const override;
+      jsonParser dof_to_json(ConfigDoF const &_dof, BasicStructure const &_reference) const override;
 
       /// \brief Transforms SimpleSructure @param _struc by applying strain DoF values contained in @param _dof
-      void apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const override;
+      void apply_dof(ConfigDoF const &_dof, BasicStructure const &_reference, SimpleStructure &_struc) const override;
 
     protected:
 

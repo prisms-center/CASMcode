@@ -1,6 +1,6 @@
 #include "casm/clex/ChemicalReference_impl.hh"
 #include "casm/casm_io/container/stream_io.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/BasicStructure.hh"
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/PrimClex.hh"
@@ -13,7 +13,7 @@ namespace CASM {
   namespace {
     typedef std::vector<ChemicalReferenceState>::iterator RefStateIterator;
   }
-  template ChemicalReference::ChemicalReference(const BasicStructure<Site> &, RefStateIterator, RefStateIterator, double);
+  template ChemicalReference::ChemicalReference(const BasicStructure &, RefStateIterator, RefStateIterator, double);
   template void ChemicalReference::set_config<RefStateIterator>(const std::string &, RefStateIterator, RefStateIterator, double);
   template void ChemicalReference::set_supercell<RefStateIterator>(const std::string &, RefStateIterator, RefStateIterator, double);
   template void ChemicalReference::set_global<RefStateIterator>(RefStateIterator, RefStateIterator, double);
@@ -137,7 +137,7 @@ namespace CASM {
   /// optional '_supercell_ref' and '_config_ref'.
   ///
   ChemicalReference::ChemicalReference(
-    const BasicStructure<Site> &prim,
+    const BasicStructure &prim,
     const Eigen::VectorXd &_global_ref,
     SpecializedRef _supercell_ref,
     SpecializedRef _config_ref) :
@@ -149,8 +149,8 @@ namespace CASM {
     return notstd::make_unique<ChemicalReference>(*this->_clone());
   }
 
-  /// \brief Get primitive BasicStructure<Site>
-  const BasicStructure<Site> &ChemicalReference::prim() const {
+  /// \brief Get primitive BasicStructure
+  const BasicStructure &ChemicalReference::prim() const {
     return *m_prim;
   }
 
@@ -278,7 +278,7 @@ namespace CASM {
 
   /// \brief Convert a set of ChemicalReferenceState to a hyperplane, including checks
   Eigen::VectorXd ChemicalReference::_calc_hyperplane(
-    const BasicStructure<Site> &prim,
+    const BasicStructure &prim,
     const std::vector<std::string> &struc_mol_name,
     Eigen::MatrixXd _N,
     Eigen::VectorXd E,

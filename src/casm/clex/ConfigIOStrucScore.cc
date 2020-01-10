@@ -34,7 +34,7 @@ namespace CASM {
 
     StrucScore::StrucScore(const StrucScore &RHS) :
       VectorXdAttribute<Configuration>(RHS),
-      m_altprim((RHS.m_altprim == nullptr) ? nullptr : new BasicStructure<Site>(*(RHS.m_altprim))),
+      m_altprim((RHS.m_altprim == nullptr) ? nullptr : new BasicStructure(*(RHS.m_altprim))),
       m_strain_weight(RHS.m_strain_weight),
       m_prim_path(RHS.m_prim_path),
       m_prop_names(RHS.m_prop_names) {
@@ -93,9 +93,9 @@ namespace CASM {
     /// \brief If not yet initialized, use the default clexulator from the PrimClex
     bool StrucScore::init(const Configuration &_tmplt) const {
       PrimClex const &pclex(_tmplt.primclex());
-      m_altprim.reset(new BasicStructure<Site>(read_prim(m_prim_path,
-                                                         _tmplt.crystallography_tol(),
-                                                         &(pclex.settings().hamiltonian_modules()))));
+      m_altprim.reset(new BasicStructure(read_prim(m_prim_path,
+                                                   _tmplt.crystallography_tol(),
+                                                   &(pclex.settings().hamiltonian_modules()))));
 
       m_strucmapper = notstd::make_unique<StrucMapper>(PrimStrucMapCalculator(*m_altprim), m_strain_weight);
       return true;

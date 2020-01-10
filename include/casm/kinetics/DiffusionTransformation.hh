@@ -34,7 +34,7 @@ namespace CASM {
     /// configurational degrees of freedom)
     struct SpeciesLocation : public Comparisons<CRTPBase<SpeciesLocation>> {
 
-      typedef xtal::BasicStructure<xtal::Site> PrimType;
+      typedef xtal::BasicStructure PrimType;
 
       /// Constructor Create SpeciesLocation using a bijk and
       /// an occ index into that basis site's occupant array

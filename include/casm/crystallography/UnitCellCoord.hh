@@ -15,7 +15,6 @@ namespace CASM {
   namespace xtal {
     class Coordinate;
     class Site;
-    template <typename CoordType>
     class BasicStructure;
     class Structure;
     class Lattice;
@@ -121,7 +120,7 @@ namespace CASM {
     class UnitCellCoord : public Comparisons<Translatable<CRTPBase<UnitCellCoord>>> {
 
     public:
-      typedef BasicStructure<Site> PrimType;
+      typedef BasicStructure PrimType;
 
       UnitCellCoord(Index _sublat, const UnitCell &_unitcell) : m_unitcell(_unitcell), m_sublat(_sublat) {
         if(!valid_index(_sublat)) {

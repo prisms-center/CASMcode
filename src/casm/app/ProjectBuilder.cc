@@ -9,7 +9,7 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/BasicStructure.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/database/DatabaseTypes.hh"
 

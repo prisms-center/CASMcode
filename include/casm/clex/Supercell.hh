@@ -15,14 +15,12 @@
 namespace CASM {
 
   namespace xtal {
-    template<typename T> class BasicStructure;
     class Site;
     class Structure;
     class Coordinate;
     class UnitCellCoord;
     class IntegralCoordinateWithin_f;
   }
-  using xtal::BasicStructure;
   using xtal::Site;
   using xtal::Structure;
   using xtal::Coordinate;

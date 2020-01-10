@@ -11,7 +11,6 @@
 
 namespace CASM {
   namespace xtal {
-    template<typename T> class BasicStructure;
     class Site;
     class SimpleStructure;
   }

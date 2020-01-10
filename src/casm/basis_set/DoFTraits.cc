@@ -77,12 +77,12 @@ namespace CASM {
     }
 
     //************************************************************
-    void Traits::apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const {
+    void Traits::apply_dof(ConfigDoF const &_dof, BasicStructure const &_reference, SimpleStructure &_struc) const {
       return;
     }
 
     //************************************************************
-    jsonParser Traits::dof_to_json(ConfigDoF const &_dof, BasicStructure<Site> const &_reference) const {
+    jsonParser Traits::dof_to_json(ConfigDoF const &_dof, BasicStructure const &_reference) const {
       jsonParser result;
       result.put_obj();
 

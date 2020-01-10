@@ -15,7 +15,7 @@ namespace CASM {
     class DiffTransConfiguration;
   }
   namespace xtal {
-    template<typename T> class BasicStructure;
+    class BasicStructure;
     class Site;
   }
   using xtal::BasicStructure;

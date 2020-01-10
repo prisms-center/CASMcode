@@ -225,7 +225,7 @@ namespace CASM {
     xtal::COORD_MODE C(coordtype);
 
     // lambda for printing
-    auto print = [&](const BasicStructure<Site> &struc) {
+    auto print = [&](const BasicStructure & struc) {
       VaspIO::PrintPOSCAR printer(make_simple_structure(struc), struc.title());
 
       if(vm.count("vasp5")) {
@@ -254,7 +254,7 @@ namespace CASM {
         args.log() << "ERROR: " << abs_tmatfile[0] << " not found." << std::endl;
         return 1;
       }
-      BasicStructure<Site> unitcell(abs_structfile);
+      BasicStructure unitcell(abs_structfile);
 
       // -- read transf matrix ---
       if(!fs::exists(abs_tmatfile[0])) {
@@ -518,7 +518,7 @@ namespace CASM {
         p.print(ss);
 
         std::istringstream iss(ss.str());
-        BasicStructure<Site> unit;
+        BasicStructure unit;
         unit.read(iss);
 
         args.log() << "Unit structure:";
@@ -528,7 +528,7 @@ namespace CASM {
         args.log() << "\n\n";
 
 
-        BasicStructure<Site> super = unit.create_superstruc(make_superlattice(unit.lattice(), T));
+        BasicStructure super = unit.create_superstruc(make_superlattice(unit.lattice(), T));
         super.set_title(std::string("Supercell of ") + con.name());
 
         args.log() << "Super structure:";
@@ -585,7 +585,7 @@ namespace CASM {
       // super lattice of prim lattice
       else {
 
-        BasicStructure<Site> unit = primclex.prim();
+        BasicStructure unit = primclex.prim();
         SymGroup pg = Structure(unit).point_group();
 
         Eigen::Matrix3d U = unit.lattice().lat_column_mat();
@@ -642,7 +642,7 @@ namespace CASM {
       Lattice super_lat;
 
       if(vm.count("structure")) {
-        super_lat = BasicStructure<Site>(abs_structfile).lattice();
+        super_lat = BasicStructure(abs_structfile).lattice();
       }
       else if(vm.count("scelnames")) {
         super_lat = primclex.db<Supercell>().find(unitscelname)->lattice();

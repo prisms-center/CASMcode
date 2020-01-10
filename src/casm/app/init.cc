@@ -158,7 +158,7 @@ namespace CASM {
     }
 
     /// Check if PRIM is primitive
-    BasicStructure<Site> true_prim;
+    BasicStructure true_prim;
     true_prim.set_title(prim.title());
     if(!prim.is_primitive(true_prim)) {
       if(!vm.count("force")) {

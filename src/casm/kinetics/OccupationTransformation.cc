@@ -1,5 +1,5 @@
 #include "casm/kinetics/OccupationTransformation.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/basis_set/DoF.hh"

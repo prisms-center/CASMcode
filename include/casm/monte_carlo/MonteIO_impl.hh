@@ -7,7 +7,7 @@
 #include "casm/monte_carlo/MonteIO.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/casm_io/dataformatter/DataFormatterTools.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/BasicStructure.hh"
 
 namespace CASM {
   namespace Monte {

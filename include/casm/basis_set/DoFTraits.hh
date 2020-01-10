@@ -11,7 +11,6 @@ namespace CASM {
   namespace xtal {
     class Site;
     class Structure;
-    template<typename CoordType>
     class BasicStructure;
     class SimpleStructure;
     class UnitCellCoord;
@@ -89,10 +88,10 @@ namespace CASM {
       virtual void to_json(DoFSet const &_out, jsonParser &_json) const;
 
       /// \brief Transforms SimpleSructure @param _struc by applying DoF values contained in @param _dof in a type-specific way
-      virtual void apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const;
+      virtual void apply_dof(ConfigDoF const &_dof, BasicStructure const &_reference, SimpleStructure &_struc) const;
 
       /// \brief Serialize type-specific DoF values from ConfigDoF
-      virtual jsonParser dof_to_json(ConfigDoF const &_dof, BasicStructure<Site> const &_reference) const;
+      virtual jsonParser dof_to_json(ConfigDoF const &_dof, BasicStructure const &_reference) const;
 
       // ** The following functionality is utilized for controlling clexulator printing. It only needs to be overridden in special cases **
 
