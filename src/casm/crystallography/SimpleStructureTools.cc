@@ -213,15 +213,11 @@ namespace CASM {
       for(Index b = 0; b < nb; ++b) {
         for(Index v = 0; v < nv; ++v, ++s) {
           N_atoms += _reference.basis(b).occupant_dof()[_mol_occ[s]].size();
-
           // Jonas: Maybe figure out all required attributes here??
           // Loop over atoms? For each atom track the SpeciesAttributes
-          // Molecule const & mol = _reference.basis(b).occupant_dof()[_mol_occ[s]];
-          // for(auto const & attr : mol.atom(a).attributes())
-          //   attribute_list.insert(attr.first);
         }
       }
-      //std::cout << "Atomizing with N_atom = " << N_atoms << "; nv = " << nv << "; nb = " << nb << "\n";
+
       _sstruc.atom_info.coords.resize(3, N_atoms);
       _sstruc.atom_info.names.resize(N_atoms);
 
@@ -231,20 +227,43 @@ namespace CASM {
       for(Index b = 0; b < nb; ++b) {
         for(Index v = 0; v < nv; ++v, ++s) {
           Molecule const &molref = _reference.basis(b).occupant_dof()[_mol_occ[s]];
-          //std::cout << "(b,v): (" << b << ", " << v << "); molref.size() = " << molref.size() << "\n";
+
+          // Initialize atom_info.properties for *molecule* attributes
+          for (auto const &attr : molref.attributes()) {
+            auto it = _sstruc.atom_info.properties.find(attr.first);
+            if(it == _sstruc.atom_info.properties.end()) {
+              _sstruc.atom_info.properties.emplace(attr.first, Eigen::MatrixXd::Zero(attr.second.traits().dim(), N_atoms));
+            }
+          }
+
           for(Index ms = 0; ms < molref.size(); ++ms, ++a) {
             // Record position of atom
             _sstruc.atom_info.cart_coord(a) = _sstruc.mol_info.cart_coord(s) + molref.atom(ms).cart();
-            // record name of atom
+            // Record name of atom
             _sstruc.atom_info.names[a] = molref.atom(ms).name();
 
-            // Jonas: Initialize atom_info.properties here for *atom* attributes
-            // record attributes of atom
-            // for(auto const & attr : molref.atom(ms).attributes())
-            //   attribute_list.insert(attr.first);
+            // Initialize atom_info.properties for *atom* attributes
+            for(auto const &attr : molref.atom(ms).attributes()) {
+              auto it = _sstruc.atom_info.properties.find(attr.first);
+              if(it == _sstruc.atom_info.properties.end()) {
+                it = _sstruc.atom_info.properties.emplace(attr.first, Eigen::MatrixXd::Zero(attr.second.traits().dim(), N_atoms)).first;
+                }
+                // Record attributes of atom
+                it->second.col(a) = attr.second.value();
+            }
 
-            // TODO: split everything in _sstruc.mol_info.properties into
-            //       _sstruc.atom_info.properties using appropriate extensivity rules
+            // Split molecule attributes into atom attributes using appropriate extensivity rules
+            // If an attribute is specified both at the atom and molecule levels (is this allowed?),
+            // then the two are added (is this the desired behavior?)
+            for (auto const &attr : molref.attributes()) {
+              auto it = _sstruc.atom_info.properties.find(attr.first);
+              if (attr.second.traits().extensive()) {
+                it->second.col(a) += attr.second.value() / molref.size();
+              }
+              else {
+                it->second.col(a) += attr.second.value();
+              }
+            }
           }
         }
       }
