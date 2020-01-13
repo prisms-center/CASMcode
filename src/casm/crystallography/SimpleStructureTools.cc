@@ -220,6 +220,8 @@ namespace CASM {
 
       _sstruc.atom_info.coords.resize(3, N_atoms);
       _sstruc.atom_info.names.resize(N_atoms);
+      // map to keep track of whether the molecule attributes are extensive
+      std::map<std::string, bool> mol_property_extensive;
 
       // a indexes atom, s indexes site (molecule)
       Index a = 0;
@@ -229,10 +231,15 @@ namespace CASM {
           Molecule const &molref = _reference.basis(b).occupant_dof()[_mol_occ[s]];
 
           // Initialize atom_info.properties for *molecule* attributes
-          for (auto const &attr : molref.attributes()) {
-            auto it = _sstruc.atom_info.properties.find(attr.first);
+          for (auto const &property : _sstruc.mol_info.properties) {
+            AnisoValTraits property_traits = AnisoValTraits(property.first);
+            auto it = _sstruc.atom_info.properties.find(property.first);
             if(it == _sstruc.atom_info.properties.end()) {
-              _sstruc.atom_info.properties.emplace(attr.first, Eigen::MatrixXd::Zero(attr.second.traits().dim(), N_atoms));
+              _sstruc.atom_info.properties.emplace(property.first, Eigen::MatrixXd::Zero(property_traits.dim(), N_atoms));
+            }
+            auto e_it = mol_property_extensive.find(property.first);
+            if (e_it == mol_property_extensive.end()) {
+              mol_property_extensive.emplace(property.first, property_traits.extensive());
             }
           }
 
@@ -253,15 +260,14 @@ namespace CASM {
             }
 
             // Split molecule attributes into atom attributes using appropriate extensivity rules
-            // If an attribute is specified both at the atom and molecule levels (is this allowed?),
-            // then the two are added (is this the desired behavior?)
-            for (auto const &attr : molref.attributes()) {
-              auto it = _sstruc.atom_info.properties.find(attr.first);
-              if (attr.second.traits().extensive()) {
-                it->second.col(a) += attr.second.value() / molref.size();
+            // If an attribute is specified both at the atom and molecule levels then the two are added
+            for (auto const &property : _sstruc.mol_info.properties) {
+              auto it = _sstruc.atom_info.properties.find(property.first);
+              if (mol_property_extensive[property.first]) {
+                it->second.col(a) += property.second.col(s) / molref.size();
               }
               else {
-                it->second.col(a) += attr.second.value();
+                it->second.col(a) += property.second.col(s);
               }
             }
           }
