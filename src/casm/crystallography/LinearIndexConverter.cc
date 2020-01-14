@@ -18,7 +18,7 @@ namespace CASM {
     void UnitCellCoordIndexConverter::_throw_if_incompatible_index(Index ix) const {
       if(ix < 0 || ix >= this->total_sites()) {
         throw std::runtime_error("The specified index is out of range. There are " + std::to_string(this->total_sites()) +
-                                 " availabel sites, but you specified index " + std::to_string(ix));
+                                 " available sites, but you specified index " + std::to_string(ix));
       }
       return;
     }
@@ -80,8 +80,9 @@ namespace CASM {
 
       //Otherwise you have to bring the UnitCellCoord within the superlattice before checking,
       //but maybe you already hit it
-      if(m_bijk_to_linear_index_outside_of_superlattice.find(bijk) != m_bijk_to_linear_index_outside_of_superlattice.end()) {
-        return m_bijk_to_linear_index_outside_of_superlattice.at(bijk);
+      auto found_it = m_bijk_to_linear_index_outside_of_superlattice.find(bijk);
+      if(found_it != m_bijk_to_linear_index_outside_of_superlattice.end()) {
+        return found_it->second;
       }
 
       //You've never seen this UnitCellCoord before. Bring it within the superlattice, figure out its index,

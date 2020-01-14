@@ -247,7 +247,7 @@ namespace CASM {
       }
 
       ///Returns the number of tiling units (primitive lattices) that fit inside the superlattice
-      int size() const {
+      Index size() const {
         return std::abs(this->transformation_matrix().determinant());
       }
 

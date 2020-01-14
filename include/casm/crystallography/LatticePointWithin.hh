@@ -2,6 +2,7 @@
 #define UNITCELLWITHIN_HH
 
 #include <vector>
+#include <array>
 #include "casm/external/Eigen/Core"
 #include "casm/external/Eigen/src/Core/Matrix.h"
 #include "casm/global/eigen.hh"
@@ -34,8 +35,7 @@ namespace CASM {
       /// the superlattice.
       IntegralCoordinateWithin_f(const matrix_type &superlattice_transformation_matrix)
         : m_transformation_matrix(superlattice_transformation_matrix),
-          m_transformation_matrix_adjugate(adjugate(superlattice_transformation_matrix)),
-          m_total_lattice_points_in_superlattice(superlattice_transformation_matrix.determinant()) {
+          m_transformation_matrix_adjugate(adjugate(superlattice_transformation_matrix)) {
         _throw_if_bad_transformation_matrix(this->m_transformation_matrix);
       }
 
@@ -68,8 +68,6 @@ namespace CASM {
       /// The adjugate matrix of the transformation matrix.
       /// adjugate(T)=det(T)*inverse(T)
       matrix_type m_transformation_matrix_adjugate;
-
-      long int m_total_lattice_points_in_superlattice;
 
       /// Throws exception if the transformation matrix has determinant 0
       static void _throw_if_bad_transformation_matrix(const matrix_type &transformation_matrix);
@@ -154,7 +152,7 @@ namespace CASM {
       matrix_type m_smith_normal_V;
 
       /// stride maps canonical 3d index (m,n,p) onto linear index -- l = m + n*stride[0] + p*stride[1]
-      int m_stride[2];
+      std::array<int, 2> m_stride;
 
       /// Convert UnitCell created with strides (mnp) to a "normal" UnitCell in terms of the superlattice (ijk)
       /// U*mnp = ijk
