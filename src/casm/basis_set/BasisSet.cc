@@ -747,7 +747,7 @@ namespace CASM {
     if(allowed_occs.symrep_ID().is_identity())
       m_basis_symrep_ID = SymGroupRepID::identity(N - 1);
     else
-      m_basis_symrep_ID = symgroup.master_group().add_transformed_rep(allowed_occs.symrep_ID(), Eigen::MatrixXd(B.transpose()));
+      m_basis_symrep_ID = symgroup.master_group().add_transformed_rep(allowed_occs.symrep_ID(), Eigen::MatrixXd(B.rightCols(N - 1).transpose()));
 
   }
 
