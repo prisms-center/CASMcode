@@ -20,7 +20,7 @@ namespace CASM {
 
     IntegralCoordinateWithin_f::vector_type IntegralCoordinateWithin_f::operator()(const vector_type &ijk) const {
       vector_type vec2 = this->m_transformation_matrix_adjugate * ijk;
-      auto vol = this->m_total_lattice_points_in_superlattice;
+      auto vol = this->m_transformation_matrix.determinant();   //this volume is signed, could be negative, that's fine.
       vec2[0] = ((vec2[0] % vol) + vol) % vol;
       vec2[1] = ((vec2[1] % vol) + vol) % vol;
       vec2[2] = ((vec2[2] % vol) + vol) % vol;
@@ -37,7 +37,7 @@ namespace CASM {
       : m_bring_within_f(transformation_matrix), m_total_lattice_points(std::abs(transformation_matrix.determinant())) {
       smith_normal_form(transformation_matrix, this->m_smith_normal_U, this->m_smith_normal_S, this->m_smith_normal_V);
 
-      auto S_diagonal = this->m_smith_normal_S.diagonal();
+      vector_type S_diagonal = this->m_smith_normal_S.diagonal();
 
       m_stride[0] = S_diagonal[0];
       m_stride[1] = S_diagonal[0] * S_diagonal[1];
@@ -46,12 +46,7 @@ namespace CASM {
     }
 
     OrderedLatticePointGenerator::vector_type OrderedLatticePointGenerator::_normalize_lattice_point(const vector_type &mnp) const {
-      vector_type ijk(0, 0, 0);
-      for(int i = 0; i < 3; i++) {
-        for(int j = 0; j < 3; j++) {
-          ijk[i] += m_smith_normal_U(i, j) * mnp[j];
-        }
-      }
+      vector_type ijk = m_smith_normal_U * mnp;
       return m_bring_within_f(ijk);
     }
 

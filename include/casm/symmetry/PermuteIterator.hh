@@ -126,6 +126,13 @@ namespace CASM {
 
     friend void swap(PermuteIterator &a, PermuteIterator &b);
 
+    /// Returns true if the two PermuteIterators share the same instance of sym_info.
+    /// This is meant to be used if you want to check that a particular range of PermuteIterators
+    /// are referring to the same supercell, to ensure your iterating over a consistent set of permutations.
+    bool is_compatible(const PermuteIterator &other_permute_iterator) const {
+      return (&this->sym_info() == &other_permute_iterator->sym_info());
+    }
+
   private:
 
     friend Comparisons<CRTPBase<PermuteIterator>>;
@@ -133,9 +140,6 @@ namespace CASM {
     bool eq_impl(const PermuteIterator &iter) const;
 
   };
-
-  /// \brief Output PermuteIterator as (fg_index, i, j, k)
-  /* std::ostream &operator<<(std::ostream &sout, const PermuteIterator &op); */
 
   /// Iterator to next beginning of next factor group operation
   /// skipping all of the intervening operations that differ only by a translation

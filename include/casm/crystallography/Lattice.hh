@@ -248,7 +248,7 @@ namespace CASM {
       }
 
       ///Returns the number of tiling units (primitive lattices) that fit inside the superlattice
-      long int size() const {
+      Index size() const {
         return m_size;
       }
 
