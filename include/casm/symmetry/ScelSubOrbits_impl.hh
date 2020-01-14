@@ -20,7 +20,7 @@ namespace CASM {
     PermuteIteratorIt subgroup_end,
     ElementOutputIterator result) {
 
-    if(&scel.prim_grid() != &subgroup_begin->prim_grid()) {
+    if(&scel.sym_info() != &subgroup_begin->sym_info()) {
       throw std::runtime_error("Error: PermuteIterator supercell mismatch.");
     }
 
@@ -52,7 +52,11 @@ namespace CASM {
   }
 
   /// \brief Output the orbit generators necessary to construct the sub-orbits
-  /// corresponding to Prim Structure -> Supercell symmetry breaking
+  /// corresponding to Prim Structure -> Supercell symmetry breaking.
+  ///
+  /// The function is templated so that you can pass a pair of PermuteIterators
+  /// or a pair of iterators belonging to a container of PermuteIterators.
+  /// The dereference operators of PermuteIterator are defined such that it returns a reference to itself.
   template<typename Element, typename ElementOutputIterator, typename PermuteIteratorIt>
   ElementOutputIterator make_suborbit_generators(
     const Element &element,
@@ -63,7 +67,7 @@ namespace CASM {
     PermuteIteratorIt subgroup_end,
     ElementOutputIterator result) {
 
-    if(&group_begin->prim_grid() != &subgroup_begin->prim_grid()) {
+    if(!group_begin->is_compatible(*subgroup_begin)) {
       throw std::runtime_error("Error: PermuteIterator supercell mismatch.");
     }
 

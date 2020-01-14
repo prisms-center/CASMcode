@@ -22,7 +22,7 @@ void print_mapping_nodes(std::set<xtal::MappingNode> const &set) {
               << "   translation: " << el.basis_node.translation.transpose() << "\n"
               << "   isometry: \n" << el.lat_node.isometry << "\n"
               << "   stretch: \n" << el.lat_node.stretch << "\n"
-              << "   parent: \n" << el.lat_node.parent.scel_lattice().lat_column_mat() << "\n"
+              << "   parent: \n" << el.lat_node.parent.superlattice().lat_column_mat() << "\n"
               << "   cost_mat: \n" << el.basis_node.cost_mat << "\n"
               << "   partitioned: " << el.is_partitioned << "\n"
               << "   forced_on: \n";

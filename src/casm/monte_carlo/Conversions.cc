@@ -76,7 +76,7 @@ namespace CASM {
       return m_mc_scel->sublat(l);
     }
     UnitCell Conversions::l_to_ijk(Index l) const {
-      return m_mc_scel->prim_grid().unitcell(l % m_mc_scel->volume());
+      return m_mc_scel->uccoord(l).unitcell();
     }
     UnitCellCoord Conversions::l_to_bijk(Index l) const {
       return m_mc_scel->uccoord(l);

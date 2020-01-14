@@ -1,6 +1,7 @@
 #ifndef CASM_ClusterSpecsParser_impl
 #define CASM_ClusterSpecsParser_impl
 
+#include "casm/clex/Supercell.hh"
 #include "casm/clusterography/ClusterSpecsParser.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/global/definitions.hh"
@@ -142,7 +143,7 @@ namespace CASM {
   template<typename PhenomenalType>
   void ClusterEquivalenceParser<PhenomenalType>::_init_scel_equivalence() {
     prim_sym_compare = notstd::make_unique<PrimPeriodicSymCompare<PhenomenalType>>(primclex.shared_prim(), primclex.crystallography_tol());
-    scel_sym_compare = notstd::make_unique<ScelPeriodicSymCompare<PhenomenalType>>(scel.primclex().shared_prim(), scel.prim_grid(), scel.crystallography_tol());
+    scel_sym_compare = notstd::make_unique<ScelPeriodicSymCompare<PhenomenalType>>(scel.primclex().shared_prim(), xtal::make_bring_within_f(scel), scel.crystallography_tol());
     if(phenom) {
       *phenom = scel_sym_compare->prepare(*phenom);
     }
@@ -165,7 +166,7 @@ namespace CASM {
         auto config_it = primclex.db<Configuration>().find(configname);
         config_fg = config_it->factor_group();
         const auto &scel = config_it->supercell();
-        config_sym_compare = notstd::make_unique<ScelPeriodicSymCompare<PhenomenalType>>(scel.primclex().shared_prim(), scel.prim_grid(), scel.crystallography_tol());
+        config_sym_compare = notstd::make_unique<ScelPeriodicSymCompare<PhenomenalType>>(scel.primclex().shared_prim(), xtal::make_bring_within_f(scel), scel.crystallography_tol());
 
         if(phenom) {
           *phenom = config_sym_compare->prepare(*phenom);

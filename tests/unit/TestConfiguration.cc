@@ -48,7 +48,7 @@ namespace test {
 
   const SymGroup &TestConfiguration::config_sym_fg() const {
     if(!m_config_sym_fg.size()) {
-      m_config_sym_fg = make_sym_group(config_permute_fg().begin(), config_permute_fg().end());
+      m_config_sym_fg = make_sym_group(config_permute_fg().begin(), config_permute_fg().end(), this->scel.sym_info().supercell_lattice());
     }
     return m_config_sym_fg;
   }

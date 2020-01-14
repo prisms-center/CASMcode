@@ -1,5 +1,6 @@
 #include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"
 
+#include "casm/crystallography/LatticePointWithin.hh"
 #include "casm/kinetics/DiffusionTransformationTraits.hh"
 #include "casm/kinetics/DiffTransConfiguration_impl.hh"
 #include "casm/symmetry/ConfigSubOrbits_impl.hh"
@@ -28,7 +29,8 @@ extern "C" {
 namespace {
   using namespace CASM;
   ScelPeriodicSymCompare<IntegralCluster> _construct_scel_sym_compare(const Supercell &scel) {
-    return ScelPeriodicSymCompare<IntegralCluster>(scel.primclex().shared_prim(), scel.prim_grid(), scel.crystallography_tol());
+    xtal::IntegralCoordinateWithin_f bring_within_f(scel.prim().lattice(), scel.lattice());
+    return ScelPeriodicSymCompare<IntegralCluster>(scel.primclex().shared_prim(), bring_within_f, scel.crystallography_tol());
   }
 }
 
@@ -232,7 +234,7 @@ namespace CASM {
         std::vector<ScelPeriodicOrbit<IntegralCluster>> local_orbits;
         std::vector<PermuteIterator> diff_trans_g {
           dtorbit.prototype().invariant_subgroup(bg_config.supercell())};
-        SymGroup diff_trans_sym_g { make_sym_group(diff_trans_g) };
+        SymGroup diff_trans_sym_g { make_sym_group(diff_trans_g, bg_config.supercell().sym_info().supercell_lattice()) };
         /* ScelPeriodicSymCompare<IntegralCluster> scel_sym_compare {bg_config.supercell()}; */
         auto scel_sym_compare =::_construct_scel_sym_compare(bg_config.supercell());
 
@@ -501,7 +503,7 @@ namespace CASM {
       config(make_attachable(diff_trans, _config)),
       diff_trans_g(diff_trans.invariant_subgroup(config.supercell())),
       generating_g(config.invariant_subgroup(diff_trans_g.begin(), diff_trans_g.end())),
-      generating_sym_g(make_sym_group(generating_g)) {
+      generating_sym_g(make_sym_group(generating_g, config.supercell().sym_info().supercell_lattice())) {
     }
 
     const std::vector<DiffTransConfigEnumOccPerturbations::Base> &

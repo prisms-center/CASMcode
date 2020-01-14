@@ -8,10 +8,6 @@
 #include "casm/misc/Comparisons.hh"
 
 namespace CASM {
-  namespace xtal {
-    class PrimGrid;
-  }
-  using xtal::PrimGrid;
 
   /** \ingroup SymOp
    *  @{
@@ -42,13 +38,7 @@ namespace CASM {
 
     SupercellSymInfo const *m_sym_info;
 
-    /// permutation representation of factor group acting on sites of the supercell
-    //SymGroupRep::RemoteHandle m_fg_permute_rep;
-
-    /// m_prim_grid holds permutation representation of lattice translations acting on sites of the supercell
-    //PrimGrid const *m_prim_grid;
-
-    /// m_trans_permute points to the Array<Permutation> of translation permutations inside of m_prim_grid (to provide faster access)
+    /// m_trans_permute points to the vector<Permutation> of translation permutations inside of m_sym_info (to provide faster access)
     std::vector<Permutation> const *m_trans_permute;
 
     Index m_factor_group_index;
@@ -56,6 +46,7 @@ namespace CASM {
 
   public:
 
+    //TODO: What does this even mean? You're asking for a segmentation fault
     PermuteIterator();
 
     PermuteIterator(const PermuteIterator &iter);
@@ -64,7 +55,6 @@ namespace CASM {
                     Index _factor_group_index,
                     Index _translation_index);
 
-    const PrimGrid &prim_grid() const;
 
     PermuteIterator &operator=(PermuteIterator iter);
 
@@ -77,13 +67,10 @@ namespace CASM {
     /// Returns the combination of factor_group permutation and translation permutation
     Permutation combined_permute() const;
 
-    SupercellSymInfo const &sym_info() const;
-
     SymGroup const &factor_group() const;
 
-    /// Apply the combined factor_group permutation and translation permutation being pointed at
-    //template<typename T>
-    //ReturnArray<T> permute(const Array<T> &before_array) const;
+    //TODO: Get rid of this?
+    SupercellSymInfo const &sym_info() const;
 
     /// Return the index into m_factor_group_permute of the factor group op being pointed at
     Index factor_group_index() const;
@@ -139,6 +126,13 @@ namespace CASM {
 
     friend void swap(PermuteIterator &a, PermuteIterator &b);
 
+    /// Returns true if the two PermuteIterators share the same instance of sym_info.
+    /// This is meant to be used if you want to check that a particular range of PermuteIterators
+    /// are referring to the same supercell, to ensure your iterating over a consistent set of permutations.
+    bool is_compatible(const PermuteIterator &other_permute_iterator) const {
+      return (&this->sym_info() == &other_permute_iterator->sym_info());
+    }
+
   private:
 
     friend Comparisons<CRTPBase<PermuteIterator>>;
@@ -146,9 +140,6 @@ namespace CASM {
     bool eq_impl(const PermuteIterator &iter) const;
 
   };
-
-  /// \brief Output PermuteIterator as (fg_index, i, j, k)
-  std::ostream &operator<<(std::ostream &sout, const PermuteIterator &op);
 
   /// Iterator to next beginning of next factor group operation
   /// skipping all of the intervening operations that differ only by a translation
@@ -168,13 +159,13 @@ namespace CASM {
   ///
   /// - The result is sorted
   template<typename PermuteIteratorContainer>
-  SymGroup make_point_group(const PermuteIteratorContainer &container) {
-    return make_point_group(container.begin(), container.end());
+  SymGroup make_point_group(const PermuteIteratorContainer &container, const Lattice &supercell_lattice) {
+    return make_point_group(container.begin(), container.end(), supercell_lattice);
   }
 
   /// \brief Returns a SymGroup generated from a range of PermuteIterator
   template<typename PermuteIteratorIt>
-  SymGroup make_point_group(PermuteIteratorIt begin, PermuteIteratorIt end);
+  SymGroup make_point_group(PermuteIteratorIt begin, PermuteIteratorIt end, const Lattice &supercell_lattice);
 
   /// \brief Returns a SymGroup generated from a container of PermuteIterator
   ///
@@ -182,13 +173,13 @@ namespace CASM {
   ///
   /// - The result is sorted
   template<typename PermuteIteratorContainer>
-  SymGroup make_sym_group(const PermuteIteratorContainer &container) {
-    return make_sym_group(container.begin(), container.end());
+  SymGroup make_sym_group(const PermuteIteratorContainer &container, const Lattice &supercell_lattice) {
+    return make_sym_group(container.begin(), container.end(), supercell_lattice);
   }
 
   /// \brief Returns a SymGroup generated from a range of PermuteIterator
   template<typename PermuteIteratorIt>
-  SymGroup make_sym_group(PermuteIteratorIt begin, PermuteIteratorIt end);
+  SymGroup make_sym_group(PermuteIteratorIt begin, PermuteIteratorIt end, const Lattice &supercell_lattice);
 
   jsonParser &to_json(const PermuteIterator &clust, jsonParser &json);
 

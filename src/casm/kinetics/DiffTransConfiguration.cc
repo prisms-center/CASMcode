@@ -14,7 +14,8 @@
 namespace {
   using namespace CASM;
   ScelPeriodicDiffTransSymCompare _construct_scel_sym_compare(const Supercell &scel) {
-    return ScelPeriodicDiffTransSymCompare(scel.primclex().shared_prim(), scel.prim_grid(), scel.crystallography_tol());
+    xtal::IntegralCoordinateWithin_f bring_within_f(scel.prim().lattice(), scel.lattice());
+    return ScelPeriodicDiffTransSymCompare(scel.primclex().shared_prim(), bring_within_f, scel.crystallography_tol());
   }
 }
 

@@ -234,7 +234,7 @@ namespace CASM {
                             bool dry_run) {
     std::vector<SymRepTools::SubWedge> wedges;
     std::vector<int> dims;
-    SymGroup pg = make_point_group(_config.group());
+    SymGroup pg = make_point_group(_config.group(), _config.supercell().sym_info().supercell_lattice());
     DoFKey strain_dof_key;
     std::vector<DoFKey> tdof_types = global_dof_types(_primclex.prim());
     Index istrain = find_index_if(tdof_types,

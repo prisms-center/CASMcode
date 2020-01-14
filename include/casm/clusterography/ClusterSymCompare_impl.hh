@@ -3,7 +3,6 @@
 
 #include "casm/clusterography/ClusterSymCompare.hh"
 #include "casm/symmetry/SymPermutation.hh"
-#include "casm/crystallography/PrimGrid.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 
 namespace CASM {
@@ -128,10 +127,10 @@ namespace CASM {
   ///
   template<typename Element>
   ScelPeriodicSymCompare<Element>::
-  ScelPeriodicSymCompare(PrimType_ptr prim_ptr, const PrimGrid &prim_grid, double tol):
+  ScelPeriodicSymCompare(PrimType_ptr prim_ptr, const xtal::IntegralCoordinateWithin_f &bring_within_f, double tol):
     m_prim(prim_ptr),
     m_tol(tol),
-    m_prim_grid(&prim_grid) {}
+    m_bring_within_f(bring_within_f) {}
 
   /// \brief Prepare an element for comparison
   ///
@@ -143,8 +142,8 @@ namespace CASM {
       return obj;
     }
     const auto pos = position(obj);
-    this->m_spatial_transform = SymOp::translation(this->m_prim->lattice().lat_column_mat() * (m_prim_grid->within(pos).unitcell() - pos.unitcell()).template cast<double>());
-    return obj + (m_prim_grid->within(pos).unitcell() - pos.unitcell());
+    this->m_spatial_transform = SymOp::translation(this->m_prim->lattice().lat_column_mat() * (m_bring_within_f(pos).unitcell() - pos.unitcell()).template cast<double>());
+    return obj + (m_bring_within_f(pos).unitcell() - pos.unitcell());
   }
 
 
@@ -171,10 +170,10 @@ namespace CASM {
   ///
   template<typename Element>
   WithinScelSymCompare<Element>::
-  WithinScelSymCompare(PrimType_ptr prim_ptr, const PrimGrid &prim_grid, double tol):
+  WithinScelSymCompare(PrimType_ptr prim_ptr, const xtal::IntegralCoordinateWithin_f &bring_within_f, double tol):
     m_prim(prim_ptr),
     m_tol(tol),
-    m_prim_grid(&prim_grid) {}
+    m_bring_within_f(bring_within_f) {}
 
   /// \brief Returns transformation that takes 'obj' to its prepared (canonical) form
   ///
@@ -184,7 +183,7 @@ namespace CASM {
   canonical_transform_impl(Element const &obj)const {
     Element tobj = obj;
     for(Index i = 0; i < tobj.size(); ++i) {
-      tobj[i] = m_prim_grid->within(tobj[i]);
+      tobj[i] = m_bring_within_f(tobj[i]);
     }
 
     return std::unique_ptr<SymOpRepresentation>(new SymPermutation(tobj.sort_permutation()));
@@ -209,7 +208,7 @@ namespace CASM {
       return obj;
     }
     for(Index i = 0; i < obj.size(); ++i) {
-      obj[i] = m_prim_grid->within(obj[i]);
+      obj[i] = m_bring_within_f(obj[i]);
     }
     obj.sort();
     return obj;

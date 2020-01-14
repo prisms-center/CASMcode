@@ -192,7 +192,9 @@ casm_unit_crystallography_SOURCES = \
     tests/unit/crystallography/Coordinate_test.cpp\
     tests/unit/crystallography/HermiteCounter_test.cpp\
     tests/unit/crystallography/LatticeEnumEquivalents_test.cpp\
+    tests/unit/crystallography/LatticePointWithin_test.cpp\
     tests/unit/crystallography/Lattice_test.cpp\
+    tests/unit/crystallography/LinearIndexConverter_test.cpp\
     tests/unit/crystallography/Molecule_test.cpp\
     tests/unit/crystallography/Niggli_test.cpp\
     tests/unit/crystallography/Site_test.cpp\

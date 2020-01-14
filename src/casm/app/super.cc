@@ -1,4 +1,6 @@
 #include <boost/filesystem/fstream.hpp>
+#include "casm/external/Eigen/Core"
+#include "casm/external/Eigen/src/Core/Matrix.h"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/CoordinateSystems.hh"
@@ -472,7 +474,8 @@ namespace CASM {
                    min_vol,
                    vm.count("fixed-shape"));
 
-        Lattice niggli_lat = xtal::canonical::equivalent(make_superlattice(prim_lat, T * M), pg, TOL);
+        Eigen::Matrix3i super_lat_matrix = T * M;
+        Lattice niggli_lat = xtal::canonical::equivalent(make_superlattice(prim_lat, super_lat_matrix), pg, TOL);
         T = iround(is_superlattice(niggli_lat, prim_lat, TOL).second);
 
         args.log() << "    Transformation matrix, after enforcing mininum volume:\n"

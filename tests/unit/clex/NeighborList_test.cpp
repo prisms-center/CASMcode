@@ -7,6 +7,7 @@
 
 #include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/clusterography/IntegralCluster.hh"
+#include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Structure.hh"
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
@@ -85,15 +86,15 @@ TEST(NeighborListTest, SuperNeighborListBasics) {
   0, 2, 0,
   0, 0, 2;
   Lattice super_lat = make_superlattice(prim.lattice(), T);
-  PrimGrid grid(prim.lattice(), super_lat);
-  SuperNeighborList super_nlist(grid, nlist);
+  xtal::Superlattice slat(prim.lattice(), super_lat);
+  SuperNeighborList super_nlist(slat, nlist);
 
   // size
-  for(int i = 0; i < grid.size(); ++i) {
+  for(int i = 0; i < slat.size(); ++i) {
     EXPECT_EQ(super_nlist.sites(i).size(), 177);
   }
 
-  for(int i = 0; i < grid.size(); ++i) {
+  for(int i = 0; i < slat.size(); ++i) {
     EXPECT_EQ(super_nlist.unitcells(i).size(), 177);
   }
 

@@ -9,7 +9,6 @@
 #include <boost/filesystem/fstream.hpp>
 #include "casm/misc/algorithm.hh"
 #include "casm/container/algorithm.hh"
-#include "casm/crystallography/PrimGrid.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/basis_set/DoFTraits.hh"
@@ -203,19 +202,19 @@ namespace CASM {
     void Structure::fill_supercell(const Structure &prim) {
       Index i, j;
 
-      PrimGrid prim_grid(prim.lattice(), lattice());
+      auto all_lattice_points = make_lattice_points(prim.lattice(), lattice(), lattice().tol());
 
       m_basis.clear();
-      Coordinate tcoord(lattice());
 
       //loop over basis sites of prim
       for(j = 0; j < prim.basis().size(); j++) {
 
         //loop over prim_grid points
-        for(i = 0; i < prim_grid.size(); i++) {
+        for(const auto &lattice_point : all_lattice_points) {
+          Coordinate lattice_point_coordinate = make_superlattice_coordinate(lattice_point, prim.lattice(), lattice());
 
           //push back translated basis site of prim onto superstructure basis
-          push_back(prim.basis()[j] + prim_grid.scel_coord(i));
+          push_back(prim.basis()[j] + lattice_point_coordinate);
 
           m_basis.back().within();
           for(Index k = 0; k < basis().size() - 1; k++) {
@@ -226,12 +225,14 @@ namespace CASM {
           }
         }
       }
+
       //trans_and_expand primitive factor_group
       IsPointGroupOp check_op(lattice());
       for(CASM::SymOp const &op : prim.factor_group()) {
         if(check_op(op)) {
-          for(Index j = 0; j < prim_grid.size(); j++) {
-            m_factor_group.push_back(within_cell(CASM::SymOp::translation(prim_grid.scel_coord(j).const_cart())*op,
+          for(const auto &lattice_point : all_lattice_points) {
+            Coordinate lattice_point_coordinate = make_superlattice_coordinate(lattice_point, prim.lattice(), lattice());
+            m_factor_group.push_back(within_cell(CASM::SymOp::translation(lattice_point_coordinate.const_cart())*op,
                                                  lattice(),
                                                  PERIODIC));
           }
