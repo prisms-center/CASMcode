@@ -736,7 +736,9 @@ namespace CASM {
           sign_change = float_sgn(B(j, i));
         }
       }
-      OccupantFunction tOF(allowed_occs, double(sign_change)*B.col(i), size(), basis_ind, allowed_occs.symrep_ID());
+
+      B.col(i) *= double(sign_change);
+      OccupantFunction tOF(allowed_occs, B.col(i), size(), basis_ind, allowed_occs.symrep_ID());
 
       push_back(tOF.copy());
     }
