@@ -1,13 +1,14 @@
 #ifndef LATTICE_HH
 #define LATTICE_HH
 
-#include <iostream>
 #include <cmath>
+#include <iostream>
+#include <type_traits>
 #include <vector>
 
+#include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
 #include "casm/misc/Comparisons.hh"
-#include "casm/global/definitions.hh"
 
 namespace CASM {
   class jsonParser;
@@ -38,10 +39,9 @@ namespace CASM {
               double xtal_tol = TOL,
               bool force = false);
 
-      ///Construct Lattice from a matrix of lattice vectors, where lattice vectors are columns
+      /// Construct Lattice from a matrix of lattice vectors, where lattice vectors are columns
       ///(e.g., lat_mat is equivalent to coord_trans[FRAC])
-      Lattice(Eigen::Ref<const Eigen::Matrix3d> const &lat_mat = Eigen::Matrix3d::Identity(),
-              double xtal_tol = TOL, bool force = false);
+      Lattice(Eigen::Ref<const Eigen::Matrix3d> const &lat_mat = Eigen::Matrix3d::Identity(), double xtal_tol = TOL, bool force = false);
 
       /// \brief Construct FCC primitive cell of unit volume
       static Lattice fcc(double tol = TOL);
@@ -63,7 +63,7 @@ namespace CASM {
       }
 
       /// \brief Get i'th lattice vector as column expression
-      ConstLatVec operator[](Index i)const {
+      ConstLatVec operator[](Index i) const {
         return m_lat_mat.col(i);
       }
 
@@ -79,13 +79,13 @@ namespace CASM {
       Lattice scaled_lattice(double scale) const;
 
       /// \brief Return angle between lattice vectors (*this)[(i+1)%3] and (*this)[(i+2)%3], in degrees
-      double angle(Index i)const;
+      double angle(Index i) const;
 
       /// \brief Return length of i'th lattice vector
-      double length(Index i)const;
+      double length(Index i) const;
 
       /// \brief Return *signed* volume of this lattice
-      double vol()const {
+      double vol() const {
         return lat_column_mat().determinant();
       }
 
@@ -143,10 +143,10 @@ namespace CASM {
       double min_voronoi_radius() const;
 
       /// Given cartesian vector 'pos', returns double v_dist and populates 'lattice_trans'.
-      /// v_dist is the fractional number of half lattice-planes along 'lattice_trans' between 'pos' and the lattice plane that passes through the origin.
-      /// lattice_trans is a lattice translation that is normal to a face of the voronoi cell and translating pos to 'pos-lattice_trans'
-      /// will yield a translationally-equivalent vector between the -1 and +1 half-plane.
-      /// v_dist is maximized over all faces of the voronoi cell.
+      /// v_dist is the fractional number of half lattice-planes along 'lattice_trans' between 'pos' and the lattice plane that passes through
+      /// the origin. lattice_trans is a lattice translation that is normal to a face of the voronoi cell and translating pos to
+      /// 'pos-lattice_trans' will yield a translationally-equivalent vector between the -1 and +1 half-plane. v_dist is maximized over all
+      /// faces of the voronoi cell.
       double max_voronoi_measure(const Eigen::Vector3d &pos, Eigen::Vector3d &lattice_trans) const;
 
       /// return number of voronoi cell faces that 'pos' is on, within +/- TOL
@@ -161,7 +161,7 @@ namespace CASM {
 
       /// Make a grid of lattice sites such that min_radius <= distance <= max_radius from \param lat_point
       // ***This should live somewhere else
-      template<typename CoordType, typename CoordType2>
+      template <typename CoordType, typename CoordType2>
       std::vector<CoordType> gridstruc_build(double max_radius, double min_radius, std::vector<CoordType> basis, CoordType2 lat_point);
 
       void read(std::istream &stream);
@@ -170,23 +170,23 @@ namespace CASM {
       /// \brief Compare two Lattice
       bool operator<(const Lattice &RHS) const;
 
-      ///Matrix that relates two lattices (e.g., strain or slat)
-      //Eigen::Matrix3d operator/(const Lattice &RHS);
+      /// Matrix that relates two lattices (e.g., strain or slat)
+      // Eigen::Matrix3d operator/(const Lattice &RHS);
 
-      ///Return a lattice with diagonal matrix that fits around starting lattice
+      /// Return a lattice with diagonal matrix that fits around starting lattice
       Lattice box(const Lattice &prim, const Lattice &scel, bool verbose = false) const;
 
-      ///Flip c vector if it's on the wrong side of a-b plane -- return (*this)
+      /// Flip c vector if it's on the wrong side of a-b plane -- return (*this)
       Lattice &make_right_handed();
 
-      ///Check if the lattice is right handed
+      /// Check if the lattice is right handed
       bool is_right_handed() const;
 
-      ///Given a normal vector, a Vector3 containing the miller indeces for the lattice is generated
+      /// Given a normal vector, a Vector3 containing the miller indeces for the lattice is generated
       Eigen::Vector3i millers(Eigen::Vector3d plane_normal) const;
 
-      ///Generates a lattice with vectors a and b parallel to the plane described by the miller indeces
-      Lattice lattice_in_plane(Eigen::Vector3i millers, int max_vol = 20) const; //John G 121030
+      /// Generates a lattice with vectors a and b parallel to the plane described by the miller indeces
+      Lattice lattice_in_plane(Eigen::Vector3i millers, int max_vol = 20) const; // John G 121030
 
       double tol() const {
         return m_tol;
@@ -197,7 +197,6 @@ namespace CASM {
       }
 
     private:
-
       friend Comparisons<Lattice>;
 
       /// Are lattice vectors identical for two lattices, within TOL
@@ -209,24 +208,53 @@ namespace CASM {
       mutable double m_inner_voronoi_radius;
       mutable Eigen::MatrixXd m_voronoi_table;
 
-      //Coordinate Conversion Matrices
-      //0 is fractional to cartesion; 1 is cartesian to fractional
-      //use FRAC and CART globals to index
-      //e.g., coord[CART]=coord_trans[FRAC]*coord[FRAC]; //converts frac to cart
-      //Word to the wise: coord_trans[FRAC] is the matrix with columns equal to the lattice vectors
+      // Coordinate Conversion Matrices
+      // 0 is fractional to cartesion; 1 is cartesian to fractional
+      // use FRAC and CART globals to index
+      // e.g., coord[CART]=coord_trans[FRAC]*coord[FRAC]; //converts frac to cart
+      // Word to the wise: coord_trans[FRAC] is the matrix with columns equal to the lattice vectors
       Eigen::Matrix3d m_lat_mat, m_inv_lat_mat;
 
       double m_tol;
     };
 
-    /* never write a Matrix*Lattice operator, PLEASE
+    /**
+     * Small class that describes a superlattice. Contains the superlattice, the
+     * primitive tiling unit, and the integer transformation matrix to convert from
+     * the tiling unit to the superlattice.
+     */
 
-       template <class T>
-       Lattice operator*(const Matrix3<T> &LHS, const Lattice &RHS);
+    class Superlattice {
+    private:
 
-       Lattice operator*(const Eigen::Matrix3d &LHS, const Lattice &RHS);
-    */
+      Lattice m_primitive_lattice;
+      Lattice m_superlattice;
+      Eigen::Matrix3l m_transformation_matrix;
 
+      Index m_size;
+    public:
+
+      const Lattice &superlattice() const {
+        return m_superlattice;
+      }
+
+      const Lattice &prim_lattice() const {
+        return m_primitive_lattice;
+      }
+
+      ///The integer transformation matrix that converts the tiling unit (primitive lattice) into the superlattice
+      const Eigen::Matrix3l &transformation_matrix() const {
+        return m_transformation_matrix;
+      }
+
+      ///Returns the number of tiling units (primitive lattices) that fit inside the superlattice
+      long int size() const {
+        return m_size;
+      }
+
+      Superlattice(const Lattice &tiling_unit, const Lattice &superlattice);
+      Superlattice(const Lattice &tiling_unit, const Eigen::Matrix3l &transformation_matrix);
+    };
 
     /// \brief Returns the volume of a Lattice
     double volume(const Lattice &lat);
@@ -239,17 +267,8 @@ namespace CASM {
     ///\brief returns Lattice that is smallest possible superlattice of both input Lattice
     Lattice make_superduperlattice(const Lattice &lat1, const Lattice &lat2);
 
-    //TODO
-    //Unimplemented until someone actually needs it, will be similarly implemented as
-    //make_equivalent_superduperlattice in SymTools.hh
-    ///\brief returns Lattice that is smallest possible superlattice of all input Lattice
-    /* template<typename LatIterator> */
-    /* Lattice make_superduperlattice(LatIterator begin, */
-    /*                                LatIterator end); */
-
     Lattice replace_vector(const Lattice &lat, const Eigen::Vector3d &new_vector, double tol);
 
-    //********************************************************************
     ///\brief Returns 'frac_mat' which is transformation of 'cart_mat'
     /// if
     ///    cart_vec_after = cart_mat*cart_vec
@@ -257,12 +276,10 @@ namespace CASM {
     ///    frac_vec_after = frac_mat*frac_vec
     /// where cart_vec = lat.lat_column_mat()*frac_vec
     /// and cart_vec_after = lat.lat_column_mat()*frac_vec_after
-    inline
-    Eigen::Matrix3d cart2frac(const Eigen::Ref<const Eigen::Matrix3d> &cart_mat, const Lattice &lat) {
+    inline Eigen::Matrix3d cart2frac(const Eigen::Ref<const Eigen::Matrix3d> &cart_mat, const Lattice &lat) {
       return lat.inv_lat_column_mat() * cart_mat * lat.lat_column_mat();
     }
 
-    //********************************************************************
     ///\brief Returns 'cart_mat' which is transformation of 'frac_mat'
     /// if
     ///    cart_vec_after = cart_mat*cart_vec
@@ -270,8 +287,7 @@ namespace CASM {
     ///    frac_vec_after = frac_mat*frac_vec
     /// where cart_vec = lat.lat_column_mat()*frac_vec
     /// and cart_vec_after = lat.lat_column_mat()*frac_vec_after
-    inline
-    Eigen::Matrix3d frac2cart(const Eigen::Ref<const Eigen::Matrix3d> &frac_mat, const Lattice &lat) {
+    inline Eigen::Matrix3d frac2cart(const Eigen::Ref<const Eigen::Matrix3d> &frac_mat, const Lattice &lat) {
       return lat.lat_column_mat() * frac_mat * lat.inv_lat_column_mat();
     }
 
@@ -285,17 +301,24 @@ namespace CASM {
       return lat.lat_column_mat().determinant();
     }
 
-    /// \brief Returns a super Lattice
-    inline Lattice make_superlattice(const Lattice &lat, const Eigen::Matrix3i &transf_mat) {
-      return Lattice(Eigen::Matrix3d(lat.lat_column_mat()) * transf_mat.cast<double>(), lat.tol());
+    /// \brief Returns a super Lattice. Transformation matrix must be integer.
+    template <typename IntegralType, int Options = 0>
+    Lattice make_superlattice(const Lattice &lat, const Eigen::Matrix<IntegralType, 3, 3, Options> &transf_mat) {
+      //TODO: Do this in more places that involve transformation matrices
+      static_assert(std::is_integral<IntegralType>::value, "Transfomration matrix must be integer matrix");
+      return Lattice(Eigen::Matrix3d(lat.lat_column_mat()) * transf_mat.template cast<double>(), lat.tol());
     }
 
     /** @} */
 
-  }
+    /// Calculates the transformation matrix that takes the tiling unit to the superlattice.
+    /// Throws exceptions if the superlattice isn't compatible with its tiling unit
+    Eigen::Matrix3l make_transformation_matrix(const Lattice &tiling_unit, const Lattice &superlattice, double tol);
+
+  } // namespace xtal
   // write Lattice in json as array of vectors
   jsonParser &to_json(const xtal::Lattice &lat, jsonParser &json);
   void from_json(xtal::Lattice &lat, const jsonParser &json, double xtal_tol);
 
-}
+} // namespace CASM
 #endif

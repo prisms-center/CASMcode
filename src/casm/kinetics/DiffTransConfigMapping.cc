@@ -76,7 +76,7 @@ namespace CASM {
       MappingNode from_node = *from_set.begin();
       MappingNode to_node = *to_set.begin();
 
-      auto scel_ptr = std::make_shared<Supercell>(&(mapper.primclex()), from_node.lat_node.parent.scel_lattice());
+      auto scel_ptr = std::make_shared<Supercell>(&(mapper.primclex()), from_node.lat_node.parent.superlattice());
       std::vector<UnitCellCoord> from_uccoords;
       std::vector<UnitCellCoord> to_uccoords;
 
@@ -224,19 +224,20 @@ namespace CASM {
                                                                    std::vector<UnitCellCoord> &to_uccoords,
                                                                    std::set<UnitCellCoord> &vacancy_from,
                                                                    std::set<UnitCellCoord> &vacancy_to) const {
+      auto bring_within_f = xtal::make_bring_within_f(scel);
       // For image 00 set reference of POSCAR index to  basis site linear index
       // tolerance for UnitCellCoord mapping has 20% wiggle room from max displacement
       // instead of introducing wiggle room maybe take max disp between from map and to map
       int from_count = 0;
       for(auto &site : from.basis()) {
-        from_uccoords.push_back(scel.prim_grid().within(_site_to_uccoord(site, primclex(), uccoord_tol)));
+        from_uccoords.push_back(bring_within_f(_site_to_uccoord(site, primclex(), uccoord_tol)));
         from_count++;
       }
 
       // For last image  find POSCAR index to basis site linear index
       int to_count = 0;
       for(auto &site : to.basis()) {
-        to_uccoords.push_back(scel.prim_grid().within(_site_to_uccoord(site, primclex(), uccoord_tol)));
+        to_uccoords.push_back(bring_within_f(_site_to_uccoord(site, primclex(), uccoord_tol)));
         to_count++;
       }
       std::vector<Index> moving_atoms;

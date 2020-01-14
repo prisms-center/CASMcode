@@ -160,6 +160,7 @@ libcasm_la_SOURCES = \
     include/casm/clusterography/ClusterSymCompare.hh\
     include/casm/clusterography/ClusterSymCompare_impl.hh\
     include/casm/clusterography/CoordCluster.hh\
+    include/casm/clusterography/CoordClusterTraits.hh\
     include/casm/clusterography/GenericCluster.hh\
     include/casm/clusterography/IntegralCluster.hh\
     include/casm/clusterography/IntegralCluster_impl.hh\
@@ -193,7 +194,6 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/Lattice_impl.hh\
     include/casm/crystallography/Molecule.hh\
     include/casm/crystallography/Niggli.hh\
-    include/casm/crystallography/PrimGrid.hh\
     include/casm/crystallography/SimpleStrucMapCalculator.hh\
     include/casm/crystallography/SimpleStructure.hh\
     include/casm/crystallography/SimpleStructureTools.hh\
@@ -207,6 +207,7 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/SymTools.hh\
     include/casm/crystallography/SymType.hh\
     include/casm/crystallography/UnitCellCoord.hh\
+    include/casm/crystallography/UnitCellCoordTraits.hh\
     include/casm/crystallography/io/VaspIO.hh\
     include/casm/database/Cache.hh\
     include/casm/database/ConfigData.hh\
@@ -667,6 +668,7 @@ libcasm_la_SOURCES = \
     include/casm/strain/StrainConverter.hh\
     include/casm/symmetry/ConfigSubOrbits.hh\
     include/casm/symmetry/ConfigSubOrbits_impl.hh\
+    include/casm/symmetry/ElementSymApply.hh\
     include/casm/symmetry/EnumEquivalents.hh\
     include/casm/symmetry/InvariantSubgroup.hh\
     include/casm/symmetry/InvariantSubgroup_impl.hh\
@@ -817,9 +819,10 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/LatticeEnumEquivalents.cc\
     src/casm/crystallography/LatticeIsEquivalent.cc\
     src/casm/crystallography/LatticeMap.cc\
+    src/casm/crystallography/LatticePointWithin.cc\
+    src/casm/crystallography/LinearIndexConverter.cc\
     src/casm/crystallography/Molecule.cc\
     src/casm/crystallography/Niggli.cc\
-    src/casm/crystallography/PrimGrid.cc\
     src/casm/crystallography/SimpleStrucMapCalculator.cc\
     src/casm/crystallography/SimpleStructure.cc\
     src/casm/crystallography/SimpleStructureTools.cc\

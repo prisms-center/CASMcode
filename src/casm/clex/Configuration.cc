@@ -19,6 +19,8 @@
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clex/MappedPropertiesTools.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/LatticePointWithin.hh"
+#include "casm/crystallography/LinearIndexConverter.hh"
 #include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/SimpleStructure.hh"
@@ -363,7 +365,7 @@ namespace CASM {
   /// \brief Returns the point group that leaves the Configuration unchanged
   std::string Configuration::point_group_name() const  {
     if(!cache().contains("point_group_name")) {
-      cache_insert("point_group_name", make_sym_group(this->point_group()).get_name());
+      cache_insert("point_group_name", make_sym_group(this->point_group(), this->supercell().sym_info().supercell_lattice()).get_name());
     }
     return cache()["point_group_name"].get<std::string>();
   }
@@ -1510,9 +1512,7 @@ namespace CASM {
     // ------- site dof ----------
     Lattice oriented_motif_lat = sym::copy_apply(*m_op, m_motif_scel->lattice());
 
-    // Create a PrimGrid linking the prim and the oriented motif each to the supercell
-    // So we can tile the decoration of the motif config onto the supercell correctly
-    PrimGrid prim_grid(oriented_motif_lat, m_scel->lattice());
+    auto oriended_motif_lattice_points = xtal::make_lattice_points(oriented_motif_lat, m_scel->lattice(), TOL);
 
     const Structure &prim = m_scel->prim();
     m_index_table.resize(m_motif_scel->num_sites());
@@ -1521,16 +1521,17 @@ namespace CASM {
     for(Index s = 0 ; s < m_motif_scel->num_sites() ; s++) {
 
       // apply symmetry to re-orient and find unit cell coord
-      UnitCellCoord oriented_uccoord = sym::copy_apply(*m_op, m_motif_scel->uccoord(s), prim);
+      UnitCellCoord oriented_uccoord = sym::copy_apply(*m_op, m_motif_scel->uccoord(s), prim.lattice(), prim.basis_permutation_symrep_ID());
 
       // for each unit cell of the oriented motif in the supercell, copy the occupation
-      for(Index i = 0 ; i < prim_grid.size() ; i++) {
+      for(const UnitCell &oriented_motif_uc : oriended_motif_lattice_points) {
+        UnitCell oriented_motif_uc_relative_to_prim = oriented_motif_uc.reset_tiling_unit(oriented_motif_lat, prim.lattice());
 
-        Index prim_motif_tile_ind = m_scel->prim_grid().find(prim_grid.scel_coord(i));
+        Index prim_motif_tile_ind = m_scel->sym_info().unitcell_index_converter()[oriented_motif_uc_relative_to_prim];
 
         UnitCellCoord mc_uccoord(
           oriented_uccoord.sublattice(),
-          m_scel->prim_grid().unitcell(prim_motif_tile_ind) + oriented_uccoord.unitcell());
+          m_scel->sym_info().unitcell_index_converter()[(prim_motif_tile_ind)] + oriented_uccoord.unitcell());
 
         m_index_table[s].push_back(m_scel->linear_index(mc_uccoord));
       }

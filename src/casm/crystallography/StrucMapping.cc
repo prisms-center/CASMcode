@@ -248,10 +248,10 @@ namespace CASM {
     bool LatticeNode::operator<(LatticeNode const &B)const {
       if(!almost_equal(cost, B.cost, 1e-6))
         return cost < B.cost;
-      if(child.trans_mat() != B.child.trans_mat())
-        return Local::lex_lt(child.trans_mat(), B.child.trans_mat());
-      if(parent.trans_mat() != B.parent.trans_mat())
-        return Local::lex_lt(parent.trans_mat(), B.parent.trans_mat());
+      if(child.transformation_matrix() != B.child.transformation_matrix())
+        return Local::lex_lt(child.transformation_matrix(), B.child.transformation_matrix());
+      if(parent.transformation_matrix() != B.parent.transformation_matrix())
+        return Local::lex_lt(parent.transformation_matrix(), B.parent.transformation_matrix());
       return false;
     }
 
@@ -260,9 +260,9 @@ namespace CASM {
     bool identical(LatticeNode const &A, LatticeNode const &B) {
       if(!almost_equal(A.cost, B.cost, 1e-6))
         return false;
-      if(A.parent.trans_mat() != B.parent.trans_mat())
+      if(A.parent.transformation_matrix() != B.parent.transformation_matrix())
         return false;
-      if(A.child.trans_mat() != B.child.trans_mat())
+      if(A.child.transformation_matrix() != B.child.transformation_matrix())
         return false;
       return true;
     }

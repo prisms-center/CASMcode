@@ -1,9 +1,10 @@
 #include "casm/clex/NeighborList.hh"
+#include "casm/crystallography/Lattice.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/container/Counter.hh"
-#include "casm/crystallography/PrimGrid.hh"
+#include "casm/crystallography/LinearIndexConverter.hh"
 
 namespace CASM {
 
@@ -206,7 +207,7 @@ namespace CASM {
 
   /// \brief Constructor
   ///
-  /// \param prim_grid A grid of unit cells describing the supercell this neighbor list pertains to
+  /// \param superlattice The superlattice this neighbor list pertains to, coupled with its primitive tiling unit
   /// \param prim_nlist_begin, prim_nlist_end Iterators over range [begin, end) of UnitCell that are
   ///        the neighbors of the origin UnitCell
   /// \param sublat_begin, sublat_end  Iterators over range [begin, end) of basis sites that should be
@@ -217,11 +218,13 @@ namespace CASM {
   /// - The canonical order of UnitCell is obtained by lexicographically sorting [r, i, j, k]
   /// - The sublattice iterators enable restricting the neighbor list to only sites that have degrees of freedom
   ///
-  SuperNeighborList::SuperNeighborList(const PrimGrid &prim_grid,
+  SuperNeighborList::SuperNeighborList(const xtal::Superlattice &superlattice,
                                        const PrimNeighborList &prim_nlist) :
-    m_prim_grid_size(prim_grid.size()),
-    m_site(prim_grid.size()),
-    m_unitcell(prim_grid.size()) {
+    m_prim_grid_size(superlattice.size()),
+    m_site(superlattice.size()),
+    m_unitcell(superlattice.size()) {
+
+    xtal::UnitCellIndexConverter ijk_index_converter(superlattice.transformation_matrix());
 
     // use the PrimNeighborList to generate the UnitCell and Site indices for
     //   the neighbors of each UnitCell in the supercell
@@ -233,17 +236,19 @@ namespace CASM {
       for(auto it = prim_nlist.begin(); it != prim_nlist.end(); ++it) {
 
         // get the neighbor unitcell's index
-        size_type unitcell_index = prim_grid.find(prim_grid.unitcell(i) + *it);
+        UnitCell neighbor_unitcell = ijk_index_converter[i] + *it;
+        size_type neighbor_unitcell_index =
+          ijk_index_converter[neighbor_unitcell];
 
         // store the unitcell index
-        m_unitcell[i].push_back(unitcell_index);
+        m_unitcell[i].push_back(neighbor_unitcell_index);
 
         // calculate and store the site indices for all sites in the neighbor unitcell that are requested
         // - Depends on Configuration sites being stored in blocks by sublattice and unitcell indices
-        //   determined by the PrimGrid ordering
+        //   determined by the UnitCellCoordIndexConverter ordering
         for(auto b_it = prim_nlist.sublat_indices().begin(); b_it != prim_nlist.sublat_indices().end(); ++b_it) {
-          //std::cout << "unitcell_index : " << unitcell_index << "; sublat_index : " << *b_it << "\n";
-          m_site[i].push_back((*b_it)*m_prim_grid_size + unitcell_index);
+          m_site[i].push_back((*b_it) * m_prim_grid_size +
+                              neighbor_unitcell_index);
         }
 
       }

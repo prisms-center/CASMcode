@@ -3,12 +3,13 @@
 
 #include <vector>
 #include <unordered_set>
+#include "casm/external/Eigen/Core"
 #include "casm/global/definitions.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/crystallography/SimpleStructure.hh"
-#include "casm/crystallography/PrimGrid.hh"
+#include "casm/crystallography/Lattice.hh"
 
 namespace CASM {
   namespace xtal {
@@ -48,6 +49,7 @@ namespace CASM {
       double basis_cost(const MappingNode &mapped_config, Index Nsites);
     }
 
+
     /// \brief Class describing the lattice-mapping portion of a particular mapping
     /// A general map for child_struc onto parent_struc may require forming a supercell of
     /// parent_struc (most commonly) and/or of child_struc.
@@ -77,7 +79,7 @@ namespace CASM {
       ///      Sc(i) == U * R * Sc(d)
       ///   and
       ///      Sc(d) == R.transpose() * U.inverse() * Sc(i)
-      PrimGrid parent;
+      Superlattice parent;
 
       /// \brief PrimGrid for supercell of child structure
       /// The child lattice is recorded in its idealized state (de-rotated and un-deformed)
@@ -95,7 +97,7 @@ namespace CASM {
       ///      Sc(i) == U * R * Sc(d)
       ///   and
       ///      Sc(d) == R.transpose() * U.inverse() * Sc(i)
-      PrimGrid child;
+      Superlattice child;
 
       /// \brief strain_cost of the LatticeNode
       double cost;

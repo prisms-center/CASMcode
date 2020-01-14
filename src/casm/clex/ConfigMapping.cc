@@ -53,7 +53,7 @@ namespace CASM {
       int best_det = sgn(round(op.matrix().determinant()));
       int best_pdist = _permute_dist(_node.mol_map);
 
-      Coordinate tau(_node.lat_node.parent.scel_lattice());
+      Coordinate tau(_node.lat_node.parent.superlattice());
       while(begin != end) {
         t_op = begin->sym_op() * op;
         tdet = sgn(round(t_op.matrix().determinant()));
@@ -355,7 +355,7 @@ namespace CASM {
     double hint_cost;
     if(hint_ptr != nullptr) {
       StrucMapper tmapper(*struc_mapper().calculator().quasi_clone(xtal::make_simple_structure(*hint_ptr, _hint_dofs),
-                                                                   make_point_group(hint_ptr->point_group()),
+                                                                   make_point_group(hint_ptr->point_group(), hint_ptr->supercell().sym_info().supercell_lattice()),
                                                                    SimpleStructure::SpeciesMode::ATOM),
                           struc_mapper().strain_weight(),
                           0.,
@@ -452,9 +452,9 @@ namespace CASM {
     //std::cout << "struc_maps.size(): " << struc_maps.size() << "\n";
     // Refactor into external routine A. This is too annoying with the current way that supercells are managed
     for(auto const &map : struc_maps) {
-      std::shared_ptr<Supercell> shared_scel = std::make_shared<Supercell>(&primclex(), map.lat_node.parent.scel_lattice());
+      std::shared_ptr<Supercell> shared_scel = std::make_shared<Supercell>(&primclex(), map.lat_node.parent.superlattice());
       SimpleStructure resolved_struc = struc_mapper().calculator().resolve_setting(map, child_struc);
-      auto tdof = to_configdof(resolved_struc, *shared_scel);
+      std::pair<ConfigDoF, std::set<std::string> > tdof = to_configdof(resolved_struc, *shared_scel);
       Configuration tconfig(shared_scel, jsonParser(), tdof.first);
       PermuteIterator perm_it = shared_scel->sym_info().permute_begin();
       if(settings().strict) {

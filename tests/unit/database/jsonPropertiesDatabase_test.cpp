@@ -33,7 +33,7 @@ TEST(jsonPropertiesDatabase_Test, Test1) {
   EXPECT_EQ(db_props.size(), 0);
 
   MappedProperties props;
-  props.from = "from/0";
+  props.origin = "from/0";
   props.to = "to/0";
   props.scalar("relaxed_energy") = 0.1;
   props.site["test"] = Eigen::MatrixXd::Ones(3, 3);
@@ -41,15 +41,15 @@ TEST(jsonPropertiesDatabase_Test, Test1) {
   auto res = db_props.insert(props);
   EXPECT_EQ(res.second, true);
   EXPECT_EQ(db_props.size(), 1);
-  EXPECT_EQ(db_props.find_via_from("from/0")->to, "to/0");
-  EXPECT_EQ(db_props.find_via_to("to/0")->from, "from/0");
-  EXPECT_EQ(db_props.relaxed_from_all("to/0").size(), 1);
-  EXPECT_EQ(db_props.relaxed_to("from/0"), "to/0");
-  EXPECT_EQ(db_props.relaxed_from("to/0"), "from/0");
+  EXPECT_EQ(db_props.find_via_origin("from/0")->to, "to/0");
+  EXPECT_EQ(db_props.find_via_to("to/0")->origin, "from/0");
+  EXPECT_EQ(db_props.all_origins("to/0").size(), 1);
+  //EXPECT_EQ(db_props.relaxed_to("from/0"), "to/0");
+  //EXPECT_EQ(db_props.relaxed_from("to/0"), "from/0");
   EXPECT_EQ(db_props.best_score("to/0"), 0.1);
   EXPECT_EQ(db_props.score("from/0"), 0.1);
 
-  props.from = "from/1";
+  props.origin = "from/1";
   props.to = "to/1";
   props.scalar("relaxed_energy") = 0.2;
   props.site["test"] = Eigen::MatrixXd::Ones(3, 3);
@@ -57,15 +57,15 @@ TEST(jsonPropertiesDatabase_Test, Test1) {
   res = db_props.insert(props);
   EXPECT_EQ(res.second, true);
   EXPECT_EQ(db_props.size(), 2);
-  EXPECT_EQ(db_props.find_via_from("from/1")->to, "to/1");
-  EXPECT_EQ(db_props.find_via_to("to/1")->from, "from/1");
-  EXPECT_EQ(db_props.relaxed_from_all("to/1").size(), 1);
-  EXPECT_EQ(db_props.relaxed_to("from/1"), "to/1");
-  EXPECT_EQ(db_props.relaxed_from("to/1"), "from/1");
+  EXPECT_EQ(db_props.find_via_origin("from/1")->to, "to/1");
+  EXPECT_EQ(db_props.find_via_to("to/1")->origin, "from/1");
+  EXPECT_EQ(db_props.all_origins("to/1").size(), 1);
+  //EXPECT_EQ(db_props.relaxed_to("from/1"), "to/1");
+  //EXPECT_EQ(db_props.relaxed_from("to/1"), "from/1");
   EXPECT_EQ(almost_equal(db_props.best_score("to/1"), 0.2), true);
   EXPECT_EQ(almost_equal(db_props.score("from/1"), 0.2), true);
 
-  props.from = "from/2";
+  props.origin = "from/2";
   props.to = "to/1";
   props.scalar("relaxed_energy") = 0.3;
   props.site["test"] = Eigen::MatrixXd::Ones(3, 3);
@@ -73,21 +73,21 @@ TEST(jsonPropertiesDatabase_Test, Test1) {
   res = db_props.insert(props);
   EXPECT_EQ(res.second, true);
   EXPECT_EQ(db_props.size(), 3);
-  EXPECT_EQ(db_props.find_via_from("from/2")->to, "to/1");
-  EXPECT_EQ(db_props.find_via_to("to/1")->from, "from/1");
-  EXPECT_EQ(db_props.relaxed_from_all("to/1").size(), 2);
-  EXPECT_EQ(db_props.relaxed_to("from/2"), "to/1");
-  EXPECT_EQ(db_props.relaxed_from("to/1"), "from/1");
+  EXPECT_EQ(db_props.find_via_origin("from/2")->to, "to/1");
+  EXPECT_EQ(db_props.find_via_to("to/1")->origin, "from/1");
+  EXPECT_EQ(db_props.all_origins("to/1").size(), 2);
+  //EXPECT_EQ(db_props.relaxed_to("from/2"), "to/1");
+  //EXPECT_EQ(db_props.relaxed_from("to/1"), "from/1");
   EXPECT_EQ(almost_equal(db_props.best_score("to/1"), 0.2), true);
   EXPECT_EQ(almost_equal(db_props.score("from/2"), 0.3), true);
 
   auto it = db_props.find_via_to("to/1");
   db_props.erase(it);
   EXPECT_EQ(db_props.size(), 2);
-  EXPECT_EQ(db_props.find_via_from("from/1") == db_props.end(), true);
-  EXPECT_EQ(db_props.find_via_to("to/1")->from, "from/2");
-  EXPECT_EQ(db_props.relaxed_from_all("to/1").size(), 1);
-  EXPECT_EQ(db_props.relaxed_from("to/1"), "from/2");
+  EXPECT_EQ(db_props.find_via_origin("from/1") == db_props.end(), true);
+  EXPECT_EQ(db_props.find_via_to("to/1")->origin, "from/2");
+  EXPECT_EQ(db_props.all_origins("to/1").size(), 1);
+  //EXPECT_EQ(db_props.relaxed_from("to/1"), "from/2");
   EXPECT_EQ(almost_equal(db_props.best_score("to/1"), 0.3), true);
 
   db_props.commit();

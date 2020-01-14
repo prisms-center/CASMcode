@@ -4,7 +4,6 @@
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/misc/Comparisons.hh"
 #include "casm/crystallography/Lattice.hh"
-#include "casm/crystallography/PrimGrid.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymGroupRepID.hh"
 #include "casm/symmetry/SupercellSymInfo.hh"
@@ -21,6 +20,7 @@ namespace CASM {
     class Structure;
     class Coordinate;
     class UnitCellCoord;
+    class IntegralCoordinateWithin_f;
   }
   using xtal::BasicStructure;
   using xtal::Site;
@@ -99,8 +99,6 @@ namespace CASM {
 
     const PrimClex &primclex() const;
 
-    const PrimGrid &prim_grid() const;
-
     ///Return number of primitive cells that fit inside of *this
     Index volume() const;
 
@@ -176,6 +174,10 @@ namespace CASM {
   std::string scelname(const Structure &prim, const Lattice &superlat);
 
   std::string canonical_scelname(const Structure &prim, const Lattice &superlat);
+
+  namespace xtal {
+    IntegralCoordinateWithin_f make_bring_within_f(const Supercell &scel);
+  }
 
   /** @} */
 }

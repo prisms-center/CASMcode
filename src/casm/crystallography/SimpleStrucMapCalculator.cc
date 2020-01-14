@@ -1,13 +1,24 @@
 #include "casm/crystallography/SimpleStrucMapCalculator.hh"
-#include "casm/crystallography/StrucMapping.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/AnisoValTraits.hh"
 #include "casm/misc/algorithm.hh"
+#include "casm/crystallography/LatticePointWithin.hh"
+#include "casm/crystallography/StrucMapping.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
+
+
+
 namespace CASM {
   namespace xtal {
+    namespace Local {
+      static Coordinate
+      _make_superlattice_coordinate(Index ijk_ix, const Superlattice &superlattice, OrderedLatticePointGenerator index_to_ijk_f) {
+        UnitCell ijk = index_to_ijk_f(ijk_ix);
+        return make_superlattice_coordinate(ijk, superlattice);
+      }
+    }
 
-    std::vector<Eigen::Vector3d> SimpleStrucMapCalculator::translations(MappingNode const &_node,
-                                                                        SimpleStructure const &ichild_struc) const {
+    std::vector<Eigen::Vector3d> SimpleStrucMapCalculator::translations(MappingNode const &_node, SimpleStructure const &ichild_struc) const {
       SimpleStructure::Info const &p_info(this->struc_info(parent()));
       SimpleStructure::Info const &c_info(this->struc_info(ichild_struc));
 
@@ -25,7 +36,7 @@ namespace CASM {
           }
         }
         else {
-          //child species not known in parent -- incompatible
+          // child species not known in parent -- incompatible
           return result;
         }
       }
@@ -34,7 +45,7 @@ namespace CASM {
 
       result.reserve(n_best);
 
-      Coordinate translation(_node.lat_node.parent.scel_lattice());
+      Coordinate translation(_node.lat_node.parent.superlattice());
       // Try translating child atom at i_trans onto each chemically compatible site of parent
       for(Index j = 0; j < _allowed_species().size(); ++j) {
         if(contains(_allowed_species()[j], sp)) {
@@ -54,8 +65,8 @@ namespace CASM {
     SimpleStructure SimpleStrucMapCalculator::resolve_setting(MappingNode const &_node, SimpleStructure const &_child_struc) const {
       SimpleStructure::Info const &c_info(_child_struc.atom_info);
       SimpleStructure::Info const &p_info((this->parent()).mol_info);
-      PrimGrid const &cgrid = _node.lat_node.child;
-      PrimGrid const &pgrid = _node.lat_node.parent;
+      auto const &cgrid = _node.lat_node.child;
+      auto const &pgrid = _node.lat_node.parent;
 
       Index csize = c_info.size();
 
@@ -64,7 +75,7 @@ namespace CASM {
       // Resolve setting of deformed lattice vectors
       // Symmetric deformation of parent lattice that takes it to de-rotated child lattice:
       Eigen::Matrix3d U = (_node.lat_node.stretch).inverse(); // * _node.lat_node.isometry).inverse();
-      result.lat_column_mat = U * pgrid.scel_lattice().lat_column_mat();
+      result.lat_column_mat = U * pgrid.superlattice().lat_column_mat();
 
       // Match number of sites in result to number of sites in supercell of parent
       SimpleStructure::Info &r_info(result.mol_info);
@@ -72,6 +83,9 @@ namespace CASM {
 
       Eigen::MatrixXd mol_displacement;
       mol_displacement.setZero(3, _node.mol_map.size());
+
+      OrderedLatticePointGenerator parent_index_to_unitcell(pgrid.transformation_matrix());
+
       // transform and expand the coordinates of child to fill the resolved structure
       {
         for(Index i = 0; i < _node.mol_map.size(); ++i) {
@@ -86,7 +100,9 @@ namespace CASM {
             else if(mol.size() > 1)
               throw std::runtime_error("SimpleStrucMapCalculator found multi-atom molecule with vacancy. This should not occur");
           }
-          r_info.cart_coord(i) = U * (p_info.cart_coord(i / pgrid.size()) + pgrid.scel_coord(i % pgrid.size()).const_cart() + mol_displacement.col(i));
+          r_info.cart_coord(i) = U * (p_info.cart_coord(i / pgrid.size()) +
+                                      Local::_make_superlattice_coordinate(i % pgrid.size(), pgrid, parent_index_to_unitcell).const_cart()
+                                      + mol_displacement.col(i));
         }
         result.within();
       }//End coordinate transform
@@ -144,7 +160,9 @@ namespace CASM {
 
       return result;
     }
+
     //***************************************************************************************************
+
 
     void SimpleStrucMapCalculator::finalize(MappingNode &node,
                                             SimpleStructure const &_child_struc) const {
@@ -163,21 +181,22 @@ namespace CASM {
     //            Assignment Problem methods
     //****************************************************************************************************************
 
-    void SimpleStrucMapCalculator::populate_displacement(MappingNode &_node,
-                                                         SimpleStructure const &child_struc) const {
+    void SimpleStrucMapCalculator::populate_displacement(MappingNode &_node, SimpleStructure const &child_struc) const {
 
-      PrimGrid const &pgrid(_node.lat_node.parent);
-      PrimGrid const &cgrid(_node.lat_node.child);
+      const auto &pgrid = _node.lat_node.parent;
+      const auto &cgrid = _node.lat_node.child;
       SimpleStructure::Info const &p_info(this->struc_info(parent()));
       SimpleStructure::Info const &c_info(this->struc_info(child_struc));
-
+      // TODO: Just use linear index converter? could make things more obvious
+      OrderedLatticePointGenerator child_index_to_unitcell(cgrid.transformation_matrix());
+      OrderedLatticePointGenerator parent_index_to_unitcell(pgrid.transformation_matrix());
 
       _node.atom_permutation = _node.basis_node.permutation();
 
       // initialize displacement matrix with all zeros
-      _node.atom_displacement.setZero(3, pgrid.size()*p_info.size());
+      _node.atom_displacement.setZero(3, pgrid.size() * p_info.size());
 
-      Coordinate disp_coord(pgrid.scel_lattice());
+      Coordinate disp_coord(pgrid.superlattice());
       Index cN = c_info.size() * cgrid.size();
       // Populate displacements given as the difference in the Coordinates
       // as described by node.permutation.
@@ -188,7 +207,6 @@ namespace CASM {
         //  --DO NOTHING--
         //}
 
-
         // Using min_dist routine to calculate the displacement vector that corresponds
         // to the distance used in the Cost Matrix and Hungarian Algorithm
         // The method returns the displacement vector pointing from the
@@ -196,11 +214,13 @@ namespace CASM {
         if(_node.atom_permutation[i] < cN) {
 
           Coordinate child_coord(c_info.cart_coord(_node.atom_permutation[i] / cgrid.size())
-                                 + cgrid.scel_coord(_node.atom_permutation[i] % cgrid.size()).const_cart()
+                                 + Local::_make_superlattice_coordinate(_node.atom_permutation[i] % cgrid.size(),
+                                                                        cgrid,
+                                                                        child_index_to_unitcell).const_cart()
                                  + _node.basis_node.translation,
-                                 pgrid.scel_lattice(), CART);
+                                 pgrid.superlattice(), CART);
 
-          Coordinate parent_coord = pgrid.scel_coord(i % pgrid.size());
+          Coordinate parent_coord = Local::_make_superlattice_coordinate(i % pgrid.size(), pgrid, parent_index_to_unitcell);
           parent_coord.cart() += p_info.cart_coord(i / pgrid.size());
           child_coord.min_dist(parent_coord, disp_coord);
           //std::cout << "\nMap " << _node.atom_permutation[i] << "->" << i << "\n"
@@ -209,6 +229,7 @@ namespace CASM {
           //        << "Parent coord: (" << i % pgrid.size()<< ", "<< i / pgrid.size() << "): "
           //        << parent_coord.const_cart().transpose() << "\n"
           //        << "Disp coord: " << disp_coord.const_cart().transpose() << "\n";
+
           _node.atom_displacement.col(i) = disp_coord.const_cart();
 
         }
@@ -236,11 +257,14 @@ namespace CASM {
     //****************************************************************************************
     bool SimpleStrucMapCalculator::populate_cost_mat(MappingNode &_node,
                                                      SimpleStructure const &child_struc) const {
-      PrimGrid const &pgrid(_node.lat_node.parent);
-      PrimGrid const &cgrid(_node.lat_node.child);
+      const auto &pgrid = _node.lat_node.parent;
+      const auto &cgrid = _node.lat_node.child;
+
       Eigen::Vector3d const &translation(_node.basis_node.translation);
       Eigen::MatrixXd &cost_matrix(_node.basis_node.cost_mat);
       Eigen::Matrix3d metric = (_node.lat_node.stretch * _node.lat_node.stretch).inverse();
+      OrderedLatticePointGenerator child_index_to_unitcell(cgrid.transformation_matrix());
+      OrderedLatticePointGenerator parent_index_to_unitcell(pgrid.transformation_matrix());
 
       SimpleStructure::Info const &p_info(this->struc_info(parent()));
       SimpleStructure::Info const &c_info(this->struc_info(child_struc));
@@ -251,11 +275,11 @@ namespace CASM {
       cost_matrix = Eigen::MatrixXd::Constant(pN, pN, StrucMapping::small_inf());
 
       if(pN < cN) {
-        //std::cout << "Insufficient number of parent sites to accept child atoms\n";
+        // std::cout << "Insufficient number of parent sites to accept child atoms\n";
         return false;
       }
       Index residual = pN - cN;
-      if(residual > this->max_n_va()*pgrid.size()) {
+      if(residual > this->max_n_va() * pgrid.size()) {
         //std::cout << "Parent cannot accommodate enough vacancies to make mapping possible.\n";
         return false;
       }
@@ -277,7 +301,9 @@ namespace CASM {
 
         // For each sublattice, loop over lattice points, 'n'. 'ac' tracks linear index of atoms in child supercell
         for(Index lc = 0; lc < cgrid.size(); ++lc, ++ac) {
-          Coordinate child_coord(c_info.cart_coord(bc) + cgrid.scel_coord(lc).const_cart() + translation, pgrid.scel_lattice(), CART);
+          Coordinate child_coord(c_info.cart_coord(bc)
+                                 + Local::_make_superlattice_coordinate(lc, cgrid, child_index_to_unitcell).const_cart()
+                                 + translation, pgrid.superlattice(), CART);
           // loop through all the sites in the parent supercell
           Index ap = 0;
           for(Index bp = 0; bp < p_info.size(); ++bp) {
@@ -285,10 +311,11 @@ namespace CASM {
               ap += pgrid.size();
               continue;
             }
-            Coordinate parent_coord(p_info.cart_coord(bp), pgrid.scel_lattice(), CART);
+            Coordinate parent_coord(p_info.cart_coord(bp), pgrid.superlattice(), CART);
 
             for(Index lp = 0; lp < pgrid.size(); ++lp, ++ap) {
-              cost_matrix(ap, ac) = (parent_coord + pgrid.scel_coord(lp)).min_dist2(child_coord, metric);
+              cost_matrix(ap, ac) =
+                (parent_coord + Local::_make_superlattice_coordinate(lp, pgrid, parent_index_to_unitcell)).min_dist2(child_coord, metric);
             }
           }
         }
@@ -305,7 +332,6 @@ namespace CASM {
         }
       }
 
-
       // JCT: I'm not sure if there's an easy way to check if the cost matrix is viable in all cases
       //      Some of the simpler checks I could think of failed for edge cases with vacancies.
       //      If we return an invalid cost matrix, the Hungarian routines will detect that it is invalid,
@@ -313,11 +339,14 @@ namespace CASM {
       return true;
     }
 
+
+    //****************************************************************************************
+
     bool SimpleStrucMapCalculator::_assign_molecules(MappingNode &node,
                                                      SimpleStructure const &_child_struc) const {
 
-      PrimGrid const &cgrid(node.lat_node.child);
-      PrimGrid const &pgrid(node.lat_node.parent);
+      auto const &cgrid(node.lat_node.child);
+      auto const &pgrid(node.lat_node.parent);
       node.mol_map.clear();
       node.mol_map.reserve(node.atom_permutation.size());
       node.mol_labels.clear();
@@ -339,5 +368,5 @@ namespace CASM {
 
       return true;
     }
-  }
-}
+  } // namespace xtal
+} // namespace CASM

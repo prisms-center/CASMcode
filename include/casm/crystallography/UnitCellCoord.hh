@@ -2,14 +2,15 @@
 #define UNITCELLCOORD_HH
 
 #include <iostream>
+#include <stdexcept>
 
+#include "casm/external/Eigen/Core"
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
 #include "casm/misc/Comparisons.hh"
 
 namespace CASM {
   class jsonParser;
-  class SymOp;
 
   namespace xtal {
     class Coordinate;
@@ -19,6 +20,7 @@ namespace CASM {
     class Structure;
     class Lattice;
     class UnitCellCoord;
+    class Superlattice;
   }
 
   namespace xtal {
@@ -46,6 +48,15 @@ namespace CASM {
       /// Convert lattice point to a unitcell
       static UnitCell from_coordinate(Coordinate const &lattice_point);
 
+      /// Convert a Cartesian coordinate into a unitcell by rounding fractional coordinates to the provided lattice
+      static UnitCell from_cartesian(const Eigen::Vector3d &cartesian_coord, const Lattice &tiling_unit);
+
+      /// Convert a unitcell to a lattice point coordinate, given the primitive tiling unit lattice
+      Coordinate coordinate(const Lattice &tiling_unit) const;
+
+      /// Finds a new UnitCell with values relative to the given tiling unit
+      UnitCell reset_tiling_unit(const Lattice &current_tiling_unit, const Lattice &new_tiling_unit) const;
+
       // This method allows you to assign Eigen expressions to MyVectorType
       template <typename OtherDerived>
       UnitCell &operator=(const Eigen::MatrixBase<OtherDerived> &other) {
@@ -65,6 +76,13 @@ namespace CASM {
           }
         }
         return false;
+      }
+
+    private:
+
+      /// Throws exception to indicate that finding integral values resulted in errors much larger than the relevant lattice tolerance
+      static void _throw_large_rounding_error() {
+        throw std::runtime_error("Could not round values to integers within a reasonable tolerance");
       }
     };
 
@@ -213,6 +231,11 @@ namespace CASM {
     }
 
     /** @} */
+
+    /// Converts the position of a lattice site into a Coordinate within the superlattice
+    Coordinate make_superlattice_coordinate(const UnitCell &ijk, const Superlattice &superlattice);
+    Coordinate make_superlattice_coordinate(const UnitCell &ijk, const Lattice &tiling_unit, const Lattice &superlattice);
+
   } // namespace xtal
 
   /// \brief Print to json as [b, i, j, k]
@@ -222,5 +245,23 @@ namespace CASM {
   void from_json(xtal::UnitCellCoord &fill_value, const jsonParser &read_json);
 
 } // namespace CASM
+
+/* #include "casm/crystallography/Coordinate.hh" */
+namespace CASM {
+  namespace xtal {
+  }
+}
+
+namespace std {
+  template <>
+  struct hash<CASM::xtal::UnitCell> {
+    std::size_t operator()(const CASM::xtal::UnitCell &value) const;
+  };
+
+  template <>
+  struct hash<CASM::xtal::UnitCellCoord> {
+    std::size_t operator()(const CASM::xtal::UnitCellCoord &value) const;
+  };
+}
 #endif
 

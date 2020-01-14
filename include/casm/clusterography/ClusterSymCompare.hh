@@ -1,6 +1,7 @@
 #ifndef CASM_ClusterSymCompare
 #define CASM_ClusterSymCompare
 
+#include "casm/crystallography/LatticePointWithin.hh"
 #include "casm/clusterography/CoordCluster.hh"
 #include "casm/symmetry/ElementSymApply.hh"
 #include "casm/symmetry/SymCompare.hh"
@@ -9,13 +10,11 @@
 
 namespace CASM {
   namespace xtal {
-    class PrimGrid;
     class UnitCellCoord;
     template <typename CoordType>
     class BasicStructure;
     class Site;
   } // namespace xtal
-  using xtal::PrimGrid;
   using xtal::UnitCellCoord;
 
   template <typename Derived>
@@ -130,9 +129,9 @@ namespace CASM {
       return *m_prim;
     }
 
-    double m_tol;
-
     PrimType_ptr m_prim;
+
+    double m_tol;
   };
 
   /// \brief Comparisons of GenericCluster-derived types using prim periodic symmetry
@@ -190,10 +189,10 @@ private:
       return *m_prim;
     }
 
-    double m_tol;
-
     /// Pointer to the primitive structure, necessary to apply symmetry to the Element
     PrimType_ptr m_prim;
+
+    double m_tol;
   };
 
   /// \brief Comparisons of GenericCluster-derived types using supercell periodic symmetry
@@ -225,7 +224,7 @@ public:
       ///
       /// \param tol Tolerance for invariants_compare of site-to-site distances
       ///
-      ScelPeriodicSymCompare(PrimType_ptr prim_ptr, const PrimGrid &prim_grid, double tol);
+      ScelPeriodicSymCompare(PrimType_ptr prim_ptr, const xtal::IntegralCoordinateWithin_f &bring_within_f, double tol);
 
       /// \brief Return tolerance
     double tol() const {
@@ -251,12 +250,12 @@ private:
       return *m_prim;
     }
 
-    const PrimGrid *m_prim_grid;
-
-    double m_tol;
+    xtal::IntegralCoordinateWithin_f m_bring_within_f;
 
     /// Pointer to the primitive structure, necessary to apply symmetry to the Element
     PrimType_ptr m_prim;
+
+    double m_tol;
   };
 
   /// \brief Comparisons of GenericCluster-derived types using supercell periodic symmetry
@@ -289,7 +288,7 @@ public:
       ///
       /// \param tol Tolerance for invariants_compare of site-to-site distances
       ///
-      WithinScelSymCompare(PrimType_ptr prim_ptr, const PrimGrid &prim_grid, double tol);
+      WithinScelSymCompare(PrimType_ptr prim_ptr, const xtal::IntegralCoordinateWithin_f &bring_within_f, double tol);
 
       /// \brief Return tolerance
     double tol() const {
@@ -318,12 +317,12 @@ private:
       return *m_prim;
     }
 
-    const PrimGrid *m_prim_grid;
-
-    double m_tol;
+    xtal::IntegralCoordinateWithin_f m_bring_within_f;
 
     /// Pointer to the primitive structure, necessary to apply symmetry to the Element
     PrimType_ptr m_prim;
+
+    double m_tol;
   };
 
 } // namespace CASM

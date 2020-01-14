@@ -20,7 +20,7 @@ namespace CASM {
     PermuteIteratorIt subgroup_end,
     ElementOutputIterator result) {
 
-    if(&scel.prim_grid() != &subgroup_begin->prim_grid()) {
+    if(&scel.sym_info() != &subgroup_begin->sym_info()) {
       throw std::runtime_error("Error: PermuteIterator supercell mismatch.");
     }
 
@@ -63,7 +63,12 @@ namespace CASM {
     PermuteIteratorIt subgroup_end,
     ElementOutputIterator result) {
 
-    if(&group_begin->prim_grid() != &subgroup_begin->prim_grid()) {
+    //TODO: Do we really want this check to exist?
+    //The sym_info probably shouldn't be publicly accessible anyway.
+    //It kind of defeats having this routine be a template too, since the
+    //iterator type is now required to be implemented the same way
+    //PermuteIterator is, which basically forces you to use PermuteIterator
+    if(&group_begin->sym_info() != &subgroup_begin->sym_info()) {
       throw std::runtime_error("Error: PermuteIterator supercell mismatch.");
     }
 

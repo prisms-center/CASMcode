@@ -1,20 +1,21 @@
 #ifndef CASM_SupercellSymInfo
 #define CASM_SupercellSymInfo
 
+#include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/LinearIndexConverter.hh"
+#include "casm/global/eigen.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymGroupRepID.hh"
 #include "casm/basis_set/DoFDecl.hh"
-#include "casm/crystallography/PrimGrid.hh"
+#include <vector>
 
 namespace CASM {
   namespace xtal {
     class Structure;
-    class PrimGrid;
     class UnitCell;
   }
   using xtal::Structure;
-  using xtal::PrimGrid;
   using xtal::UnitCell;
 
   class PermuteIterator;
@@ -53,8 +54,16 @@ namespace CASM {
       return m_local_dof_symreps.at(_key);
     }
 
-    PrimGrid const &prim_grid() const {
-      return m_prim_grid;
+    const xtal::UnitCellIndexConverter &unitcell_index_converter() const {
+      return m_unitcell_to_index_converter;
+    }
+
+    const xtal::UnitCellCoordIndexConverter &unitcellcoord_index_converter() const {
+      return m_unitcellcoord_to_index_converter;
+    }
+
+    const std::vector<Permutation> &translation_permutations() const {
+      return m_translation_permutations;
     }
 
     SymGroup const &factor_group() const {
@@ -67,6 +76,22 @@ namespace CASM {
 
     bool has_occupation_dofs() const {
       return m_has_occupation_dofs;
+    }
+
+    const xtal::Lattice &supercell_lattice() const {
+      return m_supercell_superlattice.superlattice();
+    }
+
+    const xtal::Lattice &prim_lattice() const {
+      return m_supercell_superlattice.prim_lattice();
+    }
+
+    const xtal::Superlattice &superlattice() const {
+      return m_supercell_superlattice;
+    }
+
+    Eigen::Matrix3l transformation_matrix() const {
+      return this->superlattice().transformation_matrix();
     }
 
     /// \brief Begin iterator over pure translational permutations
@@ -84,7 +109,21 @@ namespace CASM {
     permute_const_iterator permute_it(Index fg_index, UnitCell trans) const;
 
   private:
-    PrimGrid m_prim_grid;
+
+    /// Couples the primitive lattice to the supercell lattice, and knows the transformation matrix
+    xtal::Superlattice m_supercell_superlattice;
+
+    //TODO: I don't think this belongs in SupercellSymInfo, but neither did PrimGrid.
+    //I'm keeping the functionality where I found it for now, but we should consider moving it elsewhere
+    /// Converts between ijk (UnitCell) values and their corresponding index in an unrolled vector
+    xtal::UnitCellIndexConverter m_unitcell_to_index_converter;
+
+    //TODO: See TODO comment for m_unitcell_to_index_converter
+    /// Converts between bijk (UnitCellCoord) values and their corresponding linear index
+    xtal::UnitCellCoordIndexConverter m_unitcellcoord_to_index_converter;
+
+    /// Stores the permutations associated with making translations from a lattice point to the origin
+    std::vector<Permutation> m_translation_permutations;
 
     // m_factor_group is factor group of the super cell, found by identifying the subgroup of
     // (*this).prim().factor_group() that leaves the supercell lattice vectors unchanged

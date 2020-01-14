@@ -43,7 +43,7 @@ namespace CASM {
     std::pair<MasterSymGroup, SymGroupRepID> result;// = std::make_pair(make_sym_group(_group),SymGroupRepID());
     if(_group.empty())
       throw std::runtime_error("Empty group passed to collective_dof_symrep()");
-    result.first.set_lattice(_group[0].prim_grid().scel_lattice());
+    result.first.set_lattice(_syminfo.supercell_lattice());
     for(PermuteIterator const &perm : _group) {
       result.first.push_back(perm.sym_op());
     }
@@ -56,24 +56,19 @@ namespace CASM {
     for(auto const &rep : subreps)
       subdim = max(subdim, rep.dim());
 
-    //std::cout << "subdim is " << subdim << "\n";
-
     Index Nsite = std::distance(begin, end);
-
-    //std::cout << "Nsite is " << Nsite << "\n";
 
     Eigen::MatrixXd trep(subdim * Nsite, subdim * Nsite);
     Index g = 0;
     for(PermuteIterator const &perm : _group) {
       trep.setZero();
       for(IterType it = begin; it != end; ++it) {
-        Index b = _syminfo.prim_grid().sublat(*it);
+        /* Index b = _syminfo.prim_grid().sublat(*it); */
+        Index b = _syminfo.unitcellcoord_index_converter()[*it].sublattice();
         auto ptr = (subreps[b][perm.factor_group_index()]->MatrixXd());
         trep.block(subdim * (*it), subdim * perm.permute_ind(*it), ptr->rows(), ptr->cols()) = *ptr;
       }
-      //std::cout << "trep " << g << " is \n" << trep << "\n\n";
       result.first[g++].set_rep(result.second, SymMatrixXd(trep));
-      //std::cout << "cartesian symop is: \n" << perm.sym_op().matrix() << "\n";
     }
     result.first.sort();
     return result;
