@@ -14,7 +14,7 @@ namespace test {
   using xtal::Molecule;
   using xtal::Coordinate;
 
-  inline BasicStructure<Site> ZrO_prim() {
+  inline BasicStructure ZrO_prim() {
 
     // lattice vectors as rows
     Eigen::Matrix3d lat;
@@ -22,7 +22,7 @@ namespace test {
         -1.616993430000, 2.800714770000, 0.000000000000,
         0.000000000000, 0.000000000000, 5.168678340000;
 
-    BasicStructure<Site> struc(Lattice(lat.transpose()));
+    BasicStructure struc(Lattice(lat.transpose()));
     struc.set_title("ZrO");
 
     Molecule O = Molecule::make_atom("O");
@@ -37,7 +37,7 @@ namespace test {
     return struc;
   }
 
-  inline BasicStructure<Site> FCC_ternary_prim() {
+  inline BasicStructure FCC_ternary_prim() {
 
     // lattice vectors as cols
     Eigen::Matrix3d lat;
@@ -45,7 +45,7 @@ namespace test {
         2.0, 0.0, 2.0,
         2.0, 2.0, 0.0;
 
-    BasicStructure<Site> struc {Lattice{lat}};
+    BasicStructure struc {Lattice{lat}};
     struc.set_title("FCC_ternary");
 
     Molecule A = Molecule::make_atom("A");

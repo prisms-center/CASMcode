@@ -32,7 +32,7 @@ D
 0.00 0.00 0.00 A B C
 ***************************************/
 
-void prim1_read_test(BasicStructure<Site> &struc) {
+void prim1_read_test(BasicStructure &struc) {
 
   double tol = struc.lattice().tol();
 
@@ -75,7 +75,7 @@ D
 0.0 0.5 0.5 A B C :: C
 ***************************************/
 
-void prim2_read_test(BasicStructure<Site> &struc) {
+void prim2_read_test(BasicStructure &struc) {
 
   double tol = struc.lattice().tol();
 
@@ -141,7 +141,7 @@ Direct
 ***************************************/
 
 
-void pos1_read_test(BasicStructure<Site> &struc) {
+void pos1_read_test(BasicStructure &struc) {
 
   double tol = struc.lattice().tol();
 
@@ -182,7 +182,7 @@ TEST(BasicStructureSiteTest, PRIM1Test) {
   fs::path testdir = ::crystallography_test_directory();
 
   // Read in test PRIM and run tests
-  BasicStructure<Site> struc(fs::path(testdir / "PRIM1.txt"));
+  BasicStructure struc(fs::path(testdir / "PRIM1.txt"));
   prim1_read_test(struc);
 
   // Write test PRIM back out
@@ -190,7 +190,7 @@ TEST(BasicStructureSiteTest, PRIM1Test) {
   write_prim(struc, tmp_file, FRAC);
 
   // Read new file and run tests again
-  BasicStructure<Site> struc2(read_prim(tmp_file, TOL));
+  BasicStructure struc2(read_prim(tmp_file, TOL));
   prim1_read_test(struc2);
 
 }
@@ -200,7 +200,7 @@ TEST(BasicStructureSiteTest, PRIM2Test) {
   fs::path testdir = ::crystallography_test_directory();
 
   // Read in test PRIM and run tests
-  BasicStructure<Site> struc(fs::path(testdir / "PRIM2.txt"));
+  BasicStructure struc(fs::path(testdir / "PRIM2.txt"));
   prim2_read_test(struc);
 }
 
@@ -209,7 +209,7 @@ TEST(BasicStructureSiteTest, PRIM3Test) {
   fs::path testdir = ::crystallography_test_directory();
 
   // Read in an incorrectly formatted PRIM and check that an exception is thrown
-  EXPECT_THROW(BasicStructure<Site>(fs::path(testdir / "PRIM3.txt")), std::runtime_error);
+  EXPECT_THROW(BasicStructure(fs::path(testdir / "PRIM3.txt")), std::runtime_error);
 
 }
 
@@ -218,7 +218,7 @@ TEST(BasicStructureSiteTest, POS1Test) {
   fs::path testdir = ::crystallography_test_directory();
 
   // Read in test PRIM and run tests
-  BasicStructure<Site> struc(fs::path(testdir / "POS1.txt"));
+  BasicStructure struc(fs::path(testdir / "POS1.txt"));
   pos1_read_test(struc);
 
   // Write test PRIM back out
@@ -230,7 +230,7 @@ TEST(BasicStructureSiteTest, POS1Test) {
   sout.close();
 
   // Read new file and run tests again
-  BasicStructure<Site> struc2(fs::path(testdir / "POS1_out.txt"));
+  BasicStructure struc2(fs::path(testdir / "POS1_out.txt"));
   pos1_read_test(struc2);
 
 }
@@ -240,7 +240,7 @@ TEST(BasicStructureSiteTest, POS1Vasp5Test) {
   fs::path testdir = ::crystallography_test_directory();
 
   // Read in test PRIM and run tests
-  BasicStructure<Site> struc(fs::path(testdir / "POS1.txt"));
+  BasicStructure struc(fs::path(testdir / "POS1.txt"));
   pos1_read_test(struc);
 
   // Write test PRIM back out
@@ -250,7 +250,7 @@ TEST(BasicStructureSiteTest, POS1Vasp5Test) {
   sout.close();
 
   // Read new file and run tests again
-  BasicStructure<Site> struc2(fs::path(testdir / "POS1_vasp5_out.txt"));
+  BasicStructure struc2(fs::path(testdir / "POS1_vasp5_out.txt"));
   pos1_read_test(struc2);
 
 }
