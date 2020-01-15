@@ -59,8 +59,6 @@ namespace CASM {
   }
 
   void ConfigEnumInput::_add_site(UnitCellCoord const &_ucc) {
-    //TODO: @jcthomas please confirm this is what this is supposed to do
-    //I changed the behavior of this routine
     m_sites_selection.insert(this->supercell().sym_info().unitcellcoord_index_converter()[_ucc]);
     return;
   }

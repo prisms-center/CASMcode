@@ -196,11 +196,6 @@ namespace CASM {
     return it;
   }
 
-  /* std::ostream &operator<<(std::ostream &sout, const PermuteIterator &op) { */
-  /*   sout << "(" << op.factor_group_index() << ", " << op.prim_grid().unitcell(op.translation_index()).transpose() << ")"; */
-  /*   return sout; */
-  /* } */
-
   /// \brief Returns a SymGroup generated from a range of PermuteIterator
   ///
   /// \param begin,end A range of PermuteIterator
