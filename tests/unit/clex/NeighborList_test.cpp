@@ -7,6 +7,7 @@
 
 #include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/clusterography/IntegralCluster.hh"
+#include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Structure.hh"
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
@@ -39,7 +40,7 @@ TEST(NeighborListTest, PrimNeighborListBasics) {
 
   // expand
   std::set<UnitCellCoord> nbors;
-  nbors.insert(UnitCellCoord(prim, 0, UnitCell(3, 0, 0)));
+  nbors.emplace(0, UnitCell(3, 0, 0));
   nlist.expand(nbors.begin(), nbors.end());
 
   // size
@@ -73,7 +74,7 @@ TEST(NeighborListTest, SuperNeighborListBasics) {
 
   // expand
   std::set<UnitCellCoord> nbors;
-  nbors.insert(UnitCellCoord(prim, 0, UnitCell(3, 0, 0)));
+  nbors.emplace(0, UnitCell(3, 0, 0));
   nlist.expand(nbors.begin(), nbors.end());
 
   // size
@@ -85,15 +86,15 @@ TEST(NeighborListTest, SuperNeighborListBasics) {
   0, 2, 0,
   0, 0, 2;
   Lattice super_lat = make_superlattice(prim.lattice(), T);
-  PrimGrid grid(prim.lattice(), super_lat);
-  SuperNeighborList super_nlist(grid, nlist);
+  xtal::Superlattice slat(prim.lattice(), super_lat);
+  SuperNeighborList super_nlist(slat, nlist);
 
   // size
-  for(int i = 0; i < grid.size(); ++i) {
+  for(int i = 0; i < slat.size(); ++i) {
     EXPECT_EQ(super_nlist.sites(i).size(), 177);
   }
 
-  for(int i = 0; i < grid.size(); ++i) {
+  for(int i = 0; i < slat.size(); ++i) {
     EXPECT_EQ(super_nlist.unitcells(i).size(), 177);
   }
 
@@ -149,7 +150,7 @@ TEST(NeighborListTest, Proj) {
   jsonParser bspecs_json(proj.bspecs());
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   double crystallography_tol = TOL;
-  make_prim_periodic_orbits(prim,
+  make_prim_periodic_orbits(primclex.shared_prim(),
                             bspecs_json,
                             alloy_sites_filter,
                             crystallography_tol,
@@ -166,7 +167,7 @@ TEST(NeighborListTest, Proj) {
 
   //std::cout << "expand nlist again" << std::endl;
   nbors.clear();
-  nbors.insert(UnitCellCoord(prim, 0, UnitCell(4, 0, 0)));
+  nbors.emplace(0, UnitCell(4, 0, 0));
   nlist.expand(nbors.begin(), nbors.end());
   EXPECT_EQ(nlist.size(), 381);
 

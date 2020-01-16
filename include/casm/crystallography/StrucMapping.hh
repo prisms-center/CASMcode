@@ -3,12 +3,13 @@
 
 #include <vector>
 #include <unordered_set>
+#include "casm/external/Eigen/Core"
 #include "casm/global/definitions.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/crystallography/SimpleStructure.hh"
-#include "casm/crystallography/PrimGrid.hh"
+#include "casm/crystallography/Lattice.hh"
 
 namespace CASM {
   namespace xtal {
@@ -48,6 +49,7 @@ namespace CASM {
       double basis_cost(const MappingNode &mapped_config, Index Nsites);
     }
 
+
     /// \brief Class describing the lattice-mapping portion of a particular mapping
     /// A general map for child_struc onto parent_struc may require forming a supercell of
     /// parent_struc (most commonly) and/or of child_struc.
@@ -77,7 +79,7 @@ namespace CASM {
       ///      Sc(i) == U * R * Sc(d)
       ///   and
       ///      Sc(d) == R.transpose() * U.inverse() * Sc(i)
-      PrimGrid parent;
+      Superlattice parent;
 
       /// \brief PrimGrid for supercell of child structure
       /// The child lattice is recorded in its idealized state (de-rotated and un-deformed)
@@ -95,7 +97,7 @@ namespace CASM {
       ///      Sc(i) == U * R * Sc(d)
       ///   and
       ///      Sc(d) == R.transpose() * U.inverse() * Sc(i)
-      PrimGrid child;
+      Superlattice child;
 
       /// \brief strain_cost of the LatticeNode
       double cost;
@@ -451,15 +453,15 @@ namespace CASM {
       }
 
       ///\brief specify to use filtered lattices for mapping
-      void set_filter(std::function<bool(Lattice const &)> _filter_f) {
-        m_restricted = true;
+      void set_filter(std::function<bool(Lattice const &, Lattice const &)> _filter_f) {
+        m_filtered = true;
         m_filter_f = _filter_f;
         m_superlat_map.clear();
       }
 
       ///\brief specify not to use filtered lattice for mapping
       void unset_filter() {
-        m_restricted = false;
+        m_filtered = false;
         m_superlat_map.clear();
       }
 
@@ -556,9 +558,9 @@ namespace CASM {
       ///\brief returns number of species in a SimpleStructure given the current calculator settings. Use instead of sstruc.n_atom() for consistency
       Index _n_species(SimpleStructure const &sstruc) const;
 
-      //Implement filter as std::function<bool(Lattice const&)> or as polymorphic type or as query (i.e., DataFormatter)
-      bool _filter_lat(Lattice const &_lat)const {
-        return m_filter_f(_lat);
+      //Implement filter as std::function<bool(Lattice const&,Lattice const&)>
+      bool _filter_lat(Lattice const &_parent_lat, Lattice const &_child_lat)const {
+        return m_filter_f(_parent_lat, _child_lat);
       }
 
       std::pair<Index, Index> _vol_range(const SimpleStructure &child_struc) const;
@@ -574,8 +576,8 @@ namespace CASM {
       double m_min_va_frac;
       double m_max_va_frac;
 
-      bool m_restricted;
-      std::function<bool(Lattice const &)> m_filter_f;
+      bool m_filtered;
+      std::function<bool(Lattice const &, Lattice const &)> m_filter_f;
 
       ///Maps the supercell volume to a vector of Lattices with that volume
       mutable LatMapType m_superlat_map;

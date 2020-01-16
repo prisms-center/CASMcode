@@ -297,13 +297,13 @@ namespace CASM {
           auto end = all().end();
           for(; it != end; ++it) {
             ValueDataStream<bool> select_stream;
+            select_stream << tformat(*it);
             if(select_stream.fail()) {
               err_log() << "Warning: Unable to apply criteria \"" << criteria
                         << "\" to " << traits<ObjType>::name << " " << it.name()
                         << "\n";
               continue;
             }
-            select_stream << tformat(*it);
             it.is_selected() = select_stream.value();
           }
         }

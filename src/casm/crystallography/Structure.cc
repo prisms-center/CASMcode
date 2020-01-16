@@ -9,7 +9,6 @@
 #include <boost/filesystem/fstream.hpp>
 #include "casm/misc/algorithm.hh"
 #include "casm/container/algorithm.hh"
-#include "casm/crystallography/PrimGrid.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/basis_set/DoFTraits.hh"
@@ -201,21 +200,21 @@ namespace CASM {
     //***********************************************************
 
     void Structure::fill_supercell(const Structure &prim) {
-      Index i, j;
+      Index j;
 
-      PrimGrid prim_grid(prim.lattice(), lattice());
+      auto all_lattice_points = make_lattice_points(prim.lattice(), lattice(), lattice().tol());
 
       m_basis.clear();
-      Coordinate tcoord(lattice());
 
       //loop over basis sites of prim
       for(j = 0; j < prim.basis().size(); j++) {
 
         //loop over prim_grid points
-        for(i = 0; i < prim_grid.size(); i++) {
+        for(const auto &lattice_point : all_lattice_points) {
+          Coordinate lattice_point_coordinate = make_superlattice_coordinate(lattice_point, prim.lattice(), lattice());
 
           //push back translated basis site of prim onto superstructure basis
-          push_back(prim.basis()[j] + prim_grid.scel_coord(i));
+          push_back(prim.basis()[j] + lattice_point_coordinate);
 
           m_basis.back().within();
           for(Index k = 0; k < basis().size() - 1; k++) {
@@ -226,12 +225,14 @@ namespace CASM {
           }
         }
       }
+
       //trans_and_expand primitive factor_group
       IsPointGroupOp check_op(lattice());
       for(CASM::SymOp const &op : prim.factor_group()) {
         if(check_op(op)) {
-          for(Index j = 0; j < prim_grid.size(); j++) {
-            m_factor_group.push_back(within_cell(CASM::SymOp::translation(prim_grid.scel_coord(j).const_cart())*op,
+          for(const auto &lattice_point : all_lattice_points) {
+            Coordinate lattice_point_coordinate = make_superlattice_coordinate(lattice_point, prim.lattice(), lattice());
+            m_factor_group.push_back(within_cell(CASM::SymOp::translation(lattice_point_coordinate.const_cart())*op,
                                                  lattice(),
                                                  PERIODIC));
           }
@@ -422,7 +423,7 @@ namespace CASM {
       // that previously resided at basis(b). As such, for dofs, we use the inverse permutation and
       //   basis()[b].symrep(doftype.name()) = basis()[b].dof(doftype.name()).basis().transpose()
       //                                       * doftype.symop_to_matrix(op)
-      //                                       * basis()[sitemap[b].sublat()].dof(doftype.name().basis())
+      //                                       * basis()[sitemap[b].sublattice()].dof(doftype.name().basis())
       Eigen::MatrixXd trep, trepblock;
       for(Index s = 0; s < m_factor_group.size(); ++s) {
         auto const &op = m_factor_group[s];
@@ -436,24 +437,28 @@ namespace CASM {
 
         for(Index b = 0; b < basis().size(); ++b) {
           // copy_aply(symop,dofref_from) = P.permute(dofref_to);
-          auto const &dofref_to = basis()[sitemap[b].sublat()].occupant_dof();
+          auto const &dofref_to = basis()[sitemap[b].sublattice()].occupant_dof();
           auto const &dofref_from = basis()[b].occupant_dof();
           OccupantDoFIsEquivalent<Molecule> eq(dofref_from);
           //TODO
           //Calling the adapter here, because we said we don't want anything outside
           //of crystallography to invoke crystallography/Adapter.hh
           if(eq(adapter::Adapter<SymOp, CASM::SymOp>()(op), dofref_to)) {
+            // By default, the symrep is identity, but if we find that there are
+            // equivalent anisotropic occupants, we will initialize a non-trivial
+            // representation
             if(dofref_from.symrep_ID().is_identity()) {
               if(!eq.perm().is_identity()) {
                 dofref_from.allocate_symrep(m_factor_group);
                 Index s2;
                 for(s2 = 0; s2 < s; ++s2) {
-                  m_factor_group[s2].set_rep(dofref_from.symrep_ID(), SymPermutation(sequence<Index>(0, dofref_from.size())));
+                  m_factor_group[s2].set_rep(dofref_from.symrep_ID(), SymPermutation(sequence<Index>(0, dofref_from.size() - 1)));
                 }
-                m_factor_group[s2].set_rep(dofref_from.symrep_ID(), SymPermutation(eq.perm().inverse()));
               }
             }
-            else {
+
+            // If representation is non-trivial, register the representation for this operation
+            if(!dofref_from.symrep_ID().is_identity()) {
               op.set_rep(dofref_from.symrep_ID(), SymPermutation(eq.perm().inverse()));
             }
           }
@@ -466,7 +471,7 @@ namespace CASM {
               continue;
 
             // copy_aply(symop,dofref_from) = dofref_to * U
-            DoFSet const &dofref_to = basis()[sitemap[b].sublat()].dof(dof_dim.first);
+            DoFSet const &dofref_to = basis()[sitemap[b].sublattice()].dof(dof_dim.first);
             DoFSet const &dofref_from = basis()[b].dof(dof_dim.first);
             DoFIsEquivalent eq(dofref_from);
             //TODO

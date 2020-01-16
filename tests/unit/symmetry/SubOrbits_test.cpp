@@ -1,6 +1,8 @@
 #include "gtest/gtest.h"
 
 /// What is being tested:
+#include "casm/clex/Supercell.hh"
+#include "casm/symmetry/ElementSymApply.hh"
 #include "casm/symmetry/SubOrbits.hh"
 #include "casm/symmetry/SubOrbits_impl.hh"
 
@@ -46,7 +48,7 @@ TEST(SubOrbitsTest, ZrOProj) {
   jsonParser bspecs {bspecs_path};
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
-    primclex.prim(),
+    primclex.shared_prim(),
     bspecs,
     alloy_sites_filter,
     primclex.crystallography_tol(),
@@ -125,7 +127,8 @@ TEST(SubOrbitsTest, ZrOProj) {
     }
 
     ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> scel_sym_compare(
-      config.supercell().prim_grid(),
+      config.supercell().primclex().shared_prim(),
+      xtal::make_bring_within_f(config.supercell()),
       config.crystallography_tol());
     // Configuration with every other layer of O filled
 
@@ -133,7 +136,8 @@ TEST(SubOrbitsTest, ZrOProj) {
     Configuration prim_config = config.primitive().in_canonical_supercell();
     std::vector<PermuteIterator> prim_config_fg = prim_config.factor_group();
     ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> prim_sym_compare(
-      prim_config.supercell().prim_grid(),
+      prim_config.supercell().primclex().shared_prim(),
+      xtal::make_bring_within_f(prim_config.supercell()),
       prim_config.crystallography_tol());
 
     EXPECT_EQ(true, true);
@@ -155,9 +159,10 @@ TEST(SubOrbitsTest, ZrOProj) {
     /// prim -> prim_config.supercell() symmetry breaking
     DiffTransVec prim_scel_suborbit_generators;
     {
-      MakeSubOrbitGenerators gen(
+      MakeSubOrbitGenerators<sym::CopyApplyDefault_f> gen(
         prim_config.prim().factor_group(),
-        prim_config.supercell().factor_group());
+        prim_config.supercell().factor_group(),
+        sym::CopyApplyDefault_f());
       for(const auto &orbit : diff_trans_orbits) {
         gen(orbit, std::back_inserter(prim_scel_suborbit_generators));
       }
@@ -279,7 +284,7 @@ TEST(SubOrbitsTest, FCCTernaryProj) {
   jsonParser bspecs {bspecs_path};
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
-    primclex.prim(),
+    primclex.shared_prim(),
     bspecs,
     alloy_sites_filter,
     primclex.crystallography_tol(),
@@ -331,7 +336,8 @@ TEST(SubOrbitsTest, FCCTernaryProj) {
       0, 0, 0, 0
     }));
     ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> scel_sym_compare(
-      config.supercell().prim_grid(),
+      config.supercell().primclex().shared_prim(),
+      xtal::make_bring_within_f(config.supercell()),
       config.crystallography_tol());
 
     // Print out a POSCAR file
@@ -346,7 +352,8 @@ TEST(SubOrbitsTest, FCCTernaryProj) {
     Configuration prim_config = config.primitive().in_canonical_supercell();
     std::vector<PermuteIterator> prim_config_fg = prim_config.factor_group();
     ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> prim_sym_compare(
-      prim_config.supercell().prim_grid(),
+      prim_config.supercell().primclex().shared_prim(),
+      xtal::make_bring_within_f(config.supercell()),
       prim_config.crystallography_tol());
 
     EXPECT_EQ(true, true);
@@ -368,9 +375,10 @@ TEST(SubOrbitsTest, FCCTernaryProj) {
     /// prim -> prim_config.supercell() symmetry breaking
     DiffTransVec prim_scel_suborbit_generators;
     {
-      MakeSubOrbitGenerators gen(
+      MakeSubOrbitGenerators<sym::CopyApplyDefault_f> gen(
         prim_config.prim().factor_group(),
-        prim_config.supercell().factor_group());
+        prim_config.supercell().factor_group(),
+        sym::CopyApplyDefault_f());
       for(const auto &orbit : diff_trans_orbits) {
         gen(orbit, std::back_inserter(prim_scel_suborbit_generators));
       }
@@ -485,7 +493,7 @@ TEST(SubOrbitsTest, L12Proj) {
   jsonParser bspecs {bspecs_path};
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
-    primclex.prim(),
+    primclex.shared_prim(),
     bspecs,
     alloy_sites_filter,
     primclex.crystallography_tol(),
@@ -552,14 +560,16 @@ TEST(SubOrbitsTest, L12Proj) {
     Configuration bg_config = config.fill_supercell(bg_scel, primclex.prim().factor_group());
 
     ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> scel_sym_compare(
-      config.supercell().prim_grid(),
+      config.supercell().primclex().shared_prim(),
+      xtal::make_bring_within_f(config.supercell()),
       config.crystallography_tol());
 
 
     Configuration prim_config = bg_config.primitive().in_canonical_supercell();
     std::vector<PermuteIterator> prim_config_fg = prim_config.factor_group();
     ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> prim_sym_compare(
-      prim_config.supercell().prim_grid(),
+      prim_config.supercell().primclex().shared_prim(),
+      xtal::make_bring_within_f(prim_config.supercell()),
       prim_config.crystallography_tol());
 
     EXPECT_EQ(true, true);
@@ -590,9 +600,10 @@ TEST(SubOrbitsTest, L12Proj) {
     /// prim -> prim_config.supercell() symmetry breaking
     DiffTransVec prim_scel_suborbit_generators;
     {
-      MakeSubOrbitGenerators gen(
+      MakeSubOrbitGenerators<sym::CopyApplyDefault_f> gen(
         prim_config.prim().factor_group(),
-        prim_config.supercell().factor_group());
+        prim_config.supercell().factor_group(),
+        sym::CopyApplyDefault_f());
       for(const auto &orbit : diff_trans_orbits) {
         gen(orbit, std::back_inserter(prim_scel_suborbit_generators));
       }

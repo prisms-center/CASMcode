@@ -42,7 +42,7 @@ TEST(jsonDiffTransOrbitDatabase_Test, Test1) {
   fs::path difftrans_path = autotools::abs_srcdir() + "/tests/unit/kinetics/FCCTernary_diff_trans_0.json";
   jsonParser diff_trans_json {difftrans_path};
   auto end = make_prim_periodic_orbits(
-               primclex.prim(),
+               primclex.shared_prim(),
                diff_trans_json["cspecs"],
                alloy_sites_filter,
                primclex.crystallography_tol(),

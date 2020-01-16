@@ -35,6 +35,22 @@ namespace CASM {
 
     namespace ConfigIO {
 
+      /// Data structure for data import results
+      struct ImportData {
+
+        ImportData() :
+          preexisting(false),
+          copy_data(false),
+          copy_more(false),
+          is_best(false) {}
+
+        // base responsibility:
+        bool preexisting;
+        bool copy_data;
+        bool copy_more;
+        bool is_best;
+      };
+
       /// Data structure for mapping / import results
       struct Result {
 
@@ -60,25 +76,14 @@ namespace CASM {
 
         // If mapping failed, stores any error message that may be generated
         std::string fail_msg;
+
+        ImportData import_data;
       };
 
-      /// Data structure for data import results
-      struct ImportData {
 
-        ImportData() :
-          preexisting(false),
-          copy_data(false),
-          copy_more(false),
-          is_best(false) {}
+      GenericDatumFormatter<std::string, Result> initial_path();
 
-        // base responsibility:
-        bool preexisting;
-        bool copy_data;
-        bool copy_more;
-        bool is_best;
-      };
-
-      GenericDatumFormatter<std::string, Result> path();
+      GenericDatumFormatter<std::string, Result> final_path();
 
       GenericDatumFormatter<std::string, Result> fail_msg();
 
@@ -90,11 +95,11 @@ namespace CASM {
 
       GenericDatumFormatter<bool, Result> has_complete_data();
 
-      GenericDatumFormatter<bool, Result> preexisting_data(const std::map<std::string, ImportData> &data_results);
+      GenericDatumFormatter<bool, Result> preexisting_data();
 
-      GenericDatumFormatter<bool, Result> import_data(const std::map<std::string, ImportData> &data_results);
+      GenericDatumFormatter<bool, Result> import_data();
 
-      GenericDatumFormatter<bool, Result> import_additional_files(const std::map<std::string, ImportData> &data_results);
+      GenericDatumFormatter<bool, Result> import_additional_files();
 
       GenericDatumFormatter<double, Result> lattice_deformation_cost();
 
@@ -115,8 +120,7 @@ namespace CASM {
       /// Insert default formatters to dictionary, for 'casm import'
       void default_import_formatters(
         DataFormatterDictionary<Result> &dict,
-        PropertiesDatabase &db_props,
-        const std::map<std::string, ImportData> &data_results);
+        PropertiesDatabase &db_props);
 
       /// Insert default formatters to dictionary, for 'casm update'
       void default_update_formatters(
@@ -187,9 +191,9 @@ namespace CASM {
 
       /// \brief Copy files in the same directory as properties.calc.json into the
       ///        traning_data directory for a particular configuration
-      std::pair<bool, bool> cp_files(ConfigIO::Result &res,
-                                     bool dry_run,
-                                     bool copy_additional_files) const;
+      void cp_files(ConfigIO::Result &res,
+                    bool dry_run,
+                    bool copy_additional_files) const;
 
     private:
       const PrimClex &m_primclex;

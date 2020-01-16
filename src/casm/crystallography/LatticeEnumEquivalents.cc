@@ -1,10 +1,12 @@
 #include "casm/crystallography/LatticeEnumEquivalents.hh"
 #include "casm/crystallography/Lattice_impl.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/symmetry/SymTools.hh"
 #include "casm/symmetry/SymTools_impl.hh"
 
 namespace CASM {
   namespace xtal {
+    using sym::copy_apply;    //TODO: Template base classes still expecting CASM::copy_apply
 
     namespace {
 

@@ -6,6 +6,9 @@
 
 namespace CASM {
 
+  template <typename Base>
+  class CopyApplyWithPrim_crtp;
+
   // --- OccupationTransformation ---
   //
   // should rename:
@@ -26,11 +29,19 @@ namespace CASM {
 
   /// Traits necessary for SymCompare
   template<>
+  struct traits<OccupationTransformation> {
+    template <typename Base>
+    using copy_apply_crtp_type = CopyApplyWithPrim_crtp<Base>;
+  };
+
+  template<>
   struct traits<OccPerturbation> {
     typedef OccupationTransformation Element;
     typedef OccPerturbationInvariants InvariantsType;
     typedef Index size_type;
     static xtal::UnitCellCoord position(const OccPerturbation &perturb);
+    template <typename Base>
+    using copy_apply_crtp_type = CopyApplyWithPrim_crtp<Base>;
   };
 
   typedef PrimPeriodicSymCompare<OccPerturbation> PrimPeriodicOccPerturbSymCompare;

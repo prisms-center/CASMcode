@@ -1,110 +1,106 @@
-#include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/basis_set/DoF.hh"
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/Site.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/symmetry/SymBasisPermute.hh"
-#include "casm/symmetry/SymOp.hh"
 
 namespace CASM {
   namespace xtal {
 
-    /// Convert lattice point a unitcell
-    UnitCell make_unitcell(Coordinate const &lattice_point) {
-      return UnitCell(lround(lattice_point.const_frac()));
+    //TODO: Make this take a tolerance
+    UnitCell UnitCell::from_coordinate(Coordinate const &lattice_point) {
+      Eigen::Vector3l rounded_lattice_point = lround(lattice_point.const_frac());
+      Eigen::Vector3d round_error = lattice_point.const_frac() - rounded_lattice_point.cast<double>();
+
+      /* auto unscaled_round_error = lattice_point.const_frac() - rounded_lattice_point.cast<double>(); */
+      /* auto round_error = lattice_point.lattice().lat_column_mat()*unscaled_round_error; //scale the error proportionally to the length of the vector */
+
+      double tol = lattice_point.lattice().tol();
+      if(!almost_zero(round_error(0), tol) || !almost_zero(round_error(1), tol) || !almost_zero(round_error(2), tol)) {
+        std::cerr << round_error << std::endl;
+        UnitCell::_throw_large_rounding_error();
+      }
+
+      return UnitCell(rounded_lattice_point);
     }
 
-    UnitCellCoord::UnitCellCoord(const UnitType &unit, const Coordinate &coord, double tol) : m_unit(&unit) {
-      Coordinate coord_in_unit(unit.lattice());
-      coord_in_unit.cart() = coord.cart();
-      for(Index b = 0; b < unit.basis().size(); ++b) {
-        // Standard debugging statements when things go wrong - Please leave in
-        // std::cout << "Coord" << coord_in_unit.const_frac() <<std::endl;
-        // std::cout << "b" << unit.basis[b].const_frac() <<std::endl;
-        auto diff = coord_in_unit - unit.basis()[b];
-        // std::cout << "diff" << diff.const_frac() <<std::endl;
-        Coordinate tmp = diff;
-        tmp.frac() = round(diff.const_frac());
+    UnitCell UnitCell::from_cartesian(const Eigen::Vector3d &cartesian_coord, const Lattice &tiling_unit) {
+      Coordinate as_coord(cartesian_coord, tiling_unit, CART);
+      return UnitCell::from_coordinate(as_coord);
+    }
 
-        // std::cout << "tmp" << tmp.const_frac() <<std::endl;
-        // std::cout << "error is " << (diff - tmp).const_cart().norm() << "tol is " << tol<< std::endl;
-        if((diff - tmp).const_cart().norm() < tol) {
-          *this = UnitCellCoord(unit, b, lround(diff.const_frac()));
-          return;
+    Coordinate UnitCell::coordinate(const Lattice &tiling_unit) const {
+      return Coordinate(this->cast<double>(), tiling_unit, FRAC);
+    }
+
+    //TODO: Make this take a tolerance
+    UnitCell UnitCell::reset_tiling_unit(const Lattice &current_tiling_unit, const Lattice &new_tiling_unit) const {
+      auto as_coord = this->coordinate(current_tiling_unit);
+      as_coord.set_lattice(new_tiling_unit, CART);
+      return UnitCell::from_coordinate(as_coord);
+    }
+
+    //************************************************************************************************************//
+
+    UnitCellCoord UnitCellCoord::from_coordinate(const PrimType &prim, const Coordinate &coord, double tol) {
+      Coordinate coord_in_prim(prim.lattice());
+      coord_in_prim.cart() = coord.cart();
+
+      for(Index b = 0; b < prim.basis().size(); ++b) {
+        if(coord_in_prim.min_dist(prim.basis(b)) < tol) {
+          UnitCell coord_unitcell(lround(coord_in_prim.const_frac() - prim.basis(b).const_frac()));
+          return UnitCellCoord(b, coord_unitcell);
         }
       }
 
-      throw std::runtime_error("Error in 'UnitCellCoord(CoordType coord, const StrucType& struc, double tol)'\n"
-                               "  No matching basis site found.");
-    }
-
-    /// \brief Access the Lattice
-    const Lattice &UnitCellCoord::lattice() const {
-      return unit().lattice();
+      throw std::runtime_error("Error constructing UnitCellCoord. No basis site could be found within the given tolerance.");
     }
 
     /// \brief Get corresponding coordinate
-    Coordinate UnitCellCoord::coordinate() const {
-      return site();
+    Coordinate UnitCellCoord::coordinate(const PrimType &prim) const {
+      return site(prim);
     }
 
-    UnitCellCoord::operator Coordinate() const {
-      return coordinate();
+    bool UnitCellCoord::_is_compatible_with_prim(const PrimType &prim) const {
+      return this->sublattice() < prim.basis().size();
+    }
+
+    void UnitCellCoord::_throw_incompatible_primitive_cell() {
+      throw std::runtime_error("Error in UnitCellCoord. Sublattice index out of range.");
     }
 
     /// \brief Get corresponding site
-    Site UnitCellCoord::site() const {
-      if(sublat() < 0 || sublat() >= unit().basis().size()) {
-        unit().print_xyz(std::cout);
-        std::cerr << "CRITICAL ERROR: In BasicStructure<CoordType>::get_site(), UnitCellCoord " << *this
-                  << " is out of bounds!\n"
-                  << "                Cannot index basis, which contains " << unit().basis().size() << " objects.\n";
-        throw std::runtime_error("Error: in 'UnitCellCoord::site()': Cannot convert UnitCellCoord to Site");
+    Site UnitCellCoord::site(const PrimType &prim) const {
+      if(!this->_is_compatible_with_prim(prim)) {
+        UnitCellCoord::_throw_incompatible_primitive_cell();
       }
-      return unit().basis()[sublat()] + Coordinate(unitcell().cast<double>(), unit().lattice(), FRAC);
+      return prim.basis()[this->sublattice()] + this->unitcell().coordinate(prim.lattice());
     }
 
     /// \brief Get reference to corresponding sublattice site in the unit structure
-    const Site &UnitCellCoord::sublat_site() const {
-      if(sublat() < 0 || sublat() >= unit().basis().size()) {
-        unit().print_xyz(std::cout);
-        std::cerr << "CRITICAL ERROR: In BasicStructure<CoordType>::get_site(), UnitCellCoord " << *this
-                  << " is out of bounds!\n"
-                  << "                Cannot index basis, which contains " << unit().basis().size() << " objects.\n";
-        throw std::runtime_error("Error: in 'UnitCellCoord::site()': Cannot convert UnitCellCoord to Site");
+    const Site &UnitCellCoord::sublattice_site(const PrimType &prim) const {
+      if(!this->_is_compatible_with_prim(prim)) {
+        UnitCellCoord::_throw_incompatible_primitive_cell();
       }
-      return unit().basis()[sublat()];
+      return prim.basis()[sublattice()];
     }
 
-    UnitCellCoord &UnitCellCoord::apply_sym(const CASM::SymOp &op) {
-
-      // transform using stored SymBasisPermute representation
-      const SymBasisPermute &rep = *op.get_basis_permute_rep(unit().basis_permutation_symrep_ID());
-      unitcell() = rep.matrix() * unitcell() + rep[sublat()].unitcell();
-      sublat() = rep[sublat()].sublat();
-
-      // additional translations (such as needed for supercell factor groups),
-      // are stored in SymOp::integral_tau() (in cartesian coordinates)
-      // this converts that to fractional coordinates and adds it to this->unitcell()
-      unitcell() += lround(unit().lattice().inv_lat_column_mat() * op.integral_tau());
-
-      return *this;
+    Coordinate make_superlattice_coordinate(const UnitCell &ijk, const Lattice &tiling_unit, const Lattice &superlattice) {
+      Coordinate tcoord = ijk.coordinate(tiling_unit);
+      tcoord.set_lattice(superlattice, CART);
+      return tcoord;
     }
 
-    UnitCellCoord UnitCellCoord::copy_apply(const CASM::SymOp &op) const {
-      UnitCellCoord result(*this);
-      result.apply_sym(op);
-      return result;
+    Coordinate make_superlattice_coordinate(const UnitCell &ijk, const Superlattice &superlattice) {
+      return make_superlattice_coordinate(ijk, superlattice.prim_lattice(), superlattice.superlattice());
     }
-
   } // namespace xtal
 
   /// \brief Print to json as [b, i, j, k]
   jsonParser &to_json(const xtal::UnitCellCoord &ucc_val, jsonParser &fill_json) {
     fill_json.put_array();
-    fill_json.push_back(ucc_val.sublat());
+    fill_json.push_back(ucc_val.sublattice());
     fill_json.push_back(ucc_val.unitcell()(0));
     fill_json.push_back(ucc_val.unitcell()(1));
     fill_json.push_back(ucc_val.unitcell()(2));
@@ -112,21 +108,33 @@ namespace CASM {
     return fill_json;
   }
 
-  /// \brief Read from json [b, i, j, k], using 'unit' for UnitCellCoord::unit()
-  UnitCellCoord jsonConstructor<UnitCellCoord>::from_json(const jsonParser &json, const xtal::BasicStructure<xtal::Site> &unit) {
-    xtal::UnitCellCoord coord(unit);
-    CASM::from_json(coord, json);
-    return coord;
-  }
-
   /// \brief Read from json [b, i, j, k], assuming fill_value.unit() is already set
-  void from_json(UnitCellCoord &fill_value, const jsonParser &read_json) {
+  void from_json(xtal::UnitCellCoord &fill_value, const jsonParser &read_json) {
 
-    fill_value.sublat() = read_json[0].get<Index>();
-    fill_value.unitcell()(0) = read_json[1].get<Index>();
-    fill_value.unitcell()(1) = read_json[2].get<Index>();
-    fill_value.unitcell()(2) = read_json[3].get<Index>();
+    auto b = read_json[0].get<Index>();
+    auto i = read_json[1].get<Index>();
+    auto j = read_json[2].get<Index>();
+    auto k = read_json[3].get<Index>();
+
+    fill_value = xtal::UnitCellCoord(b, i, j, k);
 
     return;
   }
 } // namespace CASM
+
+namespace std {
+  std::size_t hash<CASM::xtal::UnitCell>::operator()(const CASM::xtal::UnitCell &value) const {
+    std::size_t seed = value.size();
+    for(int i = 0; i < 3; ++i) {
+      seed ^= value(i) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
+    return seed;
+  }
+
+  std::size_t hash<CASM::xtal::UnitCellCoord>::operator()(const CASM::xtal::UnitCellCoord &value) const {
+    const auto &uc = value.unitcell();
+    auto seed = std::hash<CASM::xtal::UnitCell>()(uc);
+    seed ^= value.sublattice() + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    return seed;
+  }
+} // namespace std

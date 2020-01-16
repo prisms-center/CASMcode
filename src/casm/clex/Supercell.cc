@@ -1,8 +1,6 @@
 #include "casm/clex/Supercell_impl.hh"
 
-//#include <math.h>
 #include <vector>
-//#include <stdlib.h>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/lexical_cast.hpp>
@@ -13,6 +11,7 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/crystallography/CanonicalForm.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/LatticePointWithin.hh"
 #include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/clex/PrimClex.hh"
@@ -36,7 +35,7 @@ namespace CASM {
     return *A < *B;
   }
 
-  //Copy constructor is needed for proper initialization of m_prim_grid
+  //Copy constructor is needed for proper initialization of supercell sym info
   Supercell::Supercell(const Supercell &RHS) :
     m_primclex(&RHS.primclex()),
     m_sym_info(make_supercell_sym_info(prim(), RHS.lattice())),
@@ -78,12 +77,12 @@ namespace CASM {
   /// \brief Return the sublattice index for a linear index
   ///
   /// Linear indices are grouped by sublattice, then ordered as determined by
-  /// PrimGrid. This function is equivalent to:
+  /// xtal::OrderedLatticePointGenerator. This function is equivalent to:
   /// \code
   /// linear_index / volume();
   /// \endcode
   Index Supercell::sublat(Index linear_index) const {
-    return prim_grid().sublat(linear_index);
+    return this->sym_info().unitcellcoord_index_converter()[linear_index].sublattice();
   }
 
   /// \brief Given a Coordinate and tolerance, return linear index into Configuration
@@ -100,38 +99,30 @@ namespace CASM {
   Index Supercell::linear_index(const Coordinate &coord, double tol) const {
     Coordinate tcoord(coord);
     tcoord.within();
-    return linear_index(UnitCellCoord(prim(), coord, tol));
+    return linear_index(UnitCellCoord::from_coordinate(this->primclex().prim(), coord, tol));
   }
 
   /// \brief Return the linear index corresponding to integral coordinates
   ///
   /// Linear indices are grouped by sublattice, then ordered as determined by
-  /// PrimGrid. This function is equivalent to:
-  /// \code
-  /// bijk[0] * volume() + prim_grid().find(bijk.unitcell());
-  /// \endcode
+  /// xtal::OrderedLatticePointGenerator.
   Index Supercell::linear_index(const UnitCellCoord &bijk) const {
-    return bijk[0] * volume() + prim_grid().find(bijk.unitcell());
+    return this->sym_info().unitcellcoord_index_converter()[bijk];
   }
 
   /// \brief Return the coordinate corresponding to linear index in the supercell
   ///
   Coordinate Supercell::coord(Index linear_index) const {
-    Coordinate tcoord(prim_grid().scel_coord(linear_index % volume()));
-    tcoord.cart() += prim().basis()[sublat(linear_index)].cart();
-    return tcoord;
-    // return uccoord(linear_index).coordinate();
+    UnitCellCoord linear_index_ucc = this->sym_info().unitcellcoord_index_converter()[linear_index];
+    return linear_index_ucc.coordinate(this->prim());
   }
 
   /// \brief Return the integral coordinates corresponding to a linear index
   ///
   /// Linear indices are grouped by sublattice, then ordered as determined by
-  /// PrimGrid. This function is equivalent to:
-  /// \code
-  /// UnitCellCoord(prim(), sublat(linear_index), prim_grid().unitcell(linear_index % volume()))
-  /// \endcode
+  /// xtal::OrderedLatticePointGenerator.
   UnitCellCoord Supercell::uccoord(Index linear_index) const {
-    return UnitCellCoord(prim(), sublat(linear_index), prim_grid().unitcell(linear_index % volume()));
+    return this->sym_info().unitcellcoord_index_converter()[linear_index];
   }
 
   /// \brief returns Supercell-compatible configdof with zeroed DoF values and user-specified tolerance
@@ -157,13 +148,9 @@ namespace CASM {
   }
 
 
-  const PrimGrid &Supercell::prim_grid() const {
-    return sym_info().prim_grid();
-  }
-
   ///Return number of primitive cells that fit inside of *this
   Index Supercell::volume() const {
-    return prim_grid().size();
+    return this->sym_info().unitcell_index_converter().total_sites();
   }
 
   Index Supercell::basis_size() const {
@@ -175,12 +162,13 @@ namespace CASM {
   }
 
   Eigen::Matrix3i Supercell::transf_mat() const {
-    return iround(prim_grid().trans_mat());
+    return this->sym_info().transformation_matrix().cast<int>();
+    /* return iround(this->sym_info().transformation_matrix()); */
     //return CASM::transf_mat(primclex().prim().lattice(), lattice(), primclex().crystallography_tol());
   }
 
   const Lattice &Supercell::lattice() const {
-    return prim_grid().scel_lattice();
+    return this->sym_info().supercell_lattice();
   }
 
   /// \brief Returns the SuperNeighborList
@@ -195,7 +183,7 @@ namespace CASM {
     if(!m_nlist) {
       m_nlist_size_at_construction = primclex().nlist().size();
       m_nlist = notstd::make_cloneable<SuperNeighborList>(
-                  prim_grid(),
+                  this->sym_info().superlattice(),
                   primclex().nlist()
                 );
     }
@@ -370,7 +358,7 @@ namespace CASM {
 
     // generate scel lattice, and put in niggli form
     Index fg_op_index = boost::lexical_cast<Index>(tokens[1]);
-    Lattice hnf_lat = copy_apply(
+    Lattice hnf_lat = sym::copy_apply(
                         primclex.prim().factor_group()[fg_op_index],
                         make_supercell(primclex, tokens[0]).lattice());
     Lattice niggli_lat = niggli(hnf_lat, primclex.crystallography_tol());
@@ -414,7 +402,7 @@ namespace CASM {
   }
 
   Supercell copy_apply(const SymOp &op, const Supercell &scel) {
-    return Supercell(&scel.primclex(), copy_apply(op, scel.lattice()));
+    return Supercell(&scel.primclex(), sym::copy_apply(op, scel.lattice()));
   }
 
   Eigen::Matrix3i transf_mat(const Lattice &prim_lat, const Lattice &super_lat, double tol) {
@@ -464,5 +452,11 @@ namespace CASM {
     return CASM::generate_name(transf_mat(prim.lattice(), xtal::canonical::equivalent(superlat, pg), prim.lattice().tol()));
   }
 
+  namespace xtal {
+    IntegralCoordinateWithin_f make_bring_within_f(const Supercell &scel) {
+      IntegralCoordinateWithin_f bring_within_f(scel.prim().lattice(), scel.lattice());
+      return bring_within_f;
+    }
+  }
 
 }

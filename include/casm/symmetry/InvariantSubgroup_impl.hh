@@ -7,6 +7,7 @@
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/clusterography/ClusterSymCompare.hh"
 #include "casm/clex/Supercell.hh"
+#include "casm/clex/PrimClex.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 
 namespace CASM {
@@ -23,7 +24,7 @@ namespace CASM {
   /// SymGroup result = generating_grp;
   /// result.clear();
   /// for(const auto &op : generating_grp) {
-  ///   if(sym_compare.equal(e, sym_compare.prepare(copy_apply(op, e)))) {
+  ///   if(sym_compare.equal(e, sym_compare.prepare(sym_compare.copy_apply(op, e)))) {
   ///    result.push_back(sym_compare.translation(element.prim())*op);
   ///   }
   /// }
@@ -37,7 +38,7 @@ namespace CASM {
     SymGroup result = generating_grp;
     result.clear();
     for(const auto &op : generating_grp) {
-      if(sym_compare.equal(e, sym_compare.prepare(copy_apply(op, e)))) {
+      if(sym_compare.equal(e, sym_compare.prepare(sym_compare.copy_apply(op, e)))) {
         result.push_back(sym_compare.spatial_transform()*op);
       }
     }
@@ -108,17 +109,18 @@ namespace CASM {
     PermuteIterator end) {
 
     ScelPeriodicSymCompare<Element> sym_compare(
-      scel.prim_grid(),
+      scel.primclex().shared_prim(),
+      xtal::make_bring_within_f(scel),
       scel.crystallography_tol());
     Element e(sym_compare.prepare(element));
     std::vector<PermuteIterator> result;
     Coordinate coord(scel.prim().lattice());
     auto it = begin;
     while(it != end) {
-      auto test = sym_compare.prepare(copy_apply(it.sym_op(), e));
+      auto test = sym_compare.prepare(sym_compare.copy_apply(it.sym_op(), e));
       if(sym_compare.equal(test, e)) {
         coord.cart() = sym_compare.spatial_transform().integral_tau();
-        auto trans_it = scel.sym_info().permute_it(0, xtal::make_unitcell(coord));
+        auto trans_it = scel.sym_info().permute_it(0, xtal::UnitCell::from_coordinate(coord));
         result.push_back(trans_it * it);
       }
       ++it;
@@ -146,17 +148,18 @@ namespace CASM {
     PermuteIteratorIt end) {
 
     ScelPeriodicSymCompare<Element> sym_compare(
-      scel.prim_grid(),
+      scel.primclex().shared_prim(),
+      xtal::make_bring_within_f(scel),
       scel.crystallography_tol());
     Element e(sym_compare.prepare(element));
     std::vector<PermuteIterator> result;
     Coordinate coord(scel.prim().lattice());
     auto it = begin;
     while(it != end) {
-      auto test = sym_compare.prepare(copy_apply(it->sym_op(), e));
+      auto test = sym_compare.prepare(sym_compare.copy_apply(it->sym_op(), e));
       if(sym_compare.equal(test, e)) {
         coord.cart() = sym_compare.spatial_transform().integral_tau();
-        auto trans_it = scel.sym_info().permute_it(0, make_unitcell(coord));
+        auto trans_it = scel.sym_info().permute_it(0, xtal::UnitCell::from_coordinate(coord));
         result.push_back(trans_it * (*it));
       }
       ++it;

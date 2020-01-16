@@ -1,18 +1,21 @@
 #include "casm/symmetry/PermuteIterator.hh"
 
-#include "casm/crystallography/PrimGrid.hh"
-#include "casm/crystallography/PrimGrid.hh"
-#include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/clex/Supercell.hh"
 #include "casm/casm_io/json/jsonParser.hh"
+#include "casm/clex/Supercell.hh"
+#include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/LinearIndexConverter.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/external/Eigen/src/Core/Matrix.h"
+#include <vector>
 
 namespace CASM {
+
 
   PermuteIterator::PermuteIterator() {}
 
   PermuteIterator::PermuteIterator(const PermuteIterator &iter) :
     m_sym_info(iter.m_sym_info),
-    m_trans_permute(&(m_sym_info->prim_grid().translation_permutations())),
+    m_trans_permute(&(m_sym_info->translation_permutations())),
     m_factor_group_index(iter.m_factor_group_index),
     m_translation_index(iter.m_translation_index) {
 
@@ -22,13 +25,9 @@ namespace CASM {
                                    Index _factor_group_index,
                                    Index _translation_index) :
     m_sym_info(&_sym_info),
-    m_trans_permute(&(m_sym_info->prim_grid().translation_permutations())),
+    m_trans_permute(&(m_sym_info->translation_permutations())),
     m_factor_group_index(_factor_group_index),
     m_translation_index(_translation_index) {
-  }
-
-  const PrimGrid &PermuteIterator::prim_grid() const {
-    return sym_info().prim_grid();
   }
 
   PermuteIterator &PermuteIterator::operator=(PermuteIterator iter) {
@@ -98,7 +97,9 @@ namespace CASM {
   }
 
   SymOp PermuteIterator::sym_op()const {
-    return prim_grid().sym_op(m_translation_index) * sym_info().factor_group()[m_factor_group_index];
+    UnitCell translation_lattice_site = this->sym_info().unitcell_index_converter()[this->translation_index()];
+    SymOp lattice_translation_op = SymOp::translation(make_superlattice_coordinate(translation_lattice_site, this->sym_info().superlattice()).cart());
+    return lattice_translation_op * sym_info().factor_group()[m_factor_group_index];
   }
 
   Index PermuteIterator::permute_ind(Index i) const {
@@ -171,9 +172,10 @@ namespace CASM {
     // Easiest way to get the new translation is just to compare the tau of the
     // inverse of the 'total' sym_op (described by *this), to the inverse of the
     // untranslated symop (described by m_fg_site_permutation_symrep.sym_op(it.m_factor_group_index))
-    // Result is the portion of the inverse sym_op that needs to be described by a prim_grid translation
-    it.m_translation_index =
-      prim_grid().find_cart(sym_op().inverse().tau() - factor_group()[it.factor_group_index()].tau());
+    // Result is the portion of the inverse sym_op that needs to be described by a lattice point translation
+    Eigen::Vector3d translation_cart = (sym_op().inverse().tau() - factor_group()[it.factor_group_index()].tau());
+    UnitCell translation_uc = UnitCell::from_cartesian(translation_cart, this->sym_info().prim_lattice());
+    it.m_translation_index = this->sym_info().unitcell_index_converter()[translation_uc];
 
     return it;
   }
@@ -186,16 +188,12 @@ namespace CASM {
     // Easiest way to get the new translation is just to compare the tau of the
     // 'total' sym_op (described by (*this).sym_op()*RHS.sym_op()), to the
     // untranslated symop product (described by m_fg_site_permutation_symrep.sym_op(it.factor_group_index()))
-    // Result is the portion of the product sym_op that needs to be described by a prim_grid translation
-    it.m_translation_index =
-      prim_grid().find_cart((sym_op() * RHS.sym_op()).tau() - factor_group()[it.factor_group_index()].tau());
+    // Result is the portion of the product sym_op that needs to be described by a lattice point translation
+    Eigen::Vector3d translation_cart = (sym_op() * RHS.sym_op()).tau() - factor_group()[it.factor_group_index()].tau();
+    UnitCell translation_uc = UnitCell::from_cartesian(translation_cart, this->sym_info().prim_lattice());
+    it.m_translation_index = this->sym_info().unitcell_index_converter()[translation_uc];
 
     return it;
-  }
-
-  std::ostream &operator<<(std::ostream &sout, const PermuteIterator &op) {
-    sout << "(" << op.factor_group_index() << ", " << op.prim_grid().unitcell(op.translation_index()).transpose() << ")";
-    return sout;
   }
 
   /// \brief Returns a SymGroup generated from a range of PermuteIterator
@@ -205,9 +203,9 @@ namespace CASM {
   /// - The result is sorted
   /// - The result uses the Supercell lattice for periodic comparisons
   template<typename PermuteIteratorIt>
-  SymGroup make_point_group(PermuteIteratorIt begin, PermuteIteratorIt end) {
+  SymGroup make_point_group(PermuteIteratorIt begin, PermuteIteratorIt end, const Lattice &supercell_lattice) {
     SymGroup result;
-    result.set_lattice(begin->prim_grid().scel_lattice());
+    result.set_lattice(supercell_lattice);
     for(; begin != end; ++begin) {
       Index f = begin->sym_op().index();
       Index i;
@@ -231,9 +229,9 @@ namespace CASM {
   /// - The result is sorted
   /// - The result uses the Supercell lattice for periodic comparisons
   template<typename PermuteIteratorIt>
-  SymGroup make_sym_group(PermuteIteratorIt begin, PermuteIteratorIt end) {
+  SymGroup make_sym_group(PermuteIteratorIt begin, PermuteIteratorIt end, const Lattice &supercell_lattice) {
     SymGroup sym_group;
-    sym_group.set_lattice(begin->prim_grid().scel_lattice());
+    sym_group.set_lattice(supercell_lattice);
     while(begin != end) {
       sym_group.push_back(begin->sym_op());
       ++begin;
@@ -244,23 +242,23 @@ namespace CASM {
 
   template SymGroup make_sym_group(
     PermuteIterator begin,
-    PermuteIterator end);
+    PermuteIterator end, const Lattice &supercell_lattice);
   template SymGroup make_sym_group(
     std::vector<PermuteIterator>::const_iterator begin,
-    std::vector<PermuteIterator>::const_iterator end);
+    std::vector<PermuteIterator>::const_iterator end, const Lattice &supercell_lattice);
   template SymGroup make_sym_group(
     std::vector<PermuteIterator>::iterator begin,
-    std::vector<PermuteIterator>::iterator end);
+    std::vector<PermuteIterator>::iterator end, const Lattice &supercell_lattice);
 
   template SymGroup make_point_group(
     PermuteIterator begin,
-    PermuteIterator end);
+    PermuteIterator end, const Lattice &supercell_lattice);
   template SymGroup make_point_group(
     std::vector<PermuteIterator>::const_iterator begin,
-    std::vector<PermuteIterator>::const_iterator end);
+    std::vector<PermuteIterator>::const_iterator end, const Lattice &supercell_lattice);
   template SymGroup make_point_group(
     std::vector<PermuteIterator>::iterator begin,
-    std::vector<PermuteIterator>::iterator end);
+    std::vector<PermuteIterator>::iterator end, const Lattice &supercell_lattice);
 
   void swap(PermuteIterator &a, PermuteIterator &b) {
     std::swap(a.m_sym_info, b.m_sym_info);

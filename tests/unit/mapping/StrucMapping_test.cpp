@@ -22,7 +22,7 @@ void print_mapping_nodes(std::set<xtal::MappingNode> const &set) {
               << "   translation: " << el.basis_node.translation.transpose() << "\n"
               << "   isometry: \n" << el.lat_node.isometry << "\n"
               << "   stretch: \n" << el.lat_node.stretch << "\n"
-              << "   parent: \n" << el.lat_node.parent.scel_lattice().lat_column_mat() << "\n"
+              << "   parent: \n" << el.lat_node.parent.superlattice().lat_column_mat() << "\n"
               << "   cost_mat: \n" << el.basis_node.cost_mat << "\n"
               << "   partitioned: " << el.is_partitioned << "\n"
               << "   forced_on: \n";
@@ -31,8 +31,8 @@ void print_mapping_nodes(std::set<xtal::MappingNode> const &set) {
     std::cout << "   irow: " << el.basis_node.irow << "\n"
               << "   icol: " << el.basis_node.icol << "\n"
               << "   assignment: " << el.basis_node.assignment << "\n"
-              << "   displacement: \n" << el.displacement << "\n"
-              << "   tot assignment: " << el.permutation << "\n\n-----\n\n";
+              << "   displacement: \n" << el.atom_displacement << "\n"
+              << "   tot assignment: " << el.atom_permutation << "\n\n-----\n\n";
   }
 }
 // Generate cubic cell with lat param a and two atoms of species "A" separated by d along [111]

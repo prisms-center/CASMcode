@@ -37,7 +37,7 @@ TEST(LocalClusterExpansionTest, Test0) {
 
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   make_prim_periodic_orbits(
-    primclex.prim(),
+    primclex.shared_prim(),
     bspecs,
     alloy_sites_filter,
     primclex.crystallography_tol(),
@@ -112,8 +112,8 @@ TEST(LocalClusterExpansionTest, Test0) {
   SymGroup generating_grp {
     trans.invariant_subgroup(
       primclex.prim().factor_group(),
-      PrimPeriodicDiffTransSymCompare(primclex.crystallography_tol()))};
-  LocalSymCompare<IntegralCluster> sym_compare(primclex.crystallography_tol());
+      PrimPeriodicDiffTransSymCompare(primclex.shared_prim(), primclex.crystallography_tol()))};
+  LocalSymCompare<IntegralCluster> sym_compare(primclex.shared_prim(), primclex.crystallography_tol());
 
   make_local_orbits(
     trans,

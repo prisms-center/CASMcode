@@ -76,7 +76,7 @@ namespace CASM {
       MappingNode from_node = *from_set.begin();
       MappingNode to_node = *to_set.begin();
 
-      auto scel_ptr = std::make_shared<Supercell>(&(mapper.primclex()), from_node.lat_node.parent.scel_lattice());
+      auto scel_ptr = std::make_shared<Supercell>(&(mapper.primclex()), from_node.lat_node.parent.superlattice());
       std::vector<UnitCellCoord> from_uccoords;
       std::vector<UnitCellCoord> to_uccoords;
 
@@ -87,7 +87,8 @@ namespace CASM {
 
       Coordinate t_shift =
         copy_apply(SymOp::point_op(from_node.lat_node.isometry), first_site)
-        - Coordinate(scel_ptr->uccoord(find_index(from_node.atom_permutation, 0)));
+        - Coordinate(scel_ptr->uccoord(find_index(from_node.atom_permutation, 0)).coordinate(this->primclex().prim()));
+
       t_shift.set_lattice(primclex().prim().lattice(), CART);
 
       //std::cout << "t shift " << t_shift.const_frac() << std::endl;
@@ -163,7 +164,8 @@ namespace CASM {
       }
       //std::cout << "to config is " << std::endl << non_canon_to_config << std::endl;
       //NEED TO SET ORBIT NAME OF DTC SOMEHOW FOR NEW DIFF TRANS
-      PrimPeriodicDiffTransSymCompare sym_c {primclex().crystallography_tol()};
+
+      PrimPeriodicDiffTransSymCompare sym_c {this->primclex().shared_prim(), primclex().crystallography_tol()};
       OrbitGenerators<PrimPeriodicDiffTransOrbit> generators(primclex().prim().factor_group(), sym_c);
       generators.insert(sym_c.prepare(diff_trans));
       std::vector<PrimPeriodicDiffTransOrbit> dt_orbits;
@@ -222,19 +224,20 @@ namespace CASM {
                                                                    std::vector<UnitCellCoord> &to_uccoords,
                                                                    std::set<UnitCellCoord> &vacancy_from,
                                                                    std::set<UnitCellCoord> &vacancy_to) const {
+      auto bring_within_f = xtal::make_bring_within_f(scel);
       // For image 00 set reference of POSCAR index to  basis site linear index
       // tolerance for UnitCellCoord mapping has 20% wiggle room from max displacement
       // instead of introducing wiggle room maybe take max disp between from map and to map
       int from_count = 0;
       for(auto &site : from.basis()) {
-        from_uccoords.push_back(scel.prim_grid().within(_site_to_uccoord(site, primclex(), uccoord_tol)));
+        from_uccoords.push_back(bring_within_f(_site_to_uccoord(site, primclex(), uccoord_tol)));
         from_count++;
       }
 
       // For last image  find POSCAR index to basis site linear index
       int to_count = 0;
       for(auto &site : to.basis()) {
-        to_uccoords.push_back(scel.prim_grid().within(_site_to_uccoord(site, primclex(), uccoord_tol)));
+        to_uccoords.push_back(bring_within_f(_site_to_uccoord(site, primclex(), uccoord_tol)));
         to_count++;
       }
       std::vector<Index> moving_atoms;
@@ -264,7 +267,7 @@ namespace CASM {
     }
 
     UnitCellCoord DiffTransConfigMapper::_site_to_uccoord(const Site &site, const PrimClex &pclex, double tol) const {
-      return UnitCellCoord(pclex.prim(), site, tol);
+      return UnitCellCoord::from_coordinate(pclex.prim(), site, tol);
     }
 
     void DiffTransConfigMapper::_precondition_from_and_to(const Eigen::Matrix3d &cart_op, const Eigen::Matrix3d &strain, const Eigen::Vector3d &trans, BasicStructure<Site> &from, BasicStructure<Site> &to) const {
@@ -323,14 +326,14 @@ namespace CASM {
         diff_trans.occ_transform().emplace_back(*vacancy_from.begin(), 0, 0);
       }
       for(int i = 0; i < moving_atoms.size(); i++) {
-        std::vector<std::string> allowed_from_occs = primclex().prim().basis()[from_coords[moving_atoms[i]].sublat()].allowed_occupants();
+        std::vector<std::string> allowed_from_occs = primclex().prim().basis()[from_coords[moving_atoms[i]].sublattice()].allowed_occupants();
         Index from_occ_index = std::distance(allowed_from_occs.begin(),
                                              std::find(allowed_from_occs.begin(),
                                                        allowed_from_occs.end(),
                                                        from_struc.basis()[moving_atoms[i]].occ_name()));
         //for now pos is 0 because Molecules are hard
         Kinetics::SpeciesLocation from_loc(from_coords[moving_atoms[i]], from_occ_index, 0);
-        std::vector<std::string> allowed_to_occs = primclex().prim().basis()[to_coords[moving_atoms[i]].sublat()].allowed_occupants();
+        std::vector<std::string> allowed_to_occs = primclex().prim().basis()[to_coords[moving_atoms[i]].sublattice()].allowed_occupants();
         Index to_occ_index = std::distance(allowed_to_occs.begin(),
                                            std::find(allowed_to_occs.begin(),
                                                      allowed_to_occs.end(),
@@ -349,10 +352,10 @@ namespace CASM {
         }
       }
       if(vacancy_from.size() && vacancy_to.size()) {
-        std::vector<std::string> allowed_from_occs = primclex().prim().basis()[vacancy_from.begin()->sublat()].allowed_occupants();
+        std::vector<std::string> allowed_from_occs = primclex().prim().basis()[vacancy_from.begin()->sublattice()].allowed_occupants();
         Index from_occ_index = std::distance(allowed_from_occs.begin(), std::find(allowed_from_occs.begin(), allowed_from_occs.end(), "Va"));
         Kinetics::SpeciesLocation from_loc(*vacancy_from.begin(), from_occ_index, 0);
-        std::vector<std::string> allowed_to_occs = primclex().prim().basis()[vacancy_to.begin()->sublat()].allowed_occupants();
+        std::vector<std::string> allowed_to_occs = primclex().prim().basis()[vacancy_to.begin()->sublattice()].allowed_occupants();
         Index to_occ_index = std::distance(allowed_to_occs.begin(), std::find(allowed_to_occs.begin(), allowed_to_occs.end(), "Va"));
         Kinetics::SpeciesLocation to_loc(*vacancy_to.begin(), to_occ_index, 0);
         diff_trans.species_traj().emplace_back(from_loc, to_loc);

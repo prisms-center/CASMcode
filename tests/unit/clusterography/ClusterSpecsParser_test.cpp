@@ -1,24 +1,28 @@
 #include "gtest/gtest.h"
+#include <memory>
 
 /// What is being tested:
+#include "casm/clex/Supercell.hh"
 #include "casm/clusterography/ClusterSpecsParser_impl.hh"
 
 /// What is being used to test it:
-#include "casm/crystallography/Molecule.hh"
-#include "casm/crystallography/Structure.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/clusterography/ClusterOrbits_impl.hh"
-#include "casm/clusterography/IntegralCluster.hh"
-#include "casm/clusterography/ClusterSymCompare_impl.hh"
-#include "casm/kinetics/DiffusionTransformation_impl.hh"
-#include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
-#include "casm/casm_io/json/jsonFile.hh"
-#include "casm/completer/Handlers.hh"
 #include "FCCTernaryProj.hh"
-#include "ZrOProj.hh"
+#include "TestConfiguration.hh"
 #include "TestOrbits.hh"
 #include "TestSupercell.hh"
-#include "TestConfiguration.hh"
+#include "ZrOProj.hh"
+#include "casm/casm_io/json/jsonFile.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/clusterography/ClusterSymCompare_impl.hh"
+#include "casm/clusterography/IntegralCluster.hh"
+#include "casm/completer/Handlers.hh"
+#include "casm/crystallography/Molecule.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/kinetics/DiffusionTransformationEnum_impl.hh"
+#include "casm/kinetics/DiffusionTransformation_impl.hh"
+#include "casm/misc/CRTPBase.hh"
+#include "casm/symmetry/ElementSymApply.hh"
 
 using namespace CASM;
 
@@ -33,7 +37,7 @@ namespace {
       parser(notstd::make_unique<PrimPeriodicClustersByMaxLength>(
                primclex,
                primclex.prim().factor_group(),
-               PrimPeriodicSymCompare<IntegralCluster>(primclex),
+               PrimPeriodicSymCompare<IntegralCluster>(primclex.shared_prim(), primclex.crystallography_tol()),
                input,
                fs::path(),
                true)) {}
@@ -82,21 +86,22 @@ namespace {
     }
   };
 
-  void local_point_clusters_test(
-    const test::TestSupercell &ts,
-    const Kinetics::DiffusionTransformation &phenom) {
+  void
+  local_point_clusters_test(const test::TestSupercell &test_supercell,
+                            const Kinetics::DiffusionTransformation &phenom) {
 
     IntegralCluster phenom_sites = phenom.cluster();
 
-    std::vector<PermuteIterator> dt_permute_group = phenom.invariant_subgroup(ts.scel);
-    SymGroup dt_group = make_sym_group(dt_permute_group);
+    std::vector<PermuteIterator> dt_permute_group =
+      phenom.invariant_subgroup(test_supercell.scel);
+    SymGroup dt_group = make_sym_group(dt_permute_group, test_supercell.scel.sym_info().supercell_lattice());
 
     OrbitGenerators<WithinScelIntegralClusterOrbit> generators(
-      dt_group, ts.within_scel_sym_compare);
+      dt_group, test_supercell.within_scel_sym_compare);
 
-    for(Index l = 0; l < ts.scel.num_sites(); ++l) {
-      IntegralCluster el(ts.scel.primclex().prim());
-      el.elements().push_back(ts.scel.uccoord(l));
+    for(Index l = 0; l < test_supercell.scel.num_sites(); ++l) {
+      IntegralCluster el(test_supercell.scel.primclex().prim());
+      el.elements().push_back(test_supercell.scel.uccoord(l));
       generators.insert(el);
     }
 
@@ -108,33 +113,34 @@ namespace {
       count += orbit.size();
     }
 
-    EXPECT_EQ(count, ts.scel.num_sites());
+    EXPECT_EQ(count, test_supercell.scel.num_sites());
 
     OrbitPrinterOptions opt;
     opt.coord_type = CART;
     FullOrbitPrinter<IntegralCluster> orbit_printer(opt);
-    print_clust(local_point_orbits.begin(), local_point_orbits.end(), ts.scel.primclex().log(), orbit_printer);
-
+    print_clust(local_point_orbits.begin(), local_point_orbits.end(),
+                test_supercell.scel.primclex().log(), orbit_printer);
   }
 
-  void local_pair_clusters_test(
-    const test::TestSupercell &ts,
-    const Kinetics::DiffusionTransformation &phenom) {
+  void
+  local_pair_clusters_test(const test::TestSupercell &test_supercell,
+                           const Kinetics::DiffusionTransformation &phenom) {
 
     IntegralCluster phenom_sites = phenom.cluster();
 
-    std::vector<PermuteIterator> dt_permute_group = phenom.invariant_subgroup(ts.scel);
-    SymGroup dt_group = make_sym_group(dt_permute_group);
+    std::vector<PermuteIterator> dt_permute_group =
+      phenom.invariant_subgroup(test_supercell.scel);
+    SymGroup dt_group = make_sym_group(dt_permute_group, test_supercell.scel.sym_info().supercell_lattice());
 
     OrbitGenerators<WithinScelIntegralClusterOrbit> generators(
-      dt_group, ts.within_scel_sym_compare);
+      dt_group, test_supercell.within_scel_sym_compare);
 
-    for(Index l = 0; l < ts.scel.num_sites(); ++l) {
-      for(Index m = 0; m < ts.scel.num_sites(); ++m) {
+    for(Index l = 0; l < test_supercell.scel.num_sites(); ++l) {
+      for(Index m = 0; m < test_supercell.scel.num_sites(); ++m) {
         if(l < m) {
-          IntegralCluster el(ts.scel.primclex().prim());
-          el.elements().push_back(ts.scel.uccoord(l));
-          el.elements().push_back(ts.scel.uccoord(m));
+          IntegralCluster el(test_supercell.scel.primclex().prim());
+          el.elements().push_back(test_supercell.scel.uccoord(l));
+          el.elements().push_back(test_supercell.scel.uccoord(m));
           generators.insert(el);
         }
       }
@@ -148,15 +154,15 @@ namespace {
       count += orbit.size();
     }
 
-    EXPECT_EQ(count, ts.scel.num_sites() * (ts.scel.num_sites() - 1) / 2);
+    EXPECT_EQ(count, test_supercell.scel.num_sites() *
+              (test_supercell.scel.num_sites() - 1) / 2);
 
     OrbitPrinterOptions opt;
     opt.coord_type = CART;
     FullOrbitPrinter<IntegralCluster> orbit_printer(opt);
-    print_clust(local_pair_orbits.begin(), local_pair_orbits.end(), ts.scel.primclex().log(), orbit_printer);
-
+    print_clust(local_pair_orbits.begin(), local_pair_orbits.end(),
+                test_supercell.scel.primclex().log(), orbit_printer);
   }
-
 }
 
 TEST(ClusterSpecsParserTest, PrimPeriodicClustersByMaxLengthTest) {
@@ -457,7 +463,7 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest) {
   //  }
 
   // generate local orbits (w/ scel symmetry) using a 3x3x3 standard FCC supercell (so 3x3x3x4 sites)
-  test::TestStandardFCCSupercell ts(primclex, 3, 3, 3);
+  test::TestStandardFCCSupercell fcc_supercell(primclex, 3, 3, 3);
 
   //print prototypes
   //  {
@@ -476,7 +482,7 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest) {
 
   // --- minimal ---
   {
-    auto parser = LocalParser(ts.scel, R"({
+    auto parser = LocalParser(fcc_supercell.scel, R"({
       "standard": {
         "orbit_branch_specs": {
           "1": {"cutoff_radius": 10.}
@@ -500,7 +506,7 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest) {
 
   // --- typical ---
   {
-    auto parser = LocalParser(ts.scel, R"({
+    auto parser = LocalParser(fcc_supercell.scel, R"({
       "standard": {
         "orbit_branch_specs": {
           "1": {"cutoff_radius": 3.},
@@ -530,7 +536,7 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest) {
 
   // --- typical, warning for max_length on brach 1 w/out max_length_including_phenomenal option ---
   {
-    auto parser = LocalParser(ts.scel, R"({
+    auto parser = LocalParser(fcc_supercell.scel, R"({
       "standard": {
         "orbit_branch_specs": {
           "1": {"max_length": 12.0, "cutoff_radius": 3.},
@@ -553,7 +559,7 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest) {
 
   // --- typical, error for nonincreasing ---
   {
-    auto parser = LocalParser(ts.scel, R"({
+    auto parser = LocalParser(fcc_supercell.scel, R"({
       "standard": {
         "orbit_branch_specs": {
           "1": {"cutoff_radius": 3.},
@@ -576,7 +582,7 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest) {
 
   // --- typical, w/ max_length_including_phenomenal ---
   {
-    auto parser = LocalParser(ts.scel, R"({
+    auto parser = LocalParser(fcc_supercell.scel, R"({
       "standard": {
         "orbit_branch_specs": {
           "max_length_including_phenomenal": true,
@@ -607,7 +613,7 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest) {
 
   // --- typical, w/ max_length_including_phenomenal && max_length="inf" (all clusters of branch in neighborhood) ---
   {
-    auto parser = LocalParser(ts.scel, R"({
+    auto parser = LocalParser(fcc_supercell.scel, R"({
       "standard": {
         "orbit_branch_specs": {
           "max_length_including_phenomenal": true,
@@ -639,7 +645,7 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest) {
 
   // --- w/ max_length_including_phenomenal, error for nonincreasing ---
   {
-    auto parser = LocalParser(ts.scel, R"({
+    auto parser = LocalParser(fcc_supercell.scel, R"({
       "standard": {
         "orbit_branch_specs": {
           "max_length_including_phenomenal": true,
@@ -663,7 +669,7 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest) {
 
   // --- custom orbit_branch_specs, equivalence_type=prim (default)  ---
   {
-    auto parser = LocalParser(ts.scel, R"({
+    auto parser = LocalParser(fcc_supercell.scel, R"({
       "standard": {
         "orbit_branch_specs": {
           "max_length_including_phenomenal": true,
@@ -843,7 +849,7 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest) {
 
   // --- custom orbit_specs, equivalence_type=prim (default)  ---
   {
-    auto parser = LocalParser(ts.scel, R"({
+    auto parser = LocalParser(fcc_supercell.scel, R"({
       "standard": {
         "orbit_branch_specs": {
           "max_length_including_phenomenal": true,
@@ -894,7 +900,10 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest) {
     EXPECT_EQ(parser->custom->data[0].orbit_specs->prototypes[0].include_subclusters, 1);
     EXPECT_EQ(parser->custom->data[0].orbit_specs->prototypes[0].cluster.size(), 1);
 
-    ScelPeriodicDiffTransSymCompare dt_scel_sym_compare(ts.scel);
+    ScelPeriodicDiffTransSymCompare dt_scel_sym_compare(
+      fcc_supercell.scel.primclex().shared_prim(),
+      xtal::make_bring_within_f(fcc_supercell.scel),
+      fcc_supercell.scel.crystallography_tol());
     // checks comparing input phenomenal cluster to test cluster
     // the input custom phenomenal cluster is to.diff_trans_orbits[0].prototype(), so
     // only clusters in orbit to.diff_trans_orbits[0] should be found
@@ -918,10 +927,12 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest) {
             auto &f = *it->phenom->prim_sym_compare;
             EXPECT_EQ(f.equal(f.prepare(copy_apply(op, *it->phenom->phenom)), f.prepare(equiv)), true);
 
-            std::vector<PermuteIterator> dt_permute_group = equiv.invariant_subgroup(ts.scel);
-            SymGroup dt_group = make_sym_group(dt_permute_group);
-            OrbitGenerators<ScelPeriodicIntegralClusterOrbit> test_gen(dt_group, ts.scel_sym_compare);
-            parser->insert_custom_generators(find_res, test_gen);
+            std::vector<PermuteIterator> dt_permute_group =
+              equiv.invariant_subgroup(fcc_supercell.scel);
+            SymGroup dt_group = make_sym_group(dt_permute_group, fcc_supercell.scel.sym_info().supercell_lattice());
+            OrbitGenerators<ScelPeriodicIntegralClusterOrbit> test_gen(
+              dt_group, fcc_supercell.scel_sym_compare);
+            parser->insert_custom_generators(find_res, test_gen, sym::CopyApplyWithPrim_f(primclex.shared_prim()));
 
             if(linear_orbit_index == 0) {
 
@@ -933,13 +944,15 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest) {
               auto gen_it = test_gen.elements.begin();
               {
                 // orbit of null cluster -> 1 equiv
-                ScelPeriodicIntegralClusterOrbit orbit(*gen_it++, dt_group, ts.scel_sym_compare);
+                ScelPeriodicIntegralClusterOrbit orbit(
+                  *gen_it++, dt_group, fcc_supercell.scel_sym_compare);
                 EXPECT_EQ(orbit.size(), 1);
               }
 
               {
                 // should generate 4 equivalents (there are 4NN of both sites in 1NN pair cluster)
-                ScelPeriodicIntegralClusterOrbit orbit(*gen_it++, dt_group, ts.scel_sym_compare);
+                ScelPeriodicIntegralClusterOrbit orbit(
+                  *gen_it++, dt_group, fcc_supercell.scel_sym_compare);
                 EXPECT_EQ(orbit.size(), 4);
               }
             }
@@ -974,11 +987,11 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest_Tet) {
 
 
   // generate local orbits (w/ scel symmetry) using a 4x3x3 standard FCC supercell (so 4x3x3x4 sites)
-  test::TestStandardFCCSupercell ts(primclex, 4, 3, 3);
+  test::TestStandardFCCSupercell fcc_supercell(primclex, 4, 3, 3);
 
   // --- custom orbit_specs, equivalence_type=scel, non-cubic supercell  ---
   {
-    auto parser = LocalParser(ts.scel, R"({
+    auto parser = LocalParser(fcc_supercell.scel, R"({
       "standard": {
         "orbit_branch_specs": {
           "max_length_including_phenomenal": true,
@@ -1060,7 +1073,10 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest_Tet) {
     EXPECT_EQ(parser->custom->data[1].orbit_specs->prototypes[0].include_subclusters, 1);
     EXPECT_EQ(parser->custom->data[1].orbit_specs->prototypes[0].cluster.size(), 1);
 
-    ScelPeriodicDiffTransSymCompare dt_scel_sym_compare(ts.scel);
+    ScelPeriodicDiffTransSymCompare diff_trans_scel_sym_compare(
+      fcc_supercell.scel.primclex().shared_prim(),
+      xtal::make_bring_within_f(fcc_supercell.scel),
+      fcc_supercell.scel.crystallography_tol());
     // checks comparing input phenomenal cluster to test cluster
     // the input custom phenomenal cluster is to.diff_trans_orbits[0].prototype(), so
     // 4/6 clusters in orbit to.diff_trans_orbits[0] should match the first custom phenom
@@ -1089,8 +1105,9 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest_Tet) {
           auto &f = *it->phenom->scel_sym_compare;
           EXPECT_EQ(f.equal(f.prepare(copy_apply(op, *it->phenom->phenom)), f.prepare(equiv)), true);
 
-          std::vector<PermuteIterator> dt_permute_group = equiv.invariant_subgroup(ts.scel);
-          SymGroup dt_group = make_sym_group(dt_permute_group);
+          std::vector<PermuteIterator> dt_permute_group =
+            equiv.invariant_subgroup(fcc_supercell.scel);
+          SymGroup dt_group = make_sym_group(dt_permute_group, fcc_supercell.scel.sym_info().supercell_lattice());
 
           if(&*it == &parser->custom->data[0]) {
             count[0]++;
@@ -1101,16 +1118,11 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest_Tet) {
             EXPECT_EQ(dt_group.size(), 8);
           }
 
-          //          log << "--- dt_group ---" << std::endl;
-          //          Index op_index = 0;
-          //          for(const auto& op: dt_group) {
-          //            log << op_index++ << ":\n" << std::endl;
-          //            log << "op.matrix(): \n" << op.matrix() << std::endl;
-          //            log << "op.tau(): " << op.tau().transpose() << std::endl << std::endl;
-          //          }
+          OrbitGenerators<ScelPeriodicIntegralClusterOrbit> test_gen(
+            dt_group, fcc_supercell.scel_sym_compare);
+          parser->insert_custom_generators(find_res, test_gen, sym::CopyApplyWithPrim_f(primclex.shared_prim()));
 
-          OrbitGenerators<ScelPeriodicIntegralClusterOrbit> test_gen(dt_group, ts.scel_sym_compare);
-          parser->insert_custom_generators(find_res, test_gen);
+
 
           // 2 elements (because default==include_subclusters -> null cluster)
           EXPECT_EQ(test_gen.elements.size(), 2);
@@ -1118,13 +1130,15 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest_Tet) {
           auto gen_it = test_gen.elements.begin();
           {
             // orbit of null cluster -> 1 equiv
-            ScelPeriodicIntegralClusterOrbit orbit(*gen_it++, dt_group, ts.scel_sym_compare);
+            ScelPeriodicIntegralClusterOrbit orbit(
+              *gen_it++, dt_group, fcc_supercell.scel_sym_compare);
             EXPECT_EQ(orbit.size(), 1);
           }
 
           {
             // should generate 4 equivalents (the 4 NN of both sites in 1NN pair cluster)
-            ScelPeriodicIntegralClusterOrbit orbit(*gen_it++, dt_group, ts.scel_sym_compare);
+            ScelPeriodicIntegralClusterOrbit orbit(
+              *gen_it++, dt_group, fcc_supercell.scel_sym_compare);
             EXPECT_EQ(orbit.size(), 4);
           }
         }

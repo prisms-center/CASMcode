@@ -140,7 +140,7 @@ namespace CASM {
       tlocal.reserve(_orbit.prototype().size());
       //Loop over sites
       for(Index i = 0; i < _orbit.prototype().size(); i++) {
-        tlocal.push_back(arg_vec[_orbit.prototype()[i].sublat()]);
+        tlocal.push_back(arg_vec[_orbit.prototype()[i].sublattice()]);
         tlocal.back().set_dof_IDs(std::vector<Index>(1, i));
       }
 

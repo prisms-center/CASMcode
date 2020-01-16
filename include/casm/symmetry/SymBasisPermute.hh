@@ -3,12 +3,12 @@
 
 #include <vector>
 #include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/symmetry/SymOp.hh"
 #include "casm/symmetry/SymOpRepresentation.hh"
 
 namespace CASM {
   namespace xtal {
     class Lattice;
-    class UnitCellCoord;
   }
   using xtal::Lattice;
   using xtal::UnitCellCoord;
@@ -35,13 +35,13 @@ namespace CASM {
   /// - So a UnitCellCoord, u, is transformed by a SymOp, op, like:
   ///   \code
   ///   const SymBasisPermute &rep = *op.get_basis_permute_rep(u.unit().basis_permutation_symrep_ID());
-  ///   u.unitcell() = rep.matrix()*u.unitcell() + rep.data()[u.sublat()].unitcell();
-  ///   u.sublat() = rep.data()[u.sublat()].sublat();
+  ///   u.unitcell() = rep.matrix()*u.unitcell() + rep.data()[u.sublattice()].unitcell();
+  ///   u.sublattice() = rep.data()[u.sublattice()].sublattice();
   ///   \endcode
   /// - Additional translations, such as those in supercell factor group operations,
   ///   may be stored in SymOp::integral_tau(). Those additional contributions
   ///   can be included with:
-  ///   - u.unitcell() += (u.unit().lattice().inv_lat_column_mat() * op.integral_tau()).cast<long>();
+  ///   - u.unitcell() += (prim.lattice().inv_lat_column_mat() * op.integral_tau()).cast<long>();
   ///
   class SymBasisPermute: public SymOpRepresentation {
   private:

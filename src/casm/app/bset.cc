@@ -186,21 +186,22 @@ namespace CASM {
           PrimPeriodicDiffTransOrbit dtorbit = *primclex.db<PrimPeriodicDiffTransOrbit>().find(orbitname);
 
           const SymGroup &prim_grp = primclex.prim().factor_group();
-          PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> dt_sym_compare(primclex.crystallography_tol());
+
+          PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> dt_sym_compare(primclex.shared_prim(), primclex.crystallography_tol());
           SymGroup generating_grp {
             make_invariant_subgroup(dtorbit.prototype(), prim_grp, dt_sym_compare)};
 
           make_local_orbits(
             dtorbit.prototype(),
             generating_grp,
-            LocalSymCompare<IntegralCluster>(primclex.crystallography_tol()),
+            LocalSymCompare<IntegralCluster>(primclex.shared_prim(), primclex.crystallography_tol()),
             local_bspecs_json,
             alloy_sites_filter,
             primclex.crystallography_tol(),
             std::back_inserter(local_orbits),
             args.log());
 
-          clex_basis_ptr.reset(new ClexBasis(primclex.prim(), local_bspecs_json));
+          clex_basis_ptr.reset(new ClexBasis(primclex.shared_prim(), local_bspecs_json));
           clex_basis_ptr->generate(local_orbits.begin(), local_orbits.end(), local_bspecs_json);
 
         }
@@ -209,14 +210,14 @@ namespace CASM {
           args.log() << std::endl;
 
           make_prim_periodic_orbits(
-            primclex.prim(),
+            primclex.shared_prim(),
             bspecs_json,
             alloy_sites_filter,
             set.crystallography_tol(),
             std::back_inserter(orbits),
             args.log());
 
-          clex_basis_ptr.reset(new ClexBasis(primclex.prim(), bspecs_json));
+          clex_basis_ptr.reset(new ClexBasis(primclex.shared_prim(), bspecs_json));
           clex_basis_ptr->generate(orbits.begin(), orbits.end(), bspecs_json);
         }
 
@@ -247,12 +248,12 @@ namespace CASM {
         if(bspecs_json.contains("local_bspecs")) {
           //throw std::runtime_error("No pretty printing of local cluster functions");
           // clex_basis should be replaced with local_clex_basisl
-          write_site_basis_funcs(primclex.prim(), *clex_basis_ptr, basis_json);
-          write_clust(local_orbits.begin(), local_orbits.end(), basis_json, ProtoFuncsPrinter(*clex_basis_ptr), local_bspecs_json);
+          write_site_basis_funcs(primclex.shared_prim(), *clex_basis_ptr, basis_json);
+          write_clust(local_orbits.begin(), local_orbits.end(), basis_json, ProtoFuncsPrinter(*clex_basis_ptr, primclex.shared_prim()), local_bspecs_json);
         }
         else {
-          write_site_basis_funcs(primclex.prim(), *clex_basis_ptr, basis_json);
-          write_clust(orbits.begin(), orbits.end(), basis_json, ProtoFuncsPrinter(*clex_basis_ptr), bspecs_json);
+          write_site_basis_funcs(primclex.shared_prim(), *clex_basis_ptr, basis_json);
+          write_clust(orbits.begin(), orbits.end(), basis_json, ProtoFuncsPrinter(*clex_basis_ptr, primclex.shared_prim()), bspecs_json);
         }
         basis_json.write(dir.basis(bset));
 
@@ -337,11 +338,13 @@ namespace CASM {
       }
 
       typedef PrimPeriodicIntegralClusterOrbit orbit_type;
+      typedef PrimPeriodicSymCompare<IntegralCluster> symcompare_type;
+
       std::vector<orbit_type> orbits;
       primclex.orbits(
         clex_desc,
         std::back_inserter(orbits),
-        orbit_type::SymCompareType(set.crystallography_tol()));
+        orbit_type::SymCompareType(primclex.shared_prim(), set.crystallography_tol()));
 
       if(vm.count("orbits")) {
         print_clust(orbits.begin(), orbits.end(), args.log(), ProtoSitesPrinter());
@@ -350,12 +353,12 @@ namespace CASM {
         print_clust(orbits.begin(), orbits.end(), args.log(), FullSitesPrinter());
       }
       if(vm.count("functions")) {
-        print_site_basis_funcs(primclex.prim(), primclex.clex_basis(clex_desc), args.log());
+        print_site_basis_funcs(primclex.shared_prim(), primclex.clex_basis(clex_desc), args.log());
         print_clust(
           orbits.begin(),
           orbits.end(),
           args.log(),
-          ProtoFuncsPrinter(primclex.clex_basis(clex_desc)));
+          ProtoFuncsPrinter(primclex.clex_basis(clex_desc), primclex.shared_prim()));
       }
     }
     else {

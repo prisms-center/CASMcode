@@ -60,6 +60,7 @@ libcasm_la_SOURCES = \
     include/casm/basis_set/PolynomialFunction.hh\
     include/casm/basis_set/StrainDoFTraits.hh\
     include/casm/basis_set/Variable.hh\
+    include/casm/casm_io/FileData.hh\
     include/casm/casm_io/FormatFlag.hh\
     include/casm/casm_io/Help.hh\
     include/casm/casm_io/Log.hh\
@@ -126,6 +127,7 @@ libcasm_la_SOURCES = \
     include/casm/clex/HasPrimClex_impl.hh\
     include/casm/clex/HasSupercell.hh\
     include/casm/clex/HasSupercell_impl.hh\
+    include/casm/clex/MappedProperties.hh\
     include/casm/clex/MappedPropertiesTools.hh\
     include/casm/clex/NeighborList.hh\
     include/casm/clex/Norm.hh\
@@ -146,6 +148,7 @@ libcasm_la_SOURCES = \
     include/casm/clex/Supercell_functions.hh\
     include/casm/clex/Supercell_impl.hh\
     include/casm/clex/io/json/ChemicalReference.hh\
+    include/casm/clex/io/json/ConfigMapping.hh\
     include/casm/clex/json_io.hh\
     include/casm/clusterography/ClusterDecl.hh\
     include/casm/clusterography/ClusterInvariants.hh\
@@ -157,6 +160,7 @@ libcasm_la_SOURCES = \
     include/casm/clusterography/ClusterSymCompare.hh\
     include/casm/clusterography/ClusterSymCompare_impl.hh\
     include/casm/clusterography/CoordCluster.hh\
+    include/casm/clusterography/CoordClusterTraits.hh\
     include/casm/clusterography/GenericCluster.hh\
     include/casm/clusterography/IntegralCluster.hh\
     include/casm/clusterography/IntegralCluster_impl.hh\
@@ -190,7 +194,6 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/Lattice_impl.hh\
     include/casm/crystallography/Molecule.hh\
     include/casm/crystallography/Niggli.hh\
-    include/casm/crystallography/PrimGrid.hh\
     include/casm/crystallography/SimpleStrucMapCalculator.hh\
     include/casm/crystallography/SimpleStructure.hh\
     include/casm/crystallography/SimpleStructureTools.hh\
@@ -204,6 +207,7 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/SymTools.hh\
     include/casm/crystallography/SymType.hh\
     include/casm/crystallography/UnitCellCoord.hh\
+    include/casm/crystallography/UnitCellCoordTraits.hh\
     include/casm/crystallography/io/VaspIO.hh\
     include/casm/database/Cache.hh\
     include/casm/database/ConfigData.hh\
@@ -226,7 +230,6 @@ libcasm_la_SOURCES = \
     include/casm/database/DiffTransOrbitDatabase.hh\
     include/casm/database/Import.hh\
     include/casm/database/Import_impl.hh\
-    include/casm/clex/MappedProperties.hh\
     include/casm/database/Named.hh\
     include/casm/database/Named_impl.hh\
     include/casm/database/PropertiesDatabase.hh\
@@ -665,6 +668,7 @@ libcasm_la_SOURCES = \
     include/casm/strain/StrainConverter.hh\
     include/casm/symmetry/ConfigSubOrbits.hh\
     include/casm/symmetry/ConfigSubOrbits_impl.hh\
+    include/casm/symmetry/ElementSymApply.hh\
     include/casm/symmetry/EnumEquivalents.hh\
     include/casm/symmetry/InvariantSubgroup.hh\
     include/casm/symmetry/InvariantSubgroup_impl.hh\
@@ -784,6 +788,7 @@ libcasm_la_SOURCES = \
     src/casm/clex/Configuration.cc\
     src/casm/clex/ConfigurationTraits.cc\
     src/casm/clex/ECIContainer.cc\
+    src/casm/clex/MappedProperties.cc\
     src/casm/clex/MappedPropertiesTools.cc\
     src/casm/clex/NeighborList.cc\
     src/casm/clex/OrbitFunctionTraits.cc\
@@ -799,6 +804,7 @@ libcasm_la_SOURCES = \
     src/casm/clex/SupercellTraits.cc\
     src/casm/clusterography/ClusterOrbits.cc\
     src/casm/clusterography/ClusterSpecsParser.cc\
+    src/casm/clusterography/ClusterSymCompareSpecializations.cc\
     src/casm/clusterography/IntegralCluster.cc\
     src/casm/completer/Complete.cc\
     src/casm/completer/Handlers.cc\
@@ -813,9 +819,10 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/LatticeEnumEquivalents.cc\
     src/casm/crystallography/LatticeIsEquivalent.cc\
     src/casm/crystallography/LatticeMap.cc\
+    src/casm/crystallography/LatticePointWithin.cc\
+    src/casm/crystallography/LinearIndexConverter.cc\
     src/casm/crystallography/Molecule.cc\
     src/casm/crystallography/Niggli.cc\
-    src/casm/crystallography/PrimGrid.cc\
     src/casm/crystallography/SimpleStrucMapCalculator.cc\
     src/casm/crystallography/SimpleStructure.cc\
     src/casm/crystallography/SimpleStructureTools.cc\
@@ -827,6 +834,7 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/SymTools.cc\
     src/casm/crystallography/SymType.cc\
     src/casm/crystallography/UnitCellCoord.cc\
+    src/casm/crystallography/UnitCellCoordTraits.cc\
     src/casm/crystallography/io/VaspIO.cc\
     src/casm/database/ConfigData.cc\
     src/casm/database/ConfigDatabase.cc\
@@ -838,7 +846,6 @@ libcasm_la_SOURCES = \
     src/casm/database/DiffTransConfigImport.cc\
     src/casm/database/DiffTransOrbitDatabase.cc\
     src/casm/database/Import.cc\
-    src/casm/clex/MappedProperties.cc\
     src/casm/database/PropertiesDatabase.cc\
     src/casm/database/Remove.cc\
     src/casm/database/ScelDatabase.cc\

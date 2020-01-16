@@ -1,6 +1,7 @@
 #ifndef CASM_ClusterSpecsParser_impl
 #define CASM_ClusterSpecsParser_impl
 
+#include "casm/clex/Supercell.hh"
 #include "casm/clusterography/ClusterSpecsParser.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/global/definitions.hh"
@@ -48,17 +49,16 @@ namespace CASM {
     return true;
   }
 
-  // --- struct LocalOrbitSpecsParser ---
-
   /// For all custom clusters, insert 'op*prototype' into custom_generators
   ///
   /// \note Use ClusterEquivalenceParser to determine if custom clusters apply
   /// to a given cluster, and determine 'op'.
   ///
-  template<typename OrbitType>
+  template<typename OrbitType, typename CopyApplySymToElementType>
   OrbitGenerators<OrbitType> &LocalOrbitSpecsParser::insert_custom_generators(
     const SymOp &op,
-    OrbitGenerators<OrbitType> &custom_generators) const {
+    OrbitGenerators<OrbitType> &custom_generators,
+    const CopyApplySymToElementType &copy_apply) const {
     for(const auto &val : prototypes) {
       if(val.include_subclusters) {
         insert_subcluster_generators(copy_apply(op, val.cluster), custom_generators, primclex.log());
@@ -131,7 +131,7 @@ namespace CASM {
 
   template<typename PhenomenalType>
   void ClusterEquivalenceParser<PhenomenalType>::_init_prim_equivalence() {
-    prim_sym_compare = notstd::make_unique<PrimPeriodicSymCompare<PhenomenalType>>(primclex);
+    prim_sym_compare = notstd::make_unique<PrimPeriodicSymCompare<PhenomenalType>>(primclex.shared_prim(), primclex.crystallography_tol());
     if(phenom) {
       *phenom = prim_sym_compare->prepare(*phenom);
     }
@@ -142,8 +142,8 @@ namespace CASM {
 
   template<typename PhenomenalType>
   void ClusterEquivalenceParser<PhenomenalType>::_init_scel_equivalence() {
-    prim_sym_compare = notstd::make_unique<PrimPeriodicSymCompare<PhenomenalType>>(primclex);
-    scel_sym_compare = notstd::make_unique<ScelPeriodicSymCompare<PhenomenalType>>(scel);
+    prim_sym_compare = notstd::make_unique<PrimPeriodicSymCompare<PhenomenalType>>(primclex.shared_prim(), primclex.crystallography_tol());
+    scel_sym_compare = notstd::make_unique<ScelPeriodicSymCompare<PhenomenalType>>(scel.primclex().shared_prim(), xtal::make_bring_within_f(scel), scel.crystallography_tol());
     if(phenom) {
       *phenom = scel_sym_compare->prepare(*phenom);
     }
@@ -165,8 +165,8 @@ namespace CASM {
       else {
         auto config_it = primclex.db<Configuration>().find(configname);
         config_fg = config_it->factor_group();
-        config_sym_compare = notstd::make_unique<ScelPeriodicSymCompare<PhenomenalType>>(
-                               config_it->supercell());
+        const auto &scel = config_it->supercell();
+        config_sym_compare = notstd::make_unique<ScelPeriodicSymCompare<PhenomenalType>>(scel.primclex().shared_prim(), xtal::make_bring_within_f(scel), scel.crystallography_tol());
 
         if(phenom) {
           *phenom = config_sym_compare->prepare(*phenom);
@@ -363,15 +363,16 @@ namespace CASM {
   ///
   /// \throws std::invalid_argument if find_res.first == custom.end()
   template<typename PhenomenalType>
-  template<typename OrbitType>
+  template<typename OrbitType, typename CopyApplySymToElementType>
   OrbitGenerators<OrbitType>&
   LocalClustersByMaxLength<PhenomenalType>::insert_custom_generators(
       std::pair<custom_specs_iterator, SymOp> find_res,
-      OrbitGenerators<OrbitType>& custom_generators) const {
+      OrbitGenerators<OrbitType>& custom_generators,
+      const CopyApplySymToElementType& copy_apply) const{
     if(find_res.first == custom->data.end()) {
       throw std::invalid_argument("Error: No custom generators for standard local orbit specs");
     }
-    return find_res.first->orbit_specs->insert_custom_generators(find_res.second, custom_generators);
+    return find_res.first->orbit_specs->insert_custom_generators(find_res.second, custom_generators, copy_apply);
   }
 
   // *INDENT-ON*

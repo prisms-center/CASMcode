@@ -181,13 +181,8 @@ namespace {
           log << "check " << orbit_i << "/" << enumerator->local_orbit().size() << ":\n";
           const auto &g = base[base_i].generating_sym_g;
           auto proto = enumerator->local_orbit()[orbit_i].prototype();
-          ScelPeriodicSymCompare<IntegralCluster> sym_compare(base[base_i].config.supercell());
-
-          for(Index op_i = 0; op_i < g.size(); ++op_i) {
-            log << "op " << op_i << "/" << g.size() << ":\n"
-                << sym_compare.prepare(copy_apply(g[op_i], proto));
-          }
-          log << std::endl;
+          const auto &scel = base[base_i].config.supercell();
+          ScelPeriodicSymCompare<IntegralCluster> sym_compare(scel.primclex().shared_prim(), xtal::make_bring_within_f(scel), scel.crystallography_tol());
         }
       }
 

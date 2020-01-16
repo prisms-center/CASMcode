@@ -18,24 +18,24 @@ namespace CASM {
 
     /// Checks if lat = copy_apply(B,lat)*U, with unimodular U
     bool LatticeIsEquivalent::operator()(const SymOp &B) const {
-      return (*this)(copy_apply(B, m_lat));
+      return (*this)(sym::copy_apply(B, m_lat));
     }
 
     /// Checks if copy_apply(A, lat) = copy_apply(B,lat)*U, with unimodular U
     bool LatticeIsEquivalent::operator()(const SymOp &A, const SymOp &B) const {
-      LatticeIsEquivalent f {copy_apply(A, m_lat)};
-      return f(copy_apply(B, m_lat));
+      LatticeIsEquivalent f {sym::copy_apply(A, m_lat)};
+      return f(sym::copy_apply(B, m_lat));
     }
 
     /// Checks if lat = apply(B,other)*U, with unimodular U
     bool LatticeIsEquivalent::operator()(const SymOp &B, const Lattice &other) const {
-      return (*this)(copy_apply(B, other));
+      return (*this)(sym::copy_apply(B, other));
     }
 
     /// Checks if copy_apply(A, lat) = apply(B,other)*U, with unimodular U
     bool LatticeIsEquivalent::operator()(const SymOp &A, const SymOp &B, const Lattice &other) const {
-      LatticeIsEquivalent f {copy_apply(A, m_lat)};
-      return (*this)(copy_apply(B, other));
+      LatticeIsEquivalent f {sym::copy_apply(A, m_lat)};
+      return (*this)(sym::copy_apply(B, other));
     }
 
     /// Returns U found for last check

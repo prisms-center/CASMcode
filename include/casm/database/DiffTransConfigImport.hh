@@ -103,8 +103,7 @@ namespace CASM {
     protected:
 
       /// Allow ConfigType to specialize the report formatting for 'import'
-      DataFormatter<ConfigIO::Result> _import_formatter(
-        const std::map<std::string, ConfigIO::ImportData> &data_results) const override;
+      DataFormatter<ConfigIO::Result> _import_formatter() const override;
 
     };
 

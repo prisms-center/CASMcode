@@ -10,6 +10,7 @@ namespace CASM {
   class SymGroup;
 
   namespace xtal {
+    using sym::copy_apply;  //TODO: Base class for equivalents still relies on CASM::copy_apply
 
 
     /// \brief Enumerate equivalent Lattics, given a SymGroup

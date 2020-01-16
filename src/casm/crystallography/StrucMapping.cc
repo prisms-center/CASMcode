@@ -248,10 +248,10 @@ namespace CASM {
     bool LatticeNode::operator<(LatticeNode const &B)const {
       if(!almost_equal(cost, B.cost, 1e-6))
         return cost < B.cost;
-      if(child.trans_mat() != B.child.trans_mat())
-        return Local::lex_lt(child.trans_mat(), B.child.trans_mat());
-      if(parent.trans_mat() != B.parent.trans_mat())
-        return Local::lex_lt(parent.trans_mat(), B.parent.trans_mat());
+      if(child.transformation_matrix() != B.child.transformation_matrix())
+        return Local::lex_lt(child.transformation_matrix(), B.child.transformation_matrix());
+      if(parent.transformation_matrix() != B.parent.transformation_matrix())
+        return Local::lex_lt(parent.transformation_matrix(), B.parent.transformation_matrix());
       return false;
     }
 
@@ -260,9 +260,9 @@ namespace CASM {
     bool identical(LatticeNode const &A, LatticeNode const &B) {
       if(!almost_equal(A.cost, B.cost, 1e-6))
         return false;
-      if(A.parent.trans_mat() != B.parent.trans_mat())
+      if(A.parent.transformation_matrix() != B.parent.transformation_matrix())
         return false;
-      if(A.child.trans_mat() != B.child.trans_mat())
+      if(A.child.transformation_matrix() != B.child.transformation_matrix())
         return false;
       return true;
     }
@@ -371,7 +371,8 @@ namespace CASM {
       m_options(_options),
       m_tol(max(1e-9, _tol)),
       m_min_va_frac(0.),
-      m_max_va_frac(1.) {
+      m_max_va_frac(1.),
+      m_filtered(false) {
 
       //ParamComposition param_comp(_pclex.prim());
       m_max_volume_change = max(tol(), _max_volume_change);
@@ -450,11 +451,16 @@ namespace CASM {
         min_vol = vol_range.first;
         max_vol = vol_range.second;
       }
-
+      Lattice child_lat(child_struc.lat_column_mat);
       std::set<MappingNode> mapping_seed;
       for(Index i_vol = min_vol; i_vol <= max_vol; i_vol++) {
         std::vector<Lattice> lat_vec;
-        lat_vec = _lattices_of_vol(i_vol);
+        for(Lattice const &lat : _lattices_of_vol(i_vol)) {
+          if(m_filtered && !_filter_lat(lat, child_lat)) {
+            continue;
+          }
+          lat_vec.push_back(lat);
+        }
 
         std::set<MappingNode> t_seed = _seed_k_best_from_super_lats(child_struc,
                                                                     lat_vec,
@@ -616,9 +622,6 @@ namespace CASM {
                                         ScelEnumProps(prim_vol, prim_vol + 1));
 
       for(auto it = enumerator.begin(); it != enumerator.end(); ++it) {
-        if(m_restricted && !_filter_lat(*it)) {
-          continue;
-        }
         Lattice canon_lat = *it;
         if(canonical::check(canon_lat, calculator().point_group())) {
           canon_lat = canonical::equivalent(canon_lat, calculator().point_group());

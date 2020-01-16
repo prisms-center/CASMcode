@@ -15,6 +15,8 @@ namespace CASM {
     return diff_trans.occ_transform()[0].uccoord;
   }
 
+  std::string traits<Kinetics::DiffusionTransformation>::name = "DiffusionTransformation";
+
   void PrimPeriodicDiffTransOrbitTraits::write_pos(const OrbitType &orbit, std::ostream &sout) {
     std::vector<PrimPeriodicDiffTransOrbit> container;
     container.push_back(orbit);

@@ -1,36 +1,40 @@
 #include "casm/clex/Configuration_impl.hh"
 
+#include <memory>
 #include <sstream>
 #include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 
-#include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/symmetry/PermuteIterator.hh"
-#include "casm/crystallography/Molecule.hh"
-#include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/Lattice_impl.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/app/QueryHandler.hh"
+#include "casm/basis_set/DoF.hh"
+#include "casm/casm_io/container/stream_io.hh"
+#include "casm/clex/ChemicalReference.hh"
+#include "casm/clex/ClexParamPack.hh"
+#include "casm/clex/Clexulator.hh"
+#include "casm/clex/CompositionConverter.hh"
+#include "casm/clex/ECIContainer.hh"
+#include "casm/clex/MappedPropertiesTools.hh"
 #include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/LatticePointWithin.hh"
+#include "casm/crystallography/LinearIndexConverter.hh"
+#include "casm/crystallography/Lattice_impl.hh"
+#include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SymTools.hh"
-#include "casm/clex/Clexulator.hh"
-#include "casm/clex/ECIContainer.hh"
-#include "casm/clex/CompositionConverter.hh"
-#include "casm/clex/ChemicalReference.hh"
-#include "casm/clex/MappedPropertiesTools.hh"
-#include "casm/clex/ClexParamPack.hh"
-#include "casm/database/Named_impl.hh"
-#include "casm/database/ConfigDatabase.hh"
-#include "casm/database/ScelDatabase.hh"
-#include "casm/basis_set/DoF.hh"
 #include "casm/crystallography/io/VaspIO.hh"
-#include "casm/casm_io/container/stream_io.hh"
-#include "casm/app/QueryHandler.hh"
-#include "casm/app/ProjectSettings.hh"
-#include "casm/app/DirectoryStructure.hh"
+#include "casm/database/ConfigDatabase.hh"
 #include "casm/database/DiffTransConfigDatabase.hh"
+#include "casm/database/Named_impl.hh"
+#include "casm/database/ScelDatabase.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
+#include "casm/symmetry/PermuteIterator.hh"
+#include "casm/symmetry/SymTools.hh"
 
 namespace CASM {
 
@@ -199,12 +203,10 @@ namespace CASM {
   Configuration Configuration::primitive() const {
     Configuration tconfig {*this};
 
-    std::unique_ptr<Supercell> next_scel;
-
     // check if config is primitive, and if not, obtain a translation that maps the config on itself
     while(true) {
-
       PermuteIterator result = tconfig.find_translation();
+
       if(result == tconfig.supercell().sym_info().translate_end()) {
         break;
       }
@@ -215,14 +217,8 @@ namespace CASM {
                           result.sym_op().tau(),
                           crystallography_tol()).make_right_handed().reduced_cell();
 
-      next_scel.reset(new Supercell(&primclex(), new_lat));
-
       // create a sub configuration in the new supercell
-      tconfig = sub_configuration(*next_scel, tconfig);
-
-      tconfig.m_supercell_ptr.reset(next_scel.release());
-      tconfig.m_supercell = tconfig.m_supercell_ptr.get();
-
+      tconfig = sub_configuration(std::make_shared<Supercell>(&primclex(), new_lat), tconfig);
     }
 
     return tconfig;
@@ -369,7 +365,7 @@ namespace CASM {
   /// \brief Returns the point group that leaves the Configuration unchanged
   std::string Configuration::point_group_name() const  {
     if(!cache().contains("point_group_name")) {
-      cache_insert("point_group_name", make_sym_group(this->point_group()).get_name());
+      cache_insert("point_group_name", make_sym_group(this->point_group(), this->supercell().sym_info().supercell_lattice()).get_name());
     }
     return cache()["point_group_name"].get<std::string>();
   }
@@ -932,28 +928,18 @@ namespace CASM {
   }
 
 
-  //*********************************************************************************
-  /// \brief Returns the sub-configuration that fills a particular Supercell
-  ///
-  /// \param sub_scel The Supercell of the sub-configuration
-  /// \param super_config The super-configuration
-  /// \param origin The UnitCell indicating the which unit cell in the
-  ///        super-configuration is the origin in sub-configuration
-  ///
-  /// - Copies DoF from the super-configuration directly into the sub-configuration
-  ///
   Configuration sub_configuration(
-    Supercell &sub_scel,
+    std::shared_ptr<Supercell> sub_scel_ptr,
     const Configuration &super_config,
     const UnitCell &origin) {
 
 
-    if(&sub_scel.primclex() != &super_config.primclex()) {
+    if(&sub_scel_ptr->primclex() != &super_config.primclex()) {
       throw std::runtime_error(std::string("Error in 'sub_configuration:"
                                            " PrimClex of sub-Supercell and super-configuration are not the same"));
     }
 
-    Configuration sub_config {sub_scel};
+    Configuration sub_config {sub_scel_ptr};
     // copy global dof
     for(auto const &dof : super_config.configdof().global_dofs()) {
       sub_config.configdof().set_global_dof(dof.first, dof.second.values());
@@ -1143,7 +1129,6 @@ namespace CASM {
 
   /// \brief Returns gradient correlations using 'clexulator', with respect to DoF 'dof_type'
   Eigen::MatrixXd gradcorrelations(const Configuration &config, Clexulator &clexulator, DoFKey &key) {
-    //std::cout <<  "Gradcorr of config " << config.name() << "...\n";
     return gradcorrelations(config.configdof(), config.supercell(), clexulator, key);
   }
 
@@ -1522,15 +1507,12 @@ namespace CASM {
   }
 
   void FillSupercell::_init(const Supercell &_motif_scel) const {
-
     m_motif_scel = &_motif_scel;
 
     // ------- site dof ----------
-    Lattice oriented_motif_lat = copy_apply(*m_op, m_motif_scel->lattice());
+    Lattice oriented_motif_lat = sym::copy_apply(*m_op, m_motif_scel->lattice());
 
-    // Create a PrimGrid linking the prim and the oriented motif each to the supercell
-    // So we can tile the decoration of the motif config onto the supercell correctly
-    PrimGrid prim_grid(oriented_motif_lat, m_scel->lattice());
+    auto oriended_motif_lattice_points = xtal::make_lattice_points(oriented_motif_lat, m_scel->lattice(), TOL);
 
     const Structure &prim = m_scel->prim();
     m_index_table.resize(m_motif_scel->num_sites());
@@ -1539,17 +1521,17 @@ namespace CASM {
     for(Index s = 0 ; s < m_motif_scel->num_sites() ; s++) {
 
       // apply symmetry to re-orient and find unit cell coord
-      UnitCellCoord oriented_uccoord = copy_apply(*m_op, m_motif_scel->uccoord(s));
+      UnitCellCoord oriented_uccoord = sym::copy_apply(*m_op, m_motif_scel->uccoord(s), prim.lattice(), prim.basis_permutation_symrep_ID());
 
       // for each unit cell of the oriented motif in the supercell, copy the occupation
-      for(Index i = 0 ; i < prim_grid.size() ; i++) {
+      for(const UnitCell &oriented_motif_uc : oriended_motif_lattice_points) {
+        UnitCell oriented_motif_uc_relative_to_prim = oriented_motif_uc.reset_tiling_unit(oriented_motif_lat, prim.lattice());
 
-        Index prim_motif_tile_ind = m_scel->prim_grid().find(prim_grid.scel_coord(i));
+        Index prim_motif_tile_ind = m_scel->sym_info().unitcell_index_converter()[oriented_motif_uc_relative_to_prim];
 
         UnitCellCoord mc_uccoord(
-          prim,
-          oriented_uccoord.sublat(),
-          m_scel->prim_grid().unitcell(prim_motif_tile_ind) + oriented_uccoord.unitcell());
+          oriented_uccoord.sublattice(),
+          m_scel->sym_info().unitcell_index_converter()[(prim_motif_tile_ind)] + oriented_uccoord.unitcell());
 
         m_index_table[s].push_back(m_scel->linear_index(mc_uccoord));
       }
@@ -1630,7 +1612,6 @@ namespace CASM {
     Index scel_vol = scel.volume();
     if(DoF::BasicTraits(key).global()) {
       Eigen::MatrixXd gcorr_func = configdof.global_dof(key).values();
-      //std::cout << "global_dof is: \n" << gcorr_func << std::endl;
       gcorr.setZero(gcorr_func.size(), clexulator.corr_size());
       //Holds contribution to global correlations from a particular neighborhood
 
@@ -1651,7 +1632,6 @@ namespace CASM {
     else {
 
       Eigen::MatrixXd gcorr_func;
-      //std::cout << "local_dof is: \n" << gcorr_func << std::endl;
       gcorr.setZero(configdof.local_dof(key).values().size(), clexulator.corr_size());
       //Holds contribution to global correlations from a particular neighborhood
       Index l;
@@ -1663,7 +1643,6 @@ namespace CASM {
 
         for(Index c = 0; c < clexulator.corr_size(); ++c) {
           gcorr_func = clexulator.param_pack().read(paramkey(c));
-          //std::cout << "for c " << c << " gcorr_func is: \n" << gcorr_func << "\n\n";
 
           for(Index n = 0; n < scel.nlist().sites(v).size(); ++n) {
             l = scel.nlist().sites(v)[n];

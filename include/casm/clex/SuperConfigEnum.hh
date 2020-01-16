@@ -1,6 +1,7 @@
 #ifndef CASM_SuperConfigEnum
 #define CASM_SuperConfigEnum
 
+#include "casm/crystallography/LinearIndexConverter.hh"
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/container/Counter.hh"
 #include "casm/enumerator/InputEnumerator.hh"
@@ -64,17 +65,9 @@ namespace CASM {
     ///
     /// - The counter indicates how the sub-configurations tile into the
     ///   super-configuration
-    /// - sub_config()[counter()[i]] is tiled into the i-th PrimGrid location
+    /// - sub_config()[counter()[i]] is tiled into the i-th lattice point location
     const Array<int> &counter() const {
       return m_counter();
-    }
-
-    /// \brief Access the PrimGrid
-    ///
-    /// - The PrimGrid tiles the sub-configurations into the super-configuration
-    /// - sub_config()[counter()[i]] is tiled into the i-th PrimGrid location
-    const PrimGrid &prim_grid() const {
-      return *m_prim_grid;
     }
 
   private:
@@ -108,14 +101,14 @@ namespace CASM {
       return m_sub_config;
     }
 
-    /// Access the PrimGrid
-    PrimGrid &_prim_grid() {
-      return *m_prim_grid;
+    /// Access the UnitCellIndexConverter
+    xtal::UnitCellIndexConverter &_unitcell_index_converter() {
+      return *m_unitcell_index_converter;
     }
 
     /// Fill DoF from sub_config into a Configuration
     ///
-    /// \param summary The index of the sub_config on each PrimGrid site
+    /// \param summary The index of the sub_config on each lattice site
     void _fill(const Array<int> &counter_val, Configuration &config);
 
     const PermuteIterator &_perm_begin() const {
@@ -142,14 +135,13 @@ namespace CASM {
 
     Counter<Array<int> > m_counter;
 
-    /// A PrimGrid that tiles thes sub_scel into the ref_scel
-    notstd::cloneable_ptr<PrimGrid> m_prim_grid;
+    /// An ordered set of lattice points (UnitCell) that tile the sub_scel into the ref_scel
+    notstd::cloneable_ptr<xtal::UnitCellIndexConverter> m_unitcell_index_converter;
 
     /// m_current->occ(m_index_map[i][j]) = m_sub_scel[i].occ(j)
     std::vector<std::vector<Index> > m_index_map;
 
     bool m_has_occ;
-    bool m_has_disp;
 
   };
 

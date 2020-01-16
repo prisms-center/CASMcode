@@ -8,6 +8,8 @@
 #include "casm/clex/MappedProperties.hh"
 
 namespace CASM {
+  struct MappedProperties;
+
   namespace DB {
 
     class PropertiesDatabaseIterator;

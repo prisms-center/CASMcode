@@ -78,6 +78,7 @@ casm_basis_set_include_HEADERS = \
 
 casm_casm_io_includedir=$(includedir)/casm/casm_io
 casm_casm_io_include_HEADERS = \
+    include/casm/casm_io/FileData.hh\
     include/casm/casm_io/FormatFlag.hh\
     include/casm/casm_io/Help.hh\
     include/casm/casm_io/Log.hh\
@@ -169,6 +170,7 @@ casm_clex_include_HEADERS = \
     include/casm/clex/HasPrimClex_impl.hh\
     include/casm/clex/HasSupercell.hh\
     include/casm/clex/HasSupercell_impl.hh\
+    include/casm/clex/MappedProperties.hh\
     include/casm/clex/MappedPropertiesTools.hh\
     include/casm/clex/NeighborList.hh\
     include/casm/clex/Norm.hh\
@@ -194,7 +196,8 @@ casm_clex_include_HEADERS = \
 
 casm_clex_io_json_includedir=$(includedir)/casm/clex/io/json
 casm_clex_io_json_include_HEADERS = \
-    include/casm/clex/io/json/ChemicalReference.hh
+    include/casm/clex/io/json/ChemicalReference.hh\
+    include/casm/clex/io/json/ConfigMapping.hh
 
 #-------------------------------------------------------------------------------#
 
@@ -210,6 +213,7 @@ casm_clusterography_include_HEADERS = \
     include/casm/clusterography/ClusterSymCompare.hh\
     include/casm/clusterography/ClusterSymCompare_impl.hh\
     include/casm/clusterography/CoordCluster.hh\
+    include/casm/clusterography/CoordClusterTraits.hh\
     include/casm/clusterography/GenericCluster.hh\
     include/casm/clusterography/IntegralCluster.hh\
     include/casm/clusterography/IntegralCluster_impl.hh\
@@ -258,7 +262,6 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/Lattice_impl.hh\
     include/casm/crystallography/Molecule.hh\
     include/casm/crystallography/Niggli.hh\
-    include/casm/crystallography/PrimGrid.hh\
     include/casm/crystallography/SimpleStrucMapCalculator.hh\
     include/casm/crystallography/SimpleStructure.hh\
     include/casm/crystallography/SimpleStructureTools.hh\
@@ -271,7 +274,8 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/SymRepBuilder.hh\
     include/casm/crystallography/SymTools.hh\
     include/casm/crystallography/SymType.hh\
-    include/casm/crystallography/UnitCellCoord.hh
+    include/casm/crystallography/UnitCellCoord.hh\
+    include/casm/crystallography/UnitCellCoordTraits.hh
 
 #-------------------------------------------------------------------------------#
 
@@ -304,7 +308,6 @@ casm_database_include_HEADERS = \
     include/casm/database/DiffTransOrbitDatabase.hh\
     include/casm/database/Import.hh\
     include/casm/database/Import_impl.hh\
-    include/casm/clex/MappedProperties.hh\
     include/casm/database/Named.hh\
     include/casm/database/Named_impl.hh\
     include/casm/database/PropertiesDatabase.hh\
@@ -1018,6 +1021,7 @@ casm_symmetry_includedir=$(includedir)/casm/symmetry
 casm_symmetry_include_HEADERS = \
     include/casm/symmetry/ConfigSubOrbits.hh\
     include/casm/symmetry/ConfigSubOrbits_impl.hh\
+    include/casm/symmetry/ElementSymApply.hh\
     include/casm/symmetry/EnumEquivalents.hh\
     include/casm/symmetry/InvariantSubgroup.hh\
     include/casm/symmetry/InvariantSubgroup_impl.hh\

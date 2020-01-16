@@ -76,7 +76,7 @@ namespace CASM {
       map_result_inserter result) const {
 
       ConfigIO::Result res;
-      res.properties.best_file_data = p.string();
+      res.properties.file_data = p.string();
       res.pos_path = p.string();
 
 
@@ -218,7 +218,7 @@ namespace CASM {
         from_json(import_settings, kwargs["data"]);
 
       if(vm.count("data")) {
-        import_settings.data = true;
+        import_settings.import = true;
       }
 
       used["data"] = import_settings;
@@ -249,13 +249,12 @@ namespace CASM {
       return 0;
     }
 
-    DataFormatter<ConfigIO::Result> Import<Kinetics::DiffTransConfiguration>::_import_formatter(
-      const std::map<std::string, ConfigIO::ImportData> &data_results) const {
+    DataFormatter<ConfigIO::Result> Import<Kinetics::DiffTransConfiguration>::_import_formatter() const {
 
       // todo
 
       DataFormatterDictionary<ConfigIO::Result> dict;
-      ConfigIO::default_import_formatters(dict, db_props(), data_results);
+      ConfigIO::default_import_formatters(dict, db_props());
 
 
 

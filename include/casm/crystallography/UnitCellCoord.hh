@@ -2,21 +2,28 @@
 #define UNITCELLCOORD_HH
 
 #include <iostream>
+#include <stdexcept>
 
+#include "casm/external/Eigen/Core"
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
 #include "casm/misc/Comparisons.hh"
 
 namespace CASM {
   class jsonParser;
-  class SymOp;
-  namespace xtal {
 
+  namespace xtal {
     class Coordinate;
     class Site;
     template <typename CoordType>
     class BasicStructure;
+    class Structure;
     class Lattice;
+    class UnitCellCoord;
+    class Superlattice;
+  }
+
+  namespace xtal {
 
     /** \ingroup Coordinate
      *  @{
@@ -29,19 +36,30 @@ namespace CASM {
     ///
     class UnitCell : public Eigen::Vector3l {
     public:
-
       UnitCell(void) : Eigen::Vector3l() {}
 
-      UnitCell(Index a, Index b, Index c) : Eigen::Vector3l(a, b, c) {}
-
-      // This constructor allows you to construct MyVectorType from Eigen expressions
+      /// Construct from integral fractional values, relative to the tiling unit.
       template<typename OtherDerived>
-      UnitCell(const Eigen::MatrixBase<OtherDerived> &other) :
-        Eigen::Vector3l(other) {}
+      UnitCell(const Eigen::MatrixBase<OtherDerived> &integral_coordinate) : Eigen::Vector3l(integral_coordinate) {
+      }
+
+      UnitCell(Index a, Index b, Index c) : UnitCell(Eigen::Vector3l(a, b, c)) {}
+
+      /// Convert lattice point to a unitcell
+      static UnitCell from_coordinate(Coordinate const &lattice_point);
+
+      /// Convert a Cartesian coordinate into a unitcell by rounding fractional coordinates to the provided lattice
+      static UnitCell from_cartesian(const Eigen::Vector3d &cartesian_coord, const Lattice &tiling_unit);
+
+      /// Convert a unitcell to a lattice point coordinate, given the primitive tiling unit lattice
+      Coordinate coordinate(const Lattice &tiling_unit) const;
+
+      /// Finds a new UnitCell with values relative to the given tiling unit
+      UnitCell reset_tiling_unit(const Lattice &current_tiling_unit, const Lattice &new_tiling_unit) const;
 
       // This method allows you to assign Eigen expressions to MyVectorType
-      template<typename OtherDerived>
-      UnitCell &operator=(const Eigen::MatrixBase <OtherDerived> &other) {
+      template <typename OtherDerived>
+      UnitCell &operator=(const Eigen::MatrixBase<OtherDerived> &other) {
         this->Eigen::Vector3l::operator=(other);
         return *this;
       }
@@ -60,17 +78,20 @@ namespace CASM {
         return false;
       }
 
-    };
+    private:
 
-    /// Convert lattice point a unitcell
-    UnitCell make_unitcell(Coordinate const &lattice_point);
+      /// Throws exception to indicate that finding integral values resulted in errors much larger than the relevant lattice tolerance
+      static void _throw_large_rounding_error() {
+        throw std::runtime_error("Could not round values to integers within a reasonable tolerance");
+      }
+    };
 
     /// \brief CRTP class to implement '-=', '+', and '-' in terms of '+='
     ///
     /// Requires:
     /// - MostDerived& MostDerived::operator+=(UnitCell frac)
     ///
-    template<typename Base>
+    template <typename Base>
     struct Translatable : public Base {
 
       typedef typename Base::MostDerived MostDerived;
@@ -81,15 +102,14 @@ namespace CASM {
       }
 
       MostDerived operator+(UnitCell frac) const {
-        MostDerived tmp {derived()};
+        MostDerived tmp{derived()};
         return tmp += frac;
       }
 
       MostDerived operator-(UnitCell frac) const {
-        MostDerived tmp {derived()};
+        MostDerived tmp{derived()};
         return tmp += -frac;
       }
-
     };
 
     /* -- UnitCellCoord Declarations ------------------------------------- */
@@ -101,18 +121,19 @@ namespace CASM {
     class UnitCellCoord : public Comparisons<Translatable<CRTPBase<UnitCellCoord>>> {
 
     public:
+      typedef BasicStructure<Site> PrimType;
 
-      /// \brief SymBasisPermute rep should be obtainable from UnitType
-      typedef BasicStructure<Site> UnitType;
+      UnitCellCoord(Index _sublat, const UnitCell &_unitcell) : m_unitcell(_unitcell), m_sublat(_sublat) {
+        if(!valid_index(_sublat)) {
+          throw std::runtime_error("Error in UnitCellCoord. Construction requires a positive sublattice index.");
+        }
+      }
 
-      explicit UnitCellCoord(const UnitType &unit);
+      UnitCellCoord(Index _sublat, Index i, Index j, Index k) : UnitCellCoord(_sublat, UnitCell(i, j, k)) {}
 
-      UnitCellCoord(const UnitType &unit, Index _sublat, const UnitCell &_unitcell);
+      explicit UnitCellCoord() : UnitCellCoord(0, 0, 0, 0) {}
 
-      UnitCellCoord(const UnitType &unit, Index _sublat, Index i, Index j, Index k);
-
-      UnitCellCoord(const UnitType &unit, const Coordinate &coord, double tol);
-
+      static UnitCellCoord from_coordinate(const PrimType &, const Coordinate &coord, double tol);
 
       UnitCellCoord(const UnitCellCoord &B) = default;
 
@@ -122,124 +143,62 @@ namespace CASM {
 
       UnitCellCoord &operator=(UnitCellCoord &&B) = default;
 
+      const UnitCell &unitcell() const {
+        return m_unitcell;
+      }
 
-      /// \brief Get unit structure reference
-      const UnitType &unit() const;
-
-      /// \brief Change unit structure, keeping indices constant
-      void set_unit(const UnitType &_unit);
-
-      /// \brief Access the Lattice
-      const Lattice &lattice() const;
+      Index sublattice() const {
+        return m_sublat;
+      }
 
       /// \brief Get corresponding coordinate
-      Coordinate coordinate() const;
+      Coordinate coordinate(const PrimType &prim) const;
 
       /// \brief Get a copy of corresponding site
-      Site site() const;
+      Site site(const PrimType &prim) const;
 
       /// \brief Get reference to corresponding sublattice site in the unit structure
-      const Site &sublat_site() const;
+      const Site &sublattice_site(const PrimType &prim) const;
 
-      UnitCell &unitcell();
-      const UnitCell &unitcell() const;
-
-      Index &unitcell(Index i);
-      const Index &unitcell(Index i) const;
-
-      Index &sublat();
-      const Index &sublat() const;
-
-      Index &operator[](Index i);
-      const Index &operator[](Index i) const;
+      Index operator[](Index i) const;
 
       UnitCellCoord &operator+=(UnitCell frac);
 
       bool operator<(const UnitCellCoord &B) const;
 
-      UnitCellCoord &apply_sym(const CASM::SymOp &op);
-
-      UnitCellCoord copy_apply(const CASM::SymOp &op) const;
-
-      operator Coordinate() const;
-
     private:
-
       /// make _eq accessible
       friend struct Comparisons<Translatable<CRTPBase<UnitCellCoord>>>;
 
+      UnitCell &_unitcell() {
+        return m_unitcell;
+      }
+
+      Index &_sublattice() {
+        return m_sublat;
+      }
+
       bool eq_impl(const UnitCellCoord &B) const;
 
-      const UnitType *m_unit;
+      /// Returns false if the sublattice of *this is greater than the number of sites in the given prmitive structure
+      bool _is_compatible_with_prim(const PrimType &prim) const;
+
+      // TODO: Should this be made into an actual exception class?
+      static void _throw_incompatible_primitive_cell();
+
       UnitCell m_unitcell;
       Index m_sublat;
-
     };
 
     inline std::ostream &operator<<(std::ostream &sout, const UnitCellCoord &site) {
-      return sout << site.sublat() << ", " << site.unitcell().transpose();
+      return sout << site.sublattice() << ", " << site.unitcell().transpose();
     }
 
-    /* -- UnitCellCoord Definitions ------------------------------------- */
-
-    inline UnitCellCoord::UnitCellCoord(const UnitType &unit) :
-      m_unit(&unit) {}
-
-    inline UnitCellCoord::UnitCellCoord(const UnitType &unit, Index _sublat, const UnitCell &_unitcell) :
-      m_unit(&unit),
-      m_unitcell(_unitcell),
-      m_sublat(_sublat) {}
-
-    inline UnitCellCoord::UnitCellCoord(const UnitType &unit, Index _sublat, Index i, Index j, Index k) :
-      m_unit(&unit),
-      m_unitcell(i, j, k),
-      m_sublat(_sublat) {}
-
-    inline const UnitCellCoord::UnitType &UnitCellCoord::unit() const {
-      return *m_unit;
-    }
-
-    /// \brief Change unit structure, keeping indices constant
-    inline void UnitCellCoord::set_unit(const UnitType &_unit) {
-      m_unit = &_unit;
-    }
-
-    inline UnitCell &UnitCellCoord::unitcell() {
-      return m_unitcell;
-    }
-
-    inline const UnitCell &UnitCellCoord::unitcell() const {
-      return m_unitcell;
-    }
-
-    inline Index &UnitCellCoord::unitcell(Index i) {
-      return m_unitcell[i];
-    }
-
-    inline const Index &UnitCellCoord::unitcell(Index i) const {
-      return m_unitcell[i];
-    }
-
-    inline Index &UnitCellCoord::sublat() {
-      return m_sublat;
-    }
-
-    inline const Index &UnitCellCoord::sublat() const {
-      return m_sublat;
-    }
-
-    inline Index &UnitCellCoord::operator[](Index i) {
+    inline Index UnitCellCoord::operator[](Index i) const {
       if(i == 0) {
         return m_sublat;
       }
-      return unitcell(i - 1);
-    }
-
-    inline const Index &UnitCellCoord::operator[](Index i) const {
-      if(i == 0) {
-        return m_sublat;
-      }
-      return unitcell(i - 1);
+      return unitcell()[i - 1];
     }
 
     inline UnitCellCoord &UnitCellCoord::operator+=(UnitCell frac) {
@@ -258,7 +217,7 @@ namespace CASM {
           return false;
         }
       }
-      if(A.sublat() < B.sublat()) {
+      if(A.sublattice() < B.sublattice()) {
         return true;
       }
 
@@ -267,36 +226,42 @@ namespace CASM {
 
     inline bool UnitCellCoord::eq_impl(const UnitCellCoord &B) const {
       const auto &A = *this;
-      return A.unitcell()(0) == B.unitcell()(0) &&
-             A.unitcell()(1) == B.unitcell()(1) &&
-             A.unitcell()(2) == B.unitcell()(2) &&
-             A.sublat() == B.sublat();
+      return A.unitcell()(0) == B.unitcell()(0) && A.unitcell()(1) == B.unitcell()(1) &&
+             A.unitcell()(2) == B.unitcell()(2) && A.sublattice() == B.sublattice();
     }
 
-
     /** @} */
-  }
+
+    /// Converts the position of a lattice site into a Coordinate within the superlattice
+    Coordinate make_superlattice_coordinate(const UnitCell &ijk, const Superlattice &superlattice);
+    Coordinate make_superlattice_coordinate(const UnitCell &ijk, const Lattice &tiling_unit, const Lattice &superlattice);
+
+  } // namespace xtal
 
   /// \brief Print to json as [b, i, j, k]
   jsonParser &to_json(const xtal::UnitCellCoord &ucc_val, jsonParser &fill_json);
 
-  template<typename T> struct jsonConstructor;
-
-  template<>
-  struct jsonConstructor<xtal::UnitCellCoord> {
-
-    /// \brief Read from json [b, i, j, k], using 'unit' for UnitCellCoord::unit()
-    static xtal::UnitCellCoord from_json(const jsonParser &json, const xtal::BasicStructure<xtal::Site> &unit);
-  };
-
   /// \brief Read from json [b, i, j, k]
   void from_json(xtal::UnitCellCoord &fill_value, const jsonParser &read_json);
 
+} // namespace CASM
 
+/* #include "casm/crystallography/Coordinate.hh" */
+namespace CASM {
+  namespace xtal {
+  }
+}
+
+namespace std {
+  template <>
+  struct hash<CASM::xtal::UnitCell> {
+    std::size_t operator()(const CASM::xtal::UnitCell &value) const;
+  };
+
+  template <>
+  struct hash<CASM::xtal::UnitCellCoord> {
+    std::size_t operator()(const CASM::xtal::UnitCellCoord &value) const;
+  };
 }
 #endif
-
-
-
-
 

@@ -8,6 +8,9 @@
 #include "casm/clex/ParamComposition.hh"
 #include "casm/strain/StrainConverter.hh"
 #include "casm/clex/ConfigIsEquivalent.hh"
+#include "casm/app/QueryHandler_impl.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/casm_io/dataformatter/DataStream.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/crystallography/LatticeMap.hh"
@@ -17,8 +20,7 @@
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/database/ScelDatabase.hh"
-//DEBUGGING
-#include "casm/crystallography/io/VaspIO.hh"
+
 namespace CASM {
 
   namespace Local {
@@ -51,7 +53,7 @@ namespace CASM {
       int best_det = sgn(round(op.matrix().determinant()));
       int best_pdist = _permute_dist(_node.mol_map);
 
-      Coordinate tau(_node.lat_node.parent.scel_lattice());
+      Coordinate tau(_node.lat_node.parent.superlattice());
       while(begin != end) {
         t_op = begin->sym_op() * op;
         tdet = sgn(round(t_op.matrix().determinant()));
@@ -305,6 +307,17 @@ namespace CASM {
                    _settings.max_va_frac),
     m_settings(_settings) {
 
+    if(!settings().filter.empty()) {
+      DataFormatter<Supercell> formatter = _pclex.settings().query_handler<Supercell>().dict().parse(settings().filter);
+      auto filter =
+      [formatter, &_pclex](Lattice const & parent, Lattice const & child)->bool{
+        ValueDataStream<bool> check_stream;
+        check_stream << formatter(Supercell(&_pclex, parent));
+        return check_stream.value();
+      };
+
+      m_struc_mapper.set_filter(filter);
+    }
 
     for(std::string const &scel : settings().forced_lattices) {
       auto it = _pclex.db<Supercell>().find(scel);
@@ -342,7 +355,7 @@ namespace CASM {
     double hint_cost;
     if(hint_ptr != nullptr) {
       StrucMapper tmapper(*struc_mapper().calculator().quasi_clone(xtal::make_simple_structure(*hint_ptr, _hint_dofs),
-                                                                   make_point_group(hint_ptr->point_group()),
+                                                                   make_point_group(hint_ptr->point_group(), hint_ptr->supercell().sym_info().supercell_lattice()),
                                                                    SimpleStructure::SpeciesMode::ATOM),
                           struc_mapper().strain_weight(),
                           0.,
@@ -407,6 +420,9 @@ namespace CASM {
                                                                     hint_ptr->ideal_lattice(),
                                                                     k,
                                                                     best_cost + struc_mapper().tol());
+      if(struc_maps.empty())
+        result.fail_msg = "Unable to map structure using same lattice as " + hint_ptr->name() + ". Try setting \"fix_lattice\" : false.";
+
     }
     else if(hint_ptr && settings().fix_volume) {
       Index vol = hint_ptr->supercell().volume();
@@ -415,23 +431,30 @@ namespace CASM {
                                                                          vol,
                                                                          k,
                                                                          best_cost + struc_mapper().tol());
+      if(struc_maps.empty())
+        result.fail_msg = "Unable to map structure assuming volume = " + std::to_string(vol) + ". Try setting \"fix_volume\" : false.";
+
     }
     else if(settings().ideal) {
       struc_maps = struc_mapper().map_ideal_struc(child_struc,
                                                   k);
+      if(struc_maps.empty())
+        result.fail_msg = "Imported structure has lattice vectors that are not a perfect supercell of PRIM. Try setting \"ideal\" : false.";
     }
     else {
       struc_maps = struc_mapper().map_deformed_struc(child_struc,
                                                      k,
                                                      best_cost + struc_mapper().tol());
+      if(struc_maps.empty())
+        result.fail_msg = "Unable to map structure to prim. May be incompatible structure, or provided settings may be too restrictive.";
     }
 
-    std::cout << "struc_maps.size(): " << struc_maps.size() << "\n";
+    //std::cout << "struc_maps.size(): " << struc_maps.size() << "\n";
     // Refactor into external routine A. This is too annoying with the current way that supercells are managed
     for(auto const &map : struc_maps) {
-      std::shared_ptr<Supercell> shared_scel = std::make_shared<Supercell>(&primclex(), map.lat_node.parent.scel_lattice());
+      std::shared_ptr<Supercell> shared_scel = std::make_shared<Supercell>(&primclex(), map.lat_node.parent.superlattice());
       SimpleStructure resolved_struc = struc_mapper().calculator().resolve_setting(map, child_struc);
-      auto tdof = to_configdof(resolved_struc, *shared_scel);
+      std::pair<ConfigDoF, std::set<std::string> > tdof = to_configdof(resolved_struc, *shared_scel);
       Configuration tconfig(shared_scel, jsonParser(), tdof.first);
       PermuteIterator perm_it = shared_scel->sym_info().permute_begin();
       if(settings().strict) {

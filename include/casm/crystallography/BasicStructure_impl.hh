@@ -16,8 +16,8 @@
 #include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/crystallography/PrimGrid.hh"
 #include "casm/crystallography/Molecule.hh"
+#include "casm/crystallography/LatticePointWithin.hh"
 #include "casm/basis_set/DoFIsEquivalent.hh"
 #include "casm/basis_set/OccupationDoFTraits.hh"
 #include "casm/symmetry/SymPermutation.hh"
@@ -89,7 +89,7 @@ namespace CASM {
 
     template<typename CoordType>
     void BasicStructure<CoordType>::copy_attributes_from(const BasicStructure<CoordType> &RHS) {
-
+      //TODO: Delete this? Why is it even here still?
     }
 
     //***********************************************************
@@ -276,7 +276,7 @@ namespace CASM {
 
       // CASE 2: Structure is not primitive
 
-      PrimGrid prim_grid(tprim.lattice(), lattice());
+      auto all_lattice_points = make_lattice_points(tprim.lattice(), lattice(), lattice().tol());
       SymGroup prim_fg;
       tprim.generate_factor_group_slow(prim_fg);
 
@@ -287,8 +287,9 @@ namespace CASM {
           continue;
         }
         else {
-          for(Index j = 0; j < prim_grid.size(); j++) {
-            factor_group.push_back(CASM::SymOp::translation(prim_grid.scel_coord(j).cart())*prim_fg[i]);
+          for(const auto &lattice_point : all_lattice_points) {
+            Coordinate lattice_point_coordinate = make_superlattice_coordinate(lattice_point, tprim.lattice(), lattice());
+            factor_group.push_back(CASM::SymOp::translation(lattice_point_coordinate.cart())*prim_fg[i]);
             // set lattice, in case CASM::SymOp::operator* ever changes
           }
         }
@@ -314,11 +315,11 @@ namespace CASM {
 
     template<typename CoordType>
     void BasicStructure<CoordType>::fill_supercell(const BasicStructure<CoordType> &prim) {
-      Index i, j;
+      Index j;
 
       copy_attributes_from(prim);
 
-      PrimGrid prim_grid(prim.lattice(), lattice());
+      auto all_lattice_points = make_lattice_points(prim.lattice(), lattice(), lattice().tol());
 
       m_basis.clear();
 
@@ -326,10 +327,11 @@ namespace CASM {
       for(j = 0; j < prim.basis().size(); j++) {
 
         //loop over prim_grid points
-        for(i = 0; i < prim_grid.size(); i++) {
+        for(const auto &lattice_point : all_lattice_points) {
+          Coordinate lattice_point_coordinate = make_superlattice_coordinate(lattice_point, prim.lattice(), lattice());
 
           //push back translated basis site of prim onto superstructure basis
-          push_back(prim.basis()[j] + prim_grid.scel_coord(i));
+          push_back(prim.basis()[j] + lattice_point_coordinate);
 
           m_basis.back().within();
         }
@@ -887,7 +889,8 @@ namespace CASM {
       std::vector<UnitCellCoord> result;
       // Determine how basis sites transform from the origin unit cell
       for(int b = 0; b < _struc.basis().size(); b++) {
-        result.push_back(UnitCellCoord(_struc, CASM::copy_apply(_op, _struc.basis()[b]), _tol));
+        auto transformed_basis_site = CASM::copy_apply(_op, _struc.basis()[b]);
+        result.emplace_back(UnitCellCoord::from_coordinate(_struc, transformed_basis_site, _tol));
       }
       return result;
     }
