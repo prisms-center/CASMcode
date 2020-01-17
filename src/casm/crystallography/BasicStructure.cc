@@ -832,8 +832,8 @@ namespace CASM {
 
       std::vector<std::vector<std::string> > result(_struc.basis().size());
       for(Index b = 0; b < _struc.basis().size(); ++b) {
-        for(Index j = 0; j < _struc.basis(b).occupant_dof().size(); ++j) {
-          Molecule const &mol(_struc.basis(b).occupant_dof()[j]);
+        for(Index j = 0; j < _struc.basis()[b].occupant_dof().size(); ++j) {
+          Molecule const &mol(_struc.basis()[b].occupant_dof()[j]);
           result[b].push_back(mol.name());
           auto it = name_map.find(mol.name());
           if(it == name_map.end()) {
@@ -863,7 +863,7 @@ namespace CASM {
       std::vector<std::vector<std::string> > result(_struc.basis().size());
 
       for(Index b = 0; b < _struc.basis().size(); ++b)
-        result[b] = _struc.basis(b).allowed_occupants();
+        result[b] = _struc.basis()[b].allowed_occupants();
 
       return result;
     }

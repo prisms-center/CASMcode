@@ -126,9 +126,9 @@ namespace CASM {
       Eigen::VectorXi _mol_occ;
       _mol_occ.resize(_struc.basis().size());
       for(Index b = 0; b < _struc.basis().size(); ++b) {
-        result.mol_info.coord(b) = _struc.basis(b).const_cart();
-        result.mol_info.names.push_back(_struc.basis(b).occ_name());
-        _mol_occ[b] = _struc.basis(b).occupant_dof().value();
+        result.mol_info.coord(b) = _struc.basis()[b].const_cart();
+        result.mol_info.names.push_back(_struc.basis()[b].occ_name());
+        _mol_occ[b] = _struc.basis()[b].occupant_dof().value();
       }
       _atomize(result, _mol_occ, _struc);
       return result;
@@ -176,7 +176,7 @@ namespace CASM {
       Index s = 0;
       for(Index b = 0; b < nb; ++b) {
         for(Index v = 0; v < nv; ++v, ++s) {
-          N_atoms += _reference.basis(b).occupant_dof()[_mol_occ[s]].size();
+          N_atoms += _reference.basis()[b].occupant_dof()[_mol_occ[s]].size();
         }
       }
 
@@ -189,7 +189,7 @@ namespace CASM {
       s = 0;
       for(Index b = 0; b < nb; ++b) {
         for(Index v = 0; v < nv; ++v, ++s) {
-          Molecule const &molref = _reference.basis(b).occupant_dof()[_mol_occ[s]];
+          Molecule const &molref = _reference.basis()[b].occupant_dof()[_mol_occ[s]];
           //std::cout << "(b,v): (" << b << ", " << v << "); molref.size() = " << molref.size() << "\n";
           for(Index ms = 0; ms < molref.size(); ++ms, ++a) {
             _sstruc.atom_info.coord(a) = _sstruc.mol_info.coord(s) + molref.atom(ms).cart();
@@ -243,7 +243,7 @@ namespace CASM {
       for(std::string const &sp : sstruc.atom_info.names) {
         result.push_back({});
         for(Index b = 0; b < _prim.basis().size(); ++b) {
-          for(Molecule const &mol : _prim.basis(b).occupant_dof().domain()) {
+          for(Molecule const &mol : _prim.basis()[b].occupant_dof().domain()) {
             if(mol.contains(sp)) {
               result.back().insert(b);
               break;

@@ -87,9 +87,9 @@ namespace CASM {
         return m_basis;
       }
 
-      const Site &basis(Index i) const {
-        return m_basis[i];
-      }
+      /* const Site &basis(Index i) const { */
+      /*   return m_basis[i]; */
+      /* } */
 
       std::vector<Site> &set_basis() {
         reset();

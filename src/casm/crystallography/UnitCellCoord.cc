@@ -48,8 +48,8 @@ namespace CASM {
       coord_in_prim.cart() = coord.cart();
 
       for(Index b = 0; b < prim.basis().size(); ++b) {
-        if(coord_in_prim.min_dist(prim.basis(b)) < tol) {
-          UnitCell coord_unitcell(lround(coord_in_prim.const_frac() - prim.basis(b).const_frac()));
+        if(coord_in_prim.min_dist(prim.basis()[b]) < tol) {
+          UnitCell coord_unitcell(lround(coord_in_prim.const_frac() - prim.basis()[b].const_frac()));
           return UnitCellCoord(b, coord_unitcell);
         }
       }
