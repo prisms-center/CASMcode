@@ -230,27 +230,54 @@ namespace CASM {
     }
   };
 
-  // \brief Build 30x30 symmetry representation for an unrolled pair of d-orbital occupation matrices
-  class dOrbitalOccupationSymRepBuilder : public TimeReversalSymRepBuilderBase {
+  // \brief Builds symmetry representation that is 2 x 2 identity (exchange) matrix if time_reversal is false (true)
+  class TimeReversalSwapSymRepBuilder : public TimeReversalSymRepBuilderBase {
     public:
-        dOrbitalOccupationSymRepBuilder() : TimeReversalSymRepBuilderBase("dOrbitalOccupation"){}
-    
-        Eigen::MatrixXd symop_to_matrix(Eigen::Ref<const Eigen::Matrix3d> const &_matrix,
-                                            Eigen::Ref<const Eigen::Vector3d> const &_tau,
-                                            bool time_reversal,
-                                            Index dim) const override
-        {
-            // Reduction matrix for reference d-orbitals
-            Eigen::MatrixXd P(5, 9);
-            P << 0, 1/sqrt(2), 0, 1/sqrt(2), 0, 0, 0, 0, 0,
-                 0, 0, 0, 0, 0, 1/sqrt(2), 0, 1/sqrt(2), 0,
-                 -1/sqrt(6), 0, 0, 0, -1/sqrt(6), 0, 0, 0, 2/sqrt(6),
-                 0, 0, 1/sqrt(2), 0, 0, 0, 1/sqrt(2), 0, 0,
-                 1/sqrt(2), 0, 0, 0, -1/sqrt(2), 0, 0, 0, 0;
+      TimeReversalSwapSymRepBuilder() : TimeReversalSymRepBuilderBase("TimeReversalSwap"){}
 
-            // Reduction matrix for vectorized orbital occupation matrix
-            Eigen::MatrixXd Q(15, 25);
-            Q << 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      Eigen::MatrixXd symop_to_matrix(Eigen::Ref<const Eigen::Matrix3d> const &_matrix,
+                                      Eigen::Ref<const Eigen::Vector3d> const &_tau,
+                                      bool time_reversal,
+                                      Index dim) const override
+      {
+        assert(dim == 2);
+        Eigen::MatrixXd result(2, 2);
+        if (time_reversal) {
+          result << 0, 1, 1, 0;
+        } else {
+          result << 1, 0, 0, 1;
+        }
+        return result;
+      }
+
+    private:
+      SymRepBuilderInterface *_clone() const override {
+        return new TimeReversalSwapSymRepBuilder();
+      }
+  };
+
+  // \brief Build 15x15 symmetry representation for an unrolled d-orbital occupation matrix
+  class dOrbitalOccupationSymRepBuilder : public SymRepBuilderBase {
+    public:
+      dOrbitalOccupationSymRepBuilder() : SymRepBuilderBase("dOrbitalOccupation"){}
+    
+      Eigen::MatrixXd symop_to_matrix(Eigen::Ref<const Eigen::Matrix3d> const &_matrix,
+                                      Eigen::Ref<const Eigen::Vector3d> const &_tau,
+                                      bool time_reversal,
+                                      Index dim) const override
+      {
+        assert(dim == 15);
+        // Reduction matrix for reference d-orbitals
+        Eigen::MatrixXd P(5, 9);
+        P << 0, 1/sqrt(2), 0, 1/sqrt(2), 0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0, 1/sqrt(2), 0, 1/sqrt(2), 0,
+             -1/sqrt(6), 0, 0, 0, -1/sqrt(6), 0, 0, 0, 2/sqrt(6),
+             0, 0, 1/sqrt(2), 0, 0, 0, 1/sqrt(2), 0, 0,
+             1/sqrt(2), 0, 0, 0, -1/sqrt(2), 0, 0, 0, 0;
+
+        // Reduction matrix for vectorized orbital occupation matrix
+        Eigen::MatrixXd Q(15, 25);
+        Q << 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                  0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
@@ -266,27 +293,26 @@ namespace CASM {
                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1/sqrt(2), 0, 0, 0, 1/sqrt(2), 0, 0, 0, 0, 0, 0, 0,
                  0, 0, 0, 0, 0, 0, 0, 0, 1/sqrt(2), 0, 0, 0, 0, 0, 0, 0, 1/sqrt(2), 0, 0, 0, 0, 0, 0, 0, 0;
             
-            Eigen::MatrixXd kron_S_S(9, 9);
-            Eigen::kroneckerProduct(_matrix, _matrix, kron_S_S);
-            Eigen::MatrixXd G = P*kron_S_S*P.transpose(); 
-            Eigen::MatrixXd kron_GT_GT(25, 25);
-            Eigen::kroneckerProduct(G.transpose(), G.transpose(), kron_GT_GT);
-            Eigen::MatrixXd R = Q*kron_GT_GT*Q.transpose();
-            Eigen::MatrixXd W(2,2); 
-            if (time_reversal) { 
-                W << 0, 1, 1, 0;
-            } else {
-                W << 1, 0, 0, 1;
-            }
-            Eigen::MatrixXd result(30, 30);
-            Eigen::kroneckerProduct(W, R, result);
-            return result;
-        }
+        Eigen::MatrixXd kron_S_S(9, 9);
+        Eigen::kroneckerProduct(_matrix, _matrix, kron_S_S);
+        Eigen::MatrixXd G = P*kron_S_S*P.transpose();
+        Eigen::MatrixXd kron_GT_GT(25, 25);
+        Eigen::kroneckerProduct(G.transpose(), G.transpose(), kron_GT_GT);
+        Eigen::MatrixXd result = Q*kron_GT_GT*Q.transpose();
+        return result;
+      }
 
     private:
-        SymRepBuilderInterface *_clone() const override {
-         return new dOrbitalOccupationSymRepBuilder();
-        }
+      SymRepBuilderInterface *_clone() const override {
+        return new dOrbitalOccupationSymRepBuilder();
+      }
+  };
+
+  // \brief Build 30x30 symmetry representation for an unrolled pair spin up/down d-orbital occupation matrices
+  class dOrbitalOccupationSpinPolarizedSymRepBuilder : public KroneckerSymRepBuilder<TimeReversalSwapSymRepBuilder, dOrbitalOccupationSymRepBuilder, 2, 15>
+  {
+    public:
+      dOrbitalOccupationSpinPolarizedSymRepBuilder() : KroneckerSymRepBuilder("dOrbitalOccupationSpinPolarized"){}
   };
 
   // Named constructors for all previously defined SymRepBuilders
@@ -319,6 +345,11 @@ namespace CASM {
     inline
     dOrbitalOccupationSymRepBuilder dOrbitalOccupation() {
       return dOrbitalOccupationSymRepBuilder();
+    }
+
+    inline
+    dOrbitalOccupationSpinPolarizedSymRepBuilder dOrbitalOccupationSpinPolarized() {
+      return dOrbitalOccupationSpinPolarizedSymRepBuilder();
     }
   }
 

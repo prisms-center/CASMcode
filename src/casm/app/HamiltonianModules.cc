@@ -23,7 +23,8 @@ namespace CASM {
       AnisoValTraits::strain("GL"),
       AnisoValTraits::strain("H"),
       AnisoValTraits::force(),
-      AnisoValTraits::d_orbital_occupation());
+      AnisoValTraits::d_orbital_occupation(),
+      AnisoValTraits::d_orbital_occupation_spin_polarized());
 
     return dict;
   }
@@ -37,7 +38,8 @@ namespace CASM {
       SymRepBuilder::TimeReversal(),
       SymRepBuilder::AngularMomentum(),
       SymRepBuilder::Rank2Tensor(),
-      SymRepBuilder::dOrbitalOccupation());
+      SymRepBuilder::dOrbitalOccupation(),
+      SymRepBuilder::dOrbitalOccupationSpinPolarized());
     return dict;
   }
 

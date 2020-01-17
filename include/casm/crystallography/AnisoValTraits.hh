@@ -69,6 +69,9 @@ namespace CASM {
     ///\brief Named constructor for d-orbital occupation AnisoValTraits
     static AnisoValTraits d_orbital_occupation();
 
+    ///\brief Named constructor for spin-polarized d-orbital occupation AnisoValTraits
+    static AnisoValTraits d_orbital_occupation_spin_polarized();
+
     /// \brief Given a string, returns string with all characters before the final @delim character deleted
     /// For example, if a trajector has properties with  key1="step1_force", key2="step2_force", etc, then
     /// AnisoValTraits::name_suffix(key1) will return "force" if delim='_'
