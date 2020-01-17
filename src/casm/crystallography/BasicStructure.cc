@@ -61,12 +61,6 @@ namespace CASM {
     }
 
     //***********************************************************
-
-    void BasicStructure::copy_attributes_from(const BasicStructure &RHS) {
-      //TODO: Delete this? Why is it even here still?
-    }
-
-    //***********************************************************
     /*
       BasicStructure &BasicStructure::apply_sym(const SymOp &op) {
       for(Index i = 0; i < basis().size(); i++) {
@@ -281,8 +275,6 @@ namespace CASM {
 
     void BasicStructure::fill_supercell(const BasicStructure &prim) {
       Index i, j;
-
-      copy_attributes_from(prim);
 
       auto all_lattice_points = make_lattice_points(prim.lattice(), lattice(), lattice().tol());
 

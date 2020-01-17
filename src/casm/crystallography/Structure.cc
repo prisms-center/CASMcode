@@ -77,8 +77,6 @@ namespace CASM {
 
     void Structure::copy_attributes_from(const Structure &RHS) {
 
-      BasicStructure::copy_attributes_from(RHS);
-
       m_basis_perm_rep_ID = RHS.m_basis_perm_rep_ID; //this *should* work
       //assert(0);
       m_factor_group = RHS.m_factor_group;

@@ -105,24 +105,9 @@ namespace CASM {
         return m_dof_map;
       }
 
-
-      /// Return the UnitCellCoord corresponding to test_site (i.e., finds the basis index and
-      /// the lattice translation)
-      //   UnitCellCoord unit_cell_coord(const Site2 &test_site, double tol = TOL)const;
-
-      // ****Mutators****
-      ;
-      //   - Basic assignment/bookkeeping
-
       /// Have to explicitly define the assignment operator so that sites in this structure
       /// do not depend on the lattice of 'RHS'
       virtual BasicStructure &operator=(const BasicStructure &RHS);
-
-      /// Use this is the copy interface for things that derive from BasicStructure
-      /// It should be overloaded in derived classes so that all important attributes besides lattice, basis, and title
-      /// get copied
-      void copy_attributes_from(const BasicStructure &RHS);
-      //virtual void copy_attributes_from(const BasicStructure &RHS); <---- should be virtual, but will have to use some sort of visitor pattern to make work
 
       //TODO: update just calls set_site_internals? what does that even mean?
       void update();
@@ -203,12 +188,6 @@ namespace CASM {
 
       /// Output other formats
       void print_xyz(std::ostream &stream, bool frac = false) const;
-      //void print_cif(std::ostream &stream) const;
-
-      //jsonParser &to_json(jsonParser &json) const;
-
-      // Assumes constructor Site::Site(Lattice) exists
-      //void from_json(const jsonParser &json);
     };
 
     /* BasicStructure operator*(const CASM::SymOp &LHS, const BasicStructure &RHS); */
