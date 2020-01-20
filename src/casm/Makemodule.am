@@ -179,6 +179,7 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/Adapter.hh\
     include/casm/crystallography/AnisoValTraits.hh\
     include/casm/crystallography/BasicStructure.hh\
+    include/casm/crystallography/BasicStructureTools.hh\
     include/casm/crystallography/BasicStructure_impl.hh\
     include/casm/crystallography/CanonicalForm.hh\
     include/casm/crystallography/Coordinate.hh\
@@ -812,6 +813,7 @@ libcasm_la_SOURCES = \
     src/casm/container/Permutation.cc\
     src/casm/crystallography/AnisoValTraits.cc\
     src/casm/crystallography/BasicStructure.cc\
+    src/casm/crystallography/BasicStructureTools.cc\
     src/casm/crystallography/CanonicalForm.cc\
     src/casm/crystallography/Coordinate.cc\
     src/casm/crystallography/CoordinateSystems.cc\

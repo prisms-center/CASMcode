@@ -247,6 +247,7 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/Adapter.hh\
     include/casm/crystallography/AnisoValTraits.hh\
     include/casm/crystallography/BasicStructure.hh\
+    include/casm/crystallography/BasicStructureTools.hh\
     include/casm/crystallography/BasicStructure_impl.hh\
     include/casm/crystallography/CanonicalForm.hh\
     include/casm/crystallography/Coordinate.hh\
