@@ -71,14 +71,6 @@ namespace CASM {
 
       //  ****Inspectors/Accessors****
 
-      /// return basis index of site that matches test_coord, if it is in basis
-      /// otherwise, returns basis.size()
-      Index find(const Site &test_site) const;
-
-      /// return basis index of site that matches test_site+shift, if it is in basis
-      /// otherwise, returns basis.size()
-      Index find(const Site &test_site, const Coordinate &shift) const;
-
       const Lattice &lattice() const {
         return m_lattice;
       }

@@ -408,7 +408,7 @@ namespace CASM {
       for(Index nb = 0; nb < basis().size(); nb++) {
         tsite = m_basis[nb];
         tsite.set_lattice(new_prim.lattice(), CART);
-        if(new_prim.find(tsite) == new_prim.basis().size()) {
+        if(find_index(new_prim.basis(), tsite) == new_prim.basis().size()) {
           tsite.within();
           new_prim.push_back(tsite);
         }
@@ -423,28 +423,6 @@ namespace CASM {
       for(Index nb = 0; nb < basis().size(); nb++) {
         m_basis[nb].set_basis_ind(nb);
       }
-    }
-
-    //***********************************************************
-
-    Index BasicStructure::find(const Site &test_site) const {
-      for(Index i = 0; i < basis().size(); i++) {
-        if(m_basis[i].compare(test_site)) {
-          return i;
-        }
-      }
-      return basis().size();
-    }
-
-    //***********************************************************
-
-    Index BasicStructure::find(const Site &test_site, const Coordinate &shift) const {
-      for(Index i = 0; i < basis().size(); i++) {
-        if(m_basis[i].compare(test_site, shift)) {
-          return i;
-        }
-      }
-      return basis().size();
     }
 
     //***********************************************************
