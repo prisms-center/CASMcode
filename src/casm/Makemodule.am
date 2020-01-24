@@ -191,7 +191,9 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/LatticeEnumEquivalents.hh\
     include/casm/crystallography/LatticeIsEquivalent.hh\
     include/casm/crystallography/LatticeMap.hh\
+    include/casm/crystallography/LatticePointWithin.hh\
     include/casm/crystallography/Lattice_impl.hh\
+    include/casm/crystallography/LinearIndexConverter.hh\
     include/casm/crystallography/Molecule.hh\
     include/casm/crystallography/Niggli.hh\
     include/casm/crystallography/SimpleStrucMapCalculator.hh\

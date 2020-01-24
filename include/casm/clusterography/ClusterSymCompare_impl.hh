@@ -128,8 +128,8 @@ namespace CASM {
   template<typename Element>
   ScelPeriodicSymCompare<Element>::
   ScelPeriodicSymCompare(PrimType_ptr prim_ptr, const xtal::IntegralCoordinateWithin_f &bring_within_f, double tol):
-    m_prim(prim_ptr),
     m_bring_within_f(bring_within_f),
+    m_prim(prim_ptr),
     m_tol(tol) {}
 
   /// \brief Prepare an element for comparison
@@ -171,9 +171,9 @@ namespace CASM {
   template<typename Element>
   WithinScelSymCompare<Element>::
   WithinScelSymCompare(PrimType_ptr prim_ptr, const xtal::IntegralCoordinateWithin_f &bring_within_f, double tol):
+    m_bring_within_f(bring_within_f),
     m_prim(prim_ptr),
-    m_tol(tol),
-    m_bring_within_f(bring_within_f) {}
+    m_tol(tol) {}
 
   /// \brief Returns transformation that takes 'obj' to its prepared (canonical) form
   ///
