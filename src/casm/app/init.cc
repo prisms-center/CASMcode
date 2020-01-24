@@ -19,15 +19,77 @@ namespace CASM {
   namespace Completer {
     InitOption::InitOption(): OptionHandlerBase("init") {}
 
+    const std::string subproject_opt = "sub";
+
+    const std::string write_prim_opt = "write-prim";
+
+    // returns {error message, new file extension, new structure}
+    std::tuple<std::string, std::string, BasicStructure<Site> > standardize_prim(BasicStructure<Site> const &prim, bool force) {
+      /// Check if PRIM is primitive
+      Structure true_prim;
+      std::string err;
+      true_prim.set_title(prim.title());
+      if(!prim.is_primitive(true_prim)) {
+        //err
+        err +=
+          "       The structure in the provided file is not primitive. Some CASM\n"
+          "       features cannot be used with a non-primitive starting structure.\n\n";
+
+        if(!force) {
+
+          // current is_primitive
+          Lattice lat_niggli = xtal::canonical::equivalent(true_prim.lattice(), TOL);
+          true_prim.set_lattice(lat_niggli, CART);
+          return {err, ".primitive.json", true_prim}
+        }
+      }
+
+      /// Check that the PRIM is in reduced form:
+      Lattice niggli_lat = xtal::canonical::equivalent(prim.lattice(), TOL);
+
+      bool is_standard_niggli = almost_equal(niggli_lat.lat_column_mat(), prim.lattice().lat_column_mat());
+
+      if(!is_standard_niggli) {
+        err +=
+          "       The structure in the provided file is not the Niggli cell in the CASM\n"
+          "       standard orientation.\n\n";
+
+        if(!force) {
+          Structure tmp(prim);
+          tmp.set_lattice(niggli_lat, CART);
+          return {err, ".niggli.json", tmp}
+        }
+
+      }
+
+      //Check if the lattice is right handed, and if not print PRIM.right_handed.json
+      if(!prim.lattice().is_right_handed()) {
+        err +=
+          "       The lattice vectors of the provided structure do not form a right-handed\n"
+          "       coordinate system. Some electronic-structure codes will not accept this\n"
+          "       input.\n\n";
+
+        if(!force) {
+
+          Structure tmp(prim);
+          tmp.set_lattice(Lattice(prim.lattice()).make_right_handed(), CART);
+          tmp.within();
+          return {err, ".right_handed.json", tmp};
+        }
+      }
+      return {err, "", prim};
+    }
+
     void InitOption::initialize() {
       add_help_suboption();
       add_file_path_suboption();
       add_configlist_suboption();
       add_confignames_suboption();
+      add_coordtype_suboption();
       add_dofs_suboption();
       m_desc.add_options()
-      ("sub,s", "Initialize a project in sub-directory of an existing project. After initialization, commands executed below the sub-directory will act on the sub-directory project; commmands executed above the sub-directory will act on the original project.")
-      ("generate-prim", "Create prim.json file for specified configuration(s). Each prim.json will be written to the training_data directory of the corresponding configuration.")
+      (subproject_opt, "Initialize a project in sub-directory of an existing project. After initialization, commands executed below the sub-directory will act on the sub-directory project; commmands executed above the sub-directory will act on the original project.")
+      (write_prim_opt, "Create prim.json file for specified configuration(s). Each prim.json will be written to the training_data directory of the corresponding configuration.")
       ("force,f", "Force using a non-reduced, non-primitive, or left-handed PRIM.");
       return;
     }
@@ -95,8 +157,65 @@ namespace CASM {
       root = args.root;
     }
 
+    args.log() << "\n***************************\n" << std::endl;
+    // Going to do conversion:
+    if(vm.count("prim")) {
+      DirectoryStructure dir(root);
+      Structure prim;
+      std::string err_msg;
+      std::string extension;
+      // Read PRIM or prim.json:
+      try {
+        prim = Structure(read_prim(init_opt.prim_path(), TOL, &modules));
+
+        std::tie(err_msg, extension, prim) = standardize_prim(prim, vm.count("force"));
+      }
+      catch(std::runtime_error &e) {
+        args.err_log() << e.what() << std::endl;
+
+        return ERR_INVALID_INPUT_FILE;
+      }
+
+      if(!err_msg.empty()) {
+        if(vm.count("force")) {
+          args.err_log()
+              << "WARNING: " << init_opt.prim_path() << " failed the following check(s): \n"
+              << err_msg
+              << "Continuing due to usage of '--force' modifier.\n\n";
+        }
+        else {
+          std::string new_path = init_opt.prim_path().string();
+          std::string tpath = old_path.substr(0, old_path.find(".json"));
+          new_path = tpath.substr(0, old_path.find(".JSON"));
+          new_path += extension;
+          args.err_log()
+              << "Validation ERROR for " << init_opt.prim_path() << ":\n"
+              << err_msg
+              << "Standardizing structure and writing to JSON file: " << new_path << "\n";
+          write_prim(prim, new_path, init_opt.coordtype_enum());
+          return ERR_INVALID_INPUT_FILE;
+        }
+      }
+      if(vm.count(write_prim_opt)) {
+      }
+      else {
+        // Actually going to initialize:
+
+      }
+    }
+    else if(vm.count(write_prim_opt)) {
+      // Start from config in existing project:
+      // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
+      // Then whichever exists, store reference in 'primclex'
+
+      std::unique_ptr<PrimClex> uniq_primclex;
+      PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
+      const ProjectSettings &set = primclex.settings();
+
+    }
+
     fs::path existing = find_casmroot(root);
-    if(vm.count("sub")) {
+    if(vm.count(subproject_opt)) {
       if(existing == root) {
         args.log() << "Directory '" << root << "' is already the head directory of a casm project." << std::endl;
         return ERR_OTHER_PROJ;
@@ -110,162 +229,9 @@ namespace CASM {
     else if(!existing.empty()) {
       args.log() << "Already in a casm project." << std::endl;
       return ERR_OTHER_PROJ;
-    }
-
-    args.log() << "\n***************************\n" << std::endl;
-
-    DirectoryStructure dir(root);
-    Structure prim;
-
-    // if prim.json does not exist, try to read PRIM and create prim.json
-    if(!fs::is_regular_file(dir.prim())) {
-
-      if(!fs::is_regular_file(dir.PRIM())) {
-        args.log() << "Error in 'casm init': Neither 'prim.json' nor 'PRIM' found.\n\n";
-
-        args.log() << "Run 'casm format --prim' for the format of the 'prim.json' file.\n\n";
-
-        args.log() << "For step by step help use: 'casm status -n'\n\n";
-
-        return ERR_MISSING_INPUT_FILE;
-      }
-
-      try {
-        fs::ifstream poscar_prim;
-        poscar_prim.open(dir.PRIM());
-        prim.read(poscar_prim);
-        poscar_prim.close();
-      }
-      catch(std::runtime_error &e) {
-
-        args.err_log() << "ERROR: No prim.json exists. PRIM exists, but it could not be read.\n";
-        args.err_log() << e.what() << std::endl;
-        return ERR_INVALID_INPUT_FILE;
-      }
+    }//End new control block
 
 
-      std::string poscar_prim_title = prim.title();
-      args.log() << "Converting 'PRIM' to 'prim.json'.\n\n" << std::endl;
-
-      args.log() << "Please enter a short title for this project.\n";
-      args.log() << "  Use something suitable as a prefix for files specific to this project, such as 'ZrO' or 'TiAl'.\n\n";
-
-      std::string ttitle;
-      args.log() << "Title: ";
-      std::cin >> ttitle;
-      prim.set_title(ttitle);
-      args.log() << "\n\n";
-
-      jsonParser json;
-      write_prim(prim, json, FRAC);
-      json["description"] = poscar_prim_title;
-      fs::ofstream primfile(dir.prim());
-      json.print(primfile);
-      primfile.close();
-
-    }
-
-    jsonParser prim_json;
-
-    try {
-
-      prim_json = jsonParser(dir.prim());
-
-      prim = Structure(read_prim(prim_json, TOL, &modules));
-    }
-    catch(std::runtime_error &e) {
-      args.err_log() << e.what() << std::endl;
-
-      return ERR_INVALID_INPUT_FILE;
-    }
-
-    /// Check if PRIM is primitive
-    BasicStructure<Site> true_prim;
-    true_prim.set_title(prim.title());
-    if(!prim.is_primitive(true_prim)) {
-      if(!vm.count("force")) {
-        args.err_log() << "ERROR: The structure in the prim.json file is not primitive. Writing the most       \n"
-                       << "       primitive structure to file 'prim.true.json'.\n\n";
-
-        Structure tmp(true_prim);
-        Lattice lat_niggli = xtal::canonical::equivalent(true_prim.lattice(), tmp.point_group(), TOL);
-        tmp.set_lattice(lat_niggli, CART);
-
-        fs::ofstream primfile(root / "prim.true.json");
-        jsonParser json;
-        write_prim(tmp, json, FRAC);
-        json["description"] = prim_json["description"];
-        json.print(primfile);
-        primfile.close();
-
-        args.err_log() << "If you want to use the current prim.json anyway, re-run with the --force option. Some\n"
-                       << "CASM features cannot be used with a non-primitive starting structure.\n";
-        return ERR_INVALID_INPUT_FILE;
-      }
-      else {
-        args.err_log() << "WARNING: The structure in the prim.json file is not primitive. Continuing anyway    \n"
-                       << "         because the --force option is on.\n\n";
-      }
-    }
-
-    /// Check that the PRIM is in reduced form:
-    Lattice niggli_lat = xtal::canonical::equivalent(prim.lattice(), prim.point_group(), TOL);
-
-    bool is_standard_niggli = almost_equal(niggli_lat.lat_column_mat(), prim.lattice().lat_column_mat());
-
-    if(!is_standard_niggli) {
-      if(!vm.count("force")) {
-        if(!is_standard_niggli) {
-          args.err_log() << "ERROR: The structure in the prim.json file is not the niggli cell in the CASM standard\n"
-                         << "       orientation. Writing the suggested structure to 'prim.niggli.json'.\n\n"
-                         << "       If you want to use the current prim.json anyway, re-run with the --force option.\n";
-        }
-
-        Structure tmp(true_prim);
-        Lattice lat_niggli = xtal::canonical::equivalent(true_prim.lattice(), tmp.point_group(), TOL);
-        tmp.set_lattice(lat_niggli, CART);
-
-        fs::ofstream primfile(root / "prim.niggli.json");
-        jsonParser json;
-        write_prim(tmp, json, FRAC);
-        json["description"] = prim_json["description"];
-        json.print(primfile);
-        primfile.close();
-
-        return ERR_INVALID_INPUT_FILE;
-      }
-      else {
-        args.err_log() << "WARNING: The structure in the prim.json file is not the standard orientation Niggli\n"
-                       << "         cell. Continuing anyway because the --force option is on.\n\n";
-        //return 1;
-      }
-
-    }
-
-    //Check if the lattice is right handed, and if not print PRIM.right_handed.json
-    if(!prim.lattice().is_right_handed()) {
-      if(!vm.count("force")) {
-        args.err_log() << "ERROR: The structure in prim.json is not right-handed. Some electronic-"
-                       << "structure codes will not accept this input. If you would like to "
-                       << "keep this PRIM, re-run with the --force option. Writing the "
-                       << "right-handed structure to PRIM.right_handed.json" << std::endl;
-
-        prim.set_lattice(Lattice(prim.lattice()).make_right_handed(), CART);
-        prim.within();
-
-        fs::ofstream primfile(root / "prim.right_handed.json");
-        jsonParser json;
-        write_prim(prim, json, FRAC);
-        json["description"] = prim_json["description"];
-        json.print(primfile);
-        primfile.close();
-        return ERR_INVALID_INPUT_FILE;
-      }
-      else {
-        args.err_log() << "WARNING: The structure in the prim.json file is not right-handed. Continuing anyway    \n"
-                       << "         because the --force option is on.\n\n";
-      }
-    }
 
     try {
       args.log() << "Initializing CASM project '" << prim.title() << "'" << std::endl;

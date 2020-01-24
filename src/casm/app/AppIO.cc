@@ -203,7 +203,7 @@ namespace CASM {
 
     // Local continuous dofs
 
-    std::map<std::string, DoFSet> _dof_map;
+    std::map<DoFKey, DoFSet> _dof_map;
     if(json.contains("dofs")) {
 
       auto it = json["dofs"].begin(), end_it = json["dofs"].end();
@@ -284,7 +284,7 @@ namespace CASM {
 
       // Global DoFs
       {
-        std::map<std::string, DoFSet> _dof_map;
+        std::map<DoFKey, DoFSet> _dof_map;
         if(json.contains("dofs")) {
           auto it = json["dofs"].begin(), end_it = json["dofs"].end();
           for(; it != end_it; ++it) {

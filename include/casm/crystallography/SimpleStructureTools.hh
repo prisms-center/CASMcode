@@ -8,16 +8,24 @@
 #include "casm/global/definitions.hh"
 #include "casm/basis_set/DoFDecl.hh"
 #include "casm/crystallography/CoordinateSystems.hh"
+#include "casm/crystallography/Molecule.hh"
 
 namespace CASM {
   class jsonParser;
   class Supercell;
   class ConfigDoF;
   class Configuration;
+  struct MappedProperties;
 
   namespace DoFType {
     class Traits;
   }
+
+  namespace SimpleStructureTools {
+    // Defined in SimpleStructure.hh
+    class SpeciesMode;
+  }
+
 
 
   namespace xtal {
@@ -79,6 +87,18 @@ namespace CASM {
                                           ConfigDoF const &_dof,
                                           std::vector<DoFKey> const &_which_dofs = {});
 
+    /// \brief Construct from ConfigDoF _dof belonging to provided Supercell _scel with associated
+    /// calculated properties
+    SimpleStructure make_simple_structure(Supercell const &_scel,
+                                          ConfigDoF const &_dof,
+                                          MappedProperties const &_props,
+                                          bool ideal,
+                                          std::vector<DoFKey> const &_which_dofs = {});
+
+    BasicStructure<Site> make_basic_structure(SimpleStructure const &_sstruc,
+                                              std::vector<DoFKey> const &_all_dofs,
+                                              SimpleStructureTools::SpeciesMode mode,
+                                              std::vector<std::vector<Molecule> > _allowed_occupants = {});
 
     std::vector<std::set<Index> > atom_site_compatibility(SimpleStructure const &sstruc, BasicStructure<Site> const &_prim);
     std::vector<std::set<Index> > mol_site_compatibility(SimpleStructure const &sstruc, BasicStructure<Site> const &_prim);

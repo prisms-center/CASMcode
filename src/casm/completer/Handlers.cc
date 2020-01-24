@@ -377,6 +377,10 @@ namespace CASM {
       return m_file_path;
     }
 
+    const fs::path &OptionHandlerBase::prim_path() const {
+      return m_prim_path;
+    }
+
     const std::string &OptionHandlerBase::verbosity_str() const {
       return m_verbosity_str;
     }
@@ -496,9 +500,17 @@ namespace CASM {
 
     void OptionHandlerBase::add_file_path_suboption(const fs::path &_default) {
       m_desc.add_options()
-      ("path,P",
+      ("path",
        po::value<fs::path>(&m_file_path)->default_value(_default)->value_name(ArgHandler::path()),
        std::string("Path to directory in which to run the command. ").c_str());
+      return;
+    }
+
+    void OptionHandlerBase::add_prim_path_suboption(const fs::path &_default) {
+      m_desc.add_options()
+      ("prim",
+       po::value<fs::path>(&m_prim_path)->default_value(_default)->value_name(ArgHandler::path()),
+       std::string("Path to prim.json or POSCAR-like file that defines project reference crystal. ").c_str());
       return;
     }
 

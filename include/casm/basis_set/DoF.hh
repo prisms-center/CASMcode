@@ -373,8 +373,8 @@ namespace CASM {
       return compare(RHS, true);
     }
 
-    void set_domain(std::vector<T> const &new_dom) {
-      m_domain = new_dom;
+    void set_domain(std::vector<T> new_dom) {
+      m_domain = std::move(new_dom);
       if(new_dom.size() == 1)
         m_current_state = 0;
       else

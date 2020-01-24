@@ -151,12 +151,12 @@ namespace CASM {
       void set_title(std::string const &_title);
 
       /// Manually set the global DoFs
-      void set_global_dofs(std::map <DoFKey, DoFSet> const &_dof_map) {
-        m_dof_map = _dof_map;
+      void set_global_dofs(std::map <DoFKey, DoFSet> _dof_map) {
+        m_dof_map = std::move(_dof_map);
       }
 
       /// Manually set the basis sites
-      void set_basis(std::vector<CoordType> const &_basis, COORD_TYPE mode = CART);
+      void set_basis(std::vector<CoordType> _basis, COORD_TYPE mode = CART);
 
       /// Clear the basis atoms
       void clear_basis();
@@ -257,6 +257,11 @@ namespace CASM {
     /// Returns a vector with a list of allowed molecule names at each site
     template<typename CoordType>
     std::vector<std::vector<std::string> > allowed_molecule_names(BasicStructure<CoordType> const &_struc);
+
+    //************************************************************
+    /// Returns an Array of each *possible* Molecule in this Structure
+    template<typename CoordType>
+    std::vector<std::vector<Molecule> > allowed_molecules(BasicStructure<CoordType> const &_struc);
 
     //************************************************************
     // Assumes constructor CoordType::CoordType(Lattice) exists

@@ -75,11 +75,9 @@ namespace CASM {
       bool contains(const std::string &name) const;
       bool contains(const std::string &name, int &index) const;
 
-      void set_allowed_occupants(std::vector<Molecule> const &_occ_domain);
+      void set_allowed_occupants(std::vector<Molecule> _occ_domain);
 
       void set_occ_value(int new_val);
-
-      void set_occ(const Molecule &new_occ);
 
       void set_dofs(std::map<std::string, DoFSet> _dofs);
 
@@ -101,9 +99,6 @@ namespace CASM {
       Site &apply_sym(const ExternSymOp &op) {
         return this->apply_sym(adapter::Adapter<SymOp, ExternSymOp>()(op));
       }
-
-
-      /* Site &apply_sym_no_trans(const SymOp &op); */
 
       void read(std::istream &stream, bool SD_is_on = false);
       void read(std::istream &stream, std::string &elem, bool SD_is_on);

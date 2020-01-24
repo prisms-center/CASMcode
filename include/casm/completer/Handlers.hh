@@ -260,13 +260,24 @@ namespace CASM {
 
       //-------------------------------------------------------------------------------------//
 
+      ///Add --prim suboption
+      void add_prim_path_suboption(const fs::path &_default = "");
+
+      ///The path string to go with add_prim_path_suboption
+      fs::path m_prim_path;
+
+      ///Returns the string corsresponding to add_prim_path_suboption()
+      const fs::path &prim_path() const;
+
+      //-------------------------------------------------------------------------------------//
+
       ///Add --path suboption (defaults to MASTER)
       void add_file_path_suboption(const fs::path &_default = "");
 
-      ///The path string to go with add_config_suboption
+      ///The path string to go with add_file_path_suboption
       fs::path m_file_path;
 
-      ///Returns the string corsresponding to add_config_suboption()
+      ///Returns the string corsresponding to add_file_path_suboption()
       const fs::path &file_path() const;
 
       //-------------------------------------------------------------------------------------//
@@ -655,6 +666,8 @@ namespace CASM {
       InitOption();
 
       using OptionHandlerBase::file_path;
+
+      using OptionHandlerBase::prim_path;
 
       using OptionHandlerBase::selection_path;
 

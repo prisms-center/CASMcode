@@ -181,6 +181,105 @@ namespace CASM {
     }
 
     //***************************************************************************
+    SimpleStructure make_simple_structure(Supercell const &_scel,
+                                          ConfigDoF const &_dof,
+                                          MappedProperties const &_props,
+                                          bool ideal,
+                                          std::vector<DoFKey> const &_which_dofs) {
+
+      SimpleStructure result;
+
+      result.mol_info.resize(_dof.size());
+      if(ideal) {
+        result.lat_column_mat = _scel.lattice().lat_column_mat();
+        for(Index b = 0, l = 0; b < _dof.n_sublat(); ++b) {
+          for(Index v = 0; v < _dof.n_vol(); ++v, ++l) {
+            result.mol_info.cart_coord(l) = _scel.coord(l).const_cart();
+          }
+        }
+      }
+      else {
+        result.lat_column_mat = _props.global.at("latvec");
+        result.mol_info.coords = _props.site.at("coordinate");
+      }
+
+      for(Index b = 0, l = 0; b < _dof.n_sublat(); ++b) {
+        for(Index v = 0; v < _dof.n_vol(); ++v, ++l) {
+          std::string mol_name = _scel.prim().basis()[ b ].occupant_dof()[_dof.occ(l)].name();
+          result.mol_info.names[l] = std::move(mol_name);
+        }
+      }
+
+      _apply_dofs(result, _dof, _scel.prim(), _which_dofs);
+      return result;
+    }
+
+    //***************************************************************************
+
+    BasicStructure<Site> make_basic_structure(SimpleStructure const &_sstruc,
+                                              std::vector<DoFKey> const &_all_dofs,
+                                              SimpleStructure::SpeciesMode mode,
+                                              std::vector<std::vector<Molecule> > _allowed_occupants) {
+
+      std::map<DoFKey, DoFSet> global_dof;
+      std::map<DoFKey, DoFSet> local_dof;
+      for(DoFKey const &dof : _all_dofs) {
+        if(AnisoValTraits(dof).global()) {
+          global_dof.emplace(dof, dof);
+        }
+        else {
+          local_dof.emplace(dof, dof);
+        }
+      }
+
+      for(DoFKey const &dof : _all_dofs) {
+        if(AnisoValTraits(dof).global()) {
+          global_dof.emplace(dof, dof);
+        }
+      }
+
+      auto const &info = _sstruc.info(mode);
+      if(_allowed_occupants.empty())
+        _allowed_occupants.resize(info.size());
+      for(Index i = 0; i < info.size(); ++i) {
+        if(_allowed_occupants[i].empty()) {
+          _allowed_occupants[i].push_back(Molecule::make_atom(info.names[i]));
+        }
+        if(_allowed_occupants[i].size() == 1) {
+          std::map<std::string, SpeciesAttribute> attr_map = _allowed_occupants[i][0].attributes();
+          for(auto it = attr_map.begin(); it != attr_map.end(); ++it) {
+            if(local_dof.count(it->first)) {
+              auto er_it = it++;
+              attr_map.erase(er_it);
+            }
+          }
+
+          for(auto const &prop : info.properties) {
+            if(local_dof.count(prop.first))
+              continue;
+
+            if(!almost_zero(prop.second.col(i)))
+              attr_map.emplace(prop.first, SpeciesAttribute(prop.first, prop.second.col(i)));
+          }
+          _allowed_occupants[i][0].set_attributes(attr_map);
+        }
+      }
+
+      BasicStructure<Site> result(Lattice(_sstruc.lat_column_mat));
+      result.set_global_dofs(global_dof);
+      std::vector<Site> tbasis(info.size(), Site(result.lattice()));
+
+      for(Index i = 0; i < info.size(); ++i) {
+        tbasis[i].cart() = info.cart_coord(i);
+        tbasis[i].set_allowed_occupants(std::move(_allowed_occupants[i]));
+        tbasis[i].set_dofs(local_dof);
+      }
+
+      result.set_basis(tbasis);
+      return result;
+    }
+
+    //***************************************************************************
 
     void _atomize(SimpleStructure &_sstruc,
                   Eigen::Ref<const Eigen::VectorXi> const &_mol_occ,
