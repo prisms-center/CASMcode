@@ -2,6 +2,7 @@
 #define XTALSYMTYPE_HH
 
 #include "casm/external/Eigen/Dense"
+#include <functional>
 #include <tuple>
 #include <vector>
 
@@ -23,6 +24,14 @@ namespace CASM {
         return SymOp(SymOpMatrixType::Identity(), SymOpTranslationType::Zero(), false);
       }
 
+      static SymOp time_reversal() {
+        return SymOp(SymOpMatrixType::Identity(), SymOpTranslationType::Zero(), true);
+      }
+
+      static SymOp translation_operation(const SymOpTranslationType &translation) {
+        return SymOp(SymOpMatrixType::Identity(), translation, false);
+      }
+
       static SymOp point_operation(const SymOpMatrixType &mat) {
         return SymOp(mat, SymOpTranslationType::Zero(), false);
       }
@@ -31,6 +40,9 @@ namespace CASM {
       SymOpTranslationType translation;
       SymOpTimeReversalType is_time_reversal_active;
     };
+
+    /// Get a new SymOp that is equivalent to subsequent application of both SymOps
+    SymOp operator*(const SymOp &LHS, const SymOp &RHS);
 
     /// This defines the type of the object representing symmetry operations within the crystallography
     /// classes. Any symmetry related operations within the crystallography module must be in terms
@@ -45,6 +57,60 @@ namespace CASM {
     /// Accessor for SymOpType. Returns whether the symmetry operation is time reversal active.
     SymOpTimeReversalType get_time_reversal(const SymOp &op);
 
+    //*********************************************************************************************************************//
+
+    class Lattice;
+
+    /**
+     * Unary predicate for finding SymOp in a container such as std::vector.
+     * Compares the transformation matrix and translation to within the CASM
+     * tolerance, and also checks for time reversal match.
+     *
+     * Members provided at construction must still exist externally when
+     * using this functor.
+     */
+
+    struct SymOpCompare_f : public std::unary_function<SymOp, bool> {
+      explicit SymOpCompare_f(const SymOp &target_operation, double tolerance) : m_target_operation(&target_operation), m_tolerance(tolerance) {}
+      bool operator()(const SymOp &possible_match);
+
+    private:
+      const SymOp *m_target_operation;
+      double m_tolerance;
+    };
+
+    /**
+     * Unary predicate for finding SymOp in a container such as std::vector.
+     * Compares the transformation matrix and translation to within the CASM
+     * tolerance, and also checks for time reversal match.
+     * A lattice is given at construction so that comparisons return true if
+     * the operation is equivalent by lattice translations.
+     *
+     * Members provided at construction must still exist externally when
+     * using this functor.
+     */
+
+    struct SymOpPeriodicCompare_f : public std::unary_function<SymOp, bool> {
+      explicit SymOpPeriodicCompare_f(const SymOp &target_operation, const Lattice &periodicity_lattice, double tolerance)
+        : m_target_operation(&target_operation), m_periodicity_lattice(&periodicity_lattice), m_tolerance(tolerance) {
+      }
+      bool operator()(const SymOp &possible_match);
+
+    private:
+      const SymOp *m_target_operation;
+      const Lattice *m_periodicity_lattice;
+      double m_tolerance;
+    };
+
+    //*********************************************************************************************************************//
+
+    /// Combines every pair of symmetry operations and adds any missing resulting operations to the group.
+    /// Comparisons do not take any sort of periodicity into account.
+    void close_group(SymOpVector *partial_group);
+
+    /// Combines every pair of symmetry operations and adds any missing resulting operations to the group.
+    /// Operations are considered equivalent if the translations are equivalent by lattice tranlsations.
+    void close_group(SymOpVector *partial_group, const Lattice &periodicity_lattice);
   } // namespace xtal
 } // namespace CASM
 

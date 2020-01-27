@@ -230,25 +230,17 @@ namespace CASM {
       /// Is unsafe if min_dist is comparable to half a lattice vector in length
       double min_dist(const Coordinate &neighbor) const;
 
-      /// \brief Returns distance (in Angstr) to nearest periodic image of neighbor
+      /// \brief Returns translation coordinate (in Angstr) to nearest periodic image of neighbor
       ///
       /// This version calculates the translation such that
       /// (neighbor+translation) is the nearest periodic image of neighbor
-      double min_dist(const Coordinate &neighbor, Coordinate &translation)const;
+      Coordinate min_translation(const Coordinate &neighbor)const;
 
       /// \brief Returns distance (in Angstr) to nearest periodic image of neighbor
       ///
       /// It is safe in all cases, because it uses the lattice Wigner-Seitz cell to
       /// determine the nearest image, but this makes it slower than min_dist
       double robust_min_dist(const Coordinate &neighbor) const;
-
-      /// \brief Returns distance (in Angstr) to nearest periodic image of neighbor
-      ///
-      /// This version calculates the translation such that
-      /// (neighbor+translation) is the periodic nearest period image of neighbor
-      /// It is safe in all cases, because it uses the lattice Wigner-Seitz cell to
-      /// determine the nearest image, but this makes it slower than min_dist
-      double robust_min_dist(const Coordinate &neighbor, Coordinate &translation)const;
 
       ///Finds same shift as min_dist but returns shift(CART).transpose()*metric*shift(CART)
       double min_dist2(const Coordinate &neighbor, const Eigen::Ref<const Eigen::Matrix3d> &metric) const;

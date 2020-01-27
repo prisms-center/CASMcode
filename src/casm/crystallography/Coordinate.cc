@@ -152,48 +152,19 @@ namespace CASM {
       return (cart() - neighbor.cart()).norm();
     }
 
-    //********************************************************************
-    // Finds minimum distance from any periodic image of a coordinate to any
-    // periodic image of a neighboring coordinate
-    //********************************************************************
-
     double Coordinate::min_dist(const Coordinate &neighbor) const {
-      vector_type tfrac(frac() - neighbor.frac());
-      tfrac -= lround(tfrac).cast<double>();
-
-      return (home().lat_column_mat() * tfrac).norm();
+      return this->min_translation(neighbor).const_cart().norm();
     }
 
-    //********************************************************************
-    // Finds minimum distance from any periodic image of a coordinate to any
-    // periodic image of a neighboring coordinate.  Also passes the
-    // calculated translation in the argument.
-    //********************************************************************
-
-
-    double Coordinate::min_dist(const Coordinate &neighbor, Coordinate &translation) const {
-      translation = (*this) - neighbor;
+    Coordinate Coordinate::min_translation(const Coordinate &neighbor) const {
+      Coordinate translation = (*this) - neighbor;
       translation.frac() -= lround(translation.const_frac()).cast<double>();
-      return translation.const_cart().norm();
+      return translation;
     }
-    //********************************************************************
-    // Finds minimum distance from any periodic image of a coordinate to any
-    // periodic image of a neighboring coordinate
-    //********************************************************************
 
     double Coordinate::robust_min_dist(const Coordinate &neighbor) const {
-      Coordinate translation(home());
-      return robust_min_dist(neighbor, translation);
-    }
-
-    //********************************************************************
-    // Finds minimum distance from any periodic image of a coordinate to any
-    // periodic image of a neighboring coordinate.  Also passes the
-    // calculated translation in the argument.
-    //********************************************************************
-
-    double Coordinate::robust_min_dist(const Coordinate &neighbor, Coordinate &translation) const {
-      double fast_result = min_dist(neighbor, translation);
+      Coordinate translation = this->min_translation(neighbor);
+      double fast_result = translation.const_cart().norm();
 
       if(fast_result < (home().inner_voronoi_radius() + TOL))
         return fast_result;

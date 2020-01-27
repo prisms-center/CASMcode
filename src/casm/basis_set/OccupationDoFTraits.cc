@@ -384,7 +384,7 @@ namespace CASM {
       return stream.str();
     }
 
-    std::string OccupationDoFTraits::site_basis_description(BasisSet site_bset, Site site) const {
+    std::string OccupationDoFTraits::site_basis_description(BasisSet site_bset, Site site, Index site_ix) const {
       std::stringstream ss;
       if(site_bset.size() == 0)
         ss << "        [No site basis functions]\n\n";
@@ -396,7 +396,7 @@ namespace CASM {
         for(s = 0; s < site.occupant_dof().size(); s++) {
           if(s == 0)
             ss << "    ";
-          ss << "    \\phi_" << site.basis_ind() << '_' << f << '[' << site.occupant_dof()[s].name() << "] = "
+          ss << "    \\phi_" << site_ix << '_' << f << '[' << site.occupant_dof()[s].name() << "] = "
              << site_bset[f]->remote_eval();
           if(s + 1 == site.occupant_dof().size())
             ss << "\n";

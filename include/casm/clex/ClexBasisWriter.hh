@@ -222,7 +222,6 @@ namespace CASM {
   }
 }
 
+#endif
 
 #include "casm/clex/ClexBasisWriter_impl.hh"
-
-#endif

@@ -506,7 +506,7 @@ namespace CASM {
     }
 
 
-    std::string Traits::site_basis_description(BasisSet site_bset, Site site) const {
+    std::string Traits::site_basis_description(BasisSet site_bset, Site site, Index site_ix) const {
       return std::string();
     }
 

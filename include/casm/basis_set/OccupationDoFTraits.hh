@@ -16,7 +16,7 @@ namespace CASM {
 
       }
 
-      std::string site_basis_description(BasisSet site_bset, Site site) const override;
+      std::string site_basis_description(BasisSet site_bset, Site site, Index site_ix) const override;
 
       std::vector<std::unique_ptr<FunctionVisitor> > site_function_visitors(std::string const &nlist_specifier) const override;
 

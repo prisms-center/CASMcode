@@ -100,7 +100,7 @@ namespace CASM {
 
       virtual std::vector<std::unique_ptr<FunctionVisitor> > clust_function_visitors() const;
 
-      virtual std::string site_basis_description(BasisSet site_bset, Site site) const;
+      virtual std::string site_basis_description(BasisSet site_bset, Site site, Index site_ix) const;
 
       virtual std::vector<ParamAllocation> param_pack_allocation(Structure const &_prim,
                                                                  std::vector<BasisSet> const &_bases) const;

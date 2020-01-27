@@ -41,16 +41,7 @@ namespace CASM {
       std::vector<Site> m_basis;
 
       /// continuous global degrees of freedom
-      std::map <DoFKey, DoFSet> m_dof_map;
-
-
-      /// \brief Returns true if @param _op leaves lattice and global DoFs (if any) invariant
-      bool _is_lattice_pg_op(CASM::SymOp const &_op) const;
-
-      /// \brief Returns true if structure has attributes affected by time reversal
-      // private for now, expose if necessary
-      bool _time_reversal_active() const;
-
+      std::map <DoFKey, DoFSet> m_global_dof_map;
 
     private: // PRIVATE METHODS
 
@@ -90,7 +81,7 @@ namespace CASM {
       DoFSet const &global_dof(std::string const &dof_type) const;
 
       std::map<DoFKey, DoFSet> const &global_dofs() const {
-        return m_dof_map;
+        return m_global_dof_map;
       }
 
       /// Have to explicitly define the assignment operator so that sites in this structure
@@ -98,6 +89,7 @@ namespace CASM {
       virtual BasicStructure &operator=(const BasicStructure &RHS);
 
       //TODO: update just calls set_site_internals? what does that even mean?
+      //basis_ind still exists because OccupationDoFTraits site_basis_description
       void update();
 
       // clears site_internals and does within()
@@ -121,8 +113,8 @@ namespace CASM {
       void set_title(std::string const &_title);
 
       /// Manually set the global DoFs
-      void set_global_dofs(std::map <DoFKey, DoFSet> const &_dof_map) {
-        m_dof_map = _dof_map;
+      void set_global_dofs(std::map <DoFKey, DoFSet> const &new_dof_map) {
+        m_global_dof_map = new_dof_map;
       }
 
       /// Manually set the basis sites
@@ -149,10 +141,8 @@ namespace CASM {
       void generate_factor_group_slow(SymGroup &factor_group) const;
       void _generate_factor_group_slow(SymGroup &factor_group, SymGroup const &super_point_group, bool time_reversal_enabled = true) const;
 
-
-      /// Returns true if the structure describes a crystal primitive cell
-      /// i.e., no translation smaller than a lattice vector can map the structure onto itself
-      bool is_primitive() const;          //Donghee do this
+      /// \brief Returns true if structure has attributes affected by time reversal
+      bool is_time_reversal_active() const;
 
       /// Returns true if the structure describes a crystal primitive cell
       /// and finds the primitive cell and stores it in 'new_prim'

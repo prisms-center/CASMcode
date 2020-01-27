@@ -29,7 +29,7 @@ namespace CASM {
       m_lattice(RHS.lattice()),
       m_title(RHS.title()),
       m_basis(RHS.basis()),
-      m_dof_map(RHS.m_dof_map) {
+      m_global_dof_map(RHS.m_global_dof_map) {
       for(Index i = 0; i < basis().size(); i++) {
         m_basis[i].set_lattice(lattice(), CART);
       }
@@ -41,7 +41,7 @@ namespace CASM {
       m_lattice = RHS.lattice();
       m_title = RHS.title();
       set_basis(RHS.basis());
-      m_dof_map = RHS.m_dof_map;
+      m_global_dof_map = RHS.m_global_dof_map;
 
       for(Index i = 0; i < basis().size(); i++)
         m_basis[i].set_lattice(lattice(), CART);
@@ -52,8 +52,8 @@ namespace CASM {
     //************************************************************
 
     DoFSet const &BasicStructure::global_dof(std::string const &_dof_type) const {
-      auto it = m_dof_map.find(_dof_type);
-      if(it != m_dof_map.end())
+      auto it = m_global_dof_map.find(_dof_type);
+      if(it != m_global_dof_map.end())
         return (it->second);
       else
         throw std::runtime_error(std::string("In BasicStructure::dof(), this structure does not contain any global DoF's of type " + _dof_type));
@@ -93,35 +93,22 @@ namespace CASM {
     }
 
 
-    //***********************************************************
-
     void BasicStructure::_generate_factor_group_slow(SymGroup &factor_group, SymGroup const &super_group, bool time_reversal_enabled) const {
       std::vector<Site> trans_basis;
-      Index pg, b0, b1, b2;
+      Index b0, b1, b2;
       Coordinate t_tau(lattice());
       Index num_suc_maps;
 
       SymGroup const &point_group = super_group;
-      Index time_max = Index(_time_reversal_active() && time_reversal_enabled);
-      //std::cout << "time_max is " << time_max << "\n";
-      //std::cout << "time_reversal_enabled is " << time_reversal_enabled << "\n";
+      Index time_max = Index(is_time_reversal_active() && time_reversal_enabled);
       CASM::SymOp test_op;
-      if(factor_group.size() != 0) {
-        std::cerr << "WARNING in BasicStructure::generate_factor_group_slow" << std::endl;
-        std::cerr << "The factor group passed isn't empty and it's about to be rewritten!" << std::endl;
-        factor_group.clear();
-      }
       factor_group.set_lattice(lattice());
       //Loop over all point group ops of the lattice
-      for(pg = 0; pg < point_group.size(); pg++) {
+      for(Index pg = 0; pg < point_group.size(); pg++) {
         test_op = point_group[pg];
         for(Index tr = 0; tr <= time_max; tr++) {
           if(tr) {
             test_op = test_op * CASM::SymOp::time_reversal_op();
-          }
-
-          if(!_is_lattice_pg_op(test_op)) {
-            continue;
           }
 
           trans_basis.clear();
@@ -318,23 +305,6 @@ namespace CASM {
     //***********************************************************
     /**
      * Determines if structure is primitive description of the crystal
-     */
-    //***********************************************************
-
-    bool BasicStructure::is_primitive() const {
-      SymGroup valid_translations, identity_group;
-      identity_group.push_back(CASM::SymOp());
-      _generate_factor_group_slow(valid_translations, identity_group, false);
-      if(valid_translations.size() == 1)
-        return true;
-
-      return false;
-    }
-
-
-    //***********************************************************
-    /**
-     * Determines if structure is primitive description of the crystal
      * If not, finds primitive cell and copies to new_prim
      */
     //***********************************************************
@@ -356,13 +326,10 @@ namespace CASM {
         }
       }
 
-
-
       if(prim_flag) {
         new_prim = *this;
         return true;
       }
-
 
       shift.push_back(lattice()[0]);
       shift.push_back(lattice()[1]);
@@ -692,31 +659,10 @@ namespace CASM {
 
     //***********************************************************
 
-    /// \brief Returns true if @param _op leaves lattice and global DoFs (if any) invariant
-    bool BasicStructure::_is_lattice_pg_op(CASM::SymOp const &evil_op) const {
-      //TODO: Resolve where the Adapter should be called. I'm doing it here because
-      //DoFIsEquivalent is outside of crystallography, and we decided that crystallography/Adapter.hh
-      //should be limited to its own module.
-      auto _op = adapter::Adapter<xtal::SymOp, CASM::SymOp>()(evil_op);
-      if(!LatticeIsEquivalent(lattice())(_op)) {
-        return false;
-
-      }
-      for(auto const &dof : m_dof_map) {
-        if(!DoFIsEquivalent(dof.second)(_op)) {
-          return false;
-        }
-      }
-      return true;
-
-    }
-
-    //****************************************************
-
     /// \brief Returns true if structure has attributes affected by time reversal
     // private for now, expose if necessary
-    bool BasicStructure::_time_reversal_active() const {
-      for(auto const &dof : m_dof_map)
+    bool BasicStructure::is_time_reversal_active() const {
+      for(auto const &dof : m_global_dof_map)
         if(dof.second.traits().time_reversal_active())
           return true;
       for(Site const &site : basis())
