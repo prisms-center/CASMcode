@@ -357,7 +357,7 @@ namespace CASM {
                "volume",
                "Supercell volume (length^3)",
       [](const Supercell & scel)->double {
-        return scel.volume() * scel.lattice().vol();
+        return scel.volume() * scel.lattice().volume();
       });
     }
 

@@ -130,6 +130,7 @@ namespace CASM {
         }
       }
 
+      //Convert the fractional representation to cartesian and return as SymOp
       std::vector<SymOp> result;
       result.reserve(frac_point_group.size());
       Eigen::Matrix3d t_cart, t_diff;

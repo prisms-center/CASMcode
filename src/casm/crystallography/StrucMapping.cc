@@ -207,7 +207,7 @@ namespace CASM {
       isometry = (F * stretch).transpose();
 
       if(StrucMapping::is_inf(cost))
-        cost = StrainCostCalculator::iso_strain_cost(stretch, child_prim.vol() / double(max(child_N_atom, Index(1))));
+        cost = StrainCostCalculator::iso_strain_cost(stretch, child_prim.volume() / double(max(child_N_atom, Index(1))));
     }
 
     //*******************************************************************************************

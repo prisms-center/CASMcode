@@ -1,14 +1,19 @@
 #include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/Niggli.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/SymType.hh"
 
 // TODO: This has to get gobbled into crystallography
 #include "casm/basis_set/DoFIsEquivalent.hh"
+#include "casm/external/Eigen/Core"
+#include "casm/misc/CASM_Eigen_math.hh"
 #include <algorithm>
+#include <atomic>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -160,6 +165,13 @@ namespace {
     xtal::close_group(&factor_group, struc.lattice());
     return factor_group;
   }
+
+  xtal::SymOpVector make_translation_group(const xtal::BasicStructure &struc) {
+    xtal::SymOpVector identity_group{xtal::SymOp::identity()};
+    xtal::SymOpVector translation_group = make_factor_group_from_point_group_translations(struc, identity_group);
+    return translation_group;
+  }
+
 } // namespace
 
 namespace CASM {
@@ -182,15 +194,61 @@ namespace CASM {
       return basis.size();
     }
 
-    /* bool is_primitive(const BasicStructure& struc){ */
-    /*   SymGroup valid_translations, identity_group; */
-    /*   identity_group.push_back(CASM::SymOp()); */
-    /*   _generate_factor_group_slow(valid_translations, identity_group, false); */
-    /*   if(valid_translations.size() == 1) */
-    /*     return true; */
+    bool is_primitive(const BasicStructure &struc) {
+      SymOpVector translation_group = ::make_translation_group(struc);
+      // For a primitive structure, the only possible translation is no translation
+      return translation_group.size() == 1;
+    }
 
-    /*   return false; */
-    /* } */
+    BasicStructure make_primitive(const BasicStructure &non_primitive_struc) {
+      SymOpVector translation_group = ::make_translation_group(non_primitive_struc);
+      double minimum_possible_primitive_volume = std::abs(0.5 * non_primitive_struc.lattice().volume() / non_primitive_struc.basis().size());
+
+      // The candidate lattice vectors are the original lattice vectors, plus all the possible translations that map the basis
+      // of the non primitive structure onto itself
+      std::vector<Eigen::Vector3d> possible_lattice_vectors{non_primitive_struc.lattice()[0], non_primitive_struc.lattice()[1],
+                                                            non_primitive_struc.lattice()[2]};
+      for(const SymOp &trans_op : translation_group) {
+        possible_lattice_vectors.push_back(trans_op.translation);
+      }
+
+      // Attempt every combination of vectors, picking one that doesn't have colinearity (minimum volume check), but results in the smallest
+      // lattice possible (running lattice volume check)
+      double minimum_volume = 2 * non_primitive_struc.lattice().volume();
+      Eigen::Vector3d a_vector_primitive, b_vector_primitive, c_vector_primitive;
+      for(const Eigen::Vector3d a_vector_candidate : possible_lattice_vectors) {
+        for(const Eigen::Vector3d b_vector_candidate : possible_lattice_vectors) {
+          for(const Eigen::Vector3d c_vector_candidate : possible_lattice_vectors) {
+            double possible_volume = std::abs(triple_product(a_vector_candidate, b_vector_candidate, c_vector_candidate));
+            if(possible_volume < minimum_volume) {
+              minimum_volume = possible_volume;
+              a_vector_primitive = a_vector_candidate;
+              b_vector_primitive = b_vector_candidate;
+              c_vector_primitive = c_vector_candidate;
+            }
+          }
+        }
+      }
+      Lattice non_reduced_form_primitive_lattice(a_vector_primitive, b_vector_primitive, c_vector_primitive);
+      Lattice primitive_lattice = niggli(non_reduced_form_primitive_lattice, non_primitive_struc.lattice().tol());
+
+      //The primitive lattice could be noisy, so we smoothen it out to match an integer transformation to the
+      //original lattice exactly
+      Superlattice prim_to_original = Superlattice::smooth_prim(primitive_lattice, non_primitive_struc.lattice());
+      primitive_lattice = prim_to_original.prim_lattice();
+
+      //Fill up the basis
+      BasicStructure primitive_struc(primitive_lattice);
+      for(Site site_for_prim : non_primitive_struc.basis()) {
+        site_for_prim.set_lattice(primitive_struc.lattice(), CART);
+        if(find_index(primitive_struc.basis(), site_for_prim) == primitive_struc.basis().size()) {
+          site_for_prim.within();
+          primitive_struc.set_basis().emplace_back(std::move(site_for_prim));
+        }
+      }
+
+      return primitive_struc;
+    }
 
   } // namespace xtal
 } // namespace CASM

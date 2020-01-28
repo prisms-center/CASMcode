@@ -85,7 +85,7 @@ namespace CASM {
       double length(Index i) const;
 
       /// \brief Return *signed* volume of this lattice
-      double vol() const {
+      double volume() const {
         return lat_column_mat().determinant();
       }
 
@@ -253,6 +253,17 @@ namespace CASM {
 
       Superlattice(const Lattice &tiling_unit, const Lattice &superlattice);
       Superlattice(const Lattice &tiling_unit, const Eigen::Matrix3l &transformation_matrix);
+
+      /// Constructs by taking the superlattice vectors to be the correct values, and then uses
+      /// the rounded integer transformation matrix to slightly modify the primitive lattice so
+      /// that it exactly transforms under the transformation matrix
+      static Superlattice smooth_prim(const Lattice &tiling_unit, const Lattice &superlattice);
+
+
+      /// Constructs by taking the primitive vectors to be the correct values, and then uses
+      /// the rounded integer transformation matrix to slightly modify the superlattice so
+      /// that the primitive lattice exactly transforms to it through the transformation matrix
+      static Superlattice smooth_superlattice(const Lattice &tiling_unit, const Lattice &superlattice);
     };
 
     /// \brief Returns the volume of a Lattice

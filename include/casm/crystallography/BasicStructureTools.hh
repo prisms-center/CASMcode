@@ -22,6 +22,9 @@ namespace CASM {
     /// i.e., no translation smaller than a lattice vector can map the structure onto itself
     bool is_primitive(const BasicStructure &struc);
 
+    /// Returns the smallest possible tiling unit of the given structure
+    BasicStructure make_primitive(const BasicStructure &non_primitive_struc);
+
   } // namespace xtal
 } // namespace CASM
 
