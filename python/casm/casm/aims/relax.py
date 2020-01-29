@@ -104,8 +104,8 @@ class AimsRelax(object):
         self.rundir = []
         run_index = len(self.rundir)
         while os.path.isdir(os.path.join(self.relaxdir, "run." + str(run_index))):
-                self.rundir.append(os.path.join(self.relaxdir, "run." + str(run_index)))
-                run_index += 1
+            self.rundir.append(os.path.join(self.relaxdir, "run." + str(run_index)))
+            run_index += 1
 
     def add_errdir(self):
         """Move run.i to run.i_err.j directory"""
@@ -120,8 +120,8 @@ class AimsRelax(object):
         else:
             err_index = len(self.errdir)
             while os.path.isdir(self.rundir[-1] + "_err." + str(err_index)):
-                    self.errdir.append(self.rundir[-1] + "_err." + str(err_index))
-                    err_index += 1
+                self.errdir.append(self.rundir[-1] + "_err." + str(err_index))
+                err_index += 1
 
     def setup(self, initdir, settings):
         """ mv all files and directories (besides initdir) into initdir """

@@ -5,7 +5,8 @@ import time
 from casm.learn.fit import make_fitting_data, make_estimator, make_selector, \
   add_individual_detail, print_halloffame
 import casm.learn.model_selection
-from casm.learn.evolve import GeneticAlgorithm, IndividualBestFirst, PopulationBestFirst
+from casm.learn.evolve import GeneticAlgorithm, MLPRegressor, IndividualBestFirst, PopulationBestFirst
+
 
 def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None):
   """
@@ -57,7 +58,7 @@ def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None
   # feature selection
   selector = make_selector(input, estimator, 
     scoring=fdata.scoring, cv=fdata.cv, penalty=fdata.penalty, verbose=verbose)
-  
+
   if not hasattr(selector, "get_halloffame") and not hasattr(selector, "get_support"):
     raise Exception("Selector has neither 'get_halloffame' nor 'get_support'")
   
@@ -113,5 +114,3 @@ def fit_and_select(input, save=True, verbose=True, read_existing=True, hall=None
       hall.update([indiv])
   
   return (fdata, estimator, selector)
-
-

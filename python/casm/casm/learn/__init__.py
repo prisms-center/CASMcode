@@ -81,7 +81,7 @@ from casm.learn.fit import example_input_Lasso, example_input_LassoCV, example_i
 from casm.learn.feature_selection import fit_and_select
 from casm.learn.direct_selection import direct_fit
 
-__all__ = __all__ = [
+__all__ = [
   'create_halloffame',
   'EqualIndividual',
   'empty_individual',

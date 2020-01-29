@@ -9,6 +9,7 @@ warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 
 import sklearn.linear_model
 import sklearn.model_selection
+import sklearn.neural_network
 import sklearn.metrics
 import random, re, time, os, types, json, pickle, copy, uuid, shutil, tempfile
 import numpy as np
@@ -1569,7 +1570,8 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
     cv_kwargs = copy.deepcopy(specs["cv"]["kwargs"])
 
     # get cv method (required user input)
-    cv_method = _find_method([sklearn.model_selection, casm.learn.model_selection], specs["cv"]["method"])
+    cv_method = _find_method([sklearn.model_selection, sklearn.neural_network,
+                              casm.learn.model_selection], specs["cv"]["method"])
     cv = cv_method(**cv_kwargs)
 
     if verbose:
@@ -1606,7 +1608,7 @@ def make_fitting_data(input, save=True, verbose=True, read_existing=True):
   return fdata
 
 
-def make_estimator(input, verbose = True):
+def make_estimator(input, verbose=True):
   """
   Construct estimator object from input settings.
 
@@ -1637,14 +1639,18 @@ def make_estimator(input, verbose = True):
   # get kwargs (default: fit_intercept=False)
   kwargs = copy.deepcopy(input["estimator"]["kwargs"])
 
+  print(kwargs)
+
   # Use casm version of LinearRegression
   if input["estimator"]["method"] == "LinearRegression":
     estimator_method = casm.learn.linear_model.LinearRegressionForLOOCV
+  elif input["estimator"]["method"] == "MLPRegressor":
+    kwargs = copy.deepcopy(input["estimator"]["kwargs"])
+    estimator_method = _find_method([sklearn.neural_network], input["estimator"]["method"])
   else:
+    kwargs = False
     estimator_method = _find_method([sklearn.linear_model], input["estimator"]["method"])
-  estimator = estimator_method(**kwargs)
-
-
+  estimator = estimator_method()
 
   return estimator
 
@@ -1714,8 +1720,12 @@ def make_selector(input, estimator, scoring=None, cv=None, penalty=0.0, verbose=
 #  if "verbose" in allowed_kwargs:
 #    kwargs["verbose"] = verbose
 
+  print('sldiufbv')
+  print(selector_method)
+
   sig = signature(selector_method.__init__)
-#  print("sig.parameters.keys():", str(sig.parameters.keys()))
+  print("sig.parameters.keys():", str(sig.parameters.keys()))
+
 
   if "cv" in sig.parameters:
     kwargs["cv"] = cv
