@@ -1,9 +1,12 @@
 #include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/LatticePointWithin.hh"
 #include "casm/crystallography/Niggli.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/SymType.hh"
 
 // TODO: This has to get gobbled into crystallography
@@ -172,6 +175,21 @@ namespace {
     return translation_group;
   }
 
+  /// Given a structure, make it primitive and calculate its factor group. Return the primitive structure and the
+  /// factor group of the primitive structure
+  std::pair<xtal::BasicStructure, xtal::SymOpVector> make_primitive_factor_group(const xtal::BasicStructure &non_primitive_struc) {
+    xtal::BasicStructure primitive_struc = xtal::make_primitive(non_primitive_struc);
+
+    xtal::SymOpVector primitive_point_group = xtal::make_point_group(primitive_struc.lattice());
+    if(primitive_struc.is_time_reversal_active()) {
+      // Duplicate each symmetry operation so that the second version has time reversal enabled
+      ::expand_with_time_reversal(&primitive_point_group);
+    }
+
+    xtal::SymOpVector primitive_factor_group = ::make_factor_group_from_point_group_translations(primitive_struc, primitive_point_group);
+    return std::make_pair(primitive_struc, primitive_factor_group);
+  }
+
 } // namespace
 
 namespace CASM {
@@ -232,12 +250,12 @@ namespace CASM {
       Lattice non_reduced_form_primitive_lattice(a_vector_primitive, b_vector_primitive, c_vector_primitive);
       Lattice primitive_lattice = niggli(non_reduced_form_primitive_lattice, non_primitive_struc.lattice().tol());
 
-      //The primitive lattice could be noisy, so we smoothen it out to match an integer transformation to the
-      //original lattice exactly
+      // The primitive lattice could be noisy, so we smoothen it out to match an integer transformation to the
+      // original lattice exactly
       Superlattice prim_to_original = Superlattice::smooth_prim(primitive_lattice, non_primitive_struc.lattice());
       primitive_lattice = prim_to_original.prim_lattice();
 
-      //Fill up the basis
+      // Fill up the basis
       BasicStructure primitive_struc(primitive_lattice);
       for(Site site_for_prim : non_primitive_struc.basis()) {
         site_for_prim.set_lattice(primitive_struc.lattice(), CART);
@@ -248,6 +266,33 @@ namespace CASM {
       }
 
       return primitive_struc;
+    }
+
+    std::vector<SymOp> make_factor_group(const BasicStructure &struc) {
+      auto prim_factor_group_pair =::make_primitive_factor_group(struc);
+      const BasicStructure &primitive_struc = prim_factor_group_pair.first;
+      const std::vector<SymOp> &primitive_factor_group = prim_factor_group_pair.second;
+
+      auto all_lattice_points = make_lattice_points(primitive_struc.lattice(), struc.lattice(), struc.lattice().tol());
+      std::vector<SymOp> point_group = make_point_group(struc.lattice());
+      std::vector<SymOp> factor_group;
+
+      for(const SymOp &prim_op : primitive_factor_group) {
+        //If the primitive factor group operation with translations removed can't map the original structure's
+        //lattice onto itself, then ditch that operation.
+        SymOpMatrixCompare_f match_ignoring_translations(prim_op, TOL);
+        if(std::find_if(point_group.begin(), point_group.end(), match_ignoring_translations) == point_group.end()) {
+          continue;
+        }
+
+        //Otherwise take that factor operation, and expand it by adding additional translations within the structure
+        for(const UnitCell &lattice_point : all_lattice_points) {
+          Coordinate lattice_point_coordinate = make_superlattice_coordinate(lattice_point, primitive_struc.lattice(), struc.lattice());
+          factor_group.emplace_back(SymOp::translation_operation(lattice_point_coordinate.cart())*prim_op);
+        }
+      }
+
+      return factor_group;
     }
 
   } // namespace xtal

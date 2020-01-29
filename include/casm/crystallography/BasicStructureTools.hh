@@ -9,6 +9,7 @@ namespace CASM {
     class Site;
     class Coordinate;
     class BasicStructure;
+    class SymOp;
 
     /// return basis index of site that matches test_coord, if it is in basis
     /// otherwise, returns basis.size()
@@ -24,6 +25,11 @@ namespace CASM {
 
     /// Returns the smallest possible tiling unit of the given structure
     BasicStructure make_primitive(const BasicStructure &non_primitive_struc);
+
+    /// Create the factor group of the given structure. If the structure has not degrees of freedom
+    /// affected by time reversal, time reversal is ignored. Otherwise symmetry operations are checked
+    /// for time reversal
+    std::vector<SymOp> make_factor_group(const BasicStructure &struc);
 
   } // namespace xtal
 } // namespace CASM

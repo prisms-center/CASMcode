@@ -102,6 +102,25 @@ namespace CASM {
       double m_tolerance;
     };
 
+    /**
+     * Unary predicate for finding SymOp in a container by considering
+     * only the transformation matrix. When using this comparator
+     * both translation and time reversal are ignored. Returns true
+     * if the transformation matrix matches.
+     *
+     * Members provided at construction must still exist externally when
+     * using this functor.
+     */
+
+    struct SymOpMatrixCompare_f : public std::unary_function<SymOp, bool> {
+      explicit SymOpMatrixCompare_f(const SymOp &target_operation, double tolerance) : m_target_operation(&target_operation), m_tolerance(tolerance) {}
+      bool operator()(const SymOp &possible_match);
+
+    private:
+      const SymOp *m_target_operation;
+      double m_tolerance;
+    };
+
     //*********************************************************************************************************************//
 
     /// Combines every pair of symmetry operations and adds any missing resulting operations to the group.

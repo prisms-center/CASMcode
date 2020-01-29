@@ -144,10 +144,6 @@ namespace CASM {
       /// \brief Returns true if structure has attributes affected by time reversal
       bool is_time_reversal_active() const;
 
-      /// Returns true if the structure describes a crystal primitive cell
-      /// and finds the primitive cell and stores it in 'new_prim'
-      bool is_primitive(BasicStructure &new_prim) const;   //Donghee do this
-
       /// fill an empty structure with the basis of its corresponding primitive cell
       void fill_supercell(const BasicStructure &prim); //Ivy
 
