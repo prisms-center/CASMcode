@@ -67,11 +67,11 @@ namespace CASM {
       }
 
       Lattice equivalent(const Lattice &lat, double compare_tol) {
-        return canonical::equivalent(lat, make_point_group(lat));
+        return canonical::equivalent(lat, make_point_group(lat, compare_tol));
       }
 
       Lattice equivalent(const Lattice &lat) {
-        return canonical::equivalent(lat, make_point_group(lat), compare_tol);
+        return canonical::equivalent(lat, make_point_group(lat, lat.tol()), lat.tol());
       }
 
       bool check(const Lattice &lat, SymOpVector const &g) {

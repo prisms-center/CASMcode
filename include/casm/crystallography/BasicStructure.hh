@@ -155,6 +155,18 @@ namespace CASM {
         m_dof_map = std::move(_dof_map);
       }
 
+      /// Manually add new DoF
+      void add_dof(DoFSet const &dofset) {
+        if(dofset.traits().global()) {
+          m_dof_map.emplace(dofset.type_name(), dofset);
+        }
+        else {
+          for(CoordType &site : set_basis()) {
+            site.add_dof(dofset);
+          }
+        }
+      }
+
       /// Manually set the basis sites
       void set_basis(std::vector<CoordType> _basis, COORD_TYPE mode = CART);
 

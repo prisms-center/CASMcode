@@ -675,6 +675,8 @@ namespace CASM {
 
       using OptionHandlerBase::dof_strs;
 
+      using OptionHandlerBase::coordtype_enum;
+
     private:
 
       void initialize() override;

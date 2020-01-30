@@ -2,7 +2,7 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
-#include <boost/regex.hpp>
+#include <regex>
 #include "casm/app/AppIO.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ClexDescription.hh"
@@ -28,26 +28,77 @@ namespace CASM {
     };
   }
 
+  bool ProjectBuilder::valid_title(std::string const &title) {
+    return std::regex_match(title, std::regex(R"([_a-zA-Z]\w*)"));
+  }
 
   /// \brief Construct a CASM ProjectBuilder
   ///
   /// \param _root The directory where a new CASM project should be created.
-  /// \param _name The name of the CASM project. Should be a short name suitable for prepending to files.
+  /// \param _title The title of the CASM project. Should be a short title suitable for prepending to files.
   /// \param _property The name of the default cluster expansion property, i.e. "formation_energy"
   ///
-  ProjectBuilder::ProjectBuilder(fs::path _root, std::string _name, std::string _property) :
+  ProjectBuilder::ProjectBuilder(fs::path _root, std::string _title, std::string _property) :
     m_root(_root),
-    m_name(_name),
+    m_title(_title),
     m_property(_property) {
 
-    /// check if m_name is suitable:
-    if(!boost::regex_match(m_name, boost::regex(R"([_a-zA-Z]\w*)"))) {
+    /// check if m_title is suitable:
+    if(!valid_title(m_title)) {
       throw std::runtime_error(
         std::string("Error constructing ProjectBuilder.\n") +
-        "  Invalid Project name: '" + m_name + "'\n"
+        "  Invalid Project title: '" + m_title + "'\n"
         "  Must be a valid C++ identifier: \n"
         "  - only alphanumeric characters and underscores allowed\n"
         "  - cannot start with a number");
+    }
+
+    fs::path test_root = find_casmroot(m_root);
+    if(test_root == m_root) {
+      throw std::runtime_error(
+        std::string("Error in 'ProjectBuilder::build()'.\n") +
+        "  Already in a casm project: " + test_root.string());
+    }
+
+    // check for a prim.json
+    fs::path prim_path = m_root / "prim.json";
+    if(!fs::is_regular_file(prim_path)) {
+      throw std::runtime_error(std::string("Error constructing 'ProjectBuilder'.\n") +
+                               "  No prim.json file found at: " + prim_path.string());
+    }
+
+    // Read prim
+    ProjectSettings set(m_root, m_title);
+    m_prim = read_prim(prim_path, m_crystallography_tol, &(set.hamiltonian_modules()));
+  }
+
+  /// \brief Construct a CASM ProjectBuilder
+  ///
+  /// \param _root The directory where a new CASM project should be created.
+  /// \param _title The title of the CASM project. Should be a short title suitable for prepending to files.
+  /// \param _property The name of the default cluster expansion property, i.e. "formation_energy"
+  ///
+  ProjectBuilder::ProjectBuilder(BasicStructure<Site> const &_prim, fs::path _root, std::string _title, std::string _property) :
+    m_prim(_prim),
+    m_root(_root),
+    m_title(_title),
+    m_property(_property) {
+
+    /// check if m_title is suitable:
+    if(!valid_title(m_title)) {
+      throw std::runtime_error(
+        std::string("Error constructing ProjectBuilder.\n") +
+        "  Invalid Project title: '" + m_title + "'\n"
+        "  Must be a valid C++ identifier: \n"
+        "  - only alphanumeric characters and underscores allowed\n"
+        "  - cannot start with a number");
+    }
+
+    fs::path test_root = find_casmroot(m_root);
+    if(test_root == m_root) {
+      throw std::runtime_error(
+        std::string("Error in 'ProjectBuilder::build()'.\n") +
+        "  Already in a casm project: " + test_root.string());
     }
 
   }
@@ -64,25 +115,9 @@ namespace CASM {
 
     try {
 
-      fs::path test_root = find_casmroot(m_root);
-      if(test_root == m_root) {
-        std::cerr << "Attempting to create a casm project here: " << m_root << std::endl;
-        std::cerr << "Found existing casm project here: " << test_root << std::endl;
-        throw std::runtime_error(
-          std::string("Error in 'ProjectBuilder::build()'.\n") +
-          "  Already in a casm project: " + test_root.string());
-      }
-
       DirectoryStructure dir(m_root);
 
-      // check for a prim.json
-      if(!fs::is_regular_file(dir.prim())) {
-        throw std::runtime_error(
-          std::string("Error in 'ProjectBuilder::build()'.\n") +
-          "  No prim.json file found at: " + dir.prim().string());
-      }
-
-      ProjectSettings set(m_root, m_name);
+      ProjectSettings set(m_root, m_title);
 
       // create basic directories
       set.new_casm_dir();
@@ -116,13 +151,7 @@ namespace CASM {
 
       set.commit();
 
-
-      // Read prim
-      Structure prim;
-      fs::ifstream primfile(dir.prim());
-      prim = Structure(read_prim(jsonParser(primfile), m_crystallography_tol, &(set.hamiltonian_modules())));
-      primfile.close();
-
+      Structure prim(m_prim);
 
       // Calculate symmetry  --------------------
       // get lattice point group and character table
@@ -168,6 +197,8 @@ namespace CASM {
 
       // Generate empty composition_axes.json --------------------
       CompositionAxes().write(dir.composition_axes());
+
+      write_prim(m_prim, dir.prim(), FRAC);
 
     }
     catch(...) {

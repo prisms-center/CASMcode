@@ -153,23 +153,7 @@ namespace CASM {
     SimpleStructure make_simple_structure(Supercell const &_scel,
                                           ConfigDoF const &_dof,
                                           std::vector<DoFKey> const &_which_dofs) {
-      SimpleStructure result;
-      result.lat_column_mat = _scel.lattice().lat_column_mat();
-
-
-      result.mol_info.coords.resize(3, _dof.size());
-      result.mol_info.names.reserve(_dof.size());
-
-      for(Index b = 0, l = 0; b < _dof.n_sublat(); ++b) {
-        for(Index v = 0; v < _dof.n_vol(); ++v, ++l) {
-          result.mol_info.cart_coord(l) = _scel.coord(l).const_cart();
-          std::string mol_name = _scel.prim().basis()[ b ].occupant_dof()[_dof.occ(l)].name();
-          result.mol_info.names.push_back(std::move(mol_name));
-        }
-      }
-
-      _apply_dofs(result, _dof, _scel.prim(), _which_dofs);
-      return result;
+      return make_simple_structure(_scel, _dof, MappedProperties(), _which_dofs, false);
     }
 
     //***************************************************************************
@@ -177,20 +161,25 @@ namespace CASM {
     SimpleStructure make_simple_structure(Configuration const &_config,
                                           std::vector<DoFKey> const &_which_dofs,
                                           bool relaxed) {
-      return make_simple_structure(_config.supercell(), _config.configdof(), _which_dofs);
+
+      if(relaxed && is_calculated(_config)) {
+        return make_simple_structure(_config.supercell(), _config.configdof(), _config.calc_properties(), _which_dofs, true);
+      }
+      //else
+      return make_simple_structure(_config.supercell(), _config.configdof(), MappedProperties(), _which_dofs, false);
     }
 
     //***************************************************************************
     SimpleStructure make_simple_structure(Supercell const &_scel,
                                           ConfigDoF const &_dof,
                                           MappedProperties const &_props,
-                                          bool ideal,
-                                          std::vector<DoFKey> const &_which_dofs) {
+                                          std::vector<DoFKey> const &_which_dofs,
+                                          bool relaxed) {
 
       SimpleStructure result;
 
       result.mol_info.resize(_dof.size());
-      if(ideal) {
+      if(!relaxed) {
         result.lat_column_mat = _scel.lattice().lat_column_mat();
         for(Index b = 0, l = 0; b < _dof.n_sublat(); ++b) {
           for(Index v = 0; v < _dof.n_vol(); ++v, ++l) {
@@ -232,12 +221,6 @@ namespace CASM {
         }
       }
 
-      for(DoFKey const &dof : _all_dofs) {
-        if(AnisoValTraits(dof).global()) {
-          global_dof.emplace(dof, dof);
-        }
-      }
-
       auto const &info = _sstruc.info(mode);
       if(_allowed_occupants.empty())
         _allowed_occupants.resize(info.size());
@@ -256,6 +239,9 @@ namespace CASM {
 
           for(auto const &prop : info.properties) {
             if(local_dof.count(prop.first))
+              continue;
+
+            if(prop.first == "disp")
               continue;
 
             if(!almost_zero(prop.second.col(i)))

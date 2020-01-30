@@ -79,8 +79,15 @@ namespace CASM {
 
       void set_occ_value(int new_val);
 
+      ///\brief Set all DoFs, overwriting existing DoFs
       void set_dofs(std::map<std::string, DoFSet> _dofs);
 
+      ///\brief Add new DoF, keeping existing DoFs
+      void add_dof(DoFSet const &_dofset) {
+        m_dof_map.emplace(_dofset.type_name(), _dofset);
+      }
+
+      ///\brief const acces of map from DoF type name to DoFSet
       std::map<std::string, DoFSet> const &dofs() const {
         return m_dof_map;
       }
