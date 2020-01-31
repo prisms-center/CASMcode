@@ -19,6 +19,7 @@ namespace CASM {
   namespace xtal {
     class COORD_MODE;
     class Structure;
+    class SimpleStructure;
     class SpeciesAttribute;
     class AtomPosition;
     class Molecule;
@@ -28,6 +29,7 @@ namespace CASM {
   }
   using xtal::COORD_MODE;
   using xtal::Structure;
+  using xtal::SimpleStructure;
   using xtal::SpeciesAttribute;
   using xtal::AtomPosition;
   using xtal::Molecule;
@@ -117,6 +119,13 @@ namespace CASM {
 
   /// \brief Write prim.json as JSON
   void write_prim(const BasicStructure<Site> &prim, jsonParser &json, COORD_TYPE mode);
+
+  /// \brief Write prim.json as JSON
+  void write_prim(SimpleStructure const &prim_struc,
+                  std::set<std::string> const &dofs,
+                  std::set<std::string> const &attributes,
+                  jsonParser &json,
+                  COORD_TYPE mode);
 
 
 

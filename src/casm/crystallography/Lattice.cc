@@ -793,13 +793,15 @@ namespace CASM {
     Superlattice::Superlattice(const Lattice &tiling_unit, const Lattice &superlattice):
       m_primitive_lattice(tiling_unit),
       m_superlattice(superlattice),
-      m_transformation_matrix(xtal::make_transformation_matrix(this->prim_lattice(), this->superlattice(), TOL))
+      m_transformation_matrix(xtal::make_transformation_matrix(this->prim_lattice(), this->superlattice(), TOL)),
+      m_size(std::abs(m_transformation_matrix.determinant()))
     {}
 
     Superlattice::Superlattice(const Lattice &tiling_unit, const Eigen::Matrix3l &transformation_matrix):
       m_primitive_lattice(tiling_unit),
       m_superlattice(xtal::make_superlattice(tiling_unit, transformation_matrix)),
-      m_transformation_matrix(transformation_matrix)
+      m_transformation_matrix(transformation_matrix),
+      m_size(std::abs(m_transformation_matrix.determinant()))
     {}
 
 

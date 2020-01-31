@@ -315,7 +315,7 @@ namespace CASM {
 
     template<typename CoordType>
     void BasicStructure<CoordType>::fill_supercell(const BasicStructure<CoordType> &prim) {
-      Index i, j;
+      Index j;
 
       copy_attributes_from(prim);
 

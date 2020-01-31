@@ -1,4 +1,4 @@
-#include "casm/database/MappedProperties.hh"
+#include "casm/clex/MappedProperties.hh"
 
 #include <utility>
 #include "casm/casm_io/container/json_io.hh"
@@ -46,20 +46,27 @@ namespace CASM {
   }
   jsonParser &to_json(const MappedProperties &obj, jsonParser &json) {
     json.put_obj();
-    json["from"] = obj.from;
+    json["origin"] = obj.origin;
+    json["init"] = obj.init_config;
     json["to"] = obj.to;
+    if(!obj.file_data.empty()) {
+      json["path"] = obj.file_data.path();
+      json["timestamp"] = obj.file_data.timestamp();
+    }
     json["global"] = obj.global;
     json["site"] = obj.site;
-    json["timestamp"] = obj.timestamp;
+
     return json;
   }
 
   jsonParser const &from_json(MappedProperties &obj, const jsonParser &json) {
-    from_json(obj.from, json["from"]);
+    from_json(obj.origin, json["origin"]);
+    from_json(obj.init_config, json["init"]);
     from_json(obj.to, json["to"]);
     from_json(obj.global, json["global"]);
     from_json(obj.site, json["site"]);
-    from_json(obj.timestamp, json["timestamp"]);
+    if(json.contains("path"))
+      obj.file_data = FileData(json["path"].get<std::string>(), json["timestamp"].get<std::time_t>());
     return json;
   }
 

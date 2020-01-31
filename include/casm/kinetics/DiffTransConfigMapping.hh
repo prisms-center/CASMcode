@@ -8,35 +8,28 @@
 #include "casm/crystallography/StrucMapping.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/Site.hh"
-#include "casm/casm_io/json/jsonParser.hh"
-#include "casm/crystallography/Structure.hh"
-
+#include "casm/clex/ConfigMapping.hh"
 namespace CASM {
   namespace xtal {
-    class Lattice;
     class Site;
     class UnitCellCoord;
     template<typename CoordType>
     class BasicStructure;
   }
-  using xtal::Lattice;
   using xtal::Site;
   using xtal::UnitCellCoord;
   using xtal::BasicStructure;
 
   class Supercell;
-  class SymGroup;
   class PrimClex;
-  class Configuration;
-  class ConfigDoF;
+
+  namespace ConfigMapping {
+    struct Settings;
+  }
 
   namespace Kinetics {
     class DiffTransConfiguration;
     class DiffusionTransformation;
-  }
-
-  namespace Completer {
-    class ImportOption;
   }
 
   /// Data structure holding results of ConfigMapper algorithm
@@ -75,10 +68,7 @@ namespace CASM {
       ///\brief Default construction not allowed -- this constructor provides an override
       DiffTransConfigMapper(NullInitializer) :
         m_pclex(nullptr),
-        m_lattice_weight(0.5),
-        m_max_volume_change(0.5),
-        m_min_va_frac(0.),
-        m_max_va_frac(1.) {
+        m_tol(CASM::TOL) {
       }
 
       ///\brief Construct and initialize a DiffTransConfigMapper
@@ -110,9 +100,7 @@ namespace CASM {
       ///
       ///\param _tol tolerance for mapping comparisons
       DiffTransConfigMapper(const PrimClex &_pclex,
-                            double _lattice_weight,
-                            double _max_volume_change = 0.5,
-                            int _options = xtal::StrucMapper::robust, // this should actually be a bitwise-OR of StrucMapper::Options
+                            ConfigMapping::Settings const &_settings,
                             double _tol = TOL);
 
 
@@ -124,29 +112,8 @@ namespace CASM {
         m_pclex = &_pclex;
       }
 
-      /// \brief the relative weighting between strain cost and basis cost
-      double lattice_weight() const {
-        return m_lattice_weight;
-      }
-
-      void set_lattice_weight(double _lw) {
-        m_lattice_weight = max(min(_lw, 1.0), 1e-9);
-      }
-
-      double min_va_frac() const {
-        return m_min_va_frac;
-      }
-
-      void set_min_va_frac(double _min_va) {
-        m_min_va_frac = max(_min_va, 0.);
-      }
-
-      double max_va_frac() const {
-        return m_max_va_frac;
-      }
-
-      void set_max_va_frac(double _max_va) {
-        m_max_va_frac = min(_max_va, 1.);
+      ConfigMapping::Settings const &settings()const {
+        return m_settings;
       }
 
 
@@ -176,16 +143,6 @@ namespace CASM {
       ///       unlike import_structure_occupation, displacements and strain are preserved
       ///
       DiffTransConfigMapperResult import_structure(const fs::path &pos_path) const;
-
-      ///\brief specify to use restricted hermites when mapping
-      void restricted() {
-        m_restricted = true;
-      }
-
-      ///\brief specify which lattices should be searched when mapping configurations
-      void set_forced_lattices(const std::vector<std::string> &lattice_names) {
-        m_lattices_to_force = lattice_names;
-      }
 
     private:
 
@@ -220,17 +177,8 @@ namespace CASM {
                                               std::set<UnitCellCoord> &vacancy_to) const;
 
       const PrimClex *m_pclex;
-      mutable std::map<Index, std::vector<Lattice> > m_superlat_map;
-      double m_lattice_weight;
-      double m_max_volume_change;
-      double m_min_va_frac;
-      double m_max_va_frac;
-      int m_options;
+      ConfigMapping::Settings m_settings;
       double m_tol;
-
-      const std::vector<Lattice> &_lattices_of_vol(Index prim_vol) const;
-      std::vector<std::string> m_lattices_to_force;
-      bool m_restricted = false;
     };
   }
 

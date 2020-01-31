@@ -20,6 +20,11 @@ namespace CASM {
     void SymOption::initialize() {
       add_help_suboption();
       add_coordtype_suboption();
+      add_configlist_suboption();
+      add_confignames_suboption();
+      add_scelnames_suboption();
+      add_dofs_suboption();
+
       m_desc.add_options()
       ("lattice-point-group", "Pretty print lattice point group")
       ("factor-group", "Pretty print factor group")

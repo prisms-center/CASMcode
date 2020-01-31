@@ -8,7 +8,7 @@
 namespace CASM {
   namespace DB {
 
-    Remove<Supercell>::Remove(const PrimClex &_primclex, fs::path report_dir, Log &_file_log) :
+    Remove<Supercell>::Remove(const PrimClex &_primclex, std::string report_dir, Log &_file_log) :
       m_primclex(_primclex), m_report_dir(report_dir), m_file_log(_file_log) {}
 
     std::string Remove<Supercell>::desc() {
@@ -216,10 +216,10 @@ namespace CASM {
 
       // get remove report_dir, check if exists, and create new report_dir.i if necessary
       fs::path report_dir = primclex.dir().root_dir() / "remove_report";
-      report_dir = create_report_dir(report_dir);
+      report_dir = create_report_dir(report_dir.string());
 
       // -- erase --
-      Remove<Supercell> f(primclex, report_dir, primclex.log());
+      Remove<Supercell> f(primclex, report_dir.string(), primclex.log());
 
       if(opt.force()) {
         f.erase_all(selection, opt.dry_run());
@@ -237,7 +237,7 @@ namespace CASM {
       return m_primclex;
     }
 
-    fs::path Remove<Supercell>::report_dir() const {
+    std::string Remove<Supercell>::report_dir() const {
       return m_report_dir;
     }
 

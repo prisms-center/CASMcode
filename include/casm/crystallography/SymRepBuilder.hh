@@ -5,6 +5,7 @@
 #include <memory>
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 
 namespace CASM {
 
@@ -64,11 +65,13 @@ namespace CASM {
     bool m_time_reversal_active;
   };
 
-  template<bool uses_time_reversal>
+  template<bool _uses_time_reversal>
   class TemplateSymRepBuilderBase : public SymRepBuilderInterface {
+  public:
+    static const bool uses_time_reversal = _uses_time_reversal;
   protected:
     TemplateSymRepBuilderBase(std::string const &_name) :
-      SymRepBuilderInterface(_name, uses_time_reversal) {}
+      SymRepBuilderInterface(_name, _uses_time_reversal) {}
 
   };
 
@@ -111,6 +114,37 @@ namespace CASM {
     SymRepBuilderInterface *_clone() const override {
       return new CartesianSymRepBuilder();
     }
+  };
+
+  /// \brief Builds symmetry representation as the Kronecker product of two other representations
+  template<typename Builder1, typename Builder2, Index Dim1, Index Dim2>
+  class KroneckerSymRepBuilder : public TemplateSymRepBuilderBase < Builder1::uses_time_reversal || Builder2::uses_time_reversal > {
+  public:
+    static const bool uses_time_reversal = Builder1::uses_time_reversal || Builder2::uses_time_reversal;
+    KroneckerSymRepBuilder(std::string const &_name,
+                           Builder1 _builder1 = Builder1(),
+                           Builder2 _builder2 = Builder2()) :
+      TemplateSymRepBuilderBase<uses_time_reversal>(_name),
+      m_builder1(_builder1),
+      m_builder2(_builder2) {}
+
+    Eigen::MatrixXd symop_to_matrix(Eigen::Ref<const Eigen::Matrix3d> const &_matrix,
+                                    Eigen::Ref<const Eigen::Vector3d> const &_tau,
+                                    bool time_reversal,
+                                    Index dim) const override {
+      assert(dim == Dim1 * Dim2);
+      Eigen::MatrixXd result;
+      kroneckerProduct(m_builder1.symop_to_matrix(_matrix, _tau, time_reversal, Dim1), m_builder2.symop_to_matrix(_matrix, _tau, time_reversal, Dim2), result);
+      return result;
+    }
+
+  private:
+    SymRepBuilderInterface *_clone() const override {
+      return new KroneckerSymRepBuilder(*this);
+    }
+
+    Builder1 m_builder1;
+    Builder2 m_builder2;
   };
 
   /// \brief Builds symmetry representation as the 'dim' x 'dim' identity matrix, regardless of symop
@@ -198,8 +232,8 @@ namespace CASM {
   // Named constructors for all previously defined SymRepBuilders
   namespace SymRepBuilder {
     inline
-    CartesianSymRepBuilder Identity() {
-      return CartesianSymRepBuilder();
+    IdentitySymRepBuilder Identity() {
+      return IdentitySymRepBuilder();
     }
 
     inline

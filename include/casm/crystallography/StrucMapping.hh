@@ -163,6 +163,10 @@ namespace CASM {
       std::vector<Index> assignment;
 
       /// \brief Cost matrix for an assignment problem, which may be a reduced assignment problem if forced_on.size()>0
+      /// cost_mat(i,j) is the cost of mapping child site 'j' onto parent atom 'i'. If parent structure allows vacancies
+      /// cost_mat may have more columns than child sites. These correspond to 'virtual vacancies', which have zero cost
+      /// of mapping onto a parent site that allows vacancies and infinite cost of mapping onto a parent site that does
+      /// not allow vacancies.
       /// In the case of a reduced assignment problem, cost_mat.cols()=icol.size() and cost_mat.rows()=irow.size()
       Eigen::MatrixXd cost_mat;
 
@@ -209,8 +213,15 @@ namespace CASM {
       typedef Eigen::MatrixXd DisplacementMatrix;
 
       // Can treat as a Eigen::VectorXd
-      typedef DisplacementMatrix::ColXpr Displacement;
-      typedef DisplacementMatrix::ConstColXpr ConstDisplacement;
+      using Displacement = DisplacementMatrix::ColXpr;
+      using ConstDisplacement = DisplacementMatrix::ConstColXpr;
+
+      // Label molecules as name and occupant index (optional, default 0)
+      using MoleculeLabel = std::pair<std::string, Index>;
+
+      using MoleculeSet = std::set<Index>;
+
+      using MoleculeMap = std::vector<MoleculeSet>;
 
       /// \brief Static constructor to build an invalid MappingNode, can be used as return value when no valid mapping exists
       static MappingNode invalid();
@@ -262,11 +273,11 @@ namespace CASM {
       }
 
       Displacement disp(Index i) {
-        return displacement.col(i);
+        return atom_displacement.col(i);
       }
 
       ConstDisplacement disp(Index i) const {
-        return displacement.col(i);
+        return atom_displacement.col(i);
       }
 
 
@@ -286,11 +297,17 @@ namespace CASM {
 
       double cost;
 
-      Eigen::MatrixXd displacement;
+      Eigen::MatrixXd atom_displacement;
 
       /// permutation lists indices of sites in input structure, as-read, so that
       /// they constitute particular mapping onto parent structure
-      std::vector<Index> permutation;
+      std::vector<Index> atom_permutation;
+
+      ///  mol_map[j] are indices of relaxed atoms that comprise molecule
+      MoleculeMap mol_map;
+
+      /// list of assigned molecule names
+      std::vector<MoleculeLabel> mol_labels;
 
       bool operator<(MappingNode const &other) const;
     };
@@ -359,7 +376,7 @@ namespace CASM {
       StrucMapper(StrucMapCalculatorInterface const &_calculator,
                   double _strain_weight = 0.5,
                   double _max_volume_change = 0.5,
-                  int _options = robust, // this should actually be a bitwise-OR of StrucMapper::Options
+                  int _options = 0, // this should actually be a bitwise-OR of StrucMapper::Options
                   double _tol = TOL,
                   double _min_va_frac = 0.,
                   double _max_va_frac = 1.);
@@ -430,14 +447,22 @@ namespace CASM {
         m_allowed_superlat_map.clear();
       }
 
-      ///\brief specify to use restricted hermites when mapping
-      void restricted() {
-        m_restricted = true;
-      }
-
       ///\brief returns true if lattices were set to be allowed as candidates
       bool lattices_constrained() const {
         return m_allowed_superlat_map.size();
+      }
+
+      ///\brief specify to use filtered lattices for mapping
+      void set_filter(std::function<bool(Lattice const &, Lattice const &)> _filter_f) {
+        m_filtered = true;
+        m_filter_f = _filter_f;
+        m_superlat_map.clear();
+      }
+
+      ///\brief specify not to use filtered lattice for mapping
+      void unset_filter() {
+        m_filtered = false;
+        m_superlat_map.clear();
       }
 
       ///\brief Returns single best mapping of ideal child structure onto parent structure
@@ -447,8 +472,11 @@ namespace CASM {
       ///                   populated by the permutation of sites in the imported structure
       ///                   that maps them onto sites of the ideal crystal (excluding vacancies)
       ///\endparblock
-      MappingNode map_ideal_struc(const SimpleStructure &child_struc,
-                                  Index k = 1) const;
+      std::set<MappingNode> map_ideal_struc(const SimpleStructure &child_struc,
+                                            Index k = 1,
+                                            double max_cost = StrucMapping::big_inf(),
+                                            double min_cost = -TOL,
+                                            bool keep_invalid = false) const;
 
 
 
@@ -463,6 +491,15 @@ namespace CASM {
                                                double max_cost = StrucMapping::big_inf(),
                                                double min_cost = -TOL,
                                                bool keep_invalid = false) const;
+
+      std::set<MappingNode> map_deformed_struc_impose_lattice_vols(const SimpleStructure &child_struc,
+                                                                   Index min_vol,
+                                                                   Index max_vol,
+                                                                   Index k = 1,
+                                                                   double max_cost = StrucMapping::big_inf(),
+                                                                   double min_cost = -TOL,
+                                                                   bool keep_invalid = false) const;
+
 
       ///\brief Low-level routine to map a structure onto a ConfigDof assuming a specific Lattice, without assuming structure is ideal
       ///       Will only identify mappings better than best_cost, and best_cost is updated to reflect cost of best mapping identified
@@ -521,9 +558,9 @@ namespace CASM {
       ///\brief returns number of species in a SimpleStructure given the current calculator settings. Use instead of sstruc.n_atom() for consistency
       Index _n_species(SimpleStructure const &sstruc) const;
 
-      //Implement filter as std::function<bool(Lattice const&)> or as polymorphic type or as query (i.e., DataFormatter)
-      bool _filter_lat(Lattice const &_lat)const {
-        return true;
+      //Implement filter as std::function<bool(Lattice const&,Lattice const&)>
+      bool _filter_lat(Lattice const &_parent_lat, Lattice const &_child_lat)const {
+        return m_filter_f(_parent_lat, _child_lat);
       }
 
       std::pair<Index, Index> _vol_range(const SimpleStructure &child_struc) const;
@@ -535,18 +572,18 @@ namespace CASM {
       double m_strain_weight;
       double m_max_volume_change;
       int m_options;
-      bool m_restricted = false;
       double m_tol;
       double m_min_va_frac;
       double m_max_va_frac;
+
+      bool m_filtered;
+      std::function<bool(Lattice const &, Lattice const &)> m_filter_f;
 
       ///Maps the supercell volume to a vector of Lattices with that volume
       mutable LatMapType m_superlat_map;
       mutable LatMapType m_allowed_superlat_map;
 
       std::vector<Lattice> _lattices_of_vol(Index prim_vol) const;
-
-
     };
 
 

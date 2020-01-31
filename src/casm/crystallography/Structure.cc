@@ -200,7 +200,7 @@ namespace CASM {
     //***********************************************************
 
     void Structure::fill_supercell(const Structure &prim) {
-      Index i, j;
+      Index j;
 
       auto all_lattice_points = make_lattice_points(prim.lattice(), lattice(), lattice().tol());
 
@@ -444,17 +444,21 @@ namespace CASM {
           //Calling the adapter here, because we said we don't want anything outside
           //of crystallography to invoke crystallography/Adapter.hh
           if(eq(adapter::Adapter<SymOp, CASM::SymOp>()(op), dofref_to)) {
+            // By default, the symrep is identity, but if we find that there are
+            // equivalent anisotropic occupants, we will initialize a non-trivial
+            // representation
             if(dofref_from.symrep_ID().is_identity()) {
               if(!eq.perm().is_identity()) {
                 dofref_from.allocate_symrep(m_factor_group);
                 Index s2;
                 for(s2 = 0; s2 < s; ++s2) {
-                  m_factor_group[s2].set_rep(dofref_from.symrep_ID(), SymPermutation(sequence<Index>(0, dofref_from.size())));
+                  m_factor_group[s2].set_rep(dofref_from.symrep_ID(), SymPermutation(sequence<Index>(0, dofref_from.size() - 1)));
                 }
-                m_factor_group[s2].set_rep(dofref_from.symrep_ID(), SymPermutation(eq.perm().inverse()));
               }
             }
-            else {
+
+            // If representation is non-trivial, register the representation for this operation
+            if(!dofref_from.symrep_ID().is_identity()) {
               op.set_rep(dofref_from.symrep_ID(), SymPermutation(eq.perm().inverse()));
             }
           }
