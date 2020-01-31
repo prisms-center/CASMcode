@@ -137,10 +137,6 @@ namespace CASM {
         return SymGroupRepID();
       }
 
-      void generate_factor_group(SymGroup &factor_group) const;
-      void generate_factor_group_slow(SymGroup &factor_group) const;
-      void _generate_factor_group_slow(SymGroup &factor_group, SymGroup const &super_point_group, bool time_reversal_enabled = true) const;
-
       /// \brief Returns true if structure has attributes affected by time reversal
       bool is_time_reversal_active() const;
 

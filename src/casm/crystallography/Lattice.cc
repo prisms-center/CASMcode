@@ -779,7 +779,7 @@ namespace CASM {
     Superlattice Superlattice::smooth_prim(const Lattice &tiling_unit, const Lattice &superlattice) {
       Superlattice result_superlattice(tiling_unit, superlattice);
 
-      Eigen::Matrix3d trans_mat_inverse = result_superlattice.transformation_matrix().inverse();
+      Eigen::Matrix3d trans_mat_inverse = result_superlattice.transformation_matrix().cast<double>().inverse();
       // By using the inverse transformatiom matrix, the new prim is guaranteed to
       // perfectly tile the old prim
       Lattice reconstructed_tiling_unit(result_superlattice.superlattice().lat_column_mat() * trans_mat_inverse,

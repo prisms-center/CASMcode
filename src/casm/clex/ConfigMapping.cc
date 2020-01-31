@@ -1,5 +1,8 @@
 #include "casm/clex/ConfigMapping.hh"
 
+#include "casm/crystallography/Adapter.hh"
+#include "casm/crystallography/BasicStructureTools.hh"
+#include "casm/crystallography/SymType.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/clex/PrimClex.hh"
@@ -229,8 +232,8 @@ namespace CASM {
   ConfigMapping::_allowed_species(_prim)),
 
   m_prim(_prim) {
-    SymGroup fg;
-    _prim.generate_factor_group(fg);
+    xtal::SymOpVector factor_group_operations = xtal::make_factor_group(_prim);
+    SymGroup fg = adapter::Adapter<SymGroup, xtal::SymOpVector>()(factor_group_operations, _prim.lattice());
     set_point_group(fg.copy_no_trans());
 
   }

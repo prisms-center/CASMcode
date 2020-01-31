@@ -140,7 +140,7 @@ namespace CASM {
 
           Coordinate parent_coord = ::make_superlattice_coordinate(i % pgrid.size(), pgrid, parent_index_to_unitcell);
           parent_coord.cart() += p_info.coord(i / pgrid.size());
-          child_coord.min_dist(parent_coord, disp_coord);
+          Coordinate disp_coord = child_coord.min_translation(parent_coord);
           // std::cout << "\nMap " << _node.permutation[i] << "->" << i << "\n"
           //        << "Child coord (" << _node.permutation[i] % cgrid.size()<< ", "<< _node.permutation[i] / cgrid.size() << "): "
           //        << child_coord.const_cart().transpose() << "\n"

@@ -437,20 +437,8 @@ namespace CASM {
   //*******************************************************************************************
   SymGroup SymGroup::lattice_point_group(Lattice const &_lat) {
 
-    //TODO
-    //Should an adapter exist for this?
-    //There was talk about making SymGroup not depend on CASM::SymOp,
-    //so when that happens you can just pass it whatever calc_point_group
-    //returns
-
-    auto lattice_point_group = xtal::make_point_group(_lat);
-    std::vector<CASM::SymOp> casted_point_group;
-    for(const auto &op : lattice_point_group) {
-      //The tolerance passed here is totally arbitrary...
-      casted_point_group.emplace_back(get_matrix(op), get_translation(op), get_time_reversal(op), CASM::TOL);
-    }
-
-    SymGroup point_group(casted_point_group, &_lat);
+    xtal::SymOpVector lattice_point_group_operations = xtal::make_point_group(_lat);
+    SymGroup point_group = adapter::Adapter<SymGroup, xtal::SymOpVector>()(lattice_point_group_operations, _lat);
 
 
     if(!point_group.is_group(_lat.tol())) {

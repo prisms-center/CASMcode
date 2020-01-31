@@ -1,16 +1,16 @@
 #ifndef XTALSYMTOOLS_HH
 #define XTALSYMTOOLS_HH
 
-#include <vector>
 #include "casm/crystallography/Adapter.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/global/definitions.hh"
+#include <vector>
 
 namespace CASM {
   namespace sym {
-    //TODO: These could be template specializations of what's in symmetry/SymTools.hh
-    //but I'm not sure how we're generalizing the apply/copy_apply stuff yet
+    // TODO: These could be template specializations of what's in symmetry/SymTools.hh
+    // but I'm not sure how we're generalizing the apply/copy_apply stuff yet
 
     /// \brief Apply SymOp to a Lattice
     xtal::Lattice &apply(const xtal::SymOp &op, xtal::Lattice &lat);
@@ -22,7 +22,7 @@ namespace CASM {
     xtal::Lattice copy_apply(const ExternSymOp &op, const xtal::Lattice &lat) {
       return copy_apply(adapter::Adapter<xtal::SymOp, ExternSymOp>()(op), lat);
     }
-  }
+  } // namespace sym
   namespace xtal {
 
     /// \brief Construct indices of the subgroup that leaves a lattice unchanged
@@ -89,13 +89,9 @@ namespace CASM {
     ///   such that scel is a superlattice of the result of applying op to unit
     ///
     /// \returns pair corresponding to first successful op and T, or with op=end if not successful
-    template<typename Object, typename OpIterator>
-    std::pair<OpIterator, Eigen::Matrix3d> is_equivalent_superlattice(
-      const Object &scel,
-      const Object &unit,
-      OpIterator begin,
-      OpIterator end,
-      double tol) {
+    template <typename Object, typename OpIterator>
+    std::pair<OpIterator, Eigen::Matrix3d>
+    is_equivalent_superlattice(const Object &scel, const Object &unit, OpIterator begin, OpIterator end, double tol) {
 
       std::pair<bool, Eigen::Matrix3d> res;
       for(auto it = begin; it != end; ++it) {
@@ -111,11 +107,8 @@ namespace CASM {
     ///
     /// SymOpIterator are provided to apply to each Lattice in an attempt
     /// to find the smallest possible superduperlattice of all symmetrically transformed Lattice
-    template<typename LatIterator, typename SymOpIterator>
-    Lattice make_equivalent_superduperlattice(LatIterator begin,
-                                              LatIterator end,
-                                              SymOpIterator op_begin,
-                                              SymOpIterator op_end) {
+    template <typename LatIterator, typename SymOpIterator>
+    Lattice make_equivalent_superduperlattice(LatIterator begin, LatIterator end, SymOpIterator op_begin, SymOpIterator op_end) {
 
       Lattice best = *begin;
       for(auto it = ++begin; it != end; ++it) {
@@ -152,23 +145,24 @@ namespace CASM {
       auto avg_basis = structure.basis();
 
       // Loop through given symmetry group an fill a temporary "operated basis"
-      decltype(avg_basis) operbasis;
+      decltype(avg_basis) operated_basis;
 
       // Loop through given symmetry group an fill a temporary "operated basis"
-      for(Index rf = 0; rf < enforced_group.size(); rf++) {
-        operbasis.clear();
-        for(Index b = 0; b < symmetrized_structure.basis().size(); b++) {
-          operbasis.push_back(enforced_group[rf] * symmetrized_structure.basis()[b]);
+      for(const SymOp &enforce_group_operation : enforced_group) {
+        operated_basis.clear();
+        for(const auto &symmetrized_structure_site : symmetrized_structure.basis()) {
+          operated_basis.push_back(enforce_group_operation * symmetrized_structure_site);
         }
+
         // Now that you have a transformed basis, find the closest mapping of atoms
         // Then average the distance and add it to the average basis
         for(Index b = 0; b < symmetrized_structure.basis().size(); b++) {
           double smallest = 1000000;
-          Coordinate bshift(symmetrized_structure.lattice()), tshift(symmetrized_structure.lattice());
-          for(Index ob = 0; ob < operbasis.size(); ob++) {
-            double dist = operbasis[ob].min_dist(symmetrized_structure.basis()[b], tshift);
+          Coordinate bshift(symmetrized_structure.lattice());
+          for(const auto &operated_basis_site : operated_basis) {
+            double dist = operated_basis_site.min_dist(symmetrized_structure.basis()[b]);
             if(dist < smallest) {
-              bshift = tshift;
+              bshift = operated_basis_site.min_translation(symmetrized_structure.basis()[b]);
               smallest = dist;
             }
           }

@@ -130,7 +130,7 @@ namespace CASM {
       //from.print_xyz(std::cout,true);
       //std::cout << "to struc" << std::endl;
       //to.print_xyz(std::cout,true);
-      double uccoord_tol = 1.1 * max(from_node.displacement.colwise().norm().maxCoeff(), to_node.displacement.colwise().norm().maxCoeff()) + cuberoot(abs(scel_ptr->lattice().vol())) * primclex().crystallography_tol();
+      double uccoord_tol = 1.1 * max(from_node.displacement.colwise().norm().maxCoeff(), to_node.displacement.colwise().norm().maxCoeff()) + cuberoot(abs(scel_ptr->lattice().volume())) * primclex().crystallography_tol();
       //std::cout << "uccoord_tol " << uccoord_tol <<std::endl;
       std::vector<Index> moving_atoms = _analyze_atoms_ideal(from,
                                                              to,

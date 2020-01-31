@@ -60,17 +60,6 @@ namespace CASM {
 
     }
 
-    //***********************************************************
-    /*
-      BasicStructure &BasicStructure::apply_sym(const SymOp &op) {
-      for(Index i = 0; i < basis().size(); i++) {
-      m_basis[i].apply_sym(op);
-      }
-      return *this;
-      }
-    */
-    //***********************************************************
-
     void BasicStructure::reset() {
       set_site_internals();
 
@@ -92,52 +81,6 @@ namespace CASM {
       return;
     }
 
-
-    void BasicStructure::generate_factor_group_slow(SymGroup &factor_group) const {
-      SymGroup point_group((SymGroup::lattice_point_group(lattice())));
-
-      _generate_factor_group_slow(factor_group, point_group);
-      return;
-    }
-
-    //************************************************************
-
-    void BasicStructure::generate_factor_group(SymGroup &factor_group) const {
-      BasicStructure tprim(lattice());
-      factor_group.clear();
-      factor_group.set_lattice(lattice());
-      // CASE 1: Structure is primitive
-      if(is_primitive(tprim)) {
-        generate_factor_group_slow(factor_group);
-        return;
-      }
-
-
-      // CASE 2: Structure is not primitive
-
-      auto all_lattice_points = make_lattice_points(tprim.lattice(), lattice(), lattice().tol());
-      SymGroup prim_fg;
-      tprim.generate_factor_group_slow(prim_fg);
-
-      SymGroup point_group((SymGroup::lattice_point_group(lattice())));
-
-      for(Index i = 0; i < prim_fg.size(); i++) {
-        if(point_group.find_no_trans(prim_fg[i]) == point_group.size()) {
-          continue;
-        }
-        else {
-          for(const auto &lattice_point : all_lattice_points) {
-            Coordinate lattice_point_coordinate = make_superlattice_coordinate(lattice_point, tprim.lattice(), lattice());
-            factor_group.push_back(CASM::SymOp::translation(lattice_point_coordinate.cart())*prim_fg[i]);
-            // set lattice, in case CASM::SymOp::operator* ever changes
-          }
-        }
-      }
-
-      return;
-    }
-
-    //***********************************************************
     /**
      * It is NOT wise to use this function unless you have already
      * initialized a superstructure with lattice vectors.
@@ -150,7 +93,6 @@ namespace CASM {
      *
      *  Both of these will return NEW superstructures.
      */
-    //***********************************************************
 
     void BasicStructure::fill_supercell(const BasicStructure &prim) {
       Index i, j;

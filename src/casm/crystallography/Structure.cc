@@ -7,8 +7,11 @@
 #include <sys/types.h>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
+#include "casm/crystallography/Adapter.hh"
+#include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/crystallography/LatticePointWithin.hh"
+#include "casm/crystallography/SymType.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/container/algorithm.hh"
 #include "casm/crystallography/BasicStructure.hh"
@@ -18,6 +21,7 @@
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymBasisPermute.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
+#include "casm/symmetry/SymOp.hh"
 #include "casm/symmetry/SymPermutation.hh"
 #include "casm/casm_io/Log.hh"
 
@@ -89,15 +93,18 @@ namespace CASM {
     void Structure::generate_factor_group_slow() const {
       m_factor_group.clear();
       m_factor_group.set_lattice(lattice());
-      BasicStructure::generate_factor_group_slow(m_factor_group);
+
+      //TODO: @jcthomas
+      //Am I doing this right? The MasterSymGroup stuff seems a bit delicate
+      SymOpVector factor_group_operations = make_factor_group(*this);
+      for(const SymOp &op : factor_group_operations) {
+        m_factor_group.push_back(adapter::Adapter<CASM::SymOp, xtal::SymOp>()(op));
+      }
       return;
     }
 
     //************************************************************
     void Structure::generate_factor_group() const {
-      m_factor_group.clear();
-      m_factor_group.set_lattice(lattice());
-      BasicStructure::generate_factor_group(m_factor_group);
       _generate_basis_symreps();
       _generate_global_symreps();
       return;
@@ -154,8 +161,9 @@ namespace CASM {
         tols.push_back(i);
         m_lattice.set_tol(i);
 
-        factor_group.clear();
-        BasicStructure::generate_factor_group(factor_group);
+        xtal::SymOpVector factor_group_operations = xtal::make_factor_group(*this);
+        factor_group = adapter::Adapter<SymGroup, xtal::SymOpVector>()(factor_group_operations, this->lattice());
+
         factor_group.get_multi_table();
         num_ops.push_back(factor_group.size());
         is_group.push_back(factor_group.is_group(i));
@@ -501,7 +509,7 @@ namespace CASM {
         exit(1);
       }
       //std::cout << "INSIDE _generate_global_symreps\n";
-      for(auto const &dof : m_dof_map) {
+      for(auto const &dof : m_global_dof_map) {
         dof.second.allocate_symrep(m_factor_group);
         for(auto const &op : m_factor_group) {
           DoFIsEquivalent eq(dof.second);
@@ -586,7 +594,7 @@ namespace CASM {
         converter[i].resize(struc.basis()[i].occupant_dof().size());
 
         for(Index j = 0; j < struc.basis()[i].occupant_dof().size(); j++) {
-          converter[i][j] = find_index(mol_list, struc.basis()[i].occupant_dof()[j]);
+          converter[i][j] = CASM::find_index(mol_list, struc.basis()[i].occupant_dof()[j]);
         }
       }
 
@@ -604,7 +612,7 @@ namespace CASM {
         converter[i].resize(struc.basis()[i].occupant_dof().size());
 
         for(Index j = 0; j < struc.basis()[i].occupant_dof().size(); j++) {
-          converter[i][j] = find_index(mol_name_list, struc.basis()[i].occupant_dof()[j].name());
+          converter[i][j] = CASM::find_index(mol_name_list, struc.basis()[i].occupant_dof()[j].name());
         }
       }
 
@@ -629,7 +637,7 @@ namespace CASM {
         }
 
         for(Index j = 0; j < mol_name_list.size(); j++) {
-          converter_inv[i][j] = find_index(site_occ_name_list, mol_name_list[j]);
+          converter_inv[i][j] = CASM::find_index(site_occ_name_list, mol_name_list[j]);
         }
       }
 

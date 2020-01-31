@@ -1,4 +1,5 @@
 #include <boost/filesystem/fstream.hpp>
+#include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/crystallography/CoordinateSystems.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
@@ -138,10 +139,8 @@ namespace CASM {
       args.log() << "Symmetrizing: " << poscar_path << std::endl;
       args.log() << "with tolerance: " << tol << std::endl;
       Structure struc(poscar_path);
-      Structure tprim;
-      if(!struc.is_primitive(tprim)) {
-        struc = tprim;
-      }
+      struc = Structure(xtal::make_primitive(struc));
+
       int biggest = struc.factor_group().size();
       Structure tmp = struc;
       // a) symmetrize the lattice vectors
@@ -164,9 +163,7 @@ namespace CASM {
       if(tmp.factor_group().is_group(tol) && (tmp.factor_group().size() > biggest)) {
         struc = tmp;
       }
-      if(!struc.is_primitive(tprim)) {
-        struc = tprim;
-      }
+      struc = Structure(xtal::make_primitive(struc));
       fs::ofstream file_i;
       fs::path POSCARpath_i = "POSCAR_sym";
       file_i.open(POSCARpath_i);

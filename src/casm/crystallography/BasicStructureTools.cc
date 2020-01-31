@@ -64,7 +64,7 @@ namespace {
     std::vector<Index> basis_map;
 
     for(const xtal::Site &s_tb : translatable_basis) {
-      Index ix = xtal::find_index(basis, s_tb, translation);
+      Index ix = xtal::find_index_with_translation(basis, s_tb, translation);
       basis_map.push_back(ix);
     }
 
@@ -203,7 +203,7 @@ namespace CASM {
       return basis.size();
     }
 
-    Index find_index(const std::vector<Site> &basis, const Site &test_site, const Coordinate &shift) {
+    Index find_index_with_translation(const std::vector<Site> &basis, const Site &test_site, const Coordinate &shift) {
       for(Index i = 0; i < basis.size(); i++) {
         if(basis[i].compare(test_site, shift)) {
           return i;
@@ -265,6 +265,8 @@ namespace CASM {
         }
       }
 
+      //TODO: Do we want this?
+      primitive_struc.set_title(non_primitive_struc.title());
       return primitive_struc;
     }
 

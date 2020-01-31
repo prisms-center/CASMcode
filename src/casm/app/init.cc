@@ -13,6 +13,7 @@
 #include "casm/completer/Handlers.hh"
 #include "casm/crystallography/CanonicalForm.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/BasicStructureTools.hh"
 
 namespace CASM {
 
@@ -158,9 +159,8 @@ namespace CASM {
     }
 
     /// Check if PRIM is primitive
-    BasicStructure true_prim;
-    true_prim.set_title(prim.title());
-    if(!prim.is_primitive(true_prim)) {
+    BasicStructure true_prim = xtal::make_primitive(prim);
+    if(xtal::is_primitive(prim)) {
       if(!vm.count("force")) {
         args.err_log() << "ERROR: The structure in the prim.json file is not primitive. Writing the most       \n"
                        << "       primitive structure to file 'prim.true.json'.\n\n";
