@@ -2,6 +2,7 @@
 #define XTALSYMTYPE_HH
 
 #include "casm/external/Eigen/Dense"
+#include <algorithm>
 #include <functional>
 #include <tuple>
 #include <vector>
@@ -71,11 +72,12 @@ namespace CASM {
      */
 
     struct SymOpCompare_f : public std::unary_function<SymOp, bool> {
-      explicit SymOpCompare_f(const SymOp &target_operation, double tolerance) : m_target_operation(&target_operation), m_tolerance(tolerance) {}
-      bool operator()(const SymOp &possible_match);
+      explicit SymOpCompare_f(const SymOp &target_operation, double tolerance) : m_target_operation(target_operation), m_tolerance(tolerance) {
+      }
+      bool operator()(const SymOp &possible_match) const;
 
     private:
-      const SymOp *m_target_operation;
+      const SymOp &m_target_operation;
       double m_tolerance;
     };
 
@@ -92,13 +94,13 @@ namespace CASM {
 
     struct SymOpPeriodicCompare_f : public std::unary_function<SymOp, bool> {
       explicit SymOpPeriodicCompare_f(const SymOp &target_operation, const Lattice &periodicity_lattice, double tolerance)
-        : m_target_operation(&target_operation), m_periodicity_lattice(&periodicity_lattice), m_tolerance(tolerance) {
+        : m_target_operation(target_operation), m_periodicity_lattice(periodicity_lattice), m_tolerance(tolerance) {
       }
-      bool operator()(const SymOp &possible_match);
+      bool operator()(const SymOp &possible_match) const;
 
     private:
-      const SymOp *m_target_operation;
-      const Lattice *m_periodicity_lattice;
+      const SymOp &m_target_operation;
+      const Lattice &m_periodicity_lattice;
       double m_tolerance;
     };
 
@@ -113,23 +115,55 @@ namespace CASM {
      */
 
     struct SymOpMatrixCompare_f : public std::unary_function<SymOp, bool> {
-      explicit SymOpMatrixCompare_f(const SymOp &target_operation, double tolerance) : m_target_operation(&target_operation), m_tolerance(tolerance) {}
-      bool operator()(const SymOp &possible_match);
+      explicit SymOpMatrixCompare_f(const SymOp &target_operation, double tolerance)
+        : m_target_operation(target_operation), m_tolerance(tolerance) {
+      }
+      bool operator()(const SymOp &possible_match) const;
 
     private:
-      const SymOp *m_target_operation;
+      const SymOp &m_target_operation;
       double m_tolerance;
     };
 
     //*********************************************************************************************************************//
 
+    // TODO: Sort out how to handle a maximum group size? A bad closure could result in an infinite group.
     /// Combines every pair of symmetry operations and adds any missing resulting operations to the group.
-    /// Comparisons do not take any sort of periodicity into account.
-    void close_group(SymOpVector *partial_group);
+    /// In order to determine what a missing operation is, a comparator type must be provided, and any
+    /// arguments needed to construct it must be passed as final arguments.
+    ///
+    /// For example, when closing a factor group, we consider operations to be the same when the transformation
+    /// matrix matches to within a tolerance, and the translation components are equivalent under translational symmetry.
+    /// We therefore want to use the SymOpPeriodicCompare_f comparator, which requires a lattice and a tolerance.
+    /// The group closure call for this situation might look like:
+    ///
+    /// close_group<SymOpPeriodicCompare_f> close_group(&my_partial_group, my_lattice, CASM::TOL);
+    template <typename SymOpCompareType, typename... CompareArgs>
+    void close_group(SymOpVector *partial_group, const CompareArgs &... args) {
+      bool is_closed = false;
+      while(!is_closed) {
+        is_closed = true;
+        int current_size = partial_group->size();
 
-    /// Combines every pair of symmetry operations and adds any missing resulting operations to the group.
-    /// Operations are considered equivalent if the translations are equivalent by lattice tranlsations.
-    void close_group(SymOpVector *partial_group, const Lattice &periodicity_lattice);
+        for(int i = 0; i < current_size; ++i) {
+          for(int j = 0; j < current_size; ++j) {
+            const SymOp &l_op = partial_group->at(i);
+            const SymOp &r_op = partial_group->at(j);
+            SymOp candidate = l_op * r_op;
+            SymOpCompareType compare_candidate(candidate, args...);
+
+            //If you can't find find the operation then the group wasn't closed.
+            //Add it and make sure to start over to continue closing with the new operations.
+            if(std::find_if(partial_group->begin(), partial_group->end(), compare_candidate) == partial_group->end()) {
+              partial_group->push_back(candidate);
+              is_closed = false;
+            }
+          }
+        }
+      }
+
+      return;
+    }
   } // namespace xtal
 } // namespace CASM
 

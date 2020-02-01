@@ -166,6 +166,7 @@ namespace {
     }
 
     xtal::close_group(&factor_group, struc.lattice());
+    //!!TODO!! Bring the operations within
     return factor_group;
   }
 

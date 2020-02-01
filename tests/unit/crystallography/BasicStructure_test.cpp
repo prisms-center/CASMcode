@@ -3,9 +3,12 @@
 
 /// What is being tested:
 #include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/BasicStructureTools.hh"
 
 /// What is being used to test it:
 #include <boost/filesystem/fstream.hpp>
+#include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/SymType.hh"
 #include "crystallography/TestStructures.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/Site.hh"
@@ -56,9 +59,8 @@ void prim1_read_test(BasicStructure &struc) {
   }
 
   // FCC motif
-  MasterSymGroup factor_grp;
-  struc.generate_factor_group(factor_grp);
-  EXPECT_EQ(48, factor_grp.size());
+  xtal::SymOpVector factor_group = xtal::make_factor_group(struc);
+  EXPECT_EQ(48, factor_group.size());
 }
 
 /** PRIM2 *****************************
@@ -103,9 +105,8 @@ void prim2_read_test(BasicStructure &struc) {
   }
 
   // ordering on FCC motif
-  MasterSymGroup factor_grp;
-  struc.generate_factor_group(factor_grp);
-  EXPECT_EQ(16, factor_grp.size());
+  xtal::SymOpVector factor_group = xtal::make_factor_group(struc);
+  EXPECT_EQ(16, factor_group.size());
 }
 
 
@@ -165,9 +166,8 @@ void pos1_read_test(BasicStructure &struc) {
   }
 
   // FCC structure
-  MasterSymGroup factor_grp;
-  struc.generate_factor_group(factor_grp);
-  EXPECT_EQ(16, factor_grp.size());
+  xtal::SymOpVector factor_group = xtal::make_factor_group(struc);
+  EXPECT_EQ(16, factor_group.size());
 }
 
 namespace {
@@ -269,8 +269,7 @@ TEST(BasicStructureSiteTest, IsPrimitiveTest) {
     Structure super = prim.create_superstruc(*it);
     EXPECT_EQ(super.lattice().is_right_handed(), true);
 
-    Structure new_prim;
-    super.is_primitive(new_prim);
+    Structure new_prim = Structure(xtal::make_primitive(super));
     EXPECT_EQ(new_prim.lattice().is_right_handed(), true);
     EXPECT_EQ(new_prim.lattice().is_right_handed(), super.lattice().is_right_handed());
   }
