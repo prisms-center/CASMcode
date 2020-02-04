@@ -247,16 +247,42 @@ namespace CASM {
   }
 
   BasicStructure<Site> read_prim(fs::path filename, double xtal_tol, HamiltonianModules const *_modules) {
+    jsonParser json;
+    std::ifstream f(filename.string());
+    if(!f) {
+      throw std::invalid_argument("Error reading prim from file '" + filename.string() + "'. Does not contain valid input.");
+    }
+    while(!f.eof() && std::isspace(f.peek())) {
+      f.get();
+    }
 
-    try {
-      jsonParser json(filename);
+    // Check if JSON
+    if(f.peek() == '{') {
+      try {
+        json.parse(f);
+      }
+      catch(std::exception const &ex) {
+        std::stringstream err_msg;
+        err_msg
+            << "Error reading prim from JSON file '" << filename << "':" << std::endl
+            << ex.what();
+        throw std::invalid_argument(err_msg.str());
+      }
       return read_prim(json, xtal_tol, _modules);
     }
-    catch(...) {
-      std::cerr << "Error reading prim from " << filename << std::endl;
-      /// re-throw exceptions
-      throw;
+    // else tread as vasp-like file
+    BasicStructure<Site> prim;
+    try {
+      prim.read(f);
     }
+    catch(std::exception const &ex) {
+      std::stringstream err_msg;
+      err_msg
+          << "Error reading prim from VASP-formatted file '" << filename << "':" << std::endl
+          << ex.what();
+      throw std::invalid_argument(err_msg.str());
+    }
+    return prim;
   }
 
   /// \brief Read prim.json

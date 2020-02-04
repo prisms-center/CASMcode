@@ -89,7 +89,7 @@ namespace CASM {
     m_name(name),
     m_db_name("jsonDB") {
 
-    if(fs::exists(m_dir.casm_dir())) {
+    if(fs::exists(m_dir.project_settings())) {
       throw std::runtime_error(
         std::string("Error in 'ProjectSettings(fs::path root, std::string name)'.\n") +
         "  A CASM project already exists at this location: '" + root.string() + "'");

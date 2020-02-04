@@ -91,6 +91,7 @@ namespace CASM {
 
     void InitOption::initialize() {
       add_help_suboption();
+      add_prim_path_suboption();
       add_file_path_suboption();
       add_configlist_suboption();
       add_confignames_suboption();

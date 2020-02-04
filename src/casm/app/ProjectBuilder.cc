@@ -116,6 +116,10 @@ namespace CASM {
     try {
 
       DirectoryStructure dir(m_root);
+      std::cout << "Creating root directory: " << dir.root_dir() << ": ";
+      std::cout << fs::create_directories(dir.casm_dir()) << std::endl;
+      std::cout << "Writing prim file: " << dir.prim() << std::endl;
+      write_prim(m_prim, dir.prim(), FRAC);
 
       ProjectSettings set(m_root, m_title);
 
@@ -197,8 +201,6 @@ namespace CASM {
 
       // Generate empty composition_axes.json --------------------
       CompositionAxes().write(dir.composition_axes());
-
-      write_prim(m_prim, dir.prim(), FRAC);
 
     }
     catch(...) {
