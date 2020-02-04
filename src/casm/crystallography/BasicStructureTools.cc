@@ -165,7 +165,7 @@ namespace {
       }
     }
 
-    xtal::close_group(&factor_group, struc.lattice());
+    xtal::close_group<xtal::SymOpPeriodicCompare_f>(&factor_group, struc.lattice(), TOL);
     //!!TODO!! Bring the operations within
     return factor_group;
   }
@@ -239,7 +239,7 @@ namespace CASM {
         for(const Eigen::Vector3d b_vector_candidate : possible_lattice_vectors) {
           for(const Eigen::Vector3d c_vector_candidate : possible_lattice_vectors) {
             double possible_volume = std::abs(triple_product(a_vector_candidate, b_vector_candidate, c_vector_candidate));
-            if(possible_volume < minimum_volume) {
+            if(possible_volume < minimum_volume && possible_volume > TOL) {
               minimum_volume = possible_volume;
               a_vector_primitive = a_vector_candidate;
               b_vector_primitive = b_vector_candidate;

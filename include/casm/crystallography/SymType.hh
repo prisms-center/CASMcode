@@ -4,6 +4,8 @@
 #include "casm/external/Eigen/Dense"
 #include <algorithm>
 #include <functional>
+#include <stdexcept>
+#include <string>
 #include <tuple>
 #include <vector>
 
@@ -140,10 +142,15 @@ namespace CASM {
     /// close_group<SymOpPeriodicCompare_f> close_group(&my_partial_group, my_lattice, CASM::TOL);
     template <typename SymOpCompareType, typename... CompareArgs>
     void close_group(SymOpVector *partial_group, const CompareArgs &... args) {
+      int max_size = 500;
+
       bool is_closed = false;
       while(!is_closed) {
         is_closed = true;
         int current_size = partial_group->size();
+        if(current_size > max_size) {
+          throw std::runtime_error("Group closure resulted in over " + std::to_string(max_size));
+        }
 
         for(int i = 0; i < current_size; ++i) {
           for(int j = 0; j < current_size; ++j) {

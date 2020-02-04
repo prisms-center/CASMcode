@@ -197,11 +197,13 @@ void coordinate_periodicity_test() {
       EXPECT_TRUE(almost_zero(coord1.min_dist(transcoord1), tol));
 
       // min_dist transcoord1 to coord1 w/ translation check
-      EXPECT_TRUE(almost_zero(transcoord1.min_dist(coord1, nearest_trans), tol));
+      nearest_trans = transcoord1.min_translation(coord1);
+      EXPECT_TRUE(almost_zero(transcoord1.min_dist(coord1), tol));
       EXPECT_TRUE(almost_zero(nearest_trans.const_frac(), tol));
 
       // min_dist coord1 to transcoord1 w/ translation check
-      EXPECT_TRUE(almost_zero(coord1.min_dist(transcoord1, nearest_trans), tol));
+      nearest_trans = coord1.min_translation(transcoord1);
+      EXPECT_TRUE(almost_zero(coord1.min_dist(transcoord1), tol));
       EXPECT_TRUE(almost_zero(nearest_trans.const_frac(), tol));
 
     }
@@ -223,13 +225,11 @@ void coordinate_periodicity_test() {
 
       // commutativity of robust_min_dist
       EXPECT_TRUE(almost_equal(coord2.robust_min_dist(coord1), coord1.robust_min_dist(coord2), tol));
-      Coordinate trans(lat);
 
       // equivalence of both versions of robust_min_dist
-      EXPECT_TRUE(almost_equal(coord2.robust_min_dist(coord1, trans), coord1.robust_min_dist(coord2), tol));
-      EXPECT_TRUE(almost_equal(coord2.robust_min_dist(coord1), coord1.robust_min_dist(coord2, trans), tol));
+      EXPECT_TRUE(almost_equal(coord2.robust_min_dist(coord1), coord1.robust_min_dist(coord2), tol));
+      EXPECT_TRUE(almost_equal(coord2.robust_min_dist(coord1), coord1.robust_min_dist(coord2), tol));
 
-      EXPECT_TRUE(almost_equal(trans.const_cart().norm(), coord2.robust_min_dist(coord1)));
     }
 
     Eigen::MatrixXd const &vtable = lat.voronoi_table();
