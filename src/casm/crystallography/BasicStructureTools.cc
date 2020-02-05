@@ -125,7 +125,7 @@ namespace {
       const xtal::Site &reference_site = struc.basis()[0];
       for(const xtal::Site &transformed_site : transformed_basis) {
         // If the types don't match don't even bother with anything else
-        if(reference_site.compare_type(transformed_site)) {
+        if(!reference_site.compare_type(transformed_site)) {
           continue;
         }
 
@@ -159,6 +159,7 @@ namespace {
         xtal::SymOp translation_operation = xtal::SymOp::translation_operation(translation.const_cart());
         xtal::SymOp factor_group_operation(translation_operation * point_group_operation);
         xtal::SymOpPeriodicCompare_f fg_op_compare(factor_group_operation, struc.lattice(), CASM::TOL);
+
         if(std::find_if(factor_group.begin(), factor_group.end(), fg_op_compare) == factor_group.end()) {
           factor_group.push_back(factor_group_operation);
         }
@@ -279,6 +280,8 @@ namespace CASM {
       auto all_lattice_points = make_lattice_points(primitive_struc.lattice(), struc.lattice(), struc.lattice().tol());
       std::vector<SymOp> point_group = make_point_group(struc.lattice());
       std::vector<SymOp> factor_group;
+
+
 
       for(const SymOp &prim_op : primitive_factor_group) {
         //If the primitive factor group operation with translations removed can't map the original structure's

@@ -842,28 +842,6 @@ namespace CASM {
 
     //*******************************************************************************************
 
-    /// Check if scel is a superlattice of unitcell unit and some integer transformation matrix T
-    // First, find unit*Matrix3i approximation of 'scel', then check if reconstructing 'unit' from this approximation
-    // results in residual vectors less than length 'tol'
-    std::pair<bool, Eigen::Matrix3d> is_superlattice(const Lattice &scel, const Lattice &unit, double tol) {
-      // check scel = unit*T, with integer T
-      std::pair<bool, Eigen::Matrix3d> result(std::make_pair(true, unit.inv_lat_column_mat() * scel.lat_column_mat()));
-
-      Eigen::Matrix3d diff = unit.lat_column_mat() - scel.lat_column_mat() * iround(result.second).cast<double>().inverse();
-
-      result.first = almost_zero((diff.transpose() * diff).diagonal(), tol * tol);
-
-      return result;
-    }
-
-    /// \brief Returns a minimum volume Lattice obtainable by replacing one
-    ///        Lattice vector with tau
-    ///
-    /// - No guarantee on the result being canonical in any way
-    ///
-    ///
-    /// \relates Lattice
-    ///
     Lattice replace_vector(const Lattice &lat, const Eigen::Vector3d &new_vector, double tol) {
 
       // replace a lattice vector with translation
@@ -885,22 +863,34 @@ namespace CASM {
       return new_lat;
     }
 
+    /// Check if scel is a superlattice of unitcell unit and some integer transformation matrix T
+    // First, find unit*Matrix3i approximation of 'scel', then check if reconstructing 'unit' from this approximation
+    // results in residual vectors less than length 'tol'
+    std::pair<bool, Eigen::Matrix3d> is_superlattice(const Lattice &scel, const Lattice &unit, double tol) {
+      // check scel = unit*T, with integer T
+      std::pair<bool, Eigen::Matrix3d> result(std::make_pair(true, unit.inv_lat_column_mat() * scel.lat_column_mat()));
+
+      Eigen::Matrix3d diff = unit.lat_column_mat() - scel.lat_column_mat() * iround(result.second).cast<double>().inverse();
+
+      result.first = almost_zero((diff.transpose() * diff).diagonal(), tol * tol) && !almost_zero(result.second, tol);
+
+      return result;
+    }
+
+
     Eigen::Matrix3l make_transformation_matrix(const Lattice &tiling_unit, const Lattice &superlattice, double tol) {
 
-      Eigen::Matrix3d direct_transformation_matrix = tiling_unit.lat_column_mat().inverse() * superlattice.lat_column_mat();
+      Eigen::Matrix3d direct_transformation_matrix;
+      bool is_integer_transformation;
+
+      //TODO: convention is usually "prim" always goes first, but this is contradicte by is_superlattice. Which should change?
+      std::tie(is_integer_transformation, direct_transformation_matrix) = is_superlattice(superlattice, tiling_unit, tol);
+
+      if(!is_integer_transformation) {
+        throw std::runtime_error("The provided tiling unit and superlattice are not related by a non-singular integer transformation.");
+      }
+
       Eigen::Matrix3l rounded_transformation_matrix = round(direct_transformation_matrix).cast<long>();
-
-      if(rounded_transformation_matrix.determinant() == 0) {
-        throw std::runtime_error(
-          "The transformation matrix that converts the tiling unit to the superlattice is singular, and therefore not valid.");
-      }
-
-      Eigen::Matrix3d matrix_error = direct_transformation_matrix - rounded_transformation_matrix.cast<double>();
-
-      if(!matrix_error.isZero(tol)) {
-        throw std::runtime_error("The provided tiling unit and superlattice are not related by an integer transformation.");
-      }
-
       return rounded_transformation_matrix;
     }
   } // namespace xtal

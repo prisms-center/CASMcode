@@ -64,7 +64,7 @@ namespace CASM {
       _prim->err_log() << "superlattice: \n" << superlattice.lat_column_mat() << std::endl;
       _prim->err_log() << "prim lattice: \n" << prim().lattice().lat_column_mat() << std::endl;
       _prim->err_log() << "lin_alg_tol: " << primclex().settings().lin_alg_tol() << std::endl;
-      _prim->err_log() << "transformation matrix: \n" << prim().lattice().lat_column_mat().inverse() * superlattice.lat_column_mat() << std::endl;
+      _prim->err_log() << "transformation matrix: \n" << res.second << std::endl;
       throw std::invalid_argument("Error constructing Supercell: the transformation matrix is not integer");
     }
   }
@@ -416,7 +416,7 @@ namespace CASM {
               "superlattice: \n" << super_lat.lat_column_mat() << "\n" <<
               "prim lattice: \n" << prim_lat.lat_column_mat() << "\n" <<
               "tolerance: " << tol << "\n" <<
-              "transformation matrix: \n" << prim_lat.lat_column_mat().inverse() * super_lat.lat_column_mat() << "\n";
+              "transformation matrix: \n" << res.second << "\n";
       throw std::invalid_argument(err_msg.str());
     }
     return iround(res.second);

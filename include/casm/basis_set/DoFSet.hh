@@ -227,6 +227,8 @@ namespace CASM {
 
 
   private:
+
+    //AnisovalTraits, defines the intrinsic space of a type of DoF
     BasicTraits m_traits;
     std::vector<ContinuousDoF> m_components;
     mutable DoFSetInfo m_info;

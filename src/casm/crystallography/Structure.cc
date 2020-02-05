@@ -90,7 +90,21 @@ namespace CASM {
     //***********************************************************
 
 
-    void Structure::generate_factor_group_slow() const {
+    /* void Structure::generate_factor_group_slow() const { */
+    /*   m_factor_group.clear(); */
+    /*   m_factor_group.set_lattice(lattice()); */
+
+    /*   //TODO: @jcthomas */
+    /*   //Am I doing this right? The MasterSymGroup stuff seems a bit delicate */
+    /*   SymOpVector factor_group_operations = make_factor_group(*this); */
+    /*   for(const SymOp &op : factor_group_operations) { */
+    /*     m_factor_group.push_back(adapter::Adapter<CASM::SymOp, xtal::SymOp>()(op)); */
+    /*   } */
+    /*   return; */
+    /* } */
+
+    //************************************************************
+    void Structure::generate_factor_group() const {
       m_factor_group.clear();
       m_factor_group.set_lattice(lattice());
 
@@ -100,11 +114,7 @@ namespace CASM {
       for(const SymOp &op : factor_group_operations) {
         m_factor_group.push_back(adapter::Adapter<CASM::SymOp, xtal::SymOp>()(op));
       }
-      return;
-    }
 
-    //************************************************************
-    void Structure::generate_factor_group() const {
       _generate_basis_symreps();
       _generate_global_symreps();
       return;
@@ -112,8 +122,9 @@ namespace CASM {
 
     //************************************************************
     const MasterSymGroup &Structure::factor_group() const {
-      if(!m_factor_group.size())
+      if(!m_factor_group.size()) {
         generate_factor_group();
+      }
       return m_factor_group;
     }
 

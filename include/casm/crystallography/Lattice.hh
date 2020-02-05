@@ -277,6 +277,10 @@ namespace CASM {
     ///\brief returns Lattice that is smallest possible superlattice of both input Lattice
     Lattice make_superduperlattice(const Lattice &lat1, const Lattice &lat2);
 
+    /// \brief Returns a minimum volume Lattice obtainable by replacing one Lattice vector
+    ///
+    /// - No guarantee on the result being canonical in any way
+    /// \relates Lattice
     Lattice replace_vector(const Lattice &lat, const Eigen::Vector3d &new_vector, double tol);
 
     ///\brief Returns 'frac_mat' which is transformation of 'cart_mat'
