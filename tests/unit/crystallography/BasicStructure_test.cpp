@@ -262,7 +262,7 @@ TEST(BasicStructureSiteTest, IsPrimitiveTest) {
   const SymGroup effective_pg = prim.factor_group();
   std::cout << effective_pg.size() << std::endl;
 
-  ScelEnumProps enum_props(1, 6);
+  ScelEnumProps enum_props(1, 7);
   SuperlatticeEnumerator scel_enum(effective_pg.begin(), effective_pg.end(), prim.lattice(), enum_props);
 
   for(auto it = scel_enum.begin(); it != scel_enum.end(); ++it) {
@@ -272,12 +272,7 @@ TEST(BasicStructureSiteTest, IsPrimitiveTest) {
 
     Structure new_prim = Structure(xtal::make_primitive(super));
 
-    std::cout << "SUPER LATTICE:" << std::endl;
-    std::cout << super.lattice().lat_column_mat() << std::endl;
-    std::cout << "PRIM LATTICE:" << std::endl;
-    std::cout << new_prim.lattice().lat_column_mat() << std::endl;
-    std::cout << "TRANFORMATION MATRIX:" << std::endl;
-    std::cout << prim.lattice().lat_column_mat().inverse()*super.lattice().lat_column_mat() << std::endl;
+    auto is_trans_pair = xtal::is_superlattice(super.lattice(), prim.lattice(), TOL);
 
     EXPECT_EQ(new_prim.lattice().is_right_handed(), true);
     EXPECT_EQ(new_prim.lattice().is_right_handed(), super.lattice().is_right_handed());

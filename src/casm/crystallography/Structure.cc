@@ -115,6 +115,8 @@ namespace CASM {
         m_factor_group.push_back(adapter::Adapter<CASM::SymOp, xtal::SymOp>()(op));
       }
 
+      m_factor_group.sort();
+
       _generate_basis_symreps();
       _generate_global_symreps();
       return;

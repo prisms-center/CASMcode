@@ -100,6 +100,16 @@ namespace {
     return average_mapping_translation;
   }
 
+  /// Takes each translation from the SymOp and brings it within the lattice
+  void bring_within(std::vector<xtal::SymOp> *symmetry_group, const xtal::Lattice &tiling_unit) {
+    for(xtal::SymOp &operation : *symmetry_group) {
+      xtal::Coordinate translation_coord(operation.translation, tiling_unit, CART);
+      translation_coord.within();
+      operation.translation = translation_coord.const_cart();
+    }
+    return;
+  }
+
   /// Generates the factor group by applying every possible translation to the provided
   /// point group, and checking if the structure maps onto itself.
   /// The structure is considered to map onto itself by just looking at the position of the sites,
@@ -167,7 +177,8 @@ namespace {
     }
 
     xtal::close_group<xtal::SymOpPeriodicCompare_f>(&factor_group, struc.lattice(), TOL);
-    //!!TODO!! Bring the operations within
+    bring_within(&factor_group, struc.lattice());
+
     return factor_group;
   }
 
@@ -228,13 +239,15 @@ namespace CASM {
       // of the non primitive structure onto itself
       std::vector<Eigen::Vector3d> possible_lattice_vectors{non_primitive_struc.lattice()[0], non_primitive_struc.lattice()[1],
                                                             non_primitive_struc.lattice()[2]};
+
       for(const SymOp &trans_op : translation_group) {
+        Coordinate debug(trans_op.translation, non_primitive_struc.lattice(), CART);
         possible_lattice_vectors.push_back(trans_op.translation);
       }
 
       // Attempt every combination of vectors, picking one that doesn't have colinearity (minimum volume check), but results in the smallest
       // lattice possible (running lattice volume check)
-      double minimum_volume = 2 * non_primitive_struc.lattice().volume();
+      double minimum_volume = std::abs(2 * non_primitive_struc.lattice().volume());
       Eigen::Vector3d a_vector_primitive, b_vector_primitive, c_vector_primitive;
       for(const Eigen::Vector3d a_vector_candidate : possible_lattice_vectors) {
         for(const Eigen::Vector3d b_vector_candidate : possible_lattice_vectors) {
