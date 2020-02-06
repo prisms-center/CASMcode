@@ -1,4 +1,4 @@
-#include "casm/crystallography/DoFSet.hh"
+#include "casm/basis_set/DoFSet.hh"
 
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/casm_io/json/jsonParser.hh"
@@ -8,59 +8,57 @@
 #include "casm/symmetry/SymGroup.hh"
 
 namespace CASM {
-  namespace xtal {
 
-    DoFSet::DoFSet(BasicTraits const &_traits) :
-      m_traits(_traits),
-      m_info(SymGroupRepID(), Eigen::MatrixXd::Zero(m_traits.dim(), 0)) {
+  DoFSet::DoFSet(BasicTraits const &_traits) :
+    m_traits(_traits),
+    m_info(SymGroupRepID(), Eigen::MatrixXd::Zero(m_traits.dim(), 0)) {
 
+  }
+
+
+  //********************************************************************
+  void DoFSet::allocate_symrep(SymGroup const &_group) const {
+    if(!m_info.symrep_ID().empty())
+      throw std::runtime_error("In DoFSet::allocate_symrep(), representation has already been allocated for this symrep.");
+    //std::cout << "Allocating symrep...\n"
+    m_info.set_symrep_ID(_group.allocate_representation());
+
+  }
+  //********************************************************************
+
+  bool DoFSet::identical(DoFSet const &rhs)const {
+    if(!std::equal(begin(), end(), rhs.begin(), compare_no_value)) {
+      return false;
     }
 
+    return almost_equal(basis(), rhs.basis());
+  }
 
-    //********************************************************************
-    void DoFSet::allocate_symrep(SymGroup const &_group) const {
-      if(!m_info.symrep_ID().empty())
-        throw std::runtime_error("In DoFSet::allocate_symrep(), representation has already been allocated for this symrep.");
-      //std::cout << "Allocating symrep...\n"
-      m_info.set_symrep_ID(_group.allocate_representation());
+  //********************************************************************
 
-    }
-    //********************************************************************
+  void DoFSet::transform_basis(Eigen::Ref<const Eigen::MatrixXd> const &trans_mat) {
+    m_info.set_basis(trans_mat * basis());
+    m_info.set_symrep_ID(SymGroupRepID());
+  }
 
-    bool DoFSet::identical(DoFSet const &rhs)const {
-      if(!std::equal(begin(), end(), rhs.begin(), compare_no_value)) {
-        return false;
+  //********************************************************************
+
+  bool DoFSet::update_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs) {
+
+    Index ID_ind;
+    bool is_updated(false);
+    for(Index i = 0; i < m_components.size(); i++) {
+      // IMPORTANT: Do before_IDs.find(), NOT m_components().find() (if such a thing existed)
+      ID_ind = find_index(before_IDs, m_components[i].ID());
+      // Only set ID if DoF doesn't have an ID lock
+      if(ID_ind < after_IDs.size() && !m_components[i].is_locked()) {
+        m_components[i].set_ID(after_IDs[ID_ind]);
+        // The new ID only changes the formula if the corresponding coeff is nonzero
+        //if(!almost_zero(m_coeffs[i]))
+        is_updated = true;
       }
-
-      return almost_equal(basis(), rhs.basis());
     }
-
-    //********************************************************************
-
-    void DoFSet::transform_basis(Eigen::Ref<const Eigen::MatrixXd> const &trans_mat) {
-      m_info.set_basis(trans_mat * basis());
-      m_info.set_symrep_ID(SymGroupRepID());
-    }
-
-    //********************************************************************
-
-    bool DoFSet::update_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs) {
-
-      Index ID_ind;
-      bool is_updated(false);
-      for(Index i = 0; i < m_components.size(); i++) {
-        // IMPORTANT: Do before_IDs.find(), NOT m_components().find() (if such a thing existed)
-        ID_ind = find_index(before_IDs, m_components[i].ID());
-        // Only set ID if DoF doesn't have an ID lock
-        if(ID_ind < after_IDs.size() && !m_components[i].is_locked()) {
-          m_components[i].set_ID(after_IDs[ID_ind]);
-          // The new ID only changes the formula if the corresponding coeff is nonzero
-          //if(!almost_zero(m_coeffs[i]))
-          is_updated = true;
-        }
-      }
-      return is_updated;
-    }
+    return is_updated;
   }
 
   //********************************************************************
@@ -186,4 +184,5 @@ namespace CASM {
     }
     return result;
   }
+
 }
