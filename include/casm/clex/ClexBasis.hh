@@ -3,7 +3,7 @@
 
 #include <string>
 #include "casm/basis_set/BasisSet.hh"
-#include "casm/basis_set/DoFDecl.hh"
+#include "casm/crystallography/DoFDecl.hh"
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/clex/OrbitFunctionTraits.hh"
 #include "casm/clusterography/ClusterDecl.hh"

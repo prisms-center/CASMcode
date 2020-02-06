@@ -6,7 +6,7 @@
 #include <set>
 #include "casm/external/Eigen/Dense"
 #include "casm/global/definitions.hh"
-#include "casm/basis_set/DoFDecl.hh"
+#include "casm/crystallography/DoFDecl.hh"
 
 
 namespace CASM {

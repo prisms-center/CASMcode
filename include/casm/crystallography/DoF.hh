@@ -7,7 +7,7 @@
 #include<string>
 #include<boost/algorithm/string.hpp>
 #include "casm/crystallography/AnisoValTraits.hh"
-#include "casm/basis_set/DoFDecl.hh"
+#include "casm/crystallography/DoFDecl.hh"
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
 #include "casm/misc/CASM_math.hh"

@@ -243,42 +243,42 @@ namespace CASM {
   //********************************************************************
 
   inline
-  bool operator==(DoFSet const &A, DoFSet const &B) {
+  bool operator==(xtal::DoFSet const &A, xtal::DoFSet const &B) {
     return A.identical(B);
   }
 
   //********************************************************************
 
   inline
-  bool operator!=(DoFSet const &A, DoFSet const &B) {
+  bool operator!=(xtal::DoFSet const &A, xtal::DoFSet const &B) {
     return !A.identical(B);
   }
 
   //********************************************************************
 
   /// \brief Apply SymOp to a DoFSet
-  DoFSet &apply(const xtal::SymOp &op, DoFSet &_dof);
+  xtal::DoFSet &apply(const xtal::SymOp &op, xtal::DoFSet &_dof);
 
   //********************************************************************
 
   /// \brief Copy and apply SymOp to a DoFSet
-  DoFSet copy_apply(const xtal::SymOp &op, const DoFSet &_dof);
+  xtal::DoFSet copy_apply(const xtal::SymOp &op, const xtal::DoFSet &_dof);
 
   //********************************************************************
   template<>
-  struct jsonConstructor<DoFSet> {
-    static DoFSet from_json(const jsonParser &json, DoFSet::BasicTraits const &_type);
+  struct jsonConstructor<xtal::DoFSet> {
+    static xtal::DoFSet from_json(const jsonParser &json, xtal::DoFSet::BasicTraits const &_type);
   };
 
   //********************************************************************
   inline
-  void from_json(DoFSet &_dof, jsonParser &json) {
+  void from_json(xtal::DoFSet &_dof, jsonParser &json) {
     return _dof.from_json(json);
   }
 
   //********************************************************************
   inline
-  jsonParser &to_json(DoFSet const &_dof, jsonParser &json) {
+  jsonParser &to_json(xtal::DoFSet const &_dof, jsonParser &json) {
     return _dof.to_json(json);
   }
 

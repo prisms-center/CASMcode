@@ -7,7 +7,7 @@
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymGroupRepID.hh"
-#include "casm/basis_set/DoFDecl.hh"
+#include "casm/crystallography/DoFDecl.hh"
 #include <vector>
 
 namespace CASM {

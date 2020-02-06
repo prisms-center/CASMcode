@@ -8,7 +8,7 @@
 #include <memory>
 #include "casm/global/definitions.hh"
 #include "casm/clusterography/ClusterDecl.hh"
-#include "casm/basis_set/DoFDecl.hh"
+#include "casm/crystallography/DoFDecl.hh"
 
 namespace CASM {
   namespace xtal {
