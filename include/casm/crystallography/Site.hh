@@ -92,7 +92,7 @@ namespace CASM {
       /// set basis_ind of site and its occupant functions
       void set_basis_ind(Index _basis_ind);
 
-      /// set m_label of Site
+      /// Set label of Site. The label is used to distinguish between otherwise identical sites.
       void set_label(Index _new_label);
 
       Site &apply_sym(const SymOp &op);

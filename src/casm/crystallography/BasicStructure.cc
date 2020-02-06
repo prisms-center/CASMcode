@@ -7,7 +7,6 @@
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/symmetry/SymGroup.hh"
 #include "casm/basis_set/DoF.hh"
 #include <boost/filesystem.hpp>
 
@@ -424,17 +423,17 @@ namespace CASM {
 
     //***********************************************************
 
-    std::vector<UnitCellCoord> symop_site_map(CASM::SymOp const &_op, BasicStructure const &_struc) {
+    std::vector<UnitCellCoord> symop_site_map(SymOp const &_op, BasicStructure const &_struc) {
       return symop_site_map(_op, _struc, _struc.lattice().tol());
     }
 
     //***********************************************************
 
-    std::vector<UnitCellCoord> symop_site_map(CASM::SymOp const &_op, BasicStructure const &_struc, double _tol) {
+    std::vector<UnitCellCoord> symop_site_map(SymOp const &_op, BasicStructure const &_struc, double _tol) {
       std::vector<UnitCellCoord> result;
       // Determine how basis sites transform from the origin unit cell
       for(int b = 0; b < _struc.basis().size(); b++) {
-        auto transformed_basis_site = CASM::copy_apply(_op, _struc.basis()[b]);
+        Site transformed_basis_site = _op * _struc.basis()[b];
         result.emplace_back(UnitCellCoord::from_coordinate(_struc, transformed_basis_site, _tol));
       }
       return result;

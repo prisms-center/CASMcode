@@ -7,13 +7,13 @@
 #include <cstdlib>
 #include <cmath>
 
+#include "casm/crystallography/Adapter.hh"
 #include "casm/global/enum.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/basis_set/DoFSet.hh"
 
 namespace CASM {
-  class SymOp;
   namespace xtal {
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -160,8 +160,6 @@ namespace CASM {
       void print_xyz(std::ostream &stream, bool frac = false) const;
     };
 
-    /* BasicStructure operator*(const CASM::SymOp &LHS, const BasicStructure &RHS); */
-
     BasicStructure operator*(const Lattice &LHS, const BasicStructure &RHS);
 
     //Translation operators -- not yet defined
@@ -169,27 +167,30 @@ namespace CASM {
 
     BasicStructure operator+(const BasicStructure &LHS, const Coordinate &RHS);
 
-    std::vector<UnitCellCoord> symop_site_map(CASM::SymOp const &_op, BasicStructure const &_struc);
+    std::vector<UnitCellCoord> symop_site_map(SymOp const &_op, BasicStructure const &_struc);
+    template<typename ExternSymOp>
+    std::vector<UnitCellCoord> symop_site_map(ExternSymOp const &_op, BasicStructure const &_struc) {
+      return symop_site_map(adapter::Adapter<SymOp, ExternSymOp>()(_op), _struc);
+    }
 
-    std::vector<UnitCellCoord> symop_site_map(CASM::SymOp const &_op, BasicStructure const &_struc, double _tol);
+    std::vector<UnitCellCoord> symop_site_map(SymOp const &_op, BasicStructure const &_struc, double _tol);
+    template<typename ExternSymOp>
+    std::vector<UnitCellCoord> symop_site_map(ExternSymOp const &_op, BasicStructure const &_struc, double _tol) {
+      return symop_site_map(adapter::Adapter<SymOp, ExternSymOp>()(_op), _struc, _tol);
+    }
 
-    //************************************************************
     /// Returns an Array of each *possible* Molecule in this Structure
     std::vector<Molecule> struc_molecule(BasicStructure const &_struc);
 
-    //************************************************************
     /// Returns an Array of each *possible* AtomSpecie in this Structure
     std::vector<std::string> struc_species(BasicStructure const &_struc);
 
-    //************************************************************
     /// Returns an Array of each *possible* Molecule in this Structure
     std::vector<std::string> struc_molecule_name(BasicStructure const &_struc);
 
-    //************************************************************
     /// Returns an Array of each *possible* Molecule in this Structure
     std::vector<std::vector<std::string> > allowed_molecule_unique_names(BasicStructure const &_struc);
 
-    //************************************************************
     /// Returns a vector with a list of allowed molecule names at each site
     std::vector<std::vector<std::string> > allowed_molecule_names(BasicStructure const &_struc);
 

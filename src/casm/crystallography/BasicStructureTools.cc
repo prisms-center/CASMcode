@@ -27,7 +27,7 @@ namespace {
   /// be taken into account when generating the point group of the lattice. This method is used
   /// to discard operations from the factor group that aren't compatible with degrees of freedom
   /// that weren't taken into account during its creation.
-  bool is_compatible_with_operation(const xtal::SymOp &operation, const std::map<DoFKey, DoFSet> &global_dof_map) {
+  bool dofs_are_compatible_with_operation(const xtal::SymOp &operation, const std::map<DoFKey, DoFSet> &global_dof_map) {
     for(const auto &dof : global_dof_map) {
       if(!DoFIsEquivalent(dof.second)(operation)) {
         return false;
@@ -123,6 +123,10 @@ namespace {
     xtal::SymOpVector factor_group;
 
     for(const xtal::SymOp &point_group_operation : point_group) {
+      if(!::dofs_are_compatible_with_operation(point_group_operation, struc.global_dofs())) {
+        continue;
+      }
+
       // apply the point group operation to tall the sites
       std::vector<xtal::Site> transformed_basis;
       for(const xtal::Site &s : struc.basis()) {
@@ -293,8 +297,6 @@ namespace CASM {
       auto all_lattice_points = make_lattice_points(primitive_struc.lattice(), struc.lattice(), struc.lattice().tol());
       std::vector<SymOp> point_group = make_point_group(struc.lattice());
       std::vector<SymOp> factor_group;
-
-
 
       for(const SymOp &prim_op : primitive_factor_group) {
         //If the primitive factor group operation with translations removed can't map the original structure's

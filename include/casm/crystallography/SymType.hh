@@ -149,7 +149,7 @@ namespace CASM {
         is_closed = true;
         int current_size = partial_group->size();
         if(current_size > max_size) {
-          throw std::runtime_error("Group closure resulted in over " + std::to_string(max_size));
+          throw std::runtime_error("Group closure resulted in over " + std::to_string(max_size) + " operations.");
         }
 
         for(int i = 0; i < current_size; ++i) {
