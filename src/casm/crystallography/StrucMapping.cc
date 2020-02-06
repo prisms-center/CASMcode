@@ -366,14 +366,14 @@ namespace CASM {
                              double _max_va_frac /*= 1.*/) :
       m_calc_ptr(calculator.clone()),
       //squeeze strain_weight into (0,1] if necessary
-      m_strain_weight(max(min(_strain_weight, 1.0), 1e-9)),
       m_max_volume_change(_max_volume_change),
       m_options(_options),
       m_tol(max(1e-9, _tol)),
-      m_min_va_frac(0.),
-      m_max_va_frac(1.),
       m_filtered(false) {
 
+      set_min_va_frac(_min_va_frac);
+      set_max_va_frac(_max_va_frac);
+      set_strain_weight(_strain_weight);
       //ParamComposition param_comp(_pclex.prim());
       m_max_volume_change = max(tol(), _max_volume_change);
     }
@@ -409,9 +409,13 @@ namespace CASM {
 
         int max_n_va = calculator().max_n_va();
         double N_sites = double(parent().n_mol());
+
+        // Absolute largest Va fraction
         double max_va_frac_limit = double(max_n_va) / N_sites;
+
         double t_min_va_frac = min(min_va_frac(), max_va_frac_limit);
         double t_max_va_frac = min(max_va_frac(), max_va_frac_limit);
+
         // min_vol assumes min number vacancies -- best case scenario
         min_vol = ceil(_n_species(child_struc) / (N_sites * (1. - t_min_va_frac)) - tol());
 
@@ -552,6 +556,7 @@ namespace CASM {
 
       int seed_k = 10 + 5 * k;
       std::set<MappingNode> mapping_seed = _seed_from_vol_range(child_struc, seed_k, min_vol, max_vol);
+
       bool no_partition = !(robust & options()) && k <= 1;
       k_best_maps_better_than(child_struc, mapping_seed, k, max_cost, min_cost, keep_invalid, false, no_partition);
 

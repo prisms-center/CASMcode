@@ -259,7 +259,7 @@ namespace CASM {
     // Check if JSON
     if(f.peek() == '{') {
       try {
-        json.parse(f);
+        json = jsonParser(f);
       }
       catch(std::exception const &ex) {
         std::stringstream err_msg;
