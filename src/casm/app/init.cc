@@ -91,9 +91,9 @@ namespace CASM {
 
     void InitOption::initialize() {
       add_help_suboption();
-      add_prim_path_suboption();
+      add_prim_path_suboption("prim.json");
       add_file_path_suboption();
-      add_configlist_suboption();
+      add_configlist_suboption("NONE");
       add_confignames_suboption();
       add_coordtype_suboption();
       add_dofs_suboption();
@@ -171,7 +171,7 @@ namespace CASM {
 
     args.log() << "\n***************************\n" << std::endl;
     // Going to do conversion:
-    if(vm.count("prim")) {
+    if(vm["config"].defaulted() || !vm.count(write_prim_opt)) {
       DirectoryStructure dir(root);
       BasicStructure<Site> prim;
       std::string err_msg;
