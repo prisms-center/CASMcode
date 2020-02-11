@@ -5,8 +5,10 @@
 
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/SymType.hh"
-#include "casm/external/Eigen/src/Core/Matrix.h"
+#include "casm/external/Eigen/Core"
 #include "casm/global/definitions.hh"
+#include "casm/misc/CASM_math.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 
 using namespace CASM;
 
@@ -15,7 +17,7 @@ namespace {
     const auto PI = std::acos(-1);
     Eigen::Matrix3d rotate_matrix;
     double radians = angle * 2 * PI / 360;
-    rotate_matrix << std::cos(radians), -std::sin(angle), 0, std::sin(angle), std::cos(angle), 0, 0, 0, 1;
+    rotate_matrix << std::cos(radians), -std::sin(radians), 0, std::sin(radians), std::cos(radians), 0, 0, 0, 1;
 
     return rotate_matrix;
   }
@@ -54,8 +56,8 @@ TEST(SymOpTest, construct) {
   EXPECT_TRUE(xtal::get_time_reversal(time_reversal_op));
 
   xtal::SymOp translation_op = xtal::SymOp::translation_operation(t);
-  EXPECT_EQ(xtal::get_matrix(translation_op), t);
-  EXPECT_EQ(xtal::get_translation(translation_op), Eigen::Vector3d::Zero());
+  EXPECT_EQ(xtal::get_matrix(translation_op), Eigen::Matrix3d::Identity());
+  EXPECT_EQ(xtal::get_translation(translation_op), t);
   EXPECT_FALSE(xtal::get_time_reversal(translation_op));
 
   xtal::SymOp point_op = xtal::SymOp::point_operation(m);
@@ -65,8 +67,8 @@ TEST(SymOpTest, construct) {
 }
 
 TEST(SymOpTest, multiplication) {
-  Eigen::Matrix3d translate_up_matrix(1.1, 2.2, 3.3);
-  Eigen::Matrix3d translate_down_matrix = -translate_up_matrix;
+  Eigen::Vector3d translate_up_matrix(1.1, 2.2, 3.3);
+  Eigen::Vector3d translate_down_matrix = -translate_up_matrix;
 
   xtal::SymOp translate_up = xtal::SymOp::translation_operation(translate_up_matrix);
   xtal::SymOp translate_down = xtal::SymOp::translation_operation(translate_down_matrix);
@@ -126,14 +128,14 @@ TEST(SymOpTest, comparisons) {
   EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpPeriodicCompare_f(identity, hcp_lattice, TOL)), 1);
   EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpPeriodicCompare_f(time_reversal, hcp_lattice, TOL)), 1);
   EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpPeriodicCompare_f(rotate_60, hcp_lattice, TOL)), 1);
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpPeriodicCompare_f(screw_60, hcp_lattice, TOL)), 2);
+  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpPeriodicCompare_f(screw_60, hcp_lattice, TOL)), 1);
   EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpPeriodicCompare_f(rotate_72, hcp_lattice, TOL)), 0);
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpPeriodicCompare_f(screw_60_equivalent, hcp_lattice, TOL)), 2);
+  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpPeriodicCompare_f(screw_60_equivalent, hcp_lattice, TOL)), 1);
 
   EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpMatrixCompare_f(identity, TOL)), 2);
   EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpMatrixCompare_f(time_reversal, TOL)), 2);
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpMatrixCompare_f(rotate_60, TOL)), 3);
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpMatrixCompare_f(screw_60, TOL)), 3);
+  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpMatrixCompare_f(rotate_60, TOL)), 2);
+  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpMatrixCompare_f(screw_60, TOL)), 2);
   EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpMatrixCompare_f(rotate_72, TOL)), 0);
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpMatrixCompare_f(screw_60_equivalent, TOL)), 3);
+  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpMatrixCompare_f(screw_60_equivalent, TOL)), 2);
 }

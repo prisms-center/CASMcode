@@ -79,7 +79,7 @@ namespace CASM {
       bool operator()(const SymOp &possible_match) const;
 
     private:
-      const SymOp &m_target_operation;
+      const SymOp m_target_operation;
       double m_tolerance;
     };
 
@@ -101,7 +101,7 @@ namespace CASM {
       bool operator()(const SymOp &possible_match) const;
 
     private:
-      const SymOp &m_target_operation;
+      const SymOp m_target_operation;
       const Lattice &m_periodicity_lattice;
       double m_tolerance;
     };
@@ -123,7 +123,7 @@ namespace CASM {
       bool operator()(const SymOp &possible_match) const;
 
     private:
-      const SymOp &m_target_operation;
+      const SymOp m_target_operation;
       double m_tolerance;
     };
 
