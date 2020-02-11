@@ -72,7 +72,7 @@ namespace CASM {
   template<typename OccType>
   class OccupantDoFIsEquivalent {
   public:
-    using OccDoFType = OccupantDoF<OccType>;
+    using OccDoFType = std::vector<OccType>;
 
     OccupantDoFIsEquivalent(OccDoFType const &_dof, double tol = TOL) : m_dof(_dof), m_tol(tol), m_P(_dof.size()) {}
 

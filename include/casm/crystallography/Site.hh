@@ -33,12 +33,13 @@ namespace CASM {
 
       Site(const Coordinate &init_pos, const std::string &occ_name);
 
+      //TODO: Why don't you accept a vector?
       /// \brief Construct site with initial position and the allowed Molecule
       Site(const Coordinate &init_pos, std::initializer_list<Molecule> site_occ);
 
       ~Site();
 
-      const OccupantDoF<Molecule> &occupant_dof() const;
+      const std::vector<Molecule> &occupant_dof() const;
 
       DoFSet const &dof(std::string const &_dof_type) const;
 
@@ -50,19 +51,8 @@ namespace CASM {
 
       bool time_reversal_active() const;
 
-      /// Checks if current occupant is a vacancy
-      bool is_vacant() const;
-
       ///access m_label;
       Index label() const;
-
-      /// Name of current occupant (name of molecule, but for single atom, molecule name is species name)
-
-      std::string occ_name()const;
-
-      /// Const reference to occupying molecule. ***WARNING*** only use if you are certain the occupant has been set.
-      /// If you only need to know occupant name or whether site is vacant, use Site::is_vacant() or Site::occ_name() instead
-      const Molecule &occ() const;
 
       bool compare(const Coordinate &test_coord) const;
       bool compare(const Site &test_site) const; //Ivy
@@ -77,20 +67,17 @@ namespace CASM {
 
       void set_allowed_occupants(std::vector<Molecule> const &_occ_domain);
 
-      void set_occ_value(int new_val);
-
-      void set_occ(const Molecule &new_occ);
-
       void set_dofs(std::map<std::string, DoFSet> _dofs);
 
       std::map<std::string, DoFSet> const &dofs() const {
         return m_dof_map;
       }
 
+      //TODO: Change this to allowed_occupant_names or something
       std::vector<std::string> allowed_occupants() const;
 
       /// set basis_ind of site and its occupant functions
-      void set_basis_ind(Index _basis_ind);
+      /* void set_basis_ind(Index _basis_ind); */
 
       /// Set label of Site. The label is used to distinguish between otherwise identical sites.
       void set_label(Index _new_label);
@@ -114,6 +101,7 @@ namespace CASM {
       Site &operator-=(const Coordinate &translation);
 
     private:
+      //TODO: What is this?
       static std::vector<Site> &_type_prototypes() {
         static std::vector<Site> m_type_prototypes;
         return m_type_prototypes;
@@ -124,12 +112,13 @@ namespace CASM {
       /// Integer label used to differentiate sites of otherwise identical type
       Index m_label;
 
+      //TODO: What is this?
       mutable Index m_type_ID;
 
       // Configuration state is fundamentally different from most other degrees of freedom,
       // so we'll treat it separately. 'occupant' is the discrete degree of freedom associated
       // with the molecule that occupies the site
-      notstd::cloneable_ptr<OccupantDoF<Molecule>> m_occupant_dof;
+      std::vector<Molecule> m_occupant_dof;
 
       /// additional continuous degrees of freedom
       std::map <std::string, DoFSet > m_dof_map;

@@ -320,20 +320,6 @@ namespace CASM {
      */
     //***********************************************************
 
-    void Structure::sort_basis() {
-
-      for(Index i = 0; i < basis().size(); i++) {
-        for(Index j = 0; j < basis().size() - 1; j++) {
-
-          if(basis()[j].occ_name() > basis()[j + 1].occ_name()) {
-            std::iter_swap(m_basis.begin() + j, m_basis.begin() + j + 1);
-          }
-        }
-      }
-      set_site_internals();
-      return;
-    }
-
     //***********************************************************
     /**
      * Given a symmetry group, the basis of the structure will have

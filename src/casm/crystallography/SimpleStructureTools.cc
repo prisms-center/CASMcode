@@ -10,6 +10,8 @@
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/casm_io/container/stream_io.hh"
+#include "casm/external/Eigen/src/Core/Matrix.h"
+#include <stdexcept>
 
 namespace CASM {
   namespace xtal {
@@ -117,21 +119,31 @@ namespace CASM {
 
     //***************************************************************************
 
-    SimpleStructure make_simple_structure(BasicStructure const &_struc) {
+    SimpleStructure make_simple_structure(BasicStructure const &_struc, const Eigen::VectorXi &current_basis_occupants) {
+      assert(_struc.basis().size() == current_basis_occupants.size());
       SimpleStructure result;
       result.lat_column_mat = _struc.lattice().lat_column_mat();
 
       result.mol_info.coords.resize(3, _struc.basis().size());
       result.mol_info.names.reserve(_struc.basis().size());
-      Eigen::VectorXi _mol_occ;
-      _mol_occ.resize(_struc.basis().size());
+
       for(Index b = 0; b < _struc.basis().size(); ++b) {
         result.mol_info.coord(b) = _struc.basis()[b].const_cart();
-        result.mol_info.names.push_back(_struc.basis()[b].occ_name());
-        _mol_occ[b] = _struc.basis()[b].occupant_dof().value();
+        result.mol_info.names.push_back(_struc.basis()[b].occupant_dof()[current_basis_occupants[b]].name());
       }
-      _atomize(result, _mol_occ, _struc);
+      _atomize(result, current_basis_occupants, _struc);
       return result;
+    }
+
+    SimpleStructure make_simple_structure(BasicStructure const &_struc) {
+      //Make sure all the sites only allow a single occupant
+      for(const Site &s : _struc.basis()) {
+        if(s.allowed_occupants().size() != 1) {
+          throw std::runtime_error("Conversion to SimpleStructure is ambiguous. Basis site has more than one allowed occupant.");
+        }
+      }
+
+      return make_simple_structure(_struc, Eigen::VectorXi::Zero(_struc.basis().size()));
     }
 
     //***************************************************************************
@@ -243,7 +255,7 @@ namespace CASM {
       for(std::string const &sp : sstruc.atom_info.names) {
         result.push_back({});
         for(Index b = 0; b < _prim.basis().size(); ++b) {
-          for(Molecule const &mol : _prim.basis()[b].occupant_dof().domain()) {
+          for(Molecule const &mol : _prim.basis()[b].occupant_dof()) {
             if(mol.contains(sp)) {
               result.back().insert(b);
               break;

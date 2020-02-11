@@ -123,8 +123,6 @@ namespace CASM {
       /// Clear the basis atoms
       void clear_basis();
 
-      void set_occ(Index basis_ind, int _val);
-
       /// Manually set the basis sites
       void push_back(Site const &_site, COORD_TYPE mode = CART);
 

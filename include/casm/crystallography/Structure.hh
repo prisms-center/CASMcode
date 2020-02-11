@@ -123,10 +123,6 @@ namespace CASM {
       /// Setting the current occupants of the structure to those specified by an array of integers
       void set_occs(std::vector <int> occ_index);
 
-      /// Rearrange basis by grouping atoms by type
-      void sort_basis();
-      //\John G 121212
-
       ///Translates all atoms in cell
       Structure &operator+=(const Coordinate &shift);
       Structure &operator-=(const Coordinate &shift);

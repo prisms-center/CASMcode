@@ -183,10 +183,6 @@ namespace CASM {
 
     }
 
-    void BasicStructure::set_occ(Index basis_ind, int _val) {
-      m_basis[basis_ind].set_occ_value(_val);
-    }
-
     void BasicStructure::push_back(Site const &_site, COORD_TYPE mode) {
       m_basis.push_back(_site);
       m_basis.back().set_basis_ind(basis().size() - 1);
@@ -364,7 +360,8 @@ namespace CASM {
       stream << "      a       b       c" << '\n';
       stream << lattice().lat_column_mat() << '\n';
       for(Index i = 0; i < basis().size(); i++) {
-        stream << std::setw(2) << basis()[i].occ_name() << " ";
+        std::string site_label = basis()[i].allowed_occupants().size() == 1 ?  basis()[i].allowed_occupants()[0] : "?" ;
+        stream << std::setw(2) << site_label << " ";
         if(frac) {
           stream << std::setw(12) << basis()[i].frac().transpose() << '\n';
         }
