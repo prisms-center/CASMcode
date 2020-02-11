@@ -20,28 +20,32 @@ namespace CASM {
                            jsonParser const &_bspecs,
                            Index _max_poly_order /*= -1*/) {
     std::vector<DoFKey> dof_keys;
-    _bspecs.get_if(dof_keys, "dofs");
-    if(!valid_index(_max_poly_order))
-      _bspecs.get_if(_max_poly_order, "max_poly_order");
+    if(_bspecs.contains("basis_functions")) {
+      if(!valid_index(_max_poly_order))
+        _bspecs["basis_functions"].get_if(_max_poly_order, "max_poly_order");
+
+      _bspecs.get_if(dof_keys, "dofs");
+    }
+
     std::vector<DoFKey> global_keys;
     std::vector<DoFKey> local_keys;
 
     if(dof_keys.empty()) {
-      for(auto const &dof : m_global_bases)
+      for(auto const &dof : m_global_bases) {
         global_keys.push_back(dof.first);
-      for(auto const &dof : m_site_bases)
+      }
+      for(auto const &dof : m_site_bases) {
         local_keys.push_back(dof.first);
+      }
     }
     else if(dof_keys.size() > 1 || dof_keys[0] != "none") {
       //separate local_args from global_args
       for(DoFKey const &key : dof_keys) {
         if(m_global_bases.find(key) != m_global_bases.end()) {
           global_keys.push_back(key);
-          //std::cout << "ADDING GLOBAL DOF " << key << "\n";
         }
         else if(m_site_bases.find(key) != m_site_bases.end()) {
           local_keys.push_back(key);
-          //std::cout << "ADDING LOCAL DOF " << key << "\n";
         }
         else {
           assert(0);
@@ -150,7 +154,6 @@ namespace CASM {
         arg_subsets.push_back(&(all_local.back()));
     }
     SymGroup clust_group(_orbit.equivalence_map(0).first, _orbit.equivalence_map(0).second);
-
     return m_basis_builder->build_proto(_orbit.prototype(), clust_group, arg_subsets, max_poly_order, 1);
   }
 

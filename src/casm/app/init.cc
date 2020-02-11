@@ -171,7 +171,7 @@ namespace CASM {
 
     args.log() << "\n***************************\n" << std::endl;
     // Going to do conversion:
-    if(vm["config"].defaulted() || !vm.count(write_prim_opt)) {
+    if(vm["config"].defaulted() && init_opt.config_strs().empty()) {
       DirectoryStructure dir(root);
       BasicStructure<Site> prim;
       std::string err_msg;
