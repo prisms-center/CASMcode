@@ -1,5 +1,6 @@
 #include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/SymTypeComparator.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/LatticePointWithin.hh"
 #include "casm/crystallography/Niggli.hh"

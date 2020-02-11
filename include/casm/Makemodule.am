@@ -276,6 +276,7 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/SymRepBuilder.hh\
     include/casm/crystallography/SymTools.hh\
     include/casm/crystallography/SymType.hh\
+    include/casm/crystallography/SymTypeComparator.hh\
     include/casm/crystallography/UnitCellCoord.hh\
     include/casm/crystallography/UnitCellCoordTraits.hh\
     include/casm/crystallography/jsonStruc.hh

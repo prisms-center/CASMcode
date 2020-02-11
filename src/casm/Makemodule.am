@@ -208,6 +208,7 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/SymRepBuilder.hh\
     include/casm/crystallography/SymTools.hh\
     include/casm/crystallography/SymType.hh\
+    include/casm/crystallography/SymTypeComparator.hh\
     include/casm/crystallography/UnitCellCoord.hh\
     include/casm/crystallography/UnitCellCoordTraits.hh\
     include/casm/crystallography/io/VaspIO.hh\
@@ -840,6 +841,7 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/SuperlatticeEnumerator.cc\
     src/casm/crystallography/SymTools.cc\
     src/casm/crystallography/SymType.cc\
+    src/casm/crystallography/SymTypeComparator.cc\
     src/casm/crystallography/UnitCellCoord.cc\
     src/casm/crystallography/UnitCellCoordTraits.cc\
     src/casm/crystallography/io/VaspIO.cc\

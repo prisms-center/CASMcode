@@ -5,6 +5,7 @@
 
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/SymType.hh"
+#include "casm/crystallography/SymTypeComparator.hh"
 #include "casm/external/Eigen/Core"
 #include "casm/global/definitions.hh"
 #include "casm/misc/CASM_math.hh"
