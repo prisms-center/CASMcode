@@ -29,6 +29,8 @@ namespace CASM {
 
   const std::string molecule_opt = "as-molecules";
 
+  const std::string include_va_opt = "include-va";
+
   // returns {error message, new file extension, new structure}
   std::tuple<std::string, std::string, BasicStructure<Site> > standardize_prim(BasicStructure<Site> const &prim, bool force) {
     /// Check if PRIM is primitive
@@ -102,6 +104,7 @@ namespace CASM {
       (write_prim_opt.c_str(), "Create prim.json file for specified configuration(s). Each prim.json is written to the training_data directory of the corresponding configuration.")
       (relaxed_opt.c_str(), "Utilize relaxed coordinates for writing configuration-specific prim.json files.")
       (molecule_opt.c_str(), "Keep multi-atom species as molecules. By default, multi-atom species are split into constituent atoms.")
+      (include_va_opt.c_str(), "Print sites that can only be vacancies; otherwise these sites are excluded.")
       ("force,f", "Force using a non-reduced, non-primitive, or left-handed PRIM.");
       return;
     }
@@ -169,7 +172,6 @@ namespace CASM {
       root = args.root;
     }
 
-    args.log() << "\n***************************\n" << std::endl;
     // Going to do conversion:
     if(vm["config"].defaulted() && init_opt.config_strs().empty()) {
       DirectoryStructure dir(root);
@@ -210,31 +212,39 @@ namespace CASM {
               << "Validation ERROR for " << init_opt.prim_path() << ":\n"
               << err_msg
               << "Standardizing structure and writing to JSON file: " << new_path << "\n";
-          write_prim(prim, new_path, init_opt.coordtype_enum());
+          write_prim(prim, new_path, init_opt.coordtype_enum(), vm.count(include_va_opt));
           return ERR_INVALID_INPUT_FILE;
         }
       }
       if(vm.count(write_prim_opt)) {
         jsonParser json_prim;
-        write_prim(prim, json_prim, init_opt.coordtype_enum());
+        write_prim(prim, json_prim, init_opt.coordtype_enum(), vm.count(include_va_opt));
         args.log() << json_prim << std::endl;
       }
       else {
+        args.log() << "\n***************************\n" << std::endl;
         // Actually going to initialize:
+        root = fs::current_path();
+        if(!init_opt.file_path().empty()) {
+          root = init_opt.file_path();
+        }
         fs::path existing = find_casmroot(root);
         if(vm.count(subproject_opt)) {
           if(existing == root) {
             args.log() << "Directory '" << root << "' is already the head directory of a casm project." << std::endl;
             return ERR_OTHER_PROJ;
           }
-          if(!root.empty()) {
-            args.log() << "No existing project found. Cannot create sub-directory project at '" << root << "'." << std::endl;
+          if(existing.empty()) {
+            args.log() << "Cannot create sub-directory project at '" << root
+                       << "' because no existing project was found at a higher level." << std::endl
+                       << "To initialize a top-level project, try again without the --" << subproject_opt << "flag." << std::endl;
             return ERR_OTHER_PROJ;
 
           }
         }
         else if(!existing.empty()) {
-          args.log() << "Already in a casm project." << std::endl;
+          args.log() << "Already in a casm project. To create a project at " << root
+                     << ", try again using the --" << subproject_opt << " flag." << std::endl;
           return ERR_OTHER_PROJ;
         }//End new control block
 
@@ -267,6 +277,8 @@ namespace CASM {
       }
     }
     else if(vm.count(write_prim_opt)) {
+      args.log() << "\n***************************\n" << std::endl;
+
       // Start from config in existing project:
       // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
       // Then whichever exists, store reference in 'primclex'
@@ -275,6 +287,9 @@ namespace CASM {
       PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
 
       DB::Selection<Configuration> config_select(primclex.db<Configuration>(), init_opt.selection_path());
+      for(std::string const &config : init_opt.config_strs()) {
+        config_select.data()[config] = true;
+      }
       for(const auto &config : config_select.selected()) {
         SimpleStructure::SpeciesMode species_mode = SimpleStructure::SpeciesMode::ATOM;
         if(vm.count(molecule_opt))
@@ -304,7 +319,7 @@ namespace CASM {
 
         new_prim.set_title(prim_title);
 
-        write_prim(new_prim, config_dir / "prim.json", init_opt.coordtype_enum());
+        write_prim(new_prim, config_dir / "prim.json", init_opt.coordtype_enum(), vm.count(include_va_opt));
 
         args.log() << "Wrote file " << (config_dir / "prim.json") << std::endl;
       }

@@ -165,6 +165,7 @@ namespace CASM {
             site.add_dof(dofset);
           }
         }
+        reset();
       }
 
       /// Manually set the basis sites

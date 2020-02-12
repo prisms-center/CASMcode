@@ -83,8 +83,10 @@ namespace CASM {
       void set_dofs(std::map<std::string, DoFSet> _dofs);
 
       ///\brief Add new DoF, keeping existing DoFs
-      void add_dof(DoFSet const &_dofset) {
-        m_dof_map.emplace(_dofset.type_name(), _dofset);
+      void add_dof(DoFSet _dofset) {
+        _dofset.set_ID(basis_ind());
+        m_dof_map.emplace(_dofset.type_name(), std::move(_dofset));
+        m_type_ID = -1;
       }
 
       ///\brief const acces of map from DoF type name to DoFSet
