@@ -163,7 +163,7 @@ namespace CASM {
     // change this to use FormatFlag
     if(coordtype == FRAC)
       c2f = site.home().inv_lat_column_mat();
-    CASM::to_json(site.occupant_dof().domain(), json["occupants"], c2f);
+    CASM::to_json(site.occupant_dof(), json["occupants"], c2f);
 
     if(site.dofs().size()) {
       json["dofs"] = site.dofs();
@@ -810,7 +810,8 @@ namespace CASM {
       Eigen::IOFormat format(prec, width);
       for(const auto &coord : clust) {
         out << out.indent_str() << coord << " ";
-        coord.site(clust.prim()).occupant_dof().print(out);
+        Site::print_occupant_dof(coord.site(clust.prim()).occupant_dof(), out);
+
         out << std::flush;
         if(this->opt.delim) out << this->opt.delim;
         out << std::flush;
@@ -861,7 +862,7 @@ namespace CASM {
               << "  ";
           if(printer_mode.check() == INTEGRAL) {
             out << indent << indent << asym_unit[no][ne][0] << ' ';
-            asym_unit[no][ne][0].site(prim).occupant_dof().print(out);
+            Site::print_occupant_dof(asym_unit[no][ne][0].site(prim).occupant_dof(), out);
             out << std::flush;
           }
           else
@@ -876,7 +877,8 @@ namespace CASM {
               BasisSet tbasis(dofset.second[b]);
 
               int s;
-              std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", prim.basis()[b].occupant_dof().ID()));
+              /* std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", prim.basis()[b].occupant_dof().ID())); */
+              std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", b));
               remote[0] = s;
               tbasis.register_remotes(remote);
 
@@ -963,7 +965,8 @@ namespace CASM {
               fname << "\\phi_" << b << '_' << f;
               BasisSet tbasis(dofset.second[b]);
               int s;
-              std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", prim.basis()[b].occupant_dof().ID()));
+              /* std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", prim.basis()[b].occupant_dof().ID())); */
+              std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", b));
               remote[0] = s;
               tbasis.register_remotes(remote);
 

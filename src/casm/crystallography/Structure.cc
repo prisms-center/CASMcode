@@ -279,7 +279,7 @@ namespace CASM {
       //std::cout << "begin reset() " << this << std::endl;
 
       for(Index nb = 0; nb < basis().size(); nb++) {
-        m_basis[nb].set_basis_ind(nb);
+        /* m_basis[nb].set_basis_ind(nb); */
       }
       within();
       m_factor_group.clear();
@@ -309,82 +309,13 @@ namespace CASM {
         reset();
     }
 
-    //***********************************************************
-    /**
-     * Loop through basis and rearrange atoms by type. Uses bubble
-     * sort algorithm by comparing integer values of the strings
-     * assigned to the basis occupants.
-     *
-     * The basis gets sorted in a sort of alphabetical way, so be
-     * mindful of any POTCARs you might have if you run this.
-     */
-    //***********************************************************
-
-    //***********************************************************
-    /**
-     * Given a symmetry group, the basis of the structure will have
-     * each operation applied to it. The resulting set of basis
-     * from performing these operations will be averaged out,
-     * yielding a new average basis that will replace the current one.
-     */
-    //***********************************************************
-
-    /* void Structure::symmetrize(const SymGroup &relaxed_factors) { */
-    /*   //First make a copy of your current basis */
-    /*   //This copy will eventually become the new average basis. */
-    /*   reset(); */
-    /*   std::vector<Site> avg_basis = basis(); */
-
-    /*   //Loop through given symmetry group an fill a temporary "operated basis" */
-    /*   std::vector<Site> operbasis; */
-    /*   for(Index rf = 0; rf < relaxed_factors.size(); rf++) { */
-    /*     operbasis.clear(); */
-    /*     for(Index b = 0; b < basis().size(); b++) { */
-    /*       operbasis.push_back(relaxed_factors[rf]*basis()[b]); */
-    /*     } */
-
-    /*     //Now that you have a transformed basis, find the closest mapping of atoms */
-    /*     //Then average the distance and add it to the average basis */
-    /*     for(Index b = 0; b < basis().size(); b++) { */
-    /*       double smallest = 1000000; */
-    /*       Coordinate bshift(lattice()), tshift(lattice()); */
-    /*       for(Index ob = 0; ob < operbasis.size(); ob++) { */
-    /*         double dist = operbasis[ob].min_dist(basis()[b], tshift); */
-    /*         if(dist < smallest) { */
-    /*           bshift = tshift; */
-    /*           smallest = dist; */
-    /*         } */
-    /*       } */
-    /*       bshift.cart() *= (1.0 / relaxed_factors.size()); */
-    /*       avg_basis[b] += bshift; */
-    /*     } */
-
-    /*   } */
-    /*   set_basis(avg_basis); */
-    /*   //generate_factor_group(); */
-    /*   update(); */
-    /*   return; */
-    /* } */
-
-    //***********************************************************
-    /**
-     * Same as the other symmetrize routine, except this one assumes
-     * that the symmetry group you mean to use is the factor group
-     * of your structure within a certain tolerance.
-     *
-     * Notice that the tolerance is also used on your point group!!
-     */
-    //***********************************************************
-
-    /* void Structure::symmetrize(const double &tolerance) { */
-    /*   double orig_tol = lattice().tol(); */
-    /*   m_lattice.set_tol(tolerance); */
-    /*   generate_factor_group(); */
-    /*   SymGroup g = factor_group(); */
-    /*   symmetrize(g); */
-    /*   m_lattice.set_tol(orig_tol); */
-    /*   return; */
-    /* } */
+    void Structure::_reset_occupant_symrepIDs() const {
+      this->m_occupant_symrepIDs.clear();
+      for(const Site &s : this->basis()) {
+        this->m_occupant_symrepIDs.emplace_back(SymGroupRepID::identity(s.allowed_occupants().size()));
+      }
+      return;
+    }
 
     //This function gets the permutation representation of the
     // factor group operations of the structure. It first applies
@@ -431,24 +362,24 @@ namespace CASM {
         for(Index b = 0; b < basis().size(); ++b) {
           // copy_aply(symop,dofref_from) = P.permute(dofref_to);
           auto const &dofref_to = basis()[sitemap[b].sublattice()].occupant_dof();
+          auto const &symrep_to = this->m_occupant_symrepIDs[sitemap[b].sublattice()];
           auto const &dofref_from = basis()[b].occupant_dof();
+          auto &symrep_from = this->m_occupant_symrepIDs[b];
           OccupantDoFIsEquivalent<Molecule> eq(dofref_from);
-          //TODO
-          //Calling the adapter here, because we said we don't want anything outside
-          //of crystallography to invoke crystallography/Adapter.hh
+
           if(eq(adapter::Adapter<SymOp, CASM::SymOp>()(op), dofref_to)) {
-            if(dofref_from.symrep_ID().is_identity()) {
+            if(symrep_from.is_identity()) {
               if(!eq.perm().is_identity()) {
-                dofref_from.allocate_symrep(m_factor_group);
+                symrep_from = m_factor_group.allocate_representation();
                 Index s2;
                 for(s2 = 0; s2 < s; ++s2) {
-                  m_factor_group[s2].set_rep(dofref_from.symrep_ID(), SymPermutation(sequence<Index>(0, dofref_from.size())));
+                  m_factor_group[s2].set_rep(symrep_from, SymPermutation(sequence<Index>(0, dofref_from.size())));
                 }
-                m_factor_group[s2].set_rep(dofref_from.symrep_ID(), SymPermutation(eq.perm().inverse()));
+                m_factor_group[s2].set_rep(symrep_from, SymPermutation(eq.perm().inverse()));
               }
             }
             else {
-              op.set_rep(dofref_from.symrep_ID(), SymPermutation(eq.perm().inverse()));
+              op.set_rep(symrep_from, SymPermutation(eq.perm().inverse()));
             }
           }
           else throw std::runtime_error("In Structure::_generate_basis_symreps(), Sites originally identified as equivalent cannot be mapped by symmetry.");
@@ -513,16 +444,16 @@ namespace CASM {
     }
     //***********************************************************
 
-    //Sets the occupants in the basis sites to those specified by occ_index
-    void Structure::set_occs(std::vector <int> occ_index) {
-      if(occ_index.size() != basis().size()) {
-        default_err_log() << "The size of the occ index and basis index do not match!\nEXITING\n";
-        exit(1);
-      }
-      for(Index i = 0; i < basis().size(); i++) {
-        m_basis[i].set_occ_value(occ_index[i]);
-      }
-    }
+    /* //Sets the occupants in the basis sites to those specified by occ_index */
+    /* void Structure::set_occs(std::vector <int> occ_index) { */
+    /*   if(occ_index.size() != basis().size()) { */
+    /*     default_err_log() << "The size of the occ index and basis index do not match!\nEXITING\n"; */
+    /*     exit(1); */
+    /*   } */
+    /*   for(Index i = 0; i < basis().size(); i++) { */
+    /*     m_basis[i].set_occ_value(occ_index[i]); */
+    /*   } */
+    /* } */
 
     //***********************************************************
     Structure &Structure::operator+=(const Coordinate &shift) {

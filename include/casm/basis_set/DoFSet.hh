@@ -5,8 +5,6 @@
 #include <string>
 #include "casm/basis_set/DoF.hh"
 
-
-
 namespace CASM {
 
   template<typename T> struct jsonConstructor;

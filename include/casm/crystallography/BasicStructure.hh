@@ -200,8 +200,6 @@ namespace CASM {
 
     std::vector<DoFKey> continuous_local_dof_types(BasicStructure const &_struc);
 
-    std::vector<SymGroupRepID> occ_symrep_IDs(BasicStructure const &_struc);
-
     std::vector<DoFKey> global_dof_types(BasicStructure const &_struc);
 
     std::map<DoFKey, Index> local_dof_dims(BasicStructure const &_struc);

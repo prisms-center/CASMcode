@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 namespace CASM {
   class jsonParser;
@@ -38,6 +39,9 @@ namespace CASM {
       Site(const Coordinate &init_pos, std::initializer_list<Molecule> site_occ);
 
       ~Site();
+
+      //TODO: Decide where this should actually go
+      static void print_occupant_dof(const std::vector<Molecule> &allowed_occupants, std::ostream &out_stream);
 
       const std::vector<Molecule> &occupant_dof() const;
 

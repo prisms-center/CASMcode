@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <cmath>
+#include <vector>
 
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
@@ -26,7 +27,7 @@ namespace CASM {
 
     ///\brief Structure specifies the lattice and atomic basis of a crystal
     class Structure : public BasicStructure {
-    protected: //PROTECTED DATA MEMBERS
+    protected:
 
       /// Group symmetry operations that map the lattice and basis of Structure onto themselves,
       /// assuming that the crystal is periodic
@@ -35,7 +36,14 @@ namespace CASM {
       /// This holds the representation id of the permutation representation
       mutable SymGroupRepID m_basis_perm_rep_ID;
 
-    private: //PRIVATE METHODS
+      /// Hold the SymRepIDs for the occupant DoF, one for each of the basis sites
+      //Has to be mutable because everything is const for some reason
+      mutable std::vector<SymGroupRepID> m_occupant_symrepIDs;
+
+    private:
+
+      //Flushes out every SymGroupRepID for each site (occupant DoF) and gives it a default value of identity
+      void _reset_occupant_symrepIDs() const;
 
       void main_print(std::ostream &stream, COORD_TYPE mode, bool version5, int option) const;
 
@@ -48,7 +56,7 @@ namespace CASM {
 
       void _fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment);
 
-    public: //PUBLIC METHODS
+    public:
 
       //  ****Constructors****
       Structure() : BasicStructure() {}
@@ -70,6 +78,9 @@ namespace CASM {
       //const SymGroup &point_group();
       SymGroupRep const *basis_permutation_symrep()const;
       SymGroupRepID basis_permutation_symrep_ID()const override;
+      std::vector<SymGroupRepID> occupant_symrepIDs() const {
+        return this->m_occupant_symrepIDs;
+      }
 
       // ****Mutators****
 
@@ -121,7 +132,7 @@ namespace CASM {
       void map_superstruc_to_prim(Structure &prim); //Added by Ivy 06/29/2013
 
       /// Setting the current occupants of the structure to those specified by an array of integers
-      void set_occs(std::vector <int> occ_index);
+      /* void set_occs(std::vector <int> occ_index); */
 
       ///Translates all atoms in cell
       Structure &operator+=(const Coordinate &shift);

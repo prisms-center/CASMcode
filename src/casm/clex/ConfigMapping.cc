@@ -136,7 +136,7 @@ namespace CASM {
       std::vector<std::unordered_set<std::string> > result(_prim.basis().size());
       Index i = 0;
       for(Site const &site : _prim.basis()) {
-        for(Molecule const &mol : site.occupant_dof().domain()) {
+        for(Molecule const &mol : site.occupant_dof()) {
           if(_species_mode == SimpleStructure::SpeciesMode::MOL) {
             result[i].insert(mol.name());
           }

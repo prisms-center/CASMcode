@@ -420,6 +420,13 @@ namespace CASM {
       return;
     }
 
+    void Site::print_occupant_dof(const std::vector<Molecule> &allowed_occupants, std::ostream &out_stream) {
+      for(const Molecule &m : allowed_occupants) {
+        out_stream << m.name() << ' ';
+      }
+      return;
+    }
+
     //****************************************************
 
     std::ostream &operator<< (std::ostream &stream, const Site &site) {

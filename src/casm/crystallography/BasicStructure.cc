@@ -138,7 +138,7 @@ namespace CASM {
 
     void BasicStructure::set_site_internals() {
       for(Index nb = 0; nb < basis().size(); nb++) {
-        m_basis[nb].set_basis_ind(nb);
+        /* m_basis[nb].set_basis_ind(nb); */
       }
     }
 
@@ -185,7 +185,7 @@ namespace CASM {
 
     void BasicStructure::push_back(Site const &_site, COORD_TYPE mode) {
       m_basis.push_back(_site);
-      m_basis.back().set_basis_ind(basis().size() - 1);
+      /* m_basis.back().set_basis_ind(basis().size() - 1); */
       m_basis.back().set_lattice(lattice(), mode);
     }
 
@@ -577,16 +577,6 @@ namespace CASM {
     }
 
 
-    //************************************************************
-
-    std::vector<SymGroupRepID> occ_symrep_IDs(BasicStructure const &_struc) {
-      std::vector<SymGroupRepID> result;
-      result.resize(_struc.basis().size());
-      for(Index b = 0; b < _struc.basis().size(); ++b) {
-        result[b] = _struc.basis()[b].occupant_dof().symrep_ID();
-      }
-      return result;
-    }
     //************************************************************
 
     std::map<DoFKey, DoFSetInfo> global_dof_info(BasicStructure const &_struc) {
