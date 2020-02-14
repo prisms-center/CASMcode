@@ -79,6 +79,8 @@ namespace CASM {
       SymGroupRep const *basis_permutation_symrep()const;
       SymGroupRepID basis_permutation_symrep_ID()const override;
       std::vector<SymGroupRepID> occupant_symrepIDs() const {
+        //TODO: This might be getting called too often. Do things smarter if it's slowing things down/
+        this->generate_factor_group();
         return this->m_occupant_symrepIDs;
       }
 
@@ -103,23 +105,13 @@ namespace CASM {
 
       //   - Symmetry
 
-      /// apply a symmetry operation to the current structure (does not change lattice vectors, because
-      /// 'op' is assumed to be a lattice homomorphism)
-      //Structure &apply_sym(const SymOp &op);  //Anna do this
-
       /// determines primitive cell, finds its factor group using generate_factor_group_slow, and then
       /// expands the factor group into the supercell using lattice translations
       void generate_factor_group() const; // TOL is max distance for site equivalence, in Angstr.
 
-      /// Obtain factor group by testing all operations of the lattice point_group and keep
-      void generate_factor_group_slow() const; // TOL is max distance for site equivalence, in Angstr.
-
       /// generate factor groups for a range of tol values, prints results to screen (for now)
       void fg_converge(double large_tol);
       void fg_converge(double small_tol, double large_tol, double increment);
-
-      /* void symmetrize(const SymGroup &relaxed_factors); */
-      /* void symmetrize(const double &tolerace); */
 
 
       /// fill an empty structure with the basis of its corresponding primitive cell - performs optimized factor_group expansion
@@ -148,8 +140,6 @@ namespace CASM {
       void assign_species(std::vector<std::string> &names, std::vector<double> &masses, std::vector<double> &magmoms, std::vector<double> &Us, std::vector<double> &Js); //Added by Ivy
 
     };
-
-    //Structure operator*(const SymOp &LHS, const Structure &RHS);
 
     Structure operator*(const Lattice &LHS, const Structure &RHS);
 

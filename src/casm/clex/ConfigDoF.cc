@@ -206,7 +206,6 @@ namespace CASM {
   }
 
   std::vector<SymGroupRepID> occ_symrep_IDs(xtal::Structure const &_struc) {
-    _struc.generate_factor_group();
     return _struc.occupant_symrepIDs();
   }
 

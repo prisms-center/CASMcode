@@ -413,9 +413,9 @@ namespace CASM {
       Coordinate::print(stream, 0, format);
       stream << " ";
       for(const Molecule &m : this->occupant_dof()) {
-        stream << m.name() << "  " << std::endl;
+        stream << m.name() << "  ";
       }
-      stream << std::flush;
+      std::cout << std::endl;
 
       return;
     }

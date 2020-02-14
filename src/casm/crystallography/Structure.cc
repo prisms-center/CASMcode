@@ -348,6 +348,7 @@ namespace CASM {
       //   basis()[b].symrep(doftype.name()) = basis()[b].dof(doftype.name()).basis().transpose()
       //                                       * doftype.symop_to_matrix(op)
       //                                       * basis()[sitemap[b].sublattice()].dof(doftype.name().basis())
+      this->_reset_occupant_symrepIDs();
       Eigen::MatrixXd trep, trepblock;
       for(Index s = 0; s < m_factor_group.size(); ++s) {
         auto const &op = m_factor_group[s];
@@ -362,7 +363,6 @@ namespace CASM {
         for(Index b = 0; b < basis().size(); ++b) {
           // copy_aply(symop,dofref_from) = P.permute(dofref_to);
           auto const &dofref_to = basis()[sitemap[b].sublattice()].occupant_dof();
-          auto const &symrep_to = this->m_occupant_symrepIDs[sitemap[b].sublattice()];
           auto const &dofref_from = basis()[b].occupant_dof();
           auto &symrep_from = this->m_occupant_symrepIDs[b];
           OccupantDoFIsEquivalent<Molecule> eq(dofref_from);

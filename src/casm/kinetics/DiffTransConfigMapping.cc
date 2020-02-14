@@ -343,18 +343,19 @@ namespace CASM {
         diff_trans.occ_transform().emplace_back(*vacancy_from.begin(), 0, 0);
       }
       for(int i = 0; i < moving_atoms.size(); i++) {
+        assert(from_struc.basis()[moving_atoms[i]].occupant_dof().size() == 1);
         std::vector<std::string> allowed_from_occs = primclex().prim().basis()[from_coords[moving_atoms[i]].sublattice()].allowed_occupants();
         Index from_occ_index = std::distance(allowed_from_occs.begin(),
                                              std::find(allowed_from_occs.begin(),
                                                        allowed_from_occs.end(),
-                                                       from_struc.basis()[moving_atoms[i]].occ_name()));
+                                                       from_struc.basis()[moving_atoms[i]].allowed_occupants()[0]));
         //for now pos is 0 because Molecules are hard
         Kinetics::SpeciesLocation from_loc(from_coords[moving_atoms[i]], from_occ_index, 0);
         std::vector<std::string> allowed_to_occs = primclex().prim().basis()[to_coords[moving_atoms[i]].sublattice()].allowed_occupants();
         Index to_occ_index = std::distance(allowed_to_occs.begin(),
                                            std::find(allowed_to_occs.begin(),
                                                      allowed_to_occs.end(),
-                                                     from_struc.basis()[moving_atoms[i]].occ_name()));
+                                                     from_struc.basis()[moving_atoms[i]].allowed_occupants()[0]));
 
         //for now pos is 0 because Molecules are hard
         Kinetics::SpeciesLocation to_loc(to_coords[moving_atoms[i]], to_occ_index, 0);

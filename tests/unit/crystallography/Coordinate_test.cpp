@@ -19,7 +19,7 @@ void coordinate_constructor_test() {
     Coordinate tcoord(lat);
     EXPECT_TRUE(almost_zero(tcoord.const_frac(), tol));
     EXPECT_TRUE(almost_zero(tcoord.const_cart(), tol));
-    EXPECT_EQ(tcoord.basis_ind(), Coordinate::size_type(-1));
+    /* EXPECT_EQ(tcoord.basis_ind(), Coordinate::size_type(-1)); */
     EXPECT_EQ(&(tcoord.home()), &lat);
   }
 
@@ -27,7 +27,7 @@ void coordinate_constructor_test() {
     Coordinate tcoord(tvec, lat, CART);
     EXPECT_TRUE(almost_equal(tcoord.const_cart(), tvec, tol));
     EXPECT_TRUE(almost_equal(tcoord.const_frac(), lat.inv_lat_column_mat()*tvec, tol));
-    EXPECT_EQ(tcoord.basis_ind(), Coordinate::size_type(-1));
+    /* EXPECT_EQ(tcoord.basis_ind(), Coordinate::size_type(-1)); */
     EXPECT_EQ(&(tcoord.home()), &lat);
   }
 
@@ -35,7 +35,7 @@ void coordinate_constructor_test() {
     Coordinate tcoord(tvec, lat, FRAC);
     EXPECT_TRUE(almost_equal(tcoord.const_frac(), tvec, tol));
     EXPECT_TRUE(almost_equal(tcoord.const_cart(), lat.lat_column_mat()*tvec, tol));
-    EXPECT_EQ(tcoord.basis_ind(), Coordinate::size_type(-1));
+    /* EXPECT_EQ(tcoord.basis_ind(), Coordinate::size_type(-1)); */
     EXPECT_EQ(&(tcoord.home()), &lat);
   }
 
@@ -43,7 +43,7 @@ void coordinate_constructor_test() {
     Coordinate tcoord(0.1, 0.2, 0.3, lat, CART);
     EXPECT_TRUE(almost_equal(tcoord.const_cart(), tvec, tol));
     EXPECT_TRUE(almost_equal(tcoord.const_frac(), lat.inv_lat_column_mat()*tvec, tol));
-    EXPECT_EQ(tcoord.basis_ind(), Coordinate::size_type(-1));
+    /* EXPECT_EQ(tcoord.basis_ind(), Coordinate::size_type(-1)); */
     EXPECT_EQ(&(tcoord.home()), &lat);
   }
 
@@ -51,7 +51,7 @@ void coordinate_constructor_test() {
     Coordinate tcoord(0.1, 0.2, 0.3, lat, FRAC);
     EXPECT_TRUE(almost_equal(tcoord.const_frac(), tvec, tol));
     EXPECT_TRUE(almost_equal(tcoord.const_cart(), lat.lat_column_mat()*tvec, tol));
-    EXPECT_EQ(tcoord.basis_ind(), Coordinate::size_type(-1));
+    /* EXPECT_EQ(tcoord.basis_ind(), Coordinate::size_type(-1)); */
     EXPECT_EQ(&(tcoord.home()), &lat);
   }
 }
