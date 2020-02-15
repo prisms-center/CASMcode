@@ -104,12 +104,13 @@ namespace CASM {
 
       _generate_basis_symreps();
       _generate_global_symreps();
+
       return;
     }
 
     //************************************************************
     const MasterSymGroup &Structure::factor_group() const {
-      if(!m_factor_group.size()) {
+      if(m_factor_group.size() == 0) {
         generate_factor_group();
       }
       return m_factor_group;
@@ -179,18 +180,6 @@ namespace CASM {
       return;
     }
 
-    //************************************************************
-    /*void Structure::print_factor_group(std::ostream &stream) const {
-      stream << "Factor Group of " << title << ", containing "
-             << factor_group().size() << " symmetry operations:\n";
-
-      for(Index i = 0; i < m_factor_group.size(); i++) {
-        m_factor_group[i].print(stream);
-      }
-
-      return;
-    }
-    */
     //***********************************************************
     /**
      * It is NOT wise to use this function unless you have already
@@ -276,7 +265,6 @@ namespace CASM {
     //***********************************************************
 
     void Structure::reset() {
-      //std::cout << "begin reset() " << this << std::endl;
 
       for(Index nb = 0; nb < basis().size(); nb++) {
         /* m_basis[nb].set_basis_ind(nb); */
@@ -307,6 +295,16 @@ namespace CASM {
         m_factor_group.set_lattice(lattice());
       else
         reset();
+    }
+
+    std::vector<SymGroupRepID> Structure::occupant_symrepIDs() const {
+      //TODO: This might be getting called too often. Do things smarter if it's slowing things down/
+      this->generate_factor_group();
+      this->_generate_basis_symreps();
+      for(auto id : m_occupant_symrepIDs) {
+        std::cout << id.group_index() << ", " << id.rep_index() << std::endl;
+      }
+      return this->m_occupant_symrepIDs;
     }
 
     void Structure::_reset_occupant_symrepIDs() const {
@@ -423,7 +421,6 @@ namespace CASM {
         default_err_log() << "Factor group is empty." << std::endl;
         exit(1);
       }
-      //std::cout << "INSIDE _generate_global_symreps\n";
       for(auto const &dof : m_global_dof_map) {
         dof.second.allocate_symrep(m_factor_group);
         for(auto const &op : m_factor_group) {

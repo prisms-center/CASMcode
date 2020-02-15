@@ -72,6 +72,9 @@ namespace CASM {
 
   /// Return the factor group permutation being pointed at
   const Permutation &PermuteIterator::factor_group_permute() const {
+    std::cout << "DEBUGGING: m_factor_group_index is " << m_factor_group_index << std::endl;
+    std::cout << "DEBUGGING: sym_info().site_permutation_symrep().size() is " << sym_info().site_permutation_symrep().size() << std::endl;
+
     return *(sym_info().site_permutation_symrep()[m_factor_group_index]->permutation());
   }
 

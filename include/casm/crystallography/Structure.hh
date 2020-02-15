@@ -78,11 +78,7 @@ namespace CASM {
       //const SymGroup &point_group();
       SymGroupRep const *basis_permutation_symrep()const;
       SymGroupRepID basis_permutation_symrep_ID()const override;
-      std::vector<SymGroupRepID> occupant_symrepIDs() const {
-        //TODO: This might be getting called too often. Do things smarter if it's slowing things down/
-        this->generate_factor_group();
-        return this->m_occupant_symrepIDs;
-      }
+      std::vector<SymGroupRepID> occupant_symrepIDs() const;
 
       // ****Mutators****
 

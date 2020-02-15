@@ -296,6 +296,7 @@ namespace CASM {
       const std::vector<SymOp> &primitive_factor_group = prim_factor_group_pair.second;
 
       auto all_lattice_points = make_lattice_points(primitive_struc.lattice(), struc.lattice(), struc.lattice().tol());
+
       std::vector<SymOp> point_group = make_point_group(struc.lattice());
       std::vector<SymOp> factor_group;
 
@@ -313,8 +314,6 @@ namespace CASM {
           factor_group.emplace_back(SymOp::translation_operation(lattice_point_coordinate.cart())*prim_op);
         }
       }
-
-      std::cout << "DEBUGGING: factor_group.size() is " << factor_group.size() << std::endl;
 
       return factor_group;
     }
