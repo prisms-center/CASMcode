@@ -97,6 +97,11 @@ namespace CASM {
     m_reg_rep_ID = m_coord_rep_ID = SymGroupRepID();
 
     m_identity_rep_IDs.clear();
+
+    //Yes, by the time you return GROUP_COUNT is greater than m_group_index, and that's
+    //how we like it around here.
+    this->m_group_index = ++MasterSymGroup::GROUP_COUNT;
+
     return;
   }
 

@@ -47,6 +47,8 @@ namespace CASM {
     Structure::Structure(const Structure &RHS) :
       BasicStructure(RHS) {
 
+      std::cout << "IN STRUCUTRE COPY CONSTRUCTOR" << std::endl;
+
       copy_attributes_from(RHS);
 
     };
@@ -298,12 +300,14 @@ namespace CASM {
     }
 
     std::vector<SymGroupRepID> Structure::occupant_symrepIDs() const {
-      //TODO: This might be getting called too often. Do things smarter if it's slowing things down/
-      this->generate_factor_group();
+      //TODO: Should this call generate_factor_group? Should it do it every time? Only if it's empty? What if someone edited the Structure
+      //and made the factor group different than when it was generated previously?
+
+      /* this->generate_factor_group(); */
       this->_generate_basis_symreps();
-      for(auto id : m_occupant_symrepIDs) {
-        std::cout << id.group_index() << ", " << id.rep_index() << std::endl;
-      }
+      /* for(auto id : m_occupant_symrepIDs) { */
+      /*   std::cout << id.group_index() << ", " << id.rep_index() << std::endl; */
+      /* } */
       return this->m_occupant_symrepIDs;
     }
 
