@@ -57,7 +57,6 @@ namespace test {
     return struc;
 
   }
-
 }
 
 #endif

@@ -50,6 +50,8 @@ namespace CASM {
       m_scel_sym_compare(::_construct_scel_sym_compare(this->_supercell())),
       m_curr(OccPerturbation(_prim())) {
 
+      std::cout << "DEBUGGING: diff_trans_orbit.prototype() is " << diff_trans_orbit.prototype() << std::endl;
+
       this->_initialize();
 
       // initialize data
@@ -668,11 +670,7 @@ namespace CASM {
       m_curr.perturb.apply_to(perturbed_from_config);
       // here we use the group of operations that leaves the diff_trans invariant,
       // and not necessarily the from_config, to find the canonical perturbed from_config
-
-      /*auto to_canonical = perturbed_from_config.to_canonical(
-                            m_base_it->diff_trans_g.begin(),
-                            m_base_it->diff_trans_g.end());
-      */PermuteIterator to_canonical = *(m_base_it->diff_trans_g.begin());
+      PermuteIterator to_canonical = *(m_base_it->diff_trans_g.begin());
       Configuration greatest = perturbed_from_config;
       for(auto it = m_base_it->diff_trans_g.begin(); it != m_base_it->diff_trans_g.end(); ++it) {
         DiffTransConfiguration tmp(make_attachable(m_base_it->diff_trans, copy_apply(*it, perturbed_from_config)), m_base_it->diff_trans);

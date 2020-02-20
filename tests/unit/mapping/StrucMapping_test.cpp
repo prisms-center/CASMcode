@@ -1,7 +1,9 @@
 #include "gtest/gtest.h"
+#include <vector>
 #include "autotools.hh"
 
 /// What is being tested:
+#include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/StrucMapping.hh"
 
 /// What is being used to test it:
@@ -176,16 +178,28 @@ void sym_mapping_test(xtal::BasicStructure struc, Index N) {
 
 }
 
+xtal::BasicStructure select_first_allowed_occupant_for_basis(const xtal::BasicStructure &ambiguous_structure) {
+  xtal::BasicStructure struc_in_state = ambiguous_structure;
+  std::vector<xtal::Site> new_basis;
+  for(const xtal::Site &s : struc_in_state.basis()) {
+    new_basis.emplace_back(s, s.allowed_occupants()[0]);
+  }
+
+  struc_in_state.set_basis(new_basis);
+  return struc_in_state;
+}
 
 
 TEST(SymMappingTest1, FCCTernaryPrim) {
   // Read in test PRIM and run tests
-  sym_mapping_test(test::FCC_ternary_prim(), 48);
+  xtal::BasicStructure prim = test::FCC_ternary_prim();
+  sym_mapping_test(::select_first_allowed_occupant_for_basis(prim), 48);
 }
 
 TEST(SymMappingTest2, ZrOPrim) {
   // Read in test PRIM and run tests
-  sym_mapping_test(test::ZrO_prim(), 24);
+  xtal::BasicStructure prim = test::ZrO_prim();
+  sym_mapping_test(::select_first_allowed_occupant_for_basis(prim), 24);
 }
 
 TEST(KBestMappingTest, Struc1) {

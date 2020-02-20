@@ -48,6 +48,11 @@ namespace CASM {
       m_config_B(_from_config),
       m_sym_compare(::_construct_scel_sym_compare(_from_config.supercell())),
       m_diff_trans(_diff_trans) {
+
+      std::cout << "DEBUGGING: _from_config.occupation() is " << _from_config.occupation().transpose() << std::endl;
+      std::cout << "DEBUGGING: _from_config.size() is " << _from_config.size() << std::endl;
+
+
       m_from_config_is_A = true;
       if(_diff_trans != m_sym_compare.prepare(_diff_trans)) {
         throw std::runtime_error("Error in DiffTransConfiguration constructor diff trans not prepared");
@@ -59,6 +64,8 @@ namespace CASM {
         throw std::runtime_error("Error in DiffTransConfiguration constructor diff_trans and from_config inconsistent");
       }
       m_diff_trans.apply_to(m_config_B);
+      std::cout << "DEBUGGING: m_diff_trans is " << m_diff_trans << std::endl;
+
       _sort();
       if(m_config_A == m_config_B) {
         throw std::runtime_error("Error in DiffTransConfiguration constructor both endpoints are exactly the same config!");

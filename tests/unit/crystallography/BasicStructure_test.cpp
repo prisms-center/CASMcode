@@ -104,6 +104,16 @@ void prim2_read_test(BasicStructure &struc) {
     /* EXPECT_EQ(struc.basis()[i].occupant_dof().value(), check_value[i]); */
   }
 
+
+  //Modify the structure that there's different occupants at each site
+  std::vector<Site> new_basis;
+  new_basis.emplace_back(struc.basis()[0], "A");
+  new_basis.emplace_back(struc.basis()[1], "A");
+  new_basis.emplace_back(struc.basis()[2], "B");
+  new_basis.emplace_back(struc.basis()[3], "C");
+  struc.set_basis(new_basis);
+
+
   // ordering on FCC motif
   xtal::SymOpVector factor_group = xtal::make_factor_group(struc);
   EXPECT_EQ(16, factor_group.size());
