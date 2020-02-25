@@ -50,8 +50,6 @@ namespace CASM {
       m_scel_sym_compare(::_construct_scel_sym_compare(this->_supercell())),
       m_curr(OccPerturbation(_prim())) {
 
-      std::cout << "DEBUGGING: diff_trans_orbit.prototype() is " << diff_trans_orbit.prototype() << std::endl;
-
       this->_initialize();
 
       // initialize data

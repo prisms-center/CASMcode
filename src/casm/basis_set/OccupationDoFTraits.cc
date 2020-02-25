@@ -143,7 +143,7 @@ namespace CASM {
         }
 
 
-        result[b_ind].construct_orthonormal_discrete_functions(adapter::Adapter<OccupantDoF<Molecule>, std::vector<Molecule>>()(_site.occupant_dof()),
+        result[b_ind].construct_orthonormal_discrete_functions(adapter::Adapter<OccupantDoF<Molecule>, std::vector<Molecule>>()(_site.occupant_dof(), b_ind),
                                                                tprob,
                                                                _asym_unit[i].prototype()[0].sublattice(),
                                                                SymGroup(_asym_unit[i].equivalence_map(0).first,
