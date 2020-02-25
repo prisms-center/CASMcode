@@ -57,6 +57,7 @@ casm_app_io_json_include_HEADERS = \
 
 casm_basis_set_includedir=$(includedir)/casm/basis_set
 casm_basis_set_include_HEADERS = \
+    include/casm/basis_set/Adapter.hh\
     include/casm/basis_set/BasisFunction.hh\
     include/casm/basis_set/BasisSet.hh\
     include/casm/basis_set/DisplacementDoFTraits.hh\
@@ -251,9 +252,7 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/CanonicalForm.hh\
     include/casm/crystallography/Coordinate.hh\
     include/casm/crystallography/CoordinateSystems.hh\
-    include/casm/crystallography/DoF.hh\
     include/casm/crystallography/DoFDecl.hh\
-    include/casm/crystallography/DoFSet.hh\
     include/casm/crystallography/HermiteCounter.hh\
     include/casm/crystallography/Lattice.hh\
     include/casm/crystallography/LatticeEnumEquivalents.hh\

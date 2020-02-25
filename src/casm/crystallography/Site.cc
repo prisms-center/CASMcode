@@ -258,15 +258,6 @@ namespace CASM {
 
     //****************************************************
 
-    /* void Site::set_basis_ind(Index new_ind) { */
-    /*   Coordinate::set_basis_ind(new_ind); */
-    /*   m_occupant_dof.set_ID(new_ind); */
-    /*   for(auto &dof : m_dof_map) */
-    /*     dof.second.set_ID(new_ind); */
-    /* } */
-
-    //****************************************************
-
     void Site::set_label(Index new_ind) {
       if(new_ind == m_label)
         return;

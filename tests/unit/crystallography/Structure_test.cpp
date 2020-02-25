@@ -89,7 +89,6 @@ void prim2_read_test(Structure &struc) {
       EXPECT_EQ(almost_equal(struc.basis()[0].occupant_dof()[j].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
       EXPECT_EQ(struc.basis()[i].occupant_dof()[j].atom(0).name(), check_name[j]);
     }
-    /* EXPECT_EQ(struc.basis()[i].occupant_dof().value(), check_value[i]); */
   }
 
   //Modify the structure that there's different occupants at each site

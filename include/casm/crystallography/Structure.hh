@@ -116,24 +116,9 @@ namespace CASM {
       ///  Shortcut routine to create a supercell structure and fill it with sites
       Structure create_superstruc(const Lattice &scel_lat) const;
 
-      /// Figures out which prim basis each superstructure basis corresponds to
-      void map_superstruc_to_prim(Structure &prim); //Added by Ivy 06/29/2013
-
-      /// Setting the current occupants of the structure to those specified by an array of integers
-      /* void set_occs(std::vector <int> occ_index); */
-
       ///Translates all atoms in cell
       Structure &operator+=(const Coordinate &shift);
       Structure &operator-=(const Coordinate &shift);
-
-      // ****Input/Output****
-
-      /// For each symmetrically distinct site, print the symmetry operations that map it onto itself
-      void print_site_symmetry(std::ostream &stream, COORD_TYPE mode, int shorttag, double tol);
-      //void print_factor_group(std::ostream &stream) const;
-
-      bool read_species(); //Ivy 11/27/12
-      void assign_species(std::vector<std::string> &names, std::vector<double> &masses, std::vector<double> &magmoms, std::vector<double> &Us, std::vector<double> &Js); //Added by Ivy
 
     };
 

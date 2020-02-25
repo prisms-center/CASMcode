@@ -85,9 +85,6 @@ void k_best_mapping_test(xtal::SimpleStructure const &sstruc, double d) {
 }
 
 void sym_mapping_test(xtal::BasicStructure struc, Index N) {
-  /* for(Index i = 0; i < struc.basis().size(); ++i) */
-  /*   struc.set_occ(i, 0); */
-
   xtal::SimpleStructure sstruc = xtal::make_simple_structure(struc);
 
   for(std::string &sp : sstruc.mol_info.names) {

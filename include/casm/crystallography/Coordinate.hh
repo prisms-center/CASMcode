@@ -193,16 +193,6 @@ namespace CASM {
       /// \endparblock
       void set_lattice(const Lattice &new_lat, COORD_TYPE mode); //John G, use to specify whether to keep CART or FRAC the same, when assigning a new lattice
 
-      /* /// \brief Set basis Index */
-      /* void set_basis_ind(Index _basis_ind) { */
-      /*   m_basis_ind = _basis_ind; */
-      /* } */
-
-      /* /// \brief Access basis Index */
-      /* Index basis_ind() const { */
-      /*   return m_basis_ind; */
-      /* } */
-
       /// \brief Access the home lattice of the coordinate
       const Lattice &home() const {
         assert(m_home && "Coordinate doesn't have valid home lattice");

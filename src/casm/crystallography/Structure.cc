@@ -95,8 +95,7 @@ namespace CASM {
       m_factor_group.clear();
       m_factor_group.set_lattice(lattice());
 
-      //TODO: @jcthomas
-      //Am I doing this right? The MasterSymGroup stuff seems a bit delicate
+      //Don't copy a MasterSymGroup or you'll have bad luck
       SymOpVector factor_group_operations = make_factor_group(*this);
       for(const SymOp &op : factor_group_operations) {
         m_factor_group.push_back(adapter::Adapter<CASM::SymOp, xtal::SymOp>()(op));
@@ -302,12 +301,9 @@ namespace CASM {
     std::vector<SymGroupRepID> Structure::occupant_symrepIDs() const {
       //TODO: Should this call generate_factor_group? Should it do it every time? Only if it's empty? What if someone edited the Structure
       //and made the factor group different than when it was generated previously?
+      //Current plan: Make it impossible to edit *this, and have all these things be generated at construction
 
-      /* this->generate_factor_group(); */
       this->_generate_basis_symreps();
-      /* for(auto id : m_occupant_symrepIDs) { */
-      /*   std::cout << id.group_index() << ", " << id.rep_index() << std::endl; */
-      /* } */
       return this->m_occupant_symrepIDs;
     }
 
