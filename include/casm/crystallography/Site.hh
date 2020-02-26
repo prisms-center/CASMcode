@@ -58,6 +58,7 @@ namespace CASM {
       ///access m_label;
       Index label() const;
 
+      //TODO: Make comparators independent classes?
       bool compare(const Coordinate &test_coord) const;
       bool compare(const Site &test_site) const; //Ivy
       bool compare(const Site &test_site, const Coordinate &shift) const;
@@ -80,9 +81,6 @@ namespace CASM {
       //TODO: Change this to allowed_occupant_names or something
       std::vector<std::string> allowed_occupants() const;
 
-      /// set basis_ind of site and its occupant functions
-      /* void set_basis_ind(Index _basis_ind); */
-
       /// Set label of Site. The label is used to distinguish between otherwise identical sites.
       void set_label(Index _new_label);
 
@@ -92,9 +90,6 @@ namespace CASM {
       Site &apply_sym(const ExternSymOp &op) {
         return this->apply_sym(adapter::Adapter<SymOp, ExternSymOp>()(op));
       }
-
-
-      /* Site &apply_sym_no_trans(const SymOp &op); */
 
       void read(std::istream &stream, bool SD_is_on = false);
       void read(std::istream &stream, std::string &elem, bool SD_is_on);

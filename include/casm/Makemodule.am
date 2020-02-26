@@ -253,6 +253,7 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/Coordinate.hh\
     include/casm/crystallography/CoordinateSystems.hh\
     include/casm/crystallography/DoFDecl.hh\
+    include/casm/crystallography/DoFSet.hh\
     include/casm/crystallography/HermiteCounter.hh\
     include/casm/crystallography/Lattice.hh\
     include/casm/crystallography/LatticeEnumEquivalents.hh\

@@ -185,6 +185,7 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/Coordinate.hh\
     include/casm/crystallography/CoordinateSystems.hh\
     include/casm/crystallography/DoFDecl.hh\
+    include/casm/crystallography/DoFSet.hh\
     include/casm/crystallography/HermiteCounter.hh\
     include/casm/crystallography/Lattice.hh\
     include/casm/crystallography/LatticeEnumEquivalents.hh\
@@ -976,4 +977,3 @@ libcasm_la_LIBADD = \
 libcasm_la_LDFLAGS = \
     $(BOOST_LDFLAGS)\
     -avoid-version
-# src/casm/version/autoversion.lo: .FORCE
