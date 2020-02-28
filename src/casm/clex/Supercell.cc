@@ -378,7 +378,8 @@ namespace CASM {
       std::vector<SymGroupRepID> treps(_prim.basis().size());
       for(Index b = 0; b < _prim.basis().size(); ++b) {
         if(_prim.basis()[b].has_dof(key))
-          treps[b] = _prim.basis()[b].dof(key).symrep_ID();
+          /* treps[b] = _prim.basis()[b].dof(key).symrep_ID(); */
+          treps[b] = _prim.site_dof_symrepIDs()[b];
       }
       local_dof_symrep_IDs.emplace(std::make_pair(key, std::move(treps)));
     }

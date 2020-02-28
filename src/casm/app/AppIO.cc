@@ -203,7 +203,7 @@ namespace CASM {
 
     // Local continuous dofs
 
-    std::map<std::string, DoFSet> _dof_map;
+    std::map<std::string, xtal::DoFSet> _dof_map;
     if(json.contains("dofs")) {
 
       auto it = json["dofs"].begin(), end_it = json["dofs"].end();
@@ -212,7 +212,7 @@ namespace CASM {
           throw std::runtime_error("Error parsing global field \"dofs\" from JSON. DoF type " + it.name() + " cannot be repeated.");
 
         try {
-          _dof_map.emplace(std::make_pair(it.name(), it->get<DoFSet>(_modules.aniso_val_dict().lookup(it.name()))));
+          _dof_map.emplace(std::make_pair(it.name(), it->get<xtal::DoFSet>(_modules.aniso_val_dict().lookup(it.name()))));
         }
         catch(std::exception &e) {
           throw std::runtime_error("Error parsing global field \"dofs\" from JSON. Failure for DoF type " + it.name() + ": " + e.what());

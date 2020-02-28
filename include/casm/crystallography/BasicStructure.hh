@@ -41,7 +41,7 @@ namespace CASM {
       std::vector<Site> m_basis;
 
       /// continuous global degrees of freedom
-      std::map <DoFKey, DoFSet> m_global_dof_map;
+      std::map <DoFKey, CASM::DoFSet> m_global_dof_map;
 
     private: // PRIVATE METHODS
 
@@ -78,9 +78,9 @@ namespace CASM {
         return m_title;
       }
 
-      DoFSet const &global_dof(std::string const &dof_type) const;
+      CASM::DoFSet const &global_dof(std::string const &dof_type) const;
 
-      std::map<DoFKey, DoFSet> const &global_dofs() const {
+      std::map<DoFKey, CASM::DoFSet> const &global_dofs() const {
         return m_global_dof_map;
       }
 
@@ -113,7 +113,7 @@ namespace CASM {
       void set_title(std::string const &_title);
 
       /// Manually set the global DoFs
-      void set_global_dofs(std::map <DoFKey, DoFSet> const &new_dof_map) {
+      void set_global_dofs(std::map <DoFKey, CASM::DoFSet> const &new_dof_map) {
         m_global_dof_map = new_dof_map;
       }
 

@@ -9,6 +9,7 @@
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/basis_set/DoF.hh"
 #include <boost/filesystem.hpp>
+#include <stdexcept>
 
 namespace CASM {
   namespace xtal {
@@ -50,7 +51,7 @@ namespace CASM {
 
     //************************************************************
 
-    DoFSet const &BasicStructure::global_dof(std::string const &_dof_type) const {
+    CASM::DoFSet const &BasicStructure::global_dof(std::string const &_dof_type) const {
       auto it = m_global_dof_map.find(_dof_type);
       if(it != m_global_dof_map.end())
         return (it->second);
@@ -592,16 +593,19 @@ namespace CASM {
     std::map<DoFKey, std::vector<DoFSetInfo> > local_dof_info(BasicStructure const &_struc) {
       std::map<DoFKey, std::vector<DoFSetInfo> > result;
 
-      for(DoFKey const &type : continuous_local_dof_types(_struc)) {
-        std::vector<DoFSetInfo> tresult(_struc.basis().size(), DoFSetInfo(SymGroupRepID(), Eigen::MatrixXd::Zero(DoF::BasicTraits(type).dim(), 0)));
+      throw std::runtime_error("This routine has been disabled unit xtal related DoF things are sorted out.");
+      //TODO: I think you'll need to just have Structure internally hold a copy of the global DoF
+      //as CASM::DoF and let this run
+      /* for(DoFKey const &type : continuous_local_dof_types(_struc)) { */
+      /*   std::vector<DoFSetInfo> tresult(_struc.basis().size(), DoFSetInfo(SymGroupRepID(), Eigen::MatrixXd::Zero(DoF::BasicTraits(type).dim(), 0))); */
 
-        for(Index b = 0; b < _struc.basis().size(); ++b) {
-          if(_struc.basis()[b].has_dof(type)) {
-            tresult[b] = _struc.basis()[b].dof(type).info();
-          }
-        }
-        result.emplace(type, std::move(tresult));
-      }
+      /*   for(Index b = 0; b < _struc.basis().size(); ++b) { */
+      /*     if(_struc.basis()[b].has_dof(type)) { */
+      /*       tresult[b] = _struc.basis()[b].dof(type).info(); */
+      /*     } */
+      /*   } */
+      /*   result.emplace(type, std::move(tresult)); */
+      /* } */
       return result;
     }
 
@@ -628,10 +632,12 @@ namespace CASM {
 
     Index local_dof_dim(DoFKey const &_name, BasicStructure const &_struc) {
       Index result = 0;
-      for(Site const &site : _struc.basis()) {
-        if(site.has_dof(_name))
-          result = max(result, site.dof(_name).size());
-      }
+      throw std::runtime_error("This routine has been disabled unit xtal related DoF things are sorted out.");
+      /* for(Site const &site : _struc.basis()) { */
+      /*   if(site.has_dof(_name)) */
+      /*       //TODO: routine says dim, but is querying for size. What is the difference? Are there two values for the same ting?? */
+      /*     result = max(result, site.dof(_name).size()); */
+      /* } */
       return result;
     }
   }

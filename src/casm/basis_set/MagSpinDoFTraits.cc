@@ -1,3 +1,4 @@
+#include "casm/basis_set/Adapter.hh"
 #include "casm/basis_set/MagSpinDoFTraits.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/crystallography/SymType.hh"
@@ -26,7 +27,8 @@ namespace CASM {
         if(!_prim.basis()[b].has_dof(name()))
           continue;
         BasisSet tresult;
-        tresult.set_variable_basis(_prim.basis()[b].dof(name()));
+        CASM::DoFSet adapted_dofset = adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(_prim.basis()[b].dof(name()), b);
+        tresult.set_variable_basis(adapted_dofset);
         Array<BasisSet const *> tsubs(1, &tresult);
         result[b].construct_harmonic_polynomials(tsubs, 2, 1, false);
         result[b].get_symmetry_representation(_prim.factor_group());

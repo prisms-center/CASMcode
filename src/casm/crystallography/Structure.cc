@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
+#include <vector>
 #include "casm/crystallography/Adapter.hh"
 #include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/crystallography/LatticeIsEquivalent.hh"
@@ -15,6 +16,7 @@
 #include "casm/misc/algorithm.hh"
 #include "casm/container/algorithm.hh"
 #include "casm/crystallography/BasicStructure.hh"
+#include "casm/basis_set/Adapter.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/basis_set/DoFIsEquivalent_impl.hh"
@@ -315,6 +317,10 @@ namespace CASM {
       return;
     }
 
+    void Structure::_reset_site_dof_symrepIDs() const {
+      this->m_site_dof_symrepIDs = std::vector<SymGroupRepID>(this->basis().size());
+    }
+
     //This function gets the permutation representation of the
     // factor group operations of the structure. It first applies
     // the factor group operation to the structure, and then tries
@@ -333,10 +339,12 @@ namespace CASM {
 
       m_basis_perm_rep_ID = m_factor_group.allocate_representation();
 
+      this->_reset_site_dof_symrepIDs();
       for(std::string const &dof : continuous_local_dof_types(*this)) {
-        for(Site const &site : basis()) {
-          if(site.has_dof(dof))
-            site.dof(dof).allocate_symrep(m_factor_group);
+        for(Index b = 0; b < basis().size(); ++b) {
+          if(basis()[b].has_dof(dof)) {
+            this->m_site_dof_symrepIDs[b] = this->m_factor_group.allocate_representation();
+          }
         }
       }
 
@@ -388,9 +396,12 @@ namespace CASM {
             if(!basis()[b].has_dof(dof_dim.first))
               continue;
 
-            // copy_aply(symop,dofref_from) = dofref_to * U
-            DoFSet const &dofref_to = basis()[sitemap[b].sublattice()].dof(dof_dim.first);
-            DoFSet const &dofref_from = basis()[b].dof(dof_dim.first);
+            DoFSet const &_dofref_to = basis()[sitemap[b].sublattice()].dof(dof_dim.first);
+            DoFSet const &_dofref_from = basis()[b].dof(dof_dim.first);
+
+            //Transform the xtal::SiteDoFSet to the CASM::DoFSet version
+            CASM::DoFSet dofref_to = adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(_dofref_to, b);
+            CASM::DoFSet dofref_from = adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(_dofref_to, b);
             DoFIsEquivalent eq(dofref_from);
             //TODO
             //Calling the adapter here, because we said we don't want anything outside

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <unordered_set>
 #include "casm/basis_set/DoF.hh"
 
 namespace CASM {
@@ -123,6 +124,8 @@ namespace CASM {
     ///    \endcode
     DoFSet(BasicTraits const &_type);
 
+    DoFSet(BasicTraits const &_type, const std::unordered_set<std::string> &_excluded_occupants);
+
     /// \brief Returns number of components in this DoFSet
     Index size() const {
       return m_components.size();
@@ -231,7 +234,7 @@ namespace CASM {
     std::vector<ContinuousDoF> m_components;
     mutable DoFSetInfo m_info;
 
-    std::set<std::string> m_excluded_occs;
+    std::unordered_set<std::string> m_excluded_occs;
 
   };
 

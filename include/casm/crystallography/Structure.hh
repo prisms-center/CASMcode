@@ -40,10 +40,16 @@ namespace CASM {
       //Has to be mutable because everything is const for some reason
       mutable std::vector<SymGroupRepID> m_occupant_symrepIDs;
 
+      /// Hold the SymRepIDs for the continuous DoF, one for each of the basis sites
+      //Has to be mutable because everything is const for some reason
+      mutable std::vector<SymGroupRepID> m_site_dof_symrepIDs;
+
     private:
 
       //Flushes out every SymGroupRepID for each site (occupant DoF) and gives it a default value of identity
       void _reset_occupant_symrepIDs() const;
+      //Flushes out every SymGroupRepID for each site (continuous DoF) and gives it a default values
+      void _reset_site_dof_symrepIDs() const;
 
       void main_print(std::ostream &stream, COORD_TYPE mode, bool version5, int option) const;
 
@@ -79,6 +85,7 @@ namespace CASM {
       SymGroupRep const *basis_permutation_symrep()const;
       SymGroupRepID basis_permutation_symrep_ID()const override;
       std::vector<SymGroupRepID> occupant_symrepIDs() const;
+      std::vector<SymGroupRepID> site_dof_symrepIDs() const;
 
       // ****Mutators****
 

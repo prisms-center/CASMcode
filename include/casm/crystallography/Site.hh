@@ -4,8 +4,7 @@
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/Molecule.hh"
-#include "casm/basis_set/DoF.hh"
-#include "casm/basis_set/DoFSet.hh"
+#include "casm/crystallography/DoFSet.hh"
 
 #include <iostream>
 #include <string>

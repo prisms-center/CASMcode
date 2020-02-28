@@ -105,35 +105,17 @@ namespace CASM {
 
       auto it = m_dof_map.begin();
       for(; it != m_dof_map.end(); ++it)
-        it->second = copy_apply(op, it->second);
+        it->second = sym::copy_apply(op, it->second);
 
       m_type_ID = -1;
       return *this;
     }
-    //****************************************************
-    /**
-     *
-     */
-    //****************************************************
 
     Site &Site::apply_sym(const SymOp &op) {
       Coordinate::apply_sym(op);
       _apply_sym_attributes(op);
       return *this;
     }
-
-    //****************************************************
-    /**
-     *
-     */
-    //****************************************************
-
-    /* Site &Site::apply_sym_no_trans(const SymOp &op) { */
-    /*   Coordinate::apply_sym_no_trans(op); */
-    /*   _apply_sym_attributes(op); */
-
-    /*   return *this; */
-    /* } */
 
     //****************************************************
     /**
@@ -437,7 +419,7 @@ namespace CASM {
 
       auto it1 = m_dof_map.begin(), it2 = _other.m_dof_map.begin();
       for(; it1 != m_dof_map.end(); ++it1, ++it2)
-        if(!DoFIsEquivalent(it1->second)(it2->second)) {
+        if(!DoFSetEquals_f(it1->second, CASM::TOL)(it2->second)) {
           std::cout << "SiteTypes not equivalent!!\n";
           return false;
         }

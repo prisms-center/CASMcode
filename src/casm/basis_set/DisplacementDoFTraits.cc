@@ -1,3 +1,7 @@
+#include "casm/basis_set/DoFSet.hh"
+#include "casm/basis_set/Adapter.hh"
+#include "casm/crystallography/Adapter.hh"
+#include "casm/crystallography/DoFSet.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/basis_set/DisplacementDoFTraits.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
@@ -30,7 +34,8 @@ namespace CASM {
         if(!_prim.basis()[b].has_dof(name()))
           continue;
 
-        result[b].set_variable_basis(_prim.basis()[b].dof(name()));
+        CASM::DoFSet adapted_dofset = adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(_prim.basis()[b].dof(name()), b);
+        result[b].set_variable_basis(adapted_dofset);
         //std::cout << "+:+:+:+Created variable set for site " << b << ", size " << result[b].size() << "\n";
       }
       return result;
