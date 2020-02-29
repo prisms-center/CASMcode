@@ -9,6 +9,7 @@
 #include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/basis_set/DoFTraits.hh"
+#include "casm/crystallography/DoFSet.hh"
 #include "casm/global/enum/json_io.hh"
 #include "casm/global/enum/stream_io.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
@@ -212,7 +213,8 @@ namespace CASM {
           throw std::runtime_error("Error parsing global field \"dofs\" from JSON. DoF type " + it.name() + " cannot be repeated.");
 
         try {
-          _dof_map.emplace(std::make_pair(it.name(), it->get<xtal::DoFSet>(_modules.aniso_val_dict().lookup(it.name()))));
+          /* _dof_map.emplace(std::make_pair(it.name(), it->get<xtal::DoFSet>(_modules.aniso_val_dict().lookup(it.name())))); */
+          _dof_map.emplace(std::make_pair(it.name(), from_json<xtal::SiteDoFSet>(*it)));
         }
         catch(std::exception &e) {
           throw std::runtime_error("Error parsing global field \"dofs\" from JSON. Failure for DoF type " + it.name() + ": " + e.what());

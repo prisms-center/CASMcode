@@ -150,20 +150,23 @@ namespace CASM {
     xtal::DoFSet copy_apply(const xtal::SymOp &op, const xtal::DoFSet &_dof);
   }
 
+  template<> xtal::SiteDoFSet from_json<xtal::SiteDoFSet>(const jsonParser &json);
+
   jsonParser &to_json(xtal::SiteDoFSet const &_dof, jsonParser &json);
   jsonParser &to_json(xtal::DoFSet const &_dof, jsonParser &json);
 
-  xtal::SiteDoFSet from_json(const jsonParser &json, xtal::SiteDoFSet const &_dof);
-  xtal::DoFSet from_json(const jsonParser &json, xtal::DoFSet const &_dof);
+  /* template<> xtal::DoFSet from_json<xtal::DoFSet>(const jsonParser &json); */
+  /* xtal::SiteDoFSet& from_json( xtal::SiteDoFSet &_dof,const jsonParser &json); */
+  /* xtal::DoFSet& from_json( xtal::DoFSet &_dof,const jsonParser &json); */
 
-  template <>
-  struct jsonConstructor<xtal::SiteDoFSet> {
-    static xtal::SiteDoFSet from_json(const jsonParser &json, xtal::SiteDoFSet::BasicTraits const &_type);
-  };
-  template <>
-  struct jsonConstructor<xtal::DoFSet> {
-    static xtal::DoFSet from_json(const jsonParser &json, xtal::DoFSet::BasicTraits const &_type);
-  };
+  /* template <> */
+  /* struct jsonConstructor<xtal::SiteDoFSet> { */
+  /*   static xtal::SiteDoFSet from_json(const jsonParser &json, xtal::SiteDoFSet::BasicTraits const &_type); */
+  /* }; */
+  /* template <> */
+  /* struct jsonConstructor<xtal::DoFSet> { */
+  /*   static xtal::DoFSet from_json(const jsonParser &json, xtal::DoFSet::BasicTraits const &_type); */
+  /* }; */
 } // namespace CASM
 
 #endif
