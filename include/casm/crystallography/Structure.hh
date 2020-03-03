@@ -31,46 +31,60 @@ namespace CASM {
 
       /// Group symmetry operations that map the lattice and basis of Structure onto themselves,
       /// assuming that the crystal is periodic
-      mutable MasterSymGroup m_factor_group;
+      MasterSymGroup m_factor_group;
 
       /// This holds the representation id of the permutation representation
-      mutable SymGroupRepID m_basis_perm_rep_ID;
+      SymGroupRepID m_basis_perm_rep_ID;
 
       /// Hold the SymRepIDs for the occupant DoF, one for each of the basis sites
       //Has to be mutable because everything is const for some reason
-      mutable std::vector<SymGroupRepID> m_occupant_symrepIDs;
+      std::vector<SymGroupRepID> m_occupant_symrepIDs;
 
       /// Hold the SymRepIDs for the continuous DoF, one for each of the basis sites
       //Has to be mutable because everything is const for some reason
-      mutable std::vector<SymGroupRepID> m_site_dof_symrepIDs;
+      std::vector<SymGroupRepID> m_site_dof_symrepIDs;
 
     private:
 
       //Flushes out every SymGroupRepID for each site (occupant DoF) and gives it a default value of identity
-      void _reset_occupant_symrepIDs() const;
+      void _reset_occupant_symrepIDs();
       //Flushes out every SymGroupRepID for each site (continuous DoF) and gives it a default values
-      void _reset_site_dof_symrepIDs() const;
+      void _reset_site_dof_symrepIDs();
 
       void main_print(std::ostream &stream, COORD_TYPE mode, bool version5, int option) const;
 
       /// Obtain the basis permutation symrep and site dof symreps of factor_group
       /// sets internal m_basis_perm_rep_ID
-      void _generate_basis_symreps(bool verbose = false) const;
+      void _generate_basis_symreps(bool verbose = false);
 
       /// Obtain global dof symreps of factor_group
-      void _generate_global_symreps(bool verbose = false) const;
+      void _generate_global_symreps(bool verbose = false);
 
       void _fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment);
 
       /// determines primitive cell, finds its factor group using generate_factor_group_slow, and then
       /// expands the factor group into the supercell using lattice translations
-      void generate_factor_group() const; // TOL is max distance for site equivalence, in Angstr.
+      void generate_factor_group(); // TOL is max distance for site equivalence, in Angstr.
+
+      /// copy all non-derived members
+      void copy_attributes_from(const Structure &RHS);
+
+      /// clears symmetry, site internals, and other attributes
+      /* void reset() override; */
+
 
     public:
 
+      //TODO:
+      //This might seem weird right now, but the plan is to eventually have Structure become a composition
+      //of BasicStructure and its related symmetry information (e.g. factor group, symmetry representation
+      //IDs, etc).
+      /// Returns constant reference to the structure
+      const BasicStructure &structure() const;
+
       //  ****Constructors****
+      //TODO: I tried getting rid of this but it seems to get used in almost every casm command right now
       Structure() : BasicStructure() {}
-      /* explicit Structure(const Lattice &init_lat); */
       explicit Structure(const BasicStructure &base);
       explicit Structure(const fs::path &filepath);
 
@@ -99,16 +113,10 @@ namespace CASM {
       /// do not depend on the lattice of 'RHS'
       Structure &operator=(const Structure &RHS);
 
-      /// copy all non-derived members
-      void copy_attributes_from(const Structure &RHS);
-
-      /// clears symmetry, site internals, and other attributes
-      void reset() override;
-
       ///change the lattice and update site coordinates.  Argument 'mode' specifies which mode is preserved
       /// e.g.: struc.set_lattice(new_lat, CART) calculates all Cartesian coordinates,
       ///       invalidates the FRAC coordinates, and changes the lattice
-      void set_lattice(const Lattice &lattice, COORD_TYPE mode);
+      /* void set_lattice(const Lattice &lattice, COORD_TYPE mode); */
 
       //   - Symmetry
 

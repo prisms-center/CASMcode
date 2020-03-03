@@ -48,14 +48,10 @@ namespace CASM {
 
     Structure::Structure(const Structure &RHS) :
       BasicStructure(RHS) {
-
-      std::cout << "IN STRUCUTRE COPY CONSTRUCTOR" << std::endl;
-
       copy_attributes_from(RHS);
 
     };
 
-    /* Structure::Structure(const Lattice &init_lat) : BasicStructure(init_lat) {} */
     Structure::Structure(const BasicStructure &base) : BasicStructure(base) {
       this->generate_factor_group();
     }
@@ -72,12 +68,6 @@ namespace CASM {
       //lattice = RHS.lattice;
       //basis = RHS.basis;
       //title = RHS.title;
-
-      /*
-      for(Index i = 0; i < basis.size(); i++) {
-        basis[i].set_lattice(lattice);
-      }
-      */
 
       copy_attributes_from(RHS);
 
@@ -97,7 +87,7 @@ namespace CASM {
 
     //***********************************************************
 
-    void Structure::generate_factor_group() const {
+    void Structure::generate_factor_group() {
       m_factor_group.clear();
       m_factor_group.set_lattice(lattice());
 
@@ -117,9 +107,6 @@ namespace CASM {
 
     //************************************************************
     const MasterSymGroup &Structure::factor_group() const {
-      if(m_factor_group.size() == 0) {
-        generate_factor_group();
-      }
       return m_factor_group;
     }
 
@@ -137,9 +124,6 @@ namespace CASM {
     //***********************************************************
 
     SymGroupRepID Structure::basis_permutation_symrep_ID() const {
-      if(m_basis_perm_rep_ID.empty())
-        _generate_basis_symreps();
-
       return m_basis_perm_rep_ID;
     }
 
@@ -271,38 +255,28 @@ namespace CASM {
 
     //***********************************************************
 
-    void Structure::reset() {
-
-      for(Index nb = 0; nb < basis().size(); nb++) {
-        /* m_basis[nb].set_basis_ind(nb); */
-      }
-      within();
-      m_factor_group.clear();
-
-      /** Should we also invalidate the occupants?
-      for(Index i = 0; i < basis.size(); i++) {
-        basis[i].site_occupant.set_value(-1);
-      }
-      */
-      return;
-    }
+    /* void Structure::reset() { */
+    /*   within(); */
+    /*   m_factor_group.clear(); */
+    /*   return; */
+    /* } */
 
     //***********************************************************
     //
-    void Structure::set_lattice(const Lattice &new_lat, COORD_TYPE mode) {
-      bool is_equiv(lattice() == new_lat);
+    /* void Structure::set_lattice(const Lattice &new_lat, COORD_TYPE mode) { */
+    /*   bool is_equiv(lattice() == new_lat); */
 
-      m_lattice = new_lat;
+    /*   m_lattice = new_lat; */
 
-      for(Index nb = 0; nb < basis().size(); nb++) {
-        m_basis[nb].set_lattice(lattice(), mode);
-      }
+    /*   for(Index nb = 0; nb < basis().size(); nb++) { */
+    /*     m_basis[nb].set_lattice(lattice(), mode); */
+    /*   } */
 
-      if(is_equiv)
-        m_factor_group.set_lattice(lattice());
-      else
-        reset();
-    }
+    /*   if(is_equiv) */
+    /*     m_factor_group.set_lattice(lattice()); */
+    /*   else */
+    /*     reset(); */
+    /* } */
 
     std::vector<SymGroupRepID> Structure::occupant_symrepIDs() const {
       return this->m_occupant_symrepIDs;
@@ -312,7 +286,7 @@ namespace CASM {
       return this->m_site_dof_symrepIDs;
     }
 
-    void Structure::_reset_occupant_symrepIDs() const {
+    void Structure::_reset_occupant_symrepIDs() {
       this->m_occupant_symrepIDs.clear();
       for(const Site &s : this->basis()) {
         this->m_occupant_symrepIDs.emplace_back(SymGroupRepID::identity(s.allowed_occupants().size()));
@@ -320,7 +294,7 @@ namespace CASM {
       return;
     }
 
-    void Structure::_reset_site_dof_symrepIDs() const {
+    void Structure::_reset_site_dof_symrepIDs() {
       this->m_site_dof_symrepIDs = std::vector<SymGroupRepID>(this->basis().size());
     }
 
@@ -330,7 +304,7 @@ namespace CASM {
     // to map the new position of the basis atom to the various positions
     // before symmetry was applied. It only checks the positions after
     // it brings the basis within the crystal.
-    void Structure::_generate_basis_symreps(bool verbose) const {
+    void Structure::_generate_basis_symreps(bool verbose) {
       std::string clr(100, ' ');
       if(factor_group().size() <= 0) {
         default_err_log() << "ERROR in generate_basis_permutation_representation" << std::endl;
@@ -429,7 +403,7 @@ namespace CASM {
 
     //***********************************************************
 
-    void Structure::_generate_global_symreps(bool verbose) const {
+    void Structure::_generate_global_symreps(bool verbose) {
       if(factor_group().size() <= 0) {
         default_err_log() << "ERROR in generate_global_dof_representations" << std::endl;
         default_err_log() << "Factor group is empty." << std::endl;
