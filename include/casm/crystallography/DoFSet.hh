@@ -108,7 +108,7 @@ namespace CASM {
       }
 
       /// Return all occupants that the DoFSet should not be applied to
-      const std::unordered_set<std::string> &excluded_occs() const {
+      const std::unordered_set<std::string> &excluded_occupants() const {
         return this->m_excluded_occs;
       }
 
@@ -119,38 +119,79 @@ namespace CASM {
     /**
      * Comparator class for checking equivalence of two DoFSet values.
      * Evaluate by constructing object with one of the values, and then pass
-     * the other DoFSet to the oveloaded operator()/
+     * the other DoFSet to the oveloaded operator().
+     *
+     * DoFSets are considered equivalent if:
+     * - The traits names match
+     * - They have the same names for each of the axes
+     * - Basis vectors span the same space
      */
 
-    struct DoFSetEquals_f {
+    struct DoFSetIsEquivalent_f {
     public:
+      DoFSetIsEquivalent_f(const DoFSet &reference_value, double tol) : m_reference_dofset(reference_value), m_tol(tol) {}
 
-      DoFSetEquals_f(const DoFSet &reference_value, double tol):
-        m_reference_dofset(reference_value), m_tol(tol)
-      {}
-
-      ///Returns true if the passed value matches the stored value that *this was constructed with
+      /// Returns true if the passed is equivalent to the stored value that *this was constructed with
       bool operator()(const DoFSet &other_value) const;
 
     private:
-
       /// Values passed to operator() will be compared against this
       DoFSet m_reference_dofset;
 
       /// Tolerance value for making comparisons
       double m_tol;
+
+      /// Returns true if the traits match. Only compares the names
+      bool _traits_match(const DoFSet &other_value) const;
+
+      /// Returns true if the order and names of the axis names match
+      bool _axis_names_match(const DoFSet &other_value) const;
+
+      /// Returns true if the axis span the same space. For example the basis would be considered equivalent
+      /// if they are the same but have been rotated
+      bool _basis_is_equivalent(const DoFSet &other_value) const;
     };
 
+    /**
+     * Comparator class for checking equivalence of two DoFSet values.
+     * Behaves exactly like DoFSetIsEquivalent, but also checks for excluded occupants.
+     * Evaluate by constructing object with one of the values, and then pass
+     * the other DoFSet to the oveloaded operator().
+     *
+     * DoFSets are considered equivalent if:
+     * - The traits names match
+     * - They have the same names for each of the axes
+     * - Basis vectors span the same space
+     */
+
+    struct SiteDoFSetIsEquivalent_f : private DoFSetIsEquivalent_f {
+      SiteDoFSetIsEquivalent_f(const SiteDoFSet &reference_value, double tol)
+        : DoFSetIsEquivalent_f(reference_value, tol), m_reference_excluded_occs(reference_value.excluded_occupants()) {
+      }
+
+      /// Returns true if the passed is equivalent to the stored value that *this was constructed with
+      bool operator()(const SiteDoFSet &other_value) const {
+        return DoFSetIsEquivalent_f::operator()(other_value) && this->_excluded_occupants_match(other_value);
+      }
+
+    private:
+      std::unordered_set<std::string> m_reference_excluded_occs;
+
+      bool _excluded_occupants_match(const SiteDoFSet &other_value) const {
+        return this->m_reference_excluded_occs == other_value.excluded_occupants();
+      }
+    };
 
   } // namespace xtal
 
-  //This is how it's currently organized for xtal::Lattice, but maybe we want something else  (see SymTools.hh)
+  // This is how it's currently organized for xtal::Lattice, but maybe we want something else  (see SymTools.hh)
   namespace sym {
     /// \brief Copy and apply SymOp to a DoFSet
     xtal::DoFSet copy_apply(const xtal::SymOp &op, const xtal::DoFSet &_dof);
-  }
+  } // namespace sym
 
-  template<> xtal::SiteDoFSet from_json<xtal::SiteDoFSet>(const jsonParser &json);
+  template <>
+  xtal::SiteDoFSet from_json<xtal::SiteDoFSet>(const jsonParser &json);
 
   jsonParser &to_json(xtal::SiteDoFSet const &_dof, jsonParser &json);
   jsonParser &to_json(xtal::DoFSet const &_dof, jsonParser &json);

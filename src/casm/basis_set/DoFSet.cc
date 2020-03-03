@@ -9,7 +9,11 @@
 
 namespace CASM {
 
-  DoFSet::DoFSet(BasicTraits const &_traits) : m_traits(_traits), m_info(SymGroupRepID(), Eigen::MatrixXd::Zero(m_traits.dim(), 0)) {}
+  DoFSet::DoFSet(BasicTraits const &_type, const std::unordered_set<std::string> &_excluded_occupants)
+    : m_traits(_type), m_info(SymGroupRepID(), Eigen::MatrixXd::Zero(m_traits.dim(), 0)), m_excluded_occs(_excluded_occupants) {
+  }
+
+  DoFSet::DoFSet(BasicTraits const &_type) : DoFSet(_type, std::unordered_set<std::string>()) {}
 
   //********************************************************************
   void DoFSet::allocate_symrep(SymGroup const &_group) const {

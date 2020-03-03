@@ -419,7 +419,7 @@ namespace CASM {
 
       auto it1 = m_dof_map.begin(), it2 = _other.m_dof_map.begin();
       for(; it1 != m_dof_map.end(); ++it1, ++it2)
-        if(!DoFSetEquals_f(it1->second, CASM::TOL)(it2->second)) {
+        if(!SiteDoFSetIsEquivalent_f(it1->second, CASM::TOL)(it2->second)) {
           std::cout << "SiteTypes not equivalent!!\n";
           return false;
         }

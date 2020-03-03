@@ -106,8 +106,8 @@ namespace CASM {
 
     args.log() << "Generating factor group. " << std::endl << std::endl;
 
-    prim.generate_factor_group();
-    prim.set_site_internals();
+    /* prim.generate_factor_group(); */
+    /* prim.set_site_internals(); */
 
     args.log() << "  Factor group size: " << prim.factor_group().size() << std::endl;
 

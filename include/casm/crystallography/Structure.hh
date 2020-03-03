@@ -62,12 +62,16 @@ namespace CASM {
 
       void _fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment);
 
+      /// determines primitive cell, finds its factor group using generate_factor_group_slow, and then
+      /// expands the factor group into the supercell using lattice translations
+      void generate_factor_group() const; // TOL is max distance for site equivalence, in Angstr.
+
     public:
 
       //  ****Constructors****
       Structure() : BasicStructure() {}
-      explicit Structure(const Lattice &init_lat) : BasicStructure(init_lat) {}
-      explicit Structure(const BasicStructure &base) : BasicStructure(base) {}
+      /* explicit Structure(const Lattice &init_lat); */
+      explicit Structure(const BasicStructure &base);
       explicit Structure(const fs::path &filepath);
 
       /// Have to explicitly define the copy constructor so that factor_group
@@ -83,7 +87,7 @@ namespace CASM {
       const SymGroup &point_group() const;
       //const SymGroup &point_group();
       SymGroupRep const *basis_permutation_symrep()const;
-      SymGroupRepID basis_permutation_symrep_ID()const override;
+      SymGroupRepID basis_permutation_symrep_ID()const;
       std::vector<SymGroupRepID> occupant_symrepIDs() const;
       std::vector<SymGroupRepID> site_dof_symrepIDs() const;
 
@@ -107,10 +111,6 @@ namespace CASM {
       void set_lattice(const Lattice &lattice, COORD_TYPE mode);
 
       //   - Symmetry
-
-      /// determines primitive cell, finds its factor group using generate_factor_group_slow, and then
-      /// expands the factor group into the supercell using lattice translations
-      void generate_factor_group() const; // TOL is max distance for site equivalence, in Angstr.
 
       /// generate factor groups for a range of tol values, prints results to screen (for now)
       void fg_converge(double large_tol);

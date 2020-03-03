@@ -1,6 +1,8 @@
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/basis_set/DoFIsEquivalent.hh"
 #include "casm/basis_set/OccupationDoFTraits.hh"
+#include "casm/basis_set/Adapter.hh"
+#include "casm/crystallography/Adapter.hh"
 #include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/crystallography/LatticePointWithin.hh"
 #include "casm/crystallography/Niggli.hh"
@@ -61,7 +63,6 @@ namespace CASM {
     }
 
     void BasicStructure::reset() {
-      set_site_internals();
 
       within();
     }
@@ -69,7 +70,6 @@ namespace CASM {
     //***********************************************************
 
     void BasicStructure::update() {
-      set_site_internals();
     }
 
     //***********************************************************
@@ -133,14 +133,6 @@ namespace CASM {
       BasicStructure tsuper(scel_lat);
       tsuper.fill_supercell(*this);
       return tsuper;
-    }
-
-    //***********************************************************
-
-    void BasicStructure::set_site_internals() {
-      for(Index nb = 0; nb < basis().size(); nb++) {
-        /* m_basis[nb].set_basis_ind(nb); */
-      }
     }
 
     //***********************************************************
@@ -593,19 +585,19 @@ namespace CASM {
     std::map<DoFKey, std::vector<DoFSetInfo> > local_dof_info(BasicStructure const &_struc) {
       std::map<DoFKey, std::vector<DoFSetInfo> > result;
 
-      throw std::runtime_error("This routine has been disabled unit xtal related DoF things are sorted out.");
       //TODO: I think you'll need to just have Structure internally hold a copy of the global DoF
       //as CASM::DoF and let this run
-      /* for(DoFKey const &type : continuous_local_dof_types(_struc)) { */
-      /*   std::vector<DoFSetInfo> tresult(_struc.basis().size(), DoFSetInfo(SymGroupRepID(), Eigen::MatrixXd::Zero(DoF::BasicTraits(type).dim(), 0))); */
+      for(DoFKey const &type : continuous_local_dof_types(_struc)) {
+        std::vector<DoFSetInfo> tresult(_struc.basis().size(), DoFSetInfo(SymGroupRepID(), Eigen::MatrixXd::Zero(DoF::BasicTraits(type).dim(), 0)));
 
-      /*   for(Index b = 0; b < _struc.basis().size(); ++b) { */
-      /*     if(_struc.basis()[b].has_dof(type)) { */
-      /*       tresult[b] = _struc.basis()[b].dof(type).info(); */
-      /*     } */
-      /*   } */
-      /*   result.emplace(type, std::move(tresult)); */
-      /* } */
+        for(Index b = 0; b < _struc.basis().size(); ++b) {
+          if(_struc.basis()[b].has_dof(type)) {
+            const auto &dofset = _struc.basis()[b].dof(type);
+            tresult[b] = adapter::Adapter<CASM::DoFSet, SiteDoFSet>()(dofset, b).info();
+          }
+        }
+        result.emplace(type, std::move(tresult));
+      }
       return result;
     }
 

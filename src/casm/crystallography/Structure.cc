@@ -42,9 +42,9 @@ namespace CASM {
       fs::ifstream infile(filepath);
 
       read(infile);
+      this->generate_factor_group();
     }
 
-    //***********************************************************
 
     Structure::Structure(const Structure &RHS) :
       BasicStructure(RHS) {
@@ -55,7 +55,11 @@ namespace CASM {
 
     };
 
-    //***********************************************************
+    /* Structure::Structure(const Lattice &init_lat) : BasicStructure(init_lat) {} */
+    Structure::Structure(const BasicStructure &base) : BasicStructure(base) {
+      this->generate_factor_group();
+    }
+
 
     Structure::~Structure() {}
 
@@ -301,12 +305,11 @@ namespace CASM {
     }
 
     std::vector<SymGroupRepID> Structure::occupant_symrepIDs() const {
-      //TODO: Should this call generate_factor_group? Should it do it every time? Only if it's empty? What if someone edited the Structure
-      //and made the factor group different than when it was generated previously?
-      //Current plan: Make it impossible to edit *this, and have all these things be generated at construction
-
-      this->_generate_basis_symreps();
       return this->m_occupant_symrepIDs;
+    }
+
+    std::vector<SymGroupRepID> Structure::site_dof_symrepIDs() const {
+      return this->m_site_dof_symrepIDs;
     }
 
     void Structure::_reset_occupant_symrepIDs() const {

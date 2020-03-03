@@ -95,10 +95,6 @@ namespace CASM {
       // clears site_internals and does within()
       virtual void reset();
 
-      //TODO: what does this mean? should it be private? Should set_basis call this at the end?
-      /// Associate each site with its basis index by setting its internal flags (asym_ind -> -1)
-      void set_site_internals();
-
       /// Translate all basis sites so that they are inside the unit cell
       void within();
 
@@ -127,13 +123,6 @@ namespace CASM {
       void push_back(Site const &_site, COORD_TYPE mode = CART);
 
       //  - Symmetry
-
-      ///apply a symmetry operation to the current structure (may change lattice vectors and order of basis atoms)
-      //BasicStructure &apply_sym(const SymOp &op);  //Anna do this
-
-      virtual SymGroupRepID basis_permutation_symrep_ID()const {
-        return SymGroupRepID();
-      }
 
       /// \brief Returns true if structure has attributes affected by time reversal
       bool is_time_reversal_active() const;

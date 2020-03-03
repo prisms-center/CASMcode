@@ -130,8 +130,8 @@ namespace CASM {
       lattice_point_grp.character_table();
 
       // get factor group
-      prim.generate_factor_group();
-      prim.set_site_internals();
+      /* prim.generate_factor_group(); */
+      /* prim.set_site_internals(); */
 
       // Write symmetry info files
 
