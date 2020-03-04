@@ -318,5 +318,42 @@ namespace CASM {
       return factor_group;
     }
 
+    BasicStructure symmetrize(const BasicStructure &structure, const std::vector<SymOp> &enforced_group) {
+      // All your sites need to be within
+      auto symmetrized_structure = structure;
+
+      // First make a copy of your current basis
+      // This copy will eventually become the new average basis.
+      auto avg_basis = structure.basis();
+
+      // Loop through given symmetry group an fill a temporary "operated basis"
+      decltype(avg_basis) operated_basis;
+
+      // Loop through given symmetry group an fill a temporary "operated basis"
+      for(const SymOp &enforce_group_operation : enforced_group) {
+        operated_basis.clear();
+        for(const auto &symmetrized_structure_site : symmetrized_structure.basis()) {
+          operated_basis.push_back(enforce_group_operation * symmetrized_structure_site);
+        }
+
+        // Now that you have a transformed basis, find the closest mapping of atoms
+        // Then average the distance and add it to the average basis
+        for(Index b = 0; b < symmetrized_structure.basis().size(); b++) {
+          double smallest = 1000000;
+          Coordinate bshift(symmetrized_structure.lattice());
+          for(const auto &operated_basis_site : operated_basis) {
+            double dist = operated_basis_site.min_dist(symmetrized_structure.basis()[b]);
+            if(dist < smallest) {
+              bshift = operated_basis_site.min_translation(symmetrized_structure.basis()[b]);
+              smallest = dist;
+            }
+          }
+          bshift.cart() *= (1.0 / enforced_group.size());
+          avg_basis[b] += bshift;
+        }
+      }
+      symmetrized_structure.set_basis(avg_basis);
+      return symmetrized_structure;
+    }
   } // namespace xtal
 } // namespace CASM

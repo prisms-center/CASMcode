@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <cmath>
+#include <memory>
 #include <vector>
 
 #include "casm/crystallography/BasicStructure.hh"
@@ -26,7 +27,7 @@ namespace CASM {
      */
 
     ///\brief Structure specifies the lattice and atomic basis of a crystal
-    class Structure : public BasicStructure {
+    class Structure {
     protected:
 
       /// Group symmetry operations that map the lattice and basis of Structure onto themselves,
@@ -72,6 +73,9 @@ namespace CASM {
       /// clears symmetry, site internals, and other attributes
       /* void reset() override; */
 
+      //Don't ever even think about making this non-const
+      std::shared_ptr<const BasicStructure> m_structure_ptr;
+      /* BasicStructure m_structure; */
 
     public:
 
@@ -80,11 +84,29 @@ namespace CASM {
       //of BasicStructure and its related symmetry information (e.g. factor group, symmetry representation
       //IDs, etc).
       /// Returns constant reference to the structure
-      const BasicStructure &structure() const;
+      operator const BasicStructure &() const;
+
+      const BasicStructure &structure() const {
+        return *this->m_structure_ptr;
+        /* return this->m_structure; */
+      }
+
+      const std::shared_ptr<const BasicStructure> &shared_structure() const {
+        return this->m_structure_ptr;
+      }
+
+      const Lattice &lattice() const {
+        return this->structure().lattice();
+      }
+
+      const std::vector<xtal::Site> basis() const {
+        return this->structure().basis();
+      }
+
 
       //  ****Constructors****
       //TODO: I tried getting rid of this but it seems to get used in almost every casm command right now
-      Structure() : BasicStructure() {}
+      Structure();
       explicit Structure(const BasicStructure &base);
       explicit Structure(const fs::path &filepath);
 
@@ -126,27 +148,27 @@ namespace CASM {
 
 
       /// fill an empty structure with the basis of its corresponding primitive cell - performs optimized factor_group expansion
-      void fill_supercell(const Structure &prim); //Ivy
+      /* void fill_supercell(const Structure &prim); //Ivy */
 
       ///  Shortcut routine to create a supercell structure and fill it with sites
-      Structure create_superstruc(const Lattice &scel_lat) const;
+      /* Structure create_superstruc(const Lattice &scel_lat) const; */
 
       ///Translates all atoms in cell
-      Structure &operator+=(const Coordinate &shift);
-      Structure &operator-=(const Coordinate &shift);
+      /* Structure &operator+=(const Coordinate &shift); */
+      /* Structure &operator-=(const Coordinate &shift); */
 
     };
 
-    Structure operator*(const Lattice &LHS, const Structure &RHS);
+    /* Structure operator*(const Lattice &LHS, const Structure &RHS); */
 
     //Translation operators -- not yet defined
-    Structure operator+(const Coordinate &LHS, const Structure &RHS);
-    Structure operator+(const Structure &LHS, const Coordinate &RHS);
+    /* Structure operator+(const Coordinate &LHS, const Structure &RHS); */
+    /* Structure operator+(const Structure &LHS, const Coordinate &RHS); */
 
     //Not yet sure how these will work
-    Structure operator+(const Structure &LHS, const Structure &RHS);
-    Structure operator+(const Structure &LHS, const Lattice &RHS);
-    Structure operator+(const Lattice &LHS, const Structure &RHS);
+    /* Structure operator+(const Structure &LHS, const Structure &RHS); */
+    /* Structure operator+(const Structure &LHS, const Lattice &RHS); */
+    /* Structure operator+(const Lattice &LHS, const Structure &RHS); */
 
 
     /// Helper Functions

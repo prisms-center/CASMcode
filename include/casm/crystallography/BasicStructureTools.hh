@@ -31,6 +31,11 @@ namespace CASM {
     /// for time reversal
     std::vector<SymOp> make_factor_group(const BasicStructure &struc);
 
+    /// Given a symmetry group, the basis of the structure will have
+    /// each operation applied to it. The resulting set of basis
+    /// from performing these operations will be averaged out,
+    /// yielding a new average basis.
+    BasicStructure symmetrize(const BasicStructure &structure, const std::vector<SymOp> &enforced_group);
   } // namespace xtal
 } // namespace CASM
 

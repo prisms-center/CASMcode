@@ -94,7 +94,7 @@ namespace CASM {
     args.log() << "\n***************************\n" << std::endl;
 
     DirectoryStructure dir(root);
-    Structure prim;
+    BasicStructure prim;
 
     // if prim.json does not exist, try to read PRIM and create prim.json
     if(!fs::is_regular_file(dir.prim())) {
@@ -165,8 +165,10 @@ namespace CASM {
         args.err_log() << "ERROR: The structure in the prim.json file is not primitive. Writing the most       \n"
                        << "       primitive structure to file 'prim.true.json'.\n\n";
 
-        Structure tmp(true_prim);
-        Lattice lat_niggli = xtal::canonical::equivalent(true_prim.lattice(), tmp.point_group(), TOL);
+        Structure tmp_prim(true_prim);
+        Lattice lat_niggli = xtal::canonical::equivalent(true_prim.lattice(), tmp_prim.point_group(), TOL);
+
+        BasicStructure tmp(tmp_prim.structure());
         tmp.set_lattice(lat_niggli, CART);
 
         fs::ofstream primfile(root / "prim.true.json");
@@ -187,7 +189,8 @@ namespace CASM {
     }
 
     /// Check that the PRIM is in reduced form:
-    Lattice niggli_lat = xtal::canonical::equivalent(prim.lattice(), prim.point_group(), TOL);
+    Structure tmp_prim(prim);
+    Lattice niggli_lat = xtal::canonical::equivalent(prim.lattice(), tmp_prim.point_group(), TOL);
 
     bool is_standard_niggli = almost_equal(niggli_lat.lat_column_mat(), prim.lattice().lat_column_mat());
 
@@ -199,8 +202,11 @@ namespace CASM {
                          << "       If you want to use the current prim.json anyway, re-run with the --force option.\n";
         }
 
-        Structure tmp(true_prim);
-        Lattice lat_niggli = xtal::canonical::equivalent(true_prim.lattice(), tmp.point_group(), TOL);
+        //TODO: This has clearly been copied and pasted from above. Make it better.
+        Structure tmp_prim(true_prim);
+        Lattice lat_niggli = xtal::canonical::equivalent(true_prim.lattice(), tmp_prim.point_group(), TOL);
+
+        BasicStructure tmp(tmp_prim.structure());
         tmp.set_lattice(lat_niggli, CART);
 
         fs::ofstream primfile(root / "prim.niggli.json");

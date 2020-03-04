@@ -88,10 +88,6 @@ namespace CASM {
       /// do not depend on the lattice of 'RHS'
       virtual BasicStructure &operator=(const BasicStructure &RHS);
 
-      //TODO: update just calls set_site_internals? what does that even mean?
-      //basis_ind still exists because OccupationDoFTraits site_basis_description
-      void update();
-
       // clears site_internals and does within()
       virtual void reset();
 

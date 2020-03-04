@@ -13,6 +13,9 @@
 #include <boost/filesystem.hpp>
 #include <stdexcept>
 
+#include "casm/crystallography/io/VaspIO.hh"
+#include "casm/crystallography/SimpleStructureTools.hh"
+
 namespace CASM {
   namespace xtal {
     BasicStructure::BasicStructure(const fs::path &filepath) : m_lattice() {
@@ -65,11 +68,6 @@ namespace CASM {
     void BasicStructure::reset() {
 
       within();
-    }
-
-    //***********************************************************
-
-    void BasicStructure::update() {
     }
 
     //***********************************************************
@@ -337,8 +335,10 @@ namespace CASM {
         throw std::runtime_error(std::string("ERROR: too many sites listed in structure input file."));
       }
 
-      update();
       return;
+
+      CASM::VaspIO::PrintPOSCAR print(make_simple_structure(*this));
+      print.print(std::cout);
 
     }
 

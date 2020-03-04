@@ -371,7 +371,7 @@ namespace CASM {
   SupercellSymInfo make_supercell_sym_info(Structure const &_prim, Lattice const &_slat) {
     std::map<DoFKey, SymGroupRepID> global_dof_symrep_IDs;
     for(auto const &key : global_dof_types(_prim))
-      global_dof_symrep_IDs.emplace(std::make_pair(key, _prim.global_dof(key).symrep_ID()));
+      global_dof_symrep_IDs.emplace(std::make_pair(key, _prim.structure().global_dof(key).symrep_ID()));
 
     std::map<DoFKey, std::vector<SymGroupRepID> > local_dof_symrep_IDs;
     for(auto const &key : continuous_local_dof_types(_prim)) {

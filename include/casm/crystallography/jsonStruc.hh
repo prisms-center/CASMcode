@@ -94,7 +94,7 @@ namespace CASM {
       catch(const std::exception &ex) {
         throw std::runtime_error(std::string("Unable to parse Structure/BasicStructure from JSON object.  One or more tags were improperly specified:\n") + ex.what());
       }
-      struc.update();
+      /* struc.update(); */
 
     }
 

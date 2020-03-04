@@ -277,7 +277,7 @@ TEST(BasicStructureSiteTest, IsPrimitiveTest) {
 
   for(auto it = scel_enum.begin(); it != scel_enum.end(); ++it) {
 
-    Structure super = prim.create_superstruc(*it);
+    BasicStructure super = prim.structure().create_superstruc(*it);
     EXPECT_EQ(super.lattice().is_right_handed(), true);
 
     Structure new_prim = Structure(xtal::make_primitive(super));

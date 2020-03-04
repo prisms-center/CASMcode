@@ -74,7 +74,9 @@ namespace CASM {
   public:
     using OccDoFType = std::vector<OccType>;
 
-    OccupantDoFIsEquivalent(OccDoFType const &_dof, double tol = TOL) : m_dof(_dof), m_tol(tol), m_P(_dof.size()) {}
+    OccupantDoFIsEquivalent(OccDoFType const &_dof, double tol = TOL) : m_dof(_dof), m_tol(tol), m_P(_dof.size()) {
+      std::cout << "constructed occdoffisequiv" << std::endl;
+    }
 
     /// returns true if m_dof and _other have matching labels, and m_dof = P.permute(_other)
     bool operator()(OccDoFType const &_other) const;

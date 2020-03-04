@@ -23,11 +23,11 @@ namespace CASM {
 
 
       //std::cout << "Using " << func_type << " site basis functions." << std::endl << std::endl;
-      if(_prim.global_dofs().find(name()) == _prim.global_dofs().end())
+      if(_prim.structure().global_dofs().find(name()) == _prim.structure().global_dofs().end())
         return std::vector<BasisSet>();
 
       std::vector<BasisSet> result(1);
-      result[0].set_variable_basis(_prim.global_dof(name()));
+      result[0].set_variable_basis(_prim.structure().global_dof(name()));
 
       return result;
     }

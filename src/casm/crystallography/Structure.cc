@@ -1,6 +1,8 @@
 #include "casm/crystallography/Structure.hh"
 
+#include <memory>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <exception>
 #include <sys/stat.h>
@@ -27,13 +29,14 @@
 #include "casm/symmetry/SymPermutation.hh"
 #include "casm/casm_io/Log.hh"
 
+#include "casm/app/AppIO.hh"
 
 namespace CASM {
   namespace xtal {
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Structure::Structure(const fs::path &filepath) : BasicStructure() {
+    Structure::Structure(const fs::path &filepath) {
       if(!fs::exists(filepath)) {
         default_err_log() << "Error in Structure::Structure(const fs::path &filepath)." << std::endl;
         default_err_log() << "  File does not exist at: " << filepath << std::endl;
@@ -41,28 +44,68 @@ namespace CASM {
       }
       fs::ifstream infile(filepath);
 
-      read(infile);
+      BasicStructure read_struc;
+      read_struc.read(infile);
+      m_structure_ptr = std::make_shared<BasicStructure>(read_struc);
+      /* m_structure=read_struc; */
       this->generate_factor_group();
+      std::cout << "constructed via 0" << std::endl;
     }
 
+    Structure::Structure() : m_structure_ptr(std::make_shared<BasicStructure>(BasicStructure())) {
+      std::cout << "constructed via D" << std::endl;
+    }
+    /* Structure::Structure() : m_structure() {std::cout<<"constructed via D"<<std::endl;} */
 
     Structure::Structure(const Structure &RHS) :
-      BasicStructure(RHS) {
+      m_structure_ptr(RHS.m_structure_ptr) {
+      /* m_structure(RHS.m_structure) { */
+      std::cout << "construct via 1" << std::endl;
       copy_attributes_from(RHS);
+      std::cout << "constructed via 1" << std::endl;
 
     };
 
-    Structure::Structure(const BasicStructure &base) : BasicStructure(base) {
+    Structure::Structure(const BasicStructure &base) : m_structure_ptr(std::make_shared<BasicStructure>(base)) {
+      /* Structure::Structure(const BasicStructure &base) : m_structure(base) { */
+      std::cout << "construct via 2" << std::endl;
+      jsonParser json;
+      CASM::write_prim(this->structure(), json, FRAC);
+      std::cout << json << std::endl;
+
+      for(const auto &s : this->basis()) {
+        for(const auto &m : s.occupant_dof()) {
+          std::cout << m.name() << ", ";
+        }
+        std::cout << std::endl;
+      }
+
+      std::cout << "*****************" << std::endl;
+
+      for(Index b = 0; b < basis().size(); ++b) {
+        // copy_aply(symop,dofref_from) = P.permute(dofref_to);
+        const std::vector<Molecule> dofref_from = basis()[b].occupant_dof();
+
+        std::cout << basis()[b].occupant_dof().size() << std::endl;
+        std::cout << basis()[b].occupant_dof()[0].name() << std::endl;
+        std::cout << "DEBUGGING: dofref_from.size() is " << dofref_from.size() << std::endl;
+        std::cout << "DEBUGGING: dofref_from[0].name() is " << dofref_from[0].name() << std::endl;
+      }
+
+      std::cout << "*****************" << std::endl;
+
       this->generate_factor_group();
+      std::cout << "constructed via 2" << std::endl;
     }
 
 
     Structure::~Structure() {}
 
-    //***********************************************************
 
     Structure &Structure::operator=(const Structure &RHS) {
-      BasicStructure::operator=(RHS);
+      std::cout << "construct via assignment" << std::endl;
+      m_structure_ptr = RHS.m_structure_ptr;
+      /* m_structure=RHS.m_structure; */
 
       //Following gets done by base class
       //lattice = RHS.lattice;
@@ -71,25 +114,30 @@ namespace CASM {
 
       copy_attributes_from(RHS);
 
+      std::cout << "construct via assignment" << std::endl;
       return *this;
     }
 
+    Structure::operator const BasicStructure &() const {
+      return this->structure();
+    }
 
     //***********************************************************
 
     void Structure::copy_attributes_from(const Structure &RHS) {
 
       m_basis_perm_rep_ID = RHS.m_basis_perm_rep_ID; //this *should* work
+      m_site_dof_symrepIDs = RHS.m_site_dof_symrepIDs; //this *should* work
       //assert(0);
       m_factor_group = RHS.m_factor_group;
-      m_factor_group.set_lattice(lattice());
+      m_factor_group.set_lattice(this->lattice());
     }
 
     //***********************************************************
 
     void Structure::generate_factor_group() {
       m_factor_group.clear();
-      m_factor_group.set_lattice(lattice());
+      m_factor_group.set_lattice(this->lattice());
 
       //Don't copy a MasterSymGroup or you'll have bad luck
       SymOpVector factor_group_operations = make_factor_group(*this);
@@ -135,38 +183,39 @@ namespace CASM {
     }
 
     void Structure::fg_converge(double large_tol) {
-      _fg_converge(m_factor_group, lattice().tol(), large_tol, (large_tol - lattice().tol()) / 10.0);
+      _fg_converge(m_factor_group, this->lattice().tol(), large_tol, (large_tol - lattice().tol()) / 10.0);
       return;
     }
 
     void Structure::_fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment) {
+      throw std::runtime_error("This routine has been disabled");
 
-      std::vector<double> tols;
-      std::vector<bool> is_group;
-      std::vector<int> num_ops, num_enforced_ops;
-      std::vector<std::string> name;
+      /* std::vector<double> tols; */
+      /* std::vector<bool> is_group; */
+      /* std::vector<int> num_ops, num_enforced_ops; */
+      /* std::vector<std::string> name; */
 
-      double orig_tol = lattice().tol();
-      for(double i = small_tol; i < large_tol; i += increment) {
-        tols.push_back(i);
-        m_lattice.set_tol(i);
+      /* double orig_tol = lattice().tol(); */
+      /* for(double i = small_tol; i < large_tol; i += increment) { */
+      /*   tols.push_back(i); */
+      /*   m_lattice.set_tol(i); */
 
-        xtal::SymOpVector factor_group_operations = xtal::make_factor_group(*this);
-        factor_group = adapter::Adapter<SymGroup, xtal::SymOpVector>()(factor_group_operations, this->lattice());
+      /*   xtal::SymOpVector factor_group_operations = xtal::make_factor_group(*this); */
+      /*   factor_group = adapter::Adapter<SymGroup, xtal::SymOpVector>()(factor_group_operations, this->lattice()); */
 
-        factor_group.get_multi_table();
-        num_ops.push_back(factor_group.size());
-        is_group.push_back(factor_group.is_group(i));
-        factor_group.enforce_group(i);
-        num_enforced_ops.push_back(factor_group.size());
-        factor_group.character_table();
-        name.push_back(factor_group.get_name());
-      }
-      m_lattice.set_tol(orig_tol);
+      /*   factor_group.get_multi_table(); */
+      /*   num_ops.push_back(factor_group.size()); */
+      /*   is_group.push_back(factor_group.is_group(i)); */
+      /*   factor_group.enforce_group(i); */
+      /*   num_enforced_ops.push_back(factor_group.size()); */
+      /*   factor_group.character_table(); */
+      /*   name.push_back(factor_group.get_name()); */
+      /* } */
+      /* m_lattice.set_tol(orig_tol); */
 
-      for(Index i = 0; i < tols.size(); i++) {
-        std::cout << tols[i] << "\t" << num_ops[i] << "\t" << is_group[i] << "\t" << num_enforced_ops[i] << "\t name: " << name[i] << "\n";
-      }
+      /* for(Index i = 0; i < tols.size(); i++) { */
+      /*   std::cout << tols[i] << "\t" << num_ops[i] << "\t" << is_group[i] << "\t" << num_enforced_ops[i] << "\t name: " << name[i] << "\n"; */
+      /* } */
 
       return;
     }
@@ -186,55 +235,55 @@ namespace CASM {
      */
     //***********************************************************
 
-    void Structure::fill_supercell(const Structure &prim) {
-      Index i, j;
+    /* void Structure::fill_supercell(const Structure &prim) { */
+    /*   Index i, j; */
 
-      auto all_lattice_points = make_lattice_points(prim.lattice(), lattice(), lattice().tol());
+    /*   auto all_lattice_points = make_lattice_points(prim.lattice(), lattice(), lattice().tol()); */
 
-      m_basis.clear();
+    /*   m_basis.clear(); */
 
-      //loop over basis sites of prim
-      for(j = 0; j < prim.basis().size(); j++) {
+    /*   //loop over basis sites of prim */
+    /*   for(j = 0; j < prim.basis().size(); j++) { */
 
-        //loop over prim_grid points
-        for(const auto &lattice_point : all_lattice_points) {
-          Coordinate lattice_point_coordinate = make_superlattice_coordinate(lattice_point, prim.lattice(), lattice());
+    /*     //loop over prim_grid points */
+    /*     for(const auto &lattice_point : all_lattice_points) { */
+    /*       Coordinate lattice_point_coordinate = make_superlattice_coordinate(lattice_point, prim.lattice(), lattice()); */
 
-          //push back translated basis site of prim onto superstructure basis
-          push_back(prim.basis()[j] + lattice_point_coordinate);
+    /*       //push back translated basis site of prim onto superstructure basis */
+    /*       push_back(prim.basis()[j] + lattice_point_coordinate); */
 
-          m_basis.back().within();
-          for(Index k = 0; k < basis().size() - 1; k++) {
-            if(basis()[k].compare(basis().back())) {
-              m_basis.pop_back();
-              break;
-            }
-          }
-        }
-      }
+    /*       m_basis.back().within(); */
+    /*       for(Index k = 0; k < basis().size() - 1; k++) { */
+    /*         if(basis()[k].compare(basis().back())) { */
+    /*           m_basis.pop_back(); */
+    /*           break; */
+    /*         } */
+    /*       } */
+    /*     } */
+    /*   } */
 
-      //trans_and_expand primitive factor_group
-      IsPointGroupOp check_op(lattice());
-      for(CASM::SymOp const &op : prim.factor_group()) {
-        if(check_op(op)) {
-          for(const auto &lattice_point : all_lattice_points) {
-            Coordinate lattice_point_coordinate = make_superlattice_coordinate(lattice_point, prim.lattice(), lattice());
-            m_factor_group.push_back(within_cell(CASM::SymOp::translation(lattice_point_coordinate.const_cart())*op,
-                                                 lattice(),
-                                                 PERIODIC));
-          }
-        }
-      }
-      if(m_factor_group.size() > 200) {// how big is too big? this is at least big enough for FCC conventional cell
-#ifndef NDEBUG
-        default_err_log() << "WARNING: You have a very large factor group of a non-primitive structure. Certain symmetry features will be unavailable.\n";
-#endif
-        m_factor_group.invalidate_multi_tables();
-      }
-      update();
+    /*   //trans_and_expand primitive factor_group */
+    /*   IsPointGroupOp check_op(lattice()); */
+    /*   for(CASM::SymOp const &op : prim.factor_group()) { */
+    /*     if(check_op(op)) { */
+    /*       for(const auto &lattice_point : all_lattice_points) { */
+    /*         Coordinate lattice_point_coordinate = make_superlattice_coordinate(lattice_point, prim.lattice(), lattice()); */
+    /*         m_factor_group.push_back(within_cell(CASM::SymOp::translation(lattice_point_coordinate.const_cart())*op, */
+    /*                                              lattice(), */
+    /*                                              PERIODIC)); */
+    /*       } */
+    /*     } */
+    /*   } */
+    /*   if(m_factor_group.size() > 200) {// how big is too big? this is at least big enough for FCC conventional cell */
+    /* #ifndef NDEBUG */
+    /*     default_err_log() << "WARNING: You have a very large factor group of a non-primitive structure. Certain symmetry features will be unavailable.\n"; */
+    /* #endif */
+    /*     m_factor_group.invalidate_multi_tables(); */
+    /*   } */
+    /*   update(); */
 
-      return;
-    }
+    /*   return; */
+    /* } */
 
     //***********************************************************
     /**
@@ -247,11 +296,11 @@ namespace CASM {
      */
     //***********************************************************
 
-    Structure Structure::create_superstruc(const Lattice &scel_lat) const {
-      Structure tsuper(scel_lat);
-      tsuper.fill_supercell(*this);
-      return tsuper;
-    }
+    /* Structure Structure::create_superstruc(const Lattice &scel_lat) const { */
+    /*   Structure tsuper(scel_lat); */
+    /*   tsuper.fill_supercell(*this); */
+    /*   return tsuper; */
+    /* } */
 
     //***********************************************************
 
@@ -343,12 +392,24 @@ namespace CASM {
         sitemap = symop_site_map(op, *this);
         op.set_rep(m_basis_perm_rep_ID, SymBasisPermute(op, lattice(), sitemap));
 
+        std::cout << "Enter the loop" << std::endl;
         for(Index b = 0; b < basis().size(); ++b) {
           // copy_aply(symop,dofref_from) = P.permute(dofref_to);
-          auto const &dofref_to = basis()[sitemap[b].sublattice()].occupant_dof();
-          auto const &dofref_from = basis()[b].occupant_dof();
+          auto const dofref_to = basis()[sitemap[b].sublattice()].occupant_dof();
+          auto const dofref_from = basis()[b].occupant_dof();
+          std::cout << "DEBUGGING: sitemap[b].sublattice() is " << sitemap[b].sublattice() << std::endl;
+
+          std::cout << basis()[b].allowed_occupants().size() << std::endl;
+          std::cout << basis()[b].allowed_occupants()[0] << std::endl;
+          std::cout << "DEBUGGING: dofref_to.size() is " << dofref_to.size() << std::endl;
+          std::cout << "DEBUGGING: dofref_to.at(0).name() is " << dofref_to.at(0).name() << std::endl;
+
+
+
           auto &symrep_from = this->m_occupant_symrepIDs[b];
+          std::cout << "made reference" << std::endl;
           OccupantDoFIsEquivalent<Molecule> eq(dofref_from);
+          std::cout << "check 0" << std::endl;
 
           if(eq(adapter::Adapter<SymOp, CASM::SymOp>()(op), dofref_to)) {
             if(symrep_from.is_identity()) {
@@ -366,6 +427,7 @@ namespace CASM {
             }
           }
           else throw std::runtime_error("In Structure::_generate_basis_symreps(), Sites originally identified as equivalent cannot be mapped by symmetry.");
+          std::cout << "end of loop" << std::endl;
         }
 
         for(auto const &dof_dim : local_dof_dims(*this)) {
@@ -409,7 +471,7 @@ namespace CASM {
         default_err_log() << "Factor group is empty." << std::endl;
         exit(1);
       }
-      for(auto const &dof : m_global_dof_map) {
+      for(auto const &dof : this->structure().global_dofs()) {
         dof.second.allocate_symrep(m_factor_group);
         for(auto const &op : m_factor_group) {
           DoFIsEquivalent eq(dof.second);
@@ -441,26 +503,26 @@ namespace CASM {
     /* } */
 
     //***********************************************************
-    Structure &Structure::operator+=(const Coordinate &shift) {
+    /* Structure &Structure::operator+=(const Coordinate &shift) { */
 
-      for(Index i = 0; i < basis().size(); i++) {
-        m_basis[i] += shift;
-      }
+    /*   for(Index i = 0; i < basis().size(); i++) { */
+    /*     m_basis[i] += shift; */
+    /*   } */
 
-      m_factor_group += shift.cart();
-      return (*this);
-    }
+    /*   m_factor_group += shift.cart(); */
+    /*   return (*this); */
+    /* } */
 
 
     //***********************************************************
-    Structure &Structure::operator-=(const Coordinate &shift) {
+    /* Structure &Structure::operator-=(const Coordinate &shift) { */
 
-      for(Index i = 0; i < basis().size(); i++) {
-        m_basis[i] -= shift;
-      }
-      m_factor_group -= shift.cart();
-      return (*this);
-    }
+    /*   for(Index i = 0; i < basis().size(); i++) { */
+    /*     m_basis[i] -= shift; */
+    /*   } */
+    /*   m_factor_group -= shift.cart(); */
+    /*   return (*this); */
+    /* } */
 
     //***********************************************************
     /*
@@ -470,11 +532,11 @@ namespace CASM {
     }
     */
     //***********************************************************
-    Structure operator*(const Lattice &LHS, const Structure &RHS) {
-      Structure tsuper(LHS);
-      tsuper.fill_supercell(RHS);
-      return tsuper;
-    }
+    /* Structure operator*(const Lattice &LHS, const Structure &RHS) { */
+    /*   Structure tsuper(LHS); */
+    /*   tsuper.fill_supercell(RHS); */
+    /*   return tsuper; */
+    /* } */
 
 
 

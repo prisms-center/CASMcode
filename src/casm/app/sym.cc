@@ -142,13 +142,14 @@ namespace CASM {
       struc = Structure(xtal::make_primitive(struc));
 
       int biggest = struc.factor_group().size();
-      Structure tmp = struc;
+      BasicStructure basic_tmp = struc;
       // a) symmetrize the lattice vectors
-      Lattice lat = tmp.lattice();
+      Lattice lat = basic_tmp.lattice();
       lat = xtal::symmetrize(lat, tol);
       lat.set_tol(tol);
+      basic_tmp.set_lattice(lat, FRAC);
 
-      tmp.set_lattice(lat, FRAC);
+      Structure tmp(basic_tmp);
 
       tmp.factor_group();
       // b) find factor group with same tolerance
@@ -167,7 +168,7 @@ namespace CASM {
       fs::ofstream file_i;
       fs::path POSCARpath_i = "POSCAR_sym";
       file_i.open(POSCARpath_i);
-      VaspIO::PrintPOSCAR p_i(make_simple_structure(struc), struc.title());
+      VaspIO::PrintPOSCAR p_i(make_simple_structure(struc), struc.structure().title());
       p_i.print(file_i);
       file_i.close();
       return 0;
