@@ -84,7 +84,7 @@ namespace CASM {
 
       for(Index b = 0; b < basis().size(); ++b) {
         // copy_aply(symop,dofref_from) = P.permute(dofref_to);
-        const std::vector<Molecule> dofref_from = basis()[b].occupant_dof();
+        const std::vector<Molecule> &dofref_from = basis()[b].occupant_dof();
 
         std::cout << basis()[b].occupant_dof().size() << std::endl;
         std::cout << basis()[b].occupant_dof()[0].name() << std::endl;
@@ -395,8 +395,8 @@ namespace CASM {
         std::cout << "Enter the loop" << std::endl;
         for(Index b = 0; b < basis().size(); ++b) {
           // copy_aply(symop,dofref_from) = P.permute(dofref_to);
-          auto const dofref_to = basis()[sitemap[b].sublattice()].occupant_dof();
-          auto const dofref_from = basis()[b].occupant_dof();
+          auto const &dofref_to = basis()[sitemap[b].sublattice()].occupant_dof();
+          auto const &dofref_from = basis()[b].occupant_dof();
           std::cout << "DEBUGGING: sitemap[b].sublattice() is " << sitemap[b].sublattice() << std::endl;
 
           std::cout << basis()[b].allowed_occupants().size() << std::endl;

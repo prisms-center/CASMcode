@@ -73,7 +73,7 @@ namespace CASM {
       /// clears symmetry, site internals, and other attributes
       /* void reset() override; */
 
-      //Don't ever even think about making this non-const
+      //Don't ever even think about making this non-const, assignable or modifiable in any way.
       std::shared_ptr<const BasicStructure> m_structure_ptr;
       /* BasicStructure m_structure; */
 
@@ -99,7 +99,7 @@ namespace CASM {
         return this->structure().lattice();
       }
 
-      const std::vector<xtal::Site> basis() const {
+      const std::vector<xtal::Site> &basis() const {
         return this->structure().basis();
       }
 
