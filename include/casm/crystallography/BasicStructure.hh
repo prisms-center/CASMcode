@@ -8,12 +8,15 @@
 #include <cmath>
 
 #include "casm/crystallography/Adapter.hh"
+#include "casm/crystallography/DoFDecl.hh"
 #include "casm/global/enum.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Site.hh"
-#include "casm/basis_set/DoFSet.hh"
+#include "casm/crystallography/DoFSet.hh"
 
 namespace CASM {
+  class DoFSetInfo;
+
   namespace xtal {
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -41,7 +44,7 @@ namespace CASM {
       std::vector<Site> m_basis;
 
       /// continuous global degrees of freedom
-      std::map <DoFKey, CASM::DoFSet> m_global_dof_map;
+      std::map <DoFKey, DoFSet> m_global_dof_map;
 
     private: // PRIVATE METHODS
 
@@ -78,9 +81,9 @@ namespace CASM {
         return m_title;
       }
 
-      CASM::DoFSet const &global_dof(std::string const &dof_type) const;
+      DoFSet const &global_dof(std::string const &dof_type) const;
 
-      std::map<DoFKey, CASM::DoFSet> const &global_dofs() const {
+      std::map<DoFKey, DoFSet> const &global_dofs() const {
         return m_global_dof_map;
       }
 
@@ -105,7 +108,7 @@ namespace CASM {
       void set_title(std::string const &_title);
 
       /// Manually set the global DoFs
-      void set_global_dofs(std::map <DoFKey, CASM::DoFSet> const &new_dof_map) {
+      void set_global_dofs(std::map <DoFKey, DoFSet> const &new_dof_map) {
         m_global_dof_map = new_dof_map;
       }
 
@@ -123,9 +126,12 @@ namespace CASM {
       /// \brief Returns true if structure has attributes affected by time reversal
       bool is_time_reversal_active() const;
 
+      //TODO: Extract
       /// fill an empty structure with the basis of its corresponding primitive cell
       void fill_supercell(const BasicStructure &prim); //Ivy
 
+      //TODO: Extract
+      /// fill an empty structure with the basis of its corresponding primitive cell
       ///  Shortcut routine to create a supercell structure and fill it with sites
       BasicStructure create_superstruc(const Lattice &scel_lat) const;
 
@@ -178,8 +184,6 @@ namespace CASM {
     std::vector<std::vector<std::string> > allowed_molecule_names(BasicStructure const &_struc);
 
     //************************************************************
-    // Assumes constructor Site::Site(Lattice) exists
-    //void from_json(BasicStructure &basic, const jsonParser &json);
 
     std::vector<DoFKey> all_local_dof_types(BasicStructure const &_struc);
 
@@ -191,9 +195,9 @@ namespace CASM {
 
     std::map<DoFKey, Index> global_dof_dims(BasicStructure const &_struc);
 
-    std::map<DoFKey, DoFSetInfo> global_dof_info(BasicStructure const &_struc);
+    std::map<DoFKey, CASM::DoFSetInfo> global_dof_info(BasicStructure const &_struc);
 
-    std::map<DoFKey, std::vector<DoFSetInfo> > local_dof_info(BasicStructure const &_struc);
+    std::map<DoFKey, std::vector<CASM::DoFSetInfo> > local_dof_info(BasicStructure const &_struc);
 
     Index local_dof_dim(DoFKey const &_name, BasicStructure const &_struc);
 

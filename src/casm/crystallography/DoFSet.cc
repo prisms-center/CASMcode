@@ -62,9 +62,7 @@ namespace CASM {
   }
 
   jsonParser &to_json(xtal::SiteDoFSet const &_dof, jsonParser &json) {
-    json["basis"] = _dof.basis();
-    json["axis_names"] = _dof.component_names();
-    json["traits"] = _dof.traits().name();
+    to_json(static_cast<const xtal::DoFSet &>(_dof), json);
     json["excluded_occupants"] = _dof.excluded_occupants();
     return json;
   }

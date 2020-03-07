@@ -13,10 +13,6 @@
 namespace CASM {
   class jsonParser;
 
-  template<typename OccType>
-  class OccupantDoF;
-  class DoFSet;
-
   namespace xtal {
 
     struct SymOp;
@@ -44,7 +40,7 @@ namespace CASM {
 
       const std::vector<Molecule> &occupant_dof() const;
 
-      DoFSet const &dof(std::string const &_dof_type) const;
+      SiteDoFSet const &dof(std::string const &_dof_type) const;
 
       Index dof_size() const;
 
@@ -71,9 +67,9 @@ namespace CASM {
 
       void set_allowed_occupants(std::vector<Molecule> const &_occ_domain);
 
-      void set_dofs(std::map<std::string, DoFSet> _dofs);
+      void set_dofs(std::map<std::string, SiteDoFSet> _dofs);
 
-      std::map<std::string, DoFSet> const &dofs() const {
+      std::map<std::string, SiteDoFSet> const &dofs() const {
         return m_dof_map;
       }
 
@@ -119,7 +115,7 @@ namespace CASM {
       std::vector<Molecule> m_occupant_dof;
 
       /// additional continuous degrees of freedom
-      std::map <std::string, DoFSet > m_dof_map;
+      std::map <std::string, SiteDoFSet > m_dof_map;
 
       //============
 

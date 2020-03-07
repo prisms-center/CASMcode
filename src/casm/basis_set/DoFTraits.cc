@@ -105,7 +105,7 @@ namespace CASM {
       if(val_traits().global()) {
         ss <<
            indent << "  if(m_params.eval_mode(m_" << name() << "_var_param_key) != ParamPack::READ) {\n";
-        for(Index a = 0; a < _prim.structure().global_dof(name()).size(); ++a) {
+        for(Index a = 0; a < _prim.structure().global_dof(name()).dimensions(); ++a) {
           ss << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << name() << "_var_param_key, " << a
              << ", eval_" << name() << "_var(" << a << "));\n";
         }
@@ -189,7 +189,7 @@ namespace CASM {
       if(val_traits().global()) {
         ss <<
            indent << "  if(m_params.eval_mode(m_" << name() << "_var_param_key) != ParamPack::READ) {\n";
-        for(Index a = 0; a < _prim.structure().global_dof(name()).size(); ++a) {
+        for(Index a = 0; a < _prim.structure().global_dof(name()).dimensions(); ++a) {
           ss << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << name() << "_var_param_key, " << a
              << ", eval_" << name() << "_var(" << a << "));\n";
         }

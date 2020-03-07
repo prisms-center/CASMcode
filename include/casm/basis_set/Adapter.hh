@@ -13,6 +13,8 @@ namespace CASM {
 
     /// Convert the molecular degrees of freedom in the simple vector form (stored this way in Site)
     /// to the specialized OccupantDoF type, which can be used to construct basis functions.
+    /// The int parameter dof_id is used to set the ID of the OccupantDoF, and is most likely
+    /// the index of the relevant Site within the Structure basis.
     //TODO: Squash OccupantDoF and DiscreteDoF into a single DiscreteDoF class that does NOT depend on Molecule (i.e. DiscreteType)
     template <typename DiscreteType>
     struct Adapter<OccupantDoF<DiscreteType>, std::vector<DiscreteType>> {
@@ -23,8 +25,23 @@ namespace CASM {
       }
     };
 
+    /// Convert the xtal implementation of DoFSet into the CASM::DoFSet that is used to generate
+    /// basis functions elsewhere in CASM.
+    /// IDs of each component are set to values 0-n-1, and are then locked to avoid future changes to them.
+    template<>
+    struct Adapter<CASM::DoFSet, xtal::DoFSet> {
+      CASM::DoFSet operator()(const xtal::DoFSet &adaptable) {
+        CASM::DoFSet adapted_dofset(adaptable.traits());
+        adapted_dofset.set_sequential_IDs();
+        adapted_dofset.lock_IDs();
+        return adapted_dofset;
+      }
+    };
+
     /// Convert the xtal implementation of SiteDoFSet into the CASM::DoFSet that is used to generate
-    /// basis functions elsewhere in CASM
+    /// basis functions elsewhere in CASM.
+    /// The int parameter dof_id is used to set the ID of the DoFSet, and is most likely
+    /// the index of the relevant Site within the Structure basis.
     template<>
     struct Adapter<CASM::DoFSet, xtal::SiteDoFSet> {
       CASM::DoFSet operator()(const xtal::SiteDoFSet &adaptable, int dof_id) {

@@ -53,7 +53,7 @@ namespace CASM {
 
     //****************************************************
 
-    DoFSet const &Site::dof(std::string const &_dof_type) const {
+    SiteDoFSet const &Site::dof(std::string const &_dof_type) const {
       auto it = m_dof_map.find(_dof_type);
       if(it != m_dof_map.end())
         return (it->second);
@@ -224,7 +224,7 @@ namespace CASM {
 
     //****************************************************
 
-    void Site::set_dofs(std::map<std::string, DoFSet> _dofs) {
+    void Site::set_dofs(std::map<std::string, SiteDoFSet> _dofs) {
       m_dof_map = std::move(_dofs);
     }
 

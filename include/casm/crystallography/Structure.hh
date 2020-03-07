@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include "casm/crystallography/BasicStructure.hh"
@@ -44,6 +45,10 @@ namespace CASM {
       /// Hold the SymRepIDs for the continuous DoF, one for each of the basis sites
       //Has to be mutable because everything is const for some reason
       std::vector<SymGroupRepID> m_site_dof_symrepIDs;
+
+      /// Holds SymRepIDs for each of the global DoFs, using the DoF name
+      /// as the key to access the SymRepID value
+      std::unordered_map<std::string, SymGroupRepID> m_global_dof_symrepIDs;
 
     private:
 
@@ -126,6 +131,8 @@ namespace CASM {
       SymGroupRepID basis_permutation_symrep_ID()const;
       std::vector<SymGroupRepID> occupant_symrepIDs() const;
       std::vector<SymGroupRepID> site_dof_symrepIDs() const;
+      SymGroupRepID global_dof_symrepID(const std::string dof_name)const;
+
 
       // ****Mutators****
 

@@ -12,9 +12,12 @@
 #include <vector>
 #include "casm/crystallography/Adapter.hh"
 #include "casm/crystallography/BasicStructureTools.hh"
+#include "casm/crystallography/DoFSet.hh"
 #include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/crystallography/LatticePointWithin.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/SymType.hh"
+#include "casm/external/Eigen/src/Core/Matrix.h"
 #include "casm/misc/algorithm.hh"
 #include "casm/container/algorithm.hh"
 #include "casm/crystallography/BasicStructure.hh"
@@ -30,6 +33,18 @@
 #include "casm/casm_io/Log.hh"
 
 #include "casm/app/AppIO.hh"
+
+namespace {
+  /// Create the symmtery representation for going from one basis to another
+  Eigen::MatrixXd make_symmetry_representation_for_basis_change(const Eigen::MatrixXd &from_basis, const Eigen::MatrixXd &to_basis, double tol) {
+    Eigen::MatrixXd U = from_basis.colPivHouseholderQr().solve(to_basis);
+    if(!(U.transpose()*U).eval().isIdentity(tol)) {
+      throw std::runtime_error("Cannot find orthogonal symmetry representation!");
+    }
+    return U;
+  }
+
+}
 
 namespace CASM {
   namespace xtal {
@@ -335,6 +350,10 @@ namespace CASM {
       return this->m_site_dof_symrepIDs;
     }
 
+    SymGroupRepID Structure::global_dof_symrepID(const std::string dof_name)const {
+      return this->m_global_dof_symrepIDs.at(dof_name);
+    }
+
     void Structure::_reset_occupant_symrepIDs() {
       this->m_occupant_symrepIDs.clear();
       for(const Site &s : this->basis()) {
@@ -471,20 +490,31 @@ namespace CASM {
         default_err_log() << "Factor group is empty." << std::endl;
         exit(1);
       }
-      for(auto const &dof : this->structure().global_dofs()) {
-        dof.second.allocate_symrep(m_factor_group);
+      for(auto const &name_dof_pr : this->structure().global_dofs()) {
+        std::string dof_name = name_dof_pr.first;
+        const xtal::DoFSet &dof = name_dof_pr.second;
+
+        this->m_global_dof_symrepIDs[dof_name] = this->factor_group().allocate_representation();
+
         for(auto const &op : m_factor_group) {
-          DoFIsEquivalent eq(dof.second);
-          //TODO
-          //Calling the adapter here, because we said we don't want anything outside
-          //of crystallography to invoke crystallography/Adapter.hh
-          if(!eq(adapter::Adapter<SymOp, CASM::SymOp>()(op))) {
+          /* DoFIsEquivalent eq(dof.second); */
+          DoFSetIsEquivalent_f dof_equals(dof, TOL);
+
+          xtal::DoFSet transformed_dof = sym::copy_apply(adapter::Adapter<SymOp, CASM::SymOp>()(op), dof);
+          if(!dof_equals(transformed_dof)) {
             throw std::runtime_error("While generating symmetry representation for global DoF \""
-                                     + dof.first
+                                     + dof_name
                                      + "\", a symmetry operation was identified that invalidates the degree of freedom. "
                                      + "Degrees of freedom must be fully specified before performing symmetry analyses.");
           }
-          op.set_rep(dof.second.symrep_ID(), SymMatrixXd(eq.U()));
+          Eigen::MatrixXd basis_change_representation;
+          try {
+            basis_change_representation =::make_symmetry_representation_for_basis_change(dof.basis(), transformed_dof.basis(), TOL);
+          }
+          catch(std::runtime_error &e) {
+            throw std::runtime_error(std::string(e.what()) + " Attempted to make representation for " + dof_name + ".");
+          }
+          op.set_rep(this->m_global_dof_symrepIDs.at(dof_name), SymMatrixXd(basis_change_representation));
         }
 
       }

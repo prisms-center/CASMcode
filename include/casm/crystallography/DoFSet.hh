@@ -192,6 +192,8 @@ namespace CASM {
 
   template <>
   xtal::SiteDoFSet from_json<xtal::SiteDoFSet>(const jsonParser &json);
+  template <>
+  xtal::DoFSet from_json<xtal::DoFSet>(const jsonParser &json);
 
   jsonParser &to_json(xtal::SiteDoFSet const &_dof, jsonParser &json);
   jsonParser &to_json(xtal::DoFSet const &_dof, jsonParser &json);

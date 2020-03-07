@@ -9,6 +9,7 @@
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/SymType.hh"
+#include "casm/crystallography/DoFSet.hh"
 
 // TODO: This has to get gobbled into crystallography
 #include "casm/basis_set/DoFIsEquivalent.hh"
@@ -28,9 +29,11 @@ namespace {
   /// be taken into account when generating the point group of the lattice. This method is used
   /// to discard operations from the factor group that aren't compatible with degrees of freedom
   /// that weren't taken into account during its creation.
-  bool global_dofs_are_compatible_with_operation(const xtal::SymOp &operation, const std::map<DoFKey, DoFSet> &global_dof_map) {
-    for(const auto &dof : global_dof_map) {
-      if(!DoFIsEquivalent(dof.second)(operation)) {
+  bool global_dofs_are_compatible_with_operation(const xtal::SymOp &operation, const std::map<DoFKey, xtal::DoFSet> &global_dof_map) {
+    for(const auto &name_dof_pr : global_dof_map) {
+      const xtal::DoFSet &dof = name_dof_pr.second;
+      xtal::DoFSet transformed_dof = sym::copy_apply(operation, dof);
+      if(!xtal::DoFSetIsEquivalent_f(dof, TOL)(transformed_dof)) {
         return false;
       }
     }

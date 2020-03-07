@@ -151,6 +151,13 @@ namespace CASM {
         c.set_ID(_ID);
     }
 
+    /// Locks IDs of every component so they can no longer be updated
+    void lock_IDs();
+
+    /// Sets the IDs of each component of the DoFSet to be their index
+    /// within the set. That is, each component of the set gets labelled 0-n-1
+    void set_sequential_IDs();
+
     /// \brief Returns reference to DoFSetInfo (which contains SymGroupRepID and basis vectors of coordinate system
     DoFSetInfo const &info() const {
       return m_info;

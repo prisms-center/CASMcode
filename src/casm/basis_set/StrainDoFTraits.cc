@@ -1,6 +1,9 @@
 #include "casm/basis_set/StrainDoFTraits.hh"
+#include "casm/basis_set/DoFSet.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/basis_set/BasisSet.hh"
+#include "casm/basis_set/Adapter.hh"
+#include "casm/crystallography/Adapter.hh"
 #include "casm/crystallography/SymType.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SimpleStructure.hh"
@@ -27,7 +30,7 @@ namespace CASM {
         return std::vector<BasisSet>();
 
       std::vector<BasisSet> result(1);
-      result[0].set_variable_basis(_prim.structure().global_dof(name()));
+      result[0].set_variable_basis(adapter::Adapter<CASM::DoFSet, xtal::DoFSet>()(_prim.structure().global_dof(name())));
 
       return result;
     }

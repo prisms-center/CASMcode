@@ -41,6 +41,20 @@ namespace CASM {
 
   //********************************************************************
 
+  void DoFSet::lock_IDs() {
+    for(ContinuousDoF &dof : this->m_components) {
+      dof.lock_ID();
+    }
+    return;
+  }
+
+  void DoFSet::set_sequential_IDs() {
+    for(int i = 0; i < this->m_components.size(); ++i) {
+      m_components[i].set_ID(i);
+    }
+    return;
+  }
+
   bool DoFSet::update_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs) {
 
     Index ID_ind;

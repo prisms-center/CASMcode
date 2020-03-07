@@ -121,7 +121,7 @@ namespace CASM {
     if(istrain == tdof_types.size())
       throw std::runtime_error("Cannot enumerate strains for project in which strain has not been specified as a degree of freedom.");
     strain_dof_key = tdof_types[istrain];
-    Index dim = primclex.prim().structure().global_dof(strain_dof_key).dim();
+    Index dim = primclex.prim().structure().global_dof(strain_dof_key).dimensions();
 
     Eigen::MatrixXd axes;
     Eigen::VectorXd min_val, max_val, inc_val;
@@ -247,7 +247,8 @@ namespace CASM {
     if(!sym_axes)
       wedges.push_back(SymRepTools::SubWedge({SymRepTools::IrrepWedge(_axes, std::vector<Index>(_axes.cols(), 1))}));
     else
-      wedges = SymRepTools::symrep_subwedges(pg, _primclex.prim().structure().global_dof(strain_dof_key).symrep_ID());
+      /* wedges = SymRepTools::symrep_subwedges(pg, _primclex.prim().structure().global_dof(strain_dof_key).symrep_ID()); */
+      wedges = SymRepTools::symrep_subwedges(pg, _primclex.prim().global_dof_symrepID(strain_dof_key));
 
     //if(analysis) {
     //PRINT INFO TO LOG:

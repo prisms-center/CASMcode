@@ -2,6 +2,7 @@
 #include "casm/basis_set/DoFIsEquivalent.hh"
 #include "casm/basis_set/OccupationDoFTraits.hh"
 #include "casm/basis_set/Adapter.hh"
+#include "casm/basis_set/DoFSet.hh"
 #include "casm/crystallography/Adapter.hh"
 #include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/crystallography/LatticePointWithin.hh"
@@ -56,12 +57,14 @@ namespace CASM {
 
     //************************************************************
 
-    CASM::DoFSet const &BasicStructure::global_dof(std::string const &_dof_type) const {
+    DoFSet const &BasicStructure::global_dof(std::string const &_dof_type) const {
       auto it = m_global_dof_map.find(_dof_type);
-      if(it != m_global_dof_map.end())
+      if(it != m_global_dof_map.end()) {
         return (it->second);
-      else
+      }
+      else {
         throw std::runtime_error(std::string("In BasicStructure::dof(), this structure does not contain any global DoF's of type " + _dof_type));
+      }
 
     }
 
@@ -574,8 +577,9 @@ namespace CASM {
 
     std::map<DoFKey, DoFSetInfo> global_dof_info(BasicStructure const &_struc) {
       std::map<DoFKey, DoFSetInfo> result;
-      for(auto const &dof :  _struc.global_dofs())
-        result.emplace(dof.first, dof.second.info());
+      for(auto const &dof :  _struc.global_dofs()) {
+        result.emplace(dof.first, adapter::Adapter<CASM::DoFSet, xtal::DoFSet>()(dof.second).info());
+      }
 
       return result;
     }
@@ -585,10 +589,8 @@ namespace CASM {
     std::map<DoFKey, std::vector<DoFSetInfo> > local_dof_info(BasicStructure const &_struc) {
       std::map<DoFKey, std::vector<DoFSetInfo> > result;
 
-      //TODO: I think you'll need to just have Structure internally hold a copy of the global DoF
-      //as CASM::DoF and let this run
       for(DoFKey const &type : continuous_local_dof_types(_struc)) {
-        std::vector<DoFSetInfo> tresult(_struc.basis().size(), DoFSetInfo(SymGroupRepID(), Eigen::MatrixXd::Zero(DoF::BasicTraits(type).dim(), 0)));
+        std::vector<CASM::DoFSetInfo> tresult(_struc.basis().size(), CASM::DoFSetInfo(SymGroupRepID(), Eigen::MatrixXd::Zero(DoF::BasicTraits(type).dim(), 0)));
 
         for(Index b = 0; b < _struc.basis().size(); ++b) {
           if(_struc.basis()[b].has_dof(type)) {
@@ -616,7 +618,7 @@ namespace CASM {
     std::map<DoFKey, Index> global_dof_dims(BasicStructure const &_struc) {
       std::map<DoFKey, Index> result;
       for(auto const &type : _struc.global_dofs())
-        result[type.first] = type.second.size();
+        result[type.first] = type.second.dimensions();
       return result;
     }
 
