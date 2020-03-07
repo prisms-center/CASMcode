@@ -10,14 +10,12 @@
 namespace CASM {
   namespace xtal {
     class Site;
-    class Structure;
     class BasicStructure;
     class SimpleStructure;
     class UnitCellCoord;
     struct SymOp;
   }
   using xtal::Site;
-  using xtal::Structure;
   using xtal::BasicStructure;
   using xtal::SimpleStructure;
   using xtal::UnitCellCoord;
@@ -25,6 +23,7 @@ namespace CASM {
   class jsonParser;
   class PrimNeighborList;
   class BasisSet;
+  class Structure;
 
 
   template<typename T>

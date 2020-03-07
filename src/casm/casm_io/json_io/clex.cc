@@ -105,7 +105,7 @@ namespace CASM {
   jsonParser &to_json(const ChemicalReference &ref, jsonParser &json) {
     json.put_obj();
 
-    json["species_order"] = struc_molecule_name(ref.prim());
+    json["species_order"] = xtal::struc_molecule_name(ref.prim());
 
     if(ref.global_ref_states().empty()) {
       to_json(ref.global().transpose(), json["global"]);
@@ -185,7 +185,7 @@ namespace CASM {
 
     ReturnType result;
 
-    std::vector<std::string> struc_mol_name = struc_molecule_name(prim);
+    std::vector<std::string> struc_mol_name = xtal::struc_molecule_name(prim);
 
     // if: {"A": X, "C": X, "D": X} // expects all species in prim, except vacancy
     if(json.is_obj()) {

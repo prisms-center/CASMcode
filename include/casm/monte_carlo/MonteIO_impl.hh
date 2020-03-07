@@ -74,7 +74,7 @@ namespace CASM {
         ConstMonteCarloPtr ptr = mc;
         return static_cast<const MonteType *>(ptr)->conditions().mol_composition()(index);
       };
-      std::string header = std::string("comp_n(") + struc_molecule_name(mc.primclex().prim())[index] + ")";
+      std::string header = std::string("comp_n(") + xtal::struc_molecule_name(mc.primclex().prim())[index] + ")";
       return GenericDatumFormatter<double, ConstMonteCarloPtr>(header, header, evaluator);
     }
 

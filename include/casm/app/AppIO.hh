@@ -18,7 +18,6 @@
 namespace CASM {
   namespace xtal {
     class COORD_MODE;
-    class Structure;
     class SpeciesAttribute;
     class AtomPosition;
     class Molecule;
@@ -27,7 +26,6 @@ namespace CASM {
     class BasicStructure;
   }
   using xtal::COORD_MODE;
-  using xtal::Structure;
   using xtal::SpeciesAttribute;
   using xtal::AtomPosition;
   using xtal::Molecule;
@@ -43,6 +41,7 @@ namespace CASM {
   class ChemicalReference;
   class SymGroup;
   class PrimClex;
+  class Structure;
 
   /** \defgroup ProjectIO
    *

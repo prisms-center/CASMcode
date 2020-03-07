@@ -210,7 +210,7 @@ TEST(StructureTest, POS1Test) {
   // Write test PRIM back out
   fs::path tmp_file = testdir / "POS1_out.txt";
   fs::ofstream sout(tmp_file);
-  VaspIO::PrintPOSCAR printer(make_simple_structure(struc), struc.structure().title());
+  VaspIO::PrintPOSCAR printer(xtal::make_simple_structure(struc), struc.structure().title());
   printer.set_append_atom_names_off();
   printer.print(sout);
   sout.close();
@@ -232,7 +232,7 @@ TEST(StructureTest, POS1Vasp5Test) {
   // Write test PRIM back out
   fs::path tmp_file = testdir / "POS1_vasp5_out.txt";
   fs::ofstream sout(tmp_file);
-  VaspIO::PrintPOSCAR(make_simple_structure(struc), struc.structure().title()).print(sout);
+  VaspIO::PrintPOSCAR(xtal::make_simple_structure(struc), struc.structure().title()).print(sout);
   sout.close();
 
   // Read new file and run tests again

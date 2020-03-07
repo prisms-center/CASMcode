@@ -12,10 +12,8 @@
 
 namespace CASM {
   namespace xtal {
-    class Structure;
     class UnitCell;
   }
-  using xtal::Structure;
   using xtal::UnitCell;
 
   class PermuteIterator;

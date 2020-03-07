@@ -1,6 +1,8 @@
 #include <boost/filesystem/fstream.hpp>
+#include <ostream>
 #include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/crystallography/CoordinateSystems.hh"
+#include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/SymTools.hh"
@@ -12,6 +14,43 @@
 
 
 #include "casm/completer/Handlers.hh"
+#include "casm/symmetry/SymGroup.hh"
+
+namespace {
+  using namespace CASM;
+  void print_factor_group_convergence(const Structure &struc, double small_tol, double large_tol, double increment, std::ostream &print_stream) {
+    std::vector<double> tols;
+    std::vector<bool> is_group;
+    std::vector<int> num_ops, num_enforced_ops;
+    std::vector<std::string> name;
+
+    xtal::Lattice lattice = struc.lattice();
+
+    double orig_tol = lattice.tol();
+    for(double i = small_tol; i < large_tol; i += increment) {
+      tols.push_back(i);
+      lattice.set_tol(i);
+
+      xtal::SymOpVector factor_group_operations = xtal::make_factor_group(struc.structure());
+      CASM::SymGroup factor_group = adapter::Adapter<SymGroup, xtal::SymOpVector>()(factor_group_operations, lattice);
+
+      factor_group.get_multi_table();
+      num_ops.push_back(factor_group.size());
+      is_group.push_back(factor_group.is_group(i));
+      factor_group.enforce_group(i);
+      num_enforced_ops.push_back(factor_group.size());
+      factor_group.character_table();
+      name.push_back(factor_group.get_name());
+    }
+    lattice.set_tol(orig_tol);
+
+    for(Index i = 0; i < tols.size(); i++) {
+      std::cout << tols[i] << "\t" << num_ops[i] << "\t" << is_group[i] << "\t" << num_enforced_ops[i] << "\t name: " << name[i] << "\n";
+    }
+
+    return;
+  }
+}
 
 namespace CASM {
 
@@ -153,7 +192,7 @@ namespace CASM {
 
       tmp.factor_group();
       // b) find factor group with same tolerance
-      tmp.fg_converge(tol);
+      ::print_factor_group_convergence(tmp, tmp.structure().lattice().tol(), tol, (tol - tmp.structure().lattice().tol()) / 10.0, std::cout);
       // c) symmetrize the basis sites
       SymGroup g = tmp.factor_group();
       tmp = xtal::symmetrize(tmp, g);
@@ -168,7 +207,7 @@ namespace CASM {
       fs::ofstream file_i;
       fs::path POSCARpath_i = "POSCAR_sym";
       file_i.open(POSCARpath_i);
-      VaspIO::PrintPOSCAR p_i(make_simple_structure(struc), struc.structure().title());
+      VaspIO::PrintPOSCAR p_i(xtal::make_simple_structure(struc), struc.structure().title());
       p_i.print(file_i);
       file_i.close();
       return 0;

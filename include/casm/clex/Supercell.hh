@@ -16,13 +16,11 @@ namespace CASM {
 
   namespace xtal {
     class Site;
-    class Structure;
     class Coordinate;
     class UnitCellCoord;
     class IntegralCoordinateWithin_f;
   }
   using xtal::Site;
-  using xtal::Structure;
   using xtal::Coordinate;
   using xtal::UnitCellCoord;
 
@@ -33,6 +31,7 @@ namespace CASM {
   class ConfigDoF;
   class Configuration;
   class SuperNeighborList;
+  class Structure;
 
   namespace DB {
     template<typename T> class DatabaseIterator;

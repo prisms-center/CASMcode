@@ -34,7 +34,7 @@ namespace CASM {
 
         /// \brief Adds index rules corresponding to the parsed args
         bool MolDependent::init(const DiffTransConfiguration &_tmplt) const {
-          auto struc_mol = struc_molecule_name(_tmplt.primclex().prim());
+          auto struc_mol = xtal::struc_molecule_name(_tmplt.primclex().prim());
 
           if(m_mol_names.size() == 0) {
             for(Index i = 0; i < struc_mol.size(); i++) {

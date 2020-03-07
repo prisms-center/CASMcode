@@ -178,7 +178,7 @@ namespace CASM {
 
     //TODO: These element-wise ones are always the same. Template them somehow?
     template<>
-    OccPerturbation &apply<CASM::SymOp, OccPerturbation, xtal::Structure>(const SymOp &op, OccPerturbation &mutating_occ_pert, const xtal::Structure &prim) {
+    OccPerturbation &apply<CASM::SymOp, OccPerturbation, Structure>(const SymOp &op, OccPerturbation &mutating_occ_pert, const Structure &prim) {
       for(auto &e : mutating_occ_pert) {
         sym::apply(op, e, prim);
       }

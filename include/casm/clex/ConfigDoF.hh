@@ -249,11 +249,9 @@ namespace CASM {
     }
   }
 
-  namespace xtal {
-    class Structure;
-  }
+  class Structure;
 
-  std::vector<SymGroupRepID> occ_symrep_IDs(xtal::Structure const &_struc);
+  std::vector<SymGroupRepID> occ_symrep_IDs(Structure const &_struc);
 
 }
 

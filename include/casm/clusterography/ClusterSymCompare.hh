@@ -90,7 +90,7 @@ namespace CASM {
         ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Element>>> >> {
 
   public:
-    typedef xtal::Structure PrimType;
+    typedef Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
     typedef typename traits<Element>::template copy_apply_crtp_type <
       ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Element>>> >>
@@ -149,7 +149,7 @@ namespace CASM {
   ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>> >> {
 
 public:
-    typedef xtal::Structure PrimType;
+    typedef Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
     typedef typename traits<Element>::template copy_apply_crtp_type <
       ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>> >>
@@ -210,7 +210,7 @@ private:
   ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>> >> {
 
 public:
-    typedef xtal::Structure PrimType;
+    typedef Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
 
     typedef typename traits<Element>::template copy_apply_crtp_type <
@@ -274,7 +274,7 @@ private:
   ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>> >> {
 
 public:
-    typedef xtal::Structure PrimType;
+    typedef Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
     typedef typename traits<Element>::template copy_apply_crtp_type <
       ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>> >>

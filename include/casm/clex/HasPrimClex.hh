@@ -3,11 +3,8 @@
 
 namespace CASM {
 
-  namespace xtal {
-    class Structure;
-  }
-
   class PrimClex;
+  class Structure;
 
   /// \brief Implements PrimClex dependent functions
   ///
@@ -18,7 +15,7 @@ namespace CASM {
     typedef typename Base::MostDerived MostDerived;
     using Base::derived;
 
-    const xtal::Structure &prim() const;
+    const Structure &prim() const;
 
     double crystallography_tol() const;
   };

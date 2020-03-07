@@ -77,7 +77,7 @@ namespace CASM {
       }
 
       // always sample comp_n
-      auto struc_mol_name = struc_molecule_name(mc.primclex().prim());
+      auto struc_mol_name = xtal::struc_molecule_name(mc.primclex().prim());
       for(int i = 0; i < struc_mol_name.size(); ++i) {
         name = std::string("comp_n(") + struc_mol_name[i] + ")";
         formatter.push_back(MonteCarloMeanFormatter(name));
@@ -205,7 +205,7 @@ namespace CASM {
       }
 
       // always sample comp_n
-      auto struc_mol_name = struc_molecule_name(mc.primclex().prim());
+      auto struc_mol_name = xtal::struc_molecule_name(mc.primclex().prim());
       for(int i = 0; i < struc_mol_name.size(); ++i) {
         name = std::string("gs_comp_n(") + struc_mol_name[i] + ")";
         auto evaluator = [ = ](const ConstMonteCarloPtr & ptr) {

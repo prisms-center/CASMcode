@@ -19,7 +19,6 @@
 #include "casm/crystallography/CanonicalForm.hh"
 
 using namespace CASM;
-using xtal::Structure;
 using xtal::ScelEnumProps;
 using xtal::SuperlatticeEnumerator;
 

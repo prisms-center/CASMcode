@@ -27,7 +27,7 @@ namespace CASM {
     std::function<Eigen::VectorXd(Configuration)> n,
     std::function<double(Configuration)> e) {
 
-    auto names = struc_molecule_name(config.prim());
+    auto names = xtal::struc_molecule_name(config.prim());
     auto vec = n(config);
 
     if(vec.size() != names.size()) {
@@ -468,7 +468,7 @@ namespace CASM {
     indent(_indent),
     indent_incr(_indent_incr),
     ref(_ref),
-    struc_mol_name(struc_molecule_name(ref.prim())) {}
+    struc_mol_name(xtal::struc_molecule_name(ref.prim())) {}
 
   void ChemicalReferencePrinter::incr() {
     indent += indent_incr;

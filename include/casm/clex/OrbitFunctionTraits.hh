@@ -13,15 +13,14 @@
 namespace CASM {
   namespace xtal {
     class UnitCellCoord;
-    class Structure;
   }
   using xtal::UnitCellCoord;
-  using xtal::Structure;
 
   class BasisSet;
   class SymGroup;
   class ClexBasis;
   class PrimNeighborList;
+  class Structure;
 
 
   class ClexBasisBuilder {

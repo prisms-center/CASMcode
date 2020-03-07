@@ -13,12 +13,10 @@ namespace CASM {
   namespace xtal {
     class Site;
     class BasicStructure;
-    class Structure;
     class UnitCell;
   }
   using xtal::Site;
   using xtal::BasicStructure;
-  using xtal::Structure;
   using xtal::UnitCell;
 
 

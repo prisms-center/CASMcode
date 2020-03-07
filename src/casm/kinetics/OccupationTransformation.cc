@@ -84,7 +84,7 @@ namespace CASM {
   }
 
   std::map<std::string, Index> empty_species_count(const OccupationTransformation::PrimType &prim) {
-    auto species = struc_species(prim);
+    auto species = xtal::struc_species(prim);
     std::map<std::string, Index> _species_count;
     for(const std::string &s : species) {
       _species_count[s] = 0;
@@ -189,7 +189,7 @@ namespace CASM {
     /* Object &apply(const Transform &transformation, Object &obj, const Args &... args); */
 
     template<>
-    Kinetics::OccupationTransformation &apply<CASM::SymOp, Kinetics::OccupationTransformation, xtal::Structure>(const SymOp &op, Kinetics::OccupationTransformation &occ_trans, const xtal::Structure &prim) {
+    Kinetics::OccupationTransformation &apply<CASM::SymOp, Kinetics::OccupationTransformation, Structure>(const SymOp &op, Kinetics::OccupationTransformation &occ_trans, const Structure &prim) {
       sym::apply(op, occ_trans.uccoord, prim);
       return occ_trans;
     }
