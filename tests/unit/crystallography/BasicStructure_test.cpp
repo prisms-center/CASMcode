@@ -9,6 +9,7 @@
 #include <boost/filesystem/fstream.hpp>
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/SymType.hh"
+#include "casm/external/Eigen/src/Core/Matrix.h"
 #include "crystallography/TestStructures.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/Site.hh"
@@ -276,8 +277,9 @@ TEST(BasicStructureSiteTest, IsPrimitiveTest) {
   SuperlatticeEnumerator scel_enum(effective_pg.begin(), effective_pg.end(), prim.lattice(), enum_props);
 
   for(auto it = scel_enum.begin(); it != scel_enum.end(); ++it) {
+    Eigen::Matrix3l transformation_matix = xtal::make_transformation_matrix(prim.lattice(), *it, prim.lattice().tol());
+    BasicStructure super = xtal::make_superstructure(prim.lattice(), transformation_matix.cast<int>());
 
-    BasicStructure super = prim.structure().create_superstruc(*it);
     EXPECT_EQ(super.lattice().is_right_handed(), true);
 
     Structure new_prim = Structure(xtal::make_primitive(super));

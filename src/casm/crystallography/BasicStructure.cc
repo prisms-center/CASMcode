@@ -68,72 +68,11 @@ namespace CASM {
 
     }
 
-    void BasicStructure::reset() {
-
-      within();
-    }
-
-    //***********************************************************
-
     void BasicStructure::within() {
       for(Index i = 0; i < basis().size(); i++) {
         m_basis[i].within();
       }
       return;
-    }
-
-    /**
-     * It is NOT wise to use this function unless you have already
-     * initialized a superstructure with lattice vectors.
-     *
-     * It is more wise to use the two methods that call this method:
-     * Either the overloaded * operator which does:
-     *  SCEL_Lattice * Prim_Structrue = New_Superstructure
-     *       --- or ---
-     *  New_Superstructure=Prim_BasicStructure.create_superstruc(SCEL_Lattice);
-     *
-     *  Both of these will return NEW superstructures.
-     */
-
-    void BasicStructure::fill_supercell(const BasicStructure &prim) {
-      Index i, j;
-
-      auto all_lattice_points = make_lattice_points(prim.lattice(), lattice(), lattice().tol());
-
-      m_basis.clear();
-
-      //loop over basis sites of prim
-      for(j = 0; j < prim.basis().size(); j++) {
-
-        //loop over prim_grid points
-        for(const auto &lattice_point : all_lattice_points) {
-          Coordinate lattice_point_coordinate = make_superlattice_coordinate(lattice_point, prim.lattice(), lattice());
-
-          //push back translated basis site of prim onto superstructure basis
-          push_back(prim.basis()[j] + lattice_point_coordinate);
-
-          m_basis.back().within();
-        }
-      }
-
-      return;
-    }
-
-    //***********************************************************
-    /**
-     * Operates on the primitive structure and takes as an argument
-     * the supercell lattice.  It then returns a new superstructure.
-     *
-     * This is similar to the Lattice*Primitive routine which returns a
-     * new superstructure.  Unlike the fill_supercell routine which takes
-     * the primitive structure, this WILL fill the sites.
-     */
-    //***********************************************************
-
-    BasicStructure BasicStructure::create_superstruc(const Lattice &scel_lat) const {
-      BasicStructure tsuper(scel_lat);
-      tsuper.fill_supercell(*this);
-      return tsuper;
     }
 
     //***********************************************************
@@ -162,18 +101,11 @@ namespace CASM {
      */
     //***********************************************************
 
-
     void BasicStructure::set_basis(std::vector<Site> const &_basis, COORD_TYPE mode) {
       m_basis.clear();
       m_basis.reserve(_basis.size());
       for(Site const &site : _basis)
         push_back(site, mode);
-
-    }
-
-    void BasicStructure::clear_basis() {
-      m_basis.clear();
-      this->reset();
 
     }
 
@@ -394,11 +326,11 @@ namespace CASM {
 
     //***********************************************************
 
-    BasicStructure operator*(const Lattice &LHS, const BasicStructure &RHS) {
-      BasicStructure tsuper(LHS);
-      tsuper.fill_supercell(RHS);
-      return tsuper;
-    }
+    /* BasicStructure operator*(const Lattice &LHS, const BasicStructure &RHS) { */
+    /*   BasicStructure tsuper(LHS); */
+    /*   tsuper.fill_supercell(RHS); */
+    /*   return tsuper; */
+    /* } */
 
     //***********************************************************
 

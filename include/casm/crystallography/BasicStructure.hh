@@ -15,16 +15,11 @@
 #include "casm/crystallography/DoFSet.hh"
 
 namespace CASM {
-  class DoFSetInfo;
-
   namespace xtal {
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     class Coordinate;
     class UnitCellCoord;
     class Molecule;
-    //  class DoFSet;
 
     /** \defgroup Structure
      *  \ingroup Crystallography
@@ -74,9 +69,9 @@ namespace CASM {
       }
 
       std::vector<Site> &set_basis() {
-        reset();
         return m_basis;
       }
+
       const std::string &title() const {
         return m_title;
       }
@@ -89,15 +84,10 @@ namespace CASM {
 
       /// Have to explicitly define the assignment operator so that sites in this structure
       /// do not depend on the lattice of 'RHS'
-      virtual BasicStructure &operator=(const BasicStructure &RHS);
-
-      // clears site_internals and does within()
-      virtual void reset();
+      BasicStructure &operator=(const BasicStructure &RHS);
 
       /// Translate all basis sites so that they are inside the unit cell
       void within();
-
-      //Site site(const UnitCellCoord &ucc) const;
 
       ///change the lattice and update site coordinates.  Argument 'mode' specifies which mode is preserved
       /// e.g.: struc.set_lattice(new_lat, CART) calculates all Cartesian coordinates,
@@ -115,9 +105,6 @@ namespace CASM {
       /// Manually set the basis sites
       void set_basis(std::vector<Site> const &_basis, COORD_TYPE mode = CART);
 
-      /// Clear the basis atoms
-      void clear_basis();
-
       /// Manually set the basis sites
       void push_back(Site const &_site, COORD_TYPE mode = CART);
 
@@ -126,15 +113,6 @@ namespace CASM {
       /// \brief Returns true if structure has attributes affected by time reversal
       bool is_time_reversal_active() const;
 
-      //TODO: Extract
-      /// fill an empty structure with the basis of its corresponding primitive cell
-      void fill_supercell(const BasicStructure &prim); //Ivy
-
-      //TODO: Extract
-      /// fill an empty structure with the basis of its corresponding primitive cell
-      ///  Shortcut routine to create a supercell structure and fill it with sites
-      BasicStructure create_superstruc(const Lattice &scel_lat) const;
-
       ///Translates all atoms in cell
       BasicStructure &operator+=(const Coordinate &shift);
       BasicStructure &operator-=(const Coordinate &shift);
@@ -142,19 +120,16 @@ namespace CASM {
       /// Counts sites that allow vacancies
       Index max_possible_vacancies()const;
 
+      //TODO: Extract
       //CASM canonical input/output
       virtual void read(std::istream &stream);  //John do this
 
+      //TODO: Extract
       /// Output other formats
       void print_xyz(std::ostream &stream, bool frac = false) const;
     };
 
-    BasicStructure operator*(const Lattice &LHS, const BasicStructure &RHS);
-
-    //Translation operators -- not yet defined
-    BasicStructure operator+(const Coordinate &LHS, const BasicStructure &RHS);
-
-    BasicStructure operator+(const BasicStructure &LHS, const Coordinate &RHS);
+    /* BasicStructure operator*(const Lattice &LHS, const BasicStructure &RHS); */
 
     std::vector<UnitCellCoord> symop_site_map(SymOp const &_op, BasicStructure const &_struc);
     template<typename ExternSymOp>

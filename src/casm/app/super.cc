@@ -1,4 +1,5 @@
 #include <boost/filesystem/fstream.hpp>
+#include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/external/Eigen/Core"
 #include "casm/external/Eigen/src/Core/Matrix.h"
 #include "casm/misc/CASM_Eigen_math.hh"
@@ -266,7 +267,7 @@ namespace CASM {
       file >> Tm;
       file.close();
 
-      auto super = unitcell.create_superstruc(make_superlattice(unitcell.lattice(), Tm));
+      BasicStructure super = xtal::make_superstructure(unitcell, Tm);
       super.set_title(std::string("Supercell of ") + unitcell.title());
 
       print(super);
@@ -527,8 +528,8 @@ namespace CASM {
         args.log() << "\n------\n";
         args.log() << "\n\n";
 
-
-        BasicStructure super = unit.create_superstruc(make_superlattice(unit.lattice(), T));
+        //TODO: Why is there so much code copied and pasted in all the casm commands?
+        BasicStructure super = xtal::make_superstructure(unit, T);
         super.set_title(std::string("Supercell of ") + con.name());
 
         args.log() << "Super structure:";

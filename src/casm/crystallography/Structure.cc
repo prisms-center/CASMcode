@@ -61,7 +61,6 @@ namespace CASM {
     BasicStructure read_struc;
     read_struc.read(infile);
     m_structure_ptr = std::make_shared<BasicStructure>(read_struc);
-    /* m_structure=read_struc; */
     this->generate_factor_group();
     std::cout << "constructed via 0" << std::endl;
   }
@@ -69,66 +68,19 @@ namespace CASM {
   Structure::Structure() : m_structure_ptr(std::make_shared<BasicStructure>(BasicStructure())) {
     std::cout << "constructed via D" << std::endl;
   }
-  /* Structure::Structure() : m_structure() {std::cout<<"constructed via D"<<std::endl;} */
 
   Structure::Structure(const Structure &RHS) :
     m_structure_ptr(RHS.m_structure_ptr) {
-    /* m_structure(RHS.m_structure) { */
-    std::cout << "construct via 1" << std::endl;
     copy_attributes_from(RHS);
-    std::cout << "constructed via 1" << std::endl;
-
   };
 
   Structure::Structure(const BasicStructure &base) : m_structure_ptr(std::make_shared<BasicStructure>(base)) {
-    /* Structure::Structure(const BasicStructure &base) : m_structure(base) { */
-    std::cout << "construct via 2" << std::endl;
-    jsonParser json;
-    CASM::write_prim(this->structure(), json, FRAC);
-    std::cout << json << std::endl;
-
-    for(const auto &s : this->basis()) {
-      for(const auto &m : s.occupant_dof()) {
-        std::cout << m.name() << ", ";
-      }
-      std::cout << std::endl;
-    }
-
-    std::cout << "*****************" << std::endl;
-
-    for(Index b = 0; b < basis().size(); ++b) {
-      // copy_aply(symop,dofref_from) = P.permute(dofref_to);
-      const std::vector<Molecule> &dofref_from = basis()[b].occupant_dof();
-
-      std::cout << basis()[b].occupant_dof().size() << std::endl;
-      std::cout << basis()[b].occupant_dof()[0].name() << std::endl;
-      std::cout << "DEBUGGING: dofref_from.size() is " << dofref_from.size() << std::endl;
-      std::cout << "DEBUGGING: dofref_from[0].name() is " << dofref_from[0].name() << std::endl;
-    }
-
-    std::cout << "*****************" << std::endl;
-
     this->generate_factor_group();
-    std::cout << "constructed via 2" << std::endl;
   }
 
-
-  Structure::~Structure() {}
-
-
   Structure &Structure::operator=(const Structure &RHS) {
-    std::cout << "construct via assignment" << std::endl;
     m_structure_ptr = RHS.m_structure_ptr;
-    /* m_structure=RHS.m_structure; */
-
-    //Following gets done by base class
-    //lattice = RHS.lattice;
-    //basis = RHS.basis;
-    //title = RHS.title;
-
     copy_attributes_from(RHS);
-
-    std::cout << "construct via assignment" << std::endl;
     return *this;
   }
 
@@ -142,7 +94,6 @@ namespace CASM {
 
     m_basis_perm_rep_ID = RHS.m_basis_perm_rep_ID; //this *should* work
     m_site_dof_symrepIDs = RHS.m_site_dof_symrepIDs; //this *should* work
-    //assert(0);
     m_factor_group = RHS.m_factor_group;
     m_factor_group.set_lattice(this->lattice());
   }

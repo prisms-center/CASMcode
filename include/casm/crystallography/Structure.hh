@@ -113,7 +113,7 @@ namespace CASM {
     /// does not depend on the lattice of 'RHS'
     Structure(const Structure &RHS);
 
-    ~Structure();
+    ~Structure() {};
 
     //  ****Inspectors/Accessors****
     const MasterSymGroup &factor_group() const;
@@ -127,8 +127,6 @@ namespace CASM {
     /// Have to explicitly define the assignment operator so that sites in this structure
     /// do not depend on the lattice of 'RHS'
     Structure &operator=(const Structure &RHS);
-
-
   };
 
   /// Returns 'converter' which converts site_occupant indices to 'mol_list' indices:
@@ -144,6 +142,8 @@ namespace CASM {
   std::vector< std::vector<Index> > make_index_converter_inverse(const Structure &struc, std::vector<std::string> mol_name_list);
 
   //************************************************************************************
+
+  class DoFSetInfo;
 
   std::vector<DoFKey> all_local_dof_types(xtal::BasicStructure const &_struc);
 

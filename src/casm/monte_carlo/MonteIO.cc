@@ -1,5 +1,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
+#include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/monte_carlo/MonteIO.hh"
 #include "casm/external/gzstream/gzstream.h"
 #include "casm/crystallography/io/VaspIO.hh"
@@ -458,7 +459,8 @@ namespace CASM {
 
       xtal::BasicStructure primstruc = mc.supercell().prim();
       //!!TODO!! Was this here for a reason? Because I can't see what the purpose of it was
-      xtal::BasicStructure superstruc = primstruc.create_superstruc(mc.supercell().lattice());
+      /* xtal::BasicStructure superstruc = primstruc.create_superstruc(mc.supercell().lattice()); */
+      xtal::BasicStructure superstruc = xtal::make_superstructure(primstruc, mc.supercell().transf_mat());
 
       if(mc.settings().write_json()) {
 

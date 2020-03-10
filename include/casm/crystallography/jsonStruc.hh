@@ -6,6 +6,7 @@
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/casm_io/container/json_io.hh"
 #include <string>
+#include <vector>
 
 
 namespace CASM {
@@ -67,8 +68,7 @@ namespace CASM {
 
     template< bool IsConst >
     void SimpleJSonSiteStructure<IsConst>::_from_json(BasicStructure &struc, const jsonParser &json) const {
-      struc.clear_basis();
-      struc.reset();
+      struc.set_basis(std::vector<xtal::Site>());
       try {
         std::string tstr;
         CASM::from_json(tstr, json["coord_mode"]);
@@ -94,8 +94,7 @@ namespace CASM {
       catch(const std::exception &ex) {
         throw std::runtime_error(std::string("Unable to parse Structure/BasicStructure from JSON object.  One or more tags were improperly specified:\n") + ex.what());
       }
-      /* struc.update(); */
-
+      return;
     }
 
     template< bool IsConst >

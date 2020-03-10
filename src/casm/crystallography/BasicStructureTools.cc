@@ -358,5 +358,24 @@ namespace CASM {
       symmetrized_structure.set_basis(avg_basis);
       return symmetrized_structure;
     }
+
+    BasicStructure make_superstructure(const BasicStructure &tiling_unit, const Eigen::Matrix3i transformation_matrix) {
+      Lattice superlat = make_superlattice(tiling_unit.lattice(), transformation_matrix);
+      BasicStructure superstruc(superlat);
+
+      std::vector<UnitCell> all_lattice_points = make_lattice_points(tiling_unit.lattice(), superlat, superlat.tol());
+      std::vector<Site> superstruc_basis;
+      for(const Site &unit_basis_site : tiling_unit.basis()) {
+        for(const UnitCell &lattice_point : all_lattice_points) {
+          Coordinate lattice_point_coordinate = make_superlattice_coordinate(lattice_point, tiling_unit.lattice(), superlat);
+          superstruc_basis.emplace_back(unit_basis_site + lattice_point_coordinate);
+          superstruc_basis.back().within();
+        }
+      }
+
+      superstruc.set_basis(superstruc_basis);
+      return superstruc;
+    }
+
   } // namespace xtal
 } // namespace CASM

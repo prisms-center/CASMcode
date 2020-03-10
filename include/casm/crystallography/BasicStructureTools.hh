@@ -1,6 +1,7 @@
 #ifndef BASICSTRUCTURETOOLS_HH
 #define BASICSTRUCTURETOOLS_HH
 
+#include "casm/external/Eigen/Core"
 #include "casm/global/definitions.hh"
 #include <vector>
 
@@ -36,6 +37,11 @@ namespace CASM {
     /// from performing these operations will be averaged out,
     /// yielding a new average basis.
     BasicStructure symmetrize(const BasicStructure &structure, const std::vector<SymOp> &enforced_group);
+
+    /// Given an integer transformation matrix, create a superstructure whose lattice is the product of
+    /// the original lattice and the transformation matrix.
+    BasicStructure make_superstructure(const BasicStructure &tiling_unit, const Eigen::Matrix3i transformation_matrix);
+
   } // namespace xtal
 } // namespace CASM
 
