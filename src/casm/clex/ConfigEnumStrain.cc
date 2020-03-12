@@ -247,9 +247,8 @@ namespace CASM {
     if(!sym_axes)
       wedges.push_back(SymRepTools::SubWedge({SymRepTools::IrrepWedge(_axes, std::vector<Index>(_axes.cols(), 1))}));
     else
-      wedges = SymRepTools::symrep_subwedges(pg, _primclex.prim().global_dof(strain_dof_key).symrep_ID());
+      wedges = SymRepTools::symrep_subwedges(pg, _primclex.prim().global_dof(strain_dof_key).symrep_ID()).first;
 
-    //if(analysis) {
     //PRINT INFO TO LOG:
     Log &log = _primclex.log();
     log << "Strain enumeration summary:\n";
@@ -272,8 +271,6 @@ namespace CASM {
     }
     log << "End of summary.\n\n";
 
-    //return 0;
-    //}
     auto constructor = [&](const ConfigEnumInput & in_config) {
       return notstd::make_unique<ConfigEnumStrain>(in_config,
                                                    wedges,
@@ -310,9 +307,8 @@ namespace CASM {
     m_current(_init.config()),
     m_equiv_ind(0),
     m_wedges(_wedges),
-    //m_perm_begin(_scel.permute_begin()),
-    //m_perm_end(_scel.permute_end()),
     m_shape_factor(Eigen::MatrixXd::Identity(min_val.size(), min_val.size())) {
+
     //Condition range arrays and build shape_factor matrix
     Index nc = 0;
     if(m_wedges.size() == 0)
@@ -335,20 +331,16 @@ namespace CASM {
           max_val(nc) = min_val(nc) + TOL;
           inc_val(nc) = 10 * TOL;
         }
-        //else {
-        //max_val(nc) = absmags[s] + TOL;
-        //}
       }
     }
 
-    //std::cout << "shape_factor is: \n" << m_shape_factor << "\n";
-    //m_shape_factor = m_strain_calc.sop_transf_mat().transpose() * m_shape_factor * m_strain_calc.sop_transf_mat();
     //Find first valid config
     m_counter = EigenCounter<Eigen::VectorXd>(min_val, max_val, inc_val);
 
     m_counter.reset();
+
+    //Increment past any invalid values, including those that are outside specified ellipsoid (if trim_corners==true)
     while(m_counter.valid() && (trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat().transpose()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat()*m_counter()) > 1.0 + TOL)) {
-      //std::cout << "TOO BIG: " << m_counter().transpose() << "\n";
       ++m_counter;
     }
 
@@ -363,48 +355,35 @@ namespace CASM {
 
   // Implements _increment
   void ConfigEnumStrain::increment() {
-    //bool is_valid_config(false);
-    //std::cout << "Incrementing...\n";
-    //std::cout << "Strain enum increment!\n";
+    //Increment past any invalid values, including those that are outside specified ellipsoid (if trim_corners==true)
     while(++m_counter && (m_trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat().transpose()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat()*m_counter()) > 1.0 + TOL)) {
-      //just burning throught the count
-      //std::cout << "TOO BIG: " << m_counter().transpose() << "\n";
+
     }
 
     // move to next part of wedge if necessary
     if(!m_counter.valid() && m_equiv_ind + 1 < m_wedges.size()) {
       m_counter.reset();
       ++m_equiv_ind;
-      //std::cout << "INCREMENTING m_equiv_ind to " << m_equiv_ind << "\n";
-    }
 
-    while(m_counter &&
-          (m_trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat().transpose()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat()*m_counter()) > 1.0 + TOL)) {
-      //just burning throught the count
-      //std::cout << "TOO BIG: " << m_counter().transpose() << "\n";
-      ++m_counter;
+      //Increment past any invalid values, including those that are outside specified ellipsoid (if trim_corners==true)
+      // this time it's for the new wedge
+      while(m_counter &&
+            (m_trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat().transpose()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat()*m_counter()) > 1.0 + TOL)) {
+        ++m_counter;
+      }
     }
 
     if(m_counter.valid()) {
-      //throw std::runtime_error("UPDATE STRAIN INSERTION");
+
       m_current.configdof().set_global_dof(m_strain_key, m_wedges[m_equiv_ind].trans_mat() * m_counter());
-      //std::cout << "Counter is " << m_counter().transpose() << "\n\n";
-      //std::cout << "Strain vector is " << (m_wedges[m_equiv_ind].trans_mat() * m_counter()).transpose() << "\n";
-      //std::cout << "strain vector is \n" << m_wedges[m_equiv_ind].trans_mat()*m_counter() << "\n\n";
-      //std::cout << "DEFORMATION IS\n" << m_current.deformation() << "\n\n";
-      //is_valid_config = current().is_canonical(_perm_begin(), _perm_end());
-      //std::cout << "counter() is: " << m_counter() << ";  is_valid_config: " << is_valid_config
-      //<< ";  is_valid_counter: " << m_counter.valid() << "\n";
+
       _increment_step();
     }
     else {
-      //std::cout << "REACHED END OF THE LINE!\n";
       _invalidate();
     }
 
     m_current.set_source(this->source(step()));
-    //std::cout << "At end, current value is : " << m_current.configdof().global_dof(m_strain_key).values().transpose() << "\n";
-    //std::cout << "--FINISHED SEARCH " << _step()<< "--\n";
     return;
   }
 

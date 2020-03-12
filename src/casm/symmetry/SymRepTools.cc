@@ -12,10 +12,92 @@
 #include "casm/misc/algorithm.hh"
 #include "casm/container/Counter.hh"
 
-namespace CASM {
+namespace Local {
+
+  struct IrrepCompare {
+    bool operator()(IrrepInfo const &irrep_a, IrrepInfo const &irrep_b) const {
+      Eigen::VectorXcd const &a = irrep_a.characters;
+      Eigen::VectorXcd const &b = irrep_b.characters;
+
+      typedef std::complex<double> C;
+
+      // Check if a and b are identity irrep, identity always compares less than other irreps
+      bool a_id = almost_equal(a[0], C(1., 0.)) && almost_equal(a.sum(), C(a.size(), 0.));
+      bool b_id = almost_equal(b[0], C(1., 0.)) && almost_equal(b.sum(), C(b.size(), 0.));
+
+      if(a_id != b_id)
+        return a_id;
+      else if(a_id) {
+        // Index is used to break ties if they are both identity
+        return irrep_a.index < irrep_b.index;
+      }
+
+      // Low-dimensional irreps come before higher dimensional
+      if(!almost_equal(a[0], b[0]))
+        return a[0] < b[0];
+
+      // 'gerade' irreps come before 'ungerade' irreps
+      // This check may need to be improved to know whether inversion is actually present
+      bool a_g = almost_equal(a[0], a[a.size() - 1]);
+      bool b_g = almost_equal(b[0], b[b.size() - 1]);
+      if(a_g != b_g)
+        return a_g;
+
+      // Finally, compare lexicographically (real first, then imag)
+      for(Index i = 0; i < a.size(); ++i) {
+        if(!almost_equal(a[i].real(), b[i].real()))
+          return a[i].real() > b[i].real();
+      }
+
+      if(irrep_a.complex || irrep_b.complex) {
+        for(Index i = 0; i < a.size(); ++i) {
+          if(!almost_equal(a[i].imag(), b[i].imag()))
+            return a[i].imag() > b[i].imag();
+        }
+      }
+
+      // Index is used to break ties
+      return irrep_a.index < irrep_b.index;
+    }
+  };
 
   //*******************************************************************************************
-  Eigen::MatrixXd block_shape_matrix(SymGroupRep const &_rep, const SymGroup &head_group) {
+
+  bool _rep_check(SymGroupRep const &_rep, SymGroup const &head_group, bool verbose) {
+    bool passed = true;
+    for(Index ns = 0; ns < head_group.size(); ns++) {
+      Eigen::MatrixXd tmat = *(_rep.MatrixXd(head_group[ns]));
+      if(!almost_equal<double>((tmat * tmat.transpose()).trace(), tmat.cols())) {
+        passed = false;
+        if(verbose)
+          std::cout << "  Representation failed full-rank/orthogonality check!\n"
+                    << "  ns: " << ns << "\n"
+                    << "  Matrix: \n" << tmat << "\n\n"
+                    << "  Matrix*transpose: \n" << tmat.transpose()*tmat << "\n\n";
+      }
+      for(Index ns2 = ns; ns2 < head_group.size(); ns2++) {
+        auto prod = (*(_rep.MatrixXd(head_group[ns]))) * (*(_rep.MatrixXd(head_group[ns2])));
+        Index iprod = head_group[ns].ind_prod(head_group[ns2]);
+        double norm = (prod - * (_rep.MatrixXd(iprod))).norm();
+        if(!almost_zero(norm)) {
+          passed = false;
+          if(verbose)
+            std::cout << "  Representation failed multiplication check!\n"
+                      << "  ns: " << ns << "  ns2: " << ns2 << " iprod: " << iprod << " NO MATCH\n"
+                      << "  prod: \n" << prod << "\n\n"
+                      << "  mat(ns): \n" << *(_rep.MatrixXd(ns)) << "\n\n"
+                      << "  mat(ns2): \n" << *(_rep.MatrixXd(ns2)) << "\n\n"
+                      << "  mat(iprod): \n" << *(_rep.MatrixXd(iprod)) << "\n\n";
+        }
+      }
+    }
+    return passed;
+  }
+}
+
+namespace CASM {
+
+  Eigen::MatrixXd block_shape_matrix(SymGroupRep const &_rep, SymGroup const &head_group) {
     if(!_rep.size() || !head_group.size() || !_rep.MatrixXd(head_group[0]))
       return Eigen::MatrixXd();
 
@@ -30,7 +112,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  Index num_blocks(SymGroupRep const &_rep, const SymGroup &head_group) {
+  Index num_blocks(SymGroupRep const &_rep, SymGroup const &head_group) {
     Eigen::MatrixXd bmat(block_shape_matrix(_rep, head_group));
 
     if(bmat.cols() == 0)
@@ -50,52 +132,61 @@ namespace CASM {
   //*******************************************************************************************
 
   //assumes that representation is real-valued and irreducible
-  Eigen::MatrixXd irrep_symmetrizer(SymGroupRep const &_rep,
-                                    const SymGroup &head_group,
-                                    double vec_compare_tol) {
+  SymRepTools::Symmetrizer irrep_symmetrizer_and_directions(SymGroupRep const &_rep,
+                                                            SymGroup const &head_group,
+                                                            double vec_compare_tol) {
     Index dim = _rep.MatrixXd(0)->cols();
-    return irrep_symmetrizer(_rep, head_group, Eigen::MatrixXd::Identity(dim, dim), vec_compare_tol);
+    return irrep_symmetrizer_and_directions(_rep, head_group, Eigen::MatrixXcd::Identity(dim, dim), vec_compare_tol);
   }
+
   //*******************************************************************************************
 
   //assumes that representation is real-valued and irreducible
-  Eigen::MatrixXd irrep_symmetrizer(SymGroupRep const &_rep,
-                                    const SymGroup &head_group,
-                                    Eigen::Ref<const Eigen::MatrixXd> const &_subspace,
-                                    double vec_compare_tol) {
+  SymRepTools::Symmetrizer irrep_symmetrizer_and_directions(SymGroupRep const &_rep,
+                                                            SymGroup const &head_group,
+                                                            Eigen::Ref<const Eigen::MatrixXcd> const &_subspace,
+                                                            double vec_compare_tol) {
 
     // Result of sdirs is ordered by symmetry breaking properties of different directions.
     // We won't do any element-based comparisons after this point, in order to ensure that
     // our choice of axes is totally determined by symmetry
-    multivector<Eigen::VectorXd>::X<2>  sdirs = special_irrep_directions(_rep, head_group, _subspace, vec_compare_tol);
+    multivector<Eigen::VectorXcd>::X<2>  sdirs = special_irrep_directions(_rep, head_group, _subspace, vec_compare_tol);
+    return std::make_pair(irrep_symmetrizer_from_directions(sdirs, _subspace, vec_compare_tol), std::move(sdirs));
+  }
+  //*******************************************************************************************
+
+  //assumes that representation is real-valued and irreducible
+  Eigen::MatrixXcd irrep_symmetrizer_from_directions(multivector<Eigen::VectorXcd>::X<2> const &special_directions,
+                                                     Eigen::Ref<const Eigen::MatrixXcd> const &_subspace,
+                                                     double vec_compare_tol) {
 
     // Four strategies, in order of desparation
     // 1) find a spanning set of orthogonal axes within a single orbit of special directions
     // 2) find a spanning set of orthogonal axes within the total set of special directions
     // 3) perform qr decomposition on lowest-multiplicity orbit to find spanning set of axes
     // 4) find column-echelon form of _subspace matrix to get a sparse/pretty set of axes
-    Eigen::MatrixXd result;
+    Eigen::MatrixXcd result;
     Index dim = _subspace.cols();
     Index min_mult = 10000;
     bool orb_orthog = false;
     bool tot_orthog = false;
 
-    Eigen::MatrixXd axes, orb_axes, tot_axes;
+    Eigen::MatrixXcd axes, orb_axes, tot_axes;
     Index tot_col(0);
     tot_axes.setZero(_subspace.rows(), dim);
 
-    for(auto const &orbit : sdirs) {
+    for(auto const &orbit : special_directions) {
       // Strategy 1
       if((orb_orthog && orbit.size() < min_mult) || !orb_orthog) {
         orb_axes.setZero(_subspace.rows(), dim);
         Index col = 0;
         for(auto const &el : orbit) {
-          if(almost_zero((el.transpose()*orb_axes).eval(), vec_compare_tol)) {
+          if(almost_zero((el.adjoint()*orb_axes).eval(), vec_compare_tol)) {
             if(col < orb_axes.cols())
               orb_axes.col(col++) = el;
             else {
               std::stringstream errstr;
-              errstr << "Error in irrep_symmtrizer(). Constructing coordinate axes from special directions of space spanned by row vectors:\n "
+              errstr << "Error in irrep_symmtrizer_from_directions(). Constructing coordinate axes from special directions of space spanned by row vectors:\n "
                      << _subspace.transpose()
                      << "\nAxes collected thus far are the row vectors:\n" << orb_axes.transpose()
                      << "\nBut an additional orthogonal row vector has been found:\n" << el.transpose()
@@ -115,12 +206,12 @@ namespace CASM {
       // Greedy(ish) implementation of strategy 2 -- may not find a solution, even if it exists
       if(!orb_orthog && !tot_orthog) {
         for(auto const &el : orbit) {
-          if(almost_zero((el.transpose()*tot_axes).eval(), vec_compare_tol)) {
+          if(almost_zero((el.adjoint()*tot_axes).eval(), vec_compare_tol)) {
             if(tot_col < tot_axes.cols())
               tot_axes.col(tot_col++) = el;
             else {
               std::stringstream errstr;
-              errstr << "Error in irrep_symmtrizer(). Constructing coordinate axes from special directions of space spanned by row vectors:\n "
+              errstr << "Error in irrep_symmtrizer_from_directions(). Constructing coordinate axes from special directions of space spanned by row vectors:\n "
                      << _subspace.transpose()
                      << "\nAxes collected thus far are the row vectors:\n" << tot_axes.transpose()
                      << "\nBut an additional orthogonal row vector has been found:\n" << el.transpose()
@@ -144,15 +235,15 @@ namespace CASM {
         }
         //std::cout << "PLAN C--  dim: " << dim << "; min_mult: " << min_mult << "; orthog: " << orb_orthog << ";\naxes: \n" << axes;
         min_mult = orbit.size();
-        axes = Eigen::MatrixXd(orb_axes.colPivHouseholderQr().matrixQ()).leftCols(dim);
+        axes = Eigen::MatrixXcd(orb_axes.colPivHouseholderQr().matrixQ()).leftCols(dim);
         //std::cout << "\norb_axes: \n" << orb_axes << "\n\n";
       }
     }
     //std::cout << "axes: \n" << axes << "\n";
     if(axes.cols() == 0) {
       //std::cout << "Plan D\n";
-      SubspaceSymCompare<Eigen::MatrixXd, EigenSymRepApply<Eigen::MatrixXd>> tcompare(vec_compare_tol, _rep);
-      result = *(tcompare.canonical_transform(_subspace)->MatrixXd());
+      // SubspaceSymCompare doesn't actually use _rep
+      result = _subspace.colPivHouseholderQr().solve(representation_prepare_impl(obj, vec_compare_tol));
     }
     else {
       // Strategy 4
@@ -165,23 +256,36 @@ namespace CASM {
   }
 
   //*******************************************************************************************
+
+  Eigen::MatrixXd full_trans_mat(std::vector<IrrepInfo> const &irreps) {
+    Index row = 0;
+    Index col = 0;
+    for(auto const &irrep : irreps) {
+      col = irrep.vector_dim();
+      row += irrep.irrep_dim();
+    }
+    Eigen::MatrixXd trans_mat(row, col);
+    row = 0;
+    for(auto const &irrep : irreps) {
+      trans_mat.block(row, 0, irrep.irrep_dim(), irrep.vector_dim()) = irrep.trans_mat;
+      row += irrep.irrep_dim();
+    }
+    return trans_mat;
+  }
+
+  //*******************************************************************************************
+
   multivector< Eigen::VectorXd >::X<3>
   special_total_directions(SymGroupRep const &_rep,
                            SymGroup const &head_group) {
 
-    std::pair<Eigen::MatrixXd, std::vector<Index>> transmat = irrep_trans_mat_and_dims(_rep,
-                                                              head_group,
-    [&](Eigen::Ref<const Eigen::MatrixXd> const & _subspace) {
-      return Eigen::MatrixXd::Identity(_subspace.cols(), _subspace.cols());
-    });
-    multivector< Eigen::VectorXd >::X<3> result;
-    result.reserve(transmat.second.size());
+    std::vector<IrrepInfo> irreps = irrep_decomposition(_rep, head_group);
 
-    Index l = 0;
-    for(Index sdim : transmat.second) {
-      Eigen::MatrixXd subspace = transmat.first.block(l, 0, sdim, transmat.first.cols()).transpose();
-      result.push_back(special_irrep_directions(_rep, head_group, subspace, TOL));
-      l += sdim;
+    multivector< Eigen::VectorXd >::X<3> result;
+    result.reserve(irreps.size());
+
+    for(auto const &irrep : irreps) {
+      result.push_back(irrep.directions);
     }
     return result;
   }
@@ -192,34 +296,34 @@ namespace CASM {
   /// in that it does not rely on the character tables to generate the special directions. The
   /// routine also adopts the faster method to generating the irreducible transformation matrix
 
-  multivector< Eigen::VectorXd >::X<2>
+  multivector< Eigen::VectorXcd >::X<2>
   special_irrep_directions(SymGroupRep const &_rep,
                            SymGroup const &head_group,
                            double vec_compare_tol) {
-    Index dim = _rep.MatrixXd(0)->cols();
-    return special_irrep_directions(_rep, head_group, Eigen::MatrixXd::Identity(dim, dim), vec_compare_tol);
-
+    Index dim = _rep.dim();
+    return special_irrep_directions(_rep, head_group, Eigen::MatrixXcd::Identity(dim, dim), vec_compare_tol);
   }
+
   //*******************************************************************************************
   /// Returns array of orbits of high-symmetry directions in the vector space on
   /// which this representation is defined. This routine is different from special_total_directions
   /// in that it does not rely on the character tables to generate the special directions. The
   /// routine also adopts the faster method to generating the irreducible transformation matrix
 
-  multivector< Eigen::VectorXd >::X<2>
+  multivector< Eigen::VectorXcd >::X<2>
   special_irrep_directions(SymGroupRep const &_rep,
                            SymGroup const &head_group,
-                           Eigen::Ref<const Eigen::MatrixXd> const &_subspace,
+                           Eigen::Ref<const Eigen::MatrixXcd> const &_subspace,
                            double vec_compare_tol,
                            bool all_subgroups) {
     auto sgroups = (all_subgroups ? head_group.subgroups() : head_group.small_subgroups());
 
-    std::vector< Eigen::VectorXd > tdirs;
+    std::vector< Eigen::VectorXcd > tdirs;
     Eigen::MatrixXd R;
-    Index dim = _rep.MatrixXd(0)->cols();
+    Index dim = _rep.dim()
 
-    // Loop over small (i.e., cyclic) subgroups and hope that each special
-    // direction is invariant to at least one small subgroup
+                // Loop over small (i.e., cyclic) subgroups and hope that each special
+                // direction is invariant to at least one small subgroup
     for(auto const &orbit : sgroups) {
       // Reynolds for small subgroup *(orbit.begin()) in irrep subspace i
       R.setZero(dim, dim);
@@ -242,7 +346,7 @@ namespace CASM {
       // // If only one spanning vector, it is special direction
       if(QR.rank() > 1)
         continue;
-      Eigen::MatrixXd Q = QR.matrixQ();
+      Eigen::MatrixXcd Q = QR.matrixQ();
       //std::cout << "Special direction identified:\n" << Q.col(0).transpose() << "\n\n";
       //std::cout << "MatrixR:a\n" << Eigen::MatrixXd(QR.matrixR().template triangularView<Eigen::Upper>()) << "\n";
       // // PRINT OUT  the Reynolds matrix if its going to be added
@@ -272,7 +376,7 @@ namespace CASM {
     // the orbit of the directions. this should also
     // reveal the invariant subgroups.
 
-    using SymCompareType = DirectionSymCompare<Eigen::VectorXd, EigenSymRepApply<Eigen::VectorXd>>;
+    using SymCompareType = DirectionSymCompare<Eigen::VectorXcd, EigenSymRepApply<Eigen::VectorXcd>>;
     using VectorOrbit = GenericOrbit<SymCompareType>;
     std::set<VectorOrbit> orbit_result;
     make_orbits(tdirs.begin(),
@@ -302,102 +406,6 @@ namespace CASM {
     }
   }
 
-  //*******************************************************************************************
-  std::vector<std::vector< Eigen::VectorXd> > special_irrep_directions_old(SymGroupRep const &_rep, const SymGroup &head_group) {
-    if(!_rep.size() || !(_rep.MatrixXd(head_group[0]))) {
-      default_err_log() << "CRITICAL ERROR: In special_irrep_directions() called on imcompatible SymGroupRep.\n Exiting...\n";
-      exit(1);
-    }
-
-    Index i, j;
-
-    std::vector<std::vector<Eigen::VectorXd> > sdirs; //std::vector of orbits of special directions
-
-    Eigen::VectorXd tdir;
-
-    auto const &isubs(head_group.subgroups());
-    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> QR(*(_rep.MatrixXd(head_group[0])));
-
-    Index dim = _rep.MatrixXd(head_group[0])->cols();
-
-    QR.setThreshold(10 * TOL);
-
-    // i loops over subgroup "orbits". There are 0 to 'dim' special directions associated with each orbit.
-    Eigen::MatrixXd Reynolds(*(_rep.MatrixXd(0)));
-    for(i = 0; i < isubs.size(); i++) {
-      if(isubs[i].size() == 0 || isubs[i].begin()->size() == 0) {
-        default_err_log() << "CRITICAL ERROR: In special_irrep_directions(), attempting to use a zero-size subgroup.\n Exiting...\n";
-        exit(1);
-      }
-
-      Reynolds.setZero();
-      // j loops over elements of "prototype" subgroup to get the Reynold's operator for the vector
-      // space on which the representation is defined
-      for(Index op : * (isubs[i].begin())) {
-        Reynolds += *_rep.MatrixXd(head_group[op]);
-      }
-
-      Reynolds /= double(isubs[i].begin()->size());
-
-      //Need this because Eigen computes nonzero rank for matrix filled with small numbers close to zero.
-      //QR.setThreshold() doesn't help
-      if(almost_zero(Reynolds))
-        continue;
-
-      // Column space of Reynold's matrix is invariant under the subgroup
-      QR.compute(Reynolds);
-
-      // We're only interested in 1-D invariant spaces
-      if(QR.rank() != 1)
-        continue;
-
-      //QR.matrixQ().col(0) is a special direction
-
-      Eigen::MatrixXd matrixQ(QR.householderQ());
-
-      //std::cout << "QR matrixR:\n" << Eigen::MatrixXd(QR.matrixQR().template triangularView<Eigen::Upper>()) << "\n";
-      //std::cout << "QR matrixQ:\n" << matrixQ << "\n";
-
-
-      auto vector_almost_equal = [&](const Eigen::VectorXd & val1, const Eigen::VectorXd & val2) {
-        return almost_equal(val1, val2);
-      };
-
-      // See if QR.matrixQ().col(0) has been found
-      for(j = 0; j < sdirs.size(); j++) {
-        if(contains(sdirs[j], Eigen::VectorXd(matrixQ.col(0)), vector_almost_equal)) {
-          break;
-        }
-      }
-      if(j == sdirs.size()) {
-
-        //Get equivalents
-        sdirs.push_back(std::vector<Eigen::VectorXd>());
-        for(j = 0; j < head_group.size(); j++) {
-          tdir = (*_rep.MatrixXd(head_group[j])) * matrixQ.col(0);
-          if(!contains(sdirs.back(), tdir, vector_almost_equal))
-            sdirs.back().push_back(tdir);
-        }
-      }
-
-      for(j = 0; j < sdirs.size(); j++) {
-        if(contains(sdirs[j], Eigen::VectorXd(-matrixQ.col(0)), vector_almost_equal)) {
-          break;
-        }
-      }
-      if(j == sdirs.size() && dim > 1) {
-
-        //Get equivalents
-        sdirs.push_back(std::vector<Eigen::VectorXd>());
-        for(j = 0; j < head_group.size(); j++) {
-          tdir = -(*_rep.MatrixXd(head_group[j])) * matrixQ.col(0);
-          if(!contains(sdirs.back(), tdir, vector_almost_equal))
-            sdirs.back().push_back(tdir);
-        }
-      }
-    }
-    return sdirs;
-  }
 
   //*******************************************************************************************
 
@@ -405,7 +413,7 @@ namespace CASM {
   // n-planes, etc. The matrices that are returned have column vectors that span the special
   // subspaces.  The subspaces are arranged in orbits of subspaces that are equivalent by symmetry
 
-  std::vector<std::vector< Eigen::MatrixXd> > special_subspaces(SymGroupRep const &_rep, const SymGroup &head_group) {
+  std::vector<std::vector< Eigen::MatrixXd> > special_subspaces(SymGroupRep const &_rep, SymGroup const &head_group) {
     if(!_rep.size() || !_rep.MatrixXd(0)) {
       default_err_log() << "CRITICAL ERROR: In special_subspaces() called on imcompatible SymGroupRep.\n Exiting...\n";
       exit(1);
@@ -420,7 +428,7 @@ namespace CASM {
     // Operation indices of subgroups
     auto const &sg_op_inds(head_group.subgroups());
 
-    Eigen::FullPivHouseholderQR<Eigen::MatrixXd> QR(*(_rep.MatrixXd(0)));
+    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> QR(*(_rep.MatrixXd(0)));
 
     QR.setThreshold(TOL);
 
@@ -451,7 +459,7 @@ namespace CASM {
 
       // The first (QR.rank()) columns of QR.matrixQ() span a special subspace --
       // this can be accessed as QR.matrixQ().leftCols(QR.rank())
-      tsub = QR.matrixQ().leftCols(QR.rank());
+      tsub = QR.householderQ().eval().leftCols(QR.rank());
 
       // See if tsub has been found. Because we only keep orthonormal spanning vectors, this check is significantly simplified
       //  -- the matrix (tsub.transpose()*ssubs[j][k]) must have a determinant of +/-1 if the two matrices span the same column space
@@ -505,7 +513,7 @@ namespace CASM {
 
   //*******************************************************************************************
   //assumes that representation is real-valued, and combines complex-valued irreps with their complex conjugate
-  std::vector<Index> num_each_real_irrep(SymGroupRep const &_rep, const SymGroup &head_group, bool verbose) {
+  std::vector<Index> num_each_real_irrep(SymGroupRep const &_rep, SymGroup const &head_group, bool verbose) {
     const std::vector<bool > &complex_irrep(head_group.get_complex_irrep_list());
     std::vector<Index> tarray(num_each_irrep(_rep, head_group, verbose));
 
@@ -532,7 +540,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  std::vector<Index> num_each_irrep(SymGroupRep const &_rep, const SymGroup &head_group, bool verbose) {
+  std::vector<Index> num_each_irrep(SymGroupRep const &_rep, SymGroup const &head_group, bool verbose) {
     const std::vector<std::vector<Index> > &conj_class(head_group.get_conjugacy_classes());
     const std::vector<std::vector<std::complex<double> > > &char_table(head_group.character_table());
 
@@ -573,230 +581,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  std::vector<SymGroupRepID> irrep_IDs(SymGroupRep const &_rep, const SymGroup &head_group) {
-    std::vector<Index> irrep_decomp(num_each_real_irrep(_rep, head_group));
-    std::vector<SymGroupRepID> result;
-    for(Index i = 0; i < irrep_decomp.size(); i++) {
-      if(irrep_decomp[i] == 0)
-        continue;
-
-      if(head_group.get_irrep_ID(i).empty())
-        calc_new_irreps(_rep, head_group);
-
-      if(head_group.get_irrep_ID(i).empty()) {
-        default_err_log() << "CRITICAL ERROR: In irrep_IDs(), cannot resolve irrep " << i << " which has multiplicity " << irrep_decomp[i] << ". Exiting...\n";
-        assert(0);
-        exit(1);
-      }
-      auto tail = std::vector<SymGroupRepID>(irrep_decomp[i], head_group.get_irrep_ID(i));
-      result.insert(result.end(), tail.begin(), tail.end());
-    }
-
-    return result;
-
-  }
-
-
-  //*******************************************************************************************
-  //
-  // assumes that representation is real-valued. This means that complex-valued
-  // irreps in the character table get combined into single 2-D irreps
-
-  void calc_new_irreps(SymGroupRep const &_rep, const SymGroup &head_group, int max_iter) {
-
-    if(!_rep.size() || !_rep.MatrixXd(0)) {
-      default_err_log() << "WARNING:  In calc_new_irreps, size of representation is " << _rep.size() << " and MatrixXd address is " << _rep.MatrixXd(0) << std::endl
-                        << "          No valid irreps will be returned.\n";
-      return;
-    }
-    if(!head_group.size()) {
-      assert(0 && "In calc_new_irreps(), passed an empty SymGroup!");
-      return;
-    }
-
-    MasterSymGroup const *master_ptr(NULL);
-    if(_rep.has_valid_master())
-      master_ptr = &_rep.master_group();
-    else if(head_group[0].has_valid_master())
-      master_ptr = &head_group[0].master_group();
-    else {
-      default_err_log() << "CRITICAL ERROR: In calc_new_irreps(), there is no MasterSymGroup available!\n"
-                        << "                Exiting...\n";
-    }
-    int dim((_rep.MatrixXd(0))->rows());
-
-    std::vector<Index> i_decomp(num_each_real_irrep(_rep, head_group));
-    int Nirrep(std::accumulate(i_decomp.begin(), i_decomp.end(), 0));
-    if(Nirrep == 0) {
-      default_err_log() << "In calc_new_irreps(), there are no valid irreps, so no valid irreps will be returned.\n";
-      return;
-    }
-    if(Nirrep == 1) {
-      //std::cout << "There is only 1 irrep, so I'm returning a symmetrized copy of *this\n";
-      head_group.set_irrep_ID(find_index(i_decomp, 1), master_ptr->add_representation(coord_transformed_copy(_rep, irrep_symmetrizer(_rep, head_group, TOL))));
-      return;
-    }
-
-    //std::cout << "This representation contains " <<  Nirrep << " irreps... About to build commuters!\n";
-    std::vector<Eigen::MatrixXd> commuters;
-
-    // Build 'commuters', which span space of matrices that commute with SymOpReps
-    for(int i = 0; i < dim; i++) {
-      for(int j = i; j < dim; j++) {
-        Eigen::MatrixXd tmat(Eigen::MatrixXd::Zero(dim, dim)), tcommute(Eigen::MatrixXd::Zero(dim, dim));
-
-        //We only build symmetric commuters, which assures we only select out real-valued representations
-        tmat(i, j) = 1;
-        tmat(j, i) = 1;
-        //apply reynolds operator
-        for(Index ns = 0; ns < head_group.size(); ns++) {
-          tcommute += (*(_rep.MatrixXd(head_group[ns]))) * tmat * (*(_rep.MatrixXd(head_group[ns]))).transpose();
-        }
-        //Do Gram-Shmidt while building 'commuters'
-        for(Index nc = 0; nc < commuters.size(); nc++) {
-          double tproj((commuters[nc].array()*tcommute.array()).sum()); //Frobenius product
-          tcommute -= tproj * commuters[nc];
-        }
-        double tnorm(tcommute.norm());
-        if(tnorm > TOL) {
-          commuters.push_back(tcommute / tnorm);
-          //std::cout << commuters.back() << "\n\n";
-        }
-      }
-    }
-    for(Index nc = 0; nc < commuters.size(); nc++) {
-      commuters[nc] *= (dim * sqrt(dim)); //magnify the range of eigenvalues
-    }
-    //Finished building commuters
-
-    Eigen::JacobiSVD<Eigen::MatrixXd> svd;
-    double min_diff(-1);
-    int Nstep(0), Nfound(0), max_found = 0;
-    Eigen::MatrixXd tmat(dim, dim), trans_mat(dim, dim);
-    int rseed(5284163); //use constant seed for reproducibility
-    Eigen::VectorXd mags(commuters.size());
-    while((max_found < Nirrep || min_diff < 0.05 || Nstep < 10) && Nstep < max_iter) {
-      Nstep++;
-      Nfound = 1;
-      double tmindiff(1e+8), tdiff(0);
-
-      tmat.setZero();
-      for(EigenIndex i = 0; i < mags.size(); i++)
-        mags[i] = ran0(rseed);
-      mags.normalize();
-
-      for(Index nc = 0; nc < commuters.size(); nc++) {
-        tmat += mags[nc] * commuters[nc];
-      }
-      svd.compute(tmat, Eigen::ComputeFullU);
-
-      for(EigenIndex ne = 1; ne < svd.singularValues().size(); ne++) {
-        tdiff = std::abs(svd.singularValues()[ne - 1] - svd.singularValues()[ne]);
-        if(tdiff > TOL) {
-          Nfound++;
-          tmindiff = std::min(tdiff, tmindiff);
-        }
-      }
-
-      if(Nfound > max_found || (Nfound == max_found && tmindiff > min_diff)) {
-        max_found = Nfound;
-        //trans_mat defined to go from old basis to new basis
-        trans_mat = svd.matrixU().transpose();
-        min_diff = tmindiff;
-      }
-    }
-    //std::cout << "After " << Nstep << " iterations, found suitable decomposition \n ***U:" << svd.matrixU() << "\n\n ***S" << svd.singularValues() << "\n\n";
-    //std::cout << "trans_mat is:\n" << trans_mat << "\n\n";
-    if(Nstep >= max_iter) {
-      default_err_log() << "CRITICAL ERROR: In calc_new_irreps, reached maximum iterations (" << max_iter << ") without finding all irreps.\n"
-                        << "                I found " << max_found << " of " << Nirrep << " distinguishable within " << min_diff << " (0.1 required). Exiting...\n";
-      assert(0);
-      exit(1);
-
-    }
-
-    // Almost there.  We have a transformation matrix that block-diagonalizes the symmetry matrices. Now we apply it.
-
-    //get the block_shape_matrix of the transformed representation
-    //std::cout << "Transformed representation will be: \n";
-    Eigen::MatrixXd block_shape(Eigen::MatrixXd::Zero(dim, dim));
-    for(Index i = 0; i < head_group.size(); i++) {
-      //std::cout << "Operation " << i << " of " << head_group.size() << ":\n";
-      tmat = trans_mat * (*(_rep.MatrixXd(head_group[i]))) * trans_mat.transpose();
-      //std::cout << tmat << "\n";
-      block_shape.array() += tmat.array() * tmat.array();
-    }
-    //std::cout << "Block shape matrix of transformed representation is: \n" << block_shape << '\n';
-    //now loop over the 1st off-diagonal of the block-shape matrix and look for breaks
-    int i1(0);
-    int nblocks = 0;
-    for(int i2 = 1; i2 < dim; i2++) {
-      if(block_shape(i2 - 1, i2) > 0.5)
-        continue;
-      nblocks++;
-      //std::cout <<  "Found block number " << nblocks << " of " << Nirrep << '\n';
-      //Found end of block
-      tmat.resize(i2 - i1, dim);
-      tmat = trans_mat.block(i1, 0, i2 - i1, dim);
-      SymGroupRep new_irrep(coord_transformed_copy(_rep, tmat));
-
-      std::vector<Index> tdecomp(num_each_real_irrep(new_irrep, head_group));
-      if(std::accumulate(tdecomp.begin(), tdecomp.end(), 0) != 1) {
-        default_err_log() << "CRITICAL ERROR: In calc_new_irreps(), representation identified as irreducible did not pass final tests. Exiting...\n";
-        assert(0);
-        exit(1);
-      }
-      Index i_irrep = find_index(tdecomp, 1);
-      if(!head_group.get_irrep_ID(i_irrep).empty()) {
-        i1 = i2;
-        continue;
-      }
-
-      SymGroupRepID irrep_ID = master_ptr->add_representation(coord_transformed_copy(new_irrep, irrep_symmetrizer(new_irrep, head_group, TOL)));
-
-      head_group.set_irrep_ID(i_irrep, irrep_ID);
-      //std::cout << "Setting the rep_ID of irrep " << i_irrep << " to " << irrep_ID;
-      //std::cout << " and validating -- " << head_group.get_irrep_ID(i_irrep) << '\n';
-
-      i1 = i2;
-
-    }
-
-    // Process the final block
-    nblocks++;
-    //std::cout <<  "Found block number " << nblocks << " of " << Nirrep << '\n';
-
-    tmat.resize(dim - i1, dim);
-    tmat = trans_mat.block(i1, 0, dim - i1, dim);
-    SymGroupRep new_irrep(coord_transformed_copy(_rep, tmat));
-
-    //std::cout << "\nIts representation looks like this:\n";
-    //new_irrep->print_MatrixXd(std::cout, head_group);
-    //std::cout << '\n';
-    std::vector<Index> tdecomp(num_each_real_irrep(new_irrep, head_group));
-    if(std::accumulate(tdecomp.begin(), tdecomp.end(), 0) != 1) {
-      default_err_log() << "CRITICAL ERROR: In calc_new_irreps(), representation identified as irreducible did not pass final tests. Exiting...\n";
-      assert(0);
-      exit(1);
-    }
-    Index i_irrep = find_index(tdecomp, 1);
-    if(!head_group.get_irrep_ID(i_irrep).empty()) {
-      return;
-    }
-
-    SymGroupRepID irrep_ID = master_ptr->add_representation(coord_transformed_copy(new_irrep, irrep_symmetrizer(new_irrep, head_group, TOL)));
-
-    //std::cout << "Setting the rep_ID of irrep " << i_irrep << " to " << irrep_ID;
-    head_group.set_irrep_ID(i_irrep, irrep_ID);
-    //std::cout << " and validating -- " << head_group.get_irrep_ID(i_irrep) << '\n';
-
-    return;
-
-  }
-
-  //*******************************************************************************************
-
-  bool is_irrep(SymGroupRep const &_rep, const SymGroup &head_group) {
+  bool is_irrep(SymGroupRep const &_rep, SymGroup const &head_group) {
     double tvalue = 0;
 
     for(Index i = 0; i < head_group.size(); i++) {
@@ -813,11 +598,79 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  // Finds the transformation matrix that block-diagonalizes this representation into irrep blocks
-  // The ROWS of trans_mat are the new basis vectors in terms of the old such that
-  // new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
-  Eigen::MatrixXd irrep_trans_mat_old(SymGroupRep const &_rep, const SymGroup &head_group) {
-    return irrep_trans_mat_and_dims_old(_rep, head_group).first;
+  VectorSpaceSymReport vector_space_sym_report(SymGroupRep const &_rep,
+                                               SymGroup const &head_group,
+                                               Eigen::Ref<const Eigen::MatrixXd> const &_subspace,
+                                               bool calc_wedge = false) {
+
+    VectorSpaceSymReport result;
+
+
+    if(calc_wedge) {
+      auto wedges_and_irreps = SymRepTools::symrep_subwedges(_rep, head_group, _subspace);
+      result.irreducible_wedge = std::move(wedges_and_irreps.first);
+      result.irreps = std::move(wedges_and_irreps.second);
+    }
+    else {
+      result.irreps = irrep_decomposition(_rep, head_group, _subspace);
+    }
+
+    std::vector<SymRepTools::SubWedge> wedges;
+    std::vector<int> dims;
+    SymGroup pg = make_point_group(_config.group(), _config.supercell().sym_info().supercell_lattice());
+    DoFKey strain_dof_key;
+    std::vector<DoFKey> tdof_types = global_dof_types(_primclex.prim());
+    Index istrain = find_index_if(tdof_types,
+    [](DoFKey const & other) {
+      return other.find("strain") != std::string::npos;
+    });
+    if(istrain == tdof_types.size())
+      throw std::runtime_error("Cannot enumerate strains for project in which strain has not been specified as a degree of freedom.");
+    strain_dof_key = tdof_types[istrain];
+    if(!sym_axes)
+      wedges.push_back(SymRepTools::SubWedge({SymRepTools::IrrepWedge(_axes, std::vector<Index>(_axes.cols(), 1))}));
+    else
+      wedges = SymRepTools::symrep_subwedges(pg, _primclex.prim().global_dof(strain_dof_key).symrep_ID());
+
+    ///LOCAL
+
+    std::pair<Eigen::MatrixXd, std::vector<Index>> normcoords = collective_dof_normal_coords_and_irrep_dims(config.sites().begin(),
+                                                                config.sites().end(),
+                                                                config.supercell().sym_info(),
+                                                                _dof,
+                                                                config.group(),
+                                                                _axes);
+    axes = normcoords.first.transpose();
+
+    //std::cout << "Axes:\n" << axes.transpose().format(tformat) << "\n";
+    if(axes.cols() != _axes.cols()) {
+      throw std::runtime_error("In ConfigEnumSiteDoFs, symmetry-adapted axes do not have same dimension as provided axes. "
+                               "Please ensure that provided axes completely span one or more of subspaces listed above.");
+    }
+  }
+
+
+
+  //*******************************************************************************************
+
+  std::vector<IrrepInfo> irrep_decomposition(SymGroupRep const &_rep,
+                                             SymGroup const &head_group) {
+    return irrep_decomposition(_rep,
+                               head_group,
+                               Eigen::MatrixXd::Identity(_rep.dim(), _rep.dim()));
+  }
+
+  //*******************************************************************************************
+
+  std::vector<IrrepInfo> irrep_decomposition(SymGroupRep const &_rep,
+                                             SymGroup const &head_group,
+                                             Eigen::Ref<const Eigen::MatrixXd> const &_subspace) {
+    return irrep_decomposition(_rep,
+                               head_group,
+    [&](Eigen::Ref<const Eigen::MatrixXd> const & f_subspace) {
+      return irrep_symmetrizer_and_directions(_rep, head_group, f_subspace, TOL);
+    },
+    _subspace);
   }
 
   //*******************************************************************************************
@@ -825,217 +678,56 @@ namespace CASM {
   // Finds the transformation matrix that block-diagonalizes this representation into irrep blocks
   // The ROWS of trans_mat are the new basis vectors in terms of the old such that
   // new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
-  // Also populate 'subspaces' with lists of columns that form irreps
-  std::pair<Eigen::MatrixXd, std::vector<Index>> irrep_trans_mat_and_dims_old(SymGroupRep const &_rep, const SymGroup &head_group) {
+  std::vector<IrrepInfo> irrep_decomposition(SymGroupRep const &_rep,
+                                             SymGroup const &head_group,
+                                             SymRepTools::SymmetrizerFunction const &symmetrizer_func,
+                                             Eigen::Ref<const Eigen::MatrixXd> const &_subspace) {
 
-    //std::cout << "INSIDE IRREP_TRANS_MAT\n";
-    const std::vector<bool > &complex_irrep(head_group.get_complex_irrep_list());
-    //const std::vector<std::vector<std::complex<double> > > &char_table(_rep.master_group().character_table());
-    const std::vector<std::vector<std::complex<double> > > &char_table(head_group.character_table());
-
-    std::vector<Index> irrep_decomp(num_each_real_irrep(_rep, head_group));
-    std::vector<Index> irrep_dims;
-    //irrep_IDs() harvests any new irreps that appear in this representation
-    std::vector<SymGroupRepID> IDs(irrep_IDs(_rep, head_group));
-
-    int rep_dim = _rep.MatrixXd(head_group[0])->rows();
-
-
-    // We will fill the columns of trans_mat and then return its transpose at the end
-    Eigen::MatrixXd tproj(Eigen::MatrixXd::Zero(rep_dim, rep_dim)),
-          tmat(Eigen::MatrixXd::Zero(rep_dim, rep_dim)),
-          trans_mat(Eigen::MatrixXd::Zero(rep_dim, rep_dim));
-
-    // set a relatively high threshold for determining matrix rank, since we know values should be close to 1
-    Eigen::FullPivLU<Eigen::MatrixXd> LU;
-    LU.setThreshold(0.001);
-    Eigen::FullPivHouseholderQR<Eigen::MatrixXd> QR;
-    QR.setThreshold(0.001);
-
-    int col_count = 0;
-    for(Index i = 0; i < irrep_decomp.size(); i++) {
-      if(irrep_decomp[i] == 0)
-        continue;
-
-      int c_mult(1);
-      if(complex_irrep[i])
-        c_mult = 2;
-
-      const SymGroupRep &t_irrep(head_group.get_irrep(i));
-
-      int irrep_dim = c_mult * round(char_table[i][0].real());
-
-      // make sure t_irrep is valid and has the correct dimension.
-      assert(irrep_dim == (t_irrep.MatrixXd(head_group[0])->rows()));
-
-      //get the (0,0) projection operator -> projects out vectors that transform as the first basis vector of irrep 'i'
-      tproj.setZero();
-      //std::cout << "PROJECTING OUT THE FOLLOWING IRREP\n";
-      for(Index j = 0; j < head_group.size(); j++) {
-        //std::cout << "OP " << j << ":\n";
-
-        tproj += (*(t_irrep.MatrixXd(head_group[j])))(0, 0) * (*_rep.MatrixXd(head_group[j]));
-      }
-      tproj *= double(irrep_dim) / double(head_group.size());
-
-      // tproj is now the (0,0) projection operator for t_irrep. That means its rows span
-      // a subspace spanned by (0,0) basis functions of t_irrep, and we can do Gram Shmidt to find a minimal set
-
-      //std::cout << "Irrep decomp is " << irrep_decomp << "\n";
-      //std::cout << "For irrep " << i << " tproj is:\n" << tproj << "\n\n";
-
-      // We want to get a set of spanning vectors that are sparse and orthonormal
-      // first we do LU (i.e., Gaussian elimination) to clean things up a bit
-      LU.compute(tproj);
-      tmat = LU.matrixLU().triangularView<Eigen::Upper>();
-
-      //std::cout << "Gaussian elimination yields:\n" << tmat << "\n\n";
-
-      //find reduced-row-echelon form -- why is this not an Eigen routine?
-      double tval;
-      for(int j = LU.rank() - 1; j > 0; j--) {
-        tval = tmat(j, j); // <- in case aliasing is an issue
-        tmat.row(j) /= tval;
-        for(int k = 0; k < j; k++) {
-          tval = tmat(k, j);
-          tmat.row(k) -= tval * tmat.row(j);
-        }
-      }
-      // rearrange columns so that they match initial definition
-      tmat = tmat * LU.permutationQ().inverse();
-
-      //std::cout << "And finally:\n" << tmat << "\n\n";
-
-      // rows of tmat span the space, but they aren't orthonormal
-      // do QR (aka Gram-Shmidt), and first QR.rank() columns of QR will span the space
-      QR.compute(tmat.transpose());
-      if(QR.rank() != irrep_decomp[i]) {
-        default_err_log() << "CRITICAL ERROR: In irrep_trans_mat(), did not find correct number of basis vectors to account for\n"
-                          << "                multiplicity of irrep #" << i << ". There should be " << irrep_decomp[i] << " but I found " << QR.rank() << "\n"
-                          << "                Exiting...\n";
-        exit(1);
-      }
-
-      //std::cout << "QR yields:\n " << QR.matrixQ() << "\n\n";
-      for(EigenIndex n = 0; n < QR.rank(); n++) {
-        irrep_dims.push_back(irrep_dim);
-        trans_mat.col(col_count + n * irrep_dim) = QR.matrixQ().col(n);
-      }
-      //std::cout << "Initial trans_mat is:\n" << trans_mat << "\n\n";
-
-      // NOW, let's make the (0,j) projection matrices to project out the other basis functions
-      for(int j = 1; j < irrep_dim; j++) {
-
-        tproj.setZero();
-        for(Index k = 0; k < head_group.size(); k++) {
-          //tproj += (*(t_irrep->MatrixXd(head_group[k])))(0,j) * (*MatrixXd(head_group[k])); // <-- this is wrong, not totally sure why
-          tproj += (*(t_irrep.MatrixXd(head_group[k])))(j, 0) * (*_rep.MatrixXd(head_group[k]));
-        }
-        tproj *= double(irrep_dim) / double(head_group.size());
-
-        //std::cout << "(0, " << j << ") projection operator is:\n" << tproj << "\n\n";
-        //apply (0,j) projection operator to trans_mat. It will project the 0'th basis vectors to the j'th
-        tmat = tproj * QR.matrixQ();
-
-        //store the result in trans_mat
-        for(EigenIndex n = 0; n < QR.rank(); n++) {
-          trans_mat.col(col_count + n * irrep_dim + j) = tmat.col(n);
-        }
-        //std::cout << "NOW trans_mat is:\n" << trans_mat << "\n\n";
-      }
-
-      //update col_count:
-      col_count += irrep_decomp[i] * irrep_dim;
-    }
-
-    return std::pair<Eigen::MatrixXd, std::vector<Index>>(trans_mat.transpose(), irrep_dims);
-  }
-
-  bool rep_check(SymGroupRep const &_rep, SymGroup const &head_group, bool verbose) {
-    bool passed = true;
-    for(Index ns = 0; ns < head_group.size(); ns++) {
-      Eigen::MatrixXd tmat = *(_rep.MatrixXd(head_group[ns]));
-      if(!almost_equal<double>((tmat * tmat.transpose()).trace(), tmat.cols())) {
-        passed = false;
-        if(verbose)
-          std::cout << "  Representation failed full-rank/orthogonality check!\n"
-                    << "  ns: " << ns << "\n"
-                    << "  Matrix: \n" << tmat << "\n\n"
-                    << "  Matrix*transpose: \n" << tmat.transpose()*tmat << "\n\n";
-      }
-      for(Index ns2 = ns; ns2 < head_group.size(); ns2++) {
-        auto prod = (*(_rep.MatrixXd(head_group[ns]))) * (*(_rep.MatrixXd(head_group[ns2])));
-        Index iprod = head_group[ns].ind_prod(head_group[ns2]);
-        double norm = (prod - * (_rep.MatrixXd(iprod))).norm();
-        if(!almost_zero(norm)) {
-          passed = false;
-          if(verbose)
-            std::cout << "  Representation failed multiplication check!\n"
-                      << "  ns: " << ns << "  ns2: " << ns2 << " iprod: " << iprod << " NO MATCH\n"
-                      << "  prod: \n" << prod << "\n\n"
-                      << "  mat(ns): \n" << *(_rep.MatrixXd(ns)) << "\n\n"
-                      << "  mat(ns2): \n" << *(_rep.MatrixXd(ns2)) << "\n\n"
-                      << "  mat(iprod): \n" << *(_rep.MatrixXd(iprod)) << "\n\n";
-        }
-      }
-    }
-    return passed;
-  }
-  //*******************************************************************************************
-
-  // Finds the transformation matrix that block-diagonalizes this representation into irrep blocks
-  // The ROWS of trans_mat are the new basis vectors in terms of the old such that
-  // new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
-  std::pair<Eigen::MatrixXd, std::vector<Index>> irrep_trans_mat_and_dims(SymGroupRep const &_rep,
-                                                                          SymGroup const &head_group,
-                                                                          std::function<Eigen::MatrixXd(Eigen::Ref<const Eigen::MatrixXd> const &f_subspace)> symmetrizer_func,
-  Eigen::Ref<const Eigen::MatrixXd> const &_subspace) {
-
-    auto result = irrep_trans_mat_and_dims(_rep, head_group, symmetrizer_func);
-    if(_subspace.rows() != result.first.cols()) {
-      throw std::runtime_error("In irrep_trans_mat_and_dims, subspace matrix does not have proper number of rows (should have "
-                               + std::to_string(result.first.cols()) + ", but has " + std::to_string(_subspace.rows()));
-    }
-    Eigen::VectorXd trans_mags = (result.first * _subspace).array().square().rowwise().sum();
-    std::pair<Eigen::MatrixXd, std::vector<Index>> new_result;
+    Eigen::MatriXd symspace(_subspace.rows(), _subspace.cols()*head_group.size());
 
     Index l = 0;
-    Index keep = 0;
-    for(Index i : result.second) {
-      double sqmag(0.);
-      Index firstl = l;
-      for(; l < firstl + i; ++l)
-        sqmag += trans_mags[l];
-      if(sqmag > 0.5) {
-        new_result.first.conservativeResize(new_result.first.rows() + i, result.first.cols());
-        new_result.first.block(keep, 0, i, result.first.cols()) = result.first.block(firstl, 0, i, result.first.cols());
-        new_result.second.push_back(i);
-        keep += i;
-      }
+    if(_rep.dim() != _subspace.rows()) {
+      throw std::runtime_error("In irrep_decomposition, subspace matrix does not have proper number of rows (should have "
+                               + std::to_string(_rep.dim()) + ", but has " + std::to_string(_subspace.rows()));
     }
-    //std::cout << "PRUNING TRANS_MAT, starting from:\n"
-    //        << result.first << "\n"
-    //        << "trans_mags is " << trans_mags.transpose() << "\n"
-    //        << "new trans_mat is \n" << new_result.first << "\n";
 
-    return new_result;
+    Eigen::MatrixXd subspace;
+    if(!_subspace.isIdentity()) {
+      for(auto const &op : head_group) {
+        symspace.block(0, l, _subspace.rows(), _subspace.cols()) = (*(_rep[op.index()]->MatrixXd())) * _subspace;
+      }
+      Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(symspace);
+      qr.setThreshold(TOL);
+      subspace = (qr.householderQ())eval().leftcols(qr.rank());
+    }
+    else {
+      subspace = _subspace;
+    }
+
+    SymGroupRep sub_rep = _rep.coord_transformed_copy(subspace.transpose());
+
+    auto irreps = irrep_decomposition(sub_rep, head_group, symmetrizer_func);
+    for(auto &irrep : irreps) {
+      irrep.trans_mat *= subspace.transpose();
+    }
+    return irreps;
   }
   //*******************************************************************************************
 
   // Finds the transformation matrix that block-diagonalizes this representation into irrep blocks
   // The ROWS of trans_mat are the new basis vectors in terms of the old such that
   // new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
-  std::pair<Eigen::MatrixXd, std::vector<Index>> irrep_trans_mat_and_dims(SymGroupRep const &_rep,
-                                                                          const SymGroup &head_group,
-  std::function<Eigen::MatrixXd(Eigen::Ref<const Eigen::MatrixXd> const &f_subspace)> symmetrizer_func) {
-    std::vector<Eigen::VectorXcd> char_table;
-    std::vector<Index> irrep_dims;
+  std::vector<Local::IrrepInfo> irrep_decomposition(SymGroupRep const &_rep,
+                                                    SymGroup const &head_group,
+                                                    SymRepTools::SymmetrizerFunction const &symmetrizer_func,
+                                                    bool allow_complex) {
+    std::set<Local::IrrepInfo, Local::CharCompare > result(CharCompare());
     if(!_rep.size() || !head_group.size() || !_rep.MatrixXd(head_group[0])) {
-      default_err_log() << "WARNING:  In calc_new_irreps, size of representation is " << _rep.size() << " and MatrixXd address is " << _rep.MatrixXd(head_group[0]) << std::endl
+      default_err_log() << "WARNING:  In irrep_decomposition(), size of representation is " << _rep.size() << " and MatrixXd address is " << _rep.MatrixXd(head_group[0]) << std::endl
                         << "          No valid irreps will be returned.\n";
-      return std::make_pair(Eigen::MatrixXd(), irrep_dims);
+      return std::make_pair(Eigen::MatrixXd(), char_table);
     }
-    assert(rep_check(_rep, head_group, true) && "REPRESENTATION IS ILL-DEFINED!!");
+    assert(Local::_rep_check(_rep, head_group, true) && "REPRESENTATION IS ILL-DEFINED!!");
     int dim(_rep.MatrixXd(head_group[0])->rows());
     std::vector<Eigen::MatrixXcd> commuters;
     std::cout.precision(8);
@@ -1058,13 +750,8 @@ namespace CASM {
     // Initialize kernel as a random orthogonal matrix
     Eigen::MatrixXd kernel(((1000 * iround(Eigen::MatrixXd::Random(dim, dim))).cast<double>() / 1000.).householderQr().householderQ());
 
-
-
-    //std::cout << "Commuter are:\n";
     // Build 'commuters', which span space of real matrices that commute with SymOpReps
-    // 'kernel' is the kernel of trans_mat, and as the loop progresses, 'kernel' shrinks and the rank for trans_mat increases
-    //std::vector<Index> irrep_dims;
-    //std::cout << "~~~~~~~Dimension is " << dim << "\n";
+    // 'kernel' is the kernel of trans_mat, and as the loop progresses, 'kernel' shrinks and the rank of trans_mat increases
     for(Index kci = 0; kci < kernel.cols(); kci++) {
       bool found_new_irreps(false);
       for(Index kcj = kci; kcj < kernel.cols(); kcj++) {
@@ -1078,11 +765,8 @@ namespace CASM {
                  + std::conj(phase[nph]) * kernel.col(kcj) * kernel.col(kci).transpose(); // adjoint of outer product
 
           //apply reynolds operator
-          //std::cout << "Counting indices: ";
           for(Index ns = 0; ns < head_group.size(); ns++) {
-            //std::cout << head_group[ns].index() << "  ";
             tcommute += (*(_rep.MatrixXd(head_group[ns]))) * tmat * (*(_rep.MatrixXd(head_group[ns]))).transpose();
-            //tcommute += phase[nph]*(_rep.MatrixXd(ns)->col(i)) * (_rep.MatrixXd(ns)->row(j))+std::conj(phase[nph])*(_rep.MatrixXd(ns)->col(j)) * (_rep.MatrixXd(ns)->row(i));
           }
 
           //Do Gram-Shmidt while building 'commuters'
@@ -1095,8 +779,6 @@ namespace CASM {
           double tnorm((tcommute.array().conjugate()*tcommute.array()).sum().real());
           if(tnorm > TOL) {
             commuters.push_back(tcommute / tnorm);
-            //std::cout << "\nCommuter " << commuters.size() << "\n";
-            //std::cout << commuters.back().real() << "\n\n";
           }
           else continue;  // Attempt to construct the next commuter...
 
@@ -1109,30 +791,25 @@ namespace CASM {
 
           // magnify the range of eigenvalues to be (I think) independent of matrix dimension by multiplying by dim^{3/2}
           esolve.compute(double(dim)*sqrt(double(dim))*kernel.transpose()*commuters[nc]*kernel);
-          //esolve.compute(double(dim)*sqrt(double(dim))*commuters[nc]);
-          //std::cout << "KERNEL IS:\n" << kernel << "\n\n";
-          //std::cout << esolve.eigenvalues().size() << " EIGENVALUES of commuter " << nc << " are \n" << esolve.eigenvalues().transpose() << "\n";
+
           std::vector<Index> subspace_dims = partition_distinct_values(esolve.eigenvalues());
 
-          // Columns of tmat are orthonormal eigenvectors of commuter in terms of natural basis (they were calculated in terms of kernel as basis)
+          // Columns of tmat are orthonormal eigenvectors of commuter in terms of natural basis
+          // (they were calculated in terms of kernel as basis)
           tmat = kernel * (esolve.eigenvectors().householderQr().householderQ());
-          //tmat = esolve.eigenvectors().householderQr().householderQ();
 
 
           // make transformed copy of the representation
           std::vector<Eigen::MatrixXcd> trans_rep(head_group.size());
           Eigen::MatrixXd block_shape(Eigen::MatrixXd::Zero(kernel.cols(), kernel.cols()));
-          //std::cout << "Transformed representation is:\n";
+
           for(Index i = 0; i < head_group.size(); i++) {
             trans_rep[i] = tmat.adjoint() * (*_rep.MatrixXd(head_group[i])) * tmat;
             block_shape += (trans_rep[i].cwiseProduct(trans_rep[i].conjugate())).real();
-            //std::cout << trans_rep[i] << "\n\n";
           }
-          //std::cout << "Mini block shape:\n" << block_shape << "\n";
+
           Index last_i = 0;
-          //std::cout << "subspace_dims is : " << subspace_dims << "\n";
           for(Index ns = 0; ns < subspace_dims.size(); ns++) {
-            //std::cout << "ns is " << ns << "\n";
             double sqnorm(0);
             Eigen::VectorXcd char_vec(head_group.size());
 
@@ -1148,15 +825,12 @@ namespace CASM {
               sqnorm += std::norm(char_vec[ng]);
             }
 
-            //std::cout << "REPRESENTATION norm = "<< sqnorm << "\n";
             if(almost_equal(sqnorm, double(head_group.size()))) { // this representation is irreducible
-              //std::cout << "THE REPRESENTATION IS IRREDUCIBLE with norm = " << sqnorm << "\n";
-              //std::cout << "Its characters are: " << char_vec << "\n\n";
               Eigen::MatrixXd ttrans_mat(dim, 2 * subspace_dims[ns]);
-              //std::cout << "Vectors in this subspace are:\n" << tmat.block(0, last_i, dim, subspace_dims[ns]) << "\n\n";
+
               ttrans_mat.leftCols(subspace_dims[ns]) = sqrt(2.0) * tmat.block(0, last_i, dim, subspace_dims[ns]).real();
               ttrans_mat.rightCols(subspace_dims[ns]) = sqrt(2.0) * tmat.block(0, last_i, dim, subspace_dims[ns]).imag();
-              //std::cout << "Separated into components:\n" << ttrans_mat << "\n\n";
+
               //Only append to trans_mat if the new columns extend the space (i.e., are orthogonal)
 
               if(almost_zero((ttrans_mat.transpose()*trans_mat).norm(), 0.001)) {
@@ -1165,29 +839,32 @@ namespace CASM {
                 // HouseholderQR is not rank-revealing, and colPivHouseholder mixes up the columns of the Q matrix.
                 colqr.compute(ttrans_mat);
                 Index rnk = colqr.rank();
-                //std::cout << "rank is " << rnk << " and R matrix is \n" << colqr.matrixR() << "\n";
-                irrep_dims.push_back(subspace_dims[ns]);
-                if(rnk == 2 * subspace_dims[ns])
-                  irrep_dims.push_back(subspace_dims[ns]);
+
                 ttrans_mat = Eigen::MatrixXd(qr.householderQ()).leftCols(rnk);
-                //SymGroupRep t_rep(coord_transformed_copy(_rep, ttrans_mat.transpose()));
-                //std::cout << "***Adding columns!\n" << Eigen::MatrixXd(qr.householderQ()).leftCols(rnk) << "\n\n";
-                //trans_mat.block(0, Nfound, dim, rnk) = Eigen::MatrixXd(qr.householderQ()).leftCols(rnk);
-                //trans_mat.block(0, Nfound, dim, rnk) = ttrans_mat * (irrep_symmetrizer(t_rep, head_group, tol)).transpose();
-                //std::cout << "Nfound, dim, rnk: " << Nfound << ", " << dim << ", " << rnk << "\n\n ---------------\n";
-                trans_mat.block(0, Nfound, dim, rnk) = ttrans_mat * symmetrizer_func(ttrans_mat);
-                //std::cout << "trans_mat is \n" << trans_mat << "\n\n";
-                //std::cout << "ttrans_mat is \n" << ttrans_mat << "\n\n";
-                //std::cout << "symmetrizer_func is \n" << symmetrizer_func(ttrans_mat) << "\n\n";
+                auto symmetrizer = symmetrizer_func(ttrans_mat);
+                Local::IrrepInfo t_info(ttrans_mat * symmetrizer.first, char_vec);
+                t_info.directions = symmetrizer.second;
+
+                // extend trans_mat (used to simplify next iteration)
+                trans_mat.block(0, Nfound, dim, rnk) = t_info.trans_mat;
+
+
+                auto it = result.find(t_info);
+                if(it != result.end()) {
+                  t_info.index++;
+                  ++it;
+                }
+
+                while(it != result.end() && it->index > 0) {
+                  t_info.index++;
+                  ++it;
+                }
+                result.emplace_hint(it, std::move(t_info));
+
+
                 Nfound += rnk;
                 found_new_irreps = true;
-                char_table.push_back(char_vec);
-                //std::cout << "trans_mat is now: \n" << trans_mat << "\n\n";
               }
-            }
-            else {
-              //std::cout << "THE REPRESENTATION IS **REDUCIBLE with norm = "<< sqnorm << "\n";
-              //std::cout << "It's characters are: " << char_array << "\n\n";
             }
             last_i += subspace_dims[ns];
           }
@@ -1204,15 +881,9 @@ namespace CASM {
       }
     }
 
-    // make transformed copy of the representation
-    Eigen::MatrixXd block_shape(Eigen::MatrixXd::Zero(dim, dim));
-    //std::cout << "Transformed representation is:\n";
-    for(Index i = 0; i < head_group.size(); i++) {
-      block_shape += (trans_mat.transpose() * (*_rep.MatrixXd(head_group[i])) * trans_mat).cwiseAbs2();
-    }
 
-
-    return std::make_pair(trans_mat.transpose(), irrep_dims);
+    return std::vector<IrrepInfo>(std::make_move_iterator(result.begin()),
+                                  std::make_move_iterator(result.end()));
 
   }
 
@@ -1221,12 +892,12 @@ namespace CASM {
   // Finds the transformation matrix that block-diagonalizes this representation into irrep blocks
   // The ROWS of trans_mat are the new basis vectors in terms of the old such that
   // new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
-  Eigen::MatrixXd irrep_trans_mat(SymGroupRep const &_rep, const SymGroup &head_group) {
-    return irrep_trans_mat_and_dims(_rep,
-                                    head_group,
+  Eigen::MatrixXd irrep_trans_mat(SymGroupRep const &_rep, SymGroup const &head_group) {
+    return full_trans_mat(irrep_decomposition(_rep,
+                                              head_group,
     [&](Eigen::Ref<const Eigen::MatrixXd> const & _subspace) {
-      return irrep_symmetrizer(_rep, head_group, _subspace, TOL); //.transpose();
-    }).first;
+      return irrep_symmetrizer_and_directions(_rep, head_group, _subspace, TOL); //.transpose();
+    }));
   }
 
   //*******************************************************************************************
@@ -1253,14 +924,17 @@ namespace CASM {
     return tarray;
   }
 
-  /// \brief Make copy of (*this) that is transformed so that axes are oriented along high-symmetry direction
-  /// and confined to subspaces that transform as irreps.
-  SymGroupRep symmetry_adapted_copy(SymGroupRep const &_rep, const SymGroup &head_group) {
-    return coord_transformed_copy(_rep, irrep_trans_mat(_rep, head_group));
-  }
   //*******************************************************************************************
 
-  SymGroupRep subset_permutation_rep(const SymGroupRep &permute_rep, const std::vector<std::vector<Index>> &subsets) {
+  /// \brief Make copy of (*this) that is transformed so that axes are oriented along high-symmetry direction
+  /// and confined to subspaces that transform as irreps.
+  SymGroupRep symmetry_adapted_copy(SymGroupRep const &_rep, SymGroup const &head_group) {
+    return coord_transformed_copy(_rep, irrep_trans_mat(_rep, head_group));
+  }
+
+  //*******************************************************************************************
+
+  SymGroupRep subset_permutation_rep(SymGroupRep const &permute_rep, const std::vector<std::vector<Index>> &subsets) {
     SymGroupRep new_rep(SymGroupRep::NO_HOME, permute_rep.size());
     if(permute_rep.has_valid_master())
       new_rep = SymGroupRep(permute_rep.master_group());
@@ -1305,7 +979,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  SymGroupRep permuted_direct_sum_rep(const SymGroupRep &permute_rep, const std::vector<SymGroupRep const *> &sum_reps) {
+  SymGroupRep permuted_direct_sum_rep(SymGroupRep const &permute_rep, const std::vector<SymGroupRep const *> &sum_reps) {
     SymGroupRep new_rep(SymGroupRep::NO_HOME, permute_rep.size());
     if(permute_rep.has_valid_master())
       new_rep = SymGroupRep(permute_rep.master_group());
@@ -1330,7 +1004,7 @@ namespace CASM {
         assert(0);
         exit(1);
       }
-      rep_dims[i] = (*sum_reps[i]).MatrixXd(0)->cols();
+      rep_dims[i] = sum_reps[i]->dim();
     }
 
     std::vector<Index> sum_inds(1, 0);
@@ -1355,7 +1029,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  SymGroupRep kron_rep(const SymGroupRep &LHS, const SymGroupRep &RHS) {
+  SymGroupRep kron_rep(SymGroupRep const &LHS, SymGroupRep const &RHS) {
     if((LHS.has_valid_master() != RHS.has_valid_master()) || (LHS.has_valid_master() && &LHS.master_group() != &RHS.master_group())) {
       default_err_log() << "CRITICAL ERROR: In kron_rep(SymGroupRep,SymGroupRep), taking product of two incompatible SymGroupReps!\n"
                         << "                Exiting...\n";
@@ -1396,58 +1070,66 @@ namespace CASM {
       return result;
     }
 
-    std::vector<IrrepWedge> irreducible_wedges(const SymGroup &head_group, SymGroupRepID id) {
-      SymGroupRep const &srep(head_group.master_group().representation(id));
-      Index dim = srep.MatrixXd(head_group[0])->cols();
+    //*******************************************************************************************
 
-      //Handle for strain symrep
-      SymGroupRep::RemoteHandle trep(head_group, id);
+    std::pair<std::vector<IrrepWedge>, std::vector<IrrepInfo> > irrep_wedges(SymGroup const &head_group, SymGroupRepID id) {
+      return irrep_wedges(head_group.master_group().representation(id), head_group);
+    }
 
-      multivector<Eigen::VectorXd>::X<3> sdirs = special_total_directions(srep, head_group);
-      std::vector<IrrepWedge> result(sdirs.size());
+    //*******************************************************************************************
+
+    std::pair<std::vector<IrrepWedge>, std::vector<IrrepInfo> > irrep_wedges(SymGroupRep const &_rep, SymGroup const &head_group) {
+
+      std::vector<IrrepInfo> irreps = irrep_decomposition(_rep, head_group);
+      std::vector<IrrepWedge> wedges;
+      wedges.reserve(sdirs.size());
       double best_proj, tproj;
 
-      for(Index s = 0; s < sdirs.size(); s++) {
+      for(IrrepInfo const &irrep : IrrepInfo) {
         //1D irreps directions can have positive and negative directions, but we only want to include one.
         //only 1D irreps can have singly-degenerate directions and two singly-degenerate directions indicate
         //the same vector duplicated in positive and negative direction (because they are not equivalent by symmetry)
-        //If sdirs[s][0] is singly degenerate (orbits size == 1) then irrepdim is 1 and we only need one direction to
+        //If irrep.directions[0] is singly degenerate (orbits size == 1) then irrepdim is 1 and we only need one direction to
         //define wedge
-        Index irrepdim = sdirs[s].size();
-        if(irrepdim == 2 && sdirs[s][0].size() == 1)
-          irrepdim = 1;
+        wedges.emplace_back(Eigen::MatrixXd::Zero(irrep.vector_dim(), irrep.irrep_dim()), {});
 
-        result[s].axes = Eigen::MatrixXd::Zero(dim, irrepdim);
-        result[s].axes.col(0) = sdirs[s][0][0];
-        result[s].mult.push_back(sdirs[s][0].size());
-        for(Index i = 1; i < irrepdim; i++) {
+        wedges.back().axes.col(0) = irrep.directions[0][0];
+        wedges.back().mult.push_back(irrep.directions[0].size());
+        for(Index i = 1; i < irrep.irrep_dim(); i++) {
           Index j_best = 0;
-          best_proj = (result[s].axes.transpose() * sdirs[s][i][0]).sum();
-          for(Index j = 1; j < sdirs[s][i].size(); j++) {
-            tproj = (result[s].axes.transpose() * sdirs[s][i][j]).sum();
+          best_proj = (wedges.back().axes.transpose() * irrep.directions[i][0]).sum();
+          for(Index j = 1; j < irrep.directions[i].size(); j++) {
+            tproj = (wedges().axes.transpose() * irrep.directions[i][j]).sum();
             if(tproj > best_proj) {
               best_proj = tproj;
               j_best = j;
             }
           }
 
-          result[s].axes.col(i) = sdirs[s][i][j_best];
+          wedges.back().axes.col(i) = irrep.directions[i][j_best];
+          wedges.back().mult.push_back(irrep.directions[i].size());
         }
       }
-      return result;
+      return std::pair<std::vector<IrrepWedge>, std::vector<IrrepInfo> >(std::move(wedges), std::move(irreps));
     }
-
-
-
 
     //*******************************************************************************************
 
-    std::vector<SubWedge > symrep_subwedges(SymGroup const &head_group, SymGroupRepID id) {
+    std::pair<std::vector<SubWedge>, std::vector<IrrepInfo> > symrep_subwedges(SymGroup const &head_group, SymGroupRepID id) {
+      return symrep_subwedges(head_group.master_group().representation(id), head_group);
+    }
+
+    //*******************************************************************************************
+
+    std::pair<std::vector<SubWedge>, std::vector<IrrepInfo> > symrep_subwedges(SymGroupRep const &_rep, SymGroup const &head_group) {
       auto irrep_wedge_compare = [](const IrrepWedge & a, const IrrepWedge & b)->bool {
         return Eigen::almost_equal(a.axes, b.axes);
       };
 
-      auto tot_wedge_compare = [irrep_wedge_compare](const std::vector<IrrepWedge> &a, const std::vector<IrrepWedge> &b)->bool {
+      auto tot_wedge_compare =
+      [irrep_wedge_compare](const std::vector<IrrepWedge> &a, const std::vector<IrrepWedge> &b)->bool {
+        if(a.size() != b.size())
+          return false;
         for(auto ita = a.begin(), itb = b.begin(); ita != a.end(); ++ita, ++itb)
           if(!irrep_wedge_compare(*ita, *itb))
             return false;
@@ -1455,24 +1137,15 @@ namespace CASM {
         return true;
       };
 
-
-      std::vector<SubWedge> result;
-      SymGroupRep const &srep(head_group.master_group().representation(id));
-      if(!srep.MatrixXd(0))
+      if(!_rep.MatrixXd(0))
         throw std::runtime_error("In symrep_subwedges, SymGroupRep does not describe matrix representation");
 
-      //for(SymOp const &op : head_group) {
-      //std::cout << "OP " << op.index() << ":\n" << *(srep[op.index()]->MatrixXd()) << "\n\n";
-      //}
-
-      std::vector<IrrepWedge> init_wedges = irreducible_wedges(head_group, id);
-      //for(Index i=0; i<init_wedges.size(); ++i){
-      //std::cout << "IrrepWedge #" << i+1 << ":\n" << init_wedges[i].axes.transpose() << "\n\n";
-      //}
+      auto init_wedges_and_irreps = irrep_wedges(head_group, id);
+      std::vector<IrrepWedge> const &init_wedges = init_wedges_and_irreps.first;
 
 
-      //Handle for strain symrep
-      SymGroupRep::RemoteHandle trep(head_group, id);
+      std::vector<SubWedge> result;
+
       //irrep_wedge_orbits[w] is orbit of wedges[w]
       multivector<IrrepWedge>::X<2> irrep_wedge_orbits;
       irrep_wedge_orbits.reserve(init_wedges.size());
@@ -1484,8 +1157,8 @@ namespace CASM {
         irrep_wedge_orbits.push_back({wedge});
 
         //Start getting orbit of wedges[w]
-        for(Index p = 0; p < trep.size(); p++) {
-          IrrepWedge test_wedge((*(trep[p]->MatrixXd()))*wedge.axes,
+        for(Index p = 0; p < head_group.size(); p++) {
+          IrrepWedge test_wedge((*(_rep[head_group[p].index()]->MatrixXd()))*wedge.axes,
                                 wedge.mult);
 
           if(contains(irrep_wedge_orbits.back(), test_wedge, irrep_wedge_compare))
@@ -1494,14 +1167,14 @@ namespace CASM {
         }
 
         max_equiv.push_back(irrep_wedge_orbits.back().size() - 1);
-        max_equiv[0] = 0;
       }
-
-
+      max_equiv[0] = 0;
 
       //Counter over combinations of equivalent wedges
+      Counter<std::vector<Index> > wcount(std::vector<Index>(init_wedges.size(), 0),
+                                          max_equiv,
+                                          std::vector<Index>(init_wedges.size(), 1));
 
-      Counter<std::vector<Index> > wcount(std::vector<Index>(init_wedges.size(), 0), max_equiv, std::vector<Index>(init_wedges.size(), 1));
       multivector<IrrepWedge>::X<3> tot_wedge_orbits;
       for(; wcount; ++wcount) {
         std::vector<IrrepWedge> twedge = init_wedges;
@@ -1518,10 +1191,10 @@ namespace CASM {
         continue;
 
         tot_wedge_orbits.push_back({twedge});
-        result.push_back({twedge});
-        for(Index p = 0; p < trep.size(); p++) {
+        result.emplace_back(twedge);
+        for(Index p = 0; p < head_group.size(); p++) {
           for(Index i = 0; i < twedge.size(); i++)
-            twedge[i].axes = (*(trep[p]->MatrixXd())) * result.back().irrep_wedges()[i].axes;
+            twedge[i].axes = (*(_rep[head_group[p].index()]->MatrixXd())) * result.back().irrep_wedges()[i].axes;
           if(!contains(tot_wedge_orbits.back(), twedge, tot_wedge_compare)) {
             //std::cout << "Adding subwedge!\n";
             tot_wedge_orbits.back().push_back(twedge);
@@ -1529,7 +1202,7 @@ namespace CASM {
         }
       }
 
-      return result;
+      return std::pair<std::vector<SubWedge>, std::vector<IrrepInfo> >(std::move(result), std::move(init_wedges_and_irreps.second));
     }
 
   }

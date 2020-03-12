@@ -8,14 +8,52 @@ namespace CASM {
   class SymGroup;
 
   namespace SymRepTools {
+
+    using Symmetrizer = std::pair<Eigen::MatrixXcd, multivector<Eigen::VectorXcd>::X<2> >;
+    using SymmetrizerFunction = std::function<Symmetrizer(Eigen::Ref<const Eigen::MatrixXcd> const &f_subspace)>;
+
+    struct IrrepInfo {
+      IrrepInfo(Eigen::MatrixXcd _trans_mat, Eigen::VectorXcd _characters) :
+        index(0),
+        trans_mat(std::move(_trans_mat)),
+        characters(std::move(_characters)) {
+        complex = !almost_zero(trans_mat.imag());
+      }
+
+      // Dimension of irreducible vector space
+      Index irrep_dim() const {
+        return trans_mat.cols();
+      }
+
+      // Dimension of initial vector space
+      Index vector_dim() const {
+        return trans_mat.cols();
+      }
+
+      /// true if any character has non-zero imaginary component, false otherwise
+      bool complex;
+
+      /// true if irrep is real but was created as direct sum of two complex irreps
+      /// in this case, the 'irrep' is reducible, but this is the most-reduced
+      /// representation that can still have real basis vectors
+      bool pseudo_irrep;
+      Index index;
+      Eigen::MatrixXcd trans_mat;
+      Eigen::VectorXcd characters;
+      std::vector<std::vector<Eigen::VectorXd> > directions;
+    };
+
+
     struct IrrepWedge {
-      IrrepWedge() {}
-      IrrepWedge(Eigen::Ref<const Eigen::MatrixXd> const &_axes,
+
+      IrrepWedge(Eigen::MatrixXd _axes,
                  std::vector<Index> _mult) :
-        axes(_axes),
-        mult(_mult) {}
+        axes(std::move(_axes)),
+        mult(std::move(_mult)) {}
+
+      IrrepInfo irrep_info;
+
       Eigen::MatrixXd axes;
-      std::vector<Index> mult;
     };
 
     class SubWedge {
@@ -42,14 +80,22 @@ namespace CASM {
     };
 
 
-    std::vector<IrrepWedge> irreducible_wedges(const SymGroup &head_group, SymGroupRepID id);
-    std::vector<SubWedge> symrep_subwedges(SymGroup const &_group, SymGroupRepID id);
+    std::pair<std::vector<IrrepWedge>, std::vector<IrrepInfo> > irrep_wedges(SymGroup const &head_group, SymGroupRepID id);
+    std::pair<std::vector<IrrepWedge>, std::vector<IrrepInfo> > irrep_wedges(SymGroupRep const &_rep, SymGroup const &head_group);
+
+    std::pair<std::vector<SubWedge>, std::vector<IrrepInfo> > symrep_subwedges(SymGroup const &_group, SymGroupRepID id);
+    std::pair<std::vector<SubWedge>, std::vector<IrrepInfo> > symrep_subwedges(SymGroupRep const &_rep, SymGroup const &head_group);
+
   }
 
-  bool rep_check(SymGroupRep const &_rep, SymGroup const &head_group, bool verbose);
+  struct VectorSpaceSymReport {
+    std::vector<Eigen::MatrixXd> symgroup_rep;
+    std::vector<IrrepInfo> irreps;
+    std::vector<SymRepTools::SubWedge> irreducible_wedge;
+    Eigen::MatrixXd symmetry_adapted_dof_subspace;
+  };
 
-  /// \brief Find irrep decomposition of _rep and add them to irrep listing in sub_group
-  void calc_new_irreps(SymGroupRep const &_rep, const SymGroup &sub_group, int max_iter = 1000);
+  VectorSpaceSymReport vector_space_sym_report(SymGroupRep const &_rep, SymGroup const &head_group, bool calc_wedges = false);
 
   /// \brief Assuming that _rep is an irrep of head_group, find high-symmetry directions
   /// throws if _rep is not an irrep
@@ -80,18 +126,23 @@ namespace CASM {
   /// the subset of SymOpRepresentations specified by 'subgroup'.
   /// The ROWS of trans_mat are the new basis vectors in terms of the old such that
   /// new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
-  Eigen::MatrixXd irrep_symmetrizer(SymGroupRep const &_rep,
-                                    const SymGroup &head_group,
-                                    double vec_compare_tol);
+  SymRepTools::Symmetrizer irrep_symmetrizer_and_directions(SymGroupRep const &_rep,
+                                                            const SymGroup &head_group,
+                                                            double vec_compare_tol);
 
   /// Find a new coordinate system oriented along high-symmetry directions in vector space spanned by
   /// matrix argument '_subspace', using as reference symmetry the subset of SymOpRepresentations specified by 'subgroup'.
   /// The ROWS of trans_mat are the new basis vectors in terms of the old such that
   /// new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
-  Eigen::MatrixXd irrep_symmetrizer(SymGroupRep const &_rep,
-                                    const SymGroup &head_group,
-                                    Eigen::Ref<const Eigen::MatrixXd> const &_subspace,
-                                    double vec_compare_tol);
+  SymRepTools::Symmetrizer irrep_symmetrizer_and_directions(SymGroupRep const &_rep,
+                                                            const SymGroup &head_group,
+                                                            Eigen::Ref<const Eigen::MatrixXd> const &_subspace,
+                                                            double vec_compare_tol);
+
+  Eigen::MatrixXcd irrep_symmetrizer_from_directions(multivector<Eigen::VectorXd>::X<2> const &special_directions,
+                                                     Eigen::Ref<const Eigen::MatrixXd> const &_subspace,
+                                                     double vec_compare_tol);
+
 
 
   /// \brief Matrix B such that B(i,j) is sum of squares of each (i,j) matrix element over SymOpRepresentations in _rep corresponding to operations of head_group
@@ -161,21 +212,29 @@ namespace CASM {
   /// the new basis vectors in terms of the old such that
   /// new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
   /// The second element is the dimension of irreducible subspaces, ordered identically to the rows of the transformation matrix
-  std::pair<Eigen::MatrixXd, std::vector<Index>> irrep_trans_mat_and_dims(SymGroupRep const &_rep,
-                                                                          const SymGroup &head_group,
-                                                                          std::function<Eigen::MatrixXd(Eigen::Ref<const Eigen::MatrixXd> const &f_subspace)> symmetrizer_func);
+  std::pair<Eigen::MatrixXd, std::vector<Eigen::VectorXcd> > irrep_trans_mat_and_characters(SymGroupRep const &_rep,
+      const SymGroup &head_group,
+      SymrepTools::SymmetrizerFunctions symmetrizer_func);
 
   /// \brief Finds the transformation matrix that block-diagonalizes this representation of head_group into irrep blocks
   /// It does not rely on the character table, but instead utilizes a brute-force method
   /// \param head_group The group with respect to which irreps are determined, which may be a subset of all operations in this representation
-  /// \result Pair, with first element being the transformation matrix with the ROWS comprising
-  /// the new basis vectors in terms of the old such that
-  /// new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
-  /// The second element is the dimension of irreducible subspaces, ordered identically to the rows of the transformation matrix
-  std::pair<Eigen::MatrixXd, std::vector<Index>> irrep_trans_mat_and_dims(SymGroupRep const &_rep,
-                                                                          const SymGroup &head_group,
-                                                                          std::function<Eigen::MatrixXd(Eigen::Ref<const Eigen::MatrixXd> const &f_subspace)> symmetrizer_func,
-                                                                          Eigen::Ref<const Eigen::MatrixXd> const &_subspace);
+  /// \result vector of IrrepInfo objects. Irreps are ordered by dimension, with identity first (if present)
+  /// repeated irreps are sequential, and are distinguished by IrrepInfo::index
+  //OLD the new basis vectors in terms of the old such that
+  //OLD new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
+  //OLD The second element is the dimension of irreducible subspaces, ordered identically to the rows of the transformation matrix
+  std::vector<IrrepInfo> irrep_decomposition(SymGroupRep const &_rep,
+                                             SymGroup const &head_group);
+
+  std::vector<IrrepInfo> irrep_decomposition(SymGroupRep const &_rep,
+                                             const SymGroup &head_group,
+                                             Eigen::Ref<const Eigen::MatrixXd> const &_subspace);
+
+  std::vector<IrrepInfo> irrep_decomposition(SymGroupRep const &_rep,
+                                             const SymGroup &head_group,
+                                             SymRepTools::SymmetrizerFunction symmetrizer_func,
+                                             Eigen::Ref<const Eigen::MatrixXd> const &_subspace);
 
 
   /// \brief Make copy of (*this) that is transformed so that axes are oriented along high-symmetry direction

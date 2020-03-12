@@ -6,6 +6,31 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 
 
+namespace Eigen {
+  /// \brief Prepare an element for comparison
+  ///
+  /// - Attempts to find a sparse set of spanning vectors, and sort them so that subspace matrix is nearly upper triangular (if possible)
+  /// - Also enures that first nonzero element of each row (if there is one) is positive
+  template<typename Derived>
+  representation_prepare_impl(Eigen::MatrixBase<Derived> const &obj, double _tol) const {
+    //std::cout << "reduced_column_echelon of \n" << obj << "\n is\n" <<reduced_column_echelon(obj, this->tol()) << "\n";
+    Eigen::MatrixBase<Derived> result = Eigen::MatrixBase<Derived>(reduced_column_echelon(obj, _tol).householderQr().householderQ()).leftCols(obj.cols());
+    Index col = 0;
+    for(Index row = 0; row < result.rows(); ++row) {
+      Index i = 0;
+      for(i = col; i < result.cols(); ++i) {
+        if(!almost_zero(result(row, i), _tol)) {
+          if(result(row, i) < 0)
+            result.col(i) *= -1;
+          ++col;
+          break;
+        }
+      }
+    }
+    return result;
+  }
+}
+
 namespace CASM {
 
   /// \brief Return tolerance
@@ -61,21 +86,7 @@ namespace CASM {
   template<typename Element, typename SymApply>
   Element SubspaceSymCompare<Element, SymApply>::
   representation_prepare_impl(Element obj) const {
-    //std::cout << "reduced_column_echelon of \n" << obj << "\n is\n" <<reduced_column_echelon(obj, this->tol()) << "\n";
-    Eigen::MatrixXd result = Eigen::MatrixXd(reduced_column_echelon(obj, this->tol()).householderQr().householderQ()).leftCols(obj.cols());
-    Index col = 0;
-    for(Index row = 0; row < result.rows(); ++row) {
-      Index i = 0;
-      for(i = col; i < result.cols(); ++i) {
-        if(!almost_zero(result(row, i), this->tol())) {
-          if(result(row, i) < 0)
-            result.col(i) *= -1;
-          ++col;
-          break;
-        }
-      }
-    }
-    return result;
+    return representation_prepare_impl(obj, this->tol());
   }
 
 

@@ -192,12 +192,6 @@ namespace CASM {
 
     std::vector<SymGroup> unique_subgroups() const;
 
-    ///Space group (added by Donghee );
-    std::vector<Index> get_rotation_groups()const;
-
-    std::map<std::string, std::string> point_group_info()const;
-    void print_space_group_info(std::ostream &out) const;
-
     ///Fill up a SymGroup with *this minus the shifts
     SymGroup copy_no_trans(bool keep_repeated = false) const;
 
@@ -268,6 +262,15 @@ namespace CASM {
     mutable double m_max_error;
 
   };
+
+  ///Space group (added by Donghee );
+  std::vector<Index> get_rotation_groups(SymGroup const &group);
+
+  std::map<std::string, std::string> point_group_info(SymGroup const &group);
+
+  std::map<std::string, std::string> nonmagnetic_point_group_info(SymGroup const &group);
+
+  std::string space_group_info_string(SymGroup const &group);
 
   jsonParser &to_json(const SymGroup &group, jsonParser &json);
 

@@ -219,18 +219,6 @@ namespace CASM {
       return m_group_rep->at(m_subgroup_op_inds[i]);
     }
 
-    const SymOp &sym_op(Index i) const {
-      return (m_group_rep->master_group())[m_subgroup_op_inds[i]];
-    }
-
-    Index ind_inverse(Index i) const {
-      return find_index(m_subgroup_op_inds, (m_group_rep->master_group()).ind_inverse(m_subgroup_op_inds[i]));
-    }
-
-    Index ind_prod(Index i, Index j) const {
-      return find_index(m_subgroup_op_inds, (m_group_rep->master_group()).ind_prod(m_subgroup_op_inds[i], m_subgroup_op_inds[j]));
-    }
-
     bool operator==(const SymGroupRepHandle &RHS) const {
       return m_group_rep == RHS.m_group_rep && m_subgroup_op_inds == RHS.m_subgroup_op_inds;
     }
