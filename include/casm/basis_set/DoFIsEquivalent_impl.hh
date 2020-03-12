@@ -49,7 +49,7 @@ namespace CASM {
       return false;
     Index j;
     for(Index i = 0; i < m_dof.size(); ++i) {
-      OccType t_occ = copy_apply(_op, m_dof[i]);
+      OccType t_occ = sym::copy_apply(_op, m_dof[i]);
       for(j = 0; j < _other.size(); ++j) {
         if(t_occ.identical(_other[j], m_tol)) {
           m_P.set(i) = j;

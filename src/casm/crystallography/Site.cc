@@ -482,7 +482,7 @@ namespace CASM {
 
       std::vector<xtal::Molecule> transformed_occupants = site.occupant_dof();
       for(xtal::Molecule &occ : transformed_occupants) {
-        occ.apply_sym(op);
+        apply(op, occ);
       }
 
       std::map<std::string, xtal::SiteDoFSet> transformed_dof;

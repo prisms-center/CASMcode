@@ -234,14 +234,6 @@ namespace CASM {
       ///Finds same shift as min_dist but returns shift(CART).transpose()*metric*shift(CART)
       double min_dist2(const Coordinate &neighbor, const Eigen::Ref<const Eigen::Matrix3d> &metric) const;
 
-      ///Transform coordinate by symmetry operation (including translation)
-      /* Coordinate &apply_sym(const SymOp &op); //AAB */
-
-      /* template <typename ExternSymOp> */
-      /* Coordinate &apply_sym(const ExternSymOp &op) { */
-      /*   return this->apply_sym(adapter::Adapter<SymOp, ExternSymOp>()(op)); */
-      /* } */
-
     private:
 
       void _update_cart() {
