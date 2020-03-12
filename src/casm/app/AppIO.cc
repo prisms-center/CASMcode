@@ -408,9 +408,7 @@ namespace CASM {
         ojson[j] = mol_names[i][j];
         if(prim.basis()[i].occupant_dof()[j].name() != mol_names[i][j]
            || !prim.basis()[i].occupant_dof()[j].is_atomic()) {
-          jsonParser &ojson = to_json(prim.basis()[i].occupant_dof()[j], json["species"][mol_names[i][j]], c2f_mat);
-          //if(prim.basis()[i].occupant_dof()[j].name()!=mol_names[i][j])
-          //ojson["name"]=prim.basis()[i].occupant_dof()[j].name();
+          to_json(prim.basis()[i].occupant_dof()[j], json["species"][mol_names[i][j]], c2f_mat);
         }
       }
 
@@ -852,8 +850,8 @@ namespace CASM {
 
   ProtoFuncsPrinter::ProtoFuncsPrinter(ClexBasis const &_clex_basis, PrimType_ptr _prim_ptr, OrbitPrinterOptions const &_opt) :
     SitesPrinter(_opt),
-    prim_ptr(_prim_ptr),
-    clex_basis(_clex_basis) {
+    clex_basis(_clex_basis),
+    prim_ptr(_prim_ptr) {
     for(auto const &dofset : clex_basis.site_bases()) {
       for(BasisSet const &bset : dofset.second) {
         if(dofset.first != "occ"

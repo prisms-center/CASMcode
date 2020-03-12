@@ -17,16 +17,17 @@ namespace CASM {
     UpdateT<_ConfigType>::UpdateT(
       const PrimClex &primclex,
       const StructureMap<ConfigType> &mapper,
-      fs::path report_dir) :
+      std::string report_dir) :
       ConfigData(primclex, null_log(), TypeTag<ConfigType>()),
       m_structure_mapper(mapper),
       m_report_dir(report_dir) {}
 
 
-
     /// \brief Re-parse calculations 'from' all selected configurations
     template<typename _ConfigType>
     void UpdateT<_ConfigType>::update(const DB::Selection<ConfigType> &selection, bool force) {
+
+      Log &log(this->primclex().log());
       // vector of Mapping results
       std::vector<ConfigIO::Result> results;
       for(const auto &val : selection.data()) {
@@ -36,7 +37,7 @@ namespace CASM {
           continue;
         }
         std::string name = val.first;
-        fs::path pos = calc_properties_path(name, primclex());
+        std::string pos = CASM::calc_properties_path(this->primclex(), name);
 
         // reasons to update data or not:
         //
@@ -54,24 +55,35 @@ namespace CASM {
         //       update props
         //
 
-        if(!has_existing_files(name) || !fs::exists(pos) || (!force && no_change(name))) {
+        if((!force && this->no_change(name))) {
           continue;
         }
-        // erase existing data (not files), unlinking relaxation mappings && resetting 'best' data
-        db_props().erase_via_from(name);
 
+        // erase existing data (not files), unlinking relaxation mappings && resetting 'best' data
+        db_props().erase_via_origin(pos);
+
+        if(!fs::exists(pos))
+          continue;
+
+        log << "Updating data records for " << name << std::endl;
         std::vector<ConfigIO::Result> tvec;
         auto config_it = db_config<ConfigType>().find(name);
         if(config_it == db_config<ConfigType>().end())
-          m_structure_mapper.map(resolve_struc_path(pos, primclex()), nullptr, std::back_inserter(tvec));
+          m_structure_mapper.map(resolve_struc_path(pos, primclex()),
+                                 this->primclex().settings().template properties<ConfigType>(),
+                                 nullptr,
+                                 std::back_inserter(tvec));
         else
-          m_structure_mapper.map(resolve_struc_path(pos, primclex()), notstd::make_unique<ConfigType>(*config_it), std::back_inserter(tvec));
+          m_structure_mapper.map(resolve_struc_path(pos, primclex()),
+                                 this->primclex().settings().template properties<ConfigType>(),
+                                 notstd::make_unique<ConfigType>(*config_it),
+                                 std::back_inserter(tvec));
         for(auto &res : tvec) {
           results.push_back(res);
           // if mapped && has data, insert
-          if(!res.map_result.props.to.empty() && res.has_data) {
+          if(!res.properties.to.empty() && res.has_data) {
             // insert data:
-            db_props().insert(res.map_result.props);
+            db_props().insert(res.properties);
           }
         }
 
@@ -100,36 +112,39 @@ namespace CASM {
       std::vector<ConfigIO::Result> conflict;
       std::vector<ConfigIO::Result> unstable;
       std::vector<ConfigIO::Result> unselected;
+      std::vector<ConfigIO::Result> new_config;
 
       std::string prefix = "update_";
       prefix += traits<ConfigType>::short_name;
 
       std::map<std::string, int> all_to;
 
-      for(long i = 0; i < results.size(); ++i) {
-        const auto &res = results[i];
-        if(res.map_result.props.to.empty()) {
+      for(auto const &res : results) {
+        if(res.properties.to.empty()) {
           fail.push_back(res);
         }
         else {
-          if(all_to.find(res.map_result.props.to) == all_to.end()) {
-            all_to.insert(std::make_pair(res.map_result.props.to, 0));
+          auto it = all_to.find(res.properties.to);
+          if(it == all_to.end()) {
+            it = all_to.insert(std::make_pair(res.properties.to, 0)).first;
           }
-          all_to[res.map_result.props.to]++;
+          ++(it->second);
+          if(res.properties.origin != CASM::calc_properties_path(this->primclex(), res.properties.to)) {
+            unstable.push_back(res);
+            if(res.is_new_config) {
+              new_config.push_back(res);
+            }
+            if(!selection.is_selected(res.properties.to)) {
+              unselected.push_back(res);
+            }
+          }
           success.push_back(res);
         }
       }
 
-      for(long i = 0; i < results.size(); ++i) {
-        const auto &res = results[i];
-        if(all_to[res.map_result.props.to] > 1) {
+      for(auto const &res : results) {
+        if(all_to[res.properties.to] > 1) {
           conflict.push_back(res);
-          if(res.map_result.props.from != res.map_result.props.to) {
-            unstable.push_back(res);
-            if(!selection.is_selected(res.map_result.props.to)) {
-              unselected.push_back(res);
-            }
-          }
         }
       }
 
@@ -137,55 +152,67 @@ namespace CASM {
 
       if(fail.size()) {
 
-        fs::path p = m_report_dir / (prefix + "_fail");
+        fs::path p = fs::path(m_report_dir) / (prefix + "_fail");
         fs::ofstream sout(p);
 
         primclex().log() << "WARNING: Could not map " << fail.size() << " results." << std::endl;
-        primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
+        primclex().log() << "  See detailed report: " << p  << std::endl << std::endl;
 
         sout << formatter(fail.begin(), fail.end());
       }
 
       if(success.size()) {
 
-        fs::path p = m_report_dir / (prefix + "_map_success");
+        fs::path p = fs::path(m_report_dir) / (prefix + "_success");
         fs::ofstream sout(p);
 
         primclex().log() << "Successfully mapped " << success.size() << " results." << std::endl;
-        primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
+        primclex().log() << "  See detailed report: " << p  << std::endl << std::endl;
 
         sout << formatter(success.begin(), success.end());
       }
 
       if(conflict.size()) {
 
-        fs::path p = m_report_dir / (prefix + "_map_conflict");
+        fs::path p = fs::path(m_report_dir) / (prefix + "_conflict");
         fs::ofstream sout(p);
 
         primclex().log() << "WARNING: Found " << conflict.size() << " conflicting relaxation results." << std::endl;
-        primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
+        primclex().log() << "  See detailed report: " << p  << std::endl << std::endl;
 
         sout << formatter(conflict.begin(), conflict.end());
       }
 
       if(unstable.size()) {
 
-        fs::path p = m_report_dir / (prefix + "_unstable");
+        fs::path p = fs::path(m_report_dir) / (prefix + "_unstable");
         fs::ofstream sout(p);
 
         primclex().log() << "WARNING: Found " << unstable.size() << " unstable relaxations." << std::endl;
-        primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
+        primclex().log() << "  See detailed report: " << p  << std::endl << std::endl;
 
         sout << formatter(unstable.begin(), unstable.end());
       }
 
       if(unselected.size()) {
 
-        fs::path p = m_report_dir / (prefix + "_unselected");
+        fs::path p = fs::path(m_report_dir) / (prefix + "_unselected");
         fs::ofstream sout(p);
 
         primclex().log() << "WARNING: Found " << unselected.size() << " unstable relaxations to unselected configurations." << std::endl;
-        primclex().log() << "  See: " << p << " for details" << std::endl << std::endl;
+        primclex().log() << "  See detailed report: " << p  << std::endl << std::endl;
+
+        sout << formatter(unselected.begin(), unselected.end());
+      }
+
+      if(new_config.size()) {
+
+        fs::path p = fs::path(m_report_dir) / (prefix + "_new");
+        fs::ofstream sout(p);
+
+        primclex().log() << "WARNING: Found " << new_config.size() << " unstable relaxations to new configurations." << std::endl
+                         << "  These configurations have been added to the project." << std::endl;
+        primclex().log() << "  See detailed report: " << p  << std::endl << std::endl;
 
         sout << formatter(unselected.begin(), unselected.end());
       }

@@ -22,7 +22,7 @@ namespace CASM {
 
     private:
 
-      typedef typename std::set<MappedProperties>::const_iterator base_iterator;
+      typedef typename std::map<std::string, MappedProperties>::const_iterator base_iterator;
       friend jsonPropertiesDatabase;
 
       jsonPropertiesDatabaseIterator(base_iterator _it) :
@@ -41,7 +41,7 @@ namespace CASM {
       }
 
       const MappedProperties &dereference() const override {
-        return *m_it;
+        return m_it->second;
       }
 
       long distance_to(const PropertiesDatabaseIteratorBase &other) const override {
@@ -82,11 +82,11 @@ namespace CASM {
       iterator find_via_to(std::string to_configname) const override;
 
       /// \brief Return iterator to MappedProperties that is from the specified config
-      iterator find_via_from(std::string from_configname) const override;
+      iterator find_via_origin(std::string origin) const override;
 
 
-      /// \brief Names of all configurations that relaxed 'from'->'to'
-      std::set<std::string, Compare> relaxed_from_all(std::string to_configname) const override;
+      /// \brief Names of all configurations that relaxed 'origin'->'to'
+      std::set<std::string, Compare> all_origins(std::string to_configname) const override;
 
       /// \brief Change the score method for a single configuration
       void set_score_method(std::string to_configname, const ScoreMappedProperties &score) override;
@@ -94,7 +94,7 @@ namespace CASM {
 
     private:
 
-      iterator _iterator(std::set<MappedProperties>::const_iterator _it) const;
+      iterator _iterator(jsonPropertiesDatabaseIterator::base_iterator _it) const;
 
       /// \brief Private _insert MappedProperties, without modifying 'relaxed_from'
       std::pair<iterator, bool> _insert(const MappedProperties &value) override;
@@ -103,7 +103,7 @@ namespace CASM {
       iterator _erase(iterator pos) override;
 
       /// \brief Names of all configurations that relaxed 'from'->'to'
-      void _set_relaxed_from_all(
+      void _set_all_origins(
         std::string to_configname,
         const std::set<std::string, Compare> &_set) override;
 
@@ -120,13 +120,13 @@ namespace CASM {
       ScoreMappedProperties m_default_score;
 
       // a key whose 'from' value is modified to find MappedProperties in m_data
-      mutable MappedProperties m_key;
+      //mutable MappedProperties m_key;
 
       // the MappedProperties container
-      std::set<MappedProperties> m_data;
+      std::map<std::string, MappedProperties> m_data;
 
       // to -> {from, from, ...}, used to find best mapping
-      std::map<std::string, std::set<std::string, Compare> > m_relaxed_from;
+      std::map<std::string, std::set<std::string, Compare> > m_origins;
 
     };
 

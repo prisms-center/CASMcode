@@ -27,18 +27,6 @@ namespace CASM {
                                     species_mode,
                                     std::move(allowed_species)) {
 
-        for(Index i = 0; i < _allowed_species().size(); ++i) {
-          for(std::string const &sp : _allowed_species()[i]) {
-            if(sp == "Va" || sp == ("VA") || sp == "va") {
-              m_va_allowed.insert(i);
-              ++m_max_n_species["Va"];
-            }
-            else {
-              ++m_max_n_species[sp];
-            }
-          }
-        }
-        _max_n_va() = m_va_allowed.size();
       }
 
       template <typename ExternSymOpVector>
@@ -51,14 +39,12 @@ namespace CASM {
 
       virtual ~SimpleStrucMapCalculator() {}
 
-      std::map<std::string, Index> const &max_n_species() const {
-        return m_max_n_species;
-      }
-
       std::vector<Eigen::Vector3d> translations(MappingNode const &_node,
                                                 SimpleStructure const &child_struc) const override;
 
       /// \brief Creates copy of _child_struc by applying isometry, lattice transformation, translation, and site permutation of _node
+      /// Result has all sites within the unit cell. After setting resolution, the lattice and sites of _child_struc match the setting
+      /// of the parent structure onto which it has been mapped (as defined by '_node')
       virtual SimpleStructure resolve_setting(MappingNode const &_node,
                                               SimpleStructure const &_child_struc) const override;
 
@@ -73,10 +59,6 @@ namespace CASM {
                                  SimpleStructure const &child_struc) const;
 
     private:
-      bool _sublat_allows_va(Index b) const {
-        return m_va_allowed.count(b);
-      }
-
       /// \brief Make an exact copy of the calculator (including any initialized members)
       virtual StrucMapCalculatorInterface *_clone() const override {
         return new SimpleStrucMapCalculator(*this);
@@ -90,10 +72,10 @@ namespace CASM {
         return new SimpleStrucMapCalculator(std::move(_parent), std::move(_point_group), _species_mode, std::move(_allowed_species));
       }
 
-      std::unordered_set<Index> m_va_allowed;
+      /// \brief Initializes child_struc.mol_info based on child_struc.atom_info and _node. Default behavior simply copies atom_info to mol_info
+      virtual bool _assign_molecules(MappingNode &_node,
+                                     SimpleStructure const &child_struc) const;
 
-      /// \brief maximum allowed number of each species
-      std::map<std::string, Index> m_max_n_species;
     };
   }
 }

@@ -16,6 +16,28 @@
 namespace CASM {
   namespace DoF_impl {
 
+    /// \brief Retrieve the standard values for a DoF from dictionary of properties from a SimpleStructure or MappedProperties object
+    ///  Returns matrix with standard values, and names of properties that were used to construct the matrix
+    std::pair<Eigen::MatrixXd, std::set<std::string> > StrainDoFTraits::find_values(std::map<std::string, Eigen::MatrixXd> const &values) const {
+      std::pair<Eigen::MatrixXd, std::set<std::string> > result;
+      for(auto const &val : values) {
+        std::string valname = AnisoValTraits::name_suffix(val.first);
+        auto pos = valname.find("strain");
+        if(pos != std::string::npos) {
+          StrainConverter c(valname.substr(0, pos));
+          Eigen::Matrix3d F = c.unrolled_strain_metric_to_F(val.second);
+          c.set_mode(m_metric);
+
+          result.first = c.unrolled_strain_metric(F);
+          result.second.insert(val.first);
+          return result;
+        }
+      }
+      throw std::runtime_error("Could not identify DoF values for DoF '" + (this->name()) + "' from provided list of tabulated structure properties.");
+      return result;
+    }
+
+
     /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
     std::vector<BasisSet> StrainDoFTraits::construct_site_bases(Structure const &_prim,
                                                                 std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,

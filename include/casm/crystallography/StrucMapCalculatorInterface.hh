@@ -25,7 +25,7 @@ namespace CASM {
       using FixedSpecies = std::map<std::string, Index>;
 
       // List of species allowed at each site of primitive
-      using AllowedSpecies = std::vector<std::unordered_set<std::string>>;
+      using AllowedSpecies = std::vector<std::vector<std::string>>;
 
     }
 
@@ -38,42 +38,26 @@ namespace CASM {
                                   StrucMapping::AllowedSpecies allowed_species = {}) :
         m_parent(std::move(_parent)),
         m_point_group(std::move(_point_group)),
-        m_species_mode(_species_mode),
-        m_allowed_species(std::move(allowed_species)) {
+        m_species_mode(_species_mode) {
+
         //std::cout << "allowed_species:\n";
-        if(m_allowed_species.empty()) {
+        if(allowed_species.empty()) {
           auto const &p_info(this->struc_info(parent()));
-          m_allowed_species.resize(p_info.size());
+          allowed_species.resize(p_info.size());
           for(Index i = 0; i < p_info.size(); ++i) {
-            m_allowed_species[i].insert(p_info.names[i]);
+            allowed_species[i].push_back(p_info.names[i]);
             //std::cout << *(m_allowed_species[i].begin()) << "  ";
           }
           //std::cout << "\n";
         }
-
-
-        for(auto const &slist : m_allowed_species) {
-          if(slist.size() != 1) {
-            for(auto const &sp : slist) {
-              _fixed_species()[sp] = 0;
-            }
-          }
-          auto it = _fixed_species().find(*slist.begin());
-          if(it == _fixed_species().end())
-            _fixed_species()[*slist.begin()] = 1;
-          else if((it->second) > 0)
-            ++(it->second);
-        }
-        //std::cout << "Fixed_species: ";
-        for(auto it = _fixed_species().begin(); it != _fixed_species().end(); ++it) {
-          if((it->second) == 0)
-            _fixed_species().erase(it);
-          //std::cout << it->first << "  ";
-        }
-        //std::cout << "\n";
+        set_allowed_species(allowed_species);
       }
 
       SimpleStructure::Info const &struc_info(SimpleStructure const &_struc) const {
+        return _struc.info(m_species_mode);
+      }
+
+      SimpleStructure::Info &struc_info(SimpleStructure &_struc) const {
         return _struc.info(m_species_mode);
       }
 
@@ -94,13 +78,57 @@ namespace CASM {
         return this->set_point_group(adapter::Adapter<SymOpVector, ExternSymOpVector>()(_point_group));
       }
 
+      void set_allowed_species(StrucMapping::AllowedSpecies allowed_species) {
+        m_allowed_species = std::move(allowed_species);
+
+        //Analyze allowed_species:
+        for(Index i = 0; i < m_allowed_species.size(); ++i) {
+          for(std::string &sp : m_allowed_species[i]) {
+            if(sp == "Va" || sp == ("VA") || sp == "va") {
+              //Is vacancy
+              sp = "Va";
+              m_va_allowed.insert(i);
+            }
+            else if(m_allowed_species[i].size() > 1) {
+              //Not vacancy, but variable species
+              m_fixed_species[sp] = 0;
+            }
+            else {
+              //potentially fixed species
+              auto it = m_fixed_species.find(sp);
+              if(it == m_fixed_species.end())
+                m_fixed_species[sp] = 1;
+              else if((it->second) > 0)
+                ++(it->second);
+            }
+            if(!m_max_n_species.count(sp))
+              m_max_n_species[sp] = 0;
+            ++m_max_n_species[sp];
+          }
+        }
+
+        //std::cout << "Fixed_species: ";
+        for(auto it = m_fixed_species.begin(); it != m_fixed_species.end();) {
+          auto curr = it;
+          ++it;
+          if((curr->second) == 0)
+            m_fixed_species.erase(curr);
+          //std::cout << it->first << "  ";
+        }
+
+      }
+
+      std::unordered_set<Index> const &va_allowed() const {
+        return m_va_allowed;
+      }
+
       StrucMapping::FixedSpecies const &fixed_species() const {
         return m_fixed_species;
       }
 
       /// \brief Return maximum possible number of vacancies in underlying primitive structure
       Index max_n_va() const {
-        return m_max_n_va;
+        return va_allowed().size();
       }
 
       virtual ~StrucMapCalculatorInterface() {}
@@ -145,21 +173,24 @@ namespace CASM {
       }
 
     protected:
-      StrucMapping::AllowedSpecies &_allowed_species() {
-        return m_allowed_species;
-      }
 
       StrucMapping::AllowedSpecies const &_allowed_species() const {
         return m_allowed_species;
       }
 
-      StrucMapping::FixedSpecies &_fixed_species() {
+      StrucMapping::FixedSpecies const &_fixed_species() const {
         return m_fixed_species;
       }
 
-      Index &_max_n_va() {
-        return m_max_n_va;
+      bool _sublat_allows_va(Index b) const {
+        return m_va_allowed.count(b);
       }
+
+      /// \brief maximum allowed number of each species
+      std::map<std::string, Index> const &_max_n_species() const {
+        return m_max_n_species;
+      }
+
     private:
       SimpleStructure m_parent;
 
@@ -171,7 +202,10 @@ namespace CASM {
 
       StrucMapping::FixedSpecies m_fixed_species;
 
-      Index m_max_n_va;
+      /// \brief maximum allowed number of each species
+      std::map<std::string, Index> m_max_n_species;
+
+      std::unordered_set<Index> m_va_allowed;
 
       /// \brief Make an exact copy of the calculator (including any initialized members)
       virtual StrucMapCalculatorInterface *_clone() const = 0;

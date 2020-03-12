@@ -15,11 +15,14 @@ namespace CASM {
     class DiffTransConfiguration;
   }
   namespace xtal {
-    template<typename T> class BasicStructure;
-    class Site;
+    class SimpleStructure;
   }
-  using xtal::BasicStructure;
-  using xtal::Site;;
+
+  namespace ConfigMapping {
+    struct Settings;
+  }
+
+  using xtal::SimpleStructure;
 
   class PrimClex;
   class jsonParser;
@@ -38,11 +41,11 @@ namespace CASM {
       using ConfigType = Kinetics::DiffTransConfiguration;
 
       /// Construct with PrimClex and by moving a ConfigMapper
-      StructureMap(MappingSettings const &_set,
-                   std::unique_ptr<Kinetics::DiffTransConfigMapper> mapper);
+      //StructureMap(ConfigMapping::Settings const &_set,
+      //           std::unique_ptr<Kinetics::DiffTransConfigMapper> mapper);
 
       /// Construct with PrimClex and settings (see Import / Update desc)
-      StructureMap(MappingSettings const &_set,
+      StructureMap(ConfigMapping::Settings const &_set,
                    const PrimClex &primclex);
 
       typedef std::back_insert_iterator<std::vector<ConfigIO::Result> > map_result_inserter;
@@ -50,6 +53,7 @@ namespace CASM {
       /// \brief Specialized mapping method for Configuration
       ///
       /// \param p Path to structure or properties.calc.json file. Not guaranteed to exist or be valid.
+      /// \param req_properties, list of names of properties that are required for mapped data to be considered 'complete'
       /// \param hint Iterator to 'from' config for 'casm update', or 'end' if unknown as with 'casm import'.
       /// \param result Insert iterator of Result objects to output mapping results
       ///
@@ -59,13 +63,12 @@ namespace CASM {
       /// - If 'hint' is not nullptr, use hint as 'from' config, else 'from' == 'to'
       map_result_inserter map(
         fs::path p,
+        std::vector<std::string> const &req_properties,
         std::unique_ptr<ConfigType> const &hint_config,
         map_result_inserter result) const;
 
       /// Returns JSON with settings used after combing constructor input and defaults
-      const MappingSettings &settings() const {
-        return m_set;
-      }
+      const ConfigMapping::Settings &settings() const;
 
 
     private:
@@ -75,8 +78,6 @@ namespace CASM {
 
       /// \brief Read SimpleStructure to be imported
       SimpleStructure _make_structure(const fs::path &p) const;
-
-      MappingSettings m_set;
 
       std::unique_ptr<Kinetics::DiffTransConfigMapper> m_difftransconfigmapper;
     };
@@ -92,7 +93,7 @@ namespace CASM {
         const PrimClex &primclex,
         const StructureMap<ConfigType> &mapper,
         ImportSettings const &_set,
-        fs::path const &report_dir,
+        std::string const &report_dir,
         Log &file_log);
 
       static const std::string desc;
@@ -102,8 +103,7 @@ namespace CASM {
     protected:
 
       /// Allow ConfigType to specialize the report formatting for 'import'
-      DataFormatter<ConfigIO::Result> _import_formatter(
-        const std::map<std::string, ConfigIO::ImportData> &data_results) const override;
+      DataFormatter<ConfigIO::Result> _import_formatter() const override;
 
     };
 
@@ -116,7 +116,7 @@ namespace CASM {
       Update(
         const PrimClex &primclex,
         const StructureMap<ConfigType> &mapper,
-        fs::path report_dir);
+        std::string report_dir);
 
       static const std::string desc;
       static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::UpdateOption &import_opt);

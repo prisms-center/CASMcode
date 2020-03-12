@@ -31,8 +31,8 @@ void print_mapping_nodes(std::set<xtal::MappingNode> const &set) {
     std::cout << "   irow: " << el.basis_node.irow << "\n"
               << "   icol: " << el.basis_node.icol << "\n"
               << "   assignment: " << el.basis_node.assignment << "\n"
-              << "   displacement: \n" << el.displacement << "\n"
-              << "   tot assignment: " << el.permutation << "\n\n-----\n\n";
+              << "   displacement: \n" << el.atom_displacement << "\n"
+              << "   tot assignment: " << el.atom_permutation << "\n\n-----\n\n";
   }
 }
 // Generate cubic cell with lat param a and two atoms of species "A" separated by d along [111]
@@ -44,8 +44,8 @@ xtal::SimpleStructure map_struc1(double a, double d) {
   result.atom_info.resize(2);
   result.atom_info.names[0] = "A";
   result.atom_info.names[1] = "A";
-  result.atom_info.coord(0).setZero();
-  result.atom_info.coord(1).setConstant(d / sqrt(3.));
+  result.atom_info.cart_coord(0).setZero();
+  result.atom_info.cart_coord(1).setConstant(d / sqrt(3.));
   return result;
 }
 

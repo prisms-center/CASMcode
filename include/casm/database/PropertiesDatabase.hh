@@ -5,9 +5,11 @@
 #include <set>
 #include <boost/iterator/iterator_facade.hpp>
 #include "casm/database/Database.hh"
-#include "casm/database/MappedProperties.hh"
+#include "casm/clex/MappedProperties.hh"
 
 namespace CASM {
+  struct MappedProperties;
+
   namespace DB {
 
     class PropertiesDatabaseIterator;
@@ -94,12 +96,12 @@ namespace CASM {
     /// again should be valid (though it may require re-allocation):
     ///
     /// \code
-    /// PropertiesDatabaseIterator A = primclex.properties<ValueType>().find_via_from(A_name);
+    /// PropertiesDatabaseIterator A = primclex.properties<ValueType>().find_via_origin(A_name);
     /// const MappedProperties& A_ref1 = *A;  // ok
     /// A_ref1.method();  // ok
     /// A->method(); // ok
     ///
-    /// PropertiesDatabaseIterator<ValueType> B = primclex.properties<ValueType>().find_via_from(B_name);
+    /// PropertiesDatabaseIterator<ValueType> B = primclex.properties<ValueType>().find_via_origin(B_name);
     /// const MappedProperties& B_ref = *B;  // ok, but now A_ref1 may be invalidated
     /// A_ref1.method();  // maybe not ok
     /// A->method(); // ok
@@ -162,12 +164,22 @@ namespace CASM {
     };
 
 
+    /// \brief Database containing all MappedProperties that have been loaded into project
+    /// Each MappedProperties is assumed to correspond to a file on disk that has been processed
+    /// to construct the MappedProperties object. This file defines the 'origin' field of the MappedProperties,
+    /// which is either a configname (in which case the file is for the current calctype in that configs training
+    /// directory) or a path to an imported file. Each MappedProperties object gets associated with a record in
+    /// the database of enumerated objects (i.e., Configurations), which populates the 'to' field in MappedProperties
+    /// Records in PropertiesDatabase can be located via the 'origin' key (which is one-to-one) or the 'to' key (which is one-to-many)
+    /// The one-to-many mapping of the 'to' key is is maintained by the database and can be returned as a set of all
+    /// 'origin' keys that map to the requested 'to' key. This set is sorted using a "ScoreMappedProperties" object.
+    /// The PropertieisDatabase records a default ScoreMappedProperties object, as well as a list of 'bespoke' ScoreMappedProperties,
+    /// which are assigned to individual 'to' keys on an as-needed basis
     class PropertiesDatabase : public DatabaseBase {
-
     public:
 
       /// \brief Compare type for std::set<std::string, Compare>, which sorts
-      ///        to determine the 'from' configname for the best scoring MappedProperties
+      ///        to determine the 'origin' configname for the best scoring MappedProperties
       ///        to a particular config
       class Compare {
 
@@ -178,8 +190,8 @@ namespace CASM {
           m_to(_to_configname),
           m_score(_score) {}
 
-        /// \brief Compare mapped properties 'from_A' and 'from_B', preferring self-mapped results
-        bool operator()(const std::string &from_A, const std::string &from_B) const;
+        /// \brief Compare mapped properties 'origin_A' and 'origin_B', preferring self-mapped results
+        bool operator()(const std::string &origin_A, const std::string &origin_B) const;
 
         const ScoreMappedProperties &score_method() const {
           return m_score;
@@ -199,10 +211,10 @@ namespace CASM {
         DatabaseBase(_primclex) {}
 
 
-      /// \brief Begin iterator over pair<from_configname, pair<to_configname, data> >
+      /// \brief Begin iterator over data entries
       virtual iterator begin() const = 0;
 
-      /// \brief End iterator over pair<from_configname, data>
+      /// \brief End iterator over data entries
       virtual iterator end() const = 0;
 
       virtual size_type size() const = 0;
@@ -210,48 +222,35 @@ namespace CASM {
         return this->size() == 0;
       }
 
-      /// \brief Return iterator to pair<from_configname, data> that is the best mapping to specified config
+      /// \brief Return iterator to data entry that is the best mapping to specified config
       ///
       /// - Prefers self-mapped, else best scoring
       virtual iterator find_via_to(std::string to_configname) const = 0;
 
-      /// \brief Return iterator to pair<from_configname, data> that is from the specified config
-      virtual iterator find_via_from(std::string from_configname) const = 0;
+      /// \brief Return iterator to data entry that is from the specified origin
+      virtual iterator find_via_origin(std::string origin) const = 0;
 
-
-      /// \brief Name of the configuration that relaxed 'from'->'to'
-      std::string relaxed_to(std::string from_configname) const {
-        return find_via_from(from_configname)->to;
-      }
-
-      /// \brief Name of best scoring configuration that relaxed 'from'->'to'
-      ///
-      /// - Prefers self-mapped
-      std::string relaxed_from(std::string to_configname) const {
-        return find_via_to(to_configname)->from;
-      }
-
-      /// \brief Names of all configurations that relaxed 'from'->'to'
+      /// \brief Names of all configurations that relaxed 'origin'->'to'
       ///
       /// - Empty set if none
-      virtual std::set<std::string, Compare> relaxed_from_all(std::string to_configname) const = 0;
+      virtual std::set<std::string, Compare> all_origins(std::string to_configname) const = 0;
 
       /// \brief Change the score method for a single configuration
       virtual void set_score_method(std::string to_configname, const ScoreMappedProperties &score) = 0;
 
       /// \brief Name of ScoreMappedProperties method
       ScoreMappedProperties score_method(std::string to_configname) const {
-        return relaxed_from_all(to_configname).value_comp().score_method();
+        return all_origins(to_configname).value_comp().score_method();
       }
 
-      /// \brief Best score of configurations that relaxed 'from'->'to'
+      /// \brief Best score of configurations that relaxed 'origin'->'to'
       double best_score(std::string to_configname) const {
         return score(*find_via_to(to_configname));
       }
 
-      /// \brief Score mapping 'from'->'to'
-      double score(std::string from_configname) const {
-        return score(*find_via_from(from_configname));
+      /// \brief Score mapping 'origin'->'to'
+      double score(std::string origin) const {
+        return score(*find_via_origin(origin));
       }
 
       /// \brief Score mapping 'from'->'to'
@@ -266,8 +265,8 @@ namespace CASM {
       iterator erase(iterator pos);
 
       /// \brief Erase data
-      size_type erase_via_from(std::string from_configname) {
-        auto it = find_via_from(from_configname);
+      size_type erase_via_origin(std::string origin) {
+        auto it = find_via_origin(origin);
         if(it == end()) {
           return 0;
         }
@@ -285,7 +284,7 @@ namespace CASM {
       virtual iterator _erase(iterator pos) = 0;
 
       /// \brief Set sorted container of names of all configurations that relaxed 'from'->'to'
-      virtual void _set_relaxed_from_all(
+      virtual void _set_all_origins(
         std::string to_configname,
         const std::set<std::string, Compare> &_set) = 0;
 

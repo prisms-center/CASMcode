@@ -1,5 +1,5 @@
 #include "casm/clex/MappedPropertiesTools.hh"
-#include "casm/database/MappedProperties.hh"
+#include "casm/clex/MappedProperties.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/crystallography/AnisoValTraits.hh"
 

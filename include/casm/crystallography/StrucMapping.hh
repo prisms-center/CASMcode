@@ -25,11 +25,14 @@ namespace CASM {
     class StrucMapper;
 
     namespace StrucMapping {
+
+      /// \brief Very large value used to denote invalid or impossible mapping
       inline
       double big_inf() {
         return 10E20;
       }
 
+      /// \brief use as default value to initialize mapping costs. Does not indicate ivalidity
       inline
       double small_inf() {
         return 10E10;
@@ -41,11 +44,16 @@ namespace CASM {
       }
 
       /// \brief Calculate the strain cost function of a MappingNode using LatticeMap::calc_strain_cost()
-      /// \param Nsites number of atoms in the relaxed structure, for proper normalization
+      /// \param relaxed_lat_vol volume, in Angstr^3, of structure unit cell
+      /// \param mapped_config Description of a proposed mapping; mapped_config.lat_node must be initialized
+      /// \param Nsites number of atoms in the relaxed structure (excluding Va), for proper normalization
+      /// result is the strain cost per atom (units of Antsgr.^2)
       double strain_cost(double relaxed_lat_vol, const MappingNode &mapped_config, Index Nsites);
 
       /// \brief Calculate the basis cost function of a MappingNode as the mean-square displacement of its atoms
-      /// \param Nsites number of atoms in the relaxed structure, for proper normalization
+      /// \param mapped_config Description of a proposed mapping; mapped_config.basis_node must be initialized
+      /// \param Nsites number of atoms (excluding vacancies) in the relaxed structure, for proper normalization
+      /// result is the mean-squared atomic displacement (units of Antsgr.^2)
       double basis_cost(const MappingNode &mapped_config, Index Nsites);
     }
 
@@ -105,6 +113,7 @@ namespace CASM {
       /// \brief Construct with ideal parent_scel and deformed child_scel, which are related by a deformation tensor
       /// @param parent_scel and @param child_scel are integer combinations of the primitive cells 'parent_prim' and 'child_prim', respectively
       /// @param child_N_atom is number of sites in the child
+      /// \param _cost is used to specify mapping cost (in default case -- big_inf() -- cost will be calculated from scratch)
       LatticeNode(Lattice const &parent_prim,
                   Lattice const &parent_scel,
                   Lattice const &child_prim,
@@ -124,8 +133,13 @@ namespace CASM {
 
     };
 
+    /// \brief returns true if cost values and parent/child supercell transformations are same for A and B
     bool identical(LatticeNode const &A, LatticeNode const &B);
 
+    /// \brief Structure to encode the solution of a constrained atomic assignmnet problem
+    /// This describes the permutation, translation, and time-reversal of the atoms of a child structure
+    /// to bring them into registration with the atoms of a parent structure
+    /// (assuming periodic boundary conditions). Also records the constrained and unconstrained assignment costs
     struct AssignmentNode {
       AssignmentNode(double _tol = 1e-6) : time_reversal(false), cost(0), cost_offset(0), m_tol(_tol) {}
 
@@ -163,10 +177,15 @@ namespace CASM {
       std::vector<Index> assignment;
 
       /// \brief Cost matrix for an assignment problem, which may be a reduced assignment problem if forced_on.size()>0
+      /// cost_mat(i,j) is the cost of mapping child site 'j' onto parent atom 'i'. If parent structure allows vacancies
+      /// cost_mat may have more columns than child sites. These correspond to 'virtual vacancies', which have zero cost
+      /// of mapping onto a parent site that allows vacancies and infinite cost of mapping onto a parent site that does
+      /// not allow vacancies.
       /// In the case of a reduced assignment problem, cost_mat.cols()=icol.size() and cost_mat.rows()=irow.size()
       Eigen::MatrixXd cost_mat;
 
       /// \brief Total cost of best solution to the constrained assignment problem having some forced_on assignments
+      /// This value includes the contribution from cost_offset
       double cost;
 
       /// \brief Cumulative cost of all forced_on assignments
@@ -177,12 +196,19 @@ namespace CASM {
         return m_tol;
       }
 
+      /// \brief True if cost matrix and assignment vector are uninitialized
       bool empty() const {
         return cost_mat.size() == 0 && assignment.empty();
       }
 
+      /// \brief Compares time_reversal and translation
+      /// for time_reversal, false is less than true
+      /// for translation, elements are compared lexicographically
       bool operator<(AssignmentNode const &other)const;
 
+      /// \brief Combines constrained vector HungarianNode::assignment and HungarianNode::forced_on
+      /// to obtain total permutation vector. child_struc_after.site[i] after assignment is given by
+      /// child_struc_before.site[result[i]] before assignment
       std::vector<Index> permutation() const {
         std::vector<Index> result(assignment.size() + forced_on.size(), 0);
         for(auto const &pair : forced_on) {
@@ -199,6 +225,7 @@ namespace CASM {
       double m_tol;
     };
 
+    /// \brief true if time_reversal and translation are identical
     bool identical(AssignmentNode const &A, AssignmentNode const &B);
 
 
@@ -209,12 +236,20 @@ namespace CASM {
       typedef Eigen::MatrixXd DisplacementMatrix;
 
       // Can treat as a Eigen::VectorXd
-      typedef DisplacementMatrix::ColXpr Displacement;
-      typedef DisplacementMatrix::ConstColXpr ConstDisplacement;
+      using Displacement = DisplacementMatrix::ColXpr;
+      using ConstDisplacement = DisplacementMatrix::ConstColXpr;
 
-      /// \brief Static constructor to build an invalid MappingNode, can be used as return value when no valid mapping exists
-      static MappingNode invalid();
+      // Label molecules as name and occupant index (optional, default 0)
+      using MoleculeLabel = std::pair<std::string, Index>;
 
+      using AtomIndexSet = std::set<Index>;
+
+      using MoleculeMap = std::vector<AtomIndexSet>
+
+                          /// \brief Static constructor to build an invalid MappingNode, can be used as return value when no valid mapping exists
+                          static MappingNode invalid();
+
+      /// \brief construct with lattice node and strain_weight. Cost is initialized assuming zero basis_node cost
       MappingNode(LatticeNode _lat_node, double _strain_weight) :
         lat_node(std::move(_lat_node)),
         is_viable(true),
@@ -228,11 +263,16 @@ namespace CASM {
         return basis_node.tol();
       }
 
+      /// \brief set the strain_weight. Cost is calculated as
+      /// cost = strain_weight*lattice_node.cost + basis_weight*basis_node.cost
+      /// strain_weight must be on interval (0.,1.]; basis_weight is 1.-strain_weight
       void set_strain_weight(double _lw) {
         strain_weight = max(min(_lw, 1.0), 1e-9);
         basis_weight = 1. - strain_weight;
       }
 
+      /// \brief Return pair of integer volumes {Vp, Vc}, where Vp is parent supercell volume
+      /// and Vc is child supercell volume
       std::pair<Index, Index> vol_pair() const {
         return std::pair<Index, Index>(lat_node.parent.size(), lat_node.child.size());
       }
@@ -245,28 +285,34 @@ namespace CASM {
         throw std::runtime_error("MappingNode::clear() not implemented");
       }
 
+      /// \brief convenience method to access MappingNode::lat_node.isometry
       Eigen::Matrix3d const &isometry() const {
         return lat_node.isometry;
       }
 
+      /// \brief convenience method to access MappingNode::lat_node.stretch
       Eigen::Matrix3d const &stretch() const {
         return lat_node.stretch;
       }
 
+      /// \brief convenience method to access MappingNode::basis_node.translation
       Eigen::Vector3d const &translation() const {
         return basis_node.translation;
       }
 
+      /// \brief convenience method to access MappingNode::basis_node.time_reveral
       bool time_reversal() const {
         return basis_node.time_reversal;
       }
 
+      /// \brief non-const access of i'th atomic displacement of mapped structure
       Displacement disp(Index i) {
-        return displacement.col(i);
+        return atom_displacement.col(i);
       }
 
+      /// \brief const access i'th atomic displacement of mapped structure
       ConstDisplacement disp(Index i) const {
-        return displacement.col(i);
+        return atom_displacement.col(i);
       }
 
 
@@ -284,14 +330,34 @@ namespace CASM {
       /// \brief true if node has been partitioned into sub-nodes for generalized k-best assignment problem -- default false
       mutable bool is_partitioned;
 
+      /// \brief total, finalized cost, populated by a StrucMapCalculator.
+      /// Not guaranteed to be a linear function of lat_node.cost and basis_node.cost
       double cost;
 
-      Eigen::MatrixXd displacement;
+      /// \brief 3xN matrix of displacements for all sites in parent supercell (Va are included, but set to Zero)
+      Eigen::MatrixXd atom_displacement;
 
       /// permutation lists indices of sites in input structure, as-read, so that
-      /// they constitute particular mapping onto parent structure
-      std::vector<Index> permutation;
+      /// they constitute particular mapping onto parent structure.
+      /// If we define index j = atom_permutation[i], this indicates that atom 'j' of the child superstructure
+      /// maps onto site 'i' of parent superstructure
+      /// If parent has N sites and child has M<N atoms, vacancies are designated by values j>=M
+      std::vector<Index> atom_permutation;
 
+      /// mol_map[j] is set of indices of atoms in child superstructure that reside in molecule at
+      /// site 'j' of parent superstructure
+      MoleculeMap mol_map;
+
+      /// list of assigned molecule names
+      std::vector<MoleculeLabel> mol_labels;
+
+      /// Compares cost, lat_node, basis_node, and permutation
+      /// if costs are tied, compares lat_node.cost
+      ///   if tied, uninitialized basis_node comes before initialized basis_node
+      ///   if tied, compares lat_node, using defined comparator
+      ///   if tied, compares basis_node, using defined comparator
+      ///   if tied, does lexicographic comparison of permutation
+      /// This order is essential for proper behavior of mapping algorithm
       bool operator<(MappingNode const &other) const;
     };
 
@@ -313,11 +379,11 @@ namespace CASM {
       return _node.time_reversal();
     }
 
-    /// A class for mapping an arbitrary crystal structure as a configuration of a crystal template
-    /// as described by a PrimClex.  StrucMapper manages options for the mapping algorithm and mapping cost function
-    /// It also caches some information about supercell lattices so that batch imports are more efficient
+    /// A class for mapping an arbitrary 'child' crystal structure as a deformation of a 'parent' crystal structure
+    /// StrucMapper manages options for the mapping algorithm and mapping cost function
+    /// It also caches some information about supercell lattices to improve speed of mapping multiple children crystals
+    /// onto a single parent structure
     ///
-    /// \ingroup Configuration
     class StrucMapper {
     public:
       using LatMapType = std::map<Index, std::vector<Lattice> >;
@@ -330,7 +396,12 @@ namespace CASM {
                    };
 
       ///\brief Construct and initialize a StrucMapper
-      ///\param _pclex the PrimClex that describes the crystal template
+      ///
+      ///\param _calculator
+      ///\parblock
+      ///          specialization of base class StrucMapCalculatorInterface, which controls the way that the cost_matrix and costs
+      ///          are calculated, determines validity of proposed mappings, and finalizes the representation of proposed mappings
+      ///\endparblock
       ///
       ///\param _strain_weight
       ///\parblock
@@ -341,7 +412,7 @@ namespace CASM {
       ///\param _max_volume_change
       ///\parblock
       ///          constrains the search space by assuming a limit on allowed volume change
-      ///          only taken into account when non-interstitial vacancies are allowed
+      ///          only taken into account when non-interstitial vacancies are allowed in parent structure
       ///\endparblock
       ///
       ///\param _options
@@ -356,10 +427,14 @@ namespace CASM {
       ///\endparblock
       ///
       ///\param _tol tolerance for mapping comparisons
+      ///
+      ///\param _min_va_frac minimum fraction of vacant sites, below this fraction a mapping will not be considered
+      ///
+      ///\param _max_va_frac maximum fraction of vacant sites, above this fraction a mapping will not be considered
       StrucMapper(StrucMapCalculatorInterface const &_calculator,
                   double _strain_weight = 0.5,
                   double _max_volume_change = 0.5,
-                  int _options = robust, // this should actually be a bitwise-OR of StrucMapper::Options
+                  int _options = 0, // this should actually be a bitwise-OR of StrucMapper::Options
                   double _tol = TOL,
                   double _min_va_frac = 0.,
                   double _max_va_frac = 1.);
@@ -420,58 +495,109 @@ namespace CASM {
       /// \brief returns reference to parent structure
       SimpleStructure const &parent() const;
 
-      ///\brief specify which lattices should be searched when mapping configurations
+      ///\brief specify a superlattice of the parent to be searched during mapping
       void add_allowed_lattice(Lattice const &_lat) {
         m_allowed_superlat_map[std::abs(round(volume(_lat) / parent().lat_column_mat.determinant()))].push_back(_lat);
       }
 
-      ///\brief unset the enforcement of particular lattices (default behavior)
+      ///\brief clear the list of allowed parent superlattices;
+      /// all superlattices will be generated automatically, as needed (default)
       void clear_allowed_lattices() const {
         m_allowed_superlat_map.clear();
       }
 
-      ///\brief specify to use restricted hermites when mapping
-      void restricted() {
-        m_restricted = true;
-      }
-
-      ///\brief returns true if lattices were set to be allowed as candidates
+      ///\brief returns true if the search of parent superlattices is constrained to a pre-specified list
       bool lattices_constrained() const {
         return m_allowed_superlat_map.size();
       }
 
-      ///\brief Returns single best mapping of ideal child structure onto parent structure
-      ///\parem child
-      ///\param mapped_config[out] MappingNode that is result of mapping procedure
-      ///\parblock
-      ///                   populated by the permutation of sites in the imported structure
-      ///                   that maps them onto sites of the ideal crystal (excluding vacancies)
-      ///\endparblock
-      MappingNode map_ideal_struc(const SimpleStructure &child_struc,
-                                  Index k = 1) const;
+      ///\brief specify to use filtered lattices for mapping. The filter function is of the form
+      ///  bool filter(parent_lattice, proposed_lattice)
+      /// where parent_lattice is the primitive lattice of the parent structure, and proposed_lattice is
+      /// a proposed superlattice of the parent structure
+      void set_filter(std::function<bool(Lattice const &, Lattice const &)> _filter_f) {
+        m_filtered = true;
+        m_filter_f = _filter_f;
+        m_superlat_map.clear();
+      }
+
+      ///\brief specify not to use filtered lattice for mapping
+      void unset_filter() {
+        m_filtered = false;
+        m_superlat_map.clear();
+      }
+
+      ///\brief k-best mappings of ideal child structure onto parent structure
+      /// Assumes that child_struc and parent_struc have lattices related by an integer transformation
+      /// so that search over lattices can be replaced with simple matrix solution (faster than typical search)
+      /// Atomic positions need not be ideal
+      ///
+      ///\param child_struc Input structure to be mapped onto parent structure
+      ///\param k Number of k-best mapping relations to return.
+      ///\param max_cost Search will terminate once no mappings better than max_cost are found
+      ///\param min_cost All mappings better than min_cost will be reported, without contributing to 'k'
+      ///
+      ///\result std::set<MappingNode> a list of valid mappings, sorted first by cost, and then other attributes
+      std::set<MappingNode> map_ideal_struc(const SimpleStructure &child_struc,
+                                            Index k = 1,
+                                            double max_cost = StrucMapping::big_inf(),
+                                            double min_cost = -TOL,
+                                            bool keep_invalid = false) const;
 
 
 
-      ///\brief Low-level routine to map a structure onto a ConfigDof. Does not assume structure is ideal
-      ///\parblock
-      ///                   populated by the permutation of sites in the imported structure
-      ///                   that maps them onto sites of the ideal crystal (excluding vacancies)
-      ///\endparblock
-      ///\param best_cost[in] optional parameter. Method will return false of no mapping is found better than 'best_cost'
+      ///\brief k-best mappings of arbitrary child structure onto parent structure, without simplifying assumptions
+      ///       If k and k+1, k+2, etc mappings have identical cost, k will be increased until k+n mapping has
+      ///       cost greater than mapping k
+      ///
+      ///\param child_struc Input structure to be mapped onto parent structure
+      ///\param k Number of k-best mapping relations to return
+      ///\param max_cost Search will terminate once no mappings better than max_cost are found
+      ///\param min_cost All mappings better than min_cost will be reported, without contributing to 'k'
+      ///\param keep_invalid If true, invalid mappings are retained in output; otherwise they are discarded
+      ///
+      ///\result std::set<MappingNode> a list of valid mappings, sorted first by cost, and then other attributes
       std::set<MappingNode> map_deformed_struc(const SimpleStructure &child_struc,
                                                Index k = 1,
                                                double max_cost = StrucMapping::big_inf(),
                                                double min_cost = -TOL,
                                                bool keep_invalid = false) const;
 
-      ///\brief Low-level routine to map a structure onto a ConfigDof assuming a specific Lattice, without assuming structure is ideal
-      ///       Will only identify mappings better than best_cost, and best_cost is updated to reflect cost of best mapping identified
-      ///\param imposed_lat[in] Supercell Lattice onto which struc will be mapped
-      ///\param best_cost Imposes an upper bound on cost of any mapping considered, and is updated to reflect best mapping encountered
-      ///\parblock
-      ///                   populated by the permutation of sites in the imported structure
-      ///                   that maps them onto sites of the ideal crystal (excluding vacancies)
-      ///\endparblock
+      ///\brief k-best mappings of arbitrary child structure onto parent structure
+      ///       imposes simplifying assumption that solution is a superstructure of parent structure having
+      ///       integer volume on range [min_vol, max_vol]
+      ///       If k and k+1, k+2, etc mappings have identical cost, k will be increased until k+n mapping has
+      ///       cost greater than mapping k
+      ///
+      ///\param child_struc Input structure to be mapped onto parent structure
+      ///\param k Number of k-best mapping relations to return
+      ///\param max_cost Search will terminate once no mappings better than max_cost are found
+      ///\param min_cost All mappings better than min_cost will be reported, without contributing to 'k'
+      ///\param keep_invalid If true, invalid mappings are retained in output; otherwise they are discarded
+      ///
+      ///\result std::set<MappingNode> a list of valid mappings, sorted first by cost, and then other attributes
+      std::set<MappingNode> map_deformed_struc_impose_lattice_vols(const SimpleStructure &child_struc,
+                                                                   Index min_vol,
+                                                                   Index max_vol,
+                                                                   Index k = 1,
+                                                                   double max_cost = StrucMapping::big_inf(),
+                                                                   double min_cost = -TOL,
+                                                                   bool keep_invalid = false) const;
+
+
+      ///\brief k-best mappings of arbitrary child structure onto parent structure
+      ///       imposes simplifying assumption that solution is THE superstructure of parent given by
+      ///       @param imposed_lat. Significantly faster than unconstrained search, but may miss best solution
+      ///       If k and k+1, k+2, etc mappings have identical cost, k will be increased until k+n mapping has
+      ///       cost greater than mapping k
+      ///
+      ///\param child_struc Input structure to be mapped onto parent structure
+      ///\param k Number of k-best mapping relations to return
+      ///\param max_cost Search will terminate once no mappings better than max_cost are found
+      ///\param min_cost All mappings better than min_cost will be reported, without contributing to 'k'
+      ///\param keep_invalid If true, invalid mappings are retained in output; otherwise they are discarded
+      ///
+      ///\result std::set<MappingNode> a list of valid mappings, sorted first by cost, and then other attributes
       std::set<MappingNode> map_deformed_struc_impose_lattice(const SimpleStructure &child_struc,
                                                               const Lattice &imposed_lat,
                                                               Index k = 1,
@@ -479,6 +605,22 @@ namespace CASM {
                                                               double min_cost = -TOL,
                                                               bool keep_invalid = false) const;
 
+
+      ///\brief k-best mappings of arbitrary child structure onto parent structure
+      ///       imposes simplifying assumption that the lattice mapping is known and specified by
+      ///       @param imposed_node. This sets the lattice and setting that defines the mapping relation
+      ///       This assumption is much than unconstrained search, but may miss best solution
+      ///       If k and k+1, k+2, etc mappings have identical cost, k will be increased until k+n mapping has
+      ///       cost greater than mapping k
+
+      ///
+      ///\param child_struc Input structure to be mapped onto parent structure
+      ///\param k Number of k-best mapping relations to return
+      ///\param max_cost Search will terminate once no mappings better than max_cost are found
+      ///\param min_cost All mappings better than min_cost will be reported, without contributing to 'k'
+      ///\param keep_invalid If true, invalid mappings are retained in output; otherwise they are discarded
+      ///
+      ///\result std::set<MappingNode> a list of valid mappings, sorted first by cost, and then other attributes
       std::set<MappingNode> map_deformed_struc_impose_lattice_node(const SimpleStructure &child_struc,
                                                                    const LatticeNode &imposed_node,
                                                                    Index k = 1,
@@ -488,6 +630,34 @@ namespace CASM {
 
 
 
+      ///\brief low-level function. Takes a queue of mappings and use it to seed a search for k-best
+      ///       total mappings. The seed mappings may be partial (having only LatticeNode specified,
+      ///       and not HungarianNode) or complete. The result is appended to @param queue, and
+      ///       partial and invalid mappings are removed from the queue.
+      ///       If k and k+1, k+2, etc mappings have identical cost, k will be increased until k+n mapping has
+      ///       cost greater than mapping k
+
+      ///
+      ///
+      ///\param child_struc Input structure to be mapped onto parent structure
+      ///\param queue
+      ///\parblock
+      ///  list of partial mappings to seed search. Partial mappings are removed from list as they are searched
+      ///  finalized mappings are inserted into list as they are found.
+      ///\endparblock
+      ///
+      ///\param k Number of k-best mapping relations to return
+      ///\param max_cost Search will terminate once no mappings better than max_cost are found
+      ///\param min_cost All mappings better than min_cost will be reported, without contributing to 'k'
+      ///\param keep_invalid If true, invalid mappings are retained in output; otherwise they are discarded
+      ///\param keep_tail If true, any partial or unresolved mappings at back of queue will be retained (they are deleted otherwise)
+      ///\param no_partition
+      /// \parblock
+      ///   If true, search over suboptimal basis permutations will be skipped (The optimal mapping will be found, but suboptimal
+      ///   mappings may be excluded in the k-best case. Degenerate permutations of atoms will not be identified.)
+      /// \endparblock
+      ///
+      ///\result Index specifying the number of complete, valid mappings in the solution set
       Index k_best_maps_better_than(SimpleStructure const &child_struc,
                                     std::set<MappingNode> &queue,
                                     Index k = 1,
@@ -504,6 +674,12 @@ namespace CASM {
 
     private:
 
+      /// \brief generate list of partial mapping seeds (i.e., LatticeNode only) from a list
+      /// of supercells of the parent structure and a list supercells of the child structure
+      ///
+      ///\param k Number of k-best mapping relations to return
+      ///\param max_cost Search will terminate once no mappings better than max_cost are found
+      ///\param min_cost All mappings better than min_cost will be reported, without contributing to 'k'
       std::set<MappingNode> _seed_k_best_from_super_lats(SimpleStructure const &child_struc,
                                                          std::vector<Lattice> const &_parent_scels,
                                                          std::vector<Lattice> const &_child_scels,
@@ -518,12 +694,13 @@ namespace CASM {
                                                  Index min_vol,
                                                  Index max_vol) const;
 
-      ///\brief returns number of species in a SimpleStructure given the current calculator settings. Use instead of sstruc.n_atom() for consistency
+      ///\brief returns number of species in a SimpleStructure given the current calculator settings.
+      ///       Use instead of sstruc.n_atom() for consistency
       Index _n_species(SimpleStructure const &sstruc) const;
 
-      //Implement filter as std::function<bool(Lattice const&)> or as polymorphic type or as query (i.e., DataFormatter)
-      bool _filter_lat(Lattice const &_lat)const {
-        return true;
+      //Implement filter as std::function<bool(Lattice const&,Lattice const&)>
+      bool _filter_lat(Lattice const &_parent_lat, Lattice const &_child_lat)const {
+        return m_filter_f(_parent_lat, _child_lat);
       }
 
       std::pair<Index, Index> _vol_range(const SimpleStructure &child_struc) const;
@@ -535,38 +712,20 @@ namespace CASM {
       double m_strain_weight;
       double m_max_volume_change;
       int m_options;
-      bool m_restricted = false;
       double m_tol;
       double m_min_va_frac;
       double m_max_va_frac;
+
+      bool m_filtered;
+      std::function<bool(Lattice const &, Lattice const &)> m_filter_f;
 
       ///Maps the supercell volume to a vector of Lattices with that volume
       mutable LatMapType m_superlat_map;
       mutable LatMapType m_allowed_superlat_map;
 
       std::vector<Lattice> _lattices_of_vol(Index prim_vol) const;
-
-
     };
 
-
-
-    /* namespace StrucMapping_impl { */
-
-    /*   std::set<MappingNode> k_best_lat_maps_better_than(Lattice const &_parent_prim, */
-    /*                                                     std::vector<Lattice> const &_parent_scels, */
-    /*                                                     Lattice const &_child_prim, */
-    /*                                                     std::vector<Lattice> const &_child_scels, */
-    /*                                                     Index _num_atoms, */
-    /*                                                     std::vector<SymOp> const &_parent_pg, */
-    /*                                                     Index k, */
-    /*                                                     double strain_weight, */
-    /*                                                     double basis_weight, */
-    /*                                                     double _tol, */
-    /*                                                     double min_cost = 1e-6, */
-    /*                                                     double max_cost = StrucMapping::small_inf()); */
-
-    /* } */
 
 
   }
