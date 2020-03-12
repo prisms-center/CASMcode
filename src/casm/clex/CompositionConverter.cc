@@ -452,14 +452,9 @@ namespace CASM {
     // end_members.col(i) corresponds to x such that x[i] = 1, x[j!=i] = 0,
     //  -> end_members.col(i) = origin + m_to_n.col(i)
 
-    // r > c
-    int r = m_components.size();
     int c = m_end_members.cols();
 
-    m_to_n = Eigen::MatrixXd(r, c);
-    for(int i = 0; i < c; i++) {
-      m_to_n.col(i) = m_end_members.col(i) - m_origin;
-    }
+    m_to_n = m_end_members.leftCols(c).colwise() - m_origin;
 
     // x = m_to_x*(n - origin)
     //   -> x = m_to_x*(origin + m_to_n*x - origin)

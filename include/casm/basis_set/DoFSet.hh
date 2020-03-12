@@ -103,7 +103,7 @@ namespace CASM {
   public:
     using BasicTraits = AnisoValTraits;
 
-    using TypeFunc =  std::function<notstd::cloneable_ptr<BasicTraits>()>;
+    using TypeFunc =  std::function<notstd::cloneable_ptr<AnisoValTraits>()>;
 
     using Container = std::vector<ContinuousDoF>;
 
@@ -112,18 +112,18 @@ namespace CASM {
     /// \brief Factor function for DoFSet having standard dimension and coordinate basis for given type.
     /// Example usage:
     ///    \code
-    ///    DoFSet my_disp_dof = DoFSet::make_default(DoF::traits("disp"));
+    ///    DoFSet my_disp_dof = DoFSet::make_default("disp");
     ///    \endcode
-    static DoFSet make_default(DoFSet::BasicTraits const &_type);
+    static DoFSet make_default(AnisoValTraits const &_type);
 
-    /// \brief Construct with BasicTraits object, in order to catch typos near point of origin
+    /// \brief Construct with AnisoValTraits object, in order to catch typos near point of origin
     /// DoFSet is initialized to zero dimension. Use static function DoFSet::make_default() to construct
     /// A viable DoFSet having standard parameters
     /// Example usage:
     ///    \code
     ///    DoFSet my_disp_dof(DoF::traits("disp"))
     ///    \endcode
-    DoFSet(BasicTraits const &_type);
+    DoFSet(AnisoValTraits const &_type);
 
     /// \brief Returns number of components in this DoFSet
     Index size() const {
@@ -136,7 +136,7 @@ namespace CASM {
     }
 
     /// \brief Returns traits object for the DoF type of this DoFSet
-    BasicTraits const &traits() const {
+    AnisoValTraits const &traits() const {
       return m_traits;
     }
 
@@ -227,7 +227,7 @@ namespace CASM {
 
 
   private:
-    BasicTraits m_traits;
+    AnisoValTraits m_traits;
     std::vector<ContinuousDoF> m_components;
     mutable DoFSetInfo m_info;
 
@@ -262,7 +262,7 @@ namespace CASM {
   //********************************************************************
   template<>
   struct jsonConstructor<DoFSet> {
-    static DoFSet from_json(const jsonParser &json, DoFSet::BasicTraits const &_type);
+    static DoFSet from_json(const jsonParser &json, AnisoValTraits const &_type);
   };
 
   //********************************************************************

@@ -33,6 +33,7 @@
 #include "casm/database/Named_impl.hh"
 #include "casm/database/ScelDatabase.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
+#include "casm/strain/StrainConverter.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/symmetry/SymTools.hh"
 
@@ -1244,7 +1245,8 @@ namespace CASM {
 
   /// \brief Change in volume due to relaxation, expressed as the ratio V/V_0
   double volume_relaxation(const Configuration &_config) {
-    return _config.calc_properties().scalar("volume_relaxation");
+    StrainConverter tconvert("BIOT");
+    return tconvert.rollup_E(_config.calc_properties().global.at("Ustrain")).determinant();
   }
 
   /// \brief Returns the relaxed magnetic moment, normalized per unit cell
@@ -1381,7 +1383,7 @@ namespace CASM {
   }
 
   bool has_volume_relaxation(const Configuration &_config) {
-    return _config.calc_properties().has_scalar("volume_relaxation");
+    return _config.calc_properties().global.count("Ustrain");
   }
 
   bool has_relaxed_magmom(const Configuration &_config) {

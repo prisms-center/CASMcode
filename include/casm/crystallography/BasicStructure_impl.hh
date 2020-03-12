@@ -526,12 +526,12 @@ namespace CASM {
 
 
     template<typename CoordType>
-    void BasicStructure<CoordType>::set_basis(std::vector<CoordType> const &_basis, COORD_TYPE mode) {
-      m_basis.clear();
-      m_basis.reserve(_basis.size());
-      for(CoordType const &site : _basis)
-        push_back(site, mode);
-
+    void BasicStructure<CoordType>::set_basis(std::vector<CoordType> _basis, COORD_TYPE mode) {
+      m_basis = std::move(_basis);
+      for(Index i = 0; i < m_basis.size(); ++i) {
+        m_basis[i].set_basis_ind(i);
+        m_basis[i].set_lattice(lattice(), mode);
+      }
     }
 
     template<typename CoordType>
@@ -999,6 +999,18 @@ namespace CASM {
 
       for(Index b = 0; b < _struc.basis().size(); ++b)
         result[b] = _struc.basis(b).allowed_occupants();
+
+      return result;
+    }
+
+    //************************************************************
+    /// Returns a vector with a list of allowed molecule names at each site
+    template<typename CoordType>
+    std::vector<std::vector<Molecule> > allowed_molecules(BasicStructure<CoordType> const &_struc) {
+      std::vector<std::vector<Molecule> > result(_struc.basis().size());
+
+      for(Index b = 0; b < _struc.basis().size(); ++b)
+        result[b] = _struc.basis(b).allowed_occupants().domain();
 
       return result;
     }

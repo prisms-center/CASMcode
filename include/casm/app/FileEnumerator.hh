@@ -162,7 +162,7 @@ namespace CASM {
   template<typename OutputIterator>
   OutputIterator FileEnumerator::basic_files(OutputIterator result) {
     std::vector<fs::path> v {
-      m_dir.prim(), m_dir.PRIM(),
+      m_dir.prim(), //m_dir.PRIM(),
       m_dir.project_settings(), m_dir.config_list(), m_dir.SCEL(),
       m_dir.lattice_point_group(), m_dir.factor_group(), m_dir.crystal_point_group()
     };

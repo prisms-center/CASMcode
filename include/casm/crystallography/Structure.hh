@@ -82,6 +82,13 @@ namespace CASM {
       /// copy all non-derived members
       void copy_attributes_from(const Structure &RHS);
 
+      /// Notify that it is a temporary object to avoid weird symmetry errors
+      void is_temporary_of(const Structure &RHS) const {
+        if(m_factor_group.size()) {
+          m_factor_group.is_temporary_of(RHS.m_factor_group);
+        }
+      }
+
       /// clears symmetry, site internals, and other attributes
       void reset() override;
 

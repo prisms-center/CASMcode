@@ -269,8 +269,8 @@ namespace CASM {
 
     //****************************************************
 
-    void Site::set_allowed_occupants(std::vector<Molecule> const &_occ_domain) {
-      m_occupant_dof->set_domain(_occ_domain);
+    void Site::set_allowed_occupants(std::vector<Molecule> _occ_domain) {
+      m_occupant_dof->set_domain(std::move(_occ_domain));
       m_type_ID = -1;
     }
 
@@ -278,12 +278,6 @@ namespace CASM {
 
     void Site::set_occ_value(int new_val) {
       m_occupant_dof->set_value(new_val);
-    }
-
-    //****************************************************
-
-    void Site::set_occ(const Molecule &new_occ) {
-      m_occupant_dof->set_current_state(new_occ);
     }
 
     //****************************************************

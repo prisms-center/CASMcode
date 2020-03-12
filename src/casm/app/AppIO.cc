@@ -203,7 +203,7 @@ namespace CASM {
 
     // Local continuous dofs
 
-    std::map<std::string, DoFSet> _dof_map;
+    std::map<DoFKey, DoFSet> _dof_map;
     if(json.contains("dofs")) {
 
       auto it = json["dofs"].begin(), end_it = json["dofs"].end();
@@ -247,16 +247,42 @@ namespace CASM {
   }
 
   BasicStructure<Site> read_prim(fs::path filename, double xtal_tol, HamiltonianModules const *_modules) {
+    jsonParser json;
+    std::ifstream f(filename.string());
+    if(!f) {
+      throw std::invalid_argument("Error reading prim from file '" + filename.string() + "'. Does not contain valid input.");
+    }
+    while(!f.eof() && std::isspace(f.peek())) {
+      f.get();
+    }
 
-    try {
-      jsonParser json(filename);
+    // Check if JSON
+    if(f.peek() == '{') {
+      try {
+        json = jsonParser(f);
+      }
+      catch(std::exception const &ex) {
+        std::stringstream err_msg;
+        err_msg
+            << "Error reading prim from JSON file '" << filename << "':" << std::endl
+            << ex.what();
+        throw std::invalid_argument(err_msg.str());
+      }
       return read_prim(json, xtal_tol, _modules);
     }
-    catch(...) {
-      std::cerr << "Error reading prim from " << filename << std::endl;
-      /// re-throw exceptions
-      throw;
+    // else tread as vasp-like file
+    BasicStructure<Site> prim;
+    try {
+      prim.read(f);
     }
+    catch(std::exception const &ex) {
+      std::stringstream err_msg;
+      err_msg
+          << "Error reading prim from VASP-formatted file '" << filename << "':" << std::endl
+          << ex.what();
+      throw std::invalid_argument(err_msg.str());
+    }
+    return prim;
   }
 
   /// \brief Read prim.json
@@ -284,7 +310,7 @@ namespace CASM {
 
       // Global DoFs
       {
-        std::map<std::string, DoFSet> _dof_map;
+        std::map<DoFKey, DoFSet> _dof_map;
         if(json.contains("dofs")) {
           auto it = json["dofs"].begin(), end_it = json["dofs"].end();
           for(; it != end_it; ++it) {
@@ -342,20 +368,20 @@ namespace CASM {
   }
 
   /// \brief Write prim.json to file
-  void write_prim(const BasicStructure<Site> &prim, fs::path filename, COORD_TYPE mode) {
+  void write_prim(const BasicStructure<Site> &prim, fs::path filename, COORD_TYPE mode, bool include_va) {
 
     SafeOfstream outfile;
     outfile.open(filename);
 
     jsonParser json;
-    write_prim(prim, json, mode);
+    write_prim(prim, json, mode, include_va);
     json.print(outfile.ofstream());
 
     outfile.close();
   }
 
   /// \brief Write prim.json as JSON
-  void write_prim(const BasicStructure<Site> &prim, jsonParser &json, COORD_TYPE mode) {
+  void write_prim(const BasicStructure<Site> &prim, jsonParser &json, COORD_TYPE mode, bool include_va) {
 
     json = jsonParser::object();
 
@@ -382,10 +408,13 @@ namespace CASM {
       json["dofs"][_dof.first] = _dof.second;
     }
     auto mol_names = allowed_molecule_unique_names(prim);
-    jsonParser &bjson = (json["basis"] = jsonParser::array(prim.basis().size()));
+    jsonParser &bjson = (json["basis"].put_array());
     for(int i = 0; i < prim.basis().size(); i++) {
-      bjson[i] = jsonParser::object();
-      jsonParser &cjson = bjson[i]["coordinate"].put_array();
+      if(!include_va && prim.basis()[i].occupant_dof().size() == 1 && prim.basis()[i].occupant_dof()[0].is_vacancy())
+        continue;
+      bjson.push_back(jsonParser::object());
+      jsonParser &sjson = bjson[bjson.size() - 1];
+      jsonParser &cjson = sjson["coordinate"].put_array();
       if(mode == FRAC) {
         cjson.push_back(prim.basis()[i].frac(0));
         cjson.push_back(prim.basis()[i].frac(1));
@@ -398,11 +427,11 @@ namespace CASM {
       }
 
       if(prim.basis()[i].dofs().size()) {
-        bjson[i]["dofs"] = prim.basis()[i].dofs();
+        sjson["dofs"] = prim.basis()[i].dofs();
       }
 
 
-      jsonParser &ojson = (bjson[i]["occupants"] = jsonParser::array(prim.basis()[i].occupant_dof().size()));
+      jsonParser &ojson = (sjson["occupants"] = jsonParser::array(prim.basis()[i].occupant_dof().size()));
 
       for(int j = 0; j < prim.basis()[i].occupant_dof().size(); j++) {
         ojson[j] = mol_names[i][j];

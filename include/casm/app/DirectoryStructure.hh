@@ -73,10 +73,6 @@ namespace CASM {
     /// \brief Return prim.json path
     fs::path prim() const;
 
-    /// \brief Return PRIM path
-    fs::path PRIM() const;
-
-
     // -- Hidden .casm directory --------
 
     /// \brief Return hidden .casm dir path
