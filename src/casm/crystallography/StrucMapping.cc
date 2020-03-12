@@ -4,7 +4,7 @@
 #include "casm/crystallography/StrucMapCalculatorInterface.hh"
 #include "casm/container/algorithm.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/strain/StrainConverter.hh"   //!!TODO!! Life is a cruel joke
+#include "casm/crystallography/Strain.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/SymTools.hh"
@@ -201,7 +201,7 @@ namespace CASM {
       // stretch is from (de-rotated, strained) child to ideal parent
       // child_scel = F * parent_scel = isometry.transpose() * stretch.inverse() * parent_scel
       // OR: parent_scel = stretch * isometry * child_scel
-      stretch = StrainConverter::right_stretch_tensor(F).inverse();
+      stretch = strain::right_stretch_tensor(F).inverse();
 
       // isometry is from child to strained parent
       isometry = (F * stretch).transpose();

@@ -16,7 +16,7 @@ namespace CASM {
     class BasicStructure;
   }
 
-  //TODO: Who are you? Whare did you come from? What is your purpose?
+  //TODO: What is this?
   class TransformDirective {
   public:
 

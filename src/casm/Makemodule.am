@@ -841,6 +841,7 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/SimpleStructureTools.cc\
     src/casm/crystallography/Site.cc\
     src/casm/crystallography/SpeciesAttribute.cc\
+    src/casm/crystallography/Strain.cc\
     src/casm/crystallography/StrucMapping.cc\
     src/casm/crystallography/Structure.cc\
     src/casm/crystallography/SuperlatticeEnumerator.cc\
