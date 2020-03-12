@@ -373,13 +373,13 @@ namespace CASM {
       return compare(RHS, true);
     }
 
-    void set_domain(std::vector<T> const &new_dom) {
-      m_domain = new_dom;
-      if(new_dom.size() == 1)
+    void set_domain(std::vector<T> new_dom) {
+      m_domain = std::move(new_dom);
+      if(m_domain.size() == 1)
         m_current_state = 0;
       else
         m_current_state = -1;
-      set_symrep_ID(SymGroupRepID::identity(new_dom.size()));
+      set_symrep_ID(SymGroupRepID::identity(m_domain.size()));
     }
 
     const std::vector<T> &domain() const {

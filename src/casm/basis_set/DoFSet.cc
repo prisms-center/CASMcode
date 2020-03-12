@@ -9,7 +9,7 @@
 
 namespace CASM {
 
-  DoFSet::DoFSet(BasicTraits const &_traits) :
+  DoFSet::DoFSet(AnisoValTraits const &_traits) :
     m_traits(_traits),
     m_info(SymGroupRepID(), Eigen::MatrixXd::Zero(m_traits.dim(), 0)) {
 
@@ -160,7 +160,7 @@ namespace CASM {
 
   //********************************************************************
 
-  DoFSet jsonConstructor<DoFSet>::from_json(const jsonParser &json, DoFSet::BasicTraits const &_type) {
+  DoFSet jsonConstructor<DoFSet>::from_json(const jsonParser &json, AnisoValTraits const &_type) {
     DoFSet value(_type);
     value.from_json(json);
     return value;
@@ -168,7 +168,7 @@ namespace CASM {
 
   //********************************************************************
 
-  DoFSet DoFSet::make_default(DoFSet::BasicTraits const &_type) {
+  DoFSet DoFSet::make_default(AnisoValTraits const &_type) {
     DoFSet result(_type);
     result.m_info.set_basis(Eigen::MatrixXd::Identity(_type.dim(), _type.dim()));
     for(std::string var_name : _type.standard_var_names()) {

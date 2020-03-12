@@ -426,7 +426,7 @@ namespace CASM {
       /// when the supercell volume cannot is not uniquely determined by the number of each
       /// species in the child structure
       void set_max_va_frac(double _max_va) {
-        m_max_va_frac = min(_max_va, 1.);
+        m_max_va_frac = min(_max_va, 0.99);
       }
 
       /// \brief returns bit flag of selected options for this StrucMapper

@@ -274,6 +274,7 @@ namespace CASM {
       //go out of scope. Solving this will involve rethinking which parts of the prim are needed for the
       //function call, and will affect the implementation of the SymCompare classes
       auto _prim_ptr = std::make_shared<const Structure>(_prim);
+      _prim_ptr->is_temporary_of(_prim);
       make_prim_periodic_asymmetric_unit(_prim_ptr,
                                          CASM_TMP::ConstantFunctor<bool>(true),
                                          TOL,
@@ -369,6 +370,7 @@ namespace CASM {
       //go out of scope. Solving this will involve rethinking which parts of the prim are needed for the
       //function call, and will affect the implementation of the SymCompare classes
       auto _prim_ptr = std::make_shared<const Structure>(_prim);
+      _prim_ptr->is_temporary_of(_prim);
       make_prim_periodic_asymmetric_unit(_prim_ptr,
                                          CASM_TMP::ConstantFunctor<bool>(true),
                                          TOL,
@@ -461,9 +463,10 @@ namespace CASM {
       }
 
 
-      for(Site const &site : _prim.basis())
-        NV = max(NV, site.dof(name()).size());
-
+      for(Site const &site : _prim.basis()) {
+        if(site.has_dof(name()))
+          NV = max(NV, site.dof(name()).size());
+      }
       //for(Index i = 0; i < NB; i++)
       result.push_back(ParamAllocation(std::string(name() + "_var"), Index(NV), Index(-1), true));
 
@@ -490,6 +493,7 @@ namespace CASM {
       //go out of scope. Solving this will involve rethinking which parts of the prim are needed for the
       //function call, and will affect the implementation of the SymCompare classes
       auto _prim_ptr = std::make_shared<const Structure>(_prim);
+      _prim_ptr->is_temporary_of(_prim);
       make_prim_periodic_asymmetric_unit(_prim_ptr,
                                          CASM_TMP::ConstantFunctor<bool>(true),
                                          TOL,

@@ -142,12 +142,7 @@ namespace CASM {
 
   /// \brief Return prim.json path
   fs::path DirectoryStructure::prim() const {
-    return m_root / "prim.json";
-  }
-
-  /// \brief Return PRIM path
-  fs::path DirectoryStructure::PRIM() const {
-    return m_root / "PRIM";
+    return casm_dir() / "prim.json";
   }
 
 

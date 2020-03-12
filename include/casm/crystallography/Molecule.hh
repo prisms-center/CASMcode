@@ -71,13 +71,6 @@ namespace CASM {
       /// \brief Comparison with tolerance (max allowed distance between LHS and RHS, in Angstr.)
       bool identical(AtomPosition const &RHS, double _tol)const;
 
-      /// \brief Print AtomPosition after applying affine transformation cart2frac*cart()+trans
-      /*void print(std::ostream &stream,
-                 Eigen::Ref<const Eigen::Vector3d> const &trans,
-                 Eigen::Ref<const Eigen::Matrix3d> const &cart2frac,
-                 int spaces,
-                 bool print_sd_flags = false) const;
-      */
       /// \brief Apply symmetry (translation is ignored)
       AtomPosition &apply_sym(const SymOp &op);
 
@@ -207,16 +200,6 @@ namespace CASM {
       /// \brief Returns true of molecule contains atom of specified name
       bool contains(std::string const &atom_name) const;
 
-      /*
-      void read(std::istream &stream);
-
-      void print(std::ostream &stream,
-                 Eigen::Ref<const Eigen::Vector3d> const &trans,
-                 Eigen::Ref<const Eigen::Matrix3d> const &cart2frac,
-                 int spaces,
-                 char delim,
-                 bool print_sd_flags  = false) const;
-      */
       bool is_divisible() const {
         return m_divisible;
       }
