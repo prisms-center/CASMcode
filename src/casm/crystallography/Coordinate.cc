@@ -1,4 +1,5 @@
 #include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/SymTools.hh"
 
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/Lattice.hh"
@@ -9,8 +10,7 @@ namespace CASM {
     Coordinate::Coordinate(const Eigen::Ref<const Coordinate::vector_type> &init_vec,
                            const Lattice &init_home,
                            COORD_TYPE mode)
-      : m_home(&init_home),
-        m_basis_ind(-1) {
+      : m_home(&init_home) {
       if(mode == FRAC)
         _set_frac(init_vec);
       if(mode == CART)
@@ -20,8 +20,7 @@ namespace CASM {
     //********************************************************************
 
     Coordinate::Coordinate(double _x, double _y, double _z, const Lattice &init_home, COORD_TYPE mode)
-      : m_home(&init_home),
-        m_basis_ind(-1) {
+      : m_home(&init_home) {
       if(mode == FRAC) {
         m_frac_coord << _x, _y, _z;
         _update_cart();
@@ -59,13 +58,11 @@ namespace CASM {
       return CASM::almost_equal(m_cart_coord, RHS.m_cart_coord);
     }
 
-
     //********************************************************************
 
     bool Coordinate::almost_equal(const Coordinate &RHS) const {
       return dist(RHS) < lattice().tol();
     }
-
 
     //********************************************************************
 
@@ -133,7 +130,6 @@ namespace CASM {
 
     //********************************************************************
 
-    /// \brief Print normalized vector
     void Coordinate::print_axis(std::ostream &stream, COORD_TYPE mode, char term, Eigen::IOFormat format) const {
 
       Eigen::Vector3d vec;
@@ -146,7 +142,6 @@ namespace CASM {
     }
 
     //********************************************************************
-    // Finds distance between two coordinates
 
     double Coordinate::dist(const Coordinate &neighbor) const {
       return (cart() - neighbor.cart()).norm();
@@ -173,11 +168,6 @@ namespace CASM {
       return translation.const_cart().norm();
     }
 
-    //********************************************************************
-    // Finds minimum distance from any periodic image of a coordinate to any
-    // periodic image of a neighboring coordinate
-    //********************************************************************
-
     double Coordinate::min_dist2(const Coordinate &neighbor, const Eigen::Ref<const Eigen::Matrix3d> &metric) const {
       vector_type tfrac(frac() - neighbor.frac());
       tfrac -= lround(tfrac).cast<double>();
@@ -186,36 +176,13 @@ namespace CASM {
     }
 
     //********************************************************************
-    // Applies symmetry to a coordinate.
-    //********************************************************************
 
-    Coordinate &Coordinate::apply_sym(const SymOp &op) {
-      cart() = get_matrix(op) * this->const_cart() + get_translation(op);
+    /* Coordinate &Coordinate::apply_sym(const SymOp &op) { */
+    /*   cart() = get_matrix(op) * this->const_cart() + get_translation(op); */
 
-      return *this;
-    }
-
-    //********************************************************************
-    // Applies symmetry to a coordinate, but doesn't apply translation
-    //********************************************************************
-
-    /* Coordinate &Coordinate::apply_sym_no_trans(const SymOp &op) { */
-    /*   cart() = op.matrix() * const_cart(); */
     /*   return *this; */
     /* } */
 
-    //********************************************************************
-    // Change the home lattice of the coordinate, selecting one representation (either CART or FRAC)
-    // that remains invariant
-    //
-    // invariant_mode == CART: Cartesian coordinates stay the same, and fractional coordinates are updated
-    //    Ex: (my_coord.set_lattice(superlattice, CART); // this is how superlattices get filled.
-    //
-    // invariant_mode == FRAC: Fractional coordinates stay the same, and Cartesian coordinates are updated
-    //    Ex:  you can apply a strain by changing the lattice and keepin FRAC invariant
-    //            (my_coord.set_lattice(strained_lattice, FRAC);
-    //    Ex:  you can apply a rotation by changing the lattice and keeping FRAC invariant
-    //            (my_coord.set_lattice(rotated_lattice, FRAC);
     //********************************************************************
 
     void Coordinate::set_lattice(const Lattice &new_lat, COORD_TYPE invariant_mode) {
@@ -229,9 +196,6 @@ namespace CASM {
       return;
     }
 
-    //********************************************************************
-    // Within: if a point is outiside the cell defined by Lattice home
-    // then map that point back into the cell via translation by lattice vectors
     //********************************************************************
 
     bool Coordinate::within() {
@@ -361,7 +325,8 @@ namespace CASM {
 
     Coordinate operator*(const SymOp &LHS, const Coordinate &RHS) {
       Coordinate tcoord(RHS);
-      return tcoord.apply_sym(LHS);
+      sym::apply(LHS, tcoord);
+      return tcoord;
     }
 
     //********************************************************************
@@ -374,5 +339,17 @@ namespace CASM {
     }
 
   }
+
+  namespace sym {
+    xtal::Coordinate &apply(const xtal::SymOp &op, xtal::Coordinate &mutating_coord) {
+      mutating_coord.cart() = get_matrix(op) * mutating_coord.const_cart() + get_translation(op);
+      return mutating_coord;
+    }
+
+    xtal::Coordinate copy_apply(const xtal::SymOp &op, xtal::Coordinate coord) {
+      apply(op, coord);
+      return coord;
+    }
+  } // namespace sym
 }
 

@@ -105,7 +105,7 @@ namespace CASM {
       Coordinate first_site = Coordinate(result.structures[0].basis()[0].const_frac(), scel_ptr->lattice(), FRAC);
 
       Coordinate t_shift =
-        copy_apply(SymOp::point_op(from_node.lat_node.isometry), first_site)
+        sym::copy_apply(xtal::SymOp::point_operation(from_node.lat_node.isometry), first_site)
         - Coordinate(scel_ptr->uccoord(find_index(from_node.permutation, 0)).coordinate(this->primclex().prim()));
       t_shift.set_lattice(primclex().prim().lattice(), CART);
 

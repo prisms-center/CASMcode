@@ -46,8 +46,7 @@ namespace CASM {
       explicit Coordinate(const Lattice &_home) :
         m_home(&_home),
         m_frac_coord(vector_type::Zero()),
-        m_cart_coord(vector_type::Zero()),
-        m_basis_ind(-1) {
+        m_cart_coord(vector_type::Zero()) {
       }
 
       Coordinate(Eigen::Ref<const vector_type> const &_vec, const Lattice &_home, COORD_TYPE _mode);
@@ -236,15 +235,12 @@ namespace CASM {
       double min_dist2(const Coordinate &neighbor, const Eigen::Ref<const Eigen::Matrix3d> &metric) const;
 
       ///Transform coordinate by symmetry operation (including translation)
-      Coordinate &apply_sym(const SymOp &op); //AAB
+      /* Coordinate &apply_sym(const SymOp &op); //AAB */
 
-      template <typename ExternSymOp>
-      Coordinate &apply_sym(const ExternSymOp &op) {
-        return this->apply_sym(adapter::Adapter<SymOp, ExternSymOp>()(op));
-      }
-
-      ///Transform coordinate by symmetry operation (without translation)
-      /* Coordinate &apply_sym_no_trans(const SymOp &op); //AAB */
+      /* template <typename ExternSymOp> */
+      /* Coordinate &apply_sym(const ExternSymOp &op) { */
+      /*   return this->apply_sym(adapter::Adapter<SymOp, ExternSymOp>()(op)); */
+      /* } */
 
     private:
 
@@ -289,8 +285,6 @@ namespace CASM {
       Lattice const *m_home;
 
       vector_type m_frac_coord, m_cart_coord;
-
-      Index m_basis_ind;
     };
 
     inline
@@ -597,6 +591,20 @@ namespace CASM {
     }
 
   }
+}
+
+namespace CASM {
+  namespace sym {
+    /// \brief apply SymOp to a Coordinate
+    xtal::Coordinate &apply(const xtal::SymOp &op, xtal::Coordinate &coord);
+    /// \brief Copy and apply SymOp to a Coordinate
+    xtal::Coordinate copy_apply(const xtal::SymOp &op, xtal::Coordinate coord);
+
+    template <typename ExternSymOp>
+    xtal::Coordinate copy_apply(const ExternSymOp &op, xtal::Coordinate coord) {
+      return sym::copy_apply(adapter::Adapter<xtal::SymOp, ExternSymOp>()(op), coord);
+    }
+  } // namespace sym
 }
 
 namespace std {

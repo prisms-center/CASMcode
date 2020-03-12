@@ -1,6 +1,10 @@
 #include <exception>
+#include <set>
+#include <string>
 #include <vector>
 
+#include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/DoFSet.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/Molecule.hh"
 
@@ -10,6 +14,7 @@
 #include "casm/basis_set/DoFIsEquivalent.hh"
 #include "casm/basis_set/DoFIsEquivalent_impl.hh"
 #include "casm/basis_set/DoF.hh"
+#include "casm/crystallography/SymTools.hh"
 
 namespace CASM {
   namespace xtal {
@@ -24,18 +29,20 @@ namespace CASM {
 
     //****************************************************
 
-    Site::Site(const Coordinate &init_pos, const std::string &occ_name) : Site(init_pos, {
+    Site::Site(const Coordinate &init_pos, const std::string &occ_name) : Site(init_pos, std::vector<Molecule> {
       Molecule::make_atom(occ_name)
     }) {}
 
     /// \brief Construct site with initial position and the allowed Molecule
-    Site::Site(const Coordinate &init_pos, std::initializer_list<Molecule> site_occ) :
+    Site::Site(const Coordinate &init_pos, const std::vector<Molecule> &site_occ, const std::map<std::string, SiteDoFSet> &site_dof) :
       Coordinate(init_pos),
       m_label(-1),
       m_type_ID(-1),
-      m_occupant_dof(site_occ) {
-
+      m_occupant_dof(site_occ),
+      m_dof_map(site_dof) {
     }
+
+    Site::Site(const Coordinate &init_pos, const std::vector<Molecule> &site_occ) : Site(init_pos, site_occ, std::map<std::string, SiteDoFSet>()) {}
 
     Site::~Site() {}
 
@@ -99,23 +106,23 @@ namespace CASM {
 
     //****************************************************
 
-    Site &Site::_apply_sym_attributes(const SymOp &op) {
-      for(Index i = 0; i < occupant_dof().size(); i++)
-        m_occupant_dof[i].apply_sym(op);
+    /* Site &Site::_apply_sym_attributes(const SymOp &op) { */
+    /*   for(Index i = 0; i < occupant_dof().size(); i++) */
+    /*     m_occupant_dof[i].apply_sym(op); */
 
-      auto it = m_dof_map.begin();
-      for(; it != m_dof_map.end(); ++it)
-        it->second = sym::copy_apply(op, it->second);
+    /*   auto it = m_dof_map.begin(); */
+    /*   for(; it != m_dof_map.end(); ++it) */
+    /*     it->second = sym::copy_apply(op, it->second); */
 
-      m_type_ID = -1;
-      return *this;
-    }
+    /*   m_type_ID = -1; */
+    /*   return *this; */
+    /* } */
 
-    Site &Site::apply_sym(const SymOp &op) {
-      Coordinate::apply_sym(op);
-      _apply_sym_attributes(op);
-      return *this;
-    }
+    /* Site &Site::apply_sym(const SymOp &op) { */
+    /*   Coordinate::apply_sym(op); */
+    /*   _apply_sym_attributes(op); */
+    /*   return *this; */
+    /* } */
 
     //****************************************************
     /**
@@ -226,6 +233,7 @@ namespace CASM {
 
     void Site::set_dofs(std::map<std::string, SiteDoFSet> _dofs) {
       m_dof_map = std::move(_dofs);
+      m_type_ID = -1;
     }
 
     //****************************************************
@@ -445,7 +453,7 @@ namespace CASM {
     //****************************************************
 
     Site operator*(const SymOp &LHS, const Site &RHS) {
-      return Site(RHS).apply_sym(LHS);
+      return sym::copy_apply(LHS, RHS);
     }
 
     //****************************************************
@@ -460,7 +468,29 @@ namespace CASM {
       return Site(RHS) += LHS;
     }
 
+  }
 
+  namespace sym {
+    xtal::Site &apply(const xtal::SymOp &op, xtal::Site &mutating_site) {
+      xtal::Site transformed_site = copy_apply(op, mutating_site);
+      std::swap(transformed_site, mutating_site);
+      return mutating_site;
+    }
 
+    xtal::Site copy_apply(const xtal::SymOp &op, xtal::Site site) {
+      xtal::Coordinate transformed_coord = copy_apply(op, static_cast<xtal::Coordinate &>(site));
+
+      std::vector<xtal::Molecule> transformed_occupants = site.occupant_dof();
+      for(xtal::Molecule &occ : transformed_occupants) {
+        occ.apply_sym(op);
+      }
+
+      std::map<std::string, xtal::SiteDoFSet> transformed_dof;
+      for(const auto &name_dof_pr : site.dofs()) {
+        transformed_dof.emplace(name_dof_pr.first, sym::copy_apply(op, name_dof_pr.second));
+      }
+
+      return Site(transformed_coord, transformed_occupants, transformed_dof);
+    }
   }
 }

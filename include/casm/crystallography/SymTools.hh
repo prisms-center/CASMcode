@@ -23,6 +23,7 @@ namespace CASM {
       return copy_apply(adapter::Adapter<xtal::SymOp, ExternSymOp>()(op), lat);
     }
   } // namespace sym
+
   namespace xtal {
 
     /// \brief Construct indices of the subgroup that leaves a lattice unchanged

@@ -1,5 +1,6 @@
 #include <iterator>
 #include <memory>
+#include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/Structure.hh"
@@ -64,6 +65,12 @@ namespace CASM {
     xtal::UnitCellCoord &apply<CASM::SymOp, xtal::UnitCellCoord, Structure>(const CASM::SymOp &op, xtal::UnitCellCoord &mutating_ucc, const Structure &prim) {
       sym::apply(op, mutating_ucc, prim.lattice(), prim.basis_permutation_symrep_ID());
       return mutating_ucc;
+    }
+
+    //*******************************************
+    template<>
+    xtal::Coordinate &apply<CASM::SymOp, xtal::Coordinate>(const CASM::SymOp &op, xtal::Coordinate &mutating_coord) {
+      return mutating_coord;
     }
 
 

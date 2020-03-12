@@ -29,9 +29,11 @@ namespace CASM {
 
       Site(const Coordinate &init_pos, const std::string &occ_name);
 
-      //TODO: Why don't you accept a vector?
-      /// \brief Construct site with initial position and the allowed Molecule
-      Site(const Coordinate &init_pos, std::initializer_list<Molecule> site_occ);
+      /// \brief Construct site with initial position, allowed molecules (occupants)
+      Site(const Coordinate &init_pos, const std::vector<Molecule> &site_occ);
+
+      /// \brief Construct site with initial position, allowed molecules (occupants), and local degrees of freedom
+      Site(const Coordinate &init_pos, const std::vector<Molecule> &site_occ, const std::map<std::string, SiteDoFSet> &site_dof);
 
       ~Site();
 
@@ -79,12 +81,12 @@ namespace CASM {
       /// Set label of Site. The label is used to distinguish between otherwise identical sites.
       void set_label(Index _new_label);
 
-      Site &apply_sym(const SymOp &op);
+      /* Site &apply_sym(const SymOp &op); */
 
-      template <typename ExternSymOp>
-      Site &apply_sym(const ExternSymOp &op) {
-        return this->apply_sym(adapter::Adapter<SymOp, ExternSymOp>()(op));
-      }
+      /* template <typename ExternSymOp> */
+      /* Site &apply_sym(const ExternSymOp &op) { */
+      /*   return this->apply_sym(adapter::Adapter<SymOp, ExternSymOp>()(op)); */
+      /* } */
 
       void read(std::istream &stream, bool SD_is_on = false);
       void read(std::istream &stream, std::string &elem, bool SD_is_on);
@@ -101,7 +103,7 @@ namespace CASM {
         return m_type_prototypes;
       }
 
-      Site &_apply_sym_attributes(const SymOp &op);
+      /* Site &_apply_sym_attributes(const SymOp &op); */
 
       /// Integer label used to differentiate sites of otherwise identical type
       Index m_label;
@@ -138,6 +140,15 @@ namespace CASM {
     Site operator+(const Coordinate &LHS, const Site &RHS);
 
     /** @} */
+  }
+
+  namespace sym {
+    /// \brief Apply SymOp to a Site. Transforms the Coordinate as well as the allowed occupants (Molecules)
+    /// and other degrees of freedom.
+    xtal::Site &apply(const xtal::SymOp &op, xtal::Site &mutating_site);
+    /// \brief Copy and apply SymOp to a Site. Transforms the Coordinate as well as the allowed occupants (Molecules)
+    /// and other degrees of freedom.
+    xtal::Site copy_apply(const xtal::SymOp &op, xtal::Site site);
   }
 }
 
