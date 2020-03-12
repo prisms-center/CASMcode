@@ -43,6 +43,8 @@ namespace CASM {
                                                 SimpleStructure const &child_struc) const override;
 
       /// \brief Creates copy of _child_struc by applying isometry, lattice transformation, translation, and site permutation of _node
+      /// Result has all sites within the unit cell. After setting resolution, the lattice and sites of _child_struc match the setting
+      /// of the parent structure onto which it has been mapped (as defined by '_node')
       virtual SimpleStructure resolve_setting(MappingNode const &_node,
                                               SimpleStructure const &_child_struc) const override;
 

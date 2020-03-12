@@ -219,7 +219,10 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  /// \brief Initializes configdof corresponding to a mapping (encoded by _node) of _child_struc onto _pclex
+
+  /// \brief Initializes configdof of Supercell '_scel' corresponding to an idealized child structure (encoded by _child_struc)
+  /// _child_struc is assumed to have been idealized via structure-mapping or to be the result of converting a configuration to
+  /// a SimpleStructure. result.second gives list of properties that were utilized in the course of building the configdof
   std::pair<ConfigDoF, std::set<std::string> > to_configdof(SimpleStructure const &_child_struc, Supercell const  &_scel) {
     SimpleStructure::Info const &c_info(_child_struc.mol_info);
     std::pair<ConfigDoF, std::set<std::string> > result(_scel.zero_configdof(TOL), {});
@@ -308,6 +311,8 @@ namespace CASM {
     m_settings(_settings) {
 
     if(!settings().filter.empty()) {
+      /// If a filter string is specified, construct the Supercell query filter for restricting potential supercells
+      /// for mapping
       DataFormatter<Supercell> formatter = _pclex.settings().query_handler<Supercell>().dict().parse(settings().filter);
       auto filter =
       [formatter, &_pclex](Lattice const & parent, Lattice const & child)->bool{
@@ -341,13 +346,6 @@ namespace CASM {
                                                     Index k,
                                                     Configuration const *hint_ptr,
                                                     std::vector<DoFKey> const &_hint_dofs) const {
-    //std::cout << "Importing:\n";
-    //VaspIO::PrintPOSCAR printer(child_struc);
-    //printer.print(std::cout);
-    //std::cout << "\n";
-    //jsonParser json;
-    //to_json(child_struc,json);
-    //std::cout << json << "\n";
     ConfigMapperResult result;
     double best_cost = xtal::StrucMapping::big_inf();
 
@@ -378,24 +376,6 @@ namespace CASM {
       // Refactor into external routine A. This is too annoying with the current way that supercells are managed
       if(!config_maps.empty()) {
         hint_cost = best_cost = config_maps.rbegin()->cost;
-        /*const Supercell &scel(hint_ptr->supercell());
-        for(auto const &map : config_maps) {
-          SimpleStructure resolved_struc = tmapper.calculator().resolve_setting(map, child_struc);
-          auto tdof = to_configdof(resolved_struc, scel);
-          Configuration tconfig(scel, jsonParser(), tdof.first);
-          PermuteIterator perm_it = scel.sym_info().permute_begin();
-          if(strict()) {
-            // Strictness transformation reduces permutation swaps, translation magnitude, and isometry character
-            perm_it = Local::_strictest_equivalent(scel.sym_info().permute_begin(), scel.sym_info().permute_end(), map);
-          }
-          else {
-            perm_it = tconfig.to_canonical();
-          }
-          tconfig.apply_sym(perm_it);
-          MappingNode resolved_node = copy_apply(perm_it, map);
-          resolved_struc = tmapper.calculator().resolve_setting(resolved_node, child_struc);
-          result.maps.emplace(resolved_node, ConfigMapperResult::Individual(std::move(tconfig), std::move(resolved_struc), std::move(tdof.second)));
-          }*/
       }
       //\End routine A
       //TODO: Check equivalence with hint_ptr
@@ -405,7 +385,6 @@ namespace CASM {
     std::set<MappingNode> struc_maps;
 
     if(hint_ptr && settings().ideal) {
-      std::cout << "DOING THE IDEAL THING\n";
       xtal::LatticeNode lat_node(hint_ptr->prim().lattice(),
                                  hint_ptr->ideal_lattice(),
                                  Lattice(child_struc.lat_column_mat),
@@ -449,7 +428,6 @@ namespace CASM {
         result.fail_msg = "Unable to map structure to prim. May be incompatible structure, or provided settings may be too restrictive.";
     }
 
-    //std::cout << "struc_maps.size(): " << struc_maps.size() << "\n";
     // Refactor into external routine A. This is too annoying with the current way that supercells are managed
     for(auto const &map : struc_maps) {
       std::shared_ptr<Supercell> shared_scel = std::make_shared<Supercell>(&primclex(), map.lat_node.parent.superlattice());

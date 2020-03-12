@@ -23,7 +23,7 @@ namespace CASM {
     using EquivPtr = notstd::cloneable_ptr<ConfigDoFIsEquivalent::Base>;
 
     /// Construct with config to be compared against, tolerance for comparison, and (optional) list of DoFs to compare
-    /// if _wich_dofs is empty, all dofs will be compared
+    /// if _wich_dofs is empty, no dofs will be compared (default is "all", in which case all DoFs are compared)
     ConfigIsEquivalent(const Configuration &_config,
                        double _tol,
                        std::set<std::string> const &_which_dofs = {"all"}) :

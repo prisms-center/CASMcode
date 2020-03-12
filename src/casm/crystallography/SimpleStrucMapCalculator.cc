@@ -168,10 +168,10 @@ namespace CASM {
                                             SimpleStructure const &_child_struc) const {
 
       populate_displacement(node, _child_struc);
-      //std::cout << "**Finalizing: cost: " << node.cost;
+
       node.basis_node.cost = StrucMapping::basis_cost(node, this->struc_info(_child_struc).size());
       node.cost = node.basis_weight * node.basis_node.cost + node.strain_weight * node.lat_node.cost;
-      //std::cout << " -> " << _node.cost << "\n";
+
       node.is_valid = this->_assign_molecules(node, _child_struc);
 
       return;
@@ -223,12 +223,6 @@ namespace CASM {
           Coordinate parent_coord = Local::_make_superlattice_coordinate(i % pgrid.size(), pgrid, parent_index_to_unitcell);
           parent_coord.cart() += p_info.cart_coord(i / pgrid.size());
           child_coord.min_dist(parent_coord, disp_coord);
-          //std::cout << "\nMap " << _node.atom_permutation[i] << "->" << i << "\n"
-          //        << "Child coord (" << _node.atom_permutation[i] % cgrid.size()<< ", "<< _node.atom_permutation[i] / cgrid.size() << "): "
-          //        << child_coord.const_cart().transpose() << "\n"
-          //        << "Parent coord: (" << i % pgrid.size()<< ", "<< i / pgrid.size() << "): "
-          //        << parent_coord.const_cart().transpose() << "\n"
-          //        << "Disp coord: " << disp_coord.const_cart().transpose() << "\n";
 
           _node.atom_displacement.col(i) = disp_coord.const_cart();
 
@@ -236,7 +230,7 @@ namespace CASM {
       }
 
       Eigen::Vector3d avg_disp = _node.atom_displacement.rowwise().sum() / max<double>(double(cN), 1.);
-      //std::cout << "avg disp: " << avg_disp << "\n";
+
       for(Index i = 0; i < _node.atom_permutation.size(); i++) {
         if(_node.atom_permutation[i] < cN) {
           _node.atom_displacement.col(i) -= avg_disp;
@@ -353,7 +347,7 @@ namespace CASM {
       node.mol_labels.reserve(node.atom_permutation.size());
       Index j = 0;
       for(Index i : node.atom_permutation) {
-        node.mol_map.emplace_back(MappingNode::MoleculeSet({i}));
+        node.mol_map.emplace_back(MappingNode::AtomIndexSet({i}));
         Index bc = i / cgrid.size();
         std::string sp = "Va";
         if(bc < _child_struc.atom_info.size())

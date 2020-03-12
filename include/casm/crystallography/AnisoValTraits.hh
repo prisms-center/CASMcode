@@ -29,7 +29,7 @@ namespace CASM {
     ///\brief Named constructor for total energy AnisoValTraits
     static AnisoValTraits energy();
 
-    ///\brief Named constructor for total energy AnisoValTraits
+    ///\brief Named constructor for mapping cost (basis_cost/strain_cost/total_cost) AnisoValTraits
     static AnisoValTraits cost();
 
     ///\brief Named constructor for selective_dynamics AnisoValTraits
@@ -38,10 +38,10 @@ namespace CASM {
     ///\brief Named constructor for site displacement AnisoValTraits
     static AnisoValTraits disp();
 
-    ///\brief Named constructor for site displacement AnisoValTraits
+    ///\brief Named constructor for site coordinate AnisoValTraits
     static AnisoValTraits coordinate();
 
-    ///\brief Named constructor for site displacement AnisoValTraits
+    ///\brief Named constructor for lattice vector AnisoValTraits
     static AnisoValTraits latvec();
 
     ///\brief Named constructor for site force AnisoValTraits
