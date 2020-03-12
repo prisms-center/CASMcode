@@ -1,6 +1,7 @@
 #ifndef SIMPLESTRUCTUREIO_HH
 #define SIMPLESTRUCTUREIO_HH
 
+#include <set>
 #include "casm/casm_io/json/jsonParser.hh"
 
 namespace CASM {

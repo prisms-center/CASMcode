@@ -7,6 +7,7 @@
 #include "casm/kinetics/OccupationTransformation.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/symmetry/SymTools.hh"
+#include "casm/crystallography/io/UnitCellCoordIO.hh"
 #include <utility>
 
 namespace CASM {

@@ -1,14 +1,13 @@
 #include "casm/kinetics/OccupationTransformation.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/io/UnitCellCoordIO.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/basis_set/DoF.hh"
 
 #include "casm/kinetics/DoFTransformation_impl.hh"
 
 namespace CASM {
-
-
   namespace Kinetics {
 
     template class DoFTransformation<CRTPBase<Kinetics::OccupationTransformation> >;

@@ -3,8 +3,6 @@
 #include "casm/crystallography/HermiteCounter.hh"
 #include "casm/external/Eigen/Dense"
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/casm_io/json/jsonParser.hh"
-#include "casm/casm_io/container/json_io.hh"
 
 namespace CASM {
   namespace xtal {

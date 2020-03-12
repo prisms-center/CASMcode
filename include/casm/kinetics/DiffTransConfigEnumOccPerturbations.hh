@@ -10,6 +10,7 @@
 #include "casm/kinetics/OccPerturbation.hh"
 #include "casm/kinetics/DiffTransConfiguration.hh"
 #include "casm/clusterography/ClusterSymCompare.hh"
+#include "casm/crystallography/io/SuperlatticeEnumeratorIO.hh"
 
 namespace CASM {
 

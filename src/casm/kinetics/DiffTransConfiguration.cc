@@ -8,6 +8,7 @@
 #include "casm/crystallography/io/VaspIO.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/clex/Clexulator.hh"
+#include "casm/clex/SimpleStructureTools.hh"
 #include "casm/database/Named_impl.hh"
 #include "casm/database/DiffTransConfigDatabase.hh"
 
@@ -447,12 +448,12 @@ namespace CASM {
     std::string pos_string(DiffTransConfiguration const &dtc) {
       std::stringstream ss;
       ss << "Initial POS:" << std::endl;
-      VaspIO::PrintPOSCAR from(xtal::make_simple_structure(dtc.sorted().from_config()), dtc.sorted().from_config().name());
+      VaspIO::PrintPOSCAR from(make_simple_structure(dtc.sorted().from_config()), dtc.sorted().from_config().name());
       from.sort();
       from.print(ss);
       ss << std::endl;
       ss << "Final POS:" << std::endl;
-      VaspIO::PrintPOSCAR to(xtal::make_simple_structure(dtc.sorted().to_config()), dtc.sorted().to_config().name());
+      VaspIO::PrintPOSCAR to(make_simple_structure(dtc.sorted().to_config()), dtc.sorted().to_config().name());
       to.sort();
       to.print(ss);
       return ss.str();

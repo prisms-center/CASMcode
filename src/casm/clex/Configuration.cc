@@ -18,6 +18,7 @@
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clex/MappedPropertiesTools.hh"
+#include "casm/clex/SimpleStructureTools.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/LatticePointWithin.hh"
 #include "casm/crystallography/LinearIndexConverter.hh"
@@ -28,6 +29,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/io/VaspIO.hh"
+#include "casm/crystallography/io/SimpleStructureIO.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/DiffTransConfigDatabase.hh"
 #include "casm/database/Named_impl.hh"
@@ -875,7 +877,7 @@ namespace CASM {
 
   std::string pos_string(Configuration const  &_config) {
     std::stringstream ss;
-    VaspIO::PrintPOSCAR p(xtal::make_simple_structure(_config), _config.name());
+    VaspIO::PrintPOSCAR p(make_simple_structure(_config), _config.name());
     p.sort();
     p.print(ss);
     return ss.str();
@@ -905,7 +907,7 @@ namespace CASM {
     std::stringstream ss;
 
     jsonParser tjson;// = json_supplement(_config);
-    to_json(xtal::make_simple_structure(_config), tjson);
+    to_json(make_simple_structure(_config), tjson);
     tjson.print(ss);
     return ss.str();
   }

@@ -1,20 +1,21 @@
 #include "casm/app/AppIO_impl.hh"
 
 #include "casm/app/HamiltonianModules.hh"
+#include "casm/basis_set/DoFTraits.hh"
+#include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/casm_io/container/json_io.hh"
-#include "casm/crystallography/BasicStructure.hh"
 #include "casm/clex/io/json/ChemicalReference.hh"
-#include "casm/clusterography/ClusterSymCompare.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
-#include "casm/basis_set/FunctionVisitor.hh"
-#include "casm/basis_set/DoFTraits.hh"
+#include "casm/clusterography/ClusterSymCompare.hh"
+#include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/DoFSet.hh"
+#include "casm/crystallography/io/DoFSetIO.hh"
 #include "casm/global/enum/json_io.hh"
 #include "casm/global/enum/stream_io.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
-#include "casm/symmetry/SymInfo.hh"
 #include "casm/symmetry/Orbit_impl.hh"
+#include "casm/symmetry/SymInfo.hh"
 
 namespace CASM {
 

@@ -2,6 +2,7 @@
 
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
+#include "casm/crystallography/io/SimpleStructureIO.hh"
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/clex/ConfigMapping.hh"
 #include "casm/app/DirectoryStructure.hh"

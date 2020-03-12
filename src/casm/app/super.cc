@@ -16,6 +16,7 @@
 #include "casm/clex/Supercell_impl.hh"
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/clex/ConfigMapping.hh"
+#include "casm/clex/SimpleStructureTools.hh"
 #include "casm/database/Selection_impl.hh"
 #include "casm/database/DatabaseTypes.hh"
 #include "casm/database/ScelDatabase.hh"
@@ -514,7 +515,7 @@ namespace CASM {
         std::stringstream ss;
         const Configuration &con = *primclex.db<Configuration>().find(configname[0]);
 
-        VaspIO::PrintPOSCAR p(xtal::make_simple_structure(con), con.name());
+        VaspIO::PrintPOSCAR p(make_simple_structure(con), con.name());
         p.sort();
         p.print(ss);
 

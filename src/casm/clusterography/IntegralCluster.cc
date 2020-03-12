@@ -7,6 +7,7 @@
 #include "casm/clusterography/ClusterSymCompare_impl.hh"
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/io/UnitCellCoordIO.hh"
 #include "casm/global/enum/json_io.hh"
 
 namespace CASM {

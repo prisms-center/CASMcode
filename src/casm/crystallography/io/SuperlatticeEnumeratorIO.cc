@@ -1,5 +1,7 @@
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/io/SuperlatticeEnumeratorIO.hh"
+#include "casm/casm_io/json/jsonParser.hh"
+#include "casm/casm_io/container/json_io.hh"
 
 namespace CASM {
   jsonParser &to_json(const xtal::ScelEnumProps &props, jsonParser &json) {

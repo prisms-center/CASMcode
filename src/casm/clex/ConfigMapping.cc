@@ -9,6 +9,7 @@
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/ParamComposition.hh"
+#include "casm/clex/SimpleStructureTools.hh"
 #include "casm/strain/StrainConverter.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Niggli.hh"
@@ -277,7 +278,7 @@ namespace CASM {
     //bool is_new_config(true);
 
     if(hint_ptr != nullptr) {
-      StrucMapper tmapper(*struc_mapper().calculator().quasi_clone(xtal::make_simple_structure(*hint_ptr, _hint_dofs),
+      StrucMapper tmapper(*struc_mapper().calculator().quasi_clone(make_simple_structure(*hint_ptr, _hint_dofs),
                                                                    make_point_group(hint_ptr->point_group(), hint_ptr->supercell().sym_info().supercell_lattice()),
                                                                    SimpleStructure::SpeciesMode::ATOM),
                           struc_mapper().strain_weight(),
