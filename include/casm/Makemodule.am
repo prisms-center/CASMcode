@@ -182,6 +182,7 @@ casm_clex_include_HEADERS = \
     include/casm/clex/ScelEnum.hh\
     include/casm/clex/ScelEnumEquivalents.hh\
     include/casm/clex/ScelEnum_impl.hh\
+    include/casm/clex/SimpleStructureTools.hh\
     include/casm/clex/SuperConfigEnum.hh\
     include/casm/clex/Supercell.hh\
     include/casm/clex/SupercellIO.hh\
@@ -277,14 +278,19 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/SymType.hh\
     include/casm/crystallography/SymTypeComparator.hh\
     include/casm/crystallography/UnitCellCoord.hh\
-    include/casm/crystallography/UnitCellCoordTraits.hh\
-    include/casm/crystallography/jsonStruc.hh
+    include/casm/crystallography/UnitCellCoordTraits.hh
 
 #-------------------------------------------------------------------------------#
 
 casm_crystallography_io_includedir=$(includedir)/casm/crystallography/io
 casm_crystallography_io_include_HEADERS = \
-    include/casm/crystallography/io/VaspIO.hh
+    include/casm/crystallography/io/DoFSetIO.hh\
+    include/casm/crystallography/io/LatticeIO.hh\
+    include/casm/crystallography/io/SimpleStructureIO.hh\
+    include/casm/crystallography/io/SuperlatticeEnumeratorIO.hh\
+    include/casm/crystallography/io/UnitCellCoordIO.hh\
+    include/casm/crystallography/io/VaspIO.hh\
+    include/casm/crystallography/io/jsonStruc.hh
 
 #-------------------------------------------------------------------------------#
 

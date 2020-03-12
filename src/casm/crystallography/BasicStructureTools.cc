@@ -10,9 +10,6 @@
 #include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/SymType.hh"
 #include "casm/crystallography/DoFSet.hh"
-
-// TODO: This has to get gobbled into crystallography
-#include "casm/basis_set/DoFIsEquivalent.hh"
 #include "casm/external/Eigen/Core"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include <algorithm>

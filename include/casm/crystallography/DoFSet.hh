@@ -1,9 +1,8 @@
 #ifndef CASM_XTAL_DOFSET
 #define CASM_XTAL_DOFSET
 
-#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/crystallography/AnisoValTraits.hh"
-#include "casm/external/Eigen/src/Core/Matrix.h"
+#include "casm/external/Eigen/Core"
 #include <unordered_set>
 #include <vector>
 
@@ -183,33 +182,14 @@ namespace CASM {
     };
 
   } // namespace xtal
+}
 
+namespace CASM {
   // This is how it's currently organized for xtal::Lattice, but maybe we want something else  (see SymTools.hh)
   namespace sym {
     /// \brief Copy and apply SymOp to a DoFSet
     xtal::DoFSet copy_apply(const xtal::SymOp &op, const xtal::DoFSet &_dof);
   } // namespace sym
-
-  template <>
-  xtal::SiteDoFSet from_json<xtal::SiteDoFSet>(const jsonParser &json);
-  template <>
-  xtal::DoFSet from_json<xtal::DoFSet>(const jsonParser &json);
-
-  jsonParser &to_json(xtal::SiteDoFSet const &_dof, jsonParser &json);
-  jsonParser &to_json(xtal::DoFSet const &_dof, jsonParser &json);
-
-  /* template<> xtal::DoFSet from_json<xtal::DoFSet>(const jsonParser &json); */
-  /* xtal::SiteDoFSet& from_json( xtal::SiteDoFSet &_dof,const jsonParser &json); */
-  /* xtal::DoFSet& from_json( xtal::DoFSet &_dof,const jsonParser &json); */
-
-  /* template <> */
-  /* struct jsonConstructor<xtal::SiteDoFSet> { */
-  /*   static xtal::SiteDoFSet from_json(const jsonParser &json, xtal::SiteDoFSet::BasicTraits const &_type); */
-  /* }; */
-  /* template <> */
-  /* struct jsonConstructor<xtal::DoFSet> { */
-  /*   static xtal::DoFSet from_json(const jsonParser &json, xtal::DoFSet::BasicTraits const &_type); */
-  /* }; */
 } // namespace CASM
 
 #endif

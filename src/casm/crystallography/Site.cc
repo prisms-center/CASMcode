@@ -7,14 +7,27 @@
 #include "casm/crystallography/DoFSet.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/Molecule.hh"
-
-#include "casm/casm_io/container/json_io.hh"
-#include "casm/basis_set/DoFTraits.hh"
-#include "casm/basis_set/OccupationDoFTraits.hh"
-#include "casm/basis_set/DoFIsEquivalent.hh"
-#include "casm/basis_set/DoFIsEquivalent_impl.hh"
-#include "casm/basis_set/DoF.hh"
 #include "casm/crystallography/SymTools.hh"
+
+namespace {
+  using namespace CASM;
+  bool occupant_dof_are_equal(const std::vector<xtal::Molecule> &LHS, const std::vector<xtal::Molecule> &RHS, double tol) {
+    if(RHS.size() != LHS.size())
+      return false;
+    Index j;
+    for(Index i = 0; i < LHS.size(); ++i) {
+      for(j = 0; j < RHS.size(); ++j) {
+        if(LHS[i].identical(RHS[j], tol)) {
+          break;
+        }
+      }
+      if(j == RHS.size()) {
+        return false;
+      }
+    }
+    return true;
+  }
+}
 
 namespace CASM {
   namespace xtal {
@@ -419,7 +432,7 @@ namespace CASM {
 
     bool Site::_compare_type_no_ID(const Site &_other) const {
       //compare domain but not value
-      if(!(label() == _other.label() && OccupantDoFIsEquivalent<Molecule>(occupant_dof())(_other.occupant_dof())))
+      if(!(label() == _other.label() && ::occupant_dof_are_equal(occupant_dof(), _other.occupant_dof(), TOL)))
         return false;
 
       if(m_dof_map.size() != _other.m_dof_map.size())
@@ -490,7 +503,7 @@ namespace CASM {
         transformed_dof.emplace(name_dof_pr.first, sym::copy_apply(op, name_dof_pr.second));
       }
 
-      return Site(transformed_coord, transformed_occupants, transformed_dof);
+      return xtal::Site(transformed_coord, transformed_occupants, transformed_dof);
     }
   }
 }

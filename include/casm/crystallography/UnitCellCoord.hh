@@ -10,8 +10,6 @@
 #include "casm/misc/Comparisons.hh"
 
 namespace CASM {
-  class jsonParser;
-
   namespace xtal {
     class Coordinate;
     class Site;
@@ -236,13 +234,6 @@ namespace CASM {
     Coordinate make_superlattice_coordinate(const UnitCell &ijk, const Lattice &tiling_unit, const Lattice &superlattice);
 
   } // namespace xtal
-
-  /// \brief Print to json as [b, i, j, k]
-  jsonParser &to_json(const xtal::UnitCellCoord &ucc_val, jsonParser &fill_json);
-
-  /// \brief Read from json [b, i, j, k]
-  void from_json(xtal::UnitCellCoord &fill_value, const jsonParser &read_json);
-
 } // namespace CASM
 
 /* #include "casm/crystallography/Coordinate.hh" */

@@ -1,6 +1,6 @@
 #include "casm/crystallography/SpeciesAttribute.hh"
 #include "casm/crystallography/SymType.hh"
-#include "casm/external/Eigen/src/Core/Matrix.h"
+#include "casm/external/Eigen/Core"
 #include "casm/misc/CASM_Eigen_math.hh"
 
 namespace CASM {

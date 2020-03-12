@@ -4,7 +4,6 @@
 #include <vector>
 #include <array>
 #include "casm/external/Eigen/Core"
-#include "casm/external/Eigen/src/Core/Matrix.h"
 #include "casm/global/eigen.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 

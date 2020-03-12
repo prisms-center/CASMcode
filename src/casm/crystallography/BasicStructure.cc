@@ -1,8 +1,4 @@
 #include "casm/crystallography/BasicStructure.hh"
-#include "casm/basis_set/DoFIsEquivalent.hh"
-#include "casm/basis_set/OccupationDoFTraits.hh"
-#include "casm/basis_set/Adapter.hh"
-#include "casm/basis_set/DoFSet.hh"
 #include "casm/crystallography/Adapter.hh"
 #include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/crystallography/LatticePointWithin.hh"
@@ -10,12 +6,11 @@
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/basis_set/DoF.hh"
-#include <boost/filesystem.hpp>
-#include <stdexcept>
-
 #include "casm/crystallography/io/VaspIO.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
+#include "casm/misc/algorithm.hh"
+#include <boost/filesystem.hpp>
+#include <stdexcept>
 
 namespace CASM {
   namespace xtal {

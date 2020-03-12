@@ -1,7 +1,6 @@
 #ifndef CASM_SimpleStrucMapCalculator
 #define CASM_SimpleStrucMapCalculator
 
-
 #include "casm/crystallography/StrucMapCalculatorInterface.hh"
 #include "casm/crystallography/Adapter.hh"
 

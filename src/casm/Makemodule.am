@@ -139,6 +139,7 @@ libcasm_la_SOURCES = \
     include/casm/clex/ScelEnum.hh\
     include/casm/clex/ScelEnumEquivalents.hh\
     include/casm/clex/ScelEnum_impl.hh\
+    include/casm/clex/SimpleStructureTools.hh\
     include/casm/clex/SuperConfigEnum.hh\
     include/casm/clex/Supercell.hh\
     include/casm/clex/SupercellIO.hh\
@@ -210,8 +211,13 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/SymTypeComparator.hh\
     include/casm/crystallography/UnitCellCoord.hh\
     include/casm/crystallography/UnitCellCoordTraits.hh\
+    include/casm/crystallography/io/DoFSetIO.hh\
+    include/casm/crystallography/io/LatticeIO.hh\
+    include/casm/crystallography/io/SimpleStructureIO.hh\
+    include/casm/crystallography/io/SuperlatticeEnumeratorIO.hh\
+    include/casm/crystallography/io/UnitCellCoordIO.hh\
     include/casm/crystallography/io/VaspIO.hh\
-    include/casm/crystallography/jsonStruc.hh\
+    include/casm/crystallography/io/jsonStruc.hh\
     include/casm/database/Cache.hh\
     include/casm/database/ConfigData.hh\
     include/casm/database/ConfigData_impl.hh\
@@ -801,6 +807,7 @@ libcasm_la_SOURCES = \
     src/casm/clex/RemoveSupercell.cc\
     src/casm/clex/ScelEnum.cc\
     src/casm/clex/ScelEnumEquivalents.cc\
+    src/casm/clex/SimpleStructureTools.cc\
     src/casm/clex/SuperConfigEnum.cc\
     src/casm/clex/Supercell.cc\
     src/casm/clex/SupercellIO.cc\
@@ -842,6 +849,11 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/SymTypeComparator.cc\
     src/casm/crystallography/UnitCellCoord.cc\
     src/casm/crystallography/UnitCellCoordTraits.cc\
+    src/casm/crystallography/io/DoFSetIO.cc\
+    src/casm/crystallography/io/LatticeIO.cc\
+    src/casm/crystallography/io/SimpleStructureIO.cc\
+    src/casm/crystallography/io/SuperlatticeEnumeratorIO.cc\
+    src/casm/crystallography/io/UnitCellCoordIO.cc\
     src/casm/crystallography/io/VaspIO.cc\
     src/casm/database/ConfigData.cc\
     src/casm/database/ConfigDatabase.cc\
@@ -977,4 +989,4 @@ libcasm_la_LIBADD = \
 libcasm_la_LDFLAGS = \
     $(BOOST_LDFLAGS)\
     -avoid-version
-# src/casm/version/autoversion.lo: .FORCE
+src/casm/version/autoversion.lo: .FORCE

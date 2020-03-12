@@ -11,13 +11,10 @@
 #include <vector>
 
 namespace CASM {
-  class jsonParser;
-
   namespace xtal {
 
     struct SymOp;
     class Molecule;
-
 
     /** \ingroup Coordinate
      *  @{

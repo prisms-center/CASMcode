@@ -11,10 +11,8 @@
 #include "casm/misc/Comparisons.hh"
 
 namespace CASM {
-  class jsonParser;
 
   namespace xtal {
-    class ScelEnumProps;
 
     /** \defgroup Crystallography
      *
@@ -159,19 +157,18 @@ namespace CASM {
       /// The eight parallelipipeds touching the origin enclose a sphere of given radius
       Eigen::Vector3i enclose_sphere(double radius) const;
 
+      //TODO: Extract
       /// Make a grid of lattice sites such that min_radius <= distance <= max_radius from \param lat_point
-      // ***This should live somewhere else
       template <typename CoordType, typename CoordType2>
       std::vector<CoordType> gridstruc_build(double max_radius, double min_radius, std::vector<CoordType> basis, CoordType2 lat_point);
 
+      //TODO: Extract
       void read(std::istream &stream);
+      //TODO: Extract
       void print(std::ostream &stream, int _prec = 8) const;
 
       /// \brief Compare two Lattice
       bool operator<(const Lattice &RHS) const;
-
-      /// Matrix that relates two lattices (e.g., strain or slat)
-      // Eigen::Matrix3d operator/(const Lattice &RHS);
 
       /// Return a lattice with diagonal matrix that fits around starting lattice
       Lattice box(const Lattice &prim, const Lattice &scel, bool verbose = false) const;
@@ -330,9 +327,5 @@ namespace CASM {
     Eigen::Matrix3l make_transformation_matrix(const Lattice &tiling_unit, const Lattice &superlattice, double tol);
 
   } // namespace xtal
-  // write Lattice in json as array of vectors
-  jsonParser &to_json(const xtal::Lattice &lat, jsonParser &json);
-  void from_json(xtal::Lattice &lat, const jsonParser &json, double xtal_tol);
-
 } // namespace CASM
 #endif
