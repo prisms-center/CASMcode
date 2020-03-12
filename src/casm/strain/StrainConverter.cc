@@ -1,3 +1,4 @@
+#include "casm/crystallography/Strain.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymRepTools.hh"
@@ -9,79 +10,67 @@ namespace CASM {
   //Calculates the metric tensor of the the deformation gradient as
   //F^{T}F
   Matrix3d StrainConverter::metric_tensor(const Matrix3d &F) {
-    return F.transpose() * F;
+    return strain::metric_tensor(F);
   }
   //*******************************************************************************************
   //calculates and returns the value of U where F = R*U
   Matrix3d StrainConverter::right_stretch_tensor(Matrix3d &C, const Matrix3d &F) {
-    C = metric_tensor(F);
-    Eigen::SelfAdjointEigenSolver <Matrix3d> eigen_solver(C);
-    return eigen_solver.operatorSqrt();
+    C = strain::metric_tensor(F);
+    return strain::right_stretch_tensor(F);
   }
 
   //*******************************************************************************************
   //overloaded version of the above
   Matrix3d StrainConverter::right_stretch_tensor(const Matrix3d &F) {
-    Matrix3d C;
-    return right_stretch_tensor(C, F);
+    return strain::right_stretch_tensor(F);
   }
 
   //*******************************************************************************************
   /// GREEN_LAGRANGE = 1/2 * (F^{T} F - I)
   Matrix3d StrainConverter::green_lagrange(const Matrix3d &F) {
-    return 0.5 * (F.transpose() * F - Eigen::MatrixXd::Identity(3, 3));
+    return strain::deformation_tensor_to_metric<STRAIN_METRIC::GREEN_LAGRANGE>(F);
   }
 
   //*******************************************************************************************
   /// GREEN_LAGRANGE = 1/2 * (F^{T} F - I)
   Matrix3d StrainConverter::green_lagrange_to_F(const Matrix3d &E) {
-    Eigen::SelfAdjointEigenSolver<Matrix3d> es(2 * E + Eigen::MatrixXd::Identity(3, 3));
-    return es.operatorSqrt();
+    return strain::metric_to_deformation_tensor<STRAIN_METRIC::GREEN_LAGRANGE>(E);
   }
 
   //*******************************************************************************************
   /// BIOT = (U-I)
   Matrix3d StrainConverter::biot(const Matrix3d &F) {
-    return (right_stretch_tensor(F) - Eigen::MatrixXd::Identity(3, 3));
+    return strain::deformation_tensor_to_metric<STRAIN_METRIC::BIOT>(F);
   }
 
   //*******************************************************************************************
   /// BIOT = (U-I)
   Matrix3d StrainConverter::biot_to_F(const Matrix3d &B) {
-    return B + Eigen::MatrixXd::Identity(3, 3);
+    return strain::metric_to_deformation_tensor<STRAIN_METRIC::BIOT>(B);
   }
 
   //*******************************************************************************************
   /// HENCKY = log(C)/2
   Matrix3d StrainConverter::hencky(const Matrix3d &F) {
-    Eigen::SelfAdjointEigenSolver<Matrix3d> es(F.transpose()*F);
-    return es.eigenvectors() * es.eigenvalues().array().log().matrix().asDiagonal() * es.eigenvectors().inverse() / 2.0;
-
-    //Matrix3d S = es.eigenvectors()*es.eigenvalues().array().log().asDiagonal()*es.eigenvectors().inverse()/2.0;
-    //S(0, 0) = log(S(0, 0)) / 2.0;
-    //S(1, 1) = log(S(1, 1)) / 2.0;
-    //S(2, 2) = log(S(2, 2)) / 2.0;
-    //return es.eigenvectors() * S * es.eigenvectors().inverse();
+    return strain::deformation_tensor_to_metric<STRAIN_METRIC::HENCKY>(F);
   }
 
   //*******************************************************************************************
   /// HENCKY = log(C)/2
   Matrix3d StrainConverter::hencky_to_F(const Matrix3d &H) {
-    Eigen::SelfAdjointEigenSolver<Matrix3d> es(H);
-    return es.eigenvectors() * es.eigenvalues().array().exp().matrix().asDiagonal() * es.eigenvectors().inverse();
+    return strain::metric_to_deformation_tensor<STRAIN_METRIC::HENCKY>(H);
   }
 
   //*******************************************************************************************
   /// EULER_ALMANSI = (I-(F F^{T})^(-1))/2
   Matrix3d StrainConverter::euler_almansi(const Matrix3d &F) {
-    return 0.5 * (Eigen::MatrixXd::Identity(3, 3) - (F * F.transpose()).inverse());
+    return strain::deformation_tensor_to_metric<STRAIN_METRIC::EULER_ALMANSI>(F);
   }
 
   //*******************************************************************************************
   /// EULER_ALMANSI = (I-(F F^{T})^(-1))/2
   Matrix3d StrainConverter::euler_almansi_to_F(const Matrix3d &A) {
-    Eigen::SelfAdjointEigenSolver<Matrix3d> es(Eigen::MatrixXd::Identity(3, 3) - 2 * A);
-    return es.operatorInverseSqrt();
+    return strain::metric_to_deformation_tensor<STRAIN_METRIC::EULER_ALMANSI>(A);
   }
 
   //*******************************************************************************************
@@ -96,27 +85,27 @@ namespace CASM {
   //in. Allowed modes are listed in STRAIN_METRIC
   Matrix3d StrainConverter::strain_metric(const Matrix3d &F, STRAIN_METRIC MODE) {
     /// GREEN_LAGRANGE = 1/2 * (F^{T} F - I)
-    if(MODE == GREEN_LAGRANGE) {
+    if(MODE == STRAIN_METRIC::GREEN_LAGRANGE) {
       return green_lagrange(F);
     }
     /// BIOT = (U-I)
-    else if(MODE == BIOT) {
+    else if(MODE == STRAIN_METRIC::BIOT) {
       return biot(F);
     }
     /// HENCKY = log(C)/2
-    else if(MODE == HENCKY) {
+    else if(MODE == STRAIN_METRIC::HENCKY) {
       return hencky(F);
     }
     /// EULER_ALMANSI = 0.5 * (I-(F F^{T})^(-1))
-    else if(MODE == EULER_ALMANSI) {
+    else if(MODE == STRAIN_METRIC::EULER_ALMANSI) {
       return euler_almansi(F);
     }
     /// STRETCH
-    else if(MODE == STRETCH) {
+    else if(MODE == STRAIN_METRIC::STRETCH) {
       return right_stretch_tensor(F);
     }
     /// DISP_GRAD
-    else if(MODE == DISP_GRAD) {
+    else if(MODE == STRAIN_METRIC::DISP_GRAD) {
       return disp_grad(F);
     }
     else {
@@ -201,35 +190,35 @@ namespace CASM {
 
     /// GREEN_LAGRANGE = 1/2 * (F^{T} F - I)
     if(mode_name == "STRAIN_GL" || mode_name == "GL") {
-      STRAIN_METRIC_MODE = GREEN_LAGRANGE;
+      STRAIN_METRIC_MODE = STRAIN_METRIC::GREEN_LAGRANGE;
       set_conventional_order_symmetric();
       curr_metric_func = &StrainConverter::green_lagrange;
       curr_inv_metric_func = &StrainConverter::green_lagrange_to_F;
     }
     /// BIOT = (U-I)
     else if(mode_name == "STRAIN_B" || mode_name == "B") {
-      STRAIN_METRIC_MODE = BIOT;
+      STRAIN_METRIC_MODE = STRAIN_METRIC::BIOT;
       set_conventional_order_symmetric();
       curr_metric_func = &StrainConverter::biot;
       curr_inv_metric_func = &StrainConverter::biot_to_F;
     }
     /// HENCKY = log(C)/2
     else if(mode_name == "STRAIN_H" || mode_name == "H") {
-      STRAIN_METRIC_MODE = HENCKY;
+      STRAIN_METRIC_MODE = STRAIN_METRIC::HENCKY;
       set_conventional_order_symmetric();
       curr_metric_func = &StrainConverter::hencky;
       curr_inv_metric_func = &StrainConverter::hencky_to_F;
     }
     /// EULER_ALMANSI = 0.5 * (I-(F F^{T})^(-1))
     else if(mode_name == "STRAIN_EA" || mode_name == "EA") {
-      STRAIN_METRIC_MODE = EULER_ALMANSI;
+      STRAIN_METRIC_MODE = STRAIN_METRIC::EULER_ALMANSI;
       set_conventional_order_symmetric();
       curr_metric_func = &StrainConverter::euler_almansi;
       curr_inv_metric_func = &StrainConverter::euler_almansi_to_F;
     }
     /// STRETCH = U
     else if(mode_name == "STRAIN_U" || mode_name == "U") {
-      STRAIN_METRIC_MODE = STRETCH;
+      STRAIN_METRIC_MODE = STRAIN_METRIC::STRETCH;
       set_conventional_order_symmetric();
       curr_metric_func = &StrainConverter::right_stretch_tensor;
       curr_inv_metric_func = &StrainConverter::disp_grad_to_F;
@@ -239,7 +228,7 @@ namespace CASM {
     }
     /// DISP_GRAD = F
     else if(mode_name == "STRAIN_F" || mode_name == "F") {
-      STRAIN_METRIC_MODE = DISP_GRAD;
+      STRAIN_METRIC_MODE = STRAIN_METRIC::DISP_GRAD;
       set_conventional_order_unsymmetric();
       curr_metric_func = &StrainConverter::disp_grad;
       curr_inv_metric_func = &StrainConverter::disp_grad_to_F;
