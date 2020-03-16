@@ -127,9 +127,9 @@ namespace CASM {
       return *m_prim;
     }
 
-    double m_tol;
-
     PrimType_ptr m_prim;
+
+    double m_tol;
   };
 
   /// \brief Comparisons of GenericCluster-derived types using prim periodic symmetry
@@ -187,10 +187,10 @@ private:
       return *m_prim;
     }
 
-    double m_tol;
-
     /// Pointer to the primitive structure, necessary to apply symmetry to the Element
     PrimType_ptr m_prim;
+
+    double m_tol;
   };
 
   /// \brief Comparisons of GenericCluster-derived types using supercell periodic symmetry
@@ -250,10 +250,10 @@ private:
 
     xtal::IntegralCoordinateWithin_f m_bring_within_f;
 
-    double m_tol;
-
     /// Pointer to the primitive structure, necessary to apply symmetry to the Element
     PrimType_ptr m_prim;
+
+    double m_tol;
   };
 
   /// \brief Comparisons of GenericCluster-derived types using supercell periodic symmetry
@@ -317,10 +317,10 @@ private:
 
     xtal::IntegralCoordinateWithin_f m_bring_within_f;
 
-    double m_tol;
-
     /// Pointer to the primitive structure, necessary to apply symmetry to the Element
     PrimType_ptr m_prim;
+
+    double m_tol;
   };
 
 } // namespace CASM

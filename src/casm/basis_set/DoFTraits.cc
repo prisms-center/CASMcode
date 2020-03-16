@@ -52,6 +52,20 @@ namespace CASM {
     }
 
 
+    /// \brief Retrieve the standard values for a DoF from dictionary of properties from a SimpleStructure or MappedProperties object
+    ///  Returns matrix with standard values, and names of properties that were used to construct the matrix
+    std::pair<Eigen::MatrixXd, std::set<std::string> > Traits::find_values(std::map<std::string, Eigen::MatrixXd> const &values) const {
+      std::pair<Eigen::MatrixXd, std::set<std::string> > result;
+      for(auto const &val : values) {
+        if(AnisoValTraits::name_suffix(val.first) == this->name()) {
+          result.first = val.second;
+          result.second.insert(val.first);
+          return result;
+        }
+      }
+      throw std::runtime_error("Could not identify DoF values for DoF '" + (this->name()) + "' from provided list of tabulated structure properties.");
+      return result;
+    }
 
     void Traits::to_json(DoFSet const &_out, jsonParser &_json) const {
       bool simple = false;
@@ -447,9 +461,10 @@ namespace CASM {
       }
 
 
-      for(Site const &site : _prim.basis())
-        NV = max(NV, site.dof(name()).dimensions());
-
+      for(Site const &site : _prim.basis()) {
+        if(site.has_dof(name()))
+          NV = max(NV, site.dof(name()).dimensions());
+      }
       //for(Index i = 0; i < NB; i++)
       result.push_back(ParamAllocation(std::string(name() + "_var"), Index(NV), Index(-1), true));
 

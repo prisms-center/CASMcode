@@ -185,16 +185,6 @@ namespace CASM {
       /// \brief Returns true of molecule contains atom of specified name
       bool contains(std::string const &atom_name) const;
 
-      /*
-      void read(std::istream &stream);
-
-      void print(std::ostream &stream,
-                 Eigen::Ref<const Eigen::Vector3d> const &trans,
-                 Eigen::Ref<const Eigen::Matrix3d> const &cart2frac,
-                 int spaces,
-                 char delim,
-                 bool print_sd_flags  = false) const;
-      */
       bool is_divisible() const {
         return m_divisible;
       }

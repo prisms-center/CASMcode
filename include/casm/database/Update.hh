@@ -47,7 +47,7 @@ namespace CASM {
       UpdateT(
         const PrimClex &primclex,
         const StructureMap<ConfigType> &mapper,
-        fs::path report_dir);
+        std::string report_dir);
 
       /// \brief Re-parse calculations 'from' all selected configurations
       void update(const DB::Selection<ConfigType> &selection, bool force);
@@ -63,7 +63,7 @@ namespace CASM {
 
       const StructureMap<ConfigType> &m_structure_mapper;
 
-      fs::path m_report_dir;
+      std::string m_report_dir;
     };
 
 

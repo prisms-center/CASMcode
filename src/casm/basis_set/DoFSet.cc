@@ -183,7 +183,7 @@ namespace CASM {
 
   //********************************************************************
 
-  DoFSet jsonConstructor<DoFSet>::from_json(const jsonParser &json, DoFSet::BasicTraits const &_type) {
+  DoFSet jsonConstructor<DoFSet>::from_json(const jsonParser &json, AnisoValTraits const &_type) {
     DoFSet value(_type);
     value.from_json(json);
     return value;

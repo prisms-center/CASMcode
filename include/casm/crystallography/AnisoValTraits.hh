@@ -21,6 +21,7 @@ namespace CASM {
     static const unsigned char GLOBAL = (1u << 0);
     static const unsigned char UNIT_LENGTH = (1u << 1);
     static const unsigned char DESCRIBES_ORIENTATION = (1u << 2);
+    static const unsigned char EXTENSIVE = (1u << 3);
 
     ///\brief Named constructor for uninitialized AnisoValTraits
     static AnisoValTraits null();
@@ -28,17 +29,31 @@ namespace CASM {
     ///\brief Named constructor for total energy AnisoValTraits
     static AnisoValTraits energy();
 
+    ///\brief Named constructor for mapping cost (basis_cost/strain_cost/total_cost) AnisoValTraits
+    static AnisoValTraits cost();
+
     ///\brief Named constructor for selective_dynamics AnisoValTraits
     static AnisoValTraits selective_dynamics();
 
     ///\brief Named constructor for site displacement AnisoValTraits
     static AnisoValTraits disp();
 
+    ///\brief Named constructor for site coordinate AnisoValTraits
+    static AnisoValTraits coordinate();
+
+    ///\brief Named constructor for lattice vector AnisoValTraits
+    static AnisoValTraits latvec();
+
     ///\brief Named constructor for site force AnisoValTraits
     static AnisoValTraits force();
 
+    ///\brief Named constructor for global 'isometry' AnisoValTraits
+    static AnisoValTraits isometry();
+
     ///\brief Named constructor for global strain AnisoValTraits
     /// @param _metric specifies which strain metric. Choices are:
+    ///  - "U"  : Right-stretch tensor
+    ///  - "B"  : Biot
     ///  - "GL" : Green-Lagrange
     ///  - "AE" : Almansi-Euler
     ///  - "H"  : Hencky
@@ -109,6 +124,10 @@ namespace CASM {
     /// \brief return 'options' bitflag
     unsigned char options() const {
       return m_opt;
+    }
+
+    bool extensive() const {
+      return m_opt & EXTENSIVE;
     }
 
     // Please use !AnisoValTraits::global() instead of implementing AnisoValTraits::local()

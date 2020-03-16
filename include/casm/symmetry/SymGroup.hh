@@ -294,6 +294,7 @@ namespace CASM {
     MasterSymGroup(PERIODICITY_TYPE init_type = PERIODIC) :
       SymGroup(init_type),
       m_group_index(GROUP_COUNT++) {
+
     }
 
     MasterSymGroup(const MasterSymGroup &RHS);
@@ -304,6 +305,12 @@ namespace CASM {
     }
 
     MasterSymGroup &operator=(const MasterSymGroup &RHS);
+
+    /// Notify this object that it is a temporary copy of RHS to avoid weird errors
+    /// This should only be used if absolutely necessary!
+    void is_temporary_of(MasterSymGroup const &RHS) {
+      m_group_index = RHS.group_index();
+    }
 
     /// push_back sets home_group and op_index of added SymOp;
     /// virtual in SymGroup, so this overrides

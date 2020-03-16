@@ -8,7 +8,7 @@
 namespace CASM {
   namespace DB {
 
-    Remove<PrimPeriodicDiffTransOrbit>::Remove(const PrimClex &_primclex, fs::path report_dir, Log &_file_log) :
+    Remove<PrimPeriodicDiffTransOrbit>::Remove(const PrimClex &_primclex, std::string report_dir, Log &_file_log) :
       m_primclex(_primclex), m_report_dir(report_dir), m_file_log(_file_log) {}
 
     std::string Remove<PrimPeriodicDiffTransOrbit>::desc() {
@@ -215,7 +215,7 @@ namespace CASM {
       }
 
       // get remove report_dir, check if exists, and create new report_dir.i if necessary
-      fs::path report_dir = primclex.dir().root_dir() / "remove_report";
+      std::string report_dir = (primclex.dir().root_dir() / "remove_report").string();
       report_dir = create_report_dir(report_dir);
 
       // -- erase --
@@ -237,7 +237,7 @@ namespace CASM {
       return m_primclex;
     }
 
-    fs::path Remove<PrimPeriodicDiffTransOrbit>::report_dir() const {
+    std::string Remove<PrimPeriodicDiffTransOrbit>::report_dir() const {
       return m_report_dir;
     }
 

@@ -39,7 +39,7 @@ namespace CASM {
 
       enum ARG_TYPE {VOID, PATH, COMMAND, SCELNAME, QUERY, OPERATOR, CONFIGNAME,
                      COORDTYPE, DBTYPE, ENUMMETHOD, CONFIGTYPE, CALCTYPE, BSET,
-                     CLEX, REF, ECI, PROPERTY
+                     CLEX, REF, ECI, PROPERTY, DOF
                     };
 
       ///Translate the stored boost value_name into an ARG_TYPE for the completer engine
@@ -93,6 +93,9 @@ namespace CASM {
       ///Get value_type string for property mode completion
       static std::string property();
 
+      ///Get value_type string for property mode completion
+      static std::string dof();
+
       ///Fill the output strings with bash completion appropriate values for VOID (i.e. do nothing)
       static void void_to_bash(std::vector<std::string> &arguments);
 
@@ -141,6 +144,9 @@ namespace CASM {
       ///Fill the output strings with bash completion appropriate values for PROPERTY
       static void property_to_bash(std::vector<std::string> &arguments);
 
+      ///Fill the output strings with bash completion appropriate values for DOF
+      static void dof_to_bash(std::vector<std::string> &arguments);
+
     private:
 
       ///List of pairs relating the value type name of po::option_description to its corresponding argument type
@@ -172,6 +178,7 @@ namespace CASM {
      * - '-n': --dry-run, --next
      * - '-o': --output
      * - '-p': --pos
+     * - '-P': --path
      * - '-r': --recursive
      * - '-s': --settings
      * - '-t': --type
@@ -250,6 +257,28 @@ namespace CASM {
 
       ///Returns the string corresponding to add_config_suboption()
       const std::vector<fs::path> &selection_paths() const;
+
+      //-------------------------------------------------------------------------------------//
+
+      ///Add --prim suboption
+      void add_prim_path_suboption(const fs::path &_default = "");
+
+      ///The path string to go with add_prim_path_suboption
+      fs::path m_prim_path;
+
+      ///Returns the string corsresponding to add_prim_path_suboption()
+      const fs::path &prim_path() const;
+
+      //-------------------------------------------------------------------------------------//
+
+      ///Add --path suboption (defaults to MASTER)
+      void add_file_path_suboption(const fs::path &_default = "");
+
+      ///The path string to go with add_file_path_suboption
+      fs::path m_file_path;
+
+      ///Returns the string corsresponding to add_file_path_suboption()
+      const fs::path &file_path() const;
 
       //-------------------------------------------------------------------------------------//
 
@@ -444,6 +473,17 @@ namespace CASM {
 
       //-------------------------------------------------------------------------------------//
 
+      ///Add a --dofs suboption to specify DoF Types
+      void add_dofs_suboption();
+
+      ///The list of DoF type names
+      std::vector<std::string> m_dof_strs;
+
+      ///Returns the names of the DoF type names for add_dofs_suboption()
+      const std::vector<std::string> &dof_strs() const;
+
+      //-------------------------------------------------------------------------------------//
+
       void add_dry_run_suboption(std::string msg = default_dry_run_msg());
 
       static std::string default_dry_run_msg();
@@ -625,6 +665,18 @@ namespace CASM {
 
       InitOption();
 
+      using OptionHandlerBase::file_path;
+
+      using OptionHandlerBase::prim_path;
+
+      using OptionHandlerBase::selection_path;
+
+      using OptionHandlerBase::config_strs;
+
+      using OptionHandlerBase::dof_strs;
+
+      using OptionHandlerBase::coordtype_enum;
+
     private:
 
       void initialize() override;
@@ -753,6 +805,15 @@ namespace CASM {
     public:
 
       using OptionHandlerBase::coordtype_enum;
+
+      using OptionHandlerBase::selection_path;
+
+      using OptionHandlerBase::config_strs;
+
+      using OptionHandlerBase::supercell_strs;
+
+      using OptionHandlerBase::dof_strs;
+
 
       SymOption();
       double m_tol;

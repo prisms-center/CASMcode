@@ -64,7 +64,7 @@ namespace CASM {
       bool contains(const std::string &name) const;
       bool contains(const std::string &name, int &index) const;
 
-      void set_allowed_occupants(std::vector<Molecule> const &_occ_domain);
+      void set_allowed_occupants(std::vector<Molecule> _occ_domain);
 
       void set_dofs(std::map<std::string, SiteDoFSet> _dofs);
 
@@ -77,13 +77,6 @@ namespace CASM {
 
       /// Set label of Site. The label is used to distinguish between otherwise identical sites.
       void set_label(Index _new_label);
-
-      /* Site &apply_sym(const SymOp &op); */
-
-      /* template <typename ExternSymOp> */
-      /* Site &apply_sym(const ExternSymOp &op) { */
-      /*   return this->apply_sym(adapter::Adapter<SymOp, ExternSymOp>()(op)); */
-      /* } */
 
       void read(std::istream &stream, bool SD_is_on = false);
       void read(std::istream &stream, std::string &elem, bool SD_is_on);

@@ -7,7 +7,8 @@ namespace CASM {
   namespace DB {
 
     jsonParser &to_json(ImportSettings const &_set, jsonParser &_json) {
-      _json["data"] = _set.data;
+      _json["import"] = _set.import;
+      _json["copy_files"] = _set.copy_files;
       _json["additional_files"] = _set.additional_files;
       _json["overwrite"] = _set.overwrite;
       return _json;
@@ -16,8 +17,11 @@ namespace CASM {
     jsonParser const &from_json(ImportSettings &_set, jsonParser const &_json) {
       _set.set_default();
 
-      if(_json.contains("data"))
-        _set.data = _json["data"].get<bool>();
+      if(_json.contains("import"))
+        _set.import = _json["import"].get<bool>();
+
+      if(_json.contains("copy_files"))
+        _set.copy_files = _json["copy_files"].get<bool>();
 
       if(_json.contains("additional_files"))
         _set.additional_files = _json["additional_files"].get<bool>();

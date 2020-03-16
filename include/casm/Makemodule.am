@@ -78,6 +78,7 @@ casm_basis_set_include_HEADERS = \
 
 casm_casm_io_includedir=$(includedir)/casm/casm_io
 casm_casm_io_include_HEADERS = \
+    include/casm/casm_io/FileData.hh\
     include/casm/casm_io/FormatFlag.hh\
     include/casm/casm_io/Help.hh\
     include/casm/casm_io/Log.hh\
@@ -169,6 +170,7 @@ casm_clex_include_HEADERS = \
     include/casm/clex/HasPrimClex_impl.hh\
     include/casm/clex/HasSupercell.hh\
     include/casm/clex/HasSupercell_impl.hh\
+    include/casm/clex/MappedProperties.hh\
     include/casm/clex/MappedPropertiesTools.hh\
     include/casm/clex/NeighborList.hh\
     include/casm/clex/Norm.hh\
@@ -195,7 +197,8 @@ casm_clex_include_HEADERS = \
 
 casm_clex_io_json_includedir=$(includedir)/casm/clex/io/json
 casm_clex_io_json_include_HEADERS = \
-    include/casm/clex/io/json/ChemicalReference.hh
+    include/casm/clex/io/json/ChemicalReference.hh\
+    include/casm/clex/io/json/ConfigMapping.hh
 
 #-------------------------------------------------------------------------------#
 
@@ -317,7 +320,6 @@ casm_database_include_HEADERS = \
     include/casm/database/DiffTransOrbitDatabase.hh\
     include/casm/database/Import.hh\
     include/casm/database/Import_impl.hh\
-    include/casm/database/MappedProperties.hh\
     include/casm/database/Named.hh\
     include/casm/database/Named_impl.hh\
     include/casm/database/PropertiesDatabase.hh\

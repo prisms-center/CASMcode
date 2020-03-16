@@ -2,7 +2,6 @@
 #define CASM_ConfigMapping
 
 #include "casm/global/definitions.hh"
-#include "casm/database/MappedProperties.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/crystallography/SimpleStrucMapCalculator.hh"
@@ -34,33 +33,120 @@ namespace CASM {
   class ConfigDoF;
   class SupercellSymInfo;
 
+  namespace ConfigMapping {
 
-  namespace Completer {
-    class ImportOption;
+    /// \brief Struct with optional parameters for Config Mapping
+    /// Specifies default parameters for all values, in order to simplify
+    /// parsing from JSON
+
+    struct Settings {
+      Settings(double _lattice_weight = 0.5,
+               bool _ideal = false,
+               bool _strict = false,
+               bool _robust = false,
+               bool _primitive_only = false,
+               bool _fix_volume = false,
+               bool _fix_lattice = false,
+               Index _k_best = 1,
+               std::vector<std::string> _forced_lattices = {},
+               std::string _filter = "",
+               double _cost_tol = CASM::TOL,
+               double _min_va_frac = 0.,
+               double _max_va_frac = 0.5,
+               double _max_vol_change = 0.3) :
+        lattice_weight(_lattice_weight),
+        ideal(_ideal),
+        strict(_strict),
+        robust(_robust),
+        primitive_only(_primitive_only),
+        fix_volume(_fix_volume),
+        fix_lattice(_fix_lattice),
+        k_best(_k_best),
+        forced_lattices(_forced_lattices),
+        filter(_filter),
+        cost_tol(_cost_tol),
+        min_va_frac(_min_va_frac),
+        max_va_frac(_max_va_frac),
+        max_vol_change(_max_vol_change) {}
+
+      int options()const {
+        int opt = 0;
+        if(robust)
+          opt |= StrucMapper::robust;
+        return opt;
+      }
+
+      void set_default() {
+        *this = Settings();
+      }
+
+      /// lattice_weight specifies the cost function in terms of lattice deformation cost and
+      /// atomic deformation cost (i.e., atomic displacement)
+      /// cost = lattice_weight*lattice_cost + (1l-lattice_weight)*atomic_displacement_cost
+      double lattice_weight;
+
+      /// True if child structure's lattice should be assumed to be ideal integer supercell of parent structure
+      bool ideal;
+
+      /// True invokes post-processing step to find a symmetry operation of the parent structure that preserves
+      /// setting of child structure as much as possible after mapping
+      bool strict;
+
+      /// True invokes additional checks which determine whether there are any other mappings that are distinct
+      /// from the best mapping, but have the same cost
+      bool robust;
+
+      /// If true, non-primitive configurations are only inserted in the database in the form of their primitive form
+      /// The primitive form is always inserted into the database, regardless of setting value
+      bool primitive_only;
+
+      /// If true, search for potential mappings will be constrained to the supercell volume of the starting config
+      /// (update operations only)
+      bool fix_volume;
+
+
+      /// If true, search for potential mappings will be constrained to the exact supercell of the starting config
+      /// (update operations only)
+      bool fix_lattice;
+
+      /// Specify the number, k, of k-best mappings to include in solution set (default is 1)
+      Index k_best;
+
+      /// List of superlattices of parent structure to consider when searching for mappings
+      std::vector<std::string> forced_lattices;
+
+      /// casm-query expression used to filter list of potential supercells of parent structure to search over
+      std::string filter;
+
+      /// Tolerance used to determine if two mappings have identical cost
+      double cost_tol;
+
+      /// minimum fraction of vacant sites, below this fraction a mapping will not be considered
+      double min_va_frac;
+
+      /// maximum fraction of vacant sites, above this fraction a mapping will not be considered
+      double max_va_frac;
+
+      /// constrains the search space by assuming a limit on allowed volume change
+      /// only taken into account when non-interstitial vacancies are allowed in parent structure
+      double max_vol_change;
+
+    };
   }
-
-  //TO IMPLEMENT
-  /// \brief Find symop (as PermuteIterator) that gives the most 'faithful' equivalent mapping
-  /// This means that
-  ///   (1) the site permutation is as close to identity as possible (i.e., maximal character)
-  ///   (2) ties at (1) are broken by ensuring _node.isometry is proper and close to zero rotation (i.e., maximal character*determinant)
-  ///   (3) if (1) and (2) are ties, then we minimize _node.translation.norm()
 
   /// \brief Reorders the permutation and compounds the spatial isometry (rotation + translation) of _node with that of _it
   MappingNode copy_apply(PermuteIterator const &_it, MappingNode const &_node, bool transform_cost_mat = true);
 
-  /// \brief Initializes configdof corresponding to a mapping (encoded by _node) of _child_struc onto _pclex
-  ConfigDoF to_configdof(MappingNode const _node, SimpleStructure const &_child_struc, Supercell const  &_scel);
-  //\TO IMPLEMENT
+  /// \brief Initializes configdof of Supercell '_scel' corresponding to an idealized child structure (encoded by _child_struc)
+  /// _child_struc is assumed to have been idealized via structure-mapping or to be the result of converting a configuration to
+  /// a SimpleStructure. result.second gives list of properties that were utilized in the course of building the configdof
+  std::pair<ConfigDoF, std::set<std::string> > to_configdof(SimpleStructure const &_child_struc, Supercell const  &_scel);
 
   class PrimStrucMapCalculator : public SimpleStrucMapCalculator {
   public:
     PrimStrucMapCalculator(BasicStructure const &_prim,
+                           std::vector<SymOp> const &symgroup = {},
                            SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM);
-
-    /// \brief Creates copy of _child_struc by applying isometry, lattice transformation, translation, and site permutation of _node
-    SimpleStructure resolve_setting(MappingNode const &_node,
-                                    SimpleStructure const &_child_struc) const override;
 
   private:
     /// \brief Make an exact copy of the calculator (including any initialized members)
@@ -76,20 +162,49 @@ namespace CASM {
 
   /// Data structure holding results of ConfigMapper algorithm
   struct ConfigMapperResult {
-    enum class HintStatus { None, Derivative, Equivalent, Identical};
+    /// Specify degree to which the hinted configuration matches the imported structure:
+    ///    None : unspecified/unknown
+    ///    Derivate : same occupation, but other DoFs are different
+    ///    Equivalent : same occupation and DoFs, but related to Hint by a SymOp of the ideal crystal
+    ///    Identical : Exact same occupation and DoFs
+    ///    NewOcc : Occupation has no relation to Hint (no statement about other DoFs, but they should be presumed different)
+    ///    NewScel : Mapped configuration corresponds to different supercell than Hint
+    enum class HintStatus { None, Derivative, Equivalent, Identical, NewOcc, NewScel};
 
-    struct MapData {
-      MapData(std::string _name,
-              HintStatus _hint_status = HintStatus::None) :
-        name(std::move(_name)),
-        hint_status(_hint_status) {}
+    struct Individual {
+      Individual(Configuration _config,
+                 SimpleStructure _resolved_struc,
+                 std::set<std::string> _dof_managed_properties,
+                 HintStatus _hint_status = HintStatus::None,
+                 double _hint_cost = xtal::StrucMapping::big_inf()) :
+        config(std::move(_config)),
+        resolved_struc(std::move(_resolved_struc)),
+        dof_managed_properties(std::move(_dof_managed_properties)),
+        hint_status(_hint_status),
+        hint_cost(_hint_cost) {}
 
-      std::string name;
-      MappedProperties props;
+
+      Configuration config;
+
+      //Child structure, converted to setting of reference structure (i.e., prim)
+      //It is equivalent to initial child structure, but the following transformations have been performed:
+      // - Atoms converted to molecules and ordered as in reference structure
+      // - Vacancies explicitly inserted, if any were inferred from mapping
+      // - Sites are translated such that average displacement of child sites relative to parent sites is 0
+      // - Lattice and coordinates rotated
+      // - Integer combinations of child lattice vectors (Lc) to match parent lattice vectors (Lp) such that
+      //      Lc = U * Lp
+      //   where U is symmetric right stretch tensor
+      // - Permutation and rotation also applied to all properties of resolved_struc
+      SimpleStructure resolved_struc;
+
+      // list of properties that are handled by DoFs and are thus not considered properties
+      std::set<std::string> dof_managed_properties;
+
       HintStatus hint_status;
+      double hint_cost;
     };
 
-    using Individual = std::pair<MapData, Configuration>;
     ConfigMapperResult() {}
 
     bool success() const {
@@ -120,6 +235,8 @@ namespace CASM {
   class ConfigMapper {
   public:
 
+    using HintStatus = ConfigMapperResult::HintStatus;
+
     ///\brief Construct and initialize a ConfigMapper
     ///\param _pclex the PrimClex that describes the crystal template
     ///
@@ -148,9 +265,7 @@ namespace CASM {
     ///
     ///\param _tol tolerance for mapping comparisons (default is _pclex.crystallography_tol())
     ConfigMapper(PrimClex const &_pclex,
-                 double _strain_weight,
-                 double _max_volume_change = 0.5,
-                 int _options = StrucMapper::robust, // this should actually be a bitwise-OR of StrucMapper::Options
+                 ConfigMapping::Settings const &_settings,
                  double _tol = -1.);
 
 
@@ -158,17 +273,12 @@ namespace CASM {
       return *m_pclex;
     }
 
-    bool strict() const {
-      //TODO: Fix this warning, is it safe to just use logical '&'?
-      return struc_mapper().options() && StrucMapper::strict;
+    ConfigMapping::Settings const &settings() const {
+      return m_settings;
     }
 
     void set_primclex(const PrimClex &_pclex) {
       m_pclex = &_pclex;
-    }
-
-    StrucMapper &struc_mapper() {
-      return m_struc_mapper;
     }
 
     StrucMapper const &struc_mapper() const {
@@ -177,9 +287,7 @@ namespace CASM {
 
     void add_allowed_lattices(std::vector<std::string> const &_lattice_names);
 
-    void clear_allowed_lattices() {
-      struc_mapper().clear_allowed_lattices();
-    }
+    void clear_allowed_lattices();
 
     //STEPS:
     //    0) [If Hint] Do SimpleStructure -> SimpleStructure(Config) mapping => HintMapping (Default, HintMapping.cost=inf())
@@ -210,18 +318,11 @@ namespace CASM {
 
 
   private:
-
-    template <typename IterType, typename ScelType, typename OutputIter>
-    void _to_configmaps(SimpleStructure const &child_struc,
-                        IterType begin,
-                        IterType end,
-                        ScelType const &scel,
-                        SupercellSymInfo const &sym_info,
-                        OutputIter out) const;
-
     const PrimClex *m_pclex;
     ///Maps the supercell volume to a vector of Lattices with that volume
     StrucMapper m_struc_mapper;
+
+    ConfigMapping::Settings m_settings;
   };
 
 

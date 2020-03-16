@@ -60,6 +60,7 @@ libcasm_la_SOURCES = \
     include/casm/basis_set/PolynomialFunction.hh\
     include/casm/basis_set/StrainDoFTraits.hh\
     include/casm/basis_set/Variable.hh\
+    include/casm/casm_io/FileData.hh\
     include/casm/casm_io/FormatFlag.hh\
     include/casm/casm_io/Help.hh\
     include/casm/casm_io/Log.hh\
@@ -126,6 +127,7 @@ libcasm_la_SOURCES = \
     include/casm/clex/HasPrimClex_impl.hh\
     include/casm/clex/HasSupercell.hh\
     include/casm/clex/HasSupercell_impl.hh\
+    include/casm/clex/MappedProperties.hh\
     include/casm/clex/MappedPropertiesTools.hh\
     include/casm/clex/NeighborList.hh\
     include/casm/clex/Norm.hh\
@@ -147,6 +149,7 @@ libcasm_la_SOURCES = \
     include/casm/clex/Supercell_functions.hh\
     include/casm/clex/Supercell_impl.hh\
     include/casm/clex/io/json/ChemicalReference.hh\
+    include/casm/clex/io/json/ConfigMapping.hh\
     include/casm/clex/json_io.hh\
     include/casm/clusterography/ClusterDecl.hh\
     include/casm/clusterography/ClusterInvariants.hh\
@@ -217,7 +220,10 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/io/SuperlatticeEnumeratorIO.hh\
     include/casm/crystallography/io/UnitCellCoordIO.hh\
     include/casm/crystallography/io/VaspIO.hh\
+<<<<<<< HEAD
     include/casm/crystallography/io/jsonStruc.hh\
+=======
+>>>>>>> upstream/0.4.X
     include/casm/database/Cache.hh\
     include/casm/database/ConfigData.hh\
     include/casm/database/ConfigData_impl.hh\
@@ -239,7 +245,6 @@ libcasm_la_SOURCES = \
     include/casm/database/DiffTransOrbitDatabase.hh\
     include/casm/database/Import.hh\
     include/casm/database/Import_impl.hh\
-    include/casm/database/MappedProperties.hh\
     include/casm/database/Named.hh\
     include/casm/database/Named_impl.hh\
     include/casm/database/PropertiesDatabase.hh\
@@ -764,6 +769,7 @@ libcasm_la_SOURCES = \
     src/casm/basis_set/Variable.cc\
     src/casm/casm_io/DataFormatter.cc\
     src/casm/casm_io/DataStream.cc\
+    src/casm/casm_io/FileData.cc\
     src/casm/casm_io/FormatFlag.cc\
     src/casm/casm_io/InputParser.cc\
     src/casm/casm_io/Log.cc\
@@ -793,11 +799,11 @@ libcasm_la_SOURCES = \
     src/casm/clex/ConfigIONovelty.cc\
     src/casm/clex/ConfigIOStrain.cc\
     src/casm/clex/ConfigIOStrucScore.cc\
-    src/casm/clex/ConfigIsEquivalent.cc\
     src/casm/clex/ConfigMapping.cc\
     src/casm/clex/Configuration.cc\
     src/casm/clex/ConfigurationTraits.cc\
     src/casm/clex/ECIContainer.cc\
+    src/casm/clex/MappedProperties.cc\
     src/casm/clex/MappedPropertiesTools.cc\
     src/casm/clex/NeighborList.cc\
     src/casm/clex/OrbitFunctionTraits.cc\
@@ -812,7 +818,6 @@ libcasm_la_SOURCES = \
     src/casm/clex/Supercell.cc\
     src/casm/clex/SupercellIO.cc\
     src/casm/clex/SupercellTraits.cc\
-    src/casm/clex/Supercell_functions.cc\
     src/casm/clusterography/ClusterOrbits.cc\
     src/casm/clusterography/ClusterSpecsParser.cc\
     src/casm/clusterography/ClusterSymCompareSpecializations.cc\
@@ -866,13 +871,11 @@ libcasm_la_SOURCES = \
     src/casm/database/DiffTransConfigImport.cc\
     src/casm/database/DiffTransOrbitDatabase.cc\
     src/casm/database/Import.cc\
-    src/casm/database/MappedProperties.cc\
     src/casm/database/PropertiesDatabase.cc\
     src/casm/database/Remove.cc\
     src/casm/database/ScelDatabase.cc\
     src/casm/database/Selected.cc\
     src/casm/database/Selection.cc\
-    src/casm/database/Update.cc\
     src/casm/database/json/jsonDatabase.cc\
     src/casm/database/json/jsonPropertiesDatabase.cc\
     src/casm/enumerator/EnumInputParser.cc\

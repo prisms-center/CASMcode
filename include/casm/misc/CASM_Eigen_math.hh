@@ -8,6 +8,7 @@
 #include <type_traits>
 #include <boost/math/special_functions/round.hpp>
 
+#include "casm/external/Eigen/CASM_AddOns"
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
 #include "casm/misc/CASM_math.hh"
@@ -468,10 +469,32 @@ namespace CASM {
 }
 
 namespace Eigen {
+  /// \brief Round Eigen::MatrixXd
+  ///
+  /// \returns an Eigen:MatrixXd
+  ///
+  /// \param M Eigen::MatrixXd to be rounded
+  ///
+  /// For each coefficient, sets \code M(i,j) = boost::math::floor(Mdouble(i, j)) \endcode
+  ///
+  namespace Local {
+    template<typename T>
+    struct _Floor {
+      T operator()(T val)const {
+        return floor(val);
+      }
+    };
+  }
+  template<typename Derived>
+  CwiseUnaryOp<Local::_Floor<typename Derived::Scalar>, const Derived >
+  floor(const MatrixBase<Derived> &val) {
+    return val.unaryExpr(Local::_Floor<typename Derived::Scalar>());
+  }
+
 
   /// \brief Equivalent to almost_zero(double(val.norm()), tol);
   template <typename Derived>
-  bool almost_zero(const Eigen::MatrixBase<Derived> &val, double tol = CASM::TOL) {
+  bool almost_zero(const MatrixBase<Derived> &val, double tol = CASM::TOL) {
     return val.isZero(tol);
   }
 

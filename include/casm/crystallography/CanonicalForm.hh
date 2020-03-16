@@ -53,6 +53,8 @@ namespace CASM {
       /// Canonical equivalent lattice, using this lattice's point group
       Lattice equivalent(const Lattice &lat);
 
+      /// Canonical equivalent lattice, using this lattice's point group and using specified tolerance
+      Lattice equivalent(const Lattice &lat, double compare_tol) ;
       //**************************************************************************************************************//
 
       /// Uses provided group to find 'to_canonical' SymOp

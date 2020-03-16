@@ -95,7 +95,6 @@ namespace CASM {
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
-    const auto &dir = primclex.dir();
 
     try {
       if(!vm.count("config") || (selection == "MASTER")) {
@@ -109,13 +108,8 @@ namespace CASM {
 
       DB::Selection<Configuration> config_select(primclex.db<Configuration>(), selection);
       for(const auto &config : config_select.selected()) {
-        if(!fs::exists(dir.POS(config.name()))) {
-          write_pos(config);
-        }
-
-        if(!fs::exists(dir.config_json(config.name()))) {
-          write_config_json(config);
-        }
+        write_pos(config);
+        write_config_json(config);
 
         Popen process;
 

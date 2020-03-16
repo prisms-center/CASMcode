@@ -15,6 +15,11 @@ namespace CASM {
      *  @{
      */
 
+    namespace SimpleStructureTools {
+      ///\brief enum to refer to a particular representation of the occupants (atomic or molecular)
+      enum class SpeciesMode {ATOM, MOL};
+    }
+
     /// \brief Representation of a crystal of molecular and/or atomic occupants,
     /// and any additional properties.
     /// It does not require a primitive Structure or BasicStructure object to act
@@ -23,8 +28,7 @@ namespace CASM {
     class SimpleStructure {
     public:
 
-      ///\brief enum to refer to a particular representation of the occupants (atomic or molecular)
-      enum class SpeciesMode {ATOM, MOL};
+      using SpeciesMode = SimpleStructureTools::SpeciesMode;
 
       /// \brief Struct to encode all information about the crystal basis
       /// Info may describe the basis in a atomic context or molecular context
@@ -56,12 +60,12 @@ namespace CASM {
         std::vector<Index> sort_by_name();
 
         /// \brief Access coordinate of site 'i'
-        Coord coord(Index i) {
+        Coord cart_coord(Index i) {
           return coords.col(i);
         }
 
         /// \brief const access for coordinate of site 'i'
-        ConstCoord coord(Index i) const {
+        ConstCoord cart_coord(Index i) const {
           return coords.col(i);
         }
 
@@ -97,6 +101,9 @@ namespace CASM {
         return _mode == SpeciesMode::MOL ? mol_info : atom_info;
       }
 
+      /// \brief Map all coordinates within the unit cell
+      void within(double tol = TOL);
+
       /// \brief Apply homogeneous deformation gradient tensor _F to lat_column_mat, mol_info, and atom_info
       void deform_coords(Eigen::Ref<const Eigen::Matrix3d> const &_F);
 
@@ -110,7 +117,7 @@ namespace CASM {
 
       Info atom_info;
 
-      std::map<std::string, Eigen::VectorXd> properties;
+      std::map<std::string, Eigen::MatrixXd> properties;
 
     };
 

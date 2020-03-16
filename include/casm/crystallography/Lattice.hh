@@ -228,6 +228,7 @@ namespace CASM {
       Lattice m_superlattice;
       Eigen::Matrix3l m_transformation_matrix;
 
+      Index m_size;
     public:
 
       const Lattice &superlattice() const {
@@ -245,7 +246,7 @@ namespace CASM {
 
       ///Returns the number of tiling units (primitive lattices) that fit inside the superlattice
       Index size() const {
-        return std::abs(this->transformation_matrix().determinant());
+        return m_size;
       }
 
       Superlattice(const Lattice &tiling_unit, const Lattice &superlattice);

@@ -191,12 +191,29 @@ namespace CASM {
           SymGroup generating_grp {
             make_invariant_subgroup(dtorbit.prototype(), prim_grp, dt_sym_compare)};
 
+          std::vector<DoFKey> _dofs;
+          if(local_bspecs_json.contains("basis_functions")) {
+            local_bspecs_json["basis_functions"].get_if(_dofs, "dofs");
+          }
+
+          auto dof_sites_filter = [&_dofs](Site const & _site) ->bool{
+            if(_dofs.empty() && (_site.dof_size() != 0 || _site.occupant_dof().size() > 1))
+              return true;
+            for(DoFKey const &_dof : _dofs) {
+              if(_site.has_dof(_dof))
+                return true;
+              else if(_dof == "occ" && _site.occupant_dof().size() > 1) {
+                return true;
+              }
+            }
+            return false;
+          };
           make_local_orbits(
             dtorbit.prototype(),
             generating_grp,
             LocalSymCompare<IntegralCluster>(primclex.shared_prim(), primclex.crystallography_tol()),
             local_bspecs_json,
-            alloy_sites_filter,
+            dof_sites_filter,
             primclex.crystallography_tol(),
             std::back_inserter(local_orbits),
             args.log());
@@ -208,11 +225,30 @@ namespace CASM {
         else {
           args.log().construct("Orbitree");
           args.log() << std::endl;
+          std::vector<DoFKey> _dofs;
+
+          if(bspecs_json.contains("basis_functions")) {
+            bspecs_json["basis_functions"].get_if(_dofs, "dofs");
+          }
+
+          auto dof_sites_filter = [&_dofs](Site const & _site) ->bool{
+            if(_dofs.empty() && (_site.dof_size() != 0 || _site.occupant_dof().size() > 1))
+              return true;
+
+            for(DoFKey const &_dof : _dofs) {
+              if(_site.has_dof(_dof))
+                return true;
+              else if(_dof == "occ" && _site.occupant_dof().size() > 1) {
+                return true;
+              }
+            }
+            return false;
+          };
 
           make_prim_periodic_orbits(
             primclex.shared_prim(),
             bspecs_json,
-            alloy_sites_filter,
+            dof_sites_filter,
             set.crystallography_tol(),
             std::back_inserter(orbits),
             args.log());

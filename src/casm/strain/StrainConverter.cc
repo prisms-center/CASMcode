@@ -75,7 +75,7 @@ namespace CASM {
 
   //*******************************************************************************************
   /// DISP_GRAD = F
-  Matrix3d StrainConverter::disp_grad(const Matrix3d &F) {
+  Matrix3d StrainConverter::disp_grad(Eigen::Ref<const Matrix3d> const &F) {
     return F;
   }
 
@@ -83,7 +83,7 @@ namespace CASM {
   //*******************************************************************************************
   //Calculates the strain metric based on what mode is passed
   //in. Allowed modes are listed in STRAIN_METRIC
-  Matrix3d StrainConverter::strain_metric(const Matrix3d &F, STRAIN_METRIC MODE) {
+  Matrix3d StrainConverter::strain_metric(Eigen::Ref<const Matrix3d> const &F, STRAIN_METRIC MODE) {
     /// GREEN_LAGRANGE = 1/2 * (F^{T} F - I)
     if(MODE == STRAIN_METRIC::GREEN_LAGRANGE) {
       return green_lagrange(F);
@@ -119,7 +119,7 @@ namespace CASM {
   //*******************************************************************************************
   //Calculates the strain metric based on what mode is passed
   //in. Allowed modes are listed in STRAIN_METRIC
-  Matrix3d StrainConverter::strain_metric(const Matrix3d &F) const {
+  Matrix3d StrainConverter::strain_metric(Eigen::Ref<const Matrix3d> const &F) const {
     assert(curr_metric_func && "StrainConverter object improperly initialized!");
     return (*curr_metric_func)(F);
   }
@@ -127,7 +127,7 @@ namespace CASM {
   //*******************************************************************************************
   //Calculates the strain metric based on what mode is passed
   //in. Allowed modes are listed in STRAIN_METRIC
-  Matrix3d StrainConverter::strain_metric_to_F(const Matrix3d &E) const {
+  Matrix3d StrainConverter::strain_metric_to_F(Eigen::Ref<const Matrix3d> const &E) const {
     assert(curr_inv_metric_func && "StrainConverter object improperly initialized!");
     return (*curr_inv_metric_func)(E);
   }
@@ -136,7 +136,7 @@ namespace CASM {
   //Returns the symmetrically unique elements of E (assuming your
   //strain metric is symmetric) ordered in a manner decided by
   //m_order_strain
-  VectorXd StrainConverter::unroll_E(const Matrix3d &E) const {
+  VectorXd StrainConverter::unroll_E(Eigen::Ref<const Matrix3d> const &E) const {
     VectorXd _unrolled_E(m_order_strain.size());
     for(Index i = 0; i < m_order_strain.size(); i++) {
       _unrolled_E(i) = m_weight_strain[i] * E(m_order_strain[i][0], m_order_strain[i][1]);
@@ -148,7 +148,7 @@ namespace CASM {
   //Returns the symmetrically unique elements of E (assuming your
   //strain metric is symmetric) ordered in a manner decided by
   //m_order_strain
-  Matrix3d StrainConverter::rollup_E(const VectorXd &_unrolled_E) const {
+  Matrix3d StrainConverter::rollup_E(Eigen::Ref<const VectorXd> const &_unrolled_E) const {
     Matrix3d _rolled_E;
     for(Index i = 0; i < m_order_strain.size(); i++) {
       _rolled_E(m_order_strain[i][0], m_order_strain[i][1]) = _unrolled_E(i) / m_weight_strain[i];
@@ -158,19 +158,19 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  VectorXd StrainConverter::unrolled_strain_metric(const Matrix3d &F) const {
+  VectorXd StrainConverter::unrolled_strain_metric(Eigen::Ref<const Matrix3d> const &F) const {
     return unroll_E(strain_metric(F));
   }
 
   //*******************************************************************************************
-  Matrix3d StrainConverter::unrolled_strain_metric_to_F(const VectorXd &E) const {
+  Matrix3d StrainConverter::unrolled_strain_metric_to_F(Eigen::Ref<const VectorXd> const &E) const {
     return strain_metric_to_F(rollup_E(E));
   }
 
   //*******************************************************************************************
   //Calculates a linear combination of the components of unroll_E
   //using the sop_transf_mat
-  VectorXd StrainConverter::sop(Matrix3d &E, Matrix3d &C, Matrix3d &U, const Matrix3d &F, STRAIN_METRIC MODE) const {
+  VectorXd StrainConverter::sop(Matrix3d &E, Matrix3d &C, Matrix3d &U, Eigen::Ref<const Matrix3d> const &F, STRAIN_METRIC MODE) const {
     U = right_stretch_tensor(C, F);
     E = strain_metric(F, MODE);
     VectorXd _unroll_E = unroll_E(E);
@@ -180,7 +180,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  VectorXd StrainConverter::sop(Matrix3d &E, Matrix3d &C, Matrix3d &U, const Matrix3d &F) const {
+  VectorXd StrainConverter::sop(Matrix3d &E, Matrix3d &C, Matrix3d &U, Eigen::Ref<const Matrix3d> const &F) const {
     return sop(E, C, U, F, STRAIN_METRIC_MODE);
   }
 
@@ -222,9 +222,6 @@ namespace CASM {
       set_conventional_order_symmetric();
       curr_metric_func = &StrainConverter::right_stretch_tensor;
       curr_inv_metric_func = &StrainConverter::disp_grad_to_F;
-      m_weight_strain[3] = 1.0;
-      m_weight_strain[4] = 1.0;
-      m_weight_strain[5] = 1.0;
     }
     /// DISP_GRAD = F
     else if(mode_name == "STRAIN_F" || mode_name == "F") {
@@ -313,7 +310,7 @@ namespace CASM {
   //Conventional order_strain:
   // unroll_E = (E11 E22 E33 E23 E13 E12)
   void StrainConverter::set_conventional_order_symmetric() {
-    m_order_strain.resize(6, Array<int>(2, 0));
+    m_order_strain.resize(6, {0, 0});
 
     m_order_strain[0][0] = 0;
     m_order_strain[0][1] = 0;
@@ -328,10 +325,8 @@ namespace CASM {
     m_order_strain[5][0] = 0;
     m_order_strain[5][1] = 1;
 
-    m_weight_strain.resize(3, 1.0);
-    m_weight_strain.append(Array<double>(3, sqrt(2.0)));
-
-
+    m_weight_strain.setOnes(6);
+    m_weight_strain.tail(3) *= sqrt(2.0);
   }
 
 
@@ -339,8 +334,8 @@ namespace CASM {
   //Conventional order_strain:
   // unroll_E = (E11 E12 E13 E21 E22 E23 E31 E32 E33)
   void StrainConverter::set_conventional_order_unsymmetric() {
-    m_order_strain.resize(9, Array<int>(2, 0));
-    m_weight_strain.resize(9, 1.0);
+    m_order_strain.resize(9, {0, 0});
+    m_weight_strain.setOnes(9);
 
     Index l = 0;
     for(Index i = 0; i < 3; i++) {

@@ -6,7 +6,7 @@
 
 #include "casm/database/Cache.hh"
 #include "casm/database/Named.hh"
-#include "casm/database/MappedProperties.hh"
+#include "casm/clex/MappedProperties.hh"
 
 namespace CASM {
 
@@ -82,24 +82,24 @@ namespace CASM {
   bool has_failure_type(const ConfigType &config, std::string calctype = "");
 
   template<typename ConfigType>
-  fs::path calc_properties_path(const ConfigType &config, std::string calctype = "");
+  std::string calc_properties_path(const ConfigType &config, std::string calctype = "");
 
   template<typename ConfigType>
-  fs::path pos_path(const ConfigType &config, std::string calctype = "");
+  std::string pos_path(const ConfigType &config, std::string calctype = "");
 
   template<typename ConfigType>
-  fs::path calc_status_path(const ConfigType &config, std::string calctype = "");
+  std::string calc_status_path(const ConfigType &config, std::string calctype = "");
 
   /// \brief Return true if all required properties are included in the JSON
   bool is_calculated(
     const MappedProperties &calc_properties,
     const std::vector<std::string> &required_properties);
 
-  fs::path calc_properties_path(const PrimClex &primclex, const std::string &configname, std::string calctype = "");
+  std::string calc_properties_path(const PrimClex &primclex, const std::string &configname, std::string calctype = "");
 
-  fs::path pos_path(const PrimClex &primclex, const std::string &configname);
+  std::string pos_path(const PrimClex &primclex, const std::string &configname);
 
-  fs::path calc_status_path(const PrimClex &primclex, const std::string &configname, std::string calctype = "");
+  std::string calc_status_path(const PrimClex &primclex, const std::string &configname, std::string calctype = "");
 
 }
 

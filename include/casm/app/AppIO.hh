@@ -112,11 +112,20 @@ namespace CASM {
   BasicStructure read_prim(jsonParser const &json, double xtal_tol, HamiltonianModules const *_modules = nullptr);
 
   /// \brief Write prim.json to file
-  void write_prim(const BasicStructure &prim, fs::path filename, COORD_TYPE mode);
+  void write_prim(const BasicStructure &prim, fs::path filename, COORD_TYPE mode, bool include_va = false);
 
   /// \brief Write prim.json as JSON
-  void write_prim(const BasicStructure &prim, jsonParser &json, COORD_TYPE mode);
+  void write_prim(const BasicStructure &prim, jsonParser &json, COORD_TYPE mode, bool include_va = false);
 
+  /*
+  /// \brief Write prim.json as JSON
+  void write_prim(SimpleStructure const &prim_struc,
+                  std::set<std::string> const &dofs,
+                  std::set<std::string> const &attributes,
+                  jsonParser &json,
+                  COORD_TYPE mode,
+                  bool include_va=false);
+  */
 
 
   // --------- SymmetryIO Declarations --------------------------------------------------
