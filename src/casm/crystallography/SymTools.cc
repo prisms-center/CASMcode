@@ -135,7 +135,6 @@ namespace CASM {
       result.reserve(frac_point_group.size());
       Eigen::Matrix3d t_cart, t_diff;
       Lattice symlat = symmetrized_with_fractional(tlat_reduced, frac_point_group);
-      // std::cout << "Symmetrized lattice is\n " << symlat.lat_column_mat() << "\n";
       for(Eigen::Matrix3i const &frac : frac_point_group) {
         t_cart = symlat.lat_column_mat() * frac.cast<double>() * symlat.inv_lat_column_mat();
         t_diff = t_cart * _lat.lat_column_mat() - _lat.lat_column_mat();

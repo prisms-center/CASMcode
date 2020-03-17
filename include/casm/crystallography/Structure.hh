@@ -30,6 +30,11 @@ namespace CASM {
   class Structure {
   private:
 
+    //TODO: Collect all the symmetry information and package it into a StructureSymInfo class or the like.
+    //Then store alongside the BasicStructure as a shared pointer. This will save you regenerating the factor group
+    //each time you make a copy of *this. It'll also make the custom copy constructor and assignment operators
+    //unnecessary.
+
     /// Group symmetry operations that map the lattice and basis of Structure onto themselves,
     /// assuming that the crystal is periodic
     MasterSymGroup m_factor_group;
@@ -55,14 +60,12 @@ namespace CASM {
     //Flushes out every SymGroupRepID for each site (continuous DoF) and gives it a default values
     void _reset_site_dof_symrepIDs();
 
-    /* void main_print(std::ostream &stream, COORD_TYPE mode, bool version5, int option) const; */
-
     /// Obtain the basis permutation symrep and site dof symreps of factor_group
     /// sets internal m_basis_perm_rep_ID
-    void _generate_basis_symreps(bool verbose = false);
+    void _generate_basis_symreps();
 
     /// Obtain global dof symreps of factor_group
-    void _generate_global_symreps(bool verbose = false);
+    void _generate_global_symreps();
 
     void _fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment);
 
@@ -78,16 +81,12 @@ namespace CASM {
 
   public:
 
-    //TODO:
-    //This might seem weird right now, but the plan is to eventually have Structure become a composition
-    //of BasicStructure and its related symmetry information (e.g. factor group, symmetry representation
-    //IDs, etc).
+    //TODO: Do we even want automatic conversion?
     /// Returns constant reference to the structure
     operator const xtal::BasicStructure &() const;
 
     const xtal::BasicStructure &structure() const {
       return *this->m_structure_ptr;
-      /* return this->m_structure; */
     }
 
     const std::shared_ptr<const xtal::BasicStructure> &shared_structure() const {
@@ -103,7 +102,6 @@ namespace CASM {
     }
 
 
-    //  ****Constructors****
     //TODO: I tried getting rid of this but it seems to get used in almost every casm command right now
     Structure();
     explicit Structure(const xtal::BasicStructure &base);
@@ -115,7 +113,6 @@ namespace CASM {
 
     ~Structure() {};
 
-    //  ****Inspectors/Accessors****
     const MasterSymGroup &factor_group() const;
     const SymGroup &point_group() const;
     SymGroupRep const *basis_permutation_symrep()const;
@@ -160,7 +157,6 @@ namespace CASM {
   std::map<DoFKey, std::vector<CASM::DoFSetInfo> > local_dof_info(xtal::BasicStructure const &_struc);
 
   Index local_dof_dim(DoFKey const &_name, xtal::BasicStructure const &_struc);
-
 
   /** @} */
 }

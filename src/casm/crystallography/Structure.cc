@@ -62,11 +62,10 @@ namespace CASM {
     read_struc.read(infile);
     m_structure_ptr = std::make_shared<BasicStructure>(read_struc);
     this->generate_factor_group();
-    std::cout << "constructed via 0" << std::endl;
   }
 
+  //TODO: This is awful
   Structure::Structure() : m_structure_ptr(std::make_shared<BasicStructure>(BasicStructure())) {
-    std::cout << "constructed via D" << std::endl;
   }
 
   Structure::Structure(const Structure &RHS) :
@@ -172,7 +171,7 @@ namespace CASM {
   // to map the new position of the basis atom to the various positions
   // before symmetry was applied. It only checks the positions after
   // it brings the basis within the crystal.
-  void Structure::_generate_basis_symreps(bool verbose) {
+  void Structure::_generate_basis_symreps() {
     std::string clr(100, ' ');
     if(factor_group().size() <= 0) {
       default_err_log() << "ERROR in generate_basis_permutation_representation" << std::endl;
@@ -203,32 +202,17 @@ namespace CASM {
     Eigen::MatrixXd trep, trepblock;
     for(Index s = 0; s < m_factor_group.size(); ++s) {
       auto const &op = m_factor_group[s];
-      if(verbose) {
-        if(op.index() % 100 == 0)
-          std::cout << '\r' << clr.c_str() << '\r' << "Find permute rep for symOp " << op.index() << "/" << m_factor_group.size() << std::flush;
-      }
 
       sitemap = xtal::symop_site_map(op, *this);
       op.set_rep(m_basis_perm_rep_ID, SymBasisPermute(op, lattice(), sitemap));
 
-      std::cout << "Enter the loop" << std::endl;
       for(Index b = 0; b < basis().size(); ++b) {
         // copy_aply(symop,dofref_from) = P.permute(dofref_to);
         auto const &dofref_to = basis()[sitemap[b].sublattice()].occupant_dof();
         auto const &dofref_from = basis()[b].occupant_dof();
-        std::cout << "DEBUGGING: sitemap[b].sublattice() is " << sitemap[b].sublattice() << std::endl;
-
-        std::cout << basis()[b].allowed_occupants().size() << std::endl;
-        std::cout << basis()[b].allowed_occupants()[0] << std::endl;
-        std::cout << "DEBUGGING: dofref_to.size() is " << dofref_to.size() << std::endl;
-        std::cout << "DEBUGGING: dofref_to.at(0).name() is " << dofref_to.at(0).name() << std::endl;
-
-
 
         auto &symrep_from = this->m_occupant_symrepIDs[b];
-        std::cout << "made reference" << std::endl;
         OccupantDoFIsEquivalent<Molecule> eq(dofref_from);
-        std::cout << "check 0" << std::endl;
 
         if(eq(adapter::Adapter<xtal::SymOp, CASM::SymOp>()(op), dofref_to)) {
           if(symrep_from.is_identity()) {
@@ -246,7 +230,6 @@ namespace CASM {
           }
         }
         else throw std::runtime_error("In Structure::_generate_basis_symreps(), Sites originally identified as equivalent cannot be mapped by symmetry.");
-        std::cout << "end of loop" << std::endl;
       }
 
       for(auto const &dof_dim : local_dof_dims(*this)) {
@@ -278,13 +261,12 @@ namespace CASM {
       }
     }
 
-    if(verbose) std::cout << '\r' << clr.c_str() << '\r' << std::flush;
     return;
   }
 
   //***********************************************************
 
-  void Structure::_generate_global_symreps(bool verbose) {
+  void Structure::_generate_global_symreps() {
     if(factor_group().size() <= 0) {
       default_err_log() << "ERROR in generate_global_dof_representations" << std::endl;
       default_err_log() << "Factor group is empty." << std::endl;
