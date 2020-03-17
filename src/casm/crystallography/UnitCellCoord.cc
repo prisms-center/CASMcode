@@ -1,4 +1,3 @@
-#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/Site.hh"
