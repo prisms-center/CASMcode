@@ -1,6 +1,7 @@
 #include "casm/database/DiffTransConfigImport.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
+#include "casm/crystallography/io/SimpleStructureIO.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigMapping.hh"
 #include "casm/clex/io/json/ConfigMapping.hh"
@@ -38,7 +39,7 @@ namespace CASM {
         from_json(sstruc, json, "relaxed");
       }
       else {
-        BasicStructure<Site> struc;
+        BasicStructure struc;
         fs::ifstream struc_stream(p);
         struc.read(struc_stream);
         sstruc = make_simple_structure(struc);

@@ -97,7 +97,7 @@ namespace CASM {
         : SiteDoFSet(DoFSet(init_traits, init_component_names, init_basis), init_exclude_occs) {
       }
 
-      SiteDoFSet(const BasicTraits &init_traits, const std::unordered_set<std::string> &init_exclude_occs)
+      SiteDoFSet(const BasicTraits &init_traits, const std::unordered_set<std::string> &init_exclude_occs = {})
         : SiteDoFSet(DoFSet(init_traits), init_exclude_occs) {
       }
 
@@ -114,6 +114,7 @@ namespace CASM {
     private:
       std::unordered_set<std::string> m_excluded_occs;
     };
+
 
     /**
      * Comparator class for checking equivalence of two DoFSet values.

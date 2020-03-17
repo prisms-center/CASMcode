@@ -222,7 +222,7 @@ namespace CASM {
 
           Coordinate parent_coord = Local::_make_superlattice_coordinate(i % pgrid.size(), pgrid, parent_index_to_unitcell);
           parent_coord.cart() += p_info.cart_coord(i / pgrid.size());
-          child_coord.min_dist(parent_coord, disp_coord);
+          disp_coord = child_coord.min_translation(parent_coord);
 
           _node.atom_displacement.col(i) = disp_coord.const_cart();
 

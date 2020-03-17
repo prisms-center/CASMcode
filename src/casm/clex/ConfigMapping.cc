@@ -24,6 +24,8 @@
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/database/ScelDatabase.hh"
+#include "casm/symmetry/SymGroup.hh"
+#include <vector>
 
 namespace CASM {
 
@@ -235,13 +237,13 @@ namespace CASM {
     for(Index b = 0; b < prim.basis().size(); ++b) {
       for(Index l = 0; l < _scel.volume(); ++l, ++i) {
         Index j = 0;
-        for(; j < prim.basis(b).occupant_dof().size(); ++j) {
-          if(c_info.names[i] == prim.basis(b).occupant_dof()[j]) {
+        for(; j < prim.basis()[b].occupant_dof().size(); ++j) {
+          if(c_info.names[i] == prim.basis()[b].occupant_dof()[j]) {
             result.first.occ(i) = j;
             break;
           }
         }
-        if(j == prim.basis(b).occupant_dof().size())
+        if(j == prim.structure().basis()[b].occupant_dof().size())
           throw std::runtime_error("Attempting to initialize ConfigDoF from SimpleStructure. Species '"
                                    + c_info.names[i] + "' is not allowed on sublattice " + std::to_string(b));
       }
@@ -274,8 +276,8 @@ namespace CASM {
 
     m_prim(_prim) {
     if(_symgroup.empty()) {
-      SymGroup fg;
-      _prim.generate_factor_group(fg);
+      xtal::SymOpVector factor_group_operations = xtal::make_factor_group(_prim);
+      SymGroup fg = adapter::Adapter<SymGroup, xtal::SymOpVector>()(factor_group_operations, m_prim.lattice());
       set_point_group(fg);
     }
   }

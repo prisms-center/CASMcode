@@ -13,7 +13,6 @@ namespace CASM {
   namespace xtal {
     class Site;
 
-    template<typename CoordType>
     class BasicStructure;
   }
 
@@ -35,7 +34,7 @@ namespace CASM {
     /// \param _title The title of the CASM project. Should be a short title suitable for prepending to files.
     /// \param _property The name of the default cluster expansion property, i.e. "formation_energy"
     ///
-    ProjectBuilder(xtal::BasicStructure<xtal::Site> const &_prim, fs::path _root, std::string _title, std::string _property);
+    ProjectBuilder(xtal::BasicStructure const &_prim, fs::path _root, std::string _title, std::string _property);
 
     /// \brief Construct a CASM ProjectBuilder
     ///
@@ -63,7 +62,7 @@ namespace CASM {
   private:
 
     // require user initialization:
-    xtal::BasicStructure<xtal::Site> m_prim;
+    xtal::BasicStructure m_prim;
     fs::path m_root;
     std::string m_title;
     std::string m_property;

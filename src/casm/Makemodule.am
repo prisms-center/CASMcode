@@ -184,6 +184,7 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/AnisoValTraits.hh\
     include/casm/crystallography/BasicStructure.hh\
     include/casm/crystallography/BasicStructureTools.hh\
+    include/casm/crystallography/BasicStructure_impl.hh\
     include/casm/crystallography/CanonicalForm.hh\
     include/casm/crystallography/Coordinate.hh\
     include/casm/crystallography/CoordinateSystems.hh\
@@ -220,10 +221,7 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/io/SuperlatticeEnumeratorIO.hh\
     include/casm/crystallography/io/UnitCellCoordIO.hh\
     include/casm/crystallography/io/VaspIO.hh\
-<<<<<<< HEAD
     include/casm/crystallography/io/jsonStruc.hh\
-=======
->>>>>>> upstream/0.4.X
     include/casm/database/Cache.hh\
     include/casm/database/ConfigData.hh\
     include/casm/database/ConfigData_impl.hh\

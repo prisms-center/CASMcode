@@ -8,21 +8,50 @@
 #include "casm/basis_set/DoFTraits.hh"
 
 namespace CASM {
+
   xtal::SimpleStructure make_simple_structure(Supercell const &_scel,
                                               ConfigDoF const &_dof,
                                               std::vector<DoFKey> const &_which_dofs) {
-    xtal::SimpleStructure result;
-    result.lat_column_mat = _scel.lattice().lat_column_mat();
+    return make_simple_structure(_scel, _dof, MappedProperties(), _which_dofs, false);
+  }
 
+  xtal::SimpleStructure make_simple_structure(Configuration const &_config,
+                                              std::vector<DoFKey> const &_which_dofs,
+                                              bool relaxed) {
 
-    result.mol_info.coords.resize(3, _dof.size());
-    result.mol_info.names.reserve(_dof.size());
+    if(relaxed && is_calculated(_config)) {
+      return make_simple_structure(_config.supercell(), _config.configdof(), _config.calc_properties(), _which_dofs, true);
+    }
+    //else
+    return make_simple_structure(_config.supercell(), _config.configdof(), MappedProperties(), _which_dofs, false);
+  }
+
+  SimpleStructure make_simple_structure(Supercell const &_scel,
+                                        ConfigDoF const &_dof,
+                                        MappedProperties const &_props,
+                                        std::vector<DoFKey> const &_which_dofs,
+                                        bool relaxed) {
+
+    SimpleStructure result;
+
+    result.mol_info.resize(_dof.size());
+    if(!relaxed) {
+      result.lat_column_mat = _scel.lattice().lat_column_mat();
+      for(Index b = 0, l = 0; b < _dof.n_sublat(); ++b) {
+        for(Index v = 0; v < _dof.n_vol(); ++v, ++l) {
+          result.mol_info.cart_coord(l) = _scel.coord(l).const_cart();
+        }
+      }
+    }
+    else {
+      result.lat_column_mat = _props.global.at("latvec");
+      result.mol_info.coords = _props.site.at("coordinate");
+    }
 
     for(Index b = 0, l = 0; b < _dof.n_sublat(); ++b) {
       for(Index v = 0; v < _dof.n_vol(); ++v, ++l) {
-        result.mol_info.coord(l) = _scel.coord(l).const_cart();
         std::string mol_name = _scel.prim().basis()[ b ].occupant_dof()[_dof.occ(l)].name();
-        result.mol_info.names.push_back(std::move(mol_name));
+        result.mol_info.names[l] = std::move(mol_name);
       }
     }
 
@@ -30,11 +59,6 @@ namespace CASM {
     return result;
   }
 
-  //***************************************************************************
-
-  SimpleStructure make_simple_structure(Configuration const &_config, std::vector<DoFKey> const &_which_dofs) {
-    return make_simple_structure(_config.supercell(), _config.configdof(), _which_dofs);
-  }
 
   //***************************************************************************
 
@@ -53,7 +77,6 @@ namespace CASM {
     return result;
   }
 
-  //***************************************************************************
 
   std::vector<std::set<Index> > atom_site_compatibility(SimpleStructure const &sstruc,
                                                         Configuration const &_config) {
@@ -86,13 +109,10 @@ namespace CASM {
         tformers.insert(dof);
     }
 
-    //std::cout << "About to transform!!!\n";
     for(TransformDirective const &tformer : tformers) {
       tformer.transform(_config, _reference, _sstruc);
     }
   }
-
-  //***************************************************************************
 
   TransformDirective::TransformDirective(std::string const &_name) :
     m_name(_name),
@@ -107,8 +127,6 @@ namespace CASM {
     }
   }
 
-  //***************************************************************************
-
   bool TransformDirective::operator<(TransformDirective const &_other) const {
     if(m_before.count(_other.name()) || _other.m_after.count(name())) {
       return false;
@@ -119,7 +137,6 @@ namespace CASM {
     return name() < _other.name();
   }
 
-  //***************************************************************************
 
   void TransformDirective::_accumulate_before(std::set<std::string>const &_queue, std::set<std::string> &_result) const {
     for(std::string const &el : _queue) {
@@ -130,7 +147,6 @@ namespace CASM {
     }
   }
 
-  //***************************************************************************
 
   void TransformDirective::_accumulate_after(std::set<std::string>const &_queue, std::set<std::string> &_result) const {
     for(std::string const &el : _queue) {
@@ -141,7 +157,6 @@ namespace CASM {
     }
   }
 
-  //***************************************************************************
 
   void TransformDirective::transform(ConfigDoF const  &_dof, BasicStructure const &_reference, SimpleStructure &_struc) const {
     if(m_traits_ptr) {
@@ -153,7 +168,7 @@ namespace CASM {
       m_traits_ptr->apply_dof(_dof, _reference, _struc);
     }
     else {
-      xtal::_atomize(_struc, _dof.occupation(), _reference);
+      _atomize(_struc, _dof.occupation(), _reference);
     }
   }
 

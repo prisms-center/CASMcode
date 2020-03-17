@@ -9,67 +9,68 @@ namespace CASM {
 
   //Calculates the metric tensor of the the deformation gradient as
   //F^{T}F
-  Matrix3d StrainConverter::metric_tensor(const Matrix3d &F) {
+  Matrix3d StrainConverter::metric_tensor(const Eigen::Ref<const Matrix3d> &F) {
     return strain::metric_tensor(F);
   }
+
   //*******************************************************************************************
   //calculates and returns the value of U where F = R*U
-  Matrix3d StrainConverter::right_stretch_tensor(Matrix3d &C, const Matrix3d &F) {
+  Matrix3d StrainConverter::right_stretch_tensor(Matrix3d &C, const Eigen::Ref<const Matrix3d> &F) {
     C = strain::metric_tensor(F);
     return strain::right_stretch_tensor(F);
   }
 
   //*******************************************************************************************
   //overloaded version of the above
-  Matrix3d StrainConverter::right_stretch_tensor(const Matrix3d &F) {
+  Matrix3d StrainConverter::right_stretch_tensor(const Eigen::Ref<const Matrix3d> &F) {
     return strain::right_stretch_tensor(F);
   }
 
   //*******************************************************************************************
   /// GREEN_LAGRANGE = 1/2 * (F^{T} F - I)
-  Matrix3d StrainConverter::green_lagrange(const Matrix3d &F) {
+  Matrix3d StrainConverter::green_lagrange(const Eigen::Ref<const Matrix3d> &F) {
     return strain::deformation_tensor_to_metric<STRAIN_METRIC::GREEN_LAGRANGE>(F);
   }
 
   //*******************************************************************************************
   /// GREEN_LAGRANGE = 1/2 * (F^{T} F - I)
-  Matrix3d StrainConverter::green_lagrange_to_F(const Matrix3d &E) {
+  Matrix3d StrainConverter::green_lagrange_to_F(const Eigen::Ref<const Matrix3d> &E) {
     return strain::metric_to_deformation_tensor<STRAIN_METRIC::GREEN_LAGRANGE>(E);
   }
 
   //*******************************************************************************************
   /// BIOT = (U-I)
-  Matrix3d StrainConverter::biot(const Matrix3d &F) {
+  Matrix3d StrainConverter::biot(const Eigen::Ref<const Matrix3d> &F) {
     return strain::deformation_tensor_to_metric<STRAIN_METRIC::BIOT>(F);
   }
 
   //*******************************************************************************************
   /// BIOT = (U-I)
-  Matrix3d StrainConverter::biot_to_F(const Matrix3d &B) {
+  Matrix3d StrainConverter::biot_to_F(const Eigen::Ref<const Matrix3d> &B) {
     return strain::metric_to_deformation_tensor<STRAIN_METRIC::BIOT>(B);
   }
 
   //*******************************************************************************************
   /// HENCKY = log(C)/2
-  Matrix3d StrainConverter::hencky(const Matrix3d &F) {
+  Matrix3d StrainConverter::hencky(const Eigen::Ref<const Matrix3d> &F) {
     return strain::deformation_tensor_to_metric<STRAIN_METRIC::HENCKY>(F);
   }
 
   //*******************************************************************************************
   /// HENCKY = log(C)/2
-  Matrix3d StrainConverter::hencky_to_F(const Matrix3d &H) {
+  Matrix3d StrainConverter::hencky_to_F(const Eigen::Ref<const Matrix3d> &H) {
     return strain::metric_to_deformation_tensor<STRAIN_METRIC::HENCKY>(H);
   }
 
   //*******************************************************************************************
   /// EULER_ALMANSI = (I-(F F^{T})^(-1))/2
-  Matrix3d StrainConverter::euler_almansi(const Matrix3d &F) {
+  Matrix3d StrainConverter::euler_almansi(const Eigen::Ref<const Matrix3d> &F) {
     return strain::deformation_tensor_to_metric<STRAIN_METRIC::EULER_ALMANSI>(F);
   }
 
   //*******************************************************************************************
   /// EULER_ALMANSI = (I-(F F^{T})^(-1))/2
-  Matrix3d StrainConverter::euler_almansi_to_F(const Matrix3d &A) {
+  Matrix3d StrainConverter::euler_almansi_to_F(const Eigen::Ref<const Matrix3d> &A) {
     return strain::metric_to_deformation_tensor<STRAIN_METRIC::EULER_ALMANSI>(A);
   }
 

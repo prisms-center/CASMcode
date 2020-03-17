@@ -78,7 +78,7 @@ namespace CASM {
   /// \param _title The title of the CASM project. Should be a short title suitable for prepending to files.
   /// \param _property The name of the default cluster expansion property, i.e. "formation_energy"
   ///
-  ProjectBuilder::ProjectBuilder(BasicStructure<Site> const &_prim, fs::path _root, std::string _title, std::string _property) :
+  ProjectBuilder::ProjectBuilder(BasicStructure const &_prim, fs::path _root, std::string _title, std::string _property) :
     m_prim(_prim),
     m_root(_root),
     m_title(_title),

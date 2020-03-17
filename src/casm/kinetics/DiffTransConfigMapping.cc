@@ -89,7 +89,7 @@ namespace CASM {
 
       Coordinate t_shift =
         sym::copy_apply(xtal::SymOp::point_operation(from_node.lat_node.isometry), first_site)
-        - Coordinate(scel_ptr->uccoord(find_index(from_node.permutation, 0)).coordinate(this->primclex().prim()));
+        - Coordinate(scel_ptr->uccoord(find_index(from_node.atom_permutation, 0)).coordinate(this->primclex().prim()));
       t_shift.set_lattice(primclex().prim().lattice(), CART);
 
       //std::cout << "t shift " << t_shift.const_frac() << std::endl;

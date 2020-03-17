@@ -244,10 +244,10 @@ namespace CASM {
 
       using AtomIndexSet = std::set<Index>;
 
-      using MoleculeMap = std::vector<AtomIndexSet>
+      using MoleculeMap = std::vector<AtomIndexSet>;
 
-                          /// \brief Static constructor to build an invalid MappingNode, can be used as return value when no valid mapping exists
-                          static MappingNode invalid();
+      /// \brief Static constructor to build an invalid MappingNode, can be used as return value when no valid mapping exists
+      static MappingNode invalid();
 
       /// \brief construct with lattice node and strain_weight. Cost is initialized assuming zero basis_node cost
       MappingNode(LatticeNode _lat_node, double _strain_weight) :

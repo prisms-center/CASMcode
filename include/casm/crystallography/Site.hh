@@ -64,7 +64,7 @@ namespace CASM {
       bool contains(const std::string &name) const;
       bool contains(const std::string &name, int &index) const;
 
-      void set_allowed_occupants(std::vector<Molecule> _occ_domain);
+      void set_allowed_occupants(const std::vector<Molecule> &new_occ_domain);
 
       void set_dofs(std::map<std::string, SiteDoFSet> _dofs);
 
