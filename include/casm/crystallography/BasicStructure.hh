@@ -50,13 +50,11 @@ namespace CASM {
       //CASM canonical input/output
       void read(std::istream &stream);  //John do this
 
-
     public:
 
       // ****Constructors****
       BasicStructure(const Lattice &init_lat) : m_lattice(init_lat) {};
       BasicStructure() : m_lattice() {}; //added by Ivy (do we need/want this??)
-      /* BasicStructure(const fs::path &filepath); */
 
       /// Have to explicitly define the copy constructor so that sites in the new structure
       /// do not depend on the lattice of 'RHS'

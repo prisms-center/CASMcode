@@ -1,6 +1,5 @@
 #include "casm/crystallography/Strain.hh"
-#include "casm/external/Eigen/src/Core/Matrix.h"
-#include "casm/strain/StrainConverter.hh"
+#include "casm/external/Eigen/Core"
 
 namespace CASM {
   namespace strain {
@@ -14,7 +13,7 @@ namespace CASM {
     template <>
     Eigen::Matrix3d metric_to_deformation_tensor<METRIC::GREEN_LAGRANGE>(const Eigen::Ref<const Eigen::Matrix3d> &metric_tensor) {
       const Eigen::Matrix3d &E = metric_tensor;
-      Eigen::SelfAdjointEigenSolver<Matrix3d> es(2 * E + Eigen::MatrixXd::Identity(3, 3));
+      Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> es(2 * E + Eigen::MatrixXd::Identity(3, 3));
       return es.operatorSqrt();
     }
 
@@ -37,14 +36,14 @@ namespace CASM {
     template <>
     Eigen::Matrix3d deformation_tensor_to_metric<METRIC::HENCKY>(const Eigen::Ref<const Eigen::Matrix3d> &deformation_tensor) {
       const Eigen::Matrix3d &F = deformation_tensor;
-      Eigen::SelfAdjointEigenSolver<Matrix3d> es(F.transpose()*F);
+      Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> es(F.transpose()*F);
       return es.eigenvectors() * es.eigenvalues().array().log().matrix().asDiagonal() * es.eigenvectors().inverse() / 2.0;
     }
 
     template <>
     Eigen::Matrix3d metric_to_deformation_tensor<METRIC::HENCKY>(const Eigen::Ref<const Eigen::Matrix3d> &metric_tensor) {
       const Eigen::Matrix3d &H = metric_tensor;
-      Eigen::SelfAdjointEigenSolver<Matrix3d> es(H);
+      Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> es(H);
       return es.eigenvectors() * es.eigenvalues().array().exp().matrix().asDiagonal() * es.eigenvectors().inverse();
     }
 
@@ -59,7 +58,7 @@ namespace CASM {
     template <>
     Eigen::Matrix3d metric_to_deformation_tensor<METRIC::EULER_ALMANSI>(const Eigen::Ref<const Eigen::Matrix3d> &metric_tensor) {
       const Eigen::Matrix3d &A = metric_tensor;
-      Eigen::SelfAdjointEigenSolver<Matrix3d> es(Eigen::MatrixXd::Identity(3, 3) - 2 * A);
+      Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> es(Eigen::MatrixXd::Identity(3, 3) - 2 * A);
       return es.operatorInverseSqrt();
     }
 
@@ -86,7 +85,7 @@ namespace CASM {
     Eigen::Matrix3d right_stretch_tensor(const Eigen::Ref<const Eigen::Matrix3d> &deformation_tensor) {
       const Eigen::Matrix3d &F = deformation_tensor;
       Eigen::Matrix3d C = metric_tensor(F);
-      Eigen::SelfAdjointEigenSolver <Matrix3d> eigen_solver(C);
+      Eigen::SelfAdjointEigenSolver <Eigen::Matrix3d> eigen_solver(C);
       return eigen_solver.operatorSqrt();
     }
 
