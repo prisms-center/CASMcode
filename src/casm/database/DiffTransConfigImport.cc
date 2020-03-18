@@ -39,9 +39,8 @@ namespace CASM {
         from_json(sstruc, json, "relaxed");
       }
       else {
-        BasicStructure struc;
         fs::ifstream struc_stream(p);
-        struc.read(struc_stream);
+        BasicStructure struc = BasicStructure::from_poscar_stream(struc_stream);
         sstruc = make_simple_structure(struc);
       }
       return sstruc;

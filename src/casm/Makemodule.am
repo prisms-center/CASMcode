@@ -184,7 +184,6 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/AnisoValTraits.hh\
     include/casm/crystallography/BasicStructure.hh\
     include/casm/crystallography/BasicStructureTools.hh\
-    include/casm/crystallography/BasicStructure_impl.hh\
     include/casm/crystallography/CanonicalForm.hh\
     include/casm/crystallography/Coordinate.hh\
     include/casm/crystallography/CoordinateSystems.hh\
@@ -205,6 +204,7 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/SimpleStructureTools.hh\
     include/casm/crystallography/Site.hh\
     include/casm/crystallography/SpeciesAttribute.hh\
+    include/casm/crystallography/Strain.hh\
     include/casm/crystallography/StrucMapCalculatorInterface.hh\
     include/casm/crystallography/StrucMapping.hh\
     include/casm/crystallography/Structure.hh\
@@ -991,4 +991,4 @@ libcasm_la_LIBADD = \
 libcasm_la_LDFLAGS = \
     $(BOOST_LDFLAGS)\
     -avoid-version
-# src/casm/version/autoversion.lo: .FORCE
+src/casm/version/autoversion.lo: .FORCE

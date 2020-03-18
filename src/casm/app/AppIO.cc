@@ -16,6 +16,7 @@
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/symmetry/SymInfo.hh"
+#include <fstream>
 
 namespace CASM {
 
@@ -278,7 +279,7 @@ namespace CASM {
     // else tread as vasp-like file
     BasicStructure prim;
     try {
-      prim.read(f);
+      prim = BasicStructure::from_poscar_stream(f);
     }
     catch(std::exception const &ex) {
       std::stringstream err_msg;

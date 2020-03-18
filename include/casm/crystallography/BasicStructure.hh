@@ -2,6 +2,7 @@
 #define BASICSTRUCTURE_HH
 
 #include <iostream>
+#include <istream>
 #include <vector>
 #include <string>
 #include <cstdlib>
@@ -41,22 +42,29 @@ namespace CASM {
       /// continuous global degrees of freedom
       std::map <DoFKey, DoFSet> m_global_dof_map;
 
-    private: // PRIVATE METHODS
+    private:
 
       void main_print(std::ostream &stream, COORD_TYPE mode, bool version5, int option) const;
 
-    public: // PUBLIC METHODS
+      //TODO: Extract
+      //CASM canonical input/output
+      void read(std::istream &stream);  //John do this
+
+
+    public:
 
       // ****Constructors****
       BasicStructure(const Lattice &init_lat) : m_lattice(init_lat) {};
       BasicStructure() : m_lattice() {}; //added by Ivy (do we need/want this??)
-      BasicStructure(const fs::path &filepath);
+      /* BasicStructure(const fs::path &filepath); */
 
       /// Have to explicitly define the copy constructor so that sites in the new structure
       /// do not depend on the lattice of 'RHS'
       BasicStructure(const BasicStructure &RHS);
 
-      virtual ~BasicStructure() {};
+      static BasicStructure from_poscar_stream(std::istream &poscar_stream);
+
+      ~BasicStructure() {};
 
       //  ****Inspectors/Accessors****
 
@@ -108,8 +116,6 @@ namespace CASM {
       /// Manually set the basis sites
       void push_back(Site const &_site, COORD_TYPE mode = CART);
 
-      //  - Symmetry
-
       /// \brief Returns true if structure has attributes affected by time reversal
       bool is_time_reversal_active() const;
 
@@ -119,10 +125,6 @@ namespace CASM {
 
       /// Counts sites that allow vacancies
       Index max_possible_vacancies()const;
-
-      //TODO: Extract
-      //CASM canonical input/output
-      virtual void read(std::istream &stream);  //John do this
 
       //TODO: Extract
       /// Output other formats

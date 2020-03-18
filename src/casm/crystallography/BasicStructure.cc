@@ -14,15 +14,21 @@
 
 namespace CASM {
   namespace xtal {
-    BasicStructure::BasicStructure(const fs::path &filepath) : m_lattice() {
-      if(!fs::exists(filepath)) {
-        std::cerr << "Error in BasicStructure::BasicStructure(const fs::path &filepath)." << std::endl;
-        std::cerr << "  File does not exist at: " << filepath << std::endl;
-        exit(1);
-      }
-      fs::ifstream infile(filepath);
-      read(infile);
+    BasicStructure BasicStructure::from_poscar_stream(std::istream &poscar_stream) {
+      BasicStructure poscar_structure;
+      poscar_structure.read(poscar_stream);
+      return poscar_structure;
     }
+
+    /* BasicStructure::BasicStructure(const fs::path &filepath) : m_lattice() { */
+    /*   if(!fs::exists(filepath)) { */
+    /*     std::cerr << "Error in BasicStructure::BasicStructure(const fs::path &filepath)." << std::endl; */
+    /*     std::cerr << "  File does not exist at: " << filepath << std::endl; */
+    /*     exit(1); */
+    /*   } */
+    /*   fs::ifstream infile(filepath); */
+    /*   read(infile); */
+    /* } */
 
     //***********************************************************
 

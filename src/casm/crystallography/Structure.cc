@@ -58,8 +58,7 @@ namespace CASM {
     }
     fs::ifstream infile(filepath);
 
-    BasicStructure read_struc;
-    read_struc.read(infile);
+    BasicStructure read_struc = BasicStructure::from_poscar_stream(infile);
     m_structure_ptr = std::make_shared<BasicStructure>(read_struc);
     this->generate_factor_group();
   }

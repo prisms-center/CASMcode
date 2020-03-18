@@ -27,6 +27,7 @@
 #include "casm/symmetry/OrbitGeneration_impl.hh"
 #include "casm/kinetics/DiffusionTransformationTraits.hh"
 #include "casm/database/DiffTransOrbitDatabase.hh"
+#include <fstream>
 namespace CASM {
   namespace Kinetics {
     //*******************************************************************************************
@@ -399,10 +400,12 @@ namespace CASM {
             int img_no = std::stoi(begin->path().filename().string());
             if(fs::is_directory(*begin)) {
               if(fs::is_regular(*begin / "CONTCAR")) {
-                bins.insert(std::make_pair(img_no, BasicStructure(*begin / "CONTCAR")));
+                std::ifstream contcar_stream((*begin / "CONTCAR").string());
+                bins.insert(std::make_pair(img_no, BasicStructure::from_poscar_stream(contcar_stream)));
               }
               else if(fs::is_regular(*begin / "POSCAR")) {
-                bins.insert(std::make_pair(img_no, BasicStructure(*begin / "POSCAR")));
+                std::ifstream poscar_stream((*begin / "POSCAR").string());
+                bins.insert(std::make_pair(img_no, BasicStructure::from_poscar_stream(poscar_stream)));
               }
               else {
                 std::cerr << "NO POSCAR OR CONTCAR FOUND IN " << *begin << std::endl;

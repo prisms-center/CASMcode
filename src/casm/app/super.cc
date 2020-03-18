@@ -1,4 +1,5 @@
 #include <boost/filesystem/fstream.hpp>
+#include <fstream>
 #include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/external/Eigen/Core"
 #include "casm/external/Eigen/src/Core/Matrix.h"
@@ -256,7 +257,8 @@ namespace CASM {
         args.log() << "ERROR: " << abs_tmatfile[0] << " not found." << std::endl;
         return 1;
       }
-      BasicStructure unitcell(abs_structfile);
+      std::ifstream abs_structfile_stream(abs_structfile.string());
+      BasicStructure unitcell = BasicStructure::from_poscar_stream(abs_structfile_stream);
 
       // -- read transf matrix ---
       if(!fs::exists(abs_tmatfile[0])) {
@@ -520,8 +522,7 @@ namespace CASM {
         p.print(ss);
 
         std::istringstream iss(ss.str());
-        BasicStructure unit;
-        unit.read(iss);
+        BasicStructure unit = BasicStructure::from_poscar_stream(iss);
 
         args.log() << "Unit structure:";
         args.log() << "\n------\n";
@@ -642,7 +643,8 @@ namespace CASM {
       Lattice super_lat;
 
       if(vm.count("structure")) {
-        super_lat = BasicStructure(abs_structfile).lattice();
+        std::ifstream abs_structfile_stream(abs_structfile.string());
+        super_lat = BasicStructure::from_poscar_stream(abs_structfile_stream).lattice();
       }
       else if(vm.count("scelnames")) {
         super_lat = primclex.db<Supercell>().find(unitscelname)->lattice();
