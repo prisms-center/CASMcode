@@ -16,7 +16,7 @@
 namespace CASM {
   namespace DoF_impl {
 
-    /// \brief Retrieve the standard values for a DoF from dictionary of properties from properties.calc.json
+    /// \brief Retrieve the standard values for a DoF from dictionary of properties from a SimpleStructure or MappedProperties object
     ///  Returns matrix with standard values, and names of properties that were used to construct the matrix
     std::pair<Eigen::MatrixXd, std::set<std::string> > StrainDoFTraits::find_values(std::map<std::string, Eigen::MatrixXd> const &values) const {
       std::pair<Eigen::MatrixXd, std::set<std::string> > result;

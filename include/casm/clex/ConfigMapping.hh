@@ -81,19 +81,55 @@ namespace CASM {
         *this = Settings();
       }
 
+      /// lattice_weight specifies the cost function in terms of lattice deformation cost and
+      /// atomic deformation cost (i.e., atomic displacement)
+      /// cost = lattice_weight*lattice_cost + (1l-lattice_weight)*atomic_displacement_cost
       double lattice_weight;
+
+      /// True if child structure's lattice should be assumed to be ideal integer supercell of parent structure
       bool ideal;
+
+      /// True invokes post-processing step to find a symmetry operation of the parent structure that preserves
+      /// setting of child structure as much as possible after mapping
       bool strict;
+
+      /// True invokes additional checks which determine whether there are any other mappings that are distinct
+      /// from the best mapping, but have the same cost
       bool robust;
+
+      /// If true, non-primitive configurations are only inserted in the database in the form of their primitive form
+      /// The primitive form is always inserted into the database, regardless of setting value
       bool primitive_only;
+
+      /// If true, search for potential mappings will be constrained to the supercell volume of the starting config
+      /// (update operations only)
       bool fix_volume;
+
+
+      /// If true, search for potential mappings will be constrained to the exact supercell of the starting config
+      /// (update operations only)
       bool fix_lattice;
+
+      /// Specify the number, k, of k-best mappings to include in solution set (default is 1)
       Index k_best;
+
+      /// List of superlattices of parent structure to consider when searching for mappings
       std::vector<std::string> forced_lattices;
+
+      /// casm-query expression used to filter list of potential supercells of parent structure to search over
       std::string filter;
+
+      /// Tolerance used to determine if two mappings have identical cost
       double cost_tol;
+
+      /// minimum fraction of vacant sites, below this fraction a mapping will not be considered
       double min_va_frac;
+
+      /// maximum fraction of vacant sites, above this fraction a mapping will not be considered
       double max_va_frac;
+
+      /// constrains the search space by assuming a limit on allowed volume change
+      /// only taken into account when non-interstitial vacancies are allowed in parent structure
       double max_vol_change;
 
     };
@@ -102,8 +138,9 @@ namespace CASM {
   /// \brief Reorders the permutation and compounds the spatial isometry (rotation + translation) of _node with that of _it
   MappingNode copy_apply(PermuteIterator const &_it, MappingNode const &_node, bool transform_cost_mat = true);
 
-  /// \brief Initializes configdof from _child_struc, assuming it has been mapped exactly onto onto _scel
-  /// This means that _child_struc has had its setting resolved using struc_mapper().calculator().resolve_setting()
+  /// \brief Initializes configdof of Supercell '_scel' corresponding to an idealized child structure (encoded by _child_struc)
+  /// _child_struc is assumed to have been idealized via structure-mapping or to be the result of converting a configuration to
+  /// a SimpleStructure. result.second gives list of properties that were utilized in the course of building the configdof
   std::pair<ConfigDoF, std::set<std::string> > to_configdof(SimpleStructure const &_child_struc, Supercell const  &_scel);
 
   class PrimStrucMapCalculator : public SimpleStrucMapCalculator {
@@ -126,7 +163,15 @@ namespace CASM {
 
   /// Data structure holding results of ConfigMapper algorithm
   struct ConfigMapperResult {
+    /// Specify degree to which the hinted configuration matches the imported structure:
+    ///    None : unspecified/unknown
+    ///    Derivate : same occupation, but other DoFs are different
+    ///    Equivalent : same occupation and DoFs, but related to Hint by a SymOp of the ideal crystal
+    ///    Identical : Exact same occupation and DoFs
+    ///    NewOcc : Occupation has no relation to Hint (no statement about other DoFs, but they should be presumed different)
+    ///    NewScel : Mapped configuration corresponds to different supercell than Hint
     enum class HintStatus { None, Derivative, Equivalent, Identical, NewOcc, NewScel};
+
     struct Individual {
       Individual(Configuration _config,
                  SimpleStructure _resolved_struc,

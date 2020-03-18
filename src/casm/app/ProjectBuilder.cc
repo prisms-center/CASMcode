@@ -68,8 +68,9 @@ namespace CASM {
     }
 
     // Read prim
-    ProjectSettings set(m_root, m_title);
-    m_prim = read_prim(prim_path, m_crystallography_tol, &(set.hamiltonian_modules()));
+    // HamiltonianModules needs to know where to look for plug-ins, but it's unclear where that should be
+    HamiltonianModules hamiltonian_modules;
+    m_prim = read_prim(prim_path, m_crystallography_tol, &hamiltonian_modules);
   }
 
   /// \brief Construct a CASM ProjectBuilder
