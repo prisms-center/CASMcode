@@ -54,6 +54,8 @@ namespace CASM {
       this->print(log);
     }
 
+    //TODO: Why Log? This just drags in more unnecessary dependencies. Just use ostream?
+    //Shouldn't all these precision values be part of the printer and NOT the Log?
     /// \brief Print POSCAR, providing a range of std::tuple<AtomName, Coordinate, SelectiveDynamics>
     void PrintPOSCAR::print(Log &sout) const {
 

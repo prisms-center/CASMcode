@@ -246,6 +246,12 @@ casm_container_include_HEADERS = \
 
 #-------------------------------------------------------------------------------#
 
+casm_container_io_includedir=$(includedir)/casm/container/io
+casm_container_io_include_HEADERS = \
+    include/casm/container/io/PermutationIO.hh
+
+#-------------------------------------------------------------------------------#
+
 casm_crystallography_includedir=$(includedir)/casm/crystallography
 casm_crystallography_include_HEADERS = \
     include/casm/crystallography/Adapter.hh\
