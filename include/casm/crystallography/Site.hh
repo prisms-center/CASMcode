@@ -93,8 +93,6 @@ namespace CASM {
         return m_type_prototypes;
       }
 
-      /* Site &_apply_sym_attributes(const SymOp &op); */
-
       /// Integer label used to differentiate sites of otherwise identical type
       Index m_label;
 

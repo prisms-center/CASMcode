@@ -272,6 +272,26 @@ TEST(BasicStructureSiteTest, POS1Vasp5Test) {
 
 }
 
+TEST(BasicStructureSiteTest, MakeSuperstructure) {
+  Eigen::Matrix3i transf_mat;
+  transf_mat << 2, 0, 0, 0, 2, 0, 0, 0, 2;
+
+  BasicStructure prim = test::ZrO_prim();
+  BasicStructure superstruc = xtal::make_superstructure(prim, transf_mat);
+
+  EXPECT_EQ(superstruc.basis().size(), transf_mat.determinant()*prim.basis().size());
+
+  for(const Site &prim_site : prim.basis()) {
+    int match_count = 0;
+    for(const Site &super_site : superstruc.basis()) {
+      if(super_site.compare(prim_site)) {
+        ++match_count;
+      }
+    }
+    EXPECT_EQ(match_count, 1);
+  }
+}
+
 TEST(BasicStructureSiteTest, IsPrimitiveTest) {
 
   Structure prim(test::ZrO_prim());

@@ -366,11 +366,10 @@ namespace CASM {
         for(const UnitCell &lattice_point : all_lattice_points) {
           Coordinate lattice_point_coordinate = make_superlattice_coordinate(lattice_point, tiling_unit.lattice(), superlat);
           superstruc_basis.emplace_back(unit_basis_site + lattice_point_coordinate);
-          superstruc_basis.back().within();
         }
       }
 
-      superstruc.set_basis(superstruc_basis);
+      superstruc.set_basis(superstruc_basis, CART);
       return superstruc;
     }
 

@@ -1009,7 +1009,7 @@ namespace CASM {
       Index fg_index = boost::lexical_cast<Index>(tokens[2]);
       Index trans_index = boost::lexical_cast<Index>(tokens[3]);
 
-      return apply(canon_config.supercell().sym_info().permute_it(fg_index, trans_index), canon_config);
+      return CASM::apply(canon_config.supercell().sym_info().permute_it(fg_index, trans_index), canon_config);
     }
 
     /// \brief Make general super Configuration from name string

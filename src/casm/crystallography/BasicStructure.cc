@@ -102,7 +102,6 @@ namespace CASM {
 
     void BasicStructure::push_back(Site const &_site, COORD_TYPE mode) {
       m_basis.push_back(_site);
-      /* m_basis.back().set_basis_ind(basis().size() - 1); */
       m_basis.back().set_lattice(lattice(), mode);
     }
 
