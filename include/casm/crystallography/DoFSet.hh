@@ -27,8 +27,8 @@ namespace CASM {
 
       DoFSet(const BasicTraits &init_traits, const std::vector<std::string> &init_component_names, const Eigen::MatrixXd &init_basis)
         : m_traits(init_traits), m_component_names(init_component_names), m_basis(init_basis), m_basis_inverse(this->basis().inverse()) {
-        assert(m_component_names.size() == this->dimensions());
-        assert(m_basis.cols() == this->dimensions());
+        assert(m_component_names.size() == this->dim());
+        assert(m_basis.cols() == this->dim());
         assert(m_basis.rows() == this->traits().dim()); // TODO: This makes sense I think?
       }
 
@@ -52,7 +52,7 @@ namespace CASM {
       }
 
       /// Returns the number of dimension of the DoF, corresponding to the number of axes in the vector space
-      Index dimensions() const {
+      Index dim() const {
         return this->basis().cols();
       }
 
@@ -149,7 +149,7 @@ namespace CASM {
 
       /// Returns true if the axis span the same space. For example the basis would be considered equivalent
       /// if they are the same but have been rotated
-      bool _basis_is_equivalent(const DoFSet &other_value) const;
+      bool _basis_spans_same_space(const DoFSet &other_value) const;
     };
 
     /**

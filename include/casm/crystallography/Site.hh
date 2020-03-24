@@ -55,7 +55,6 @@ namespace CASM {
       //TODO: Make comparators independent classes?
       bool compare(const Coordinate &test_coord) const;
       bool compare(const Site &test_site) const; //Ivy
-      bool compare(const Site &test_site, const Coordinate &shift) const;
       bool compare_type(const Site &test_site) const; //Ivy
       bool operator==(const Site &test_site) const;
       bool almost_equal(const Site &test_site) const;

@@ -121,7 +121,7 @@ namespace CASM {
     if(istrain == tdof_types.size())
       throw std::runtime_error("Cannot enumerate strains for project in which strain has not been specified as a degree of freedom.");
     strain_dof_key = tdof_types[istrain];
-    Index dim = primclex.prim().structure().global_dof(strain_dof_key).dimensions();
+    Index dim = primclex.prim().structure().global_dof(strain_dof_key).dim();
 
     Eigen::MatrixXd axes;
     Eigen::VectorXd min_val, max_val, inc_val;

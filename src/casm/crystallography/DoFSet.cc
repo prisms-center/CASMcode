@@ -14,7 +14,7 @@ namespace CASM {
       return m_reference_dofset.component_names() == other_value.component_names();
     }
 
-    bool DoFSetIsEquivalent_f::_basis_is_equivalent(const DoFSet &other_value) const {
+    bool DoFSetIsEquivalent_f::_basis_spans_same_space(const DoFSet &other_value) const {
       const auto &reference_basis = m_reference_dofset.basis();
       const auto &other_basis = other_value.basis();
 
@@ -31,7 +31,7 @@ namespace CASM {
 
         Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(aug);
         qr.setThreshold(m_tol);
-        if(qr.rank() != m_reference_dofset.dimensions())
+        if(qr.rank() != m_reference_dofset.dim())
           return false;
       }
 
@@ -39,7 +39,7 @@ namespace CASM {
     }
 
     bool DoFSetIsEquivalent_f::operator()(const DoFSet &other_value) const {
-      return this->_traits_match(other_value) && this->_axis_names_match(other_value) && this->_basis_is_equivalent(other_value);
+      return this->_traits_match(other_value) && this->_axis_names_match(other_value) && this->_basis_spans_same_space(other_value);
     }
 
   } // namespace xtal

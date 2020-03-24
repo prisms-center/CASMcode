@@ -43,11 +43,9 @@ namespace CASM {
     SymGroupRepID m_basis_perm_rep_ID;
 
     /// Hold the SymRepIDs for the occupant DoF, one for each of the basis sites
-    //Has to be mutable because everything is const for some reason
     std::vector<SymGroupRepID> m_occupant_symrepIDs;
 
     /// Hold the SymRepIDs for the continuous DoF, one for each of the basis sites
-    //Has to be mutable because everything is const for some reason
     std::vector<SymGroupRepID> m_site_dof_symrepIDs;
 
     /// Holds SymRepIDs for each of the global DoFs, using the DoF name

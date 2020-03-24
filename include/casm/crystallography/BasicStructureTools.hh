@@ -16,10 +16,6 @@ namespace CASM {
     /// otherwise, returns the size of the basis
     Index find_index(const std::vector<Site> &basis, const Site &test_site);
 
-    /// return basis index of site that matches test_site+shift, if it is in basis
-    /// otherwise, returns the size of the basis
-    Index find_index_with_translation(const std::vector<Site> &basis, const Site &test_site, const Coordinate &shift);
-
     /// Returns true if the structure describes a crystal primitive cell
     /// i.e., no translation smaller than a lattice vector can map the structure onto itself
     bool is_primitive(const BasicStructure &struc);

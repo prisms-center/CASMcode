@@ -406,7 +406,7 @@ namespace CASM {
   std::map<DoFKey, Index> global_dof_dims(BasicStructure const &_struc) {
     std::map<DoFKey, Index> result;
     for(auto const &type : _struc.global_dofs())
-      result[type.first] = type.second.dimensions();
+      result[type.first] = type.second.dim();
     return result;
   }
 
@@ -439,7 +439,7 @@ namespace CASM {
     Index result = 0;
     for(Site const &site : _struc.basis()) {
       if(site.has_dof(_name))
-        result = max(result, site.dof(_name).dimensions());
+        result = max(result, site.dof(_name).dim());
     }
     return result;
   }
