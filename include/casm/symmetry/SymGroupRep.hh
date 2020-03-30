@@ -72,6 +72,11 @@ namespace CASM {
       return *m_master_group;
     }
 
+    /// Matrix dimension of representation
+    Index dim() const {
+      return MatrixXd(0)->cols();
+    }
+
     /// \brief Returns true if this SymGroupRep has valid pointer to a MasterSymGroup
     bool has_valid_master() const {
       return m_master_group != nullptr;

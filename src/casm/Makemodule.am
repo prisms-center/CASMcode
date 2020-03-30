@@ -855,6 +855,7 @@ libcasm_la_SOURCES = \
     src/casm/database/Selection.cc\
     src/casm/database/json/jsonDatabase.cc\
     src/casm/database/json/jsonPropertiesDatabase.cc\
+    src/casm/enumerator/DoFSpace.cc\
     src/casm/enumerator/EnumInputParser.cc\
     src/casm/enumerator/Enumerator.cc\
     src/casm/external/gzstream/gzstream.C\
@@ -958,6 +959,7 @@ libcasm_la_SOURCES = \
     src/casm/symmetry/SymPermutation.cc\
     src/casm/symmetry/SymRepTools.cc\
     src/casm/symmetry/SymTools.cc\
+    src/casm/symmetry/io/json/SymRepTools.cc\
     src/casm/system/Popen.cc\
     src/casm/system/RuntimeLibrary.cc\
     src/casm/version/autoversion.cc

@@ -555,10 +555,10 @@ namespace CASM {
   //
   // Donghee
   //*****************************************************************
-  std::vector<Index> SymGroup::get_rotation_groups() const {
+  std::vector<Index> get_rotation_groups(SymGroup const &group) {
     std::vector<Index> result(12, 0);
-    for(Index i = 0; i < size(); i++) {
-      SymInfo info(at(i), lattice());
+    for(SymOp const &op : group) {
+      SymInfo info(op, group.lattice());
       if(info.op_type == symmetry_type::identity_op) {
         result[0]++;
       }
@@ -567,7 +567,7 @@ namespace CASM {
       }
       else {
         Index bit = 0;
-        if(at(i).matrix().determinant() < 0)
+        if(op.matrix().determinant() < 0)
           bit = 1;
         for(Index n = 2; n <= 6; ++n) {
           if(almost_equal<double>(360. / n, info.angle)) {
@@ -582,14 +582,14 @@ namespace CASM {
   }
 
   //*****************************************************************
-  std::map<std::string, std::string> point_group_info(SymGroup const &g) const {
+  std::map<std::string, std::string> point_group_info(SymGroup const &g) {
     SymGroup nonmag;
     for(SymOp const &op : g) {
       if(!op.time_reversal()) {
         nonmag.push_back(op);
       }
     }
-
+    nonmag.set_lattice(g.lattice());
     auto nonmag_info = nonmagnetic_point_group_info(nonmag);
 
     //nonmagnetic group:
@@ -610,7 +610,7 @@ namespace CASM {
 
     //magnetic group:
     tot_info["international_name"] = "Magnetic group (not supported)";
-    tot_info.erase("space_group_range") = "Magnetic group (not supported)";
+    tot_info["space_group_range"] = "Magnetic group (not supported)";
     tot_info["name"] += ("(" + nonmag_info["name"] + ")");
     tot_info["latex_name"] += ("(" + nonmag_info["latex_name"] + ")");
 
@@ -618,8 +618,8 @@ namespace CASM {
 
   }
   //*****************************************************************
-  std::map<std::string, std::string> nonmagnetic_point_group_info(SymGroup const &g) const {
-    std::vector<Index> rgroups = g.get_rotation_groups();
+  std::map<std::string, std::string> nonmagnetic_point_group_info(SymGroup const &g) {
+    std::vector<Index> rgroups = get_rotation_groups(g);
     std::map<std::string, std::string> result;
     // Calculate total number of rotation elements
     Index nm = rgroups[2] + 1;
@@ -3952,6 +3952,17 @@ namespace CASM {
       /// re-throw exceptions
       throw;
     }
+  }
+
+  //*******************************************************************************************
+
+  MasterSymGroup make_master_sym_group(SymGroup const &_group, Lattice const &_lattice) {
+    MasterSymGroup result;
+    result.set_lattice(_lattice);
+    for(auto const &op : _group) {
+      result.push_back(op);
+    }
+    return result;
   }
 
   //*******************************************************************************************

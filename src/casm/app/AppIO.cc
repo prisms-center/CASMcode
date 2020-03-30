@@ -458,6 +458,8 @@ namespace CASM {
     to_json_array(op.tau(), j["tau"]["CART"]);
     to_json_array(grp.lattice().inv_lat_column_mat()*op.tau(), j["tau"]["FRAC"]);
 
+    to_json(op.time_reversal(), j["time_reversal"]);
+
     to_json(grp.class_of_op(i), j["conjugacy_class"]);
     to_json(grp.ind_inverse(i), j["inverse"]);
 

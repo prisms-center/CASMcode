@@ -13,7 +13,7 @@
 namespace CASM {
   namespace Completer {
 
-    EnumOption::EnumOption(): OptionHandlerBase("enum") {
+    EnumOption::EnumOption(): EnumOptionBase("enum") {
       initialize();
     }
 

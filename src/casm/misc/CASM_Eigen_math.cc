@@ -3,7 +3,7 @@
 #include <iostream>
 
 namespace CASM {
-
+  /*
   Eigen::MatrixXd reduced_column_echelon(Eigen::Ref<const Eigen::MatrixXd> const &M, double _tol) {
     Eigen::MatrixXd R(M);
     Index col = 0;
@@ -27,7 +27,7 @@ namespace CASM {
     }
     return R.leftCols(col);
   }
-
+  */
 
   //Given a string and the size expected in the array. Converts it to an Eigen::VectorXd
   Eigen::VectorXd eigen_vector_from_string(const std::string &tstr, const int &size) {

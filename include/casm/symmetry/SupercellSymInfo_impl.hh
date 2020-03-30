@@ -89,7 +89,7 @@ namespace CASM {
   }
 
   template<typename IterType>
-  std::pair<Eigen::MatrixXd, std::vector<Index>> collective_dof_normal_coords_and_irrep_dims(IterType begin,
+  std::pair<Eigen::MatrixXd, std::vector<Index>> collective_dof_normal_coords_and_irreps(IterType begin,
                                               IterType end,
                                               SupercellSymInfo const &_syminfo,
                                               DoFKey const &_key,
@@ -99,15 +99,18 @@ namespace CASM {
     std::pair<MasterSymGroup, SymGroupRepID> rep_info = collective_dof_symrep(begin, end, _syminfo, _key, _group);
 
     SymGroupRep const &rep = rep_info.first.representation(rep_info.second);
-    auto result = irrep_trans_mat_and_dims(rep,
-                                           rep_info.first,
-    [&](Eigen::Ref<const Eigen::MatrixXd> const & f_subspace) {
-      Eigen::MatrixXd result = irrep_symmetrizer(rep, rep_info.first, f_subspace, TOL);
-      return result;
-    },
-    _subspace);
 
-    return result;
+    auto irreps = irrep_decomposition(rep,
+                                      rep_info.first,
+    [&](Eigen::Ref<const Eigen::MatrixXd> const & f_subspace) {
+      return irrep_symmetrizer_and_directions(rep, rep_info.first, f_subspace, TOL); //.transpose();
+    });
+
+    std::vector<Index> dims;
+    for(auto const &irrep : irreps) {
+      dims.push_back(std::round(irrep.characters[0].real()));
+    }
+    return std::make_pair(full_trans_mat(irreps), dims);
   }
 
 }

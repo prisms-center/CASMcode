@@ -138,10 +138,6 @@ namespace CASM {
       return m_symrep_ID;
     }
 
-    std::vector<SymRepTools::IrrepWedge> irreducible_sop_wedges(const SymGroup &pg);
-
-    std::vector<SymRepTools::IrrepWedge> irreducible_wedges(const SymGroup &pg);
-
     void set_symmetrized_sop(const SymGroup &pg);
 
     void set_conventional_sop_transf_mat();

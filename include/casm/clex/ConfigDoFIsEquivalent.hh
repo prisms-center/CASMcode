@@ -494,7 +494,7 @@ namespace CASM {
           for(Index b = 0; b < m_values_ptr->n_sublat(); ++b) {
             m_fg_index_A = A.factor_group_index();
             Index rows = A.local_dof_rep(key(), b).MatrixXd()->rows();
-            m_new_dof_A.sublat(b).topRows(rows) = *(A.local_dof_rep(key(), b).MatrixXd()) * before.sublat(b).topRows(rows)l;
+            m_new_dof_A.sublat(b).topRows(rows) = *(A.local_dof_rep(key(), b).MatrixXd()) * before.sublat(b).topRows(rows);
           }
         }
       }

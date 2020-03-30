@@ -245,9 +245,9 @@ namespace CASM {
       throw std::runtime_error("Cannot enumerate strains for project in which strain has not been specified as a degree of freedom.");
     strain_dof_key = tdof_types[istrain];
     if(!sym_axes)
-      wedges.push_back(SymRepTools::SubWedge({SymRepTools::IrrepWedge(_axes, std::vector<Index>(_axes.cols(), 1))}));
+      wedges.push_back(SymRepTools::SubWedge({SymRepTools::IrrepWedge(SymRepTools::IrrepInfo::make_dummy(_axes), _axes)}));
     else
-      wedges = SymRepTools::symrep_subwedges(pg, _primclex.prim().global_dof(strain_dof_key).symrep_ID()).first;
+      wedges = SymRepTools::symrep_subwedges(pg, _primclex.prim().global_dof(strain_dof_key).symrep_ID());
 
     //PRINT INFO TO LOG:
     Log &log = _primclex.log();

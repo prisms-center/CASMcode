@@ -94,7 +94,7 @@ namespace CASM {
   /// \brief Standardizes parsing casm enum input options to make ScelEnum JSON input
   jsonParser make_enumerator_scel_enum_input(
     jsonParser kwargs,
-    const Completer::EnumOption &enum_opt) {
+    const Completer::EnumOptionBase &enum_opt) {
 
     if(kwargs.is_null()) {
       kwargs = jsonParser::object();
@@ -144,7 +144,7 @@ namespace CASM {
   ScelEnumProps make_enumerator_scel_enum_props(
     const PrimClex &primclex,
     const jsonParser &_kwargs,
-    const Completer::EnumOption &enum_opt) {
+    const Completer::EnumOptionBase &enum_opt) {
 
     return make_scel_enum_props(
              primclex,
@@ -157,7 +157,7 @@ namespace CASM {
   std::unique_ptr<SuperlatticeEnumerator> make_enumerator_superlat_enum(
     const PrimClex &primclex,
     const jsonParser &_kwargs,
-    const Completer::EnumOption &enum_opt) {
+    const Completer::EnumOptionBase &enum_opt) {
 
     ScelEnumProps enum_props = make_enumerator_scel_enum_props(
                                  primclex,
@@ -180,7 +180,7 @@ namespace CASM {
   std::unique_ptr<ScelEnum> make_enumerator_scel_enum(
     const PrimClex &primclex,
     const jsonParser &_kwargs,
-    const Completer::EnumOption &enum_opt) {
+    const Completer::EnumOptionBase &enum_opt) {
 
     return notstd::make_unique<ScelEnum>(
              primclex,
@@ -190,7 +190,7 @@ namespace CASM {
   std::vector<ConfigEnumInput> make_enumerator_input_configs(
     PrimClex const &primclex,
     jsonParser const &_kwargs,
-    Completer::EnumOption const &enum_opt,
+    Completer::EnumOptionBase const &enum_opt,
     EnumeratorMap const *interface_map) {
     std::vector<ConfigEnumInput> result;
     std::vector<std::string> confignames;

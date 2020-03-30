@@ -129,7 +129,7 @@ namespace CASM {
       {"format", format_command},
       {"init", init_command},
       {"settings", settings_command},
-      {"sym", sym_command},
+      {SymCommand::name, run_api_command<SymCommand>},
       {"composition", composition_command},
       {"ref", ref_command},
       {UpdateCommand::name, run_api_command<UpdateCommand>},

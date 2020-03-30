@@ -1,4 +1,5 @@
 #include <numeric>
+#include "include/casm/misc/CASM_math.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/external/Eigen/CASM_AddOns"
 #include "casm/symmetry/SymRepTools.hh"
@@ -12,91 +13,148 @@
 #include "casm/misc/algorithm.hh"
 #include "casm/container/Counter.hh"
 
-namespace Local {
+namespace CASM {
+  namespace Local {
 
-  struct IrrepCompare {
-    bool operator()(IrrepInfo const &irrep_a, IrrepInfo const &irrep_b) const {
-      Eigen::VectorXcd const &a = irrep_a.characters;
-      Eigen::VectorXcd const &b = irrep_b.characters;
+    struct IrrepCompare {
+      bool operator()(SymRepTools::IrrepInfo const &irrep_a, SymRepTools::IrrepInfo const &irrep_b) const {
+        Eigen::VectorXcd const &a = irrep_a.characters;
+        Eigen::VectorXcd const &b = irrep_b.characters;
 
-      typedef std::complex<double> C;
+        typedef std::complex<double> C;
 
-      // Check if a and b are identity irrep, identity always compares less than other irreps
-      bool a_id = almost_equal(a[0], C(1., 0.)) && almost_equal(a.sum(), C(a.size(), 0.));
-      bool b_id = almost_equal(b[0], C(1., 0.)) && almost_equal(b.sum(), C(b.size(), 0.));
+        // Check if a and b are identity irrep, identity always compares less than other irreps
+        bool a_id = almost_equal(a[0], C(1., 0.)) && almost_equal(C(a.sum()), C(a.size(), 0.));
+        bool b_id = almost_equal(b[0], C(1., 0.)) && almost_equal(C(b.sum()), C(b.size(), 0.));
 
-      if(a_id != b_id)
-        return a_id;
-      else if(a_id) {
-        // Index is used to break ties if they are both identity
+        if(a_id != b_id)
+          return a_id;
+        else if(a_id) {
+          // Index is used to break ties if they are both identity
+          return irrep_a.index < irrep_b.index;
+        }
+
+        // Low-dimensional irreps come before higher dimensional
+        if(!almost_equal(a[0], b[0]))
+          return a[0].real() < b[0].real();
+
+        // 'gerade' irreps come before 'ungerade' irreps
+        // This check may need to be improved to know whether inversion is actually present
+        bool a_g = almost_equal(a[0], a[a.size() - 1]);
+        bool b_g = almost_equal(b[0], b[b.size() - 1]);
+        if(a_g != b_g)
+          return a_g;
+
+        // Finally, compare lexicographically (real first, then imag)
+        for(Index i = 0; i < a.size(); ++i) {
+          if(!almost_equal(a[i].real(), b[i].real()))
+            return a[i].real() > b[i].real();
+        }
+
+        if(irrep_a.complex || irrep_b.complex) {
+          for(Index i = 0; i < a.size(); ++i) {
+            if(!almost_equal(a[i].imag(), b[i].imag()))
+              return a[i].imag() > b[i].imag();
+          }
+        }
+
+        // Index is used to break ties
         return irrep_a.index < irrep_b.index;
       }
+    };
 
-      // Low-dimensional irreps come before higher dimensional
-      if(!almost_equal(a[0], b[0]))
-        return a[0] < b[0];
+    //*******************************************************************************************
+    template<typename T>
+    struct _RealType;
 
-      // 'gerade' irreps come before 'ungerade' irreps
-      // This check may need to be improved to know whether inversion is actually present
-      bool a_g = almost_equal(a[0], a[a.size() - 1]);
-      bool b_g = almost_equal(b[0], b[b.size() - 1]);
-      if(a_g != b_g)
-        return a_g;
+    template<typename T>
+    using _Real = typename _RealType<T>::Type;
 
-      // Finally, compare lexicographically (real first, then imag)
-      for(Index i = 0; i < a.size(); ++i) {
-        if(!almost_equal(a[i].real(), b[i].real()))
-          return a[i].real() > b[i].real();
-      }
+    template<typename T>
+    struct _RealType<std::vector<T> > {
+      using Type = std::vector<_Real<T> >;
+    };
 
-      if(irrep_a.complex || irrep_b.complex) {
-        for(Index i = 0; i < a.size(); ++i) {
-          if(!almost_equal(a[i].imag(), b[i].imag()))
-            return a[i].imag() > b[i].imag();
-        }
-      }
+    template<typename Scalar, int RowsAtCompileTime, int ColsAtCompileTime>
+    struct _RealType<Eigen::Matrix<Scalar, RowsAtCompileTime, ColsAtCompileTime> > {
+      using Type = Eigen::Matrix<double, RowsAtCompileTime, ColsAtCompileTime>;
+    };
 
-      // Index is used to break ties
-      return irrep_a.index < irrep_b.index;
+
+    template<typename Derived>
+    _Real<Derived> _real(Eigen::MatrixBase<Derived> const &mat) {
+      return mat.real().template cast<double>();
     }
-  };
 
-  //*******************************************************************************************
+    template<typename T>
+    _Real<std::vector<T> > _real(std::vector<T> const &vec) {
 
-  bool _rep_check(SymGroupRep const &_rep, SymGroup const &head_group, bool verbose) {
-    bool passed = true;
-    for(Index ns = 0; ns < head_group.size(); ns++) {
-      Eigen::MatrixXd tmat = *(_rep.MatrixXd(head_group[ns]));
-      if(!almost_equal<double>((tmat * tmat.transpose()).trace(), tmat.cols())) {
-        passed = false;
-        if(verbose)
-          std::cout << "  Representation failed full-rank/orthogonality check!\n"
-                    << "  ns: " << ns << "\n"
-                    << "  Matrix: \n" << tmat << "\n\n"
-                    << "  Matrix*transpose: \n" << tmat.transpose()*tmat << "\n\n";
+      std::vector<_Real<T> > result;
+      result.reserve(vec.size());
+      for(T const &el : vec) {
+        result.emplace_back(_real(el));
       }
-      for(Index ns2 = ns; ns2 < head_group.size(); ns2++) {
-        auto prod = (*(_rep.MatrixXd(head_group[ns]))) * (*(_rep.MatrixXd(head_group[ns2])));
-        Index iprod = head_group[ns].ind_prod(head_group[ns2]);
-        double norm = (prod - * (_rep.MatrixXd(iprod))).norm();
-        if(!almost_zero(norm)) {
+
+      return result;
+    }
+
+
+
+    //*******************************************************************************************
+
+    bool _rep_check(SymGroupRep const &_rep, SymGroup const &head_group, bool verbose) {
+      bool passed = true;
+      for(Index ns = 0; ns < head_group.size(); ns++) {
+        Eigen::MatrixXd tmat = *(_rep.MatrixXd(head_group[ns]));
+        if(!almost_equal<double>((tmat * tmat.transpose()).trace(), tmat.cols())) {
           passed = false;
           if(verbose)
-            std::cout << "  Representation failed multiplication check!\n"
-                      << "  ns: " << ns << "  ns2: " << ns2 << " iprod: " << iprod << " NO MATCH\n"
-                      << "  prod: \n" << prod << "\n\n"
-                      << "  mat(ns): \n" << *(_rep.MatrixXd(ns)) << "\n\n"
-                      << "  mat(ns2): \n" << *(_rep.MatrixXd(ns2)) << "\n\n"
-                      << "  mat(iprod): \n" << *(_rep.MatrixXd(iprod)) << "\n\n";
+            std::cout << "  Representation failed full-rank/orthogonality check!\n"
+                      << "  ns: " << ns << "\n"
+                      << "  Matrix: \n" << tmat << "\n\n"
+                      << "  Matrix*transpose: \n" << tmat.transpose()*tmat << "\n\n";
+        }
+        for(Index ns2 = ns; ns2 < head_group.size(); ns2++) {
+          auto prod = (*(_rep.MatrixXd(head_group[ns]))) * (*(_rep.MatrixXd(head_group[ns2])));
+          Index iprod = head_group[ns].ind_prod(head_group[ns2]);
+          double norm = (prod - * (_rep.MatrixXd(iprod))).norm();
+          if(!almost_zero(norm)) {
+            passed = false;
+            if(verbose)
+              std::cout << "  Representation failed multiplication check!\n"
+                        << "  ns: " << ns << "  ns2: " << ns2 << " iprod: " << iprod << " NO MATCH\n"
+                        << "  prod: \n" << prod << "\n\n"
+                        << "  mat(ns): \n" << *(_rep.MatrixXd(ns)) << "\n\n"
+                        << "  mat(ns2): \n" << *(_rep.MatrixXd(ns2)) << "\n\n"
+                        << "  mat(iprod): \n" << *(_rep.MatrixXd(iprod)) << "\n\n";
+          }
         }
       }
+      return passed;
     }
-    return passed;
+
+    template<typename T>
+    SymRepTools::IrrepInfo _subspace_to_full_space(SymRepTools::IrrepInfo const &irrep,
+                                                   Eigen::MatrixBase<T> const &subspace) {
+      SymRepTools::IrrepInfo result(irrep);
+      result.trans_mat *= subspace.transpose().template cast<std::complex<double> >();
+      return result;
+    }
+
   }
 }
 
 namespace CASM {
+  namespace SymRepTools {
+    IrrepInfo::IrrepInfo(Eigen::MatrixXcd _trans_mat, Eigen::VectorXcd _characters) :
+      index(0),
+      trans_mat(std::move(_trans_mat)),
+      characters(std::move(_characters)) {
+      complex = !almost_zero(trans_mat.imag());
+    }
 
+
+  }
   Eigen::MatrixXd block_shape_matrix(SymGroupRep const &_rep, SymGroup const &head_group) {
     if(!_rep.size() || !head_group.size() || !_rep.MatrixXd(head_group[0]))
       return Eigen::MatrixXd();
@@ -243,7 +301,7 @@ namespace CASM {
     if(axes.cols() == 0) {
       //std::cout << "Plan D\n";
       // SubspaceSymCompare doesn't actually use _rep
-      result = _subspace.colPivHouseholderQr().solve(representation_prepare_impl(obj, vec_compare_tol));
+      result = _subspace.colPivHouseholderQr().solve(representation_prepare_impl(_subspace, vec_compare_tol));
     }
     else {
       // Strategy 4
@@ -257,7 +315,7 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  Eigen::MatrixXd full_trans_mat(std::vector<IrrepInfo> const &irreps) {
+  Eigen::MatrixXd full_trans_mat(std::vector<SymRepTools::IrrepInfo> const &irreps) {
     Index row = 0;
     Index col = 0;
     for(auto const &irrep : irreps) {
@@ -267,7 +325,7 @@ namespace CASM {
     Eigen::MatrixXd trans_mat(row, col);
     row = 0;
     for(auto const &irrep : irreps) {
-      trans_mat.block(row, 0, irrep.irrep_dim(), irrep.vector_dim()) = irrep.trans_mat;
+      trans_mat.block(row, 0, irrep.irrep_dim(), irrep.vector_dim()) = irrep.trans_mat.real();
       row += irrep.irrep_dim();
     }
     return trans_mat;
@@ -279,13 +337,13 @@ namespace CASM {
   special_total_directions(SymGroupRep const &_rep,
                            SymGroup const &head_group) {
 
-    std::vector<IrrepInfo> irreps = irrep_decomposition(_rep, head_group);
+    std::vector<SymRepTools::IrrepInfo> irreps = irrep_decomposition(_rep, head_group, false);
 
     multivector< Eigen::VectorXd >::X<3> result;
     result.reserve(irreps.size());
 
     for(auto const &irrep : irreps) {
-      result.push_back(irrep.directions);
+      result.emplace_back(Local::_real(irrep.directions));
     }
     return result;
   }
@@ -320,10 +378,10 @@ namespace CASM {
 
     std::vector< Eigen::VectorXcd > tdirs;
     Eigen::MatrixXd R;
-    Index dim = _rep.dim()
+    Index dim = _rep.dim();
 
-                // Loop over small (i.e., cyclic) subgroups and hope that each special
-                // direction is invariant to at least one small subgroup
+    // Loop over small (i.e., cyclic) subgroups and hope that each special
+    // direction is invariant to at least one small subgroup
     for(auto const &orbit : sgroups) {
       // Reynolds for small subgroup *(orbit.begin()) in irrep subspace i
       R.setZero(dim, dim);
@@ -376,17 +434,17 @@ namespace CASM {
     // the orbit of the directions. this should also
     // reveal the invariant subgroups.
 
-    using SymCompareType = DirectionSymCompare<Eigen::VectorXcd, EigenSymRepApply<Eigen::VectorXcd>>;
-    using VectorOrbit = GenericOrbit<SymCompareType>;
+    using _SymCompareType = DirectionSymCompare<Eigen::VectorXcd, EigenSymRepApply<Eigen::VectorXcd> >;
+    using VectorOrbit = GenericOrbit<_SymCompareType>;
     std::set<VectorOrbit> orbit_result;
     make_orbits(tdirs.begin(),
                 tdirs.end(),
                 head_group,
-                SymCompareType(vec_compare_tol, _rep),
+                _SymCompareType(vec_compare_tol, _rep),
                 std::inserter(orbit_result, orbit_result.begin()));
 
-    multivector<Eigen::VectorXd>::X<2> result;
-    Index o(0);
+    multivector<Eigen::VectorXcd>::X<2> result;
+
     for(VectorOrbit const &orbit : orbit_result) {
       //std::cout << "Orbit " << ++o << ": \n";
       //for(auto const &v : orbit) {
@@ -459,7 +517,7 @@ namespace CASM {
 
       // The first (QR.rank()) columns of QR.matrixQ() span a special subspace --
       // this can be accessed as QR.matrixQ().leftCols(QR.rank())
-      tsub = QR.householderQ().eval().leftCols(QR.rank());
+      tsub = Eigen::MatrixXd(QR.householderQ()).leftCols(QR.rank());
 
       // See if tsub has been found. Because we only keep orthonormal spanning vectors, this check is significantly simplified
       //  -- the matrix (tsub.transpose()*ssubs[j][k]) must have a determinant of +/-1 if the two matrices span the same column space
@@ -601,76 +659,53 @@ namespace CASM {
   VectorSpaceSymReport vector_space_sym_report(SymGroupRep const &_rep,
                                                SymGroup const &head_group,
                                                Eigen::Ref<const Eigen::MatrixXd> const &_subspace,
-                                               bool calc_wedge = false) {
+                                               bool calc_wedge) {
 
     VectorSpaceSymReport result;
 
 
     if(calc_wedge) {
-      auto wedges_and_irreps = SymRepTools::symrep_subwedges(_rep, head_group, _subspace);
-      result.irreducible_wedge = std::move(wedges_and_irreps.first);
-      result.irreps = std::move(wedges_and_irreps.second);
+      result.irreducible_wedge = SymRepTools::symrep_subwedges(_rep, head_group, _subspace);
+
+      if(!result.irreducible_wedge.empty()) {
+        result.irreps.reserve(result.irreducible_wedge[0].irrep_wedges().size());
+        for(auto const &wedge : result.irreducible_wedge[0].irrep_wedges()) {
+          result.irreps.push_back(wedge.irrep_info);
+        }
+      }
     }
     else {
-      result.irreps = irrep_decomposition(_rep, head_group, _subspace);
+      result.irreps = irrep_decomposition(_rep, head_group, _subspace, false);
     }
-
-    std::vector<SymRepTools::SubWedge> wedges;
-    std::vector<int> dims;
-    SymGroup pg = make_point_group(_config.group(), _config.supercell().sym_info().supercell_lattice());
-    DoFKey strain_dof_key;
-    std::vector<DoFKey> tdof_types = global_dof_types(_primclex.prim());
-    Index istrain = find_index_if(tdof_types,
-    [](DoFKey const & other) {
-      return other.find("strain") != std::string::npos;
-    });
-    if(istrain == tdof_types.size())
-      throw std::runtime_error("Cannot enumerate strains for project in which strain has not been specified as a degree of freedom.");
-    strain_dof_key = tdof_types[istrain];
-    if(!sym_axes)
-      wedges.push_back(SymRepTools::SubWedge({SymRepTools::IrrepWedge(_axes, std::vector<Index>(_axes.cols(), 1))}));
-    else
-      wedges = SymRepTools::symrep_subwedges(pg, _primclex.prim().global_dof(strain_dof_key).symrep_ID());
-
-    ///LOCAL
-
-    std::pair<Eigen::MatrixXd, std::vector<Index>> normcoords = collective_dof_normal_coords_and_irrep_dims(config.sites().begin(),
-                                                                config.sites().end(),
-                                                                config.supercell().sym_info(),
-                                                                _dof,
-                                                                config.group(),
-                                                                _axes);
-    axes = normcoords.first.transpose();
-
-    //std::cout << "Axes:\n" << axes.transpose().format(tformat) << "\n";
-    if(axes.cols() != _axes.cols()) {
-      throw std::runtime_error("In ConfigEnumSiteDoFs, symmetry-adapted axes do not have same dimension as provided axes. "
-                               "Please ensure that provided axes completely span one or more of subspaces listed above.");
-    }
+    return result;
   }
 
 
 
   //*******************************************************************************************
 
-  std::vector<IrrepInfo> irrep_decomposition(SymGroupRep const &_rep,
-                                             SymGroup const &head_group) {
+  std::vector<SymRepTools::IrrepInfo> irrep_decomposition(SymGroupRep const &_rep,
+                                                          SymGroup const &head_group,
+                                                          bool allow_complex) {
     return irrep_decomposition(_rep,
                                head_group,
-                               Eigen::MatrixXd::Identity(_rep.dim(), _rep.dim()));
+                               Eigen::MatrixXd::Identity(_rep.dim(), _rep.dim()),
+                               allow_complex);
   }
 
   //*******************************************************************************************
 
-  std::vector<IrrepInfo> irrep_decomposition(SymGroupRep const &_rep,
-                                             SymGroup const &head_group,
-                                             Eigen::Ref<const Eigen::MatrixXd> const &_subspace) {
+  std::vector<SymRepTools::IrrepInfo> irrep_decomposition(SymGroupRep const &_rep,
+                                                          SymGroup const &head_group,
+                                                          Eigen::Ref<const Eigen::MatrixXd> const &_subspace,
+                                                          bool allow_complex) {
     return irrep_decomposition(_rep,
                                head_group,
-    [&](Eigen::Ref<const Eigen::MatrixXd> const & f_subspace) {
+    [&](Eigen::Ref<const Eigen::MatrixXcd> const & f_subspace) {
       return irrep_symmetrizer_and_directions(_rep, head_group, f_subspace, TOL);
     },
-    _subspace);
+    _subspace,
+    allow_complex);
   }
 
   //*******************************************************************************************
@@ -678,78 +713,85 @@ namespace CASM {
   // Finds the transformation matrix that block-diagonalizes this representation into irrep blocks
   // The ROWS of trans_mat are the new basis vectors in terms of the old such that
   // new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
-  std::vector<IrrepInfo> irrep_decomposition(SymGroupRep const &_rep,
-                                             SymGroup const &head_group,
-                                             SymRepTools::SymmetrizerFunction const &symmetrizer_func,
-                                             Eigen::Ref<const Eigen::MatrixXd> const &_subspace) {
+  std::vector<SymRepTools::IrrepInfo> irrep_decomposition(SymGroupRep const &_rep,
+                                                          SymGroup const &head_group,
+                                                          SymRepTools::SymmetrizerFunction const &symmetrizer_func,
+                                                          Eigen::MatrixXd subspace,
+                                                          bool allow_complex) {
 
-    Eigen::MatriXd symspace(_subspace.rows(), _subspace.cols()*head_group.size());
-
-    Index l = 0;
-    if(_rep.dim() != _subspace.rows()) {
+    if(_rep.dim() != subspace.rows()) {
       throw std::runtime_error("In irrep_decomposition, subspace matrix does not have proper number of rows (should have "
-                               + std::to_string(_rep.dim()) + ", but has " + std::to_string(_subspace.rows()));
+                               + std::to_string(_rep.dim()) + ", but has " + std::to_string(subspace.rows()));
     }
 
-    Eigen::MatrixXd subspace;
-    if(!_subspace.isIdentity()) {
+
+    Eigen::MatrixXd symspace(subspace.rows(), subspace.cols()*head_group.size());
+    Index l = 0;
+    if(!subspace.isIdentity()) {
+      //Expand subpsace if it isn't already an invariant subspace
       for(auto const &op : head_group) {
-        symspace.block(0, l, _subspace.rows(), _subspace.cols()) = (*(_rep[op.index()]->MatrixXd())) * _subspace;
+        symspace.block(0, l, subspace.rows(), subspace.cols()) = (*(_rep[op.index()]->MatrixXd())) * subspace;
+        l += subspace.cols();
       }
       Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(symspace);
       qr.setThreshold(TOL);
-      subspace = (qr.householderQ())eval().leftcols(qr.rank());
-    }
-    else {
-      subspace = _subspace;
+      subspace = Eigen::MatrixXd(qr.householderQ()).leftCols(qr.rank());
     }
 
-    SymGroupRep sub_rep = _rep.coord_transformed_copy(subspace.transpose());
+    std::cout << "subspace after expansion: \n" << subspace << std::endl;
 
-    auto irreps = irrep_decomposition(sub_rep, head_group, symmetrizer_func);
-    for(auto &irrep : irreps) {
-      irrep.trans_mat *= subspace.transpose();
+    SymGroupRep sub_rep = coord_transformed_copy(_rep, subspace.transpose());
+
+    std::vector<SymRepTools::IrrepInfo> irreps = irrep_decomposition(sub_rep, head_group, symmetrizer_func, allow_complex);
+
+    std::vector<SymRepTools::IrrepInfo> result;
+    result.reserve(irreps.size());
+    for(auto const &irrep : irreps) {
+      result.push_back(Local::_subspace_to_full_space(irrep, subspace));
     }
-    return irreps;
+    return result;
   }
   //*******************************************************************************************
 
   // Finds the transformation matrix that block-diagonalizes this representation into irrep blocks
   // The ROWS of trans_mat are the new basis vectors in terms of the old such that
   // new_symrep_matrix = trans_mat * old_symrep_matrix * trans_mat.transpose();
-  std::vector<Local::IrrepInfo> irrep_decomposition(SymGroupRep const &_rep,
-                                                    SymGroup const &head_group,
-                                                    SymRepTools::SymmetrizerFunction const &symmetrizer_func,
-                                                    bool allow_complex) {
-    std::set<Local::IrrepInfo, Local::CharCompare > result(CharCompare());
+  std::vector<SymRepTools::IrrepInfo> irrep_decomposition(SymGroupRep const &_rep,
+                                                          SymGroup const &head_group,
+                                                          SymRepTools::SymmetrizerFunction const &symmetrizer_func,
+                                                          bool allow_complex) {
+    std::set<SymRepTools::IrrepInfo, Local::IrrepCompare > result{Local::IrrepCompare()};
     if(!_rep.size() || !head_group.size() || !_rep.MatrixXd(head_group[0])) {
       default_err_log() << "WARNING:  In irrep_decomposition(), size of representation is " << _rep.size() << " and MatrixXd address is " << _rep.MatrixXd(head_group[0]) << std::endl
                         << "          No valid irreps will be returned.\n";
-      return std::make_pair(Eigen::MatrixXd(), char_table);
+      return {};
     }
     assert(Local::_rep_check(_rep, head_group, true) && "REPRESENTATION IS ILL-DEFINED!!");
-    int dim(_rep.MatrixXd(head_group[0])->rows());
+    int dim(_rep.dim());
     std::vector<Eigen::MatrixXcd> commuters;
     std::cout.precision(8);
     std::cout.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
-    // Identity always commutes, and by putting it first we prevent some accidental degeneracies
-    commuters.push_back(Eigen::MatrixXcd::Identity(dim, dim) / sqrt(double(dim)));
+    if(!is_irrep(_rep, head_group)) {
+      // Identity always commutes, and by putting it first we prevent some accidental degeneracies
+      commuters.push_back(Eigen::MatrixXcd::Identity(dim, dim) / sqrt(double(dim)));
+    }
     typedef std::complex<double> cplx;
     std::vector<cplx> phase;
     phase.push_back(cplx(1.0, 0.0)); // 1+0i
     phase.push_back(cplx(0.0, 1.0)); // 0+1i
 
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcd> esolve;
-    Eigen::HouseholderQR<Eigen::MatrixXd> qr;
-    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> colqr;
+    Eigen::HouseholderQR<Eigen::MatrixXcd> qr;
+    Eigen::ColPivHouseholderQR<Eigen::MatrixXcd> colqr;
     colqr.setThreshold(0.001);
     int Nfound(0);
     Eigen::MatrixXcd tmat(Eigen::MatrixXcd::Zero(dim, dim)), tcommute(Eigen::MatrixXcd::Zero(dim, dim));
-    Eigen::MatrixXd trans_mat(Eigen::MatrixXd::Zero(dim, dim));
+    Eigen::MatrixXcd trans_mat(Eigen::MatrixXcd::Zero(dim, dim));
 
     // Initialize kernel as a random orthogonal matrix
-    Eigen::MatrixXd kernel(((1000 * iround(Eigen::MatrixXd::Random(dim, dim))).cast<double>() / 1000.).householderQr().householderQ());
+    Eigen::MatrixXcd kernel(((1000 * Eigen::MatrixXcd::Random(dim, dim)) / 1000.).householderQr().householderQ());
 
+    std::cout << "kernel matrix:\n" << kernel << std::endl;
     // Build 'commuters', which span space of real matrices that commute with SymOpReps
     // 'kernel' is the kernel of trans_mat, and as the loop progresses, 'kernel' shrinks and the rank of trans_mat increases
     for(Index kci = 0; kci < kernel.cols(); kci++) {
@@ -761,22 +803,30 @@ namespace CASM {
 
           // form commuters by taking outer product of i'th column of the kernel with the j'th column
           // commuters are constructed to be self-adjoint, which assures eigenvalues are real
-          tmat = phase[nph] * kernel.col(kci) * kernel.col(kcj).transpose() // outer product
-                 + std::conj(phase[nph]) * kernel.col(kcj) * kernel.col(kci).transpose(); // adjoint of outer product
-
+          tmat = phase[nph] * kernel.col(kci) * kernel.col(kcj).adjoint() // outer product
+                 + std::conj(phase[nph]) * kernel.col(kcj) * kernel.col(kci).adjoint(); // adjoint of outer product
+          std::cout << "tmat:\n" << tmat << std::endl;
           //apply reynolds operator
           for(Index ns = 0; ns < head_group.size(); ns++) {
+            std::cout << "Op " << ns << ":\n" << *(_rep.MatrixXd(head_group[ns])) << std::endl;
             tcommute += (*(_rep.MatrixXd(head_group[ns]))) * tmat * (*(_rep.MatrixXd(head_group[ns]))).transpose();
           }
+
+
+          std::cout << "Raw commuter: \n" << tcommute << std::endl;
 
           //Do Gram-Shmidt while building 'commuters'
 
           for(Index nc = 0; nc < commuters.size(); nc++) {
             cplx tproj((commuters[nc].array().conjugate()*tcommute.array()).sum()); //Frobenius product
+            std::cout << "tproj" << tproj << std::endl;
             tcommute -= tproj * commuters[nc];
           }
 
           double tnorm((tcommute.array().conjugate()*tcommute.array()).sum().real());
+
+          std::cout << "Commuter: \n" << tcommute << std::endl;
+          std::cout << "norm: " << tnorm << std::endl;
           if(tnorm > TOL) {
             commuters.push_back(tcommute / tnorm);
           }
@@ -790,10 +840,11 @@ namespace CASM {
           Index nc = commuters.size() - 1;
 
           // magnify the range of eigenvalues to be (I think) independent of matrix dimension by multiplying by dim^{3/2}
-          esolve.compute(double(dim)*sqrt(double(dim))*kernel.transpose()*commuters[nc]*kernel);
+          esolve.compute(double(dim)*sqrt(double(dim))*kernel.adjoint()*commuters[nc]*kernel);
 
           std::vector<Index> subspace_dims = partition_distinct_values(esolve.eigenvalues());
 
+          std::cout << "Eigenvals: " << esolve.eigenvalues().transpose() << "  dims: " << subspace_dims << std::endl;
           // Columns of tmat are orthonormal eigenvectors of commuter in terms of natural basis
           // (they were calculated in terms of kernel as basis)
           tmat = kernel * (esolve.eigenvectors().householderQr().householderQ());
@@ -826,24 +877,32 @@ namespace CASM {
             }
 
             if(almost_equal(sqnorm, double(head_group.size()))) { // this representation is irreducible
-              Eigen::MatrixXd ttrans_mat(dim, 2 * subspace_dims[ns]);
+              Eigen::MatrixXcd ttrans_mat;
 
-              ttrans_mat.leftCols(subspace_dims[ns]) = sqrt(2.0) * tmat.block(0, last_i, dim, subspace_dims[ns]).real();
-              ttrans_mat.rightCols(subspace_dims[ns]) = sqrt(2.0) * tmat.block(0, last_i, dim, subspace_dims[ns]).imag();
+              if(allow_complex) {
+                ttrans_mat = tmat.block(0, last_i, dim, subspace_dims[ns]);
+              }
+              else {
+                ttrans_mat.resize(dim, 2 * subspace_dims[ns]);
 
+                ttrans_mat.leftCols(subspace_dims[ns])
+                  = sqrt(2.0) * tmat.block(0, last_i, dim, subspace_dims[ns]).real().cast<std::complex<double> >();
+                ttrans_mat.rightCols(subspace_dims[ns])
+                  = sqrt(2.0) * tmat.block(0, last_i, dim, subspace_dims[ns]).imag().cast<std::complex<double> >();
+              }
               //Only append to trans_mat if the new columns extend the space (i.e., are orthogonal)
 
-              if(almost_zero((ttrans_mat.transpose()*trans_mat).norm(), 0.001)) {
+              if(almost_zero((ttrans_mat.adjoint()*trans_mat).norm(), 0.001)) {
                 qr.compute(ttrans_mat);
                 //it seems stupid to use two different decompositions that do almost the same thing, but
                 // HouseholderQR is not rank-revealing, and colPivHouseholder mixes up the columns of the Q matrix.
                 colqr.compute(ttrans_mat);
                 Index rnk = colqr.rank();
 
-                ttrans_mat = Eigen::MatrixXd(qr.householderQ()).leftCols(rnk);
+                ttrans_mat = Eigen::MatrixXcd(qr.householderQ()).leftCols(rnk);
                 auto symmetrizer = symmetrizer_func(ttrans_mat);
-                Local::IrrepInfo t_info(ttrans_mat * symmetrizer.first, char_vec);
-                t_info.directions = symmetrizer.second;
+                SymRepTools::IrrepInfo t_info(ttrans_mat * symmetrizer.first, char_vec);
+                t_info.directions = Local::_real(symmetrizer.second);
 
                 // extend trans_mat (used to simplify next iteration)
                 trans_mat.block(0, Nfound, dim, rnk) = t_info.trans_mat;
@@ -870,7 +929,7 @@ namespace CASM {
           }
           if(found_new_irreps) {
             qr.compute(trans_mat);
-            kernel = Eigen::MatrixXd(qr.householderQ()).rightCols(dim - Nfound);
+            kernel = Eigen::MatrixXcd(qr.householderQ()).rightCols(dim - Nfound);
             break;
           }
         }
@@ -882,8 +941,8 @@ namespace CASM {
     }
 
 
-    return std::vector<IrrepInfo>(std::make_move_iterator(result.begin()),
-                                  std::make_move_iterator(result.end()));
+    return std::vector<SymRepTools::IrrepInfo>(std::make_move_iterator(result.begin()),
+                                               std::make_move_iterator(result.end()));
 
   }
 
@@ -895,9 +954,10 @@ namespace CASM {
   Eigen::MatrixXd irrep_trans_mat(SymGroupRep const &_rep, SymGroup const &head_group) {
     return full_trans_mat(irrep_decomposition(_rep,
                                               head_group,
-    [&](Eigen::Ref<const Eigen::MatrixXd> const & _subspace) {
+    [&](Eigen::Ref<const Eigen::MatrixXcd> const & _subspace) {
       return irrep_symmetrizer_and_directions(_rep, head_group, _subspace, TOL); //.transpose();
-    }));
+    },
+    false));
   }
 
   //*******************************************************************************************
@@ -1072,34 +1132,43 @@ namespace CASM {
 
     //*******************************************************************************************
 
-    std::pair<std::vector<IrrepWedge>, std::vector<IrrepInfo> > irrep_wedges(SymGroup const &head_group, SymGroupRepID id) {
-      return irrep_wedges(head_group.master_group().representation(id), head_group);
+    std::vector<IrrepWedge> irrep_wedges(SymGroup const &head_group,
+                                         SymGroupRepID id,
+                                         Eigen::Ref<const Eigen::MatrixXd> const &_subspace) {
+      return irrep_wedges(head_group.master_group().representation(id), head_group, _subspace);
     }
 
     //*******************************************************************************************
 
-    std::pair<std::vector<IrrepWedge>, std::vector<IrrepInfo> > irrep_wedges(SymGroupRep const &_rep, SymGroup const &head_group) {
+    std::vector<IrrepWedge> irrep_wedges(SymGroupRep const &_rep,
+                                         SymGroup const &head_group,
+                                         Eigen::Ref<const Eigen::MatrixXd> const &_subspace) {
 
-      std::vector<IrrepInfo> irreps = irrep_decomposition(_rep, head_group);
+      std::vector<SymRepTools::IrrepInfo> irreps = irrep_decomposition(_rep, head_group, _subspace, false);
       std::vector<IrrepWedge> wedges;
-      wedges.reserve(sdirs.size());
+      wedges.reserve(irreps.size());
       double best_proj, tproj;
 
-      for(IrrepInfo const &irrep : IrrepInfo) {
+      std::cout << "subspace: \n" << _subspace << std::endl;
+      std::cout << "irrep decomposition size: " << irreps.size() << std::endl;
+
+      for(SymRepTools::IrrepInfo const &irrep : irreps) {
         //1D irreps directions can have positive and negative directions, but we only want to include one.
         //only 1D irreps can have singly-degenerate directions and two singly-degenerate directions indicate
         //the same vector duplicated in positive and negative direction (because they are not equivalent by symmetry)
         //If irrep.directions[0] is singly degenerate (orbits size == 1) then irrepdim is 1 and we only need one direction to
         //define wedge
-        wedges.emplace_back(Eigen::MatrixXd::Zero(irrep.vector_dim(), irrep.irrep_dim()), {});
-
+        wedges.emplace_back(irrep, Eigen::MatrixXd::Zero(irrep.vector_dim(), irrep.irrep_dim()));
+        std::cout << "Irrep directions: " << irrep.directions.size() << std::endl;
+        std::cout << "Irrep direction orbit" << 0 << " : " << irrep.directions[0].size() << std::endl;
         wedges.back().axes.col(0) = irrep.directions[0][0];
         wedges.back().mult.push_back(irrep.directions[0].size());
         for(Index i = 1; i < irrep.irrep_dim(); i++) {
+          std::cout << "Irrep direction orbit" << i << " : " << irrep.directions[i].size() << std::endl;
           Index j_best = 0;
           best_proj = (wedges.back().axes.transpose() * irrep.directions[i][0]).sum();
           for(Index j = 1; j < irrep.directions[i].size(); j++) {
-            tproj = (wedges().axes.transpose() * irrep.directions[i][j]).sum();
+            tproj = (wedges.back().axes.transpose() * irrep.directions[i][j]).sum();
             if(tproj > best_proj) {
               best_proj = tproj;
               j_best = j;
@@ -1110,18 +1179,38 @@ namespace CASM {
           wedges.back().mult.push_back(irrep.directions[i].size());
         }
       }
-      return std::pair<std::vector<IrrepWedge>, std::vector<IrrepInfo> >(std::move(wedges), std::move(irreps));
+      return wedges;
     }
 
     //*******************************************************************************************
 
-    std::pair<std::vector<SubWedge>, std::vector<IrrepInfo> > symrep_subwedges(SymGroup const &head_group, SymGroupRepID id) {
+    std::vector<SubWedge> symrep_subwedges(SymGroup const &head_group, SymGroupRepID id) {
       return symrep_subwedges(head_group.master_group().representation(id), head_group);
     }
 
     //*******************************************************************************************
 
-    std::pair<std::vector<SubWedge>, std::vector<IrrepInfo> > symrep_subwedges(SymGroupRep const &_rep, SymGroup const &head_group) {
+    std::vector<SubWedge> symrep_subwedges(SymGroup const &head_group,
+                                           SymGroupRepID id,
+                                           Eigen::Ref<const Eigen::MatrixXd> const &_subspace) {
+      return symrep_subwedges(head_group.master_group().representation(id), head_group, _subspace);
+    }
+
+    //*******************************************************************************************
+
+    std::vector<SubWedge> symrep_subwedges(SymGroupRep const &_rep,
+                                           SymGroup const &head_group) {
+      return symrep_subwedges(_rep,
+                              head_group,
+                              Eigen::MatrixXd::Identity(_rep.dim(), _rep.dim()));
+
+    }
+    //*******************************************************************************************
+
+    std::vector<SubWedge> symrep_subwedges(SymGroupRep const &_rep,
+                                           SymGroup const &head_group,
+                                           Eigen::Ref<const Eigen::MatrixXd> const &_subspace) {
+
       auto irrep_wedge_compare = [](const IrrepWedge & a, const IrrepWedge & b)->bool {
         return Eigen::almost_equal(a.axes, b.axes);
       };
@@ -1140,8 +1229,7 @@ namespace CASM {
       if(!_rep.MatrixXd(0))
         throw std::runtime_error("In symrep_subwedges, SymGroupRep does not describe matrix representation");
 
-      auto init_wedges_and_irreps = irrep_wedges(head_group, id);
-      std::vector<IrrepWedge> const &init_wedges = init_wedges_and_irreps.first;
+      std::vector<IrrepWedge> init_wedges = irrep_wedges(_rep, head_group, _subspace);
 
 
       std::vector<SubWedge> result;
@@ -1158,8 +1246,10 @@ namespace CASM {
 
         //Start getting orbit of wedges[w]
         for(Index p = 0; p < head_group.size(); p++) {
-          IrrepWedge test_wedge((*(_rep[head_group[p].index()]->MatrixXd()))*wedge.axes,
-                                wedge.mult);
+
+          IrrepWedge test_wedge{wedge};
+          test_wedge.axes = (*(_rep[head_group[p].index()]->MatrixXd())) * wedge.axes;
+
 
           if(contains(irrep_wedge_orbits.back(), test_wedge, irrep_wedge_compare))
             continue;
@@ -1202,7 +1292,7 @@ namespace CASM {
         }
       }
 
-      return std::pair<std::vector<SubWedge>, std::vector<IrrepInfo> >(std::move(result), std::move(init_wedges_and_irreps.second));
+      return result;
     }
 
   }

@@ -263,6 +263,7 @@ namespace CASM {
 
   };
 
+
   ///Space group (added by Donghee );
   std::vector<Index> get_rotation_groups(SymGroup const &group);
 
@@ -388,6 +389,8 @@ namespace CASM {
     /// Copy of *this with translations removed
     mutable SymGroup m_point_group;
   };
+
+  MasterSymGroup make_master_sym_group(SymGroup const &_group, Lattice const &_lattice);
 
   jsonParser &to_json(const SymGroup &group, jsonParser &json);
 

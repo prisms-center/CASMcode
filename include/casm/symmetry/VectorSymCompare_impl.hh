@@ -3,6 +3,7 @@
 
 #include "casm/symmetry/VectorSymCompare.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
+#include "casm/misc/CASM_math.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 
 
@@ -12,16 +13,16 @@ namespace Eigen {
   /// - Attempts to find a sparse set of spanning vectors, and sort them so that subspace matrix is nearly upper triangular (if possible)
   /// - Also enures that first nonzero element of each row (if there is one) is positive
   template<typename Derived>
-  representation_prepare_impl(Eigen::MatrixBase<Derived> const &obj, double _tol) const {
-    //std::cout << "reduced_column_echelon of \n" << obj << "\n is\n" <<reduced_column_echelon(obj, this->tol()) << "\n";
-    Eigen::MatrixBase<Derived> result = Eigen::MatrixBase<Derived>(reduced_column_echelon(obj, _tol).householderQr().householderQ()).leftCols(obj.cols());
-    Index col = 0;
-    for(Index row = 0; row < result.rows(); ++row) {
-      Index i = 0;
+  typename Derived::PlainObject representation_prepare_impl(Eigen::MatrixBase<Derived> const &obj, double _tol) {
+
+    typename Derived::PlainObject result
+      = typename Derived::PlainObject(CASM::reduced_column_echelon(obj, _tol).householderQr().householderQ()).leftCols(obj.cols());
+    CASM::Index col = 0;
+    for(CASM::Index row = 0; row < result.rows(); ++row) {
+      CASM::Index i = 0;
       for(i = col; i < result.cols(); ++i) {
-        if(!almost_zero(result(row, i), _tol)) {
-          if(result(row, i) < 0)
-            result.col(i) *= -1;
+        if(!CASM::almost_zero(result(row, i), _tol)) {
+          result.col(i) *= std::abs(result(row, i)) / result(row, i);
           ++col;
           break;
         }
