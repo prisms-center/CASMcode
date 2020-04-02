@@ -96,7 +96,7 @@ namespace CASM {
     jsonParser kwargs,
     const Completer::EnumOptionBase &enum_opt) {
 
-    if(kwargs.is_null()) {
+    if(!kwargs.is_obj()) {
       kwargs = jsonParser::object();
     }
 
@@ -130,11 +130,8 @@ namespace CASM {
 
       for(std::string const &scelname : scelnames)
         scel_input["names"].push_back(scelname);
-
-      //if(scel_input.begin() == scel_input.end() && !scel_input["names"].is_array())
-      //scel_input["names"].put_array();
     }
-    if(!scel_input.contains("existing_only"))
+    if(scel_input.size() > 0 && !scel_input.contains("existing_only"))
       scel_input["existing_only"] = true;
 
     return scel_input;

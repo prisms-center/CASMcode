@@ -7,7 +7,7 @@
 namespace CASM {
 
   namespace SymRepTools {
-    class IrrepInfo;
+    struct IrrepInfo;
     class SubWedge;
   }
 

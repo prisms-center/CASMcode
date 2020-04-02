@@ -102,6 +102,46 @@ namespace CASM {
 
     //*******************************************************************************************
 
+    static SymRepTools::IrrepWedge _wedge_from_pseudo_irrep(SymRepTools::IrrepInfo const &irrep,
+                                                            SymGroupRep const &_rep,
+                                                            SymGroup const &head_group) {
+      Eigen::MatrixXd t_axes = irrep.trans_mat.transpose().real();
+      Eigen::MatrixXd axes = representation_prepare_impl(t_axes, TOL);
+      Eigen::VectorXd v = axes.col(0);
+      Eigen::VectorXd vbest;
+
+      axes.setZero(irrep.vector_dim(), irrep.irrep_dim());
+
+      axes.col(0) = v;
+
+      for(Index i = 1; i < axes.cols(); ++i) {
+        double bestproj = -1;
+        for(SymOp const &op : head_group) {
+          v = (*_rep.MatrixXd(op)) * axes.col(0);
+          std::cout << "v: " << v.transpose() << std::endl;
+          bool skip_op = false;
+          for(Index j = 0; j < i; ++j) {
+            if(almost_equal(v, axes.col(j))) {
+              skip_op = true;
+              break;
+            }
+          }
+          if(skip_op)
+            continue;
+
+          std::cout << "bproj: " << bestproj << "  proj: " << (v.transpose()*axes).transpose() << std::endl;
+          if(bestproj < (v.transpose()*axes).sum()) {
+            bestproj = (v.transpose() * axes).sum();
+            vbest = v;
+          }
+        }
+        axes.col(i) = vbest;
+      }
+      return SymRepTools::IrrepWedge(irrep, axes);
+    }
+
+    //*******************************************************************************************
+
     bool _rep_check(SymGroupRep const &_rep, SymGroup const &head_group, bool verbose) {
       bool passed = true;
       for(Index ns = 0; ns < head_group.size(); ns++) {
@@ -137,7 +177,7 @@ namespace CASM {
     SymRepTools::IrrepInfo _subspace_to_full_space(SymRepTools::IrrepInfo const &irrep,
                                                    Eigen::MatrixBase<T> const &subspace) {
       SymRepTools::IrrepInfo result(irrep);
-      result.trans_mat *= subspace.transpose().template cast<std::complex<double> >();
+      result.trans_mat = irrep.trans_mat * subspace.adjoint().template cast<std::complex<double> >();
       return result;
     }
 
@@ -444,22 +484,20 @@ namespace CASM {
                 std::inserter(orbit_result, orbit_result.begin()));
 
     multivector<Eigen::VectorXcd>::X<2> result;
-
+    std::cout << "subspace: \n" << _subspace << std::endl;
+    std::cout << "Found " << orbit_result.size() << " direction orbits:\n";
     for(VectorOrbit const &orbit : orbit_result) {
-      //std::cout << "Orbit " << ++o << ": \n";
-      //for(auto const &v : orbit) {
-      //std::cout << v.transpose() << "\n";
-      //}
-      //std::cout << "---------\n";
+      std::cout << orbit.begin()->transpose() << std::endl;
+      std::cout << "---------\n";
       result.emplace_back(orbit.begin(), orbit.end());
     }
 
     if(all_subgroups || !result.empty()) {
-      //std::cout << "special_irrep_direcions RETURNING RESULT\n";
+      std::cout << "special_irrep_direcions RETURNING RESULT\n";
       return result;
     }
     else {
-      //std::cout << "special_irrep_direcions REDOING CALCULATION\n";
+      std::cout << "special_irrep_direcions REDOING CALCULATION\n";
       return special_irrep_directions(_rep, head_group, _subspace, vec_compare_tol, true);
     }
   }
@@ -677,6 +715,7 @@ namespace CASM {
     else {
       result.irreps = irrep_decomposition(_rep, head_group, _subspace, false);
     }
+    result.symmetry_adapted_dof_subspace = full_trans_mat(result.irreps).adjoint();
     return result;
   }
 
@@ -746,7 +785,9 @@ namespace CASM {
 
     std::vector<SymRepTools::IrrepInfo> result;
     result.reserve(irreps.size());
+    l = 0;
     for(auto const &irrep : irreps) {
+      std::cout << "irrep " << ++l << " index: " << irrep.index << "\n";
       result.push_back(Local::_subspace_to_full_space(irrep, subspace));
     }
     return result;
@@ -786,30 +827,32 @@ namespace CASM {
     colqr.setThreshold(0.001);
     int Nfound(0);
     Eigen::MatrixXcd tmat(Eigen::MatrixXcd::Zero(dim, dim)), tcommute(Eigen::MatrixXcd::Zero(dim, dim));
-    Eigen::MatrixXcd trans_mat(Eigen::MatrixXcd::Zero(dim, dim));
+    Eigen::MatrixXcd adapted_subspace(Eigen::MatrixXcd::Zero(dim, dim));
 
     // Initialize kernel as a random orthogonal matrix
     Eigen::MatrixXcd kernel(((1000 * Eigen::MatrixXcd::Random(dim, dim)) / 1000.).householderQr().householderQ());
-
-    std::cout << "kernel matrix:\n" << kernel << std::endl;
+    kernel.setIdentity(dim, dim);
+    //std::cout << "kernel matrix:\n" << kernel << std::endl;
     // Build 'commuters', which span space of real matrices that commute with SymOpReps
-    // 'kernel' is the kernel of trans_mat, and as the loop progresses, 'kernel' shrinks and the rank of trans_mat increases
-    for(Index kci = 0; kci < kernel.cols(); kci++) {
-      bool found_new_irreps(false);
-      for(Index kcj = kci; kcj < kernel.cols(); kcj++) {
-        for(Index nph = 0; nph < 2; nph++) {
+    // 'kernel' is the kernel of adapted_subspace, and as the loop progresses, 'kernel' shrinks and the rank of adapted_subspace increases
+    for(Index nph = 0; nph < 2; nph++) {
+      for(Index kci = 0; kci < kernel.cols(); kci++) {
+        bool found_new_irreps(false);
+        for(Index kcj = kernel.cols() - 1; kci <= kcj;  kcj--) {
+          std::cout << "nph: " << nph << "  kci: " << kci << "  kcj: " << kcj << std::endl;
           if(kci == kcj && nph > 0) continue;
           tcommute.setZero();
-
+          //std::cout << "kernel imag:\n" << kernel.imag() << std::endl;
           // form commuters by taking outer product of i'th column of the kernel with the j'th column
           // commuters are constructed to be self-adjoint, which assures eigenvalues are real
           tmat = phase[nph] * kernel.col(kci) * kernel.col(kcj).adjoint() // outer product
                  + std::conj(phase[nph]) * kernel.col(kcj) * kernel.col(kci).adjoint(); // adjoint of outer product
-          std::cout << "tmat:\n" << tmat << std::endl;
+          //std::cout << "tmat:\n" << tmat << std::endl;
           //apply reynolds operator
-          for(Index ns = 0; ns < head_group.size(); ns++) {
-            std::cout << "Op " << ns << ":\n" << *(_rep.MatrixXd(head_group[ns])) << std::endl;
-            tcommute += (*(_rep.MatrixXd(head_group[ns]))) * tmat * (*(_rep.MatrixXd(head_group[ns]))).transpose();
+          Index ns = 0;
+          for(SymOp const &op : head_group) {
+            std::cout << "Op " << ns++ << ":\n" << (*(_rep.MatrixXd(op))) << std::endl;
+            tcommute += (*(_rep.MatrixXd(op))) * tmat * (*(_rep.MatrixXd(op))).transpose();
           }
 
 
@@ -818,7 +861,7 @@ namespace CASM {
           //Do Gram-Shmidt while building 'commuters'
 
           for(Index nc = 0; nc < commuters.size(); nc++) {
-            cplx tproj((commuters[nc].array().conjugate()*tcommute.array()).sum()); //Frobenius product
+            cplx tproj((commuters[nc].array()*tcommute.array().conjugate()).sum()); //Frobenius product
             std::cout << "tproj" << tproj << std::endl;
             tcommute -= tproj * commuters[nc];
           }
@@ -828,14 +871,14 @@ namespace CASM {
           std::cout << "Commuter: \n" << tcommute << std::endl;
           std::cout << "norm: " << tnorm << std::endl;
           if(tnorm > TOL) {
-            commuters.push_back(tcommute / tnorm);
+            commuters.push_back(tcommute / sqrt(tnorm));
           }
           else continue;  // Attempt to construct the next commuter...
 
 
           //Finished building commuter now we can try to harvest irreps from it
 
-          // construct trans_mat from the non-degenerate irreps obtained from the commuter
+          // construct adapted_subspace from the non-degenerate irreps obtained from the commuter
 
           Index nc = commuters.size() - 1;
 
@@ -844,10 +887,32 @@ namespace CASM {
 
           std::vector<Index> subspace_dims = partition_distinct_values(esolve.eigenvalues());
 
-          std::cout << "Eigenvals: " << esolve.eigenvalues().transpose() << "  dims: " << subspace_dims << std::endl;
+          //std::cout << "My big matrix: \n" << commuters[nc] << std::endl;
+          //std::cout << "My little matrix: \n" << double(dim)*sqrt(double(dim))*kernel.adjoint()*commuters[nc]*kernel << std::endl;
+
           // Columns of tmat are orthonormal eigenvectors of commuter in terms of natural basis
           // (they were calculated in terms of kernel as basis)
-          tmat = kernel * (esolve.eigenvectors().householderQr().householderQ());
+          //tmat = kernel/*.conjugate()*/ * (esolve.eigenvectors().householderQr().householderQ());
+
+          tmat = kernel * esolve.eigenvectors();
+
+          std::cout << "Raw eigenvecs: \n" << esolve.eigenvectors() << std::endl;
+          std::cout << "Rotated eigenvecs: \n" << tmat << std::endl;
+
+          //std::cout << "Eigenvec unitarity: \n" << esolve.eigenvectors().adjoint()* esolve.eigenvectors() << std::endl;
+
+          //std::cout << "rebuild little 1:\n"
+          //<< esolve.eigenvectors()*esolve.eigenvalues().asDiagonal()*esolve.eigenvectors().inverse()
+          //<< std::endl;
+
+          //std::cout << "rebuild big 1:\n"
+          //<< kernel*esolve.eigenvectors()*esolve.eigenvalues().asDiagonal()*esolve.eigenvectors().inverse()*kernel.adjoint()
+          //<< std::endl;
+
+          //std::cout << "rebuild big 2:\n"
+          //<< tmat*esolve.eigenvalues().asDiagonal()*tmat.adjoint()
+          //<< std::endl;
+
 
 
           // make transformed copy of the representation
@@ -858,6 +923,8 @@ namespace CASM {
             trans_rep[i] = tmat.adjoint() * (*_rep.MatrixXd(head_group[i])) * tmat;
             block_shape += (trans_rep[i].cwiseProduct(trans_rep[i].conjugate())).real();
           }
+          std::cout << "Eigenvals: " << esolve.eigenvalues().transpose() << " \ndims: " << subspace_dims << std::endl;
+          std::cout << "block_shape: \n" << block_shape << std::endl;
 
           Index last_i = 0;
           for(Index ns = 0; ns < subspace_dims.size(); ns++) {
@@ -875,50 +942,53 @@ namespace CASM {
               //std::norm is squared norm
               sqnorm += std::norm(char_vec[ng]);
             }
-
+            std::cout << "char_vec:\n" << char_vec << std::endl;
+            std::cout << "subspace: " << ns << "; sqnorm: " << sqnorm << "\n";
             if(almost_equal(sqnorm, double(head_group.size()))) { // this representation is irreducible
-              Eigen::MatrixXcd ttrans_mat;
+              Eigen::MatrixXcd t_irrep_subspace;
 
               if(allow_complex) {
-                ttrans_mat = tmat.block(0, last_i, dim, subspace_dims[ns]);
+                t_irrep_subspace = tmat.block(0, last_i, dim, subspace_dims[ns]);
               }
               else {
-                ttrans_mat.resize(dim, 2 * subspace_dims[ns]);
+                t_irrep_subspace.resize(dim, 2 * subspace_dims[ns]);
 
-                ttrans_mat.leftCols(subspace_dims[ns])
+                t_irrep_subspace.leftCols(subspace_dims[ns])
                   = sqrt(2.0) * tmat.block(0, last_i, dim, subspace_dims[ns]).real().cast<std::complex<double> >();
-                ttrans_mat.rightCols(subspace_dims[ns])
+                t_irrep_subspace.rightCols(subspace_dims[ns])
                   = sqrt(2.0) * tmat.block(0, last_i, dim, subspace_dims[ns]).imag().cast<std::complex<double> >();
               }
-              //Only append to trans_mat if the new columns extend the space (i.e., are orthogonal)
+              //Only append to adapted_subspace if the new columns extend the space (i.e., are orthogonal)
 
-              if(almost_zero((ttrans_mat.adjoint()*trans_mat).norm(), 0.001)) {
-                qr.compute(ttrans_mat);
+              if(almost_zero((t_irrep_subspace.adjoint()*adapted_subspace).norm(), 0.001)) {
+                qr.compute(t_irrep_subspace);
                 //it seems stupid to use two different decompositions that do almost the same thing, but
                 // HouseholderQR is not rank-revealing, and colPivHouseholder mixes up the columns of the Q matrix.
-                colqr.compute(ttrans_mat);
+                colqr.compute(t_irrep_subspace);
                 Index rnk = colqr.rank();
+                std::cout << "t_irrep_subspace with rank: " << rnk << " --\n" << t_irrep_subspace << std::endl << std::endl;
+                t_irrep_subspace = Eigen::MatrixXcd(qr.householderQ()).leftCols(rnk);
+                std::cout << "MatrixR: \n" << colqr.matrixR() << std::endl;
+                auto symmetrizer = symmetrizer_func(t_irrep_subspace);
+                SymRepTools::IrrepInfo t_irrep((t_irrep_subspace * symmetrizer.first).adjoint(), char_vec);
+                t_irrep.directions = Local::_real(symmetrizer.second);
 
-                ttrans_mat = Eigen::MatrixXcd(qr.householderQ()).leftCols(rnk);
-                auto symmetrizer = symmetrizer_func(ttrans_mat);
-                SymRepTools::IrrepInfo t_info(ttrans_mat * symmetrizer.first, char_vec);
-                t_info.directions = Local::_real(symmetrizer.second);
-
-                // extend trans_mat (used to simplify next iteration)
-                trans_mat.block(0, Nfound, dim, rnk) = t_info.trans_mat;
+                // extend adapted_subspace (used to simplify next iteration)
+                adapted_subspace.block(0, Nfound, dim, rnk) = t_irrep_subspace;//t_irrep.trans_mat.adjoint();
 
 
-                auto it = result.find(t_info);
+                auto it = result.find(t_irrep);
                 if(it != result.end()) {
-                  t_info.index++;
+                  t_irrep.index++;
                   ++it;
                 }
 
                 while(it != result.end() && it->index > 0) {
-                  t_info.index++;
+                  t_irrep.index++;
                   ++it;
                 }
-                result.emplace_hint(it, std::move(t_info));
+
+                result.emplace_hint(it, std::move(t_irrep));
 
 
                 Nfound += rnk;
@@ -928,22 +998,18 @@ namespace CASM {
             last_i += subspace_dims[ns];
           }
           if(found_new_irreps) {
-            qr.compute(trans_mat);
+            qr.compute(adapted_subspace);
             kernel = Eigen::MatrixXcd(qr.householderQ()).rightCols(dim - Nfound);
+            kci = 0;
+            kci--;
             break;
           }
-        }
-        if(found_new_irreps) {
-          kci = 0;
-          break;
         }
       }
     }
 
-
     return std::vector<SymRepTools::IrrepInfo>(std::make_move_iterator(result.begin()),
                                                std::make_move_iterator(result.end()));
-
   }
 
   //*******************************************************************************************
@@ -1159,12 +1225,20 @@ namespace CASM {
         //If irrep.directions[0] is singly degenerate (orbits size == 1) then irrepdim is 1 and we only need one direction to
         //define wedge
         wedges.emplace_back(irrep, Eigen::MatrixXd::Zero(irrep.vector_dim(), irrep.irrep_dim()));
+        std::cout << "Irrep characters: \n" << irrep.characters << std::endl;
         std::cout << "Irrep directions: " << irrep.directions.size() << std::endl;
+        if(irrep.directions.empty()) {
+          wedges.back() = Local::_wedge_from_pseudo_irrep(irrep, _rep, head_group);
+          continue;
+        }
+
         std::cout << "Irrep direction orbit" << 0 << " : " << irrep.directions[0].size() << std::endl;
+        std::cout << "Irrep direction: " << irrep.directions[0][0].transpose() << std::endl;
         wedges.back().axes.col(0) = irrep.directions[0][0];
         wedges.back().mult.push_back(irrep.directions[0].size());
         for(Index i = 1; i < irrep.irrep_dim(); i++) {
           std::cout << "Irrep direction orbit" << i << " : " << irrep.directions[i].size() << std::endl;
+          std::cout << "Irrep direction: " << irrep.directions[i][0].transpose() << std::endl;
           Index j_best = 0;
           best_proj = (wedges.back().axes.transpose() * irrep.directions[i][0]).sum();
           for(Index j = 1; j < irrep.directions[i].size(); j++) {
@@ -1178,6 +1252,7 @@ namespace CASM {
           wedges.back().axes.col(i) = irrep.directions[i][j_best];
           wedges.back().mult.push_back(irrep.directions[i].size());
         }
+        std::cout << "New irrep wedge: \n" << wedges.back().axes.transpose() << std::endl;
       }
       return wedges;
     }
@@ -1240,35 +1315,52 @@ namespace CASM {
       //max_equiv[w] is irrep_wedge_orbits[w].size()-1
       std::vector<Index> max_equiv;
       max_equiv.reserve(init_wedges.size());
-
+      std::cout << "irreducible wedges for group of order " << head_group.size() << std::endl;
+      Index imax = 0;
+      multivector<Index>::X<2> subgroups;
       for(IrrepWedge const &wedge : init_wedges) {
+        std::cout << "Working wedge with axes: \n" << wedge.axes.transpose() << std::endl;
         irrep_wedge_orbits.push_back({wedge});
 
         //Start getting orbit of wedges[w]
-        for(Index p = 0; p < head_group.size(); p++) {
-
+        subgroups.push_back({});
+        for(SymOp const &op : head_group) {
           IrrepWedge test_wedge{wedge};
-          test_wedge.axes = (*(_rep[head_group[p].index()]->MatrixXd())) * wedge.axes;
-
-
-          if(contains(irrep_wedge_orbits.back(), test_wedge, irrep_wedge_compare))
+          test_wedge.axes = (*(_rep[op.index()]->MatrixXd())) * wedge.axes;
+          Index o = 0;
+          for(; o < irrep_wedge_orbits.back().size(); ++o) {
+            if(irrep_wedge_compare(irrep_wedge_orbits.back()[o], test_wedge)) {
+              if(o == 0) {
+                subgroups.back().push_back(op.index());
+              }
+              break;
+            }
+          }
+          if(o < irrep_wedge_orbits.back().size())
             continue;
           irrep_wedge_orbits.back().push_back(test_wedge);
         }
-
+        std::cout << "wedge mult: " << irrep_wedge_orbits.back().size();
+        std::cout << "; subgroups[" << subgroups.size() << "]: " << subgroups.back() << std::endl;
+        std::cout << "N equiv wedges found: " << irrep_wedge_orbits.back().size() << std::endl;
         max_equiv.push_back(irrep_wedge_orbits.back().size() - 1);
+        if(max_equiv.back() > max_equiv[imax])
+          imax = max_equiv.size() - 1;
       }
-      max_equiv[0] = 0;
+      max_equiv[imax] = 0;
 
       //Counter over combinations of equivalent wedges
       Counter<std::vector<Index> > wcount(std::vector<Index>(init_wedges.size(), 0),
                                           max_equiv,
                                           std::vector<Index>(init_wedges.size(), 1));
 
+      std::cout << "max_equiv: " << max_equiv << std::endl;
+      std::cout << "init wcount: " << wcount() << std::endl;
       multivector<IrrepWedge>::X<3> tot_wedge_orbits;
+      std::cout << "Starting slow bit!\n";
       for(; wcount; ++wcount) {
         std::vector<IrrepWedge> twedge = init_wedges;
-        for(Index i = 1; i < init_wedges.size(); i++)
+        for(Index i = 0; i < init_wedges.size(); i++)
           twedge[i].axes = irrep_wedge_orbits[i][wcount[i]].axes;
 
 
@@ -1282,16 +1374,15 @@ namespace CASM {
 
         tot_wedge_orbits.push_back({twedge});
         result.emplace_back(twedge);
-        for(Index p = 0; p < head_group.size(); p++) {
+        for(Index p : subgroups[imax]) {
           for(Index i = 0; i < twedge.size(); i++)
-            twedge[i].axes = (*(_rep[head_group[p].index()]->MatrixXd())) * result.back().irrep_wedges()[i].axes;
+            twedge[i].axes = (*(_rep[p]->MatrixXd())) * result.back().irrep_wedges()[i].axes;
           if(!contains(tot_wedge_orbits.back(), twedge, tot_wedge_compare)) {
-            //std::cout << "Adding subwedge!\n";
             tot_wedge_orbits.back().push_back(twedge);
           }
         }
       }
-
+      std::cout << "Num subwedges: " << result.size() << std::endl;
       return result;
     }
 

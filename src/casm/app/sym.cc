@@ -238,10 +238,14 @@ namespace CASM {
       else if(vm().count("input")) {
         kwargs = jsonParser::parse(opt().input_str());
       }
+      else {
+        kwargs = jsonParser::parse(std::string("{\"supercells\" : {\"min\" : 0, \"max\" : 0}}"));
+      }
 
       std::vector<ConfigEnumInput> configs = make_enumerator_input_configs(primclex(), kwargs, opt(), nullptr);
 
       for(ConfigEnumInput const &config : configs) {
+        std::cout << "WORKING ON CONFIG: " << config.name() << std::endl;
         jsonParser report;
         fs::path sym_dir = primclex().dir().symmetry_dir(config.name());
 

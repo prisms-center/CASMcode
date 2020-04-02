@@ -246,6 +246,7 @@ libcasm_la_SOURCES = \
     include/casm/database/Update_impl.hh\
     include/casm/database/json/jsonDatabase.hh\
     include/casm/database/json/jsonPropertiesDatabase.hh\
+    include/casm/enumerator/DoFSpace.hh\
     include/casm/enumerator/EnumInputParser.hh\
     include/casm/enumerator/Enumerator.hh\
     include/casm/enumerator/Enumerator_impl.hh\
@@ -704,6 +705,8 @@ libcasm_la_SOURCES = \
     include/casm/symmetry/VectorOrbits.hh\
     include/casm/symmetry/VectorSymCompare.hh\
     include/casm/symmetry/VectorSymCompare_impl.hh\
+    include/casm/symmetry/io/json/SymRepTools.hh\
+    include/casm/symmetry/json_io.hh\
     include/casm/system/Popen.hh\
     include/casm/system/RuntimeLibrary.hh\
     include/casm/version/version.hh\

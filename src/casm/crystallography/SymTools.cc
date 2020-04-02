@@ -73,7 +73,7 @@ namespace CASM {
       // we will find the sqrt of tLat2 and then reorient it so that it matches the original lattice
       Eigen::Matrix3d tMat;
 
-      Eigen::JacobiSVD<Eigen::Matrix3d> tSVD(tMat, Eigen::ComputeFullU | Eigen::ComputeFullV);
+      Eigen::JacobiSVD<Eigen::Matrix3d> tSVD(tLat2, Eigen::ComputeFullU | Eigen::ComputeFullV);
 
       // tMat is sqrt of symlat.transpose()*symlat
       tMat = tSVD.matrixU() * tSVD.singularValues().cwiseSqrt().asDiagonal() * tSVD.matrixV().transpose();

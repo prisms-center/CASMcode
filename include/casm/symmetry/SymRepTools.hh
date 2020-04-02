@@ -28,12 +28,12 @@ namespace CASM {
 
       // Dimension of irreducible vector space
       Index irrep_dim() const {
-        return trans_mat.cols();
+        return trans_mat.rows();
       }
 
       // Dimension of initial vector space
       Index vector_dim() const {
-        return trans_mat.rows();
+        return trans_mat.cols();
       }
 
       /// true if any character has non-zero imaginary component, false otherwise

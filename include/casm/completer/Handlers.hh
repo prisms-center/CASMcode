@@ -823,7 +823,7 @@ namespace CASM {
     public:
 
       EnumOptionBase(std::string const &_name) :
-        OptionHandlerBase(_name) {
+        OptionHandlerBase(_name), m_all_existing(false) {
       }
 
       using OptionHandlerBase::settings_path;

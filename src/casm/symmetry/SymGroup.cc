@@ -16,6 +16,8 @@
 #include "casm/symmetry/SymInfo.hh"
 #include "casm/casm_io/Log.hh"
 
+#include "casm/casm_io/container/stream_io.hh"
+
 #include "casm/casm_io/container/json_io.hh"
 
 namespace CASM {
@@ -570,7 +572,7 @@ namespace CASM {
         if(op.matrix().determinant() < 0)
           bit = 1;
         for(Index n = 2; n <= 6; ++n) {
-          if(almost_equal<double>(360. / n, info.angle)) {
+          if(almost_equal<double>(360. / double(n), info.angle)) {
             result[2 * (n - 1) + bit]++;
             break;
           }
@@ -626,6 +628,7 @@ namespace CASM {
     for(Index k = 4; k < rgroups.size(); k++) {
       nm += rgroups[k];
     }
+    std::cout << "RGROUPS: " << rgroups << std::endl;
     bool centric = true;
     result["centricity"] = "Centric";
     if(!rgroups[1]) {
@@ -716,13 +719,13 @@ namespace CASM {
         }
         else {
           if(rgroups[10] == 2) {
-            if(rgroups[3] == 7) {
+            if(rgroups[2] == 7) {
               result["international_name"] = "622";
               result["name"] = "D6 (Chiral)";
               result["latex_name"] = "D_{6h}";
               result["space_group_range"] = "177-182";
             }
-            else if(rgroups[4] == 6) {
+            else if(rgroups[3] == 6) {
               result["international_name"] = "6mm";
               result["name"] = "C6v";
               result["latex_name"] = "C_{6v}";
@@ -745,21 +748,32 @@ namespace CASM {
         default_err_log() << "\n Error Hexagonal \n";
       }
     } // for hexagonal
-    else if((rgroups[4] + rgroups[5]) == 2) {
+    else if((rgroups[4] + rgroups[5]) >= 1) {
       result["crystal_system"] = "Trigonal";
       switch(nm) {
+      case 2:
+        if(rgroups[3] == 3) {
+          result["international_name"] = "3m";
+          result["name"] = "C3v";
+          result["latex_name"] = "C_{3v}";
+          result["space_group_range"] = "156-161";
+        }
+        else if(rgroups[3] == 0) {
+          result["international_name"] = "3";
+          result["name"] = "C3";
+          result["latex_name"] = "C_{3}";
+          result["space_group_range"] = "143-146";
+        }
+        else {
+          default_err_log() << "\n Error Trigonal case 2 Acentric \n ";
+        }
+        break;
       case 3:
         if(centric) {
           result["international_name"] = "-3";
           result["name"] = "S6";
           result["latex_name"] = "S_6";
           result["space_group_range"] = "147-148";
-        }
-        else {
-          result["international_name"] = "3";
-          result["name"] = "C3 (Chiral)";
-          result["latex_name"] = "C_3";
-          result["space_group_range"] = "143-146";
         }
         break;
       case 6:
@@ -776,12 +790,6 @@ namespace CASM {
             result["latex_name"] = "D_3";
             result["space_group_range"] = "149-155";
           }
-          else if(rgroups[3] == 3) {
-            result["international_name"] = "3m";
-            result["name"] = "C3v";
-            result["latex_name"] = "C_{3v}";
-            result["space_group_range"] = "156-161";
-          }
           else {
             default_err_log() << "\n Error Trigonal case 6 Acentric \n ";
           }
@@ -791,9 +799,20 @@ namespace CASM {
         default_err_log() << "\n Error Trigonal \n";
       }
     } // for trigonal
-    else if((rgroups[6] + rgroups[7]) == 2) {
+    else if((rgroups[6] + rgroups[7]) >= 1) {
       result["crystal_system"] = "Tetragonal";
       switch(nm) {
+      case 3:
+        if(rgroups[3] == 4) {
+          result["international_name"] = "4mm";
+          result["name"] = "C4v";
+          result["latex_name"] = "C_{4v}";
+          result["space_group_range"] = "99-110";
+        }
+        else {
+          default_err_log() << "\n Error Tetragonal case 3 Acentric \n ";
+        }
+        break;
       case 4:
         if(centric) {
           result["international_name"] = "4/m";
@@ -801,24 +820,43 @@ namespace CASM {
           result["latex_name"] = "C_{4h}";
           result["space_group_range"] = "83-88";
         }
-        else {
-          if(rgroups[6] == 2) {
-            result["international_name"] = "4";
-            result["name"] = "C4 (Chiral)";
-            result["latex_name"] = "C_4";
-            result["space_group_range"] = "75-80";
-          }
-          else if(rgroups[7] == 2) {
-            result["international_name"] = "-4";
-            result["name"] = "S4";
-            result["latex_name"] = "S_4";
-            result["space_group_range"] = "81-82";
-          }
-          else {
-            default_err_log() << "\n Error Tetragonal case 4 Acentric \n ";
-          }
+        else if(rgroups[6] == 1) {
+          result["international_name"] = "4";
+          result["name"] = "C4 (Chiral)";
+          result["latex_name"] = "C_4";
+          result["space_group_range"] = "75-80";
         }
-
+        else if(rgroups[7] == 1) {
+          result["international_name"] = "-4";
+          result["name"] = "S4";
+          result["latex_name"] = "S_4";
+          result["space_group_range"] = "81-82";
+        }
+        else {
+          default_err_log() << "\n Error Tetragonal case 4 Acentric \n ";
+        }
+        break;
+      case 5:
+        if(rgroups[7] == 1) {
+          result["international_name"] = "-42m";
+          result["name"] = "D2d";
+          result["latex_name"] = "D_{2d}";
+          result["space_group_range"] = "111-122";
+        }
+        else {
+          default_err_log() << "\n Error Tetragonal case 7 Acentric \n ";
+        }
+        break;
+      case 7:
+        if(rgroups[6] == 1 && rgroups[2] == 5) {
+          result["international_name"] = "422";
+          result["name"] = "D4 (Chiral)";
+          result["latex_name"] = "D_4";
+          result["space_group_range"] = "89-98";
+        }
+        else {
+          default_err_log() << "\n Error Tetragonal case 7 Ancentric #4 \n";
+        }
         break;
       case 8:
         if(centric) {
@@ -828,30 +866,7 @@ namespace CASM {
           result["space_group_range"] = "123-142";
         }
         else {
-          if(rgroups[6] == 2) {
-            if(rgroups[3] == 5) {
-              result["international_name"] = "422";
-              result["name"] = "D4 (Chiral)";
-              result["latex_name"] = "D_4";
-              result["space_group_range"] = "89-98";
-            }
-            else if(rgroups[4] == 4) {
-              result["international_name"] = "4mm";
-              result["name"] = "C4v";
-              result["latex_name"] = "C_{4v}";
-              result["space_group_range"] = "99-110";
-            }
-            else default_err_log() << "\n Error Tetragonal case 8 Ancentric #4 \n";
-          }
-          else if(rgroups[7] == 2) {
-            result["international_name"] = "-42m";
-            result["name"] = "D2d";
-            result["latex_name"] = "D_{2d}";
-            result["space_group_range"] = "111-122";
-          }
-          else {
-            default_err_log() << "\n Error Tetragonal case 8 Acentric \n ";
-          }
+          default_err_log() << "\n Error Tetragonal case 8\n ";
         }
         break;
       default:
@@ -867,13 +882,13 @@ namespace CASM {
         result["space_group_range"] = "47-84";
       }
       else {
-        if(rgroups[3] == 3) {
+        if(rgroups[2] == 3) {
           result["international_name"] = "222";
           result["name"] = "D2 (Chiral)";
           result["latex_name"] = "D_2";
           result["space_group_range"] = "16-24";
         }
-        else if(rgroups[4] == 2) {
+        else if(rgroups[3] == 2) {
           result["international_name"] = "mm2";
           result["name"] = "C2v";
           result["latex_name"] = "C_{2v}";
@@ -894,13 +909,13 @@ namespace CASM {
         result["space_group_range"] = "10-15";
       }
       else {
-        if(rgroups[3] == 1) {
+        if(rgroups[2] == 1) {
           result["international_name"] = "2";
           result["name"] = "C2 (Chiral)";
           result["latex_name"] = "C_2";
           result["space_group_range"] = "3-5";
         }
-        else if(rgroups[4] == 1) {
+        else if(rgroups[3] == 1) {
           result["international_name"] = "m";
           result["name"] = "Cs";
           result["latex_name"] = "C_s";
