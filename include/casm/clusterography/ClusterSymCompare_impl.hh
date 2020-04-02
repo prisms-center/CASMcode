@@ -2,7 +2,7 @@
 #define CASM_ClusterSymCompare_impl
 
 #include "casm/clusterography/ClusterSymCompare.hh"
-#include "casm/crystallography/LatticePointWithin.hh"
+#include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/global/eigen.hh"
 #include "casm/symmetry/SymPermutation.hh"
 #include "casm/crystallography/UnitCellCoord.hh"

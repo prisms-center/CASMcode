@@ -2,7 +2,7 @@
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/SymTypeComparator.hh"
 #include "casm/crystallography/Coordinate.hh"
-#include "casm/crystallography/LatticePointWithin.hh"
+#include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/crystallography/Site.hh"
@@ -10,6 +10,7 @@
 #include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/SymType.hh"
 #include "casm/crystallography/DoFSet.hh"
+#include "casm/crystallography/Superlattice.hh"
 #include "casm/external/Eigen/Core"
 #include "casm/external/Eigen/src/Core/Matrix.h"
 #include "casm/misc/CASM_Eigen_math.hh"
@@ -348,7 +349,7 @@ namespace CASM {
       return symmetrized_structure;
     }
 
-    template <typename IntegralType, int Options = 0>
+    template <typename IntegralType, int Options>
     BasicStructure make_superstructure(const BasicStructure &tiling_unit, const Eigen::Matrix<IntegralType, 3, 3, Options> &transformation_matrix) {
       static_assert(std::is_integral<IntegralType>::value, "Transfomration matrix must be integer matrix");
 

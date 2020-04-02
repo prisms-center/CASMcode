@@ -191,11 +191,11 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/DoFDecl.hh\
     include/casm/crystallography/DoFSet.hh\
     include/casm/crystallography/HermiteCounter.hh\
+    include/casm/crystallography/IntegralCoordinateWithin.hh\
     include/casm/crystallography/Lattice.hh\
     include/casm/crystallography/LatticeEnumEquivalents.hh\
     include/casm/crystallography/LatticeIsEquivalent.hh\
     include/casm/crystallography/LatticeMap.hh\
-    include/casm/crystallography/LatticePointWithin.hh\
     include/casm/crystallography/Lattice_impl.hh\
     include/casm/crystallography/LinearIndexConverter.hh\
     include/casm/crystallography/Molecule.hh\
@@ -209,6 +209,7 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/StrucMapCalculatorInterface.hh\
     include/casm/crystallography/StrucMapping.hh\
     include/casm/crystallography/Structure.hh\
+    include/casm/crystallography/Superlattice.hh\
     include/casm/crystallography/SuperlatticeEnumerator.hh\
     include/casm/crystallography/SymRepBuilder.hh\
     include/casm/crystallography/SymTools.hh\
@@ -833,11 +834,11 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/CoordinateSystems.cc\
     src/casm/crystallography/DoFSet.cc\
     src/casm/crystallography/HermiteCounter.cc\
+    src/casm/crystallography/IntegralCoordinateWithin.cc\
     src/casm/crystallography/Lattice.cc\
     src/casm/crystallography/LatticeEnumEquivalents.cc\
     src/casm/crystallography/LatticeIsEquivalent.cc\
     src/casm/crystallography/LatticeMap.cc\
-    src/casm/crystallography/LatticePointWithin.cc\
     src/casm/crystallography/LinearIndexConverter.cc\
     src/casm/crystallography/Molecule.cc\
     src/casm/crystallography/Niggli.cc\
@@ -849,6 +850,7 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/Strain.cc\
     src/casm/crystallography/StrucMapping.cc\
     src/casm/crystallography/Structure.cc\
+    src/casm/crystallography/Superlattice.cc\
     src/casm/crystallography/SuperlatticeEnumerator.cc\
     src/casm/crystallography/SymTools.cc\
     src/casm/crystallography/SymType.cc\

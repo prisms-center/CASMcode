@@ -1,6 +1,7 @@
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/Site.hh"
+#include "casm/crystallography/Superlattice.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 

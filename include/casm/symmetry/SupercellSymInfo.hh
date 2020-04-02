@@ -1,7 +1,7 @@
 #ifndef CASM_SupercellSymInfo
 #define CASM_SupercellSymInfo
 
-#include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/Superlattice.hh"
 #include "casm/crystallography/LinearIndexConverter.hh"
 #include "casm/global/eigen.hh"
 #include "casm/symmetry/SymGroup.hh"

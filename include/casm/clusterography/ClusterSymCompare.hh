@@ -1,7 +1,7 @@
 #ifndef CASM_ClusterSymCompare
 #define CASM_ClusterSymCompare
 
-#include "casm/crystallography/LatticePointWithin.hh"
+#include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/clusterography/CoordCluster.hh"
 #include "casm/global/eigen.hh"
 #include "casm/symmetry/ElementSymApply.hh"

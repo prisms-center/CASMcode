@@ -20,7 +20,7 @@
 #include "casm/clex/MappedPropertiesTools.hh"
 #include "casm/clex/SimpleStructureTools.hh"
 #include "casm/crystallography/BasicStructure.hh"
-#include "casm/crystallography/LatticePointWithin.hh"
+#include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/crystallography/LinearIndexConverter.hh"
 #include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/Molecule.hh"

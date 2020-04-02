@@ -1,7 +1,7 @@
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/BasicStructure.hh"
-#include "casm/crystallography/LatticePointWithin.hh"
+#include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/external/Eigen/Core"

@@ -1,7 +1,7 @@
 #ifndef LINEARINDEXCONVERTER_HH
 #define LINEARINDEXCONVERTER_HH
 
-#include "casm/crystallography/LatticePointWithin.hh"
+#include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include <unordered_map>
 #include <vector>
@@ -24,12 +24,12 @@ namespace CASM {
 
     class UnitCellCoordIndexConverter {
     public:
-      typedef OrderedLatticePointGenerator::matrix_type matrix_type;
+      typedef impl::OrderedLatticePointGenerator::matrix_type matrix_type;
 
       /// Initialize with the transformation that defines how to convert from the tiling unit (prim)
       /// to the superlattice, and the number of basis sites in the primitive cell
       UnitCellCoordIndexConverter(const matrix_type &transformation_matrix, int basis_sites_in_prim)
-        : m_linear_index_to_bijk(_make_all_ordered_bijk_values(OrderedLatticePointGenerator(transformation_matrix), basis_sites_in_prim)),
+        : m_linear_index_to_bijk(_make_all_ordered_bijk_values(impl::OrderedLatticePointGenerator(transformation_matrix), basis_sites_in_prim)),
           m_basis_sites_in_prim(basis_sites_in_prim),
           m_automatically_bring_bijk_within(true),
           m_bring_within_f(transformation_matrix) {
@@ -101,7 +101,7 @@ namespace CASM {
 
       /// Enumerates every possible UnitCellCoord and returns them in the expected order (blocks by
       /// basis site, with the Smith Normal Form order within each block
-      static std::vector<UnitCellCoord> _make_all_ordered_bijk_values(const OrderedLatticePointGenerator &make_point,
+      static std::vector<UnitCellCoord> _make_all_ordered_bijk_values(const impl::OrderedLatticePointGenerator &make_point,
                                                                       int basis_sites_in_prim);
 
       /// Throws exception if the number of sites specified in the tiling unit is less than 1

@@ -3,7 +3,7 @@
 
 #include "casm/symmetry/ScelOrbitGeneration.hh"
 #include "casm/clex/Supercell.hh"
-#include "casm/crystallography/LatticePointWithin.hh"
+#include "casm/crystallography/IntegralCoordinateWithin.hh"
 
 #include "casm/clex/PrimClex.hh"
 

@@ -264,11 +264,11 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/DoFDecl.hh\
     include/casm/crystallography/DoFSet.hh\
     include/casm/crystallography/HermiteCounter.hh\
+    include/casm/crystallography/IntegralCoordinateWithin.hh\
     include/casm/crystallography/Lattice.hh\
     include/casm/crystallography/LatticeEnumEquivalents.hh\
     include/casm/crystallography/LatticeIsEquivalent.hh\
     include/casm/crystallography/LatticeMap.hh\
-    include/casm/crystallography/LatticePointWithin.hh\
     include/casm/crystallography/Lattice_impl.hh\
     include/casm/crystallography/LinearIndexConverter.hh\
     include/casm/crystallography/Molecule.hh\
@@ -282,6 +282,7 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/StrucMapCalculatorInterface.hh\
     include/casm/crystallography/StrucMapping.hh\
     include/casm/crystallography/Structure.hh\
+    include/casm/crystallography/Superlattice.hh\
     include/casm/crystallography/SuperlatticeEnumerator.hh\
     include/casm/crystallography/SymRepBuilder.hh\
     include/casm/crystallography/SymTools.hh\

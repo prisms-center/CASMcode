@@ -35,7 +35,7 @@ namespace CASM {
       return;
     }
 
-    std::vector<UnitCellCoord> UnitCellCoordIndexConverter::_make_all_ordered_bijk_values(const OrderedLatticePointGenerator &make_point,
+    std::vector<UnitCellCoord> UnitCellCoordIndexConverter::_make_all_ordered_bijk_values(const impl::OrderedLatticePointGenerator &make_point,
         int basis_sites_in_prim) {
       std::vector<UnitCellCoord> all_bijk_values;
       auto total_lattice_points = make_point.size();
