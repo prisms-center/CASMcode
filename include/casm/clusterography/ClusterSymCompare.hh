@@ -3,6 +3,7 @@
 
 #include "casm/crystallography/LatticePointWithin.hh"
 #include "casm/clusterography/CoordCluster.hh"
+#include "casm/global/eigen.hh"
 #include "casm/symmetry/ElementSymApply.hh"
 #include "casm/symmetry/SymCompare.hh"
 #include "casm/symmetry/SymTools.hh"
@@ -222,7 +223,7 @@ public:
       ///
       /// \param tol Tolerance for invariants_compare of site-to-site distances
       ///
-      ScelPeriodicSymCompare(PrimType_ptr prim_ptr, const xtal::IntegralCoordinateWithin_f &bring_within_f, double tol);
+      ScelPeriodicSymCompare(PrimType_ptr prim_ptr, const Eigen::Matrix3l &transformation_matrix, double tol);
 
       /// \brief Return tolerance
     double tol() const {
@@ -230,6 +231,8 @@ public:
     }
 
 private:
+
+    ScelPeriodicSymCompare(PrimType_ptr prim_ptr, const xtal::IntegralCoordinateWithin_f &bring_within_f, double tol);
     friend SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>;
     // Allow private access to whatever copy_apply_crtp_type is, because sometimes you need that prim
     friend Base;

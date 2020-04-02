@@ -3,6 +3,7 @@
 
 #include "casm/external/Eigen/Core"
 #include "casm/global/definitions.hh"
+#include "casm/global/eigen.hh"
 #include <vector>
 
 namespace CASM {
@@ -36,7 +37,8 @@ namespace CASM {
 
     /// Given an integer transformation matrix, create a superstructure whose lattice is the product of
     /// the original lattice and the transformation matrix.
-    BasicStructure make_superstructure(const BasicStructure &tiling_unit, const Eigen::Matrix3i transformation_matrix);
+    template <typename IntegralType, int Options = 0>
+    BasicStructure make_superstructure(const BasicStructure &tiling_unit, const Eigen::Matrix<IntegralType, 3, 3, Options> &transformation_matrix);
 
   } // namespace xtal
 } // namespace CASM

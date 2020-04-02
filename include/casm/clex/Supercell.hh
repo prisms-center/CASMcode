@@ -105,7 +105,7 @@ namespace CASM {
 
     SymGroupRep const &permutation_symrep() const;
 
-    Eigen::Matrix3i transf_mat() const;
+    Eigen::Matrix3l transf_mat() const;
 
     /// \brief The super lattice
     const Lattice &lattice() const;

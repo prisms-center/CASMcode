@@ -128,7 +128,7 @@ TEST(SubOrbitsTest, ZrOProj) {
 
     ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> scel_sym_compare(
       config.supercell().primclex().shared_prim(),
-      xtal::make_bring_within_f(config.supercell()),
+      config.supercell().transf_mat(),
       config.crystallography_tol());
     // Configuration with every other layer of O filled
 
@@ -137,7 +137,7 @@ TEST(SubOrbitsTest, ZrOProj) {
     std::vector<PermuteIterator> prim_config_fg = prim_config.factor_group();
     ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> prim_sym_compare(
       prim_config.supercell().primclex().shared_prim(),
-      xtal::make_bring_within_f(prim_config.supercell()),
+      prim_config.supercell().transf_mat(),
       prim_config.crystallography_tol());
 
     EXPECT_EQ(true, true);
@@ -337,7 +337,7 @@ TEST(SubOrbitsTest, FCCTernaryProj) {
     }));
     ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> scel_sym_compare(
       config.supercell().primclex().shared_prim(),
-      xtal::make_bring_within_f(config.supercell()),
+      config.supercell().transf_mat(),
       config.crystallography_tol());
 
     // Print out a POSCAR file
@@ -353,7 +353,7 @@ TEST(SubOrbitsTest, FCCTernaryProj) {
     std::vector<PermuteIterator> prim_config_fg = prim_config.factor_group();
     ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> prim_sym_compare(
       prim_config.supercell().primclex().shared_prim(),
-      xtal::make_bring_within_f(config.supercell()),
+      config.supercell().transf_mat(),
       prim_config.crystallography_tol());
 
     EXPECT_EQ(true, true);
@@ -561,7 +561,7 @@ TEST(SubOrbitsTest, L12Proj) {
 
     ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> scel_sym_compare(
       config.supercell().primclex().shared_prim(),
-      xtal::make_bring_within_f(config.supercell()),
+      config.supercell().transf_mat(),
       config.crystallography_tol());
 
 
@@ -569,7 +569,7 @@ TEST(SubOrbitsTest, L12Proj) {
     std::vector<PermuteIterator> prim_config_fg = prim_config.factor_group();
     ScelPeriodicSymCompare<Kinetics::DiffusionTransformation> prim_sym_compare(
       prim_config.supercell().primclex().shared_prim(),
-      xtal::make_bring_within_f(prim_config.supercell()),
+      prim_config.supercell().transf_mat(),
       prim_config.crystallography_tol());
 
     EXPECT_EQ(true, true);

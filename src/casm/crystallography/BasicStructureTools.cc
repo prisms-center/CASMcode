@@ -11,6 +11,7 @@
 #include "casm/crystallography/SymType.hh"
 #include "casm/crystallography/DoFSet.hh"
 #include "casm/external/Eigen/Core"
+#include "casm/external/Eigen/src/Core/Matrix.h"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include <algorithm>
 #include <atomic>
@@ -347,7 +348,10 @@ namespace CASM {
       return symmetrized_structure;
     }
 
-    BasicStructure make_superstructure(const BasicStructure &tiling_unit, const Eigen::Matrix3i transformation_matrix) {
+    template <typename IntegralType, int Options = 0>
+    BasicStructure make_superstructure(const BasicStructure &tiling_unit, const Eigen::Matrix<IntegralType, 3, 3, Options> &transformation_matrix) {
+      static_assert(std::is_integral<IntegralType>::value, "Transfomration matrix must be integer matrix");
+
       Lattice superlat = make_superlattice(tiling_unit.lattice(), transformation_matrix);
       BasicStructure superstruc(superlat);
 
@@ -363,6 +367,9 @@ namespace CASM {
       superstruc.set_basis(superstruc_basis, CART);
       return superstruc;
     }
+
+    template BasicStructure make_superstructure<int, 0>(const BasicStructure &tiling_unit, const Eigen::Matrix<int, 3, 3, 0> &transformation_matrix);
+    template BasicStructure make_superstructure<long, 0>(const BasicStructure &tiling_unit, const Eigen::Matrix<long, 3, 3, 0> &transformation_matrix);
 
   } // namespace xtal
 } // namespace CASM
