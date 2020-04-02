@@ -153,6 +153,9 @@ namespace CASM {
 
     Coordinate Coordinate::min_translation(const Coordinate &neighbor) const {
       Coordinate translation = (*this) - neighbor;
+      std::cout << "DEBUGGING: translation.cart() is " << translation.const_cart() << std::endl;
+
+
       translation.frac() -= lround(translation.const_frac()).cast<double>();
       return translation;
     }
