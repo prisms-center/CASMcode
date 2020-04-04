@@ -34,7 +34,8 @@ namespace CASM {
   };
 
 
-  VectorSpaceSymReport vector_space_sym_report(DoFSpace const &_space, bool calc_wedges = true);
+  VectorSpaceSymReport vector_space_sym_report(DoFSpace const &_space,
+                                               bool calc_wedges = true);
 
 }
 

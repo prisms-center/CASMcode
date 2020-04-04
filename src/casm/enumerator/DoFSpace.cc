@@ -29,7 +29,8 @@ namespace CASM {
 
   /// STRAIN:
 
-  VectorSpaceSymReport vector_space_sym_report(DoFSpace const &_space, bool calc_wedges) {
+  VectorSpaceSymReport vector_space_sym_report(DoFSpace const &_space,
+                                               bool calc_wedges) {
     MasterSymGroup g;
     SymGroupRepID id;
     DoFKey dof_key = _space.dof_key;

@@ -40,7 +40,8 @@ namespace CASM {
       ("lattice-point-group", "Pretty print lattice point group")
       ("factor-group", "Pretty print factor group")
       ("crystal-point-group", "Pretty print crystal point group")
-      ("calc-wedges", po::value<bool>(&m_wedges)->default_value(true), "Calculate irreducible degree-of-freedom wedge during symmetry analysis (default TRUE)")
+      ("no-wedge", "Skip calculation of irreducible wedge (for faster evaluation)")
+      //("no-directions", "Skip calculation of high-symmetry direction and irreducible wedge (for faster evaluation)")
       ("tol", po::value<double>(&m_tol)->default_value(1.0e-5), "Tolerance (in Angstr.) used for symmetrization (default 1e-5)")
       ("symmetrize", po::value<fs::path>(&m_poscar_path)->value_name(ArgHandler::path()), "symmetrize a POSCAR specified by path to a given tolerance");
 
@@ -261,7 +262,8 @@ namespace CASM {
         }
         for(DoFKey const &dof : dofs) {
           DoFSpace dspace(config, dof);
-          report[dof] = vector_space_sym_report(dspace, opt().wedges());
+          report[dof] = vector_space_sym_report(dspace,
+                                                !vm().count("no-wedge"));
         }
 
         fs::create_directories(sym_dir);

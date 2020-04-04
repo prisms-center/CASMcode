@@ -492,11 +492,12 @@ namespace CASM {
       result.emplace_back(orbit.begin(), orbit.end());
     }
 
-    if(all_subgroups || !result.empty()) {
+    if(all_subgroups || result.size() == _subspace.cols()) {
       std::cout << "special_irrep_direcions RETURNING RESULT\n";
       return result;
     }
     else {
+      std::cout << "result size: " << result.size() << "; _subspace cols: " << _subspace.cols() << "\n";
       std::cout << "special_irrep_direcions REDOING CALCULATION\n";
       return special_irrep_directions(_rep, head_group, _subspace, vec_compare_tol, true);
     }
@@ -716,6 +717,10 @@ namespace CASM {
       result.irreps = irrep_decomposition(_rep, head_group, _subspace, false);
     }
     result.symmetry_adapted_dof_subspace = full_trans_mat(result.irreps).adjoint();
+
+    for(SymOp const &op : head_group) {
+      result.symgroup_rep.push_back(*(_rep.MatrixXd(op)));
+    }
     return result;
   }
 
@@ -973,6 +978,11 @@ namespace CASM {
                 SymRepTools::IrrepInfo t_irrep((t_irrep_subspace * symmetrizer.first).adjoint(), char_vec);
                 t_irrep.directions = Local::_real(symmetrizer.second);
 
+                if(rnk == 2 * subspace_dims[ns])
+                  t_irrep.pseudo_irrep = true;
+                else
+                  t_irrep.pseudo_irrep = false;
+
                 // extend adapted_subspace (used to simplify next iteration)
                 adapted_subspace.block(0, Nfound, dim, rnk) = t_irrep_subspace;//t_irrep.trans_mat.adjoint();
 
@@ -1193,7 +1203,7 @@ namespace CASM {
       }
       if(i < result.cols())
         result.conservativeResize(Eigen::NoChange, i);
-      return result;
+      return result.transpose();
     }
 
     //*******************************************************************************************

@@ -461,7 +461,7 @@ namespace CASM {
                 << "    (i.e., a well-defined point group could not be found with the current tolerance of " << _lat.tol() << ").\n"
                 << "    CASM will use the group closure of the symmetry operations that were found.  Please consider using the \n"
                 << "    CASM symmetrization tool on your input files.\n";
-      std::cout << "lat_column_mat:\n" << _lat.lat_column_mat() << "\n\n";
+      std::cerr << "lat_column_mat:\n" << _lat.lat_column_mat() << "\n\n";
 
       point_group.enforce_group(_lat.tol());
 
@@ -628,7 +628,6 @@ namespace CASM {
     for(Index k = 4; k < rgroups.size(); k++) {
       nm += rgroups[k];
     }
-    std::cout << "RGROUPS: " << rgroups << std::endl;
     bool centric = true;
     result["centricity"] = "Centric";
     if(!rgroups[1]) {
@@ -1234,14 +1233,12 @@ namespace CASM {
       for(Index k = 0; k < irrep_names.size() && all_unique; k++) {
         all_unique = true;
         if((j != k) && (irrep_names[j].compare(irrep_names[k]) == 0)) {
-          //	    //std::cout << irrep_names[j] << " = " << irrep_names[k] << std::endl;
           all_unique = false;
         }
       }
     }
-    //    //std::cout << irrep_names << std::endl;
-    //    //std::cout << "Check if all of the current names are unique... " << all_unique << std::endl;
 
+    //    //std::cout << "Check if all of the current names are unique... " << all_unique << std::endl;
     if(!all_unique) {
       repeats.clear();
       for(Index j = 0; j < irrep_names.size(); j++) {
@@ -1255,7 +1252,7 @@ namespace CASM {
         }
       }
     }
-    //    //std::cout << "Repeats in ..." << repeats << std::endl;
+
     //std::cout << "STEP 3: Name according to inversion symmetry...\n";
     for(Index i = 0; i < irrep_names.size(); i++) {
       if((inversion == true) && (!all_unique) && (contains(repeats, int(m_character_table[0][i].real())))) {
@@ -1278,12 +1275,11 @@ namespace CASM {
       for(Index k = 0; k < irrep_names.size() && all_unique; k++) {
         all_unique = true;
         if((j != k) && (irrep_names[j].compare(irrep_names[k]) == 0)) {
-          //	    //std::cout << irrep_names[j] << " = " << irrep_names[k] << std::endl;
           all_unique = false;
         }
       }
     }
-    //    //std::cout << irrep_names << std::endl;
+
     //std::cout << "Check if all of the current names are unique... " << all_unique << std::endl;
 
     if(!all_unique) {
@@ -1327,21 +1323,14 @@ namespace CASM {
       for(Index k = 0; k < irrep_names.size() && all_unique; k++) {
         all_unique = true;
         if((j != k) && (irrep_names[j].compare(irrep_names[k]) == 0)) {
-          std::cout << irrep_names[j] << " = " << irrep_names[k] << std::endl;
           all_unique = false;
         }
       }
     }
 
-    //    std::cout << "Check if all of the current names are unique... " << all_unique << std::endl;
-
     if(!all_unique) {
       default_err_log() << "WARNING: Failed to name all irreps uniquely...  \n";
     }
-    for(auto &irrep_name : irrep_names) {
-      std::cout << irrep_name << "   ";
-    }
-    std::cout << std::endl;
     return;
   }
 
