@@ -47,6 +47,7 @@ namespace CASM {
         m_home(&_home),
         m_frac_coord(vector_type::Zero()),
         m_cart_coord(vector_type::Zero()) {
+        assert(m_home && "home lattice pointer was set to null!");
       }
 
       Coordinate(Eigen::Ref<const vector_type> const &_vec, const Lattice &_home, COORD_TYPE _mode);
@@ -242,6 +243,7 @@ namespace CASM {
 
 
       void _update_frac() {
+        assert(this->m_home && "No home lattice to access");
         m_frac_coord = home().inv_lat_column_mat() * m_cart_coord;
       }
 

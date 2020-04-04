@@ -15,6 +15,7 @@ namespace CASM {
         _set_frac(init_vec);
       if(mode == CART)
         _set_cart(init_vec);
+      assert(m_home && "home lattice pointer was set to null!");
     }
 
     //********************************************************************
@@ -29,6 +30,7 @@ namespace CASM {
         m_cart_coord << _x, _y, _z;
         _update_frac();
       }
+      assert(m_home && "home lattice pointer was set to null!");
     }
 
     //********************************************************************
@@ -41,6 +43,9 @@ namespace CASM {
     //********************************************************************
 
     Coordinate &Coordinate::operator-=(const Coordinate &RHS) {
+      assert(this->m_home && "Home lattice is null");
+      assert(RHS.m_home && "RHS home lattice is null");
+
       cart() -= RHS.cart();
       return *this;
 
@@ -152,11 +157,15 @@ namespace CASM {
     }
 
     Coordinate Coordinate::min_translation(const Coordinate &neighbor) const {
+      assert(this->m_home && "Home lattice is null");
+      assert(neighbor.m_home && "Neighbor home lattice is null");
       Coordinate translation = (*this) - neighbor;
-      std::cout << "DEBUGGING: translation.cart() is " << translation.const_cart() << std::endl;
 
+      assert(translation.m_home && "Home lattice is null");
 
-      translation.frac() -= lround(translation.const_frac()).cast<double>();
+      Eigen::Vector3d frac_translation = lround(translation.const_frac()).cast<double>();
+
+      translation.frac() -= frac_translation;
       return translation;
     }
 
@@ -180,16 +189,9 @@ namespace CASM {
 
     //********************************************************************
 
-    /* Coordinate &Coordinate::apply_sym(const SymOp &op) { */
-    /*   cart() = get_matrix(op) * this->const_cart() + get_translation(op); */
-
-    /*   return *this; */
-    /* } */
-
-    //********************************************************************
-
     void Coordinate::set_lattice(const Lattice &new_lat, COORD_TYPE invariant_mode) {
       m_home = &new_lat;
+      assert(m_home && "home lattice pointer was set to null!");
 
       if(invariant_mode == CART)
         _update_frac();
@@ -222,6 +224,7 @@ namespace CASM {
 
     bool Coordinate::within(Coordinate &translation) {
       translation.m_home = m_home;
+      assert(m_home && "home lattice pointer was set to null!");
       if(PERIODICITY_MODE::IS_LOCAL()) return true;
 
       bool was_within = true;
@@ -290,6 +293,7 @@ namespace CASM {
 
     bool Coordinate::voronoi_within(Coordinate &translation) {
       translation.m_home = m_home;
+      assert(m_home && "home lattice pointer was set to null!");
       translation.cart() = vector_type::Zero();
 
       Eigen::Vector3d lattice_trans;

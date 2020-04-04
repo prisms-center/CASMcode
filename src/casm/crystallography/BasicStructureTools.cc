@@ -90,6 +90,8 @@ namespace {
     xtal::Coordinate average_mapping_translation(structure_lattice);
 
     for(Index ix = 0; ix < basis_map.size(); ++ix) {
+      assert(basis_map[ix] < translated_transformed_basis.size());
+      assert(ix < basis.size());
       const xtal::Site &mapped_site = translated_transformed_basis[basis_map[ix]];
       const xtal::Site &mapped_to_site = basis[ix];
       assert(mapped_site.lattice() == mapped_to_site.lattice());
@@ -98,6 +100,7 @@ namespace {
       xtal::Coordinate single_mapping_translation = mapped_site.min_translation(mapped_to_site);
       average_mapping_translation += single_mapping_translation;
     }
+
 
     average_mapping_translation.cart() *= (1.0 / basis.size());
     return average_mapping_translation;
@@ -156,8 +159,11 @@ namespace {
         // basis site, do the rest of them match too? If not, continue to the
         // next site for a new translation
         std::vector<Index> basis_map = map_translated_basis(struc.basis(), transformed_basis, translation);
-        std::unordered_set<Index> unique_mappings(basis_map.begin(), basis_map.end());
-        if(unique_mappings.size() != struc.basis().size()) {
+
+        //The mapping failed if any of the sites couldn't get mapped (i.e. given index the size
+        //of the container)
+        Index map_misses = std::count(basis_map.begin(), basis_map.end(), struc.basis().size());
+        if(map_misses != 0) {
           continue;
         }
 
