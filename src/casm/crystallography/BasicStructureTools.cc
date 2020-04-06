@@ -121,7 +121,7 @@ namespace {
   /// The structure is considered to map onto itself by just looking at the position of the sites,
   /// so it does not take into account orientation of molecules, or global degrees of freedom.
   /// This routine is slow for non primitive structures!
-  xtal::SymOpVector make_factor_group_from_point_group_translations(const xtal::BasicStructure &struc, const xtal::SymOpVector &point_group) {
+  xtal::SymOpVector make_factor_group_from_point_group_translations(const xtal::BasicStructure &struc, const xtal::SymOpVector &point_group, double tol) {
     if(struc.basis().size() == 0) {
       return point_group;
     }
@@ -181,7 +181,7 @@ namespace {
         // operation and add it if we don't have an equivalent one already
         xtal::SymOp translation_operation = xtal::SymOp::translation_operation(translation.const_cart());
         xtal::SymOp factor_group_operation(translation_operation * point_group_operation);
-        xtal::SymOpPeriodicCompare_f fg_op_compare(factor_group_operation, struc.lattice(), CASM::TOL);
+        xtal::SymOpPeriodicCompare_f fg_op_compare(factor_group_operation, struc.lattice(), tol);
 
         if(std::find_if(factor_group.begin(), factor_group.end(), fg_op_compare) == factor_group.end()) {
           factor_group.push_back(factor_group_operation);
@@ -189,21 +189,21 @@ namespace {
       }
     }
 
-    xtal::close_group<xtal::SymOpPeriodicCompare_f>(&factor_group, struc.lattice(), TOL);
+    xtal::close_group<xtal::SymOpPeriodicCompare_f>(&factor_group, struc.lattice(), tol);
     bring_within(&factor_group, struc.lattice());
 
     return factor_group;
   }
 
-  xtal::SymOpVector make_translation_group(const xtal::BasicStructure &struc) {
+  xtal::SymOpVector make_translation_group(const xtal::BasicStructure &struc, double tol) {
     xtal::SymOpVector identity_group{xtal::SymOp::identity()};
-    xtal::SymOpVector translation_group = make_factor_group_from_point_group_translations(struc, identity_group);
+    xtal::SymOpVector translation_group = make_factor_group_from_point_group_translations(struc, identity_group, tol);
     return translation_group;
   }
 
   /// Given a structure, make it primitive and calculate its factor group. Return the primitive structure and the
   /// factor group of the primitive structure
-  std::pair<xtal::BasicStructure, xtal::SymOpVector> make_primitive_factor_group(const xtal::BasicStructure &non_primitive_struc) {
+  std::pair<xtal::BasicStructure, xtal::SymOpVector> make_primitive_factor_group(const xtal::BasicStructure &non_primitive_struc, double tol) {
     xtal::BasicStructure primitive_struc = xtal::make_primitive(non_primitive_struc);
 
     xtal::SymOpVector primitive_point_group = xtal::make_point_group(primitive_struc.lattice());
@@ -212,7 +212,7 @@ namespace {
       ::expand_with_time_reversal(&primitive_point_group);
     }
 
-    xtal::SymOpVector primitive_factor_group = ::make_factor_group_from_point_group_translations(primitive_struc, primitive_point_group);
+    xtal::SymOpVector primitive_factor_group = ::make_factor_group_from_point_group_translations(primitive_struc, primitive_point_group, tol);
     return std::make_pair(primitive_struc, primitive_factor_group);
   }
 
@@ -229,14 +229,14 @@ namespace CASM {
       return basis.size();
     }
 
-    bool is_primitive(const BasicStructure &struc) {
-      SymOpVector translation_group = ::make_translation_group(struc);
+    bool is_primitive(const BasicStructure &struc, double tol) {
+      SymOpVector translation_group = ::make_translation_group(struc, tol);
       // For a primitive structure, the only possible translation is no translation
       return translation_group.size() == 1;
     }
 
-    BasicStructure make_primitive(const BasicStructure &non_primitive_struc) {
-      SymOpVector translation_group = ::make_translation_group(non_primitive_struc);
+    BasicStructure make_primitive(const BasicStructure &non_primitive_struc, double tol) {
+      SymOpVector translation_group = ::make_translation_group(non_primitive_struc, tol);
       double minimum_possible_primitive_volume = std::abs(0.5 * non_primitive_struc.lattice().volume() / non_primitive_struc.basis().size());
 
       // The candidate lattice vectors are the original lattice vectors, plus all the possible translations that map the basis
@@ -289,8 +289,8 @@ namespace CASM {
       return primitive_struc;
     }
 
-    std::vector<SymOp> make_factor_group(const BasicStructure &struc) {
-      auto prim_factor_group_pair =::make_primitive_factor_group(struc);
+    std::vector<SymOp> make_factor_group(const BasicStructure &struc, double tol) {
+      auto prim_factor_group_pair =::make_primitive_factor_group(struc, tol);
       const BasicStructure &primitive_struc = prim_factor_group_pair.first;
       const std::vector<SymOp> &primitive_factor_group = prim_factor_group_pair.second;
 
@@ -302,7 +302,7 @@ namespace CASM {
       for(const SymOp &prim_op : primitive_factor_group) {
         //If the primitive factor group operation with translations removed can't map the original structure's
         //lattice onto itself, then ditch that operation.
-        SymOpMatrixCompare_f match_ignoring_translations(prim_op, TOL);
+        SymOpMatrixCompare_f match_ignoring_translations(prim_op, tol);
         if(std::find_if(point_group.begin(), point_group.end(), match_ignoring_translations) == point_group.end()) {
           continue;
         }

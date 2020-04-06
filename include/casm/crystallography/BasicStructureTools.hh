@@ -19,16 +19,18 @@ namespace CASM {
 
     /// Returns true if the structure describes a crystal primitive cell
     /// i.e., no translation smaller than a lattice vector can map the structure onto itself
-    bool is_primitive(const BasicStructure &struc);
+    bool is_primitive(const BasicStructure &struc, double tol = TOL);
 
     /// Returns the smallest possible tiling unit of the given structure
-    BasicStructure make_primitive(const BasicStructure &non_primitive_struc);
+    BasicStructure make_primitive(const BasicStructure &non_primitive_struc, double tol = TOL);
 
     /// Create the factor group of the given structure. If the structure has no degrees of freedom
     /// affected by time reversal, time reversal is ignored. Otherwise symmetry operations are checked
     /// for time reversal
-    std::vector<SymOp> make_factor_group(const BasicStructure &struc);
+    std::vector<SymOp> make_factor_group(const BasicStructure &struc, double tol = TOL);
 
+    //TODO: Rename to symmetrize_basis and have it take vector<Site> and Lattice?
+    //seems like a symmetrize routine that takes a structure should also symmetrize the lattice.
     /// Given a symmetry group, the basis of the structure will have
     /// each operation applied to it. The resulting set of basis
     /// from performing these operations will be averaged out,
