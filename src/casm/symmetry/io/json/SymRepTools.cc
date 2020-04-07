@@ -21,21 +21,22 @@ namespace CASM {
 
   jsonParser &to_json(SymRepTools::IrrepInfo const &irrep, jsonParser &json) {
     if(!almost_zero(irrep.characters.imag())) {
-      to_json_array(irrep.characters.imag(), json["characters"]["imaginary"]);
+      to_json_array(irrep.characters.imag(), json["symop_characters"]["imaginary"]);
     }
-    to_json_array(irrep.characters.transpose().real(), json["characters"]["real"]);
+    to_json_array(irrep.characters.transpose().real(), json["symop_characters"]["real"]);
 
     json["reducible_as_complex"] = irrep.pseudo_irrep;
     if(irrep.pseudo_irrep) {
-      to_json_array(2 * irrep.characters.real(), json["characters"]["reducible_real_characters"]);
+      to_json_array(2 * irrep.characters.real(), json["symop_characters"]["reducible_real_characters"]);
     }
 
+    /*
     if(!almost_zero(irrep.trans_mat.imag())) {
       json["axes"]["imaginary"] = -irrep.trans_mat.imag();
     }
 
     json["axes"]["real"] = irrep.trans_mat.real();
-
+    */
 
     if(irrep.directions.empty()) {
       json["high_symmetry_directions"] = "none";
@@ -47,7 +48,7 @@ namespace CASM {
     for(Index i = 0; i < irrep.directions.size(); ++i) {
       json["high_symmetry_directions"][i].put_array(irrep.directions[i].size());
       for(Index j = 0; j < irrep.directions[i].size(); ++j) {
-        to_json_array(irrep.directions[i][j], json["high_symmetry_directions"][i][j]);
+        to_json_array(Eigen::MatrixXd(irrep.trans_mat.real()*irrep.directions[i][j]), json["high_symmetry_directions"][i][j]);
       }
     }
     return json;
@@ -73,7 +74,8 @@ namespace CASM {
       mults.back()++;
     }
 
-    Index i(0), l(0);
+    Index NQ = obj.symmetry_adapted_dof_subspace.cols();
+    Index i(0), l(0), q(1);
     for(Index mult : mults) {
       ++i;
       for(Index m = 0; m < mult; ++m) {
@@ -88,12 +90,22 @@ namespace CASM {
         if(obj.irreducible_wedge.size()) {
           json["irreducible_representations"]
           [irrep_name]
-          ["irreducible_wedge"] = obj.irreducible_wedge[0].irrep_wedges()[l].axes.transpose();
+          ["irreducible_wedge"] = (obj.irreps[l].trans_mat * obj.irreducible_wedge[0].irrep_wedges()[l].axes).real().transpose();
+        }
+        json["irreducible_representations"][irrep_name]["axes"].put_array();
+        for(Index a = 0; a < obj.irreps[l].irrep_dim(); ++a, ++q) {
+          std::string axis_name = "q" + Local::_to_sequential_string(q, NQ);
+          json["irreducible_representations"][irrep_name]["axes"].push_back(axis_name);
         }
         ++l;
       }
     }
-    json["irreducible_representations"]["adapted_axes"] = obj.symmetry_adapted_dof_subspace.transpose();
+
+    for(Index q = 0; q < obj.symmetry_adapted_dof_subspace.cols(); ++q) {
+      std::string axis_name = "q" + Local::_to_sequential_string(q + 1, NQ);
+      to_json_array(obj.symmetry_adapted_dof_subspace.col(q),
+                    json["irreducible_representations"]["adapted_axes"][axis_name]);
+    }
 
 
     for(Index i = 0; i < obj.irreducible_wedge.size(); ++i) {

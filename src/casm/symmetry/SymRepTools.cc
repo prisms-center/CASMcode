@@ -492,7 +492,7 @@ namespace CASM {
       result.emplace_back(orbit.begin(), orbit.end());
     }
 
-    if(all_subgroups || result.size() == _subspace.cols()) {
+    if(all_subgroups || result.size() >= _subspace.cols()) {
       std::cout << "special_irrep_direcions RETURNING RESULT\n";
       return result;
     }
