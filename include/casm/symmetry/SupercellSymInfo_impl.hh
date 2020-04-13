@@ -78,39 +78,33 @@ namespace CASM {
   //***********************************************************
 
   template<typename IterType>
-  std::pair<Eigen::MatrixXd, std::vector<Index>> collective_dof_normal_coords_and_irrep_dims(IterType begin,
-                                              IterType end,
-                                              SupercellSymInfo const &_syminfo,
-                                              DoFKey const &_key,
-  std::vector<PermuteIterator> const &_group) {
+  std::vector<SymRepTools::IrrepInfo> irrep_decomposition(IterType begin,
+                                                          IterType end,
+                                                          SupercellSymInfo const &_syminfo,
+                                                          DoFKey const &_key,
+                                                          std::vector<PermuteIterator> const &_group) {
 
     Index dim = _syminfo.local_dof_symreps(_key)[0].dim() * std::distance(begin, end);
-    return collective_dof_normal_coords_and_irrep_dims(begin, end, _syminfo, _key, _group, Eigen::MatrixXd::Identity(dim, dim));
+    return irrep_decomposition(begin, end, _syminfo, _key, _group, Eigen::MatrixXd::Identity(dim, dim));
   }
 
   template<typename IterType>
-  std::pair<Eigen::MatrixXd, std::vector<Index>> collective_dof_normal_coords_and_irreps(IterType begin,
-                                              IterType end,
-                                              SupercellSymInfo const &_syminfo,
-                                              DoFKey const &_key,
-                                              std::vector<PermuteIterator> const &_group,
-  Eigen::Ref<const Eigen::MatrixXd> const &_subspace) {
+  std::vector<SymRepTools::IrrepInfo> irrep_decomposition(IterType begin,
+                                                          IterType end,
+                                                          SupercellSymInfo const &_syminfo,
+                                                          DoFKey const &_key,
+                                                          std::vector<PermuteIterator> const &_group,
+                                                          Eigen::Ref<const Eigen::MatrixXd> const &_subspace) {
 
     std::pair<MasterSymGroup, SymGroupRepID> rep_info = collective_dof_symrep(begin, end, _syminfo, _key, _group);
 
     SymGroupRep const &rep = rep_info.first.representation(rep_info.second);
 
-    auto irreps = irrep_decomposition(rep,
-                                      rep_info.first,
-    [&](Eigen::Ref<const Eigen::MatrixXd> const & f_subspace) {
-      return irrep_symmetrizer_and_directions(rep, rep_info.first, f_subspace, TOL); //.transpose();
-    });
+    return irrep_decomposition(rep,
+                               rep_info.first,
+                               _subspace,
+                               false);
 
-    std::vector<Index> dims;
-    for(auto const &irrep : irreps) {
-      dims.push_back(std::round(irrep.characters[0].real()));
-    }
-    return std::make_pair(full_trans_mat(irreps), dims);
   }
 
 }

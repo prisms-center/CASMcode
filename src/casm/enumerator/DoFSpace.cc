@@ -27,7 +27,6 @@ namespace CASM {
       dof_subspace.setIdentity(dofdim, dofdim);
   }
 
-  /// STRAIN:
 
   VectorSpaceSymReport vector_space_sym_report(DoFSpace const &_space,
                                                bool calc_wedges) {
@@ -40,6 +39,7 @@ namespace CASM {
     SupercellSymInfo const &sym_info = config_region.supercell().sym_info();
 
     if(val_traits.global()) {
+      // Global DoF, use point group only
       g = make_master_sym_group(make_point_group(config_region.group(), sym_info.supercell_lattice()),
                                 sym_info.supercell_lattice());
 

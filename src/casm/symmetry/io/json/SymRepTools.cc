@@ -20,15 +20,12 @@ namespace CASM {
   }
 
   jsonParser &to_json(SymRepTools::IrrepInfo const &irrep, jsonParser &json) {
-    if(!almost_zero(irrep.characters.imag())) {
-      to_json_array(irrep.characters.imag(), json["symop_characters"]["imaginary"]);
-    }
-    to_json_array(irrep.characters.transpose().real(), json["symop_characters"]["real"]);
 
-    json["reducible_as_complex"] = irrep.pseudo_irrep;
     if(irrep.pseudo_irrep) {
-      to_json_array(2 * irrep.characters.real(), json["symop_characters"]["reducible_real_characters"]);
+      to_json_array(irrep.characters.imag(), json["is_direct_sum_of_complex_irreps"]["symop_characters_imag_component"]);
+      to_json_array(irrep.characters.real(), json["is_direct_sum_of_complex_irreps"]["symop_characters_real_component"]);
     }
+
 
     /*
     if(!almost_zero(irrep.trans_mat.imag())) {
@@ -96,6 +93,10 @@ namespace CASM {
         for(Index a = 0; a < obj.irreps[l].irrep_dim(); ++a, ++q) {
           std::string axis_name = "q" + Local::_to_sequential_string(q, NQ);
           json["irreducible_representations"][irrep_name]["axes"].push_back(axis_name);
+        }
+        jsonParser &irrep_matrices = json["irreducible_representations"][irrep_name]["symop_matrices"].put_array();
+        for(Eigen::MatrixXd const &op : obj.symgroup_rep) {
+          irrep_matrices.push_back((obj.irreps[l].trans_mat * op * obj.irreps[l].trans_mat.transpose()).real());
         }
         ++l;
       }

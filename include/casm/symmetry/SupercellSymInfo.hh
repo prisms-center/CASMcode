@@ -11,6 +11,10 @@
 #include <vector>
 
 namespace CASM {
+  namespace SymRepTools {
+    struct IrrepInfo;
+  }
+
   namespace xtal {
     class Structure;
     class UnitCell;
@@ -209,11 +213,11 @@ namespace CASM {
   /// \result Pair containin an orthogonal matrix comprising normal coordinate basis vectors as its rows and a list of subspace dimensions, corresponding to
   /// irreducible invariant subspaces in which the normal coordinate basis vectors reside
   template<typename IterType>
-  std::pair<Eigen::MatrixXd, std::vector<Index>> collective_dof_normal_coords_and_irrep_dims(IterType begin,
-                                              IterType end,
-                                              SupercellSymInfo const &_syminfo,
-                                              DoFKey const &_key,
-                                              std::vector<PermuteIterator> const &_group);
+  std::vector<SymRepTools::IrrepInfo> irrep_decomposition(IterType begin,
+                                                          IterType end,
+                                                          SupercellSymInfo const &_syminfo,
+                                                          DoFKey const &_key,
+                                                          std::vector<PermuteIterator> const &_group);
 
   /// \brief Find symmetry-adapted normal coordinate basis vectors for action of '_group' acting on local DoF '_key' at site indices [begin,end]
   /// In addition to returning the normal coordinate transformation matrix, it also returns a list of dimensions of the corresponding
@@ -226,12 +230,12 @@ namespace CASM {
   /// \result Pair containin an orthogonal matrix comprising normal coordinate basis vectors as its rows and a list of subspace dimensions, corresponding to
   /// irreducible invariant subspaces in which the normal coordinate basis vectors reside
   template<typename IterType>
-  std::pair<Eigen::MatrixXd, std::vector<Index>> collective_dof_normal_coords_and_irrep_dims(IterType begin,
-                                              IterType end,
-                                              SupercellSymInfo const &_syminfo,
-                                              DoFKey const &_key,
-                                              std::vector<PermuteIterator> const &_group,
-                                              Eigen::Ref<const Eigen::MatrixXd> const &_subspace);
+  std::vector<SymRepTools::IrrepInfo> irrep_decomposition(IterType begin,
+                                                          IterType end,
+                                                          SupercellSymInfo const &_syminfo,
+                                                          DoFKey const &_key,
+                                                          std::vector<PermuteIterator> const &_group,
+                                                          Eigen::Ref<const Eigen::MatrixXd> const &_subspace);
 
 
 }
