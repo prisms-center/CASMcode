@@ -34,7 +34,7 @@ namespace CASM {
 
     json["axes"]["real"] = irrep.trans_mat.real();
     */
-
+    /*
     if(irrep.directions.empty()) {
       json["high_symmetry_directions"] = "none";
     }
@@ -48,6 +48,7 @@ namespace CASM {
         to_json_array(Eigen::MatrixXd(irrep.trans_mat.real()*irrep.directions[i][j]), json["high_symmetry_directions"][i][j]);
       }
     }
+    */
     return json;
   }
 
@@ -81,23 +82,43 @@ namespace CASM {
           + Local::_to_sequential_string(i, mults.size())
           + "_"
           + Local::_to_sequential_string(m + 1, mult);
-
-        json["irreducible_representations"][irrep_name] = obj.irreps[l];
+        auto const &irrep = obj.irreps[l];
+        json["irreducible_representations"][irrep_name] = irrep;
         json["irreducible_representations"][irrep_name]["multiplicity"] = mult;
         if(obj.irreducible_wedge.size()) {
           json["irreducible_representations"]
-          [irrep_name]
-          ["irreducible_wedge"] = (obj.irreps[l].trans_mat * obj.irreducible_wedge[0].irrep_wedges()[l].axes).real().transpose();
+          ["irreducible_wedge"]
+          [irrep_name] = (irrep.trans_mat * obj.irreducible_wedge[0].irrep_wedges()[l].axes).real().transpose();
         }
         json["irreducible_representations"][irrep_name]["axes"].put_array();
-        for(Index a = 0; a < obj.irreps[l].irrep_dim(); ++a, ++q) {
+        for(Index a = 0; a < irrep.irrep_dim(); ++a, ++q) {
           std::string axis_name = "q" + Local::_to_sequential_string(q, NQ);
           json["irreducible_representations"][irrep_name]["axes"].push_back(axis_name);
         }
-        jsonParser &irrep_matrices = json["irreducible_representations"][irrep_name]["symop_matrices"].put_array();
-        for(Eigen::MatrixXd const &op : obj.symgroup_rep) {
-          irrep_matrices.push_back((obj.irreps[l].trans_mat * op * obj.irreps[l].trans_mat.transpose()).real());
+
+        jsonParser &irrep_matrices = json["irreducible_representations"]["symop_matrices"][irrep_name];//.put_array();
+        for(Index o = 0; o < obj.symgroup_rep.size(); ++o) {
+          Eigen::MatrixXd const &op = obj.symgroup_rep[i];
+          std::string op_name = "op_" + Local::_to_sequential_string(o + 1, obj.symgroup_rep.size());
+          irrep_matrices[op_name] = (irrep.trans_mat * op * irrep.trans_mat.transpose()).real();
         }
+
+        {
+          jsonParser &djson = json["irreducible_representations"]["subgroup_invariant_directions"];
+          if(irrep.directions.empty()) {
+            djson[irrep_name] = "none";
+          }
+          else {
+            for(Index d = 0; d < irrep.directions.size(); ++d) {
+              std::string orbit_name = "direction_orbit_" + Local::_to_sequential_string(d + 1, irrep.directions.size());
+              djson[irrep_name][orbit_name].put_array(irrep.directions[d].size());
+              for(Index j = 0; j < irrep.directions[d].size(); ++j) {
+                to_json_array(Eigen::MatrixXd(irrep.trans_mat.real()*irrep.directions[d][j]), djson[irrep_name][orbit_name][j]);
+              }
+            }
+          }
+        }
+
         ++l;
       }
     }

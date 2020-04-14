@@ -77,7 +77,7 @@ namespace CASM {
 
 
   int SymCommand::vm_count_check() const {
-    if(!vm().count("symmetrize") && !in_project()) {
+    if(!Local::_symmetrize(vm()) && !in_project()) {
       help();
       err_log().error("No casm project found");
       err_log() << std::endl;
@@ -150,7 +150,7 @@ namespace CASM {
       }
     }
 
-    if(vm().count("symmetrize")) {
+    if(Local::_symmetrize(vm())) {
       fs::path poscar_path = opt().poscar_path();
       double tol = opt().tol();
       log() << "\n***************************\n" << std::endl;
@@ -247,11 +247,8 @@ namespace CASM {
 
       for(ConfigEnumInput const &config : configs) {
         std::cout << "WORKING ON CONFIG: " << config.name() << std::endl;
-        jsonParser report;
         fs::path sym_dir = primclex().dir().symmetry_dir(config.name());
 
-        if(fs::is_regular_file(sym_dir / "report.json"))
-          report.read(sym_dir / "report.json");
 
         std::vector<DoFKey> dofs = opt().dof_strs();
         if(dofs.empty()) {
@@ -262,12 +259,20 @@ namespace CASM {
         }
         for(DoFKey const &dof : dofs) {
           DoFSpace dspace(config, dof);
-          report[dof] = vector_space_sym_report(dspace,
-                                                vm().count("calc-wedge"));
+          jsonParser report;
+          std::string filename = "dof_analysis_" + dof + ".json";
+          if(fs::is_regular_file(sym_dir / filename)) {
+            report.read(sym_dir / filename);
+          }
+
+          report = vector_space_sym_report(dspace,
+                                           vm().count("calc-wedge"));
+          report["dof"] = dof;
+          fs::create_directories(sym_dir);
+          report.write(sym_dir / filename);
+
         }
 
-        fs::create_directories(sym_dir);
-        report.write(sym_dir / "report.json");
       }
 
     }

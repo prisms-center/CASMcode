@@ -40,13 +40,14 @@ namespace CASM {
 
     if(val_traits.global()) {
       // Global DoF, use point group only
-      g = make_master_sym_group(make_point_group(config_region.group(), sym_info.supercell_lattice()),
+      SymGroup pointgroup = make_point_group(config_region.group(), sym_info.supercell_lattice());
+      g = make_master_sym_group(pointgroup,
                                 sym_info.supercell_lattice());
 
       id = g.allocate_representation();
-      auto rep = sym_info.global_dof_symrep(dof_key);
-      for(Index i = 0; i < config_region.group().size(); ++i) {
-        Index fg_ix = config_region.group()[i].factor_group_index();
+      SymGroupRep const &rep = *(sym_info.global_dof_symrep(dof_key).rep_ptr());
+      for(Index i = 0; i < pointgroup.size(); ++i) {
+        Index fg_ix = pointgroup[i].index();
         g[i].set_rep(id, *rep[fg_ix]);
       }
     }
