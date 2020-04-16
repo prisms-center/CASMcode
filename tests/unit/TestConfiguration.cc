@@ -26,7 +26,7 @@ namespace test {
 
   namespace {
     Configuration make_superconfig(const Configuration &unit, const Eigen::Matrix3i &T, double tol) {
-      std::shared_ptr<Supercell> scel = std::make_shared<Supercell>(&unit.primclex(), unit.supercell().transf_mat() * T);
+      std::shared_ptr<Supercell> scel = std::make_shared<Supercell>(&unit.primclex(), unit.supercell().transf_mat().cast<int>() * T);
       FillSupercell f(scel, unit, tol);
       return f(unit);
     }

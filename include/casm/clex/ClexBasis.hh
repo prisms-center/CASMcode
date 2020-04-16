@@ -3,7 +3,7 @@
 
 #include <string>
 #include "casm/basis_set/BasisSet.hh"
-#include "casm/basis_set/DoFDecl.hh"
+#include "casm/crystallography/DoFDecl.hh"
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/clex/OrbitFunctionTraits.hh"
 #include "casm/clusterography/ClusterDecl.hh"
@@ -12,14 +12,11 @@
 namespace CASM {
   namespace xtal {
     class Site;
-    template<typename CoordType>
     class BasicStructure;
-    class Structure;
     class UnitCell;
   }
   using xtal::Site;
   using xtal::BasicStructure;
-  using xtal::Structure;
   using xtal::UnitCell;
 
 
@@ -151,7 +148,7 @@ namespace CASM {
   template<typename OrbitType>
   void print_proto_clust_funcs(ClexBasis const &_clex_basis,
                                std::ostream &out,
-                               BasicStructure<Site> const &_prim,
+                               BasicStructure const &_prim,
                                std::vector<OrbitType > const &_tree);
 
 

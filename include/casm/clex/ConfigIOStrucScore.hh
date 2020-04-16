@@ -9,7 +9,7 @@
 namespace CASM {
   namespace xtal {
     class Site;
-    template<typename T> class BasicStructure;
+    class BasicStructure;
     class StrucMapper;
   }
   using xtal::Site;
@@ -54,7 +54,7 @@ namespace CASM {
       bool init(Configuration const &tmplt) const override;
 
     protected:
-      mutable std::unique_ptr<BasicStructure<Site> > m_altprim;
+      mutable std::unique_ptr<BasicStructure > m_altprim;
       mutable std::unique_ptr<StrucMapper> m_strucmapper;
       double m_strain_weight;
       fs::path m_prim_path;

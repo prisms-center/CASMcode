@@ -3,7 +3,7 @@
 #include "casm/clex/OrbitFunctionTraits.hh"
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/BasicStructure.hh"
 
 
 namespace CASM {

@@ -902,7 +902,7 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest) {
 
     ScelPeriodicDiffTransSymCompare dt_scel_sym_compare(
       fcc_supercell.scel.primclex().shared_prim(),
-      xtal::make_bring_within_f(fcc_supercell.scel),
+      fcc_supercell.scel.transf_mat(),
       fcc_supercell.scel.crystallography_tol());
     // checks comparing input phenomenal cluster to test cluster
     // the input custom phenomenal cluster is to.diff_trans_orbits[0].prototype(), so
@@ -1075,7 +1075,7 @@ TEST(ClusterSpecsParserTest, LocalClustersByMaxLengthTest_Tet) {
 
     ScelPeriodicDiffTransSymCompare diff_trans_scel_sym_compare(
       fcc_supercell.scel.primclex().shared_prim(),
-      xtal::make_bring_within_f(fcc_supercell.scel),
+      fcc_supercell.scel.transf_mat(),
       fcc_supercell.scel.crystallography_tol());
     // checks comparing input phenomenal cluster to test cluster
     // the input custom phenomenal cluster is to.diff_trans_orbits[0].prototype(), so

@@ -7,6 +7,7 @@
 #include "casm/clusterography/ClusterSymCompare_impl.hh"
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/io/UnitCellCoordIO.hh"
 #include "casm/global/enum/json_io.hh"
 
 namespace CASM {
@@ -160,7 +161,7 @@ namespace CASM {
 
   namespace sym {
     template<>
-    CoordCluster<UnitCellCoord> &apply<SymOp, CoordCluster<UnitCellCoord>, xtal::Structure>(const SymOp &op, CoordCluster<UnitCellCoord> &clust, const xtal::Structure &prim) {
+    CoordCluster<UnitCellCoord> &apply<SymOp, CoordCluster<UnitCellCoord>, Structure>(const SymOp &op, CoordCluster<UnitCellCoord> &clust, const Structure &prim) {
       for(auto &e : clust) {
         sym::apply(op, e, prim);
       }

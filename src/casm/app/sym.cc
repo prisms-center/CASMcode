@@ -1,5 +1,8 @@
 #include <boost/filesystem/fstream.hpp>
+#include <ostream>
+#include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/crystallography/CoordinateSystems.hh"
+#include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/SymTools.hh"
@@ -18,6 +21,43 @@
 
 
 #include "casm/completer/Handlers.hh"
+#include "casm/symmetry/SymGroup.hh"
+
+namespace {
+  using namespace CASM;
+  void print_factor_group_convergence(const Structure &struc, double small_tol, double large_tol, double increment, std::ostream &print_stream) {
+    std::vector<double> tols;
+    std::vector<bool> is_group;
+    std::vector<int> num_ops, num_enforced_ops;
+    std::vector<std::string> name;
+
+    xtal::Lattice lattice = struc.lattice();
+
+    double orig_tol = lattice.tol();
+    for(double i = small_tol; i < large_tol; i += increment) {
+      tols.push_back(i);
+      lattice.set_tol(i);
+
+      xtal::SymOpVector factor_group_operations = xtal::make_factor_group(struc.structure());
+      CASM::SymGroup factor_group = adapter::Adapter<SymGroup, xtal::SymOpVector>()(factor_group_operations, lattice);
+
+      factor_group.get_multi_table();
+      num_ops.push_back(factor_group.size());
+      is_group.push_back(factor_group.is_group(i));
+      factor_group.enforce_group(i);
+      num_enforced_ops.push_back(factor_group.size());
+      factor_group.character_table();
+      name.push_back(factor_group.get_name());
+    }
+    lattice.set_tol(orig_tol);
+
+    for(Index i = 0; i < tols.size(); i++) {
+      std::cout << tols[i] << "\t" << num_ops[i] << "\t" << is_group[i] << "\t" << num_enforced_ops[i] << "\t name: " << name[i] << "\n";
+    }
+
+    return;
+  }
+}
 
 namespace CASM {
 
@@ -29,7 +69,7 @@ namespace CASM {
 
       add_help_suboption();
       add_coordtype_suboption();
-      add_selection_suboption();
+      add_selection_suboption("NONE");
       add_confignames_suboption();
       add_scelnames_suboption();
       add_dofs_suboption();
@@ -52,17 +92,13 @@ namespace CASM {
 
 namespace Local {
   static bool _dof_analysis(CASM::Completer::SymOption const &opt) {
-    return opt.selection_path().size() || opt.config_strs().size() || opt.supercell_strs().size() || opt.dof_strs().size();
-  }
-
-  static bool _prim_analysis(CASM::po::variables_map const &vm) {
-    return vm.count("lattice-point-group") || vm.count("factor-group") || vm.count("crystal-point-group");
-
+    return opt.selection_path() != "NONE" || opt.config_strs().size() || opt.supercell_strs().size() || opt.dof_strs().size();
   }
 
   static bool _symmetrize(CASM::po::variables_map const &vm) {
     return vm.count("symmetrize");
   }
+
 }
 
 namespace CASM {
@@ -109,6 +145,49 @@ namespace CASM {
   }
 
   int SymCommand::run() const {
+
+    if(Local::_symmetrize(vm())) {
+      fs::path poscar_path = opt().poscar_path();
+      double tol = opt().tol();
+      log() << "\n***************************\n" << std::endl;
+      log() << "Symmetrizing: " << poscar_path << std::endl;
+      log() << "with tolerance: " << tol << std::endl;
+      Structure struc(poscar_path);
+      struc = Structure(xtal::make_primitive(struc));
+
+      int biggest = struc.factor_group().size();
+      BasicStructure basic_tmp = struc;
+      // a) symmetrize the lattice vectors
+      Lattice lat = basic_tmp.lattice();
+      lat = xtal::symmetrize(lat, tol);
+      lat.set_tol(tol);
+      basic_tmp.set_lattice(lat, FRAC);
+
+      Structure tmp(basic_tmp);
+
+      tmp.factor_group();
+      // b) find factor group with same tolerance
+      ::print_factor_group_convergence(tmp, tmp.structure().lattice().tol(), tol, (tol - tmp.structure().lattice().tol()) / 10.0, std::cout);
+      // c) symmetrize the basis sites
+      SymGroup g = tmp.factor_group();
+      tmp = xtal::symmetrize(tmp, g);
+
+      //TODO: Why are we doing this twice?
+      g = tmp.factor_group();
+      tmp = xtal::symmetrize(tmp, g);
+      if(tmp.factor_group().is_group(tol) && (tmp.factor_group().size() > biggest)) {
+        struc = tmp;
+      }
+      struc = Structure(xtal::make_primitive(struc));
+      fs::ofstream file_i;
+      fs::path POSCARpath_i = "POSCAR_sym";
+      file_i.open(POSCARpath_i);
+      VaspIO::PrintPOSCAR p_i(xtal::make_simple_structure(struc), struc.structure().title());
+      p_i.print(file_i);
+      file_i.close();
+      return 0;
+    }
+
     //std::string name;
     COORD_TYPE coordtype;
 
@@ -120,11 +199,10 @@ namespace CASM {
     SymGroup lattice_pg(SymGroup::lattice_point_group(prim.lattice()));
     lattice_pg.character_table();
 
-    if(Local::_prim_analysis(vm())) {
+    if(!Local::_dof_analysis(opt())) {
       log() << "  Lattice point group size: " << lattice_pg.size() << std::endl;
       log() << "  Lattice point group is: " << lattice_pg.get_name() << std::endl << std::endl;
 
-      log() << "Generating factor group. " << std::endl << std::endl;
 
       log() << "  Factor group size: " << prim.factor_group().size() << std::endl;
 
@@ -150,51 +228,6 @@ namespace CASM {
       }
     }
 
-    if(Local::_symmetrize(vm())) {
-      fs::path poscar_path = opt().poscar_path();
-      double tol = opt().tol();
-      log() << "\n***************************\n" << std::endl;
-      log() << "Symmetrizing: " << poscar_path << std::endl;
-      log() << "with tolerance: " << tol << std::endl;
-      Structure struc(poscar_path);
-      Structure tprim;
-      if(!struc.is_primitive(tprim)) {
-        struc = tprim;
-      }
-      int biggest = struc.factor_group().size();
-      Structure tmp = struc;
-      // a) symmetrize the lattice vectors
-      Lattice lat = tmp.lattice();
-      lat = xtal::symmetrize(lat, tol);
-      lat.set_tol(tol);
-
-      tmp.set_lattice(lat, FRAC);
-
-      tmp.factor_group();
-      // b) find factor group with same tolerance
-      tmp.fg_converge(tol);
-      // c) symmetrize the basis sites
-      SymGroup g = tmp.factor_group();
-      tmp = xtal::symmetrize(tmp, g);
-
-      //TODO: Why are we doing this twice?
-      g = tmp.factor_group();
-      tmp = xtal::symmetrize(tmp, g);
-      if(tmp.factor_group().is_group(tol) && (tmp.factor_group().size() > biggest)) {
-        struc = tmp;
-      }
-      if(!struc.is_primitive(tprim)) {
-        struc = tprim;
-      }
-      fs::ofstream file_i;
-      fs::path POSCARpath_i = "POSCAR_sym";
-      file_i.open(POSCARpath_i);
-      VaspIO::PrintPOSCAR p_i(make_simple_structure(struc), struc.title());
-      p_i.print(file_i);
-      file_i.close();
-      return 0;
-
-    }
     coordtype = opt().coordtype_enum();
 
 

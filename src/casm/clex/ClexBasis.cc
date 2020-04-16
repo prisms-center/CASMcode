@@ -7,7 +7,7 @@
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/app/AppIO.hh" // necessary for write_prim() function
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/BasicStructure.hh"
 
 #include "casm/global/eigen.hh"
 

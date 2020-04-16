@@ -13,14 +13,13 @@
 
 namespace CASM {
   namespace xtal {
-    class Structure;
     class Site;
   }
-  using xtal::Structure;
   using xtal::Site;
   using xtal::UnitCellCoord;
 
   class Supercell;
+  class Structure;
 
   template<typename OrbitType> struct OrbitGenerators;
 

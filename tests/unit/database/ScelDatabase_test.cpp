@@ -77,7 +77,7 @@ TEST(ScelDatabase_Test, Test1) {
   int minvol = 1;
   int maxvol = 10;
   ScelEnumProps enum_props(minvol, maxvol + 1);
-  auto fg = prim.factor_group();
+  const auto &fg = prim.factor_group();
   SuperlatticeEnumerator lat_enum(fg.begin(), fg.end(), prim.lattice(), enum_props);
   EXPECT_EQ(true, true);
   EXPECT_EQ(std::distance(lat_enum.begin(), lat_enum.end()), 87);

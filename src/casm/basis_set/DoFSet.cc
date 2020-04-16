@@ -9,24 +9,22 @@
 
 namespace CASM {
 
-  DoFSet::DoFSet(AnisoValTraits const &_traits) :
-    m_traits(_traits),
-    m_info(SymGroupRepID(), Eigen::MatrixXd::Zero(m_traits.dim(), 0)) {
-
+  DoFSet::DoFSet(BasicTraits const &_type, const std::unordered_set<std::string> &_excluded_occupants)
+    : m_traits(_type), m_info(SymGroupRepID(), Eigen::MatrixXd::Zero(m_traits.dim(), 0)), m_excluded_occs(_excluded_occupants) {
   }
 
+  DoFSet::DoFSet(BasicTraits const &_type) : DoFSet(_type, std::unordered_set<std::string>()) {}
 
   //********************************************************************
   void DoFSet::allocate_symrep(SymGroup const &_group) const {
     if(!m_info.symrep_ID().empty())
       throw std::runtime_error("In DoFSet::allocate_symrep(), representation has already been allocated for this symrep.");
-    //std::cout << "Allocating symrep...\n"
+    // std::cout << "Allocating symrep...\n"
     m_info.set_symrep_ID(_group.allocate_representation());
-
   }
   //********************************************************************
 
-  bool DoFSet::identical(DoFSet const &rhs)const {
+  bool DoFSet::identical(DoFSet const &rhs) const {
     if(!std::equal(begin(), end(), rhs.begin(), compare_no_value)) {
       return false;
     }
@@ -43,6 +41,20 @@ namespace CASM {
 
   //********************************************************************
 
+  void DoFSet::lock_IDs() {
+    for(ContinuousDoF &dof : this->m_components) {
+      dof.lock_ID();
+    }
+    return;
+  }
+
+  void DoFSet::set_sequential_IDs() {
+    for(int i = 0; i < this->m_components.size(); ++i) {
+      m_components[i].set_ID(i);
+    }
+    return;
+  }
+
   bool DoFSet::update_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs) {
 
     Index ID_ind;
@@ -54,7 +66,7 @@ namespace CASM {
       if(ID_ind < after_IDs.size() && !m_components[i].is_locked()) {
         m_components[i].set_ID(after_IDs[ID_ind]);
         // The new ID only changes the formula if the corresponding coeff is nonzero
-        //if(!almost_zero(m_coeffs[i]))
+        // if(!almost_zero(m_coeffs[i]))
         is_updated = true;
       }
     }
@@ -68,7 +80,7 @@ namespace CASM {
       if(json.contains("coordinate_space"))
       m_info.basis=json["coordinate_space"].get<Eigen::MatrixXd>();
     */
-    //std::vector<ContinuousDoF> tdof;
+    // std::vector<ContinuousDoF> tdof;
 
     m_components.clear();
     m_excluded_occs.clear();
@@ -83,19 +95,19 @@ namespace CASM {
         std::vector<std::string> anames;
         json.get_if(anames, "axis_names");
         if(anames.size() != it->size()) {
-          throw std::runtime_error("Parsing DoF " + type_name() + ", field \"axes\" must have the same number of elements as field \"axes\"");
+          throw std::runtime_error("Parsing DoF " + type_name() +
+                                   ", field \"axes\" must have the same number of elements as field \"axes\"");
         }
 
         for(std::string const &aname : anames)
-          m_components.push_back(ContinuousDoF(traits(),
-                                               aname,
+          m_components.push_back(ContinuousDoF(traits(), aname,
                                                -1, // ID
-                                               -std::numeric_limits<double>::infinity(),
-                                               std::numeric_limits<double>::infinity()));
+                                               -std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()));
 
         Eigen::MatrixXd tbasis = it->get<Eigen::MatrixXd>().transpose();
         if(tbasis.rows() != traits().dim()) {
-          throw std::runtime_error("Parsing DoF " + type_name() + ", number of columns in field \"axes\" must be " + std::to_string(traits().dim()));
+          throw std::runtime_error("Parsing DoF " + type_name() + ", number of columns in field \"axes\" must be " +
+                                   std::to_string(traits().dim()));
         }
         m_info.set_basis(tbasis);
       }
@@ -105,26 +117,24 @@ namespace CASM {
       if(is_error) {
         std::stringstream ss;
         ss << json;
-        throw std::runtime_error("Parsing malformed JSON DoF object " + ss.str() + " each element of object \"basis\" must be an array containing " + std::to_string(traits().dim() + 1) + " elements.\n The first element of each sub-array must be a string, and the remaining elements must be numbers. ");
+        throw std::runtime_error(
+          "Parsing malformed JSON DoF object " + ss.str() + " each element of object \"basis\" must be an array containing " +
+          std::to_string(traits().dim() + 1) +
+          " elements.\n The first element of each sub-array must be a string, and the remaining elements must be numbers. ");
       }
-
     }
     else {
       m_info.set_basis(Eigen::MatrixXd::Identity(traits().dim(), traits().dim()));
       for(std::string var_name : traits().standard_var_names()) {
-        //std::cout << "Adding var_name " << var_name << "\n";
-        m_components.push_back(ContinuousDoF(traits(),
-                                             var_name,
+        // std::cout << "Adding var_name " << var_name << "\n";
+        m_components.push_back(ContinuousDoF(traits(), var_name,
                                              -1, // ID
-                                             -std::numeric_limits<double>::infinity(),
-                                             std::numeric_limits<double>::infinity()));
+                                             -std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()));
         if(traits().global())
           m_components.back().lock_ID();
-
       }
     }
-    //traits().from_json(*this, json);
-
+    // traits().from_json(*this, json);
   }
 
   //********************************************************************
@@ -137,10 +147,23 @@ namespace CASM {
     if(!m_excluded_occs.empty())
       json["excluded_occupants"] = m_excluded_occs;
 
-    //DoF::traits(type_name()).to_json(*this, json);
+    // DoF::traits(type_name()).to_json(*this, json);
     return json;
   }
 
+  DoFSet DoFSet::make_default(DoFSet::BasicTraits const &_type) {
+    DoFSet result(_type);
+    result.m_info.set_basis(Eigen::MatrixXd::Identity(_type.dim(), _type.dim()));
+    for(std::string var_name : _type.standard_var_names()) {
+      // std::cout << "Adding var_name " << var_name << "\n";
+      result.m_components.push_back(ContinuousDoF(_type, var_name,
+                                                  -1, // ID
+                                                  -std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()));
+      if(_type.global())
+        result.m_components.back().lock_ID();
+    }
+    return result;
+  }
   //********************************************************************
 
   /// \brief Apply SymOp to a DoFSet
@@ -168,21 +191,4 @@ namespace CASM {
 
   //********************************************************************
 
-  DoFSet DoFSet::make_default(AnisoValTraits const &_type) {
-    DoFSet result(_type);
-    result.m_info.set_basis(Eigen::MatrixXd::Identity(_type.dim(), _type.dim()));
-    for(std::string var_name : _type.standard_var_names()) {
-      //std::cout << "Adding var_name " << var_name << "\n";
-      result.m_components.push_back(ContinuousDoF(_type,
-                                                  var_name,
-                                                  -1, // ID
-                                                  -std::numeric_limits<double>::infinity(),
-                                                  std::numeric_limits<double>::infinity()));
-      if(_type.global())
-        result.m_components.back().lock_ID();
-
-    }
-    return result;
-  }
-
-}
+} // namespace CASM

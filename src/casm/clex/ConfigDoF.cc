@@ -6,6 +6,7 @@
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/symmetry/SymPermutation.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/basis_set/Adapter.hh"
 
 
 namespace CASM {
@@ -193,6 +194,9 @@ namespace CASM {
     A.swap(B);
   }
 
+  std::vector<SymGroupRepID> occ_symrep_IDs(Structure const &_struc) {
+    return _struc.occupant_symrepIDs();
+  }
 
 }
 

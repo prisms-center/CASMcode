@@ -61,7 +61,6 @@ casm_basis_set_include_HEADERS = \
     include/casm/basis_set/BasisSet.hh\
     include/casm/basis_set/DisplacementDoFTraits.hh\
     include/casm/basis_set/DoF.hh\
-    include/casm/basis_set/DoFDecl.hh\
     include/casm/basis_set/DoFIsEquivalent.hh\
     include/casm/basis_set/DoFIsEquivalent_impl.hh\
     include/casm/basis_set/DoFSet.hh\
@@ -250,7 +249,6 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/Adapter.hh\
     include/casm/crystallography/AnisoValTraits.hh\
     include/casm/crystallography/BasicStructure.hh\
-    include/casm/crystallography/BasicStructure_impl.hh\
     include/casm/crystallography/CanonicalForm.hh\
     include/casm/crystallography/Coordinate.hh\
     include/casm/crystallography/CoordinateSystems.hh\
@@ -259,7 +257,6 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/LatticeEnumEquivalents.hh\
     include/casm/crystallography/LatticeIsEquivalent.hh\
     include/casm/crystallography/LatticeMap.hh\
-    include/casm/crystallography/LatticePointWithin.hh\
     include/casm/crystallography/Lattice_impl.hh\
     include/casm/crystallography/LinearIndexConverter.hh\
     include/casm/crystallography/Molecule.hh\

@@ -48,7 +48,6 @@ libcasm_la_SOURCES = \
     include/casm/basis_set/BasisSet.hh\
     include/casm/basis_set/DisplacementDoFTraits.hh\
     include/casm/basis_set/DoF.hh\
-    include/casm/basis_set/DoFDecl.hh\
     include/casm/basis_set/DoFIsEquivalent.hh\
     include/casm/basis_set/DoFIsEquivalent_impl.hh\
     include/casm/basis_set/DoFSet.hh\
@@ -182,7 +181,6 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/Adapter.hh\
     include/casm/crystallography/AnisoValTraits.hh\
     include/casm/crystallography/BasicStructure.hh\
-    include/casm/crystallography/BasicStructure_impl.hh\
     include/casm/crystallography/CanonicalForm.hh\
     include/casm/crystallography/Coordinate.hh\
     include/casm/crystallography/CoordinateSystems.hh\
@@ -191,7 +189,6 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/LatticeEnumEquivalents.hh\
     include/casm/crystallography/LatticeIsEquivalent.hh\
     include/casm/crystallography/LatticeMap.hh\
-    include/casm/crystallography/LatticePointWithin.hh\
     include/casm/crystallography/Lattice_impl.hh\
     include/casm/crystallography/LinearIndexConverter.hh\
     include/casm/crystallography/Molecule.hh\
@@ -803,6 +800,7 @@ libcasm_la_SOURCES = \
     src/casm/clex/RemoveSupercell.cc\
     src/casm/clex/ScelEnum.cc\
     src/casm/clex/ScelEnumEquivalents.cc\
+    src/casm/clex/SimpleStructureTools.cc\
     src/casm/clex/SuperConfigEnum.cc\
     src/casm/clex/Supercell.cc\
     src/casm/clex/SupercellIO.cc\
@@ -814,17 +812,20 @@ libcasm_la_SOURCES = \
     src/casm/completer/Complete.cc\
     src/casm/completer/Handlers.cc\
     src/casm/container/Permutation.cc\
+    src/casm/container/io/PermutationIO.cc\
     src/casm/crystallography/AnisoValTraits.cc\
     src/casm/crystallography/BasicStructure.cc\
+    src/casm/crystallography/BasicStructureTools.cc\
     src/casm/crystallography/CanonicalForm.cc\
     src/casm/crystallography/Coordinate.cc\
     src/casm/crystallography/CoordinateSystems.cc\
+    src/casm/crystallography/DoFSet.cc\
     src/casm/crystallography/HermiteCounter.cc\
+    src/casm/crystallography/IntegralCoordinateWithin.cc\
     src/casm/crystallography/Lattice.cc\
     src/casm/crystallography/LatticeEnumEquivalents.cc\
     src/casm/crystallography/LatticeIsEquivalent.cc\
     src/casm/crystallography/LatticeMap.cc\
-    src/casm/crystallography/LatticePointWithin.cc\
     src/casm/crystallography/LinearIndexConverter.cc\
     src/casm/crystallography/Molecule.cc\
     src/casm/crystallography/Niggli.cc\
@@ -833,13 +834,21 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/SimpleStructureTools.cc\
     src/casm/crystallography/Site.cc\
     src/casm/crystallography/SpeciesAttribute.cc\
+    src/casm/crystallography/Strain.cc\
     src/casm/crystallography/StrucMapping.cc\
     src/casm/crystallography/Structure.cc\
+    src/casm/crystallography/Superlattice.cc\
     src/casm/crystallography/SuperlatticeEnumerator.cc\
     src/casm/crystallography/SymTools.cc\
     src/casm/crystallography/SymType.cc\
+    src/casm/crystallography/SymTypeComparator.cc\
     src/casm/crystallography/UnitCellCoord.cc\
     src/casm/crystallography/UnitCellCoordTraits.cc\
+    src/casm/crystallography/io/DoFSetIO.cc\
+    src/casm/crystallography/io/LatticeIO.cc\
+    src/casm/crystallography/io/SimpleStructureIO.cc\
+    src/casm/crystallography/io/SuperlatticeEnumeratorIO.cc\
+    src/casm/crystallography/io/UnitCellCoordIO.cc\
     src/casm/crystallography/io/VaspIO.cc\
     src/casm/database/ConfigData.cc\
     src/casm/database/ConfigDatabase.cc\

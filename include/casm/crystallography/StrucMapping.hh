@@ -9,7 +9,7 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/crystallography/SimpleStructure.hh"
-#include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/Superlattice.hh"
 
 namespace CASM {
   namespace xtal {

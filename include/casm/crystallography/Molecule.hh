@@ -71,14 +71,6 @@ namespace CASM {
       /// \brief Comparison with tolerance (max allowed distance between LHS and RHS, in Angstr.)
       bool identical(AtomPosition const &RHS, double _tol)const;
 
-      /// \brief Apply symmetry (translation is ignored)
-      AtomPosition &apply_sym(const SymOp &op);
-
-      template<typename ExternSymOp>
-      AtomPosition &apply_sym(const SymOp &op) {
-        return this->apply_sym(adapter::Adapter<SymOp, ExternSymOp>()(op));
-      }
-
     private:
       /// Atomic species
       std::string m_species;
@@ -186,13 +178,6 @@ namespace CASM {
         m_atoms = std::move(_atoms);
       }
 
-      Molecule &apply_sym(SymOp const &op);
-
-      template<typename ExternSymOp>
-      Molecule &apply_sym(ExternSymOp const &op) {
-        return this->apply_sym(adapter::Adapter<SymOp, ExternSymOp>()(op));
-      }
-
       /// \brief Check equality of two molecules, within specified tolerance.
       /// Compares atoms, irrespective of order, and attributes (name is not checked)
       bool identical(Molecule const &RHS, double _tol) const;
@@ -233,6 +218,26 @@ namespace CASM {
     }
 
     /** @} */
+  }
+}
+
+namespace CASM {
+  namespace sym {
+    xtal::AtomPosition &apply(const xtal::SymOp &op, xtal::AtomPosition &mutating_atom_pos);
+    xtal::AtomPosition copy_apply(const xtal::SymOp &op, xtal::AtomPosition atom_pos);
+
+    template <typename ExternSymOp>
+    xtal::AtomPosition copy_apply(const ExternSymOp &op, xtal::AtomPosition atom_pos) {
+      return sym::copy_apply(adapter::Adapter<xtal::SymOp, ExternSymOp>()(op), atom_pos);
+    }
+
+    xtal::Molecule &apply(const xtal::SymOp &op, xtal::Molecule &mutating_mol);
+    xtal::Molecule copy_apply(const xtal::SymOp &op, xtal::Molecule mol);
+
+    template <typename ExternSymOp>
+    xtal::Molecule copy_apply(const ExternSymOp &op, xtal::Molecule mol) {
+      return sym::copy_apply(adapter::Adapter<xtal::SymOp, ExternSymOp>()(op), mol);
+    }
   }
 }
 

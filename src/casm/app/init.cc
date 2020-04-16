@@ -2,22 +2,25 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
-#include "casm/global/definitions.hh"
-#include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/casm_io/json/jsonParser.hh"
+#include "casm/app/AppIO.hh"
+#include "casm/app/casm_functions.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/HamiltonianModules.hh"
 #include "casm/app/ProjectBuilder.hh"
-#include "casm/app/casm_functions.hh"
-#include "casm/app/AppIO.hh"
-#include "casm/completer/Handlers.hh"
-#include "casm/clex/PrimClex.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/clex/SimpleStructureTools.hh"
+#include "casm/completer/Handlers.hh"
+#include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/crystallography/CanonicalForm.hh"
-#include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/DoFSet.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/global/definitions.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 
 namespace CASM {
 
@@ -32,12 +35,11 @@ namespace CASM {
   const std::string include_va_opt = "include-va";
 
   // returns {error message, new file extension, new structure}
-  std::tuple<std::string, std::string, BasicStructure<Site> > standardize_prim(BasicStructure<Site> const &prim, bool force) {
+  std::tuple<std::string, std::string, BasicStructure > standardize_prim(BasicStructure const &prim, bool force) {
     /// Check if PRIM is primitive
-    Structure true_prim;
+    xtal::BasicStructure true_prim = prim;
     std::string err;
-    true_prim.set_title(prim.title());
-    if(!prim.is_primitive(true_prim)) {
+    if(!xtal::is_primitive(prim)) {
       //err
       err +=
         "       The structure in the provided file is not primitive. Some CASM\n"
@@ -63,7 +65,7 @@ namespace CASM {
         "       standard orientation.\n\n";
 
       if(!force) {
-        Structure tmp(prim);
+        xtal::BasicStructure tmp(prim);
         tmp.set_lattice(niggli_lat, CART);
         return {err, ".niggli.json", tmp};
       }
@@ -79,7 +81,7 @@ namespace CASM {
 
       if(!force) {
 
-        Structure tmp(prim);
+        xtal::BasicStructure tmp(prim);
         tmp.set_lattice(Lattice(prim.lattice()).make_right_handed(), CART);
         tmp.within();
         return {err, ".right_handed.json", tmp};
@@ -175,13 +177,12 @@ namespace CASM {
     // Going to do conversion:
     if(vm["config"].defaulted() && init_opt.config_strs().empty()) {
       DirectoryStructure dir(root);
-      BasicStructure<Site> prim;
+      BasicStructure prim;
       std::string err_msg;
       std::string extension;
       // Read PRIM or prim.json:
       try {
-        prim = Structure(read_prim(init_opt.prim_path(), TOL, &modules));
-
+        prim = read_prim(init_opt.prim_path(), TOL, &modules);
         std::tie(err_msg, extension, prim) = standardize_prim(prim, vm.count("force"));
       }
       catch(std::runtime_error &e) {
@@ -191,9 +192,11 @@ namespace CASM {
       }
 
       // Add the new DoFs before doing anything else
+      std::map<DoFKey, xtal::DoFSet> prim_global_dofs;
       for(std::string const &doftype : init_opt.dof_strs()) {
-        prim.add_dof(DoFSet::make_default(doftype));
+        prim_global_dofs.emplace(doftype, doftype);
       }
+      prim.set_global_dofs(prim_global_dofs);
 
       // Check error message to see if PRIM did not meet standards; report if so
       if(!err_msg.empty()) {
@@ -294,8 +297,8 @@ namespace CASM {
         SimpleStructure::SpeciesMode species_mode = SimpleStructure::SpeciesMode::ATOM;
         if(vm.count(molecule_opt))
           species_mode = SimpleStructure::SpeciesMode::MOL;
-        SimpleStructure sstruc = xtal::make_simple_structure(config, {}, vm.count(relaxed_opt));
-        BasicStructure<Site> new_prim = make_basic_structure(sstruc, init_opt.dof_strs(), species_mode);
+        SimpleStructure sstruc = make_simple_structure(config, {}, vm.count(relaxed_opt));
+        BasicStructure new_prim = xtal::make_basic_structure(sstruc, init_opt.dof_strs(), species_mode);
         fs::path config_dir = primclex.dir().configuration_dir(config.name());
         try {
           fs::create_directories(config_dir);

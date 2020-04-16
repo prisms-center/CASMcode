@@ -1,7 +1,5 @@
 #include "casm/container/Permutation.hh"
 #include "casm/misc/algorithm.hh"
-#include "casm/casm_io/container/json_io.hh"
-#include "casm/casm_io/container/stream_io.hh"
 
 namespace CASM {
 
@@ -165,53 +163,4 @@ namespace CASM {
 
   //**************************************************************
 
-  jsonParser &Permutation::to_json(jsonParser &json) const {
-    return CASM::to_json(m_perm_array, json);
-    /*    json.put_array();
-    for(Index i = 0; i < size(); i++)
-      json.push_back(m_perm_array[i]);
-    */
-    //return json;
-  }
-
-  //**************************************************************
-
-  void Permutation::from_json(const jsonParser &json) {
-    try {
-
-      CASM::from_json(m_perm_array, json);
-      /*m_perm_array.resize(json.size());
-      for(Index i = 0; i < json.size(); i++)
-      from_json(m_perm_array[i], json[i]);*/
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
-  }
-
-  //**************************************************************
-
-  std::ostream &operator<<(std::ostream &out, const Permutation &perm) {
-    out << perm.perm_array();
-    return out;
-  }
-
-  //**************************************************************
-
-  jsonParser &to_json(const Permutation &perm, jsonParser &json) {
-    return perm.to_json(json);
-  }
-
-  //**************************************************************
-
-  void from_json(Permutation &perm, const jsonParser &json) {
-    try {
-      perm.from_json(json);
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
-  }
 }

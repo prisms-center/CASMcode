@@ -248,6 +248,11 @@ namespace CASM {
       m_local_dofs[dof.first] = LocalContinuousConfigDoFValues(ttraits, _N_sublat, _N_vol, Eigen::MatrixXd::Zero(dim, _N_sublat * _N_vol), dof.second);
     }
   }
+
+  class Structure;
+
+  std::vector<SymGroupRepID> occ_symrep_IDs(Structure const &_struc);
+
 }
 
 #endif

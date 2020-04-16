@@ -11,6 +11,7 @@
 
 namespace CASM {
   namespace xtal {
+    class Site;
     class SimpleStructure;
   }
   using xtal::SimpleStructure;

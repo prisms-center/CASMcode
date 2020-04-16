@@ -12,7 +12,6 @@ namespace CASM {
   namespace xtal {
     class Lattice;
     class Site;
-    template<typename T>
     class BasicStructure;
     struct MappingNode;
     class SimpleStructure;
@@ -145,7 +144,7 @@ namespace CASM {
 
   class PrimStrucMapCalculator : public SimpleStrucMapCalculator {
   public:
-    PrimStrucMapCalculator(BasicStructure<Site> const &_prim,
+    PrimStrucMapCalculator(BasicStructure const &_prim,
                            std::vector<SymOp> const &symgroup = {},
                            SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM);
 
@@ -155,7 +154,7 @@ namespace CASM {
       return new PrimStrucMapCalculator(*this);
     }
 
-    BasicStructure<Site> m_prim;
+    BasicStructure m_prim;
 
   };
 

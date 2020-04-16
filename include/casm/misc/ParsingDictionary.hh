@@ -2,6 +2,7 @@
 #define CASM_ParsingDictionary
 
 #include "casm/misc/unique_cloneable_map.hh"
+#include "casm/misc/CASM_math.hh"
 namespace CASM {
   namespace ParsingDictionary_impl {
 

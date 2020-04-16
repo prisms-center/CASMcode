@@ -11,8 +11,6 @@
 
 namespace CASM {
 
-  class jsonParser;
-
   /// Permutation is a an operator that permutes indices or items in a list.
   /// Permutations are defined such that for an initial array
   ///        std::vector<THINGS> before;
@@ -114,13 +112,7 @@ namespace CASM {
     }
 
     Permutation operator*(const Permutation &RHS) const;
-
-    jsonParser &to_json(jsonParser &json) const;
-    void from_json(const jsonParser &json);
   };
-
-  jsonParser &to_json(const Permutation &value, jsonParser &json);
-  void from_json(Permutation &value, const jsonParser &json);
 
   std::ostream &operator<<(std::ostream &, const Permutation &);
 

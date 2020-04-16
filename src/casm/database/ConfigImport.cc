@@ -2,6 +2,7 @@
 
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
+#include "casm/crystallography/io/SimpleStructureIO.hh"
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/clex/ConfigMapping.hh"
 #include "casm/clex/io/json/ConfigMapping.hh"
@@ -171,7 +172,7 @@ namespace CASM {
       return result;
     }
 
-    /// \brief Read BasicStructure<Site> to be imported
+    /// \brief Read BasicStructure to be imported
     ///
     /// If 'p.extension()' == ".json" or ".JSON", read as properties.calc.json
     /// Else, read as VASP POSCAR
@@ -183,9 +184,8 @@ namespace CASM {
         from_json(sstruc, json, "relaxed");
       }
       else {
-        BasicStructure<Site> struc;
         fs::ifstream struc_stream(p);
-        struc.read(struc_stream);
+        BasicStructure struc = BasicStructure::from_poscar_stream(struc_stream);
         sstruc = make_simple_structure(struc);
       }
       return sstruc;

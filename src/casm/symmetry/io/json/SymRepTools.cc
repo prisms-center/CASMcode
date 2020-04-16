@@ -84,16 +84,16 @@ namespace CASM {
           + Local::_to_sequential_string(m + 1, mult);
         auto const &irrep = obj.irreps[l];
         json["irreducible_representations"][irrep_name] = irrep;
-        json["irreducible_representations"][irrep_name]["multiplicity"] = mult;
+        //json["irreducible_representations"][irrep_name]["multiplicity"] = mult;
         if(obj.irreducible_wedge.size()) {
           json["irreducible_representations"]
           ["irreducible_wedge"]
           [irrep_name] = (irrep.trans_mat * obj.irreducible_wedge[0].irrep_wedges()[l].axes).real().transpose();
         }
-        json["irreducible_representations"][irrep_name]["axes"].put_array();
+        json["irreducible_representations"]["irrep_axes"][irrep_name].put_array();
         for(Index a = 0; a < irrep.irrep_dim(); ++a, ++q) {
           std::string axis_name = "q" + Local::_to_sequential_string(q, NQ);
-          json["irreducible_representations"][irrep_name]["axes"].push_back(axis_name);
+          json["irreducible_representations"]["irrep_axes"][irrep_name].push_back(axis_name);
         }
 
         jsonParser &irrep_matrices = json["irreducible_representations"]["symop_matrices"][irrep_name];//.put_array();

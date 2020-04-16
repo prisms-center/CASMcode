@@ -454,6 +454,44 @@ namespace CASM {
 
   }
 
+  namespace adapter {
+    template <typename ToType, typename FromType>
+    struct Adapter;
+
+    /// Convertes any symmetry type to CASM::SymOp.
+    /// Works for any symmetry type that has the get_matrix, get_translation, and
+    /// get_time_reversal accessors defined.
+    ///
+    /// If there is a different symmetry type you would like to adapt for CASM::SymOp,
+    /// simply declare and define accessors get_matrix, get_translation, and
+    /// get_time_reversal
+    template <typename FromType>
+    struct Adapter<SymOp, FromType> {
+      SymOp operator()(const FromType &adaptable) {
+        //TODO: This mapping error is totally arbitrary and I'm not sure what to do about it
+        return SymOp(get_matrix(adaptable), get_translation(adaptable), get_time_reversal(adaptable), CASM::TOL);
+      }
+    };
+
+    /// Converts any container of any symmetry type with begin() and end() defined into SymGroup
+    template <typename FromType>
+    struct Adapter<SymGroup, FromType> {
+      template <typename FromTypeIt>
+      SymGroup operator()(FromTypeIt begin, FromTypeIt end, const Lattice &group_home_lattice) {
+        std::vector<SymOp> casted_group_vector;
+        Adapter<SymOp, typename FromTypeIt::value_type> to_symop_type;
+        for(auto it = begin; it != end; ++it) {
+          casted_group_vector.emplace_back(to_symop_type(*it));
+        }
+        return SymGroup(casted_group_vector, &group_home_lattice);
+      }
+
+      SymGroup operator()(const FromType &adaptable, const Lattice &group_home_lattice) {
+        return this->operator()(adaptable.begin(), adaptable.end(), group_home_lattice);
+      }
+    };
+  }
+
 
   /** @} */
 }

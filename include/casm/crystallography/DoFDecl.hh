@@ -3,7 +3,8 @@
 
 #include <string>
 
-typedef std::string DoFKey;
-
+namespace CASM {
+  typedef std::string DoFKey;
+}
 
 #endif

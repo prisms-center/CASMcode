@@ -11,7 +11,7 @@
 #include "casm/completer/Handlers.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/ScelDatabase.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/BasicStructure.hh"
 
 namespace CASM {
 
@@ -182,7 +182,7 @@ namespace CASM {
 
       ss << "       For this project, the expected order is:\n"
          << "        '[";
-      auto names = struc_molecule_name(prim);
+      auto names = xtal::struc_molecule_name(prim);
       for(int i = 0; i < names.size(); i++) {
         ss << names[i];
         if(i != names.size() - 1) {

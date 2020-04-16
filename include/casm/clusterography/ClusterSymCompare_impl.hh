@@ -2,6 +2,8 @@
 #define CASM_ClusterSymCompare_impl
 
 #include "casm/clusterography/ClusterSymCompare.hh"
+#include "casm/crystallography/IntegralCoordinateWithin.hh"
+#include "casm/global/eigen.hh"
 #include "casm/symmetry/SymPermutation.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 
@@ -131,6 +133,11 @@ namespace CASM {
     m_bring_within_f(bring_within_f),
     m_prim(prim_ptr),
     m_tol(tol) {}
+
+  template<typename Element>
+  ScelPeriodicSymCompare<Element>::
+  ScelPeriodicSymCompare(PrimType_ptr prim_ptr, const Eigen::Matrix3l &transformation_matrix, double tol):
+    ScelPeriodicSymCompare(prim_ptr, xtal::IntegralCoordinateWithin_f(transformation_matrix), tol) {}
 
   /// \brief Prepare an element for comparison
   ///

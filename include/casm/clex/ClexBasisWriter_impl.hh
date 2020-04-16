@@ -612,7 +612,7 @@ namespace CASM {
               << "  ";
           clex.prim().basis()[nb].print(out);
           out << "\n";
-          out << DoFType::traits(it->first).site_basis_description((it->second)[nb], clex.prim().basis()[nb]);
+          out << DoFType::traits(it->first).site_basis_description((it->second)[nb], clex.prim().basis()[nb], nb);
         }
       }
 

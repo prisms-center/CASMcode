@@ -1,58 +1,68 @@
 #include <exception>
+#include <set>
+#include <string>
+#include <vector>
 
+#include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/DoFSet.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/Molecule.hh"
+#include "casm/crystallography/SymTools.hh"
 
-#include "casm/casm_io/container/json_io.hh"
-#include "casm/basis_set/DoFTraits.hh"
-#include "casm/basis_set/OccupationDoFTraits.hh"
-#include "casm/basis_set/DoFIsEquivalent.hh"
-#include "casm/basis_set/DoFIsEquivalent_impl.hh"
-#include "casm/basis_set/DoF.hh"
+namespace {
+  using namespace CASM;
+  bool occupant_dof_are_equal(const std::vector<xtal::Molecule> &LHS, const std::vector<xtal::Molecule> &RHS, double tol) {
+    if(RHS.size() != LHS.size())
+      return false;
+    Index j;
+    for(Index i = 0; i < LHS.size(); ++i) {
+      for(j = 0; j < RHS.size(); ++j) {
+        if(LHS[i].identical(RHS[j], tol)) {
+          break;
+        }
+      }
+      if(j == RHS.size()) {
+        return false;
+      }
+    }
+    return true;
+  }
+}
 
 namespace CASM {
   namespace xtal {
 
 
+    //TODO: Can we delete this?
     Site::Site(const Lattice &init_home) :
       Coordinate(init_home),
       m_label(-1),
-      m_type_ID(-1),
-      m_occupant_dof(OccupantDoF<Molecule>(DoFType::occupation().val_traits(), "s" /*variable name*/, std::vector<Molecule>()).clone()) {
-      //occupant_dof.set_value(0);
+      m_type_ID(-1) {
     }
 
     //****************************************************
 
-    Site::Site(const Coordinate &init_pos, const std::string &occ_name) :
-      Coordinate(init_pos),
-      m_label(-1),
-      m_type_ID(-1),
-      m_occupant_dof(OccupantDoF<Molecule>(DoFType::occupation().val_traits(), "s"/* variable name*/, std::vector<Molecule>()).clone()) {
-
-      std::vector<Molecule> tocc;
-      tocc.push_back(Molecule::make_atom(occ_name));
-      m_occupant_dof->set_domain(tocc);
-      m_occupant_dof->set_value(0);
-
-      return;
-    }
+    Site::Site(const Coordinate &init_pos, const std::string &occ_name) : Site(init_pos, std::vector<Molecule> {
+      Molecule::make_atom(occ_name)
+    }) {}
 
     /// \brief Construct site with initial position and the allowed Molecule
-    Site::Site(const Coordinate &init_pos, std::initializer_list<Molecule> site_occ) :
+    Site::Site(const Coordinate &init_pos, const std::vector<Molecule> &site_occ, const std::map<std::string, SiteDoFSet> &site_dof) :
       Coordinate(init_pos),
       m_label(-1),
       m_type_ID(-1),
-      m_occupant_dof(OccupantDoF<Molecule>(DoFType::occupation().val_traits(), "s"/* variable name*/, std::vector<Molecule>(site_occ)).clone()) {
-
+      m_occupant_dof(site_occ),
+      m_dof_map(site_dof) {
     }
+
+    Site::Site(const Coordinate &init_pos, const std::vector<Molecule> &site_occ) : Site(init_pos, site_occ, std::map<std::string, SiteDoFSet>()) {}
 
     Site::~Site() {}
 
     //****************************************************
 
-    const OccupantDoF<Molecule> &Site::occupant_dof() const {
-      return *m_occupant_dof;
+    const std::vector<Molecule> &Site::occupant_dof() const {
+      return m_occupant_dof;
     }
 
     //****************************************************
@@ -63,7 +73,7 @@ namespace CASM {
 
     //****************************************************
 
-    DoFSet const &Site::dof(std::string const &_dof_type) const {
+    SiteDoFSet const &Site::dof(std::string const &_dof_type) const {
       auto it = m_dof_map.find(_dof_type);
       if(it != m_dof_map.end())
         return (it->second);
@@ -94,18 +104,12 @@ namespace CASM {
         if(_dof.second.traits().time_reversal_active())
           return true;
 
-      for(auto const &mol : occupant_dof().domain())
+      for(auto const &mol : this->occupant_dof())
         if(mol.time_reversal_active())
           return true;
       return false;
     }
 
-    //****************************************************
-
-    bool Site::is_vacant()const {
-      return occupant_dof().is_specified()
-             && occupant_dof().occ().is_vacancy();
-    }
 
     //****************************************************
 
@@ -115,53 +119,21 @@ namespace CASM {
 
     //****************************************************
 
-    std::string Site::occ_name() const {
-      if(!occupant_dof().is_specified())
-        return "?";
-      else
-        return occupant_dof().occ().name();
-    }
+    /* Site &Site::_apply_sym_attributes(const SymOp &op) { */
+    /*   for(Index i = 0; i < occupant_dof().size(); i++) */
+    /*     m_occupant_dof[i].apply_sym(op); */
 
-    //****************************************************
+    /*   auto it = m_dof_map.begin(); */
+    /*   for(; it != m_dof_map.end(); ++it) */
+    /*     it->second = sym::copy_apply(op, it->second); */
 
-    const Molecule &Site::occ() const {
-      return occupant_dof().occ();
-    }
+    /*   m_type_ID = -1; */
+    /*   return *this; */
+    /* } */
 
-    //****************************************************
-    Site &Site::_apply_sym_attributes(const SymOp &op) {
-      for(Index i = 0; i < occupant_dof().size(); i++)
-        (*m_occupant_dof)[i].apply_sym(op);
-
-      auto it = m_dof_map.begin();
-      for(; it != m_dof_map.end(); ++it)
-        it->second = copy_apply(op, it->second);
-
-      m_type_ID = -1;
-      return *this;
-    }
-    //****************************************************
-    /**
-     *
-     */
-    //****************************************************
-
-    Site &Site::apply_sym(const SymOp &op) {
-      Coordinate::apply_sym(op);
-      _apply_sym_attributes(op);
-      return *this;
-    }
-
-    //****************************************************
-    /**
-     *
-     */
-    //****************************************************
-
-    /* Site &Site::apply_sym_no_trans(const SymOp &op) { */
-    /*   Coordinate::apply_sym_no_trans(op); */
+    /* Site &Site::apply_sym(const SymOp &op) { */
+    /*   Coordinate::apply_sym(op); */
     /*   _apply_sym_attributes(op); */
-
     /*   return *this; */
     /* } */
 
@@ -210,28 +182,11 @@ namespace CASM {
     //*******************************************************************************************
     /**
      *
-     *
-     */
-    //*******************************************************************************************
-
-    bool Site::compare(const Site &test_site, const Coordinate &shift) const {
-
-      return (compare_type(test_site)) && (min_dist(test_site + shift) < lattice().tol());
-
-    }
-
-    //*******************************************************************************************
-    /**
-     *
      */
     //*******************************************************************************************
 
     bool Site::compare_type(const Site &test_site) const {
-      assert(((occupant_dof().size() <= 1 || test_site.occupant_dof().size() <= 1)
-              || (occupant_dof().is_specified() == test_site.occupant_dof().is_specified()))
-             && "In Site::compare_type() comparing initialized occupant to uninitialized occupant!  This isn't a good idea!");
-
-      return (_type_ID() == test_site._type_ID()) && occupant_dof().value() == test_site.occupant_dof().value();
+      return _type_ID() == test_site._type_ID();
     }
 
     //*******************************************************************************************
@@ -269,23 +224,17 @@ namespace CASM {
 
     //****************************************************
 
-    void Site::set_allowed_occupants(std::vector<Molecule> _occ_domain) {
-      m_occupant_dof->set_domain(std::move(_occ_domain));
+    void Site::set_allowed_occupants(std::vector<Molecule> const &_new_occ_domain) {
+      m_occupant_dof = _new_occ_domain;
       m_type_ID = -1;
     }
 
     //****************************************************
 
-    void Site::set_occ_value(int new_val) {
-      m_occupant_dof->set_value(new_val);
-    }
-
-    //****************************************************
-
-    void Site::set_dofs(std::map<std::string, DoFSet> _dofs) {
+    void Site::set_dofs(std::map<std::string, SiteDoFSet> _dofs) {
       m_dof_map = std::move(_dofs);
+      m_type_ID = -1;
     }
-
 
     //****************************************************
 
@@ -295,15 +244,6 @@ namespace CASM {
         occ_list.push_back(occupant_dof()[i].name());
       }
       return occ_list;
-    }
-
-    //****************************************************
-
-    void Site::set_basis_ind(Index new_ind) {
-      Coordinate::set_basis_ind(new_ind);
-      m_occupant_dof->set_ID(new_ind);
-      for(auto &dof : m_dof_map)
-        dof.second.set_ID(new_ind);
     }
 
     //****************************************************
@@ -342,9 +282,7 @@ namespace CASM {
       std::vector<Molecule> tocc;
 
       ch = stream.peek();
-      //    while(ch != '\n' && !stream.eof()) {
       while(ch != '\n' && ch != ':' && !stream.eof()) {
-        //      while((ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z') && ch != '\n' && !stream.eof()) {
         while((ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z') && ch != '\n' && ch != ':' && !stream.eof()) {
           stream.ignore();
           ch = stream.peek();
@@ -366,25 +304,26 @@ namespace CASM {
         stream >> mol_name;
 
         if(tocc.size()) {
-          m_occupant_dof->set_domain(tocc);
+          m_occupant_dof = tocc;
           Index index = tocc.size();
           for(Index i = 0; i < tocc.size(); i++)
             if(tocc[i].name() == mol_name) {
               index = i;
               break;
             }
-          if(index == tocc.size()) {
-            std::stringstream ss;
-            ss << "Error in Site::read(): Occupying molecule not listed in possible occupants" << std::endl;
-            ss << "  occupying molecule name: " << mol_name << "  index: " << index << std::endl;
-            ss << "  possible occupants: ";
-            for(Index i = 0; i < tocc.size(); i++)
-              ss << tocc[i].name() << " ";
-            ss << " " << std::endl;
-            throw std::runtime_error(ss.str());
-          }
-          else
-            m_occupant_dof->set_value(index);
+          /* if(index == tocc.size()) { */
+          /*   std::stringstream ss; */
+          /*   ss << "Error in Site::read(): Occupying molecule not listed in possible occupants" << std::endl; */
+          /*   ss << "  occupying molecule name: " << mol_name << "  index: " << index << std::endl; */
+          /*   ss << "  possible occupants: "; */
+          /*   for(Index i = 0; i < tocc.size(); i++) */
+          /*     ss << tocc[i].name() << " "; */
+          /*   ss << " " << std::endl; */
+          /*   throw std::runtime_error(ss.str()); */
+          /* } */
+          /* else { */
+          /*   m_occupant_dof->set_value(index); */
+          /* } */
 
         }
         else {
@@ -395,12 +334,12 @@ namespace CASM {
       }
 
       if(tocc.size()) {
-        m_occupant_dof->set_domain(tocc);
+        m_occupant_dof = tocc;
       }
       else {
         throw std::runtime_error("Error in Site::read(): Trying to read Site info, but no valid input was received.");
       }
-      stream.ignore(1000, '\n');
+      stream.ignore(1000, '\n');    // ????
 
       m_type_ID = -1;
       return;
@@ -433,7 +372,7 @@ namespace CASM {
       tocc.push_back(Molecule::make_atom(elem));
 
       if(tocc.size()) {
-        m_occupant_dof->set_domain(tocc);
+        m_occupant_dof = tocc;
       }
       else {
         throw std::runtime_error("Error in Site::read(): Trying to read Site info, but no valid input was received.");
@@ -454,9 +393,18 @@ namespace CASM {
     void Site::print(std::ostream &stream, Eigen::IOFormat format) const {
       Coordinate::print(stream, 0, format);
       stream << " ";
-      occupant_dof().print(stream);
-      stream << std::flush;
+      for(const Molecule &m : this->occupant_dof()) {
+        stream << m.name() << "  ";
+      }
+      std::cout << std::endl;
 
+      return;
+    }
+
+    void Site::print_occupant_dof(const std::vector<Molecule> &allowed_occupants, std::ostream &out_stream) {
+      for(const Molecule &m : allowed_occupants) {
+        out_stream << m.name() << ' ';
+      }
       return;
     }
 
@@ -471,7 +419,7 @@ namespace CASM {
 
     bool Site::_compare_type_no_ID(const Site &_other) const {
       //compare domain but not value
-      if(!(label() == _other.label() && OccupantDoFIsEquivalent<Molecule>(occupant_dof())(_other.occupant_dof())))
+      if(!(label() == _other.label() && ::occupant_dof_are_equal(occupant_dof(), _other.occupant_dof(), TOL)))
         return false;
 
       if(m_dof_map.size() != _other.m_dof_map.size())
@@ -479,8 +427,7 @@ namespace CASM {
 
       auto it1 = m_dof_map.begin(), it2 = _other.m_dof_map.begin();
       for(; it1 != m_dof_map.end(); ++it1, ++it2)
-        if(!DoFIsEquivalent(it1->second)(it2->second)) {
-          std::cout << "SiteTypes not equivalent!!\n";
+        if(!SiteDoFSetIsEquivalent_f(it1->second, CASM::TOL)(it2->second)) {
           return false;
         }
 
@@ -505,7 +452,7 @@ namespace CASM {
     //****************************************************
 
     Site operator*(const SymOp &LHS, const Site &RHS) {
-      return Site(RHS).apply_sym(LHS);
+      return sym::copy_apply(LHS, RHS);
     }
 
     //****************************************************
@@ -520,7 +467,29 @@ namespace CASM {
       return Site(RHS) += LHS;
     }
 
+  }
 
+  namespace sym {
+    xtal::Site &apply(const xtal::SymOp &op, xtal::Site &mutating_site) {
+      xtal::Site transformed_site = copy_apply(op, mutating_site);
+      std::swap(transformed_site, mutating_site);
+      return mutating_site;
+    }
 
+    xtal::Site copy_apply(const xtal::SymOp &op, xtal::Site site) {
+      xtal::Coordinate transformed_coord = copy_apply(op, static_cast<xtal::Coordinate &>(site));
+
+      std::vector<xtal::Molecule> transformed_occupants = site.occupant_dof();
+      for(xtal::Molecule &occ : transformed_occupants) {
+        apply(op, occ);
+      }
+
+      std::map<std::string, xtal::SiteDoFSet> transformed_dof;
+      for(const auto &name_dof_pr : site.dofs()) {
+        transformed_dof.emplace(name_dof_pr.first, sym::copy_apply(op, name_dof_pr.second));
+      }
+
+      return xtal::Site(transformed_coord, transformed_occupants, transformed_dof);
+    }
   }
 }

@@ -5,6 +5,7 @@
 #include "casm/external/Eigen/Dense"
 #include "casm/global/definitions.hh"
 #include "casm/symmetry/SymGroupRepID.hh"
+#include "casm/crystallography/Strain.hh"
 
 
 //--------------------------------------------------
@@ -31,7 +32,8 @@ namespace CASM {
 
   //Enum type that will define how the strain metrics used to
   //calculate strain order parameters are going to be calculated
-  enum STRAIN_METRIC {GREEN_LAGRANGE = 0, BIOT = 1, HENCKY = 2, EULER_ALMANSI = 3, STRETCH = 4, DISP_GRAD = 5};
+  typedef strain::METRIC STRAIN_METRIC;
+  /* enum STRAIN_METRIC {GREEN_LAGRANGE = 0, BIOT = 1, HENCKY = 2, EULER_ALMANSI = 3, STRETCH = 4, DISP_GRAD = 5}; */
 
 
   class StrainConverter {
@@ -77,7 +79,7 @@ namespace CASM {
         std::cerr << "The Green-Lagrange strain metric will be used for the calculation of all deformation metrics" << std::endl;
         std::cerr << "PLEASE USE WITH CAUTION" << std::endl;
       }
-      STRAIN_METRIC_MODE = GREEN_LAGRANGE;
+      STRAIN_METRIC_MODE = STRAIN_METRIC::GREEN_LAGRANGE;
       curr_metric_func = &StrainConverter::green_lagrange;
       set_conventional_sop_transf_mat();
       set_conventional_order_symmetric();
@@ -87,17 +89,17 @@ namespace CASM {
                     const std::vector<std::vector<Index> >  &_order_strain) :
       STRAIN_METRIC_MODE(_MODE), m_sop_transf_mat(_sop_transf_mat),
       m_order_strain(_order_strain) {
-      if(_MODE == GREEN_LAGRANGE)
+      if(_MODE == STRAIN_METRIC::GREEN_LAGRANGE)
         curr_metric_func = &StrainConverter::green_lagrange;
-      else if(_MODE == BIOT)
+      else if(_MODE == STRAIN_METRIC::BIOT)
         curr_metric_func = &StrainConverter::biot;
-      else if(_MODE == HENCKY)
+      else if(_MODE == STRAIN_METRIC::HENCKY)
         curr_metric_func = &StrainConverter::hencky;
-      else if(_MODE == EULER_ALMANSI)
+      else if(_MODE == STRAIN_METRIC::EULER_ALMANSI)
         curr_metric_func = &StrainConverter::euler_almansi;
-      else if(_MODE == STRETCH)
+      else if(_MODE == STRAIN_METRIC::STRETCH)
         curr_metric_func = &StrainConverter::right_stretch_tensor;
-      else if(_MODE == DISP_GRAD)
+      else if(_MODE == STRAIN_METRIC::DISP_GRAD)
         curr_metric_func = &StrainConverter::disp_grad;
     }
 

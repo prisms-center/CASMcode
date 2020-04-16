@@ -4,6 +4,9 @@
 #include <iostream>
 #include <cstdlib>
 #include <cmath>
+#include <memory>
+#include <unordered_map>
+#include <vector>
 
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
@@ -11,174 +14,149 @@
 #include "casm/symmetry/SymGroup.hh"
 
 namespace CASM {
-  namespace xtal {
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    //  template<typename ClustType>
-    //  class GenericOrbitree;
+  //  template<typename ClustType>
+  //  class GenericOrbitree;
 
-    //  typedef GenericOrbitree<SiteCluster> SiteOrbitree;
+  //  typedef GenericOrbitree<SiteCluster> SiteOrbitree;
 
-    /** \ingroup Structure
-     *  @{
-     */
+  /** \ingroup Structure
+   *  @{
+   */
 
-    ///\brief Structure specifies the lattice and atomic basis of a crystal
-    class Structure : public BasicStructure<Site> {
-    protected: //PROTECTED DATA MEMBERS
+  ///\brief Structure specifies the lattice and atomic basis of a crystal
+  class Structure {
+  private:
 
-      /// Group symmetry operations that map the lattice and basis of Structure onto themselves,
-      /// assuming that the crystal is periodic
-      mutable MasterSymGroup m_factor_group;
+    //TODO: Collect all the symmetry information and package it into a StructureSymInfo class or the like.
+    //Then store alongside the BasicStructure as a shared pointer. This will save you regenerating the factor group
+    //each time you make a copy of *this. It'll also make the custom copy constructor and assignment operators
+    //unnecessary.
 
-      /// This holds the representation id of the permutation representation
-      mutable SymGroupRepID m_basis_perm_rep_ID;
+    /// Group symmetry operations that map the lattice and basis of Structure onto themselves,
+    /// assuming that the crystal is periodic
+    MasterSymGroup m_factor_group;
 
-    private: //PRIVATE METHODS
+    /// This holds the representation id of the permutation representation
+    SymGroupRepID m_basis_perm_rep_ID;
 
-      void main_print(std::ostream &stream, COORD_TYPE mode, bool version5, int option) const;
+    /// Hold the SymRepIDs for the occupant DoF, one for each of the basis sites
+    std::vector<SymGroupRepID> m_occupant_symrepIDs;
 
-      /// Obtain the basis permutation symrep and site dof symreps of factor_group
-      /// sets internal m_basis_perm_rep_ID
-      void _generate_basis_symreps(bool verbose = false) const;
+    /// Hold the SymRepIDs for the continuous DoF, one for each of the basis sites
+    std::vector<SymGroupRepID> m_site_dof_symrepIDs;
 
-      /// Obtain global dof symreps of factor_group
-      void _generate_global_symreps(bool verbose = false) const;
+    /// Holds SymRepIDs for each of the global DoFs, using the DoF name
+    /// as the key to access the SymRepID value
+    std::unordered_map<std::string, SymGroupRepID> m_global_dof_symrepIDs;
 
-      void _fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment);
+    //Flushes out every SymGroupRepID for each site (occupant DoF) and gives it a default value of identity
+    void _reset_occupant_symrepIDs();
 
-    public: //PUBLIC METHODS
+    //Flushes out every SymGroupRepID for each site (continuous DoF) and gives it a default values
+    void _reset_site_dof_symrepIDs();
 
-      //  ****Constructors****
-      Structure() : BasicStructure<Site>() {}
-      explicit Structure(const Lattice &init_lat) : BasicStructure<Site>(init_lat) {}
-      explicit Structure(const BasicStructure<Site> &base) : BasicStructure<Site>(base) {}
-      explicit Structure(const fs::path &filepath);
+    /// Obtain the basis permutation symrep and site dof symreps of factor_group
+    /// sets internal m_basis_perm_rep_ID
+    void _generate_basis_symreps();
 
-      /// Have to explicitly define the copy constructor so that factor_group
-      /// does not depend on the lattice of 'RHS'
-      Structure(const Structure &RHS);
+    /// Obtain global dof symreps of factor_group
+    void _generate_global_symreps();
 
-      ~Structure();
+    void _fg_converge(SymGroup &factor_group, double small_tol, double large_tol, double increment);
 
-      //  ****Inspectors/Accessors****
-      //      - non-const versions try to populate data members before access
-      const MasterSymGroup &factor_group() const;
-      //const MasterSymGroup &factor_group();
-      const SymGroup &point_group() const;
-      //const SymGroup &point_group();
-      SymGroupRep const *basis_permutation_symrep()const;
-      SymGroupRepID basis_permutation_symrep_ID()const override;
+    /// determines primitive cell, finds its factor group using generate_factor_group_slow, and then
+    /// expands the factor group into the supercell using lattice translations
+    void generate_factor_group(); // TOL is max distance for site equivalence, in Angstr.
 
-      // ****Mutators****
+    /// copy all non-derived members
+    void copy_attributes_from(const Structure &RHS);
 
-      //   - Basic assignment/bookkeeping
+    //Don't ever even think about making this non-const, assignable or modifiable in any way.
+    std::shared_ptr<const xtal::BasicStructure> m_structure_ptr;
 
-      /// Have to explicitly define the assignment operator so that sites in this structure
-      /// do not depend on the lattice of 'RHS'
-      Structure &operator=(const Structure &RHS);
+  public:
 
-      /// copy all non-derived members
-      void copy_attributes_from(const Structure &RHS);
+    //TODO: Do we even want automatic conversion?
+    /// Returns constant reference to the structure
+    operator const xtal::BasicStructure &() const;
 
-      /// Notify that it is a temporary object to avoid weird symmetry errors
-      void is_temporary_of(const Structure &RHS) const {
-        if(m_factor_group.size()) {
-          m_factor_group.is_temporary_of(RHS.m_factor_group);
-        }
-      }
+    const xtal::BasicStructure &structure() const {
+      return *this->m_structure_ptr;
+    }
 
-      /// clears symmetry, site internals, and other attributes
-      void reset() override;
+    const std::shared_ptr<const xtal::BasicStructure> &shared_structure() const {
+      return this->m_structure_ptr;
+    }
 
-      ///change the lattice and update site coordinates.  Argument 'mode' specifies which mode is preserved
-      /// e.g.: struc.set_lattice(new_lat, CART) calculates all Cartesian coordinates,
-      ///       invalidates the FRAC coordinates, and changes the lattice
-      void set_lattice(const Lattice &lattice, COORD_TYPE mode);
+    const Lattice &lattice() const {
+      return this->structure().lattice();
+    }
 
-      //   - Symmetry
-
-      /// apply a symmetry operation to the current structure (does not change lattice vectors, because
-      /// 'op' is assumed to be a lattice homomorphism)
-      //Structure &apply_sym(const SymOp &op);  //Anna do this
-
-      /// determines primitive cell, finds its factor group using generate_factor_group_slow, and then
-      /// expands the factor group into the supercell using lattice translations
-      void generate_factor_group() const; // TOL is max distance for site equivalence, in Angstr.
-
-      /// Obtain factor group by testing all operations of the lattice point_group and keep
-      void generate_factor_group_slow() const; // TOL is max distance for site equivalence, in Angstr.
-
-      /// generate factor groups for a range of tol values, prints results to screen (for now)
-      void fg_converge(double large_tol);
-      void fg_converge(double small_tol, double large_tol, double increment);
-
-      /* void symmetrize(const SymGroup &relaxed_factors); */
-      /* void symmetrize(const double &tolerace); */
+    const std::vector<xtal::Site> &basis() const {
+      return this->structure().basis();
+    }
 
 
-      /// fill an empty structure with the basis of its corresponding primitive cell - performs optimized factor_group expansion
-      void fill_supercell(const Structure &prim); //Ivy
+    //TODO: I tried getting rid of this but it seems to get used in almost every casm command right now
+    Structure();
+    explicit Structure(const xtal::BasicStructure &base);
+    explicit Structure(const fs::path &filepath);
 
-      ///  Shortcut routine to create a supercell structure and fill it with sites
-      Structure create_superstruc(const Lattice &scel_lat) const;
+    /// Have to explicitly define the copy constructor so that factor_group
+    /// does not depend on the lattice of 'RHS'
+    Structure(const Structure &RHS);
 
-      /// Figures out which prim basis each superstructure basis corresponds to
-      void map_superstruc_to_prim(Structure &prim); //Added by Ivy 06/29/2013
+    ~Structure() {};
 
-      /// Setting the current occupants of the structure to those specified by an array of integers
-      void set_occs(std::vector <int> occ_index);
+    const MasterSymGroup &factor_group() const;
+    const SymGroup &point_group() const;
+    SymGroupRep const *basis_permutation_symrep()const;
+    SymGroupRepID basis_permutation_symrep_ID()const;
+    std::vector<SymGroupRepID> occupant_symrepIDs() const;
+    std::vector<SymGroupRepID> site_dof_symrepIDs() const;
+    SymGroupRepID global_dof_symrepID(const std::string dof_name)const;
 
-      /// Rearrange basis by grouping atoms by type
-      void sort_basis();
-      //\John G 121212
+    /// Have to explicitly define the assignment operator so that sites in this structure
+    /// do not depend on the lattice of 'RHS'
+    Structure &operator=(const Structure &RHS);
+  };
 
-      ///Translates all atoms in cell
-      Structure &operator+=(const Coordinate &shift);
-      Structure &operator-=(const Coordinate &shift);
+  /// Returns 'converter' which converts site_occupant indices to 'mol_list' indices:
+  ///   mol_list_index = converter[basis_site][site_occupant_index]
+  std::vector< std::vector<Index> > make_index_converter(const Structure &struc, std::vector<xtal::Molecule> mol_list);
 
-      // ****Input/Output****
+  /// Returns 'converter' which converts site_occupant indices to 'mol_name_list' indices:
+  ///   mol_name_list_index = converter[basis_site][site_occupant_index]
+  std::vector< std::vector<Index> > make_index_converter(const Structure &struc, std::vector<std::string> mol_name_list);
 
-      /// For each symmetrically distinct site, print the symmetry operations that map it onto itself
-      void print_site_symmetry(std::ostream &stream, COORD_TYPE mode, int shorttag, double tol);
-      //void print_factor_group(std::ostream &stream) const;
+  /// Returns 'converter_inverse' which converts 'mol_name_list' indices to Site::site_occupant indices:
+  ///  site_occupant_index = converter_inverse[basis_site][mol_name_list_index]
+  std::vector< std::vector<Index> > make_index_converter_inverse(const Structure &struc, std::vector<std::string> mol_name_list);
 
-      bool read_species(); //Ivy 11/27/12
-      void assign_species(std::vector<std::string> &names, std::vector<double> &masses, std::vector<double> &magmoms, std::vector<double> &Us, std::vector<double> &Js); //Added by Ivy
+  //************************************************************************************
 
-    };
+  struct DoFSetInfo;
 
-    //Structure operator*(const SymOp &LHS, const Structure &RHS);
+  std::vector<DoFKey> all_local_dof_types(xtal::BasicStructure const &_struc);
 
-    Structure operator*(const Lattice &LHS, const Structure &RHS);
+  std::vector<DoFKey> continuous_local_dof_types(xtal::BasicStructure const &_struc);
 
-    //Translation operators -- not yet defined
-    Structure operator+(const Coordinate &LHS, const Structure &RHS);
-    Structure operator+(const Structure &LHS, const Coordinate &RHS);
+  std::vector<DoFKey> global_dof_types(xtal::BasicStructure const &_struc);
 
-    //Not yet sure how these will work
-    Structure operator+(const Structure &LHS, const Structure &RHS);
-    Structure operator+(const Structure &LHS, const Lattice &RHS);
-    Structure operator+(const Lattice &LHS, const Structure &RHS);
+  std::map<DoFKey, Index> local_dof_dims(xtal::BasicStructure const &_struc);
 
+  std::map<DoFKey, Index> global_dof_dims(xtal::BasicStructure const &_struc);
 
-    /// Helper Functions
+  std::map<DoFKey, CASM::DoFSetInfo> global_dof_info(xtal::BasicStructure const &_struc);
 
-    /// Returns 'converter' which converts site_occupant indices to 'mol_list' indices:
-    ///   mol_list_index = converter[basis_site][site_occupant_index]
-    std::vector< std::vector<Index> > make_index_converter(const Structure &struc, std::vector<Molecule> mol_list);
+  std::map<DoFKey, std::vector<CASM::DoFSetInfo> > local_dof_info(xtal::BasicStructure const &_struc);
 
-    /// Returns 'converter' which converts site_occupant indices to 'mol_name_list' indices:
-    ///   mol_name_list_index = converter[basis_site][site_occupant_index]
-    std::vector< std::vector<Index> > make_index_converter(const Structure &struc, std::vector<std::string> mol_name_list);
+  Index local_dof_dim(DoFKey const &_name, xtal::BasicStructure const &_struc);
 
-    /// Returns 'converter_inverse' which converts 'mol_name_list' indices to Site::site_occupant indices:
-    ///  site_occupant_index = converter_inverse[basis_site][mol_name_list_index]
-    std::vector< std::vector<Index> > make_index_converter_inverse(const Structure &struc, std::vector<std::string> mol_name_list);
-
-    /** @} */
-  }
+  /** @} */
 }
 
 #endif

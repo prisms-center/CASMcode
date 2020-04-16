@@ -3,7 +3,7 @@
 
 #include "casm/symmetry/ScelOrbitGeneration.hh"
 #include "casm/clex/Supercell.hh"
-#include "casm/crystallography/LatticePointWithin.hh"
+#include "casm/crystallography/IntegralCoordinateWithin.hh"
 
 #include "casm/clex/PrimClex.hh"
 
@@ -12,7 +12,7 @@ namespace CASM {
   template<typename _ElementType>
   ScelCanonicalGenerator<_ElementType>::ScelCanonicalGenerator(const Supercell &_scel) :
     m_scel(&_scel),
-    m_sym_compare(_scel.primclex().shared_prim(), xtal::make_bring_within_f(_scel), _scel.crystallography_tol()) {}
+    m_sym_compare(_scel.primclex().shared_prim(), _scel.transf_mat(), _scel.crystallography_tol()) {}
 
   template<typename _ElementType>
   const Supercell &ScelCanonicalGenerator<_ElementType>::supercell() const {
@@ -85,7 +85,7 @@ namespace CASM {
   ScelIsCanonical<_ElementType>::ScelIsCanonical(
     const Supercell &_scel) :
     m_scel(&_scel),
-    m_sym_compare(_scel.primclex().shared_prim(), xtal::make_bring_within_f(_scel), _scel.crystallography_tol()) {}
+    m_sym_compare(_scel.primclex().shared_prim(), _scel.transf_mat(), _scel.crystallography_tol()) {}
 
   template<typename _ElementType>
   const Supercell &ScelIsCanonical<_ElementType>::supercell() const {

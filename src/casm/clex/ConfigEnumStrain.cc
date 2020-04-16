@@ -11,7 +11,7 @@
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/algorithm.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/BasicStructure.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_ConfigEnumStrain_interface() {
@@ -121,7 +121,7 @@ namespace CASM {
     if(istrain == tdof_types.size())
       throw std::runtime_error("Cannot enumerate strains for project in which strain has not been specified as a degree of freedom.");
     strain_dof_key = tdof_types[istrain];
-    Index dim = primclex.prim().global_dof(strain_dof_key).dim();
+    Index dim = primclex.prim().structure().global_dof(strain_dof_key).dim();
 
     Eigen::MatrixXd axes;
     Eigen::VectorXd min_val, max_val, inc_val;
@@ -247,7 +247,8 @@ namespace CASM {
     if(!sym_axes)
       wedges.push_back(SymRepTools::SubWedge({SymRepTools::IrrepWedge(SymRepTools::IrrepInfo::make_dummy(_axes), _axes)}));
     else
-      wedges = SymRepTools::symrep_subwedges(pg, _primclex.prim().global_dof(strain_dof_key).symrep_ID());
+      /* wedges = SymRepTools::symrep_subwedges(pg, _primclex.prim().structure().global_dof(strain_dof_key).symrep_ID()); */
+      wedges = SymRepTools::symrep_subwedges(pg, _primclex.prim().global_dof_symrepID(strain_dof_key));
 
     //PRINT INFO TO LOG:
     Log &log = _primclex.log();

@@ -11,9 +11,10 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/crystallography/CanonicalForm.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/LatticePointWithin.hh"
+#include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/crystallography/Lattice_impl.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/Niggli.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/NeighborList.hh"
@@ -63,7 +64,7 @@ namespace CASM {
       _prim->err_log() << "superlattice: \n" << superlattice.lat_column_mat() << std::endl;
       _prim->err_log() << "prim lattice: \n" << prim().lattice().lat_column_mat() << std::endl;
       _prim->err_log() << "lin_alg_tol: " << primclex().settings().lin_alg_tol() << std::endl;
-      _prim->err_log() << "transformation matrix: \n" << prim().lattice().lat_column_mat().inverse() * superlattice.lat_column_mat() << std::endl;
+      _prim->err_log() << "transformation matrix: \n" << res.second << std::endl;
       throw std::invalid_argument("Error constructing Supercell: the transformation matrix is not integer");
     }
   }
@@ -161,8 +162,8 @@ namespace CASM {
     return volume() * basis_size();
   }
 
-  Eigen::Matrix3i Supercell::transf_mat() const {
-    return this->sym_info().transformation_matrix().cast<int>();
+  Eigen::Matrix3l Supercell::transf_mat() const {
+    return this->sym_info().transformation_matrix();
     /* return iround(this->sym_info().transformation_matrix()); */
     //return CASM::transf_mat(primclex().prim().lattice(), lattice(), primclex().crystallography_tol());
   }
@@ -369,15 +370,18 @@ namespace CASM {
 
   SupercellSymInfo make_supercell_sym_info(Structure const &_prim, Lattice const &_slat) {
     std::map<DoFKey, SymGroupRepID> global_dof_symrep_IDs;
-    for(auto const &key : global_dof_types(_prim))
-      global_dof_symrep_IDs.emplace(std::make_pair(key, _prim.global_dof(key).symrep_ID()));
+    for(auto const &key : global_dof_types(_prim)) {
+      /* global_dof_symrep_IDs.emplace(std::make_pair(key, _prim.structure().global_dof(key).symrep_ID())); */
+      global_dof_symrep_IDs.emplace(std::make_pair(key, _prim.global_dof_symrepID(key)));
+    }
 
     std::map<DoFKey, std::vector<SymGroupRepID> > local_dof_symrep_IDs;
     for(auto const &key : continuous_local_dof_types(_prim)) {
       std::vector<SymGroupRepID> treps(_prim.basis().size());
       for(Index b = 0; b < _prim.basis().size(); ++b) {
         if(_prim.basis()[b].has_dof(key))
-          treps[b] = _prim.basis()[b].dof(key).symrep_ID();
+          /* treps[b] = _prim.basis()[b].dof(key).symrep_ID(); */
+          treps[b] = _prim.site_dof_symrepIDs()[b];
       }
       local_dof_symrep_IDs.emplace(std::make_pair(key, std::move(treps)));
     }
@@ -415,7 +419,7 @@ namespace CASM {
               "superlattice: \n" << super_lat.lat_column_mat() << "\n" <<
               "prim lattice: \n" << prim_lat.lat_column_mat() << "\n" <<
               "tolerance: " << tol << "\n" <<
-              "transformation matrix: \n" << prim_lat.lat_column_mat().inverse() * super_lat.lat_column_mat() << "\n";
+              "transformation matrix: \n" << res.second << "\n";
       throw std::invalid_argument(err_msg.str());
     }
     return iround(res.second);

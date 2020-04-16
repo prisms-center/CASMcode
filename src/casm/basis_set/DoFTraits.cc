@@ -91,12 +91,12 @@ namespace CASM {
     }
 
     //************************************************************
-    void Traits::apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const {
+    void Traits::apply_dof(ConfigDoF const &_dof, BasicStructure const &_reference, SimpleStructure &_struc) const {
       return;
     }
 
     //************************************************************
-    jsonParser Traits::dof_to_json(ConfigDoF const &_dof, BasicStructure<Site> const &_reference) const {
+    jsonParser Traits::dof_to_json(ConfigDoF const &_dof, BasicStructure const &_reference) const {
       jsonParser result;
       result.put_obj();
 
@@ -119,7 +119,7 @@ namespace CASM {
       if(val_traits().global()) {
         ss <<
            indent << "  if(m_params.eval_mode(m_" << name() << "_var_param_key) != ParamPack::READ) {\n";
-        for(Index a = 0; a < _prim.global_dof(name()).size(); ++a) {
+        for(Index a = 0; a < _prim.structure().global_dof(name()).dim(); ++a) {
           ss << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << name() << "_var_param_key, " << a
              << ", eval_" << name() << "_var(" << a << "));\n";
         }
@@ -158,7 +158,7 @@ namespace CASM {
               if(!_prim.basis()[b].has_dof(name()))
                 continue;
 
-              for(Index a = 0; a < _prim.basis()[b].dof(name()).size(); ++a) {
+              for(Index a = 0; a < _prim.basis()[b].dof(name()).dim(); ++a) {
                 ssvar << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << name() << "_var_param_key, " << a << ", " << n
                       << ", eval_" << name() << "_var_" << b << "_" << a << "(" << n << "));\n";
               }
@@ -203,7 +203,7 @@ namespace CASM {
       if(val_traits().global()) {
         ss <<
            indent << "  if(m_params.eval_mode(m_" << name() << "_var_param_key) != ParamPack::READ) {\n";
-        for(Index a = 0; a < _prim.global_dof(name()).size(); ++a) {
+        for(Index a = 0; a < _prim.structure().global_dof(name()).dim(); ++a) {
           ss << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << name() << "_var_param_key, " << a
              << ", eval_" << name() << "_var(" << a << "));\n";
         }
@@ -235,7 +235,7 @@ namespace CASM {
             if(!_prim.basis()[b].has_dof(name()))
               continue;
 
-            for(Index a = 0; a < _prim.basis()[b].dof(name()).size(); ++a) {
+            for(Index a = 0; a < _prim.basis()[b].dof(name()).dim(); ++a) {
               ssvar << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << name() << "_var_param_key, " << a << ", " << n
                     << ", eval_" << name() << "_var_" << b << "_" << a << "(" << n << "));\n";
             }
@@ -274,7 +274,6 @@ namespace CASM {
       //go out of scope. Solving this will involve rethinking which parts of the prim are needed for the
       //function call, and will affect the implementation of the SymCompare classes
       auto _prim_ptr = std::make_shared<const Structure>(_prim);
-      _prim_ptr->is_temporary_of(_prim);
       make_prim_periodic_asymmetric_unit(_prim_ptr,
                                          CASM_TMP::ConstantFunctor<bool>(true),
                                          TOL,
@@ -370,7 +369,6 @@ namespace CASM {
       //go out of scope. Solving this will involve rethinking which parts of the prim are needed for the
       //function call, and will affect the implementation of the SymCompare classes
       auto _prim_ptr = std::make_shared<const Structure>(_prim);
-      _prim_ptr->is_temporary_of(_prim);
       make_prim_periodic_asymmetric_unit(_prim_ptr,
                                          CASM_TMP::ConstantFunctor<bool>(true),
                                          TOL,
@@ -392,8 +390,8 @@ namespace CASM {
             continue;
           stream <<
                  indent << "// " << name() << " evaluators and accessors for basis site " << nb << ":\n";
-          max_na = max(max_na, _prim.basis()[nb].dof(name()).size());
-          for(Index a = 0; a < _prim.basis()[nb].dof(name()).size(); ++a) {
+          max_na = max(max_na, _prim.basis()[nb].dof(name()).dim());
+          for(Index a = 0; a < _prim.basis()[nb].dof(name()).dim(); ++a) {
 
             stream <<
                    indent << "double eval_" << name() << "_var_" << nb << '_' << a << "(const int &nlist_ind) const {\n" <<
@@ -465,7 +463,7 @@ namespace CASM {
 
       for(Site const &site : _prim.basis()) {
         if(site.has_dof(name()))
-          NV = max(NV, site.dof(name()).size());
+          NV = max(NV, site.dof(name()).dim());
       }
       //for(Index i = 0; i < NB; i++)
       result.push_back(ParamAllocation(std::string(name() + "_var"), Index(NV), Index(-1), true));
@@ -493,7 +491,6 @@ namespace CASM {
       //go out of scope. Solving this will involve rethinking which parts of the prim are needed for the
       //function call, and will affect the implementation of the SymCompare classes
       auto _prim_ptr = std::make_shared<const Structure>(_prim);
-      _prim_ptr->is_temporary_of(_prim);
       make_prim_periodic_asymmetric_unit(_prim_ptr,
                                          CASM_TMP::ConstantFunctor<bool>(true),
                                          TOL,
@@ -524,7 +521,7 @@ namespace CASM {
     }
 
 
-    std::string Traits::site_basis_description(BasisSet site_bset, Site site) const {
+    std::string Traits::site_basis_description(BasisSet site_bset, Site site, Index site_ix) const {
       return std::string();
     }
 

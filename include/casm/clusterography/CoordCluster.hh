@@ -18,14 +18,12 @@ namespace CASM {
   /* -- CoordCluster Declarations ------------------------------------- */
 
   namespace xtal {
-    class Structure;
     class Coordinate;
     template<typename Base>
     struct Translatable;
     class UnitCellCoord;
   }
 
-  using xtal::Structure;
   using xtal::Coordinate;
   using xtal::Translatable;
 

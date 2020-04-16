@@ -2,6 +2,7 @@
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/SymType.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/io/UnitCellCoordIO.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/ConfigEnumRandomOccupations.hh"
 #include "casm/clex/ConfigEnumRandomLocal.hh"

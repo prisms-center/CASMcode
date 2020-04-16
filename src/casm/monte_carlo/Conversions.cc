@@ -5,7 +5,7 @@
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/database/ScelDatabase.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/BasicStructure.hh"
 
 namespace CASM {
   namespace Monte {
@@ -27,8 +27,8 @@ namespace CASM {
     Conversions::Conversions(const Configuration &unit_config, const Supercell &mc_scel) :
       m_unit_scel(&unit_config.supercell()),
       m_mc_scel(&mc_scel),
-      m_struc_mol(struc_molecule(m_mc_scel->prim())),
-      m_struc_molname(struc_molecule_name(m_mc_scel->prim())) {
+      m_struc_mol(xtal::struc_molecule(m_mc_scel->prim())),
+      m_struc_molname(xtal::struc_molecule_name(m_mc_scel->prim())) {
 
       // make m_unitl_to_asym, m_Nasym
       Index asym = 0;
