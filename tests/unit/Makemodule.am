@@ -190,6 +190,7 @@ check_PROGRAMS += \
 casm_unit_crystallography_SOURCES = \
     tests/unit/crystallography/BasicStructure_test.cpp\
     tests/unit/crystallography/Coordinate_test.cpp\
+    tests/unit/crystallography/FactorGroupConsistency_test.cpp\
     tests/unit/crystallography/HermiteCounter_test.cpp\
     tests/unit/crystallography/IntegralCoordinateWithin_test.cpp\
     tests/unit/crystallography/LatticeEnumEquivalents_test.cpp\
