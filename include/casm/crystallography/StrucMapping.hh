@@ -128,20 +128,20 @@ namespace CASM {
                   Lattice const &parent_prim,
                   Lattice const &child_prim);
 
-      /// \brief Compare two LatticeMap objects, based on their mapping cost first, followed by PrimGrid transformation matrices
-      bool operator<(LatticeNode const &other)const;
-
     };
 
+    /// \brief Compare two LatticeMap objects, based on their mapping cost first, followed by PrimGrid transformation matrices
+    bool less(LatticeNode const &A, LatticeNode const &B, double cost_tol);
+
     /// \brief returns true if cost values and parent/child supercell transformations are same for A and B
-    bool identical(LatticeNode const &A, LatticeNode const &B);
+    bool identical(LatticeNode const &A, LatticeNode const &B, double cost_tol);
 
     /// \brief Structure to encode the solution of a constrained atomic assignmnet problem
     /// This describes the permutation, translation, and time-reversal of the atoms of a child structure
     /// to bring them into registration with the atoms of a parent structure
     /// (assuming periodic boundary conditions). Also records the constrained and unconstrained assignment costs
     struct AssignmentNode {
-      AssignmentNode(double _tol = 1e-6) : time_reversal(false), cost(0), cost_offset(0), m_tol(_tol) {}
+      AssignmentNode(double _cost_tol = 1e-6) : time_reversal(false), cost(0), cost_offset(0), m_cost_tol(_cost_tol) {}
 
       /// \brief Mapping translation from child to parent
       /// Defined such that
@@ -192,8 +192,8 @@ namespace CASM {
       /// This is added to best solution of reduced assignment problem to obtain cost of total constrained assignment problem
       double cost_offset;
 
-      double tol() const {
-        return m_tol;
+      double cost_tol() const {
+        return m_cost_tol;
       }
 
       /// \brief True if cost matrix and assignment vector are uninitialized
@@ -222,7 +222,7 @@ namespace CASM {
 
 
     private:
-      double m_tol;
+      double m_cost_tol;
     };
 
     /// \brief true if time_reversal and translation are identical
@@ -259,8 +259,8 @@ namespace CASM {
         cost = strain_weight * lat_node.cost;
       }
 
-      double tol() const {
-        return basis_node.tol();
+      double cost_tol() const {
+        return basis_node.cost_tol();
       }
 
       /// \brief set the strain_weight. Cost is calculated as
@@ -426,7 +426,7 @@ namespace CASM {
       ///             'strict': prevents transformation into canonical form. Tries to preserve original orientation of imported structure if possible
       ///\endparblock
       ///
-      ///\param _tol tolerance for mapping comparisons
+      ///\param _cost_tol tolerance for mapping comparisons
       ///
       ///\param _min_va_frac minimum fraction of vacant sites, below this fraction a mapping will not be considered
       ///
@@ -435,12 +435,18 @@ namespace CASM {
                   double _strain_weight = 0.5,
                   double _max_volume_change = 0.5,
                   int _options = 0, // this should actually be a bitwise-OR of StrucMapper::Options
-                  double _tol = TOL,
+                  double _cost_tol = TOL,
                   double _min_va_frac = 0.,
                   double _max_va_frac = 1.);
 
-      double tol() const {
-        return m_tol;
+      ///\brief Tolerance for determining if two mapping-cost values are identical
+      double cost_tol() const {
+        return m_cost_tol;
+      }
+
+      ///\brief Tolerance for initializing lattices. For now it is initialized to CASM::TOL
+      double xtal_tol() const {
+        return m_xtal_tol;
       }
 
       double strain_weight() const {
@@ -712,7 +718,8 @@ namespace CASM {
       double m_strain_weight;
       double m_max_volume_change;
       int m_options;
-      double m_tol;
+      double m_cost_tol;
+      double m_xtal_tol;
       double m_min_va_frac;
       double m_max_va_frac;
 

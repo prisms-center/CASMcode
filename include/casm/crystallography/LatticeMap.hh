@@ -67,7 +67,6 @@ namespace CASM {
       LatticeMap(Lattice const &_parent,
                  Lattice const &_child,
                  Index _num_atoms,
-                 double _tol,
                  int _range /*= 2*/,
                  SymOpVector const &_point_group/*={}*/,
                  Eigen::Ref<const Eigen::MatrixXd> const &strain_gram_mat = Eigen::MatrixXd::Identity(9, 9),
@@ -76,7 +75,6 @@ namespace CASM {
       LatticeMap(Eigen::Ref<const DMatType> const &_parent,
                  Eigen::Ref<const DMatType> const &_child,
                  Index _num_atoms,
-                 double _tol,
                  int _range /*= 2*/,
                  SymOpVector const &_point_group/*={}*/,
                  Eigen::Ref<const Eigen::MatrixXd> const &strain_gram_mat = Eigen::MatrixXd::Identity(9, 9),
@@ -122,7 +120,6 @@ namespace CASM {
 
       // m_atomic_vol = (det(m_child)/num_atoms)
       double m_atomic_vol;
-      double m_tol;
       int m_range;
 
       // pointer to static list of unimodular matrices
