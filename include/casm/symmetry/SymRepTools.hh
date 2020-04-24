@@ -131,6 +131,9 @@ namespace CASM {
 
     /// \brief Symmetry-oriented subspace of the vector space (columns are the basis vectors)
     Eigen::MatrixXd symmetry_adapted_dof_subspace;
+
+    /// \brief Names given to individual axes in initial (un-adapted) vector space, corresponding to rows of symmetry_adapted_dof_subspace
+    std::vector<std::string> axis_glossary;
   };
 
   VectorSpaceSymReport vector_space_sym_report(SymGroupRep const &_rep,

@@ -6,11 +6,14 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/SymTools.hh"
+
 #include "casm/symmetry/json_io.hh"
 #include "casm/symmetry/SymRepTools.hh"
 
 #include "casm/enumerator/Enumerator.hh"
 #include "casm/enumerator/DoFSpace.hh"
+#include "casm/enumerator/io/json/DoFSpace.hh"
+
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/DirectoryStructure.hh"
@@ -279,9 +282,41 @@ namespace CASM {
       std::vector<ConfigEnumInput> configs = make_enumerator_input_configs(primclex(), kwargs, opt(), nullptr);
 
       for(ConfigEnumInput const &config : configs) {
-        std::cout << "WORKING ON CONFIG: " << config.name() << std::endl;
         fs::path sym_dir = primclex().dir().symmetry_dir(config.name());
+        // Write lattice point group
+        {
+          SymGroup lattice_pg(SymGroup::lattice_point_group(config.config().ideal_lattice()));
+          fs::ofstream outfile;
+          jsonParser json;
+          outfile.open(sym_dir / "lattice_point_group.json");
+          write_symgroup(lattice_pg, json);
+          json.print(outfile);
+          outfile.close();
+        }
 
+        // Write factor group
+        {
+          fs::ofstream outfile;
+          jsonParser json;
+          outfile.open(sym_dir / "factor_group.json");
+          write_symgroup(make_sym_group(config.group().begin(),
+                                        config.group().end(),
+                                        config.config().ideal_lattice()), json);
+          json.print(outfile);
+          outfile.close();
+        }
+
+        // Write crystal point group
+        {
+          fs::ofstream outfile;
+          jsonParser json;
+          outfile.open(sym_dir / "crystal_point_group.json");
+          write_symgroup(make_point_group(config.group().begin(),
+                                          config.group().end(),
+                                          config.config().ideal_lattice()), json);
+          json.print(outfile);
+          outfile.close();
+        }
 
         std::vector<DoFKey> dofs = opt().dof_strs();
         if(dofs.empty()) {
@@ -300,7 +335,11 @@ namespace CASM {
 
           report = vector_space_sym_report(dspace,
                                            vm().count("calc-wedge"));
-          report["dof"] = dof;
+
+          to_json(dspace, report);
+
+
+
           fs::create_directories(sym_dir);
           report.write(sym_dir / filename);
 

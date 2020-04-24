@@ -1,5 +1,6 @@
 #include "casm/enumerator/DoFSpace.hh"
 #include "casm/clex/Supercell.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/symmetry/SupercellSymInfo_impl.hh"
 #include "casm/symmetry/SymRepTools.hh"
 namespace CASM {
@@ -37,8 +38,12 @@ namespace CASM {
 
     ConfigEnumInput const &config_region = _space.config_region;
     SupercellSymInfo const &sym_info = config_region.supercell().sym_info();
+    xtal::BasicStructure const &prim_struc = config_region.config().prim().structure();
 
-    if(val_traits.global()) {
+    std::vector<std::string> axis_glossary;
+
+    if(prim_struc.global_dofs().count(dof_key)) {
+
       // Global DoF, use point group only
       SymGroup pointgroup = make_point_group(config_region.group(), sym_info.supercell_lattice());
       g = make_master_sym_group(pointgroup,
@@ -50,6 +55,7 @@ namespace CASM {
         Index fg_ix = pointgroup[i].index();
         g[i].set_rep(id, *rep[fg_ix]);
       }
+      axis_glossary = component_descriptions(prim_struc.global_dof(dof_key));
     }
     else {
       auto group_and_ID = collective_dof_symrep(config_region.sites().begin(),
@@ -60,13 +66,26 @@ namespace CASM {
       g = group_and_ID.first;
       g.is_temporary_of(group_and_ID.first);
       id = group_and_ID.second;
+
+      for(Index l : config_region.sites()) {
+        Index b = config_region.config().sublat(l);
+        if(!prim_struc.basis()[b].dofs().count(dof_key))
+          continue;
+        std::vector<std::string> tdescs = component_descriptions(prim_struc.basis()[b].dof(dof_key));
+        for(std::string const &desc : tdescs) {
+          axis_glossary.push_back(desc + "[" + std::to_string(l + 1) + "]");
+        }
+      }
+
     }
 
     SymGroupRep const &rep = g.representation(id);
-    return vector_space_sym_report(rep,
-                                   g,
-                                   _space.dof_subspace,
-                                   calc_wedges);
+    VectorSpaceSymReport result = vector_space_sym_report(rep,
+                                                          g,
+                                                          _space.dof_subspace,
+                                                          calc_wedges);
+    result.axis_glossary = std::move(axis_glossary);
+    return result;
 
   }
 

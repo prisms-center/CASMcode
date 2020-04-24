@@ -372,7 +372,7 @@ namespace CASM {
     std::map<DoFKey, SymGroupRepID> global_dof_symrep_IDs;
     for(auto const &key : global_dof_types(_prim)) {
       /* global_dof_symrep_IDs.emplace(std::make_pair(key, _prim.structure().global_dof(key).symrep_ID())); */
-      global_dof_symrep_IDs.emplace(std::make_pair(key, _prim.global_dof_symrepID(key)));
+      global_dof_symrep_IDs.emplace(std::make_pair(key, _prim.global_dof_symrep_ID(key)));
     }
 
     std::map<DoFKey, std::vector<SymGroupRepID> > local_dof_symrep_IDs;
@@ -381,7 +381,7 @@ namespace CASM {
       for(Index b = 0; b < _prim.basis().size(); ++b) {
         if(_prim.basis()[b].has_dof(key))
           /* treps[b] = _prim.basis()[b].dof(key).symrep_ID(); */
-          treps[b] = _prim.site_dof_symrepIDs()[b];
+          treps[b] = _prim.site_dof_symrep_IDs()[b][key];
       }
       local_dof_symrep_IDs.emplace(std::make_pair(key, std::move(treps)));
     }

@@ -117,9 +117,7 @@ namespace CASM {
     try {
 
       DirectoryStructure dir(m_root);
-      std::cout << "Creating root directory: " << dir.root_dir() << ": ";
-      std::cout << fs::create_directories(dir.casm_dir()) << std::endl;
-      std::cout << "Writing prim file: " << dir.prim() << std::endl;
+      fs::create_directories(dir.casm_dir());
       write_prim(m_prim, dir.prim(), FRAC);
 
       ProjectSettings set(m_root, m_title);

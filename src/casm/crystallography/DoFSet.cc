@@ -6,6 +6,15 @@
 
 namespace CASM {
   namespace xtal {
+    /// Returns descriptive names of the components in a DoFSet, using AnisoValTraits::variable_descriptors()
+    std::vector<std::string> component_descriptions(DoFSet const &dofset) {
+      if(dofset.basis().isIdentity(TOL))
+        return dofset.traits().variable_descriptions();
+      else
+        return dofset.component_names();
+    }
+
+
     bool DoFSetIsEquivalent_f::_traits_match(const DoFSet &other_value) const {
       return m_reference_dofset.traits().name() == other_value.traits().name();
     }

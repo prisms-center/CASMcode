@@ -195,7 +195,7 @@ namespace CASM {
   }
 
   std::vector<SymGroupRepID> occ_symrep_IDs(Structure const &_struc) {
-    return _struc.occupant_symrepIDs();
+    return _struc.occupant_symrep_IDs();
   }
 
 }

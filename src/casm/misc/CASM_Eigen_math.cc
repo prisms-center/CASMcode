@@ -50,43 +50,6 @@ namespace CASM {
     return tvec;
   }
 
-  //*******************************************************************************************
-  /**
-   *
-   */
-  //*******************************************************************************************
-
-  void poly_fit(Eigen::VectorXcd &xvec, Eigen::VectorXcd &yvec, Eigen::VectorXcd &coeffs, int degree) {
-
-    // Check that the dimensions are correct
-    if(xvec.rows() != yvec.rows()) {
-      std::cout << "******************************************\n"
-                << "ERROR in poly_fit: Dimensions of xvec and \n"
-                << "yvec do not match up! Cannot perform a \n"
-                << "polynomial fit.\n"
-                << "******************************************\n";
-      exit(1);
-    }
-
-    Eigen::MatrixXcd polymat = Eigen::MatrixXcd::Ones(xvec.rows(), degree + 1);
-
-    // Construct polymatrix
-    for(int d = degree; d > 0; d--) {
-
-      polymat.col(degree - d) = xvec;
-
-      for(int m = 0; m < d - 1; m++) {
-        polymat.col(degree - d) = polymat.col(degree - d).cwiseProduct(xvec);
-      }
-    }
-
-    // SVD least squares fit
-    Eigen::JacobiSVD<Eigen::MatrixXcd> svd_solver(polymat, Eigen::ComputeThinU | Eigen::ComputeThinV);
-    coeffs = svd_solver.solve(yvec);
-
-    return;
-
-  }
 
 
   namespace HungarianMethod_impl {

@@ -31,7 +31,9 @@ namespace CASM {
     template<>
     struct Adapter<CASM::DoFSet, xtal::DoFSet> {
       CASM::DoFSet operator()(const xtal::DoFSet &adaptable) {
-        CASM::DoFSet adapted_dofset(adaptable.traits());
+        CASM::DoFSet adapted_dofset(adaptable.traits(),
+                                    adaptable.component_names(),
+                                    adaptable.basis());
         adapted_dofset.set_sequential_IDs();
         adapted_dofset.lock_IDs();
         return adapted_dofset;
@@ -45,7 +47,10 @@ namespace CASM {
     template<>
     struct Adapter<CASM::DoFSet, xtal::SiteDoFSet> {
       CASM::DoFSet operator()(const xtal::SiteDoFSet &adaptable, int dof_id) {
-        CASM::DoFSet adapted_dofset(adaptable.traits(), adaptable.excluded_occupants());
+        CASM::DoFSet adapted_dofset(adaptable.traits(),
+                                    adaptable.component_names(),
+                                    adaptable.basis(),
+                                    adaptable.excluded_occupants());
         adapted_dofset.set_ID(dof_id);
         return adapted_dofset;
       }

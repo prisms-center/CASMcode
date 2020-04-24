@@ -248,7 +248,7 @@ namespace CASM {
       wedges.push_back(SymRepTools::SubWedge({SymRepTools::IrrepWedge(SymRepTools::IrrepInfo::make_dummy(_axes), _axes)}));
     else
       /* wedges = SymRepTools::symrep_subwedges(pg, _primclex.prim().structure().global_dof(strain_dof_key).symrep_ID()); */
-      wedges = SymRepTools::symrep_subwedges(pg, _primclex.prim().global_dof_symrepID(strain_dof_key));
+      wedges = SymRepTools::symrep_subwedges(pg, _primclex.prim().global_dof_symrep_ID(strain_dof_key));
 
     //PRINT INFO TO LOG:
     Log &log = _primclex.log();

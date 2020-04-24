@@ -91,8 +91,6 @@ namespace CASM {
                                                                     jsonParser const &_bspecs) const {
 
       std::vector<BasisSet> result(_prim.basis().size());
-      std::cout << "OccupationDoFTraits::construct_site_bases()\n";
-      //std::cout << "Using " << func_type << " site basis functions." << std::endl << std::endl;
 
       for(Index i = 0; i < _asym_unit.size(); i++) {
         Site const &_site = _asym_unit[i].prototype()[0].sublattice_site(_prim);

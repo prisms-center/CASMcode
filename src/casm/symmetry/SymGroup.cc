@@ -578,8 +578,9 @@ namespace CASM {
 
   //*****************************************************************
   std::map<std::string, std::string> point_group_info(SymGroup const &g) {
+    SymGroup pg = g.copy_no_trans(false);
     SymGroup nonmag;
-    for(SymOp const &op : g) {
+    for(SymOp const &op : pg) {
       if(!op.time_reversal()) {
         nonmag.push_back(op);
       }
@@ -588,12 +589,12 @@ namespace CASM {
     auto nonmag_info = nonmagnetic_point_group_info(nonmag);
 
     //nonmagnetic group:
-    if(nonmag.size() == g.size()) {
+    if(nonmag.size() == pg.size()) {
       return nonmag_info;
     }
 
     //grey group:
-    if((2 * nonmag.size()) == g.size()) {
+    if((2 * nonmag.size()) == pg.size()) {
       nonmag_info["space_group_range"] = "Magnetic group (not supported)";
       nonmag_info["international_name"] += "1'";
       nonmag_info["name"] += "'";
@@ -601,7 +602,7 @@ namespace CASM {
       return nonmag_info;
     }
 
-    auto tot_info = nonmagnetic_point_group_info(g);
+    auto tot_info = nonmagnetic_point_group_info(pg);
 
     //magnetic group:
     tot_info["international_name"] = "Magnetic group (not supported)";
@@ -614,7 +615,8 @@ namespace CASM {
   }
   //*****************************************************************
   std::map<std::string, std::string> nonmagnetic_point_group_info(SymGroup const &g) {
-    std::vector<Index> rgroups = get_rotation_groups(g);
+    SymGroup pg = g.copy_no_trans(false);
+    std::vector<Index> rgroups = get_rotation_groups(pg);
     std::map<std::string, std::string> result;
     // Calculate total number of rotation elements
     Index nm = rgroups[2] + 1;

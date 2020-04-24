@@ -96,8 +96,6 @@ namespace CASM {
 
   // *******************************************************************************************
 
-  void poly_fit(Eigen::VectorXcd &xvec, Eigen::VectorXcd &yvec, Eigen::VectorXcd &coeffs, int degree); //Ivy
-
   // Finds optimal assignments, based on cost_matrix, and returns total optimal cost
   double hungarian_method(const Eigen::MatrixXd &cost_matrix, std::vector<Index> &optimal_assignments, const double _tol);
 
@@ -124,7 +122,6 @@ namespace CASM {
 
   void get_Hermitian(Eigen::MatrixXcd &original_mat, Eigen::MatrixXcd &hermitian_mat, Eigen::MatrixXcd &antihermitian_mat); //Ivy
   bool is_Hermitian(Eigen::MatrixXcd &mat); //Ivy
-  void poly_fit(Eigen::VectorXcd &xvec, Eigen::VectorXcd &yvec, Eigen::VectorXcd &coeffs, int degree);
 
   /// \brief Return the hermite normal form, M == H*V
   std::pair<Eigen::MatrixXi, Eigen::MatrixXi> hermite_normal_form(const Eigen::MatrixXi &M);

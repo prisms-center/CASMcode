@@ -18,13 +18,12 @@ namespace CASM {
 
 
   xtal::DoFSet jsonConstructor<xtal::DoFSet>::from_json(const jsonParser &json, AnisoValTraits const &traits) {
+
     Eigen::MatrixXd basis;
     json.get_if(basis, "basis");
 
     std::vector<std::string> component_names;
     json.get_if(component_names, "axis_names");
-
-    //std::string traits_tag = json["traits"].get<std::string>();
 
     if(component_names.size()) {
       return xtal::DoFSet(traits, component_names, basis);

@@ -4,20 +4,6 @@
 #include "casm/symmetry/SymRepTools.hh"
 
 namespace CASM {
-  namespace Local {
-    static std::string _to_sequential_string(Index i, Index max_i) {
-      max_i = max(i, max_i);
-      Index length = 1;
-      while(max_i /= 10)
-        length++;
-
-      std::string tresult = std::to_string(i);
-
-      std::string result(length - tresult.size(), '0');
-      return result.append(tresult);
-    }
-
-  }
 
   jsonParser &to_json(SymRepTools::IrrepInfo const &irrep, jsonParser &json) {
 
@@ -56,7 +42,7 @@ namespace CASM {
     json["full_wedge_axes"] = wedge.trans_mat().transpose();
 
     for(Index i = 0; i < wedge.irrep_wedges().size(); ++i) {
-      std::string irrep_name = "irrep_" + Local::_to_sequential_string(i + 1, wedge.irrep_wedges().size());
+      std::string irrep_name = "irrep_" + to_sequential_string(i + 1, wedge.irrep_wedges().size());
       json["irrep_wedge_axes"][irrep_name] = wedge.irrep_wedges()[i].axes.transpose();
     }
     return json;
@@ -64,6 +50,8 @@ namespace CASM {
 
   jsonParser &to_json(VectorSpaceSymReport const &obj, jsonParser &json) {
     json["symmetry_representation"] = obj.symgroup_rep;
+
+    json["glossary"] = obj.axis_glossary;
 
     std::vector<Index> mults;
     for(auto const &irrep : obj.irreps) {
@@ -79,11 +67,13 @@ namespace CASM {
       for(Index m = 0; m < mult; ++m) {
         std::string irrep_name =
           "irrep_"
-          + Local::_to_sequential_string(i, mults.size())
+          + to_sequential_string(i, mults.size())
           + "_"
-          + Local::_to_sequential_string(m + 1, mult);
+          + to_sequential_string(m + 1, mult);
         auto const &irrep = obj.irreps[l];
-        json["irreducible_representations"][irrep_name] = irrep;
+        if(irrep.pseudo_irrep) {
+          json["irreducible_representations"]["pseudo_irrep"][irrep_name] = irrep;
+        }
         //json["irreducible_representations"][irrep_name]["multiplicity"] = mult;
         if(obj.irreducible_wedge.size()) {
           json["irreducible_representations"]
@@ -92,14 +82,14 @@ namespace CASM {
         }
         json["irreducible_representations"]["irrep_axes"][irrep_name].put_array();
         for(Index a = 0; a < irrep.irrep_dim(); ++a, ++q) {
-          std::string axis_name = "q" + Local::_to_sequential_string(q, NQ);
+          std::string axis_name = "q" + to_sequential_string(q, NQ);
           json["irreducible_representations"]["irrep_axes"][irrep_name].push_back(axis_name);
         }
 
         jsonParser &irrep_matrices = json["irreducible_representations"]["symop_matrices"][irrep_name];//.put_array();
         for(Index o = 0; o < obj.symgroup_rep.size(); ++o) {
           Eigen::MatrixXd const &op = obj.symgroup_rep[i];
-          std::string op_name = "op_" + Local::_to_sequential_string(o + 1, obj.symgroup_rep.size());
+          std::string op_name = "op_" + to_sequential_string(o + 1, obj.symgroup_rep.size());
           irrep_matrices[op_name] = (irrep.trans_mat * op * irrep.trans_mat.transpose()).real();
         }
 
@@ -110,7 +100,7 @@ namespace CASM {
           }
           else {
             for(Index d = 0; d < irrep.directions.size(); ++d) {
-              std::string orbit_name = "direction_orbit_" + Local::_to_sequential_string(d + 1, irrep.directions.size());
+              std::string orbit_name = "direction_orbit_" + to_sequential_string(d + 1, irrep.directions.size());
               djson[irrep_name][orbit_name].put_array(irrep.directions[d].size());
               for(Index j = 0; j < irrep.directions[d].size(); ++j) {
                 to_json_array(Eigen::MatrixXd(irrep.trans_mat.real()*irrep.directions[d][j]), djson[irrep_name][orbit_name][j]);
@@ -124,7 +114,7 @@ namespace CASM {
     }
 
     for(Index q = 0; q < obj.symmetry_adapted_dof_subspace.cols(); ++q) {
-      std::string axis_name = "q" + Local::_to_sequential_string(q + 1, NQ);
+      std::string axis_name = "q" + to_sequential_string(q + 1, NQ);
       to_json_array(obj.symmetry_adapted_dof_subspace.col(q),
                     json["irreducible_representations"]["adapted_axes"][axis_name]);
     }
@@ -133,7 +123,7 @@ namespace CASM {
     for(Index i = 0; i < obj.irreducible_wedge.size(); ++i) {
       std::string subwedge_name =
         "subwedge_axes_"
-        + Local::_to_sequential_string(i + 1, obj.irreducible_wedge.size());
+        + to_sequential_string(i + 1, obj.irreducible_wedge.size());
       json["irreducible_wedge"][subwedge_name] = obj.irreducible_wedge[i].trans_mat();
     }
 
