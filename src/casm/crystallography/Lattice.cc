@@ -845,7 +845,7 @@ namespace CASM {
     }
 
 
-    Eigen::Matrix3l make_transformation_matrix(const Lattice &tiling_unit, const Lattice &superlattice, double tol) {
+    Eigen::Matrix3l make_transformation_matrix_to_super(const Lattice &tiling_unit, const Lattice &superlattice, double tol) {
 
       Eigen::Matrix3d direct_transformation_matrix;
       bool is_integer_transformation;

@@ -2,6 +2,8 @@
 #define CASM_SymRepTools
 
 #include "casm/container/multivector.hh"
+#include "casm/external/Eigen/Core"
+#include "casm/global/definitions.hh"
 namespace CASM {
   class SymGroupRep;
   class SymGroupRepID;

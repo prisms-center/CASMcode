@@ -88,7 +88,7 @@ namespace CASM {
     }
 
     std::vector<UnitCell> make_lattice_points(const Lattice &tiling_unit, const Lattice &superlattice, double tol) {
-      auto transformation_matrix = make_transformation_matrix(tiling_unit, superlattice, tol);
+      auto transformation_matrix = make_transformation_matrix_to_super(tiling_unit, superlattice, tol);
       return make_lattice_points(transformation_matrix);
     }
 

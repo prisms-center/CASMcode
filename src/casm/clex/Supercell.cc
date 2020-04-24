@@ -163,7 +163,7 @@ namespace CASM {
   }
 
   Eigen::Matrix3l Supercell::transf_mat() const {
-    return this->sym_info().transformation_matrix();
+    return this->sym_info().transformation_matrix_to_super();
     /* return iround(this->sym_info().transformation_matrix()); */
     //return CASM::transf_mat(primclex().prim().lattice(), lattice(), primclex().crystallography_tol());
   }

@@ -44,9 +44,9 @@ namespace CASM {
                                      std::vector<SymGroupRepID> const &occ_symrep_IDs,
                                      std::map<DoFKey, std::vector<SymGroupRepID> > const &local_dof_symrep_IDs) :
     m_supercell_superlattice(_prim_lat, _super_lat),
-    m_unitcell_to_index_converter(m_supercell_superlattice.transformation_matrix()),
-    m_unitcellcoord_to_index_converter(m_supercell_superlattice.transformation_matrix(), num_sites_in_prim),
-    m_translation_permutations(make_translation_permutations(this->superlattice().transformation_matrix(), num_sites_in_prim)),
+    m_unitcell_to_index_converter(m_supercell_superlattice.transformation_matrix_to_super()),
+    m_unitcellcoord_to_index_converter(m_supercell_superlattice.transformation_matrix_to_super(), num_sites_in_prim),
+    m_translation_permutations(make_translation_permutations(this->superlattice().transformation_matrix_to_super(), num_sites_in_prim)),
     m_factor_group(sym::invariant_subgroup(_prim_factor_group, _super_lat)),
     m_basis_perm_symrep(factor_group(), basis_permutation_symrep_ID),
     m_has_aniso_occs(false),

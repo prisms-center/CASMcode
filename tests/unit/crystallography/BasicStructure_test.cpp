@@ -290,7 +290,7 @@ TEST(BasicStructureSiteTest, IsPrimitiveTest) {
   SuperlatticeEnumerator scel_enum(effective_pg.begin(), effective_pg.end(), prim.lattice(), enum_props);
 
   for(auto it = scel_enum.begin(); it != scel_enum.end(); ++it) {
-    Eigen::Matrix3l transformation_matix = xtal::make_transformation_matrix(prim.lattice(), *it, prim.lattice().tol());
+    Eigen::Matrix3l transformation_matix = xtal::make_transformation_matrix_to_super(prim.lattice(), *it, prim.lattice().tol());
     BasicStructure super = xtal::make_superstructure(prim.lattice(), transformation_matix);
 
     EXPECT_EQ(super.lattice().is_right_handed(), true);

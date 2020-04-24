@@ -88,8 +88,8 @@ namespace CASM {
       return m_supercell_superlattice;
     }
 
-    Eigen::Matrix3l transformation_matrix() const {
-      return this->superlattice().transformation_matrix();
+    Eigen::Matrix3l transformation_matrix_to_super() const {
+      return this->superlattice().transformation_matrix_to_super();
     }
 
     /// \brief Begin iterator over pure translational permutations

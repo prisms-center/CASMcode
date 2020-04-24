@@ -84,7 +84,7 @@ namespace CASM {
       Eigen::MatrixXd mol_displacement;
       mol_displacement.setZero(3, _node.mol_map.size());
 
-      impl::OrderedLatticePointGenerator parent_index_to_unitcell(pgrid.transformation_matrix());
+      impl::OrderedLatticePointGenerator parent_index_to_unitcell(pgrid.transformation_matrix_to_super());
 
       // transform and expand the coordinates of child to fill the resolved structure
       {
@@ -188,8 +188,8 @@ namespace CASM {
       SimpleStructure::Info const &p_info(this->struc_info(parent()));
       SimpleStructure::Info const &c_info(this->struc_info(child_struc));
       // TODO: Just use linear index converter? could make things more obvious
-      impl::OrderedLatticePointGenerator child_index_to_unitcell(cgrid.transformation_matrix());
-      impl::OrderedLatticePointGenerator parent_index_to_unitcell(pgrid.transformation_matrix());
+      impl::OrderedLatticePointGenerator child_index_to_unitcell(cgrid.transformation_matrix_to_super());
+      impl::OrderedLatticePointGenerator parent_index_to_unitcell(pgrid.transformation_matrix_to_super());
 
       _node.atom_permutation = _node.basis_node.permutation();
 
@@ -257,8 +257,8 @@ namespace CASM {
       Eigen::Vector3d const &translation(_node.basis_node.translation);
       Eigen::MatrixXd &cost_matrix(_node.basis_node.cost_mat);
       Eigen::Matrix3d metric = (_node.lat_node.stretch * _node.lat_node.stretch).inverse();
-      impl::OrderedLatticePointGenerator child_index_to_unitcell(cgrid.transformation_matrix());
-      impl::OrderedLatticePointGenerator parent_index_to_unitcell(pgrid.transformation_matrix());
+      impl::OrderedLatticePointGenerator child_index_to_unitcell(cgrid.transformation_matrix_to_super());
+      impl::OrderedLatticePointGenerator parent_index_to_unitcell(pgrid.transformation_matrix_to_super());
 
       SimpleStructure::Info const &p_info(this->struc_info(parent()));
       SimpleStructure::Info const &c_info(this->struc_info(child_struc));

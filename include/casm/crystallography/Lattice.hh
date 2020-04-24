@@ -282,7 +282,7 @@ namespace CASM {
 
     /// Calculates the transformation matrix that takes the tiling unit to the superlattice.
     /// Throws exceptions if the superlattice isn't compatible with its tiling unit
-    Eigen::Matrix3l make_transformation_matrix(const Lattice &tiling_unit, const Lattice &superlattice, double tol);
+    Eigen::Matrix3l make_transformation_matrix_to_super(const Lattice &tiling_unit, const Lattice &superlattice, double tol);
 
   } // namespace xtal
 } // namespace CASM
