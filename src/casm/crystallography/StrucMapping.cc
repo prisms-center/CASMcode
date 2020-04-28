@@ -324,8 +324,8 @@ namespace CASM {
       if(basis_node.empty() != B.basis_node.empty()) {
         return basis_node.empty();
       }
-      if(!identical(lat_node, B.lat_node)) {
-        return lat_node < B.lat_node;
+      if(!identical(lat_node, B.lat_node, cost_tol())) {
+        return less(lat_node, B.lat_node, cost_tol());
       }
       if(!identical(basis_node, B.basis_node)) {
         return basis_node < B.basis_node;

@@ -48,7 +48,7 @@ namespace CASM {
 
     template<typename IterType>
     static IterType _strictest_equivalent(IterType begin, IterType end, MappingNode const &_node) {
-      SymOp op(_node.isometry(), _node.translation(), false, _node.tol());
+      SymOp op(_node.isometry(), _node.translation(), false, _node.cost_tol());
       SymOp t_op;
       IterType best_it = begin;
 
@@ -364,7 +364,7 @@ namespace CASM {
                           struc_mapper().strain_weight(),
                           0.,
                           struc_mapper().options(),
-                          struc_mapper().tol());
+                          struc_mapper().cost_tol());
 
       /*
       auto config_maps = tmapper.map_deformed_struc_impose_lattice(child_struc,
@@ -404,7 +404,7 @@ namespace CASM {
       struc_maps = struc_mapper().map_deformed_struc_impose_lattice(child_struc,
                                                                     hint_ptr->ideal_lattice(),
                                                                     k,
-                                                                    best_cost + struc_mapper().tol());
+                                                                    best_cost + struc_mapper().cost_tol());
       if(struc_maps.empty())
         result.fail_msg = "Unable to map structure using same lattice as " + hint_ptr->name() + ". Try setting \"fix_lattice\" : false.";
 
@@ -415,7 +415,7 @@ namespace CASM {
                                                                          vol,
                                                                          vol,
                                                                          k,
-                                                                         best_cost + struc_mapper().tol());
+                                                                         best_cost + struc_mapper().cost_tol());
       if(struc_maps.empty())
         result.fail_msg = "Unable to map structure assuming volume = " + std::to_string(vol) + ". Try setting \"fix_volume\" : false.";
 
@@ -429,7 +429,7 @@ namespace CASM {
     else {
       struc_maps = struc_mapper().map_deformed_struc(child_struc,
                                                      k,
-                                                     best_cost + struc_mapper().tol());
+                                                     best_cost + struc_mapper().cost_tol());
       if(struc_maps.empty())
         result.fail_msg = "Unable to map structure to prim. May be incompatible structure, or provided settings may be too restrictive.";
     }
