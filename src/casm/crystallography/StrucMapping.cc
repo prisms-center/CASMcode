@@ -378,6 +378,12 @@ namespace CASM {
       //mapped_result.clear();
       SimpleStructure::Info const &c_info(calculator().struc_info(child_struc));
 
+      // Using _n_species() instead of parent().n_mol() here.
+      // For mapping molecules, may need to push this entire routine into the StrucMapCalculator?
+      double N_sites_p = double(_n_species(parent()));
+
+      double N_sites_c = double(_n_species(child_struc));
+
       if(calculator().fixed_species().size() > 0) {
         std::string tcompon = calculator().fixed_species().begin()->first;
         int ncompon(0);
@@ -396,30 +402,25 @@ namespace CASM {
 
         int max_n_va = calculator().max_n_va();
 
-        // Using _n_species() instead of parent().n_mol() here.
-        // For mapping molecules, may need to push this entire routine into the StrucMapCalculator?
-        double N_sites = double(_n_species(parent()));
-
         // Absolute largest Va fraction
-        double max_va_frac_limit = double(max_n_va) / N_sites;
+        double max_va_frac_limit = double(max_n_va) / N_sites_p;
 
         double t_min_va_frac = min(min_va_frac(), max_va_frac_limit);
         double t_max_va_frac = min(max_va_frac(), max_va_frac_limit);
 
-        // Use vacancy range to narrow volume range. Ceiling function is used because the floating-point
-        // volume is a lower-bound value in both cases.
+        // Use vacancy range to narrow volume range.
 
         // the number of sites implied in order to realize va_frac >= min_va_frac (TOL is not super important):
-        double min_n_sites = floor(_n_species(child_struc) / (1. - t_min_va_frac) - TOL);
+        double min_n_sites = floor(N_sites_c / (1. - t_min_va_frac) - TOL);
 
         // the number of sites implied to realize va_frac <= max_va_frac  (TOL is not super important):
-        double max_n_sites = ceil(_n_species(child_struc) / (1. - t_max_va_frac) + TOL);
+        double max_n_sites = ceil(N_sites_c / (1. - t_max_va_frac) + TOL);
 
         // min_vol assumes min number vacancies -- best case scenario (buffer by half an atom)
-        min_vol = ceil((min_n_sites - 0.5) / N_sites);
+        min_vol = ceil((min_n_sites - 0.5) / N_sites_p);
 
         // max_vol assumes min number vacancies -- best case scenario (buffer by half an atom)
-        max_vol = floor((max_n_sites + 0.5) / N_sites);
+        max_vol = floor((max_n_sites + 0.5) / N_sites_p);
 
         // If volume is not fully determined, use volume ratio of child to parent to narrow search
         if(min_vol != max_vol) {
@@ -431,8 +432,11 @@ namespace CASM {
       }
 
       // make sure volume range is above zero
-      min_vol = max<Index>(min_vol, 1);
-      max_vol = max<Index>(max_vol, 1);
+      if(options()&StrucMapper::soft_va_limit) {
+        Index smallest_possible_vol = ceil((N_sites_c - 0.5) / N_sites_p);
+        min_vol = max<Index>(min_vol, smallest_possible_vol);
+        max_vol = max<Index>(max_vol, smallest_possible_vol);
+      }
 
       return std::pair<Index, Index>(min_vol, max_vol);
 

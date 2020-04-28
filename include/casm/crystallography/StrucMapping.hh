@@ -393,6 +393,9 @@ namespace CASM {
                     robust = (1u << 1),
                     sym_strain = (1u << 2),
                     sym_basis = (1u << 3),
+                    // soft_va_limit ensures that if no supercell volume satisfies vacancy constraints,
+                    // the smallest possible volume is used. Default behavior results in no valid mapping
+                    soft_va_limit = (1u << 4)
                    };
 
       ///\brief Construct and initialize a StrucMapper
