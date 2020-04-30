@@ -21,7 +21,7 @@ namespace {
     }
     symmetrized_lat_matrix_squared /= double(fractional_point_group.size());
 
-    // symmetrized_lat_matrix_squared has the symmetrized lengths and angles -- it is equal to symmetrized_L*symmetrized_L.transpose()
+    // symmetrized_lat_matrix_squared has the symmetrized lengths and angles -- it is equal to symmetrized_L.transpose()*symmetrized_L
     // we will find the sqrt of symmetrized_lat_matrix_squared and then reorient it so that it matches the original lattice
     Eigen::Matrix3d symmetrized_lat_matrix_misoriented;
     //This decomposition does the following transformation:
