@@ -59,7 +59,7 @@ namespace CASM {
       int best_det = sgn(round(op.matrix().determinant()));
       int best_pdist = _permute_dist(_node.mol_map);
 
-      Coordinate tau(_node.lat_node.parent.superlattice());
+      Coordinate tau(_node.lattice_node.parent.superlattice());
       while(begin != end) {
         t_op = begin->sym_op() * op;
         tdet = sgn(round(t_op.matrix().determinant()));
@@ -171,7 +171,7 @@ namespace CASM {
     SymOp op = _it.sym_op();
 
     //Apply symmetry to LatticeNode:
-    // lat_node.parent and lat_node.child remain unchanged, but isometry and stretch tensors are augmented
+    // lattice_node.parent and lattice_node.child remain unchanged, but isometry and stretch tensors are augmented
     //   parent superlattice Lp and child superlattice Lc are related via
     //      Lp = U * R * Lc  (where R is isometry and U is right stretch tensor of _node)
     //   'op' must be in point group of Lp, and invariance relation for Lp is
@@ -181,8 +181,8 @@ namespace CASM {
     //   where terms are grouped to reveal the transformation rules for matrices 'U' and 'R' for the symmetry-related mapping
     //   The fractional matrix 'N' is not used in this routine, since _node records the child lattice in its undeformed state
     //   and all atomic coordinates are recorded in undeformed cartesian coordinates
-    result.lat_node.isometry = op.matrix() * _node.isometry();
-    result.lat_node.stretch = op.matrix() * _node.stretch() * op.matrix().transpose();
+    result.lattice_node.isometry = op.matrix() * _node.isometry();
+    result.lattice_node.stretch = op.matrix() * _node.stretch() * op.matrix().transpose();
 
     //Apply symmetry to HungarianNode:
     // parent coordinates Cp (3xN) and child coordinates Cc (3xN) are related via the mapping relation
@@ -196,10 +196,10 @@ namespace CASM {
     // Inserting the mapping relation for Cp into the invariance relation yields
     //    Cp = [op.matrix() * U * op.matrix.transpose()] * [op.matrix * R] * Cc * [P.transpose() * Ps.transpose()] - [op.matrix() * D * Ps] + [op.matrix() * T + op.tau()]
     // where terms are grouped to reveal the transformation rules for mapping permutation 'P', displacement field 'D', and mapping translation 'T'
-    // The transormation rules for 'U' and 'R' are identical to those above and are recorded in _node.lat_node.
+    // The transormation rules for 'U' and 'R' are identical to those above and are recorded in _node.lattice_node.
     // These five translation rules specify all considerations necessary to describe how a symop in the space group of the parent crystal
     // relates a mapping of the child crystal onto the parent crystal to an equivalent mapping
-    result.basis_node.translation = op.matrix() * _node.translation() + op.tau();
+    result.atomic_node.translation = op.matrix() * _node.translation() + op.tau();
     result.atom_displacement = op.matrix() * result.atom_displacement;
     for(Index i = 0; i < result.mol_map.size(); ++i) {
       result.mol_map[i] = _node.mol_map[_it.permute_ind(i)];
@@ -213,12 +213,12 @@ namespace CASM {
     //permutation, which should have the same effect in the end
     if(false) { //Disabled due to changes related to molecule
       PermuteIterator inv_it = _it.inverse();
-      for(Index i = 0; i < result.basis_node.irow.size(); ++i)
-        result.basis_node.irow[i] = inv_it.permute_ind(_node.basis_node.irow[i]);
+      for(Index i = 0; i < result.atomic_node.irow.size(); ++i)
+        result.atomic_node.irow[i] = inv_it.permute_ind(_node.atomic_node.irow[i]);
 
-      result.basis_node.forced_on.clear();
-      for(auto const &el : _node.basis_node.forced_on)
-        result.basis_node.forced_on.emplace(inv_it.permute_ind(el.first), el.second);
+      result.atomic_node.forced_on.clear();
+      for(auto const &el : _node.atomic_node.forced_on)
+        result.atomic_node.forced_on.emplace(inv_it.permute_ind(el.first), el.second);
       //No need to transform assignment vector or cost_mat, which are in terms of the nominal indexing
     }
     return result;
@@ -276,9 +276,7 @@ namespace CASM {
 
     m_prim(_prim) {
     if(_symgroup.empty()) {
-      xtal::SymOpVector factor_group_operations = xtal::make_factor_group(_prim);
-      SymGroup fg = adapter::Adapter<SymGroup, xtal::SymOpVector>()(factor_group_operations, m_prim.lattice());
-      set_point_group(fg);
+      set_sym_info(xtal::make_factor_group(_prim));
     }
   }
 
@@ -361,7 +359,7 @@ namespace CASM {
       StrucMapper tmapper(*struc_mapper().calculator().quasi_clone(make_simple_structure(*hint_ptr, _hint_dofs),
                                                                    make_point_group(hint_ptr->point_group(), hint_ptr->supercell().sym_info().supercell_lattice()),
                                                                    SimpleStructure::SpeciesMode::ATOM),
-                          struc_mapper().strain_weight(),
+                          struc_mapper().lattice_weight(),
                           0.,
                           struc_mapper().options(),
                           struc_mapper().cost_tol());
@@ -391,13 +389,13 @@ namespace CASM {
     std::set<MappingNode> struc_maps;
 
     if(hint_ptr && settings().ideal) {
-      xtal::LatticeNode lat_node(hint_ptr->prim().lattice(),
-                                 hint_ptr->ideal_lattice(),
-                                 Lattice(child_struc.lat_column_mat),
-                                 Lattice(child_struc.lat_column_mat),
-                                 child_struc.atom_info.size());
+      xtal::LatticeNode lattice_node(hint_ptr->prim().lattice(),
+                                     hint_ptr->ideal_lattice(),
+                                     Lattice(child_struc.lat_column_mat),
+                                     Lattice(child_struc.lat_column_mat),
+                                     child_struc.atom_info.size());
       struc_maps = struc_mapper().map_deformed_struc_impose_lattice_node(child_struc,
-                                                                         lat_node,
+                                                                         lattice_node,
                                                                          k);
     }
     else if(hint_ptr && settings().fix_lattice) {
@@ -436,7 +434,7 @@ namespace CASM {
 
     // Refactor into external routine A. This is too annoying with the current way that supercells are managed
     for(auto const &map : struc_maps) {
-      std::shared_ptr<Supercell> shared_scel = std::make_shared<Supercell>(&primclex(), map.lat_node.parent.superlattice());
+      std::shared_ptr<Supercell> shared_scel = std::make_shared<Supercell>(&primclex(), map.lattice_node.parent.superlattice());
       SimpleStructure resolved_struc = struc_mapper().calculator().resolve_setting(map, child_struc);
       std::pair<ConfigDoF, std::set<std::string> > tdof = to_configdof(resolved_struc, *shared_scel);
       Configuration tconfig(shared_scel, jsonParser(), tdof.first);

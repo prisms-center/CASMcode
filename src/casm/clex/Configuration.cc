@@ -1236,8 +1236,8 @@ namespace CASM {
   }
 
   /// \brief Cost function that describes the degree to which basis sites have relaxed
-  double basis_deformation(const Configuration &_config) {
-    return _config.calc_properties().scalar("basis_deformation");
+  double atomic_deformation(const Configuration &_config) {
+    return _config.calc_properties().scalar("atomic_deformation");
   }
 
   /// \brief Cost function that describes the degree to which lattice has relaxed
@@ -1376,8 +1376,8 @@ namespace CASM {
     return it != props.site.end() && it->second.cols();
   }
 
-  bool has_basis_deformation(const Configuration &_config) {
-    return _config.calc_properties().has_scalar("basis_deformation");
+  bool has_atomic_deformation(const Configuration &_config) {
+    return _config.calc_properties().has_scalar("atomic_deformation");
   }
 
   bool has_lattice_deformation(const Configuration &_config) {

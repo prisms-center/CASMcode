@@ -50,28 +50,25 @@ namespace CASM {
 
     //*******************************************************************************************
     //static function
-    double StrainCostCalculator::iso_strain_cost(const Eigen::Matrix3d &F, double relaxed_atomic_vol, double _vol_factor) {
+    double StrainCostCalculator::iso_strain_cost(const Eigen::Matrix3d &F, double _vol_factor) {
       Eigen::Matrix3d tmat = polar_decomposition(F / _vol_factor);
 
       // -> epsilon=(F_deviatoric-identity)
-      double unscaled = ((tmat - Eigen::Matrix3d::Identity(3, 3)).squaredNorm()
-                         + (tmat.inverse() - Eigen::Matrix3d::Identity(3, 3)).squaredNorm()) / 2.;
-
-      // geometric factor: (3*V/(4*pi))^(2/3)/3 = V^(2/3)/7.795554179
-      return std::pow(std::abs(relaxed_atomic_vol), 2.0 / 3.0) * unscaled / 7.795554179;
+      return ((tmat - Eigen::Matrix3d::Identity(3, 3)).squaredNorm()
+              + (tmat.inverse() - Eigen::Matrix3d::Identity(3, 3)).squaredNorm()) / 6.;
     }
 
     //*******************************************************************************************
     //static function
-    double StrainCostCalculator::iso_strain_cost(const Eigen::Matrix3d &F, double relaxed_atomic_vol) {
-      return iso_strain_cost(F, relaxed_atomic_vol, vol_factor(F));
+    double StrainCostCalculator::iso_strain_cost(const Eigen::Matrix3d &F) {
+      return iso_strain_cost(F, vol_factor(F));
     }
 
     //*******************************************************************************************
 
-    // strain_cost is the mean-square displacement of a point on the surface of a sphere having volume = relaxed_atomic_vol
+    // strain_cost is the mean-square displacement of a point on the surface of a unit sphere
     // when it is deformed by the volume-preserving deformation F_deviatoric = F/det(F)^(1/3)
-    double StrainCostCalculator::strain_cost(const Eigen::Matrix3d &F, double relaxed_atomic_vol, double _vol_factor) const {
+    double StrainCostCalculator::strain_cost(const Eigen::Matrix3d &F, double _vol_factor) const {
 
       if(m_sym_cost) {
         double cost = 0;
@@ -84,22 +81,22 @@ namespace CASM {
             Index n = 0;
             for(Index k = 0; k < 3; ++k) {
               for(Index l = k; l < 3; ++l, ++n) {
-                cost += m_gram_mat(m, n) * (m_cache(i, j) * m_cache(j, k) + m_cache_inv(i, j) * m_cache_inv(j, k)) / 2;
+                cost += m_gram_mat(m, n) * (m_cache(i, j) * m_cache(j, k) + m_cache_inv(i, j) * m_cache_inv(j, k)) / 6.;
               }
             }
           }
         }
         // geometric factor: (3*V/(4*pi))^(2/3)/3 = V^(2/3)/7.795554179
-        return std::pow(std::abs(relaxed_atomic_vol), 2.0 / 3.0) * cost / 7.795554179;
+        return cost;
       }
 
-      return iso_strain_cost(F, relaxed_atomic_vol, _vol_factor);
+      return iso_strain_cost(F, _vol_factor);
     }
 
     //*******************************************************************************************
 
-    double StrainCostCalculator::strain_cost(const Eigen::Matrix3d &F, double relaxed_atomic_vol) const {
-      return strain_cost(F, relaxed_atomic_vol, vol_factor(F));
+    double StrainCostCalculator::strain_cost(const Eigen::Matrix3d &F) const {
+      return strain_cost(F, vol_factor(F));
     }
 
     //*******************************************************************************************
@@ -114,7 +111,6 @@ namespace CASM {
       m_child(_child.reduced_cell().lat_column_mat()),
       m_calc(strain_gram_mat),
       m_vol_factor(pow(std::abs(volume(_child) / volume(_parent)), 1. / 3.)),
-      m_atomic_vol(std::abs(volume(_child) / (double)num_atoms)),
       m_range(_range),
       m_cost(1e20),
       m_currmat(0) {
@@ -181,7 +177,7 @@ namespace CASM {
       // From relation F * parent * inv_mat.inverse() = child
       m_F = m_child * inv_mat().cast<double>() * m_parent.inverse(); // -> F
 
-      double tcost = m_calc.strain_cost(m_F, m_atomic_vol, m_vol_factor);
+      double tcost = m_calc.strain_cost(m_F, m_vol_factor);
 
       // Initialize to first valid mapping
       if(tcost <= _better_than && _check_canonical()) {
@@ -234,7 +230,7 @@ namespace CASM {
       m_dcache = m_V_inv * m_U;
       m_F = m_child * m_dcache * m_parent.inverse();
       //std::cout << "starting m_F is \n" << m_F << "  det: " << m_F.determinant() << "\n";
-      double best_cost = m_calc.strain_cost(m_F, m_atomic_vol, m_vol_factor);
+      double best_cost = m_calc.strain_cost(m_F, m_vol_factor);
       //std::cout << "starting cost is " << m_cost << "\n";
       //std::cout << "Starting cost is " << m_cost << ", starting N is \n" << m_N << "\nand starting F is \n" << m_F << "\n";
       //std::cout << "Best_cost progression: " << best_cost;
@@ -271,7 +267,7 @@ namespace CASM {
 
         // From relation F * parent * inv_mat.inverse() = child
         m_F = m_child * inv_mat().cast<double>() * m_parent.inverse(); // -> F
-        tcost = m_calc.strain_cost(m_F, m_atomic_vol, m_vol_factor);
+        tcost = m_calc.strain_cost(m_F, m_vol_factor);
         //DEBUG
         //Eigen::Matrix3d M=m_parent.transpose()*m_parent;
         //Eigen::Matrix3d M2=inv_mat().cast<double>().inverse().transpose()*M*inv_mat().cast<double>().inverse();

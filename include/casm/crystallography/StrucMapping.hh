@@ -43,18 +43,22 @@ namespace CASM {
         return _val > small_inf() / 2.;
       }
 
-      /// \brief Calculate the strain cost function of a MappingNode using LatticeMap::calc_strain_cost()
-      /// \param relaxed_lat_vol volume, in Angstr^3, of structure unit cell
-      /// \param mapped_config Description of a proposed mapping; mapped_config.lat_node must be initialized
-      /// \param Nsites number of atoms in the relaxed structure (excluding Va), for proper normalization
-      /// result is the strain cost per atom (units of Antsgr.^2)
-      double strain_cost(double relaxed_lat_vol, const MappingNode &mapped_config, Index Nsites);
-
-      /// \brief Calculate the basis cost function of a MappingNode as the mean-square displacement of its atoms
-      /// \param mapped_config Description of a proposed mapping; mapped_config.basis_node must be initialized
+      /// \brief Calculate the basis cost function of a MappingNode as the normalized mean-square displacement of its atoms
+      /// The displacement vectors are deformed to the CHILD structure's coordinate system before calculating
+      /// \param mapped_result a proposed mapping; both lattice_node and atomic_node of mapped_result must be initialized
       /// \param Nsites number of atoms (excluding vacancies) in the relaxed structure, for proper normalization
-      /// result is the mean-squared atomic displacement (units of Antsgr.^2)
-      double basis_cost(const MappingNode &mapped_config, Index Nsites);
+      /// result is dimensionless, having been normalized by the squared radius of a sphere having the same atomic volume of CHILD structure
+      double atomic_cost_child(const MappingNode &mapped_result, Index Nsites);
+
+      /// \brief Calculate the basis cost function of a MappingNode as the normalized mean-square displacement of its atoms
+      /// The displacement vectors are deformed to the PARENT structure's coordinate system before calculating
+      /// \param mapped_result a proposed mapping; both lattice_node and atomic_node of mapped_result must be initialized
+      /// \param Nsites number of atoms (excluding vacancies) in the relaxed structure, for proper normalization
+      /// result is dimensionless, having been normalized by the squared radius of a sphere having the same atomic volume of PARENT structure
+      double atomic_cost_parent(const MappingNode &mapped_result, Index Nsites);
+
+      /// \brief Calculate the basis cost function of a MappingNode as the average of atomic_cost_child and atomic_cost_parent
+      double atomic_cost(const MappingNode &mapped_config, Index Nsites);
     }
 
 
@@ -246,80 +250,10 @@ namespace CASM {
 
       using MoleculeMap = std::vector<AtomIndexSet>;
 
-      /// \brief Static constructor to build an invalid MappingNode, can be used as return value when no valid mapping exists
-      static MappingNode invalid();
-
-      /// \brief construct with lattice node and strain_weight. Cost is initialized assuming zero basis_node cost
-      MappingNode(LatticeNode _lat_node, double _strain_weight) :
-        lat_node(std::move(_lat_node)),
-        is_viable(true),
-        is_valid(false),
-        is_partitioned(false) {
-        set_strain_weight(_strain_weight);
-        cost = strain_weight * lat_node.cost;
-      }
-
-      double cost_tol() const {
-        return basis_node.cost_tol();
-      }
-
-      /// \brief set the strain_weight. Cost is calculated as
-      /// cost = strain_weight*lattice_node.cost + basis_weight*basis_node.cost
-      /// strain_weight must be on interval (0.,1.]; basis_weight is 1.-strain_weight
-      void set_strain_weight(double _lw) {
-        strain_weight = max(min(_lw, 1.0), 1e-9);
-        basis_weight = 1. - strain_weight;
-      }
-
-      /// \brief Return pair of integer volumes {Vp, Vc}, where Vp is parent supercell volume
-      /// and Vc is child supercell volume
-      std::pair<Index, Index> vol_pair() const {
-        return std::pair<Index, Index>(lat_node.parent.size(), lat_node.child.size());
-      }
-
-      /// \brief non-const calc method solves the assignment problem via hungarian_method
-      /// sets is_viable -> false if no solution
-      void calc();
-
-      void clear() {
-        throw std::runtime_error("MappingNode::clear() not implemented");
-      }
-
-      /// \brief convenience method to access MappingNode::lat_node.isometry
-      Eigen::Matrix3d const &isometry() const {
-        return lat_node.isometry;
-      }
-
-      /// \brief convenience method to access MappingNode::lat_node.stretch
-      Eigen::Matrix3d const &stretch() const {
-        return lat_node.stretch;
-      }
-
-      /// \brief convenience method to access MappingNode::basis_node.translation
-      Eigen::Vector3d const &translation() const {
-        return basis_node.translation;
-      }
-
-      /// \brief convenience method to access MappingNode::basis_node.time_reveral
-      bool time_reversal() const {
-        return basis_node.time_reversal;
-      }
-
-      /// \brief non-const access of i'th atomic displacement of mapped structure
-      Displacement disp(Index i) {
-        return atom_displacement.col(i);
-      }
-
-      /// \brief const access i'th atomic displacement of mapped structure
-      ConstDisplacement disp(Index i) const {
-        return atom_displacement.col(i);
-      }
-
-
-      LatticeNode lat_node;
-      AssignmentNode basis_node;
-      double strain_weight;
-      double basis_weight;
+      LatticeNode lattice_node;
+      AssignmentNode atomic_node;
+      double lattice_weight;
+      double atomic_weight;
 
       /// \brief true if assignment problem is not yet known to be insoluable -- default true
       bool is_viable;
@@ -331,7 +265,7 @@ namespace CASM {
       mutable bool is_partitioned;
 
       /// \brief total, finalized cost, populated by a StrucMapCalculator.
-      /// Not guaranteed to be a linear function of lat_node.cost and basis_node.cost
+      /// Not guaranteed to be a linear function of lattice_node.cost and atomic_node.cost
       double cost;
 
       /// \brief 3xN matrix of displacements for all sites in parent supercell (Va are included, but set to Zero)
@@ -351,11 +285,81 @@ namespace CASM {
       /// list of assigned molecule names
       std::vector<MoleculeLabel> mol_labels;
 
-      /// Compares cost, lat_node, basis_node, and permutation
-      /// if costs are tied, compares lat_node.cost
-      ///   if tied, uninitialized basis_node comes before initialized basis_node
-      ///   if tied, compares lat_node, using defined comparator
-      ///   if tied, compares basis_node, using defined comparator
+      /// \brief Static constructor to build an invalid MappingNode, can be used as return value when no valid mapping exists
+      static MappingNode invalid();
+
+      /// \brief construct with lattice node and lattice_weight. Cost is initialized assuming zero atomic_node cost
+      MappingNode(LatticeNode _lattice_node, double _lattice_weight) :
+        lattice_node(std::move(_lattice_node)),
+        is_viable(true),
+        is_valid(false),
+        is_partitioned(false) {
+        set_lattice_weight(_lattice_weight);
+        cost = lattice_weight * lattice_node.cost;
+      }
+
+      double cost_tol() const {
+        return atomic_node.cost_tol();
+      }
+
+      /// \brief set the lattice_weight. Cost is calculated as
+      /// cost = lattice_weight*lattice_node.cost + atomic_weight*atomic_node.cost
+      /// lattice_weight must be on interval (0.,1.]; atomic_weight is 1.-lattice_weight
+      void set_lattice_weight(double _lw) {
+        lattice_weight = max(min(_lw, 1.0), 1e-9);
+        atomic_weight = 1. - lattice_weight;
+      }
+
+      /// \brief Return pair of integer volumes {Vp, Vc}, where Vp is parent supercell volume
+      /// and Vc is child supercell volume
+      std::pair<Index, Index> vol_pair() const {
+        return std::pair<Index, Index>(lattice_node.parent.size(), lattice_node.child.size());
+      }
+
+      /// \brief non-const calc method solves the assignment problem via hungarian_method
+      /// sets is_viable -> false if no solution
+      void calc();
+
+      void clear() {
+        throw std::runtime_error("MappingNode::clear() not implemented");
+      }
+
+      /// \brief convenience method to access MappingNode::lattice_node.isometry
+      Eigen::Matrix3d const &isometry() const {
+        return lattice_node.isometry;
+      }
+
+      /// \brief convenience method to access MappingNode::lattice_node.stretch
+      Eigen::Matrix3d const &stretch() const {
+        return lattice_node.stretch;
+      }
+
+      /// \brief convenience method to access MappingNode::atomic_node.translation
+      Eigen::Vector3d const &translation() const {
+        return atomic_node.translation;
+      }
+
+      /// \brief convenience method to access MappingNode::atomic_node.time_reveral
+      bool time_reversal() const {
+        return atomic_node.time_reversal;
+      }
+
+      /// \brief non-const access of i'th atomic displacement of mapped structure
+      Displacement disp(Index i) {
+        return atom_displacement.col(i);
+      }
+
+      /// \brief const access i'th atomic displacement of mapped structure
+      ConstDisplacement disp(Index i) const {
+        return atom_displacement.col(i);
+      }
+
+
+      /// Compares cost, lattice_node, atomic_node, and permutation
+      /// if costs are tied, compares lattice_node.cost
+      ///   if tied, uninitialized atomic_node comes before initialized atomic_node
+      ///   if tied, compares lattice_node, using defined comparator
+      ///   if tied, compares atomic_node, using defined comparator
       ///   if tied, does lexicographic comparison of permutation
       /// This order is essential for proper behavior of mapping algorithm
       bool operator<(MappingNode const &other) const;
@@ -406,9 +410,9 @@ namespace CASM {
       ///          are calculated, determines validity of proposed mappings, and finalizes the representation of proposed mappings
       ///\endparblock
       ///
-      ///\param _strain_weight
+      ///\param _lattice_weight
       ///\parblock
-      ///          free parameter 'w' in the cost function: total_cost = w*lattice_deformation+(1-w)*basis_deformation
+      ///          free parameter 'w' in the cost function: total_cost = w*lattice_deformation+(1-w)*atomic_deformation
       ///          can vary between 0 (completely basis-focused) and 1 (completely lattice-focused)
       ///\endparblock
       ///
@@ -435,7 +439,7 @@ namespace CASM {
       ///
       ///\param _max_va_frac maximum fraction of vacant sites, above this fraction a mapping will not be considered
       StrucMapper(StrucMapCalculatorInterface const &_calculator,
-                  double _strain_weight = 0.5,
+                  double _lattice_weight = 0.5,
                   double _max_volume_change = 0.5,
                   int _options = 0, // this should actually be a bitwise-OR of StrucMapper::Options
                   double _cost_tol = TOL,
@@ -452,16 +456,16 @@ namespace CASM {
         return m_xtal_tol;
       }
 
-      double strain_weight() const {
-        return m_strain_weight;
+      double lattice_weight() const {
+        return m_lattice_weight;
       }
 
-      double basis_weight() const {
-        return 1. - m_strain_weight;
+      double atomic_weight() const {
+        return 1. - m_lattice_weight;
       }
 
-      void set_strain_weight(double _lw) {
-        m_strain_weight = max(min(_lw, 1.0), 1e-9);
+      void set_lattice_weight(double _lw) {
+        m_lattice_weight = max(min(_lw, 1.0), 1e-9);
       }
 
       /// \brief Returns the minimum fraction of sites allowed to be vacant in the mapping relation
@@ -693,15 +697,17 @@ namespace CASM {
                                                          std::vector<Lattice> const &_parent_scels,
                                                          std::vector<Lattice> const &_child_scels,
                                                          Index k,
-                                                         double min_cost = 1e-6,
-                                                         double max_cost = StrucMapping::small_inf()) const;
+                                                         double max_cost,
+                                                         double min_cost) const;
 
-      /// \brief construc partial mapping nodes (with uninitialized basis_node) based on current settings
+      /// \brief construc partial mapping nodes (with uninitialized atomic_node) based on current settings
       /// considers supercells with integer volume between min_vol and max_vol
       std::set<MappingNode> _seed_from_vol_range(SimpleStructure const &child_struc,
                                                  Index k,
                                                  Index min_vol,
-                                                 Index max_vol) const;
+                                                 Index max_vol,
+                                                 double max_cost,
+                                                 double min_cost) const;
 
       ///\brief returns number of species in a SimpleStructure given the current calculator settings.
       ///       Use instead of sstruc.n_atom() for consistency
@@ -718,7 +724,7 @@ namespace CASM {
 
       Eigen::MatrixXd m_strain_gram_mat;
 
-      double m_strain_weight;
+      double m_lattice_weight;
       double m_max_volume_change;
       int m_options;
       double m_cost_tol;

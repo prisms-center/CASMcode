@@ -45,16 +45,51 @@ namespace CASM {
 
       result.reserve(n_best);
 
-      Coordinate translation(_node.lat_node.parent.superlattice());
+
       // Try translating child atom at i_trans onto each chemically compatible site of parent
+      Coordinate equiv_trans(_node.lattice_node.parent.superlattice());
+      Coordinate t_trans(equiv_trans);
+      Eigen::Vector3d best_equiv_trans;
       for(Index j = 0; j < _allowed_species().size(); ++j) {
         if(contains(_allowed_species()[j], sp)) {
-          translation.cart() = p_info.cart_coord(j) - c_info.cart_coord(i_trans);
-          translation.voronoi_within();
-          result.push_back(translation.const_cart());
+          Eigen::Vector3d translation = p_info.cart_coord(j) - c_info.cart_coord(i_trans);
+          best_equiv_trans = translation;
+          bool unique_trans = true;
+          if(this->internal_translations().size() > 1) {
+            {
+              double best_dist = 1e20;
+              for(auto const &itrans : this->internal_translations()) {
+
+                //equivalent translation is internal_translation + translation
+                equiv_trans.cart() = itrans + translation;
+
+                // See if equiv_trans is equivalent to any found translation, to within a lattice translation
+                for(auto const &rtrans : result) {
+                  t_trans.cart() = rtrans;
+                  if(equiv_trans.min_dist(t_trans) < this->xtal_tol()) {
+                    unique_trans = false;
+                    break;
+                  }
+                }
+
+                if(!unique_trans)
+                  break;
+
+                // keep track of shortest equivalent translation
+                equiv_trans.voronoi_within();
+                double tdist = equiv_trans.const_cart().norm();
+                if(tdist < best_dist) {
+                  best_dist = tdist;
+                  best_equiv_trans = equiv_trans.const_cart();
+                }
+              }
+            }
+          }
+          if(unique_trans) {
+            result.push_back(best_equiv_trans);
+          }
         }
       }
-
       return result;
     }
 
@@ -65,8 +100,8 @@ namespace CASM {
     SimpleStructure SimpleStrucMapCalculator::resolve_setting(MappingNode const &_node, SimpleStructure const &_child_struc) const {
       SimpleStructure::Info const &c_info(_child_struc.atom_info);
       SimpleStructure::Info const &p_info((this->parent()).mol_info);
-      auto const &cgrid = _node.lat_node.child;
-      auto const &pgrid = _node.lat_node.parent;
+      auto const &cgrid = _node.lattice_node.child;
+      auto const &pgrid = _node.lattice_node.parent;
 
       Index csize = c_info.size();
 
@@ -74,7 +109,7 @@ namespace CASM {
 
       // Resolve setting of deformed lattice vectors
       // Symmetric deformation of parent lattice that takes it to de-rotated child lattice:
-      Eigen::Matrix3d U = (_node.lat_node.stretch).inverse(); // * _node.lat_node.isometry).inverse();
+      Eigen::Matrix3d U = (_node.lattice_node.stretch).inverse(); // * _node.lattice_node.isometry).inverse();
       result.lat_column_mat = U * pgrid.superlattice().lat_column_mat();
 
       // Match number of sites in result to number of sites in supercell of parent
@@ -110,18 +145,18 @@ namespace CASM {
       // Transform and expand properties of child to fill resolved structure
       // global properties first
       for(auto const &el : _child_struc.properties) {
-        Eigen::MatrixXd trans = AnisoValTraits(el.first).symop_to_matrix(_node.lat_node.isometry,
-                                                                         U * _node.basis_node.translation,
-                                                                         _node.basis_node.time_reversal);
+        Eigen::MatrixXd trans = AnisoValTraits(el.first).symop_to_matrix(_node.lattice_node.isometry,
+                                                                         U * _node.atomic_node.translation,
+                                                                         _node.atomic_node.time_reversal);
         result.properties.emplace(el.first, trans * el.second);
       }
 
       // site properties second
       for(auto const &el : c_info.properties) {
         AnisoValTraits ttraits(el.first);
-        Eigen::MatrixXd trans = AnisoValTraits(el.first).symop_to_matrix(_node.lat_node.isometry,
-                                                                         U * _node.basis_node.translation,
-                                                                         _node.basis_node.time_reversal);
+        Eigen::MatrixXd trans = AnisoValTraits(el.first).symop_to_matrix(_node.lattice_node.isometry,
+                                                                         U * _node.atomic_node.translation,
+                                                                         _node.atomic_node.time_reversal);
         Eigen::MatrixXd tprop = trans * el.second;
 
         auto it = r_info.properties.emplace(el.first, Eigen::MatrixXd::Zero(el.second.rows(), r_info.size())).first;
@@ -154,7 +189,7 @@ namespace CASM {
       {
         AnisoValTraits ttraits("isometry");
         //unroll to 9-element vector
-        result.properties[ttraits.name()] = Eigen::Map<const Eigen::VectorXd>(_node.lat_node.isometry.data(), ttraits.dim());
+        result.properties[ttraits.name()] = Eigen::Map<const Eigen::VectorXd>(_node.lattice_node.isometry.data(), ttraits.dim());
       }
 
 
@@ -169,8 +204,8 @@ namespace CASM {
 
       populate_displacement(node, _child_struc);
 
-      node.basis_node.cost = StrucMapping::basis_cost(node, this->struc_info(_child_struc).size());
-      node.cost = node.basis_weight * node.basis_node.cost + node.strain_weight * node.lat_node.cost;
+      node.atomic_node.cost = StrucMapping::atomic_cost(node, this->struc_info(_child_struc).size());
+      node.cost = node.atomic_weight * node.atomic_node.cost + node.lattice_weight * node.lattice_node.cost;
 
       node.is_valid = this->_assign_molecules(node, _child_struc);
 
@@ -183,15 +218,15 @@ namespace CASM {
 
     void SimpleStrucMapCalculator::populate_displacement(MappingNode &_node, SimpleStructure const &child_struc) const {
 
-      const auto &pgrid = _node.lat_node.parent;
-      const auto &cgrid = _node.lat_node.child;
+      const auto &pgrid = _node.lattice_node.parent;
+      const auto &cgrid = _node.lattice_node.child;
       SimpleStructure::Info const &p_info(this->struc_info(parent()));
       SimpleStructure::Info const &c_info(this->struc_info(child_struc));
       // TODO: Just use linear index converter? could make things more obvious
       impl::OrderedLatticePointGenerator child_index_to_unitcell(cgrid.transformation_matrix());
       impl::OrderedLatticePointGenerator parent_index_to_unitcell(pgrid.transformation_matrix());
 
-      _node.atom_permutation = _node.basis_node.permutation();
+      _node.atom_permutation = _node.atomic_node.permutation();
 
       // initialize displacement matrix with all zeros
       _node.atom_displacement.setZero(3, pgrid.size() * p_info.size());
@@ -217,7 +252,7 @@ namespace CASM {
                                  + Local::_make_superlattice_coordinate(_node.atom_permutation[i] % cgrid.size(),
                                                                         cgrid,
                                                                         child_index_to_unitcell).const_cart()
-                                 + _node.basis_node.translation,
+                                 + _node.atomic_node.translation,
                                  pgrid.superlattice(), CART);
 
           Coordinate parent_coord = Local::_make_superlattice_coordinate(i % pgrid.size(), pgrid, parent_index_to_unitcell);
@@ -236,7 +271,8 @@ namespace CASM {
           _node.atom_displacement.col(i) -= avg_disp;
         }
       }
-      _node.basis_node.translation -= avg_disp;
+
+      _node.atomic_node.translation -= avg_disp;
       // End of filling displacements
     }
 
@@ -251,12 +287,12 @@ namespace CASM {
     //****************************************************************************************
     bool SimpleStrucMapCalculator::populate_cost_mat(MappingNode &_node,
                                                      SimpleStructure const &child_struc) const {
-      const auto &pgrid = _node.lat_node.parent;
-      const auto &cgrid = _node.lat_node.child;
+      const auto &pgrid = _node.lattice_node.parent;
+      const auto &cgrid = _node.lattice_node.child;
 
-      Eigen::Vector3d const &translation(_node.basis_node.translation);
-      Eigen::MatrixXd &cost_matrix(_node.basis_node.cost_mat);
-      Eigen::Matrix3d metric = (_node.lat_node.stretch * _node.lat_node.stretch).inverse();
+      Eigen::Vector3d const &translation(_node.atomic_node.translation);
+      Eigen::MatrixXd &cost_matrix(_node.atomic_node.cost_mat);
+      Eigen::Matrix3d metric = (_node.lattice_node.stretch * _node.lattice_node.stretch).inverse();
       impl::OrderedLatticePointGenerator child_index_to_unitcell(cgrid.transformation_matrix());
       impl::OrderedLatticePointGenerator parent_index_to_unitcell(pgrid.transformation_matrix());
 
@@ -339,8 +375,8 @@ namespace CASM {
     bool SimpleStrucMapCalculator::_assign_molecules(MappingNode &node,
                                                      SimpleStructure const &_child_struc) const {
 
-      auto const &cgrid(node.lat_node.child);
-      auto const &pgrid(node.lat_node.parent);
+      auto const &cgrid(node.lattice_node.child);
+      auto const &pgrid(node.lattice_node.parent);
       node.mol_map.clear();
       node.mol_map.reserve(node.atom_permutation.size());
       node.mol_labels.clear();

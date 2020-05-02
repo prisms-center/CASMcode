@@ -242,7 +242,7 @@ namespace CASM {
     ///
     ///\param _strain_weight
     ///\parblock
-    ///          free parameter 'w' in the cost function: total_cost = w*lattice_deformation+(1-w)*basis_deformation
+    ///          free parameter 'w' in the cost function: total_cost = w*lattice_deformation+(1-w)*atomic_deformation
     ///          can vary between 0 (completely basis-focused) and 1 (completely lattice-focused)
     ///\endparblock
     ///

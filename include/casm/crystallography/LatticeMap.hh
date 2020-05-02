@@ -20,10 +20,10 @@ namespace CASM {
       StrainCostCalculator(Eigen::Ref<const Eigen::MatrixXd> const &strain_gram_mat = Eigen::MatrixXd::Identity(9, 9));
 
       //\brief Isotropic strain cost, without gram matrix
-      static double iso_strain_cost(Eigen::Matrix3d const &F, double relaxed_atomic_vol);
+      static double iso_strain_cost(Eigen::Matrix3d const &F);
 
       //\brief Isotropic strain cost, without gram matrix
-      static double iso_strain_cost(Eigen::Matrix3d const &F, double relaxed_atomic_vol, double _vol_factor);
+      static double iso_strain_cost(Eigen::Matrix3d const &F, double _vol_factor);
 
       // \brief Volumetric factor : pow(abs(F.determinant()),1./3.), used to normalize the strain cost to make it volume-independent
       static double vol_factor(Eigen::Matrix3d const &F) {
@@ -31,10 +31,10 @@ namespace CASM {
       }
 
       //\brief Anisotropic strain cost; utilizes stored gram matrix to compute strain cost
-      double strain_cost(Eigen::Matrix3d const &F, double relaxed_atomic_vol)const;
+      double strain_cost(Eigen::Matrix3d const &F)const;
 
       //\brief Anisotropic strain cost; utilizes stored gram matrix to compute strain cost
-      double strain_cost(Eigen::Matrix3d const &F, double relaxed_atomic_vol, double _vol_factor)const;
+      double strain_cost(Eigen::Matrix3d const &F, double _vol_factor)const;
 
 
     private:
@@ -118,8 +118,6 @@ namespace CASM {
       // m_scale = (det(m_child)/det(m_parent))^(2/3) = det(m_F)^(2/3)
       double m_vol_factor;
 
-      // m_atomic_vol = (det(m_child)/num_atoms)
-      double m_atomic_vol;
       int m_range;
 
       // pointer to static list of unimodular matrices
@@ -148,7 +146,7 @@ namespace CASM {
 
       LatticeMap const &_next_mapping_better_than(double max_cost) const;
 
-      // use m_F and m_atomic_vol to calculate strain cost
+      // use m_F to calculate strain cost
       double _calc_strain_cost() const;
 
     };

@@ -24,15 +24,24 @@ namespace CASM {
     //*******************************************************************************************
 
     namespace StrucMapping {
-      double strain_cost(double relaxed_lat_vol, const MappingNode &mapped_result, const Index Nsites) {
-        return StrainCostCalculator::iso_strain_cost(mapped_result.lat_node.stretch, relaxed_lat_vol / double(max(Nsites, Index(1))));
+      double atomic_cost_child(const MappingNode &mapped_result, Index Nsites) {
+        // mean square displacement distance in deformed coordinate system
+        double atomic_vol = mapped_result.lattice_node.parent.superlattice.volume() / double(Nsites) / mapped_result.lattice_node.stretch.determinant();
+        return pow(3.*abs(atomic_vol) / (4.*M_PI), -2. / 3.) * (mapped_result.lattice_node.stretch.inverse() * mapped_result.atom_displacement).squaredNorm() / double(max(Nsites, Index(1)));
+      }
+      //*******************************************************************************************
+
+      double atomic_cost_parent(const MappingNode &mapped_result, Index Nsites) {
+        // mean square displacement distance in deformed coordinate system
+        double atomic_vol = mapped_result.lattice_node.parent.superlattice.volume() / double(Nsites);
+        return pow(3.*abs(atomic_vol) / (4.*M_PI), -2. / 3.) * (mapped_result.atom_displacement).squaredNorm() / double(max(Nsites, Index(1)));
       }
 
       //*******************************************************************************************
 
-      double basis_cost(const MappingNode &mapped_result, Index Nsites) {
+      double atomic_cost(const MappingNode &mapped_result, Index Nsites) {
         // mean square displacement distance in deformed coordinate system
-        return (mapped_result.lat_node.stretch.inverse() * mapped_result.atom_displacement).squaredNorm() / double(max(Nsites, Index(1)));
+        return (atomic_cost_child(mapped_result, Nsites) + atomic_cost_parent(mapped_result, Nsites)) / 2.
       }
     }
 
@@ -40,11 +49,11 @@ namespace CASM {
     namespace Local {
       // Local helper function for StrucMapper::k_best_maps_better_than
       template<typename OutputIterator>
-      static bool initial_basis_maps(SimpleStructure child_struc,
-                                     MappingNode const &seed,
-                                     StrucMapCalculatorInterface const &calculator,
-                                     double max_cost,
-                                     OutputIterator it) {
+      static bool initial_atomic_maps(SimpleStructure child_struc,
+                                      MappingNode const &seed,
+                                      StrucMapCalculatorInterface const &calculator,
+                                      double max_cost,
+                                      OutputIterator it) {
 
         //derotate first
         child_struc.rotate_coords(seed.isometry());
@@ -60,7 +69,7 @@ namespace CASM {
         for(Eigen::Vector3d const &translation : calculator.translations(seed, child_struc)) {
 
           MappingNode node = seed;
-          node.basis_node.translation = translation;
+          node.atomic_node.translation = translation;
           if(!calculator.populate_cost_mat(node,
                                            child_struc)) {
             // Indicates that structure is incompatible with supercell, regardless of translation so return false
@@ -101,10 +110,10 @@ namespace CASM {
         //Then undeform by inverse of right stretch
         child_struc.deform_coords(_node.stretch());
 
-        Index cN = _node.lat_node.child.size() * _calculator.struc_info(child_struc).size();
+        Index cN = _node.lattice_node.child.size() * _calculator.struc_info(child_struc).size();
 
         Index j, jj, currj, realj;
-        Index n = _node.basis_node.assignment.size();
+        Index n = _node.atomic_node.assignment.size();
         MappingNode t1(_node),
                     t2(_node);
 
@@ -115,8 +124,8 @@ namespace CASM {
         MappingNode *p1 = &t1;
         MappingNode *p2 = &t2;
         for(Index m = n; 1 < m && (p1->is_viable || p2->is_viable); --m) {
-          AssignmentNode &n1(p1->basis_node);
-          AssignmentNode &n2(p2->basis_node);
+          AssignmentNode &n1(p1->atomic_node);
+          AssignmentNode &n2(p2->atomic_node);
           //clear assignment and cost_mat
           n2.assignment.clear();
           n2.irow.clear();
@@ -211,7 +220,7 @@ namespace CASM {
       isometry = (F * stretch).transpose();
 
       if(StrucMapping::is_inf(cost))
-        cost = StrainCostCalculator::iso_strain_cost(stretch, child_prim.volume() / double(max(child_N_atom, Index(1))));
+        cost = StrainCostCalculator::iso_strain_cost(stretch);
     }
 
     //*******************************************************************************************
@@ -296,17 +305,17 @@ namespace CASM {
     void MappingNode::calc() {
 
       if(is_viable) {
-        if(basis_node.irow.empty())
-          basis_node.irow = sequence<Index>(0, basis_node.cost_mat.rows() - 1);
-        if(basis_node.icol.empty())
-          basis_node.icol = sequence<Index>(0, basis_node.cost_mat.cols() - 1);
-        basis_node.cost = hungarian_method(basis_node.cost_mat, basis_node.assignment, cost_tol()) + basis_node.cost_offset;
-        if(StrucMapping::is_inf(basis_node.cost)) {
+        if(atomic_node.irow.empty())
+          atomic_node.irow = sequence<Index>(0, atomic_node.cost_mat.rows() - 1);
+        if(atomic_node.icol.empty())
+          atomic_node.icol = sequence<Index>(0, atomic_node.cost_mat.cols() - 1);
+        atomic_node.cost = hungarian_method(atomic_node.cost_mat, atomic_node.assignment, cost_tol()) + atomic_node.cost_offset;
+        if(StrucMapping::is_inf(atomic_node.cost)) {
           is_viable = false;
           cost = StrucMapping::big_inf();
         }
         else {
-          cost = strain_weight * lat_node.cost + basis_weight * basis_node.cost;
+          cost = lattice_weight * lattice_node.cost + atomic_weight * atomic_node.cost;
         }
       }
       else
@@ -314,25 +323,28 @@ namespace CASM {
 
     }
 
+    //*******************************************************************************************
+
     bool MappingNode::operator<(MappingNode const &B) const {
-      if(!almost_equal(cost, B.cost)) {
-        return cost < B.cost;
+      double _cost_tol = max(this->cost_tol(), B.cost_tol());
+      if(!almost_equal(this->cost, B.cost, _cost_tol)) {
+        return this->cost < B.cost;
       }
-      if(!almost_equal(lat_node.cost, B.lat_node.cost)) {
-        return lat_node.cost < B.lat_node.cost;
+      if(!almost_equal(this->lattice_node.cost, B.lattice_node.cost, _cost_tol)) {
+        return this->lattice_node.cost < B.lattice_node.cost;
       }
-      if(basis_node.empty() != B.basis_node.empty()) {
-        return basis_node.empty();
+      if(this->atomic_node.empty() != B.atomic_node.empty()) {
+        return this->atomic_node.empty();
       }
-      if(!identical(lat_node, B.lat_node, cost_tol())) {
-        return less(lat_node, B.lat_node, cost_tol());
+      if(!identical(this->lattice_node, B.lattice_node, _cost_tol)) {
+        return less(this->lattice_node, B.lattice_node, _cost_tol);
       }
-      if(!identical(basis_node, B.basis_node)) {
-        return basis_node < B.basis_node;
+      if(!identical(this->atomic_node, B.atomic_node)) {
+        return this->atomic_node < B.atomic_node;
       }
       if(atom_permutation != B.atom_permutation)
-        return std::lexicographical_compare(atom_permutation.begin(),
-                                            atom_permutation.end(),
+        return std::lexicographical_compare(this->atom_permutation.begin(),
+                                            this->atom_permutation.end(),
                                             B.atom_permutation.begin(),
                                             B.atom_permutation.end());
 
@@ -342,7 +354,7 @@ namespace CASM {
     //*******************************************************************************************
 
     StrucMapper::StrucMapper(StrucMapCalculatorInterface const &calculator,
-                             double _strain_weight /*= 0.5*/,
+                             double _lattice_weight /*= 0.5*/,
                              double _max_volume_change /*= 0.5*/,
                              int _options /*= robust*/, // this should actually be a bitwise-OR of StrucMapper::Options
                              double _cost_tol /*= TOL*/,
@@ -358,8 +370,8 @@ namespace CASM {
       set_min_va_frac(_min_va_frac);
       set_max_va_frac(_max_va_frac);
 
-      //squeeze strain_weight into (0,1] if necessary
-      set_strain_weight(_strain_weight);
+      //squeeze lattice_weight into (0,1] if necessary
+      set_lattice_weight(_lattice_weight);
 
       //Make sure that max_volume_change is positive
       m_max_volume_change = max(3 * xtal_tol(), _max_volume_change);
@@ -454,7 +466,9 @@ namespace CASM {
     std::set<MappingNode> StrucMapper::_seed_from_vol_range(SimpleStructure const &child_struc,
                                                             Index k,
                                                             Index min_vol,
-                                                            Index max_vol) const {
+                                                            Index max_vol,
+                                                            double max_cost,
+                                                            double min_cost) const {
 
       if(!valid_index(min_vol) || !valid_index(min_vol) || max_vol < min_vol) {
         auto vol_range = _vol_range(child_struc);
@@ -475,7 +489,9 @@ namespace CASM {
         std::set<MappingNode> t_seed = _seed_k_best_from_super_lats(child_struc,
                                                                     lat_vec,
         {Lattice(child_struc.lat_column_mat, xtal_tol())},
-        k);
+        k,
+        max_cost,
+        max(min_cost, cost_tol()));
 
         mapping_seed.insert(std::make_move_iterator(t_seed.begin()), std::make_move_iterator(t_seed.end()));
 
@@ -528,14 +544,14 @@ namespace CASM {
       // We now find a transformation matrix of c_lat so that, after transformation, it is related
       // to derot_c_lat by rigid rotation only. Following line finds R and T such that derot_c_lat = R*c_lat*T
       auto res = xtal::is_equivalent_superlattice(derot_c_lat, c_lat, calculator().point_group().begin(), calculator().point_group().end(), xtal_tol());
-      LatticeNode lat_node(Lattice(parent().lat_column_mat, xtal_tol()),
-                           derot_c_lat,
-                           c_lat,
-                           Lattice(child_struc.lat_column_mat * res.second.cast<double>(), xtal_tol()),
-                           _n_species(child_struc),
-                           0. /*strain_cost is zero in ideal case*/);
+      LatticeNode lattice_node(Lattice(parent().lat_column_mat, xtal_tol()),
+                               derot_c_lat,
+                               c_lat,
+                               Lattice(child_struc.lat_column_mat * res.second.cast<double>(), xtal_tol()),
+                               _n_species(child_struc),
+                               0. /*strain_cost is zero in ideal case*/);
 
-      return map_deformed_struc_impose_lattice_node(child_struc, lat_node, k, max_cost, min_cost, keep_invalid);
+      return map_deformed_struc_impose_lattice_node(child_struc, lattice_node, k, max_cost, min_cost, keep_invalid);
 
     }
 
@@ -561,7 +577,7 @@ namespace CASM {
                                                                               bool keep_invalid /*=false*/) const {
 
       int seed_k = 10 + 5 * k;
-      std::set<MappingNode> mapping_seed = _seed_from_vol_range(child_struc, seed_k, min_vol, max_vol);
+      std::set<MappingNode> mapping_seed = _seed_from_vol_range(child_struc, seed_k, min_vol, max_vol, max_cost, max(min_cost, cost_tol()));
 
       std::cout << "LatticeMap seed size: " << mapping_seed.size() << std::endl;
 
@@ -584,7 +600,9 @@ namespace CASM {
       {imposed_lat},
       {Lattice(child_struc.lat_column_mat, xtal_tol())},
       k,
-      max(min_cost, 1e-5));
+      max_cost,
+      max(min_cost, cost_tol()));
+
       bool no_partition = !(robust & options()) && k <= 1;
       k_best_maps_better_than(child_struc, mapping_seed, k, max_cost, min_cost, keep_invalid, false, no_partition);
       return mapping_seed;
@@ -600,7 +618,7 @@ namespace CASM {
                                                                               bool keep_invalid /*=false*/) const {
 
       std::set<MappingNode> mapping_seed;
-      mapping_seed.emplace(imposed_node, m_strain_weight);
+      mapping_seed.emplace(imposed_node, m_lattice_weight);
       bool no_partition = !(robust & options()) && k <= 1;
       k_best_maps_better_than(child_struc, mapping_seed, k, max_cost, min_cost, keep_invalid, false, no_partition);
       return mapping_seed;
@@ -688,75 +706,79 @@ namespace CASM {
       }
 
       auto it = queue.begin();
-      while(it != queue.end() && it->cost <= (max_cost + cost_tol())) {
-
-        auto current = it;
+      while(it != queue.end()) {
         bool erase = true;
-        // If supercell volumes have already been determined incompatible, we do nothing;
-        // current node is deleted
-        if(!vol_mismatch.count(current->vol_pair())) {
-          std::cout << "Before -- nfound: " << nfound << "; k: " << k <<  "; current cost: " << current->cost << std::endl;
-          std::cout << "min_cost: " << min_cost << ";  max_cost: " << max_cost << "\n";
-          // Consider two exlusive cases (and base case, in which current node isn't even viable)
-          if(current->basis_node.empty()) {
-            std::cout << "IS LATTICE MAP! Size before: " << queue.size() << "\n";
-            // Case 1: Current node only describes a lattice mapping with no basis mapping
-            //         Perform basis mapping, insert result into queue, and erase current
-            //         (new node must have cost greather than the current node, so will
-            //          appear later in the queue)
-            if(!Local::initial_basis_maps(child_struc,
-                                          *current,
-                                          calculator(),
-                                          max_cost,
-                                          std::inserter(queue, current))) {
-              // If no basis maps are viable, it indicates volume mismatch; add to vol_mismatch
-              vol_mismatch.insert(current->vol_pair());
-            }
-            std::cout << "Size after: " << queue.size() << "\n";
-          }
-          else if(current->is_viable) {
+        auto current = it;
 
-            std::cout << "COMPLETE MAPPING! Size before: " << queue.size() << std::endl;
-            // Case 2: Current node is a complete mapping and is viable
-            //         Either it is a valid node, and thus part of the solution set,
-            //         or it is invalid, but we must add its partition to the queue
-            //         because it may have a suboptimal derivative mapping that is valid
-            //         and is part of the solution set
-
-            if(current->is_valid && current->cost > min_cost && nfound < k) {
-              // current node is part of solution set
-              ++nfound;
-
-              // Need to account for case where mapping k+1 is as good as mapping k
-              // A few ways to make this happen, but we will do it by increasing k when nfound==k,
-              // and shrink max_cost to be *just* higher than current cost
-              if(nfound == k) {
-                ++k;
-                max_cost = current->cost;// + tol();
+        if(it->cost <= (max_cost + this->cost_tol())) {
+          // If supercell volumes have already been determined incompatible, we do nothing;
+          // current node is deleted
+          if(!vol_mismatch.count(current->vol_pair())) {
+            std::cout << "Before -- nfound: " << nfound << "; k: " << k <<  "; current cost: " << current->cost << std::endl;
+            std::cout << "min_cost: " << min_cost << ";  max_cost: " << max_cost << "\n";
+            // Consider two exlusive cases (and base case, in which current node isn't even viable)
+            if(current->atomic_node.empty()) {
+              std::cout << "IS LATTICE MAP! Size before: " << queue.size() << "\n";
+              // Case 1: Current node only describes a lattice mapping with no basis mapping
+              //         Perform basis mapping, insert result into queue, and erase current
+              //         (new node must have cost greather than the current node, so will
+              //          appear later in the queue)
+              if(!Local::initial_atomic_maps(child_struc,
+                                             *current,
+                                             calculator(),
+                                             max_cost,
+                                             std::inserter(queue, current))) {
+                // If no basis maps are viable, it indicates volume mismatch; add to vol_mismatch
+                vol_mismatch.insert(current->vol_pair());
               }
+              std::cout << "Size after: " << queue.size() << "\n";
             }
+            else if(current->is_viable) {
 
+              std::cout << "COMPLETE MAPPING! Size before: " << queue.size() << std::endl;
+              // Case 2: Current node is a complete mapping and is viable
+              //         Either it is a valid node, and thus part of the solution set,
+              //         or it is invalid, but we must add its partition to the queue
+              //         because it may have a suboptimal derivative mapping that is valid
+              //         and is part of the solution set
 
-            // Regardless of validity, we partition current node and add the derivative nodes to queue
-            // (but only if we haven't reached stopping condition)
-            // Skip partitioning if node is already partitioned, or if caller has asked not to
-            if(nfound < k || current->cost <= min_cost) {
-              if(!(no_partition || current->is_partitioned)) {
-                Local::partition_node(*current,
-                                      calculator(),
-                                      child_struc,
-                                      std::inserter(queue, current));
+              if(current->is_valid && current->cost > min_cost && nfound < k) {
+                // current node is part of solution set
+                ++nfound;
+
+                // Need to account for case where mapping k+1 is as good as mapping k
+                // A few ways to make this happen, but we will do it by increasing k when nfound==k,
+                // and shrink max_cost to be *just* higher than current cost
+                if(nfound == k) {
+                  ++k;
+                  max_cost = current->cost;// + tol();
+                }
               }
 
 
-              // Keep current node if it is in the solution set if we have been asked to keep invalids
-              if(current->is_valid || keep_invalid)
-                erase = false;
+              // Regardless of validity, we partition current node and add the derivative nodes to queue
+              // (but only if we haven't reached stopping condition)
+              // Skip partitioning if node is already partitioned, or if caller has asked not to
+              if(nfound < k || current->cost <= min_cost) {
+                if(!(no_partition || current->is_partitioned)) {
+                  Local::partition_node(*current,
+                                        calculator(),
+                                        child_struc,
+                                        std::inserter(queue, current));
+                }
+
+
+                // Keep current node if it is in the solution set if we have been asked to keep invalids
+                if(current->is_valid || keep_invalid)
+                  erase = false;
+              }
             }
+            //Never keep unviable nodes or incomplete nodes
           }
-          //Never keep unviable nodes or incomplete nodes
         }
-
+        else {
+          erase = !keep_tail;
+        }
         // Safe to increment here:
         //  1) No continue/break statements
         //  2) Nothing has been deleted yet
@@ -770,10 +792,7 @@ namespace CASM {
         if(erase)
           queue.erase(current);
       }
-      // Erase everything worse than the solution set, unless asked not to
-      if(!keep_tail && it != queue.end()) {
-        queue.erase(it, queue.end());
-      }
+
       return nfound;
     }
 
@@ -784,8 +803,8 @@ namespace CASM {
                                                                     std::vector<Lattice> const &_parent_scels,
                                                                     std::vector<Lattice> const &_child_scels,
                                                                     Index k,
-                                                                    double min_cost /*=1e-6*/,
-                                                                    double max_cost /*=StrucMapping::small_inf()*/) const {
+                                                                    double max_cost /*=StrucMapping::small_inf()*/,
+                                                                    double min_cost /*=1e-6*/) const {
       Lattice p_prim_lat(parent().lat_column_mat, xtal_tol());
       Lattice c_prim_lat(child_struc.lat_column_mat, xtal_tol());
       std::set<MappingNode> result;
@@ -808,7 +827,7 @@ namespace CASM {
             }
 
             //auto res =
-            result.emplace(LatticeNode(strain_map, p_prim_lat, c_prim_lat), strain_weight());
+            result.emplace(LatticeNode(strain_map, p_prim_lat, c_prim_lat), lattice_weight());
             if(result.size() > k) {
               result.erase(std::next(result.rbegin()).base());
               if(!result.empty())
