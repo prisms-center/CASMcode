@@ -265,6 +265,7 @@ libcasm_la_SOURCES = \
     include/casm/enumerator/Enumerator_impl.hh\
     include/casm/enumerator/InputEnumerator.hh\
     include/casm/enumerator/RandomAccessEnumerator.hh\
+    include/casm/enumerator/io/json/DoFSpace.hh\
     include/casm/external/Eigen/Array\
     include/casm/external/Eigen/CASM_AddOns\
     include/casm/external/Eigen/CMakeLists.txt\
