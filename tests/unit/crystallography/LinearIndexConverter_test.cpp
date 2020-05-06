@@ -34,12 +34,6 @@ TEST(UnitCellCoordIndexConverterTest, construct_via_transformation) {
   xtal::UnitCellCoordIndexConverter ix_bijk_converter(trans_mat, 10);
 }
 
-TEST(UnitCellCoordIndexConverterTest, construct_via_superlattice) {
-  auto trans_mat = transformation_matrix();
-  auto fcc_superlattice = xtal::make_superlattice(::fcc_lattice(), trans_mat);
-  xtal::UnitCellCoordIndexConverter ix_bijk_converter(::fcc_lattice(), fcc_superlattice, 3);
-}
-
 TEST(UnitCellCoordIndexConverterTest, construct_via_bad_basis_sites) {
   auto trans_mat = transformation_matrix();
   bool good_catch = false;

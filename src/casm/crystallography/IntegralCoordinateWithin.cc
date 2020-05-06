@@ -10,6 +10,7 @@
 
 namespace CASM {
   namespace xtal {
+
     void IntegralCoordinateWithin_f::_throw_if_bad_transformation_matrix(const matrix_type &transformation_matrix) {
       if(transformation_matrix.determinant() == 0) {
         throw std::runtime_error(

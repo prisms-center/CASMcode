@@ -45,12 +45,6 @@ namespace CASM {
         this->always_bring_within();
       }
 
-      /// Initialize with the primitie tiling unit, the superlattice, and the number of basis sites
-      /// in the primitive unit
-      UnitCellCoordIndexConverter(const Lattice &tiling_unit, const Lattice &superlattice, int basis_sites_in_prim)
-        : UnitCellCoordIndexConverter(make_transformation_matrix_to_super(tiling_unit, superlattice, TOL), basis_sites_in_prim) {
-      }
-
       /// Prevent the index converter from bringing UnitCellCoord within the supercell when querying for the index
       void never_bring_within();
 

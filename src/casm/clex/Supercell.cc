@@ -458,7 +458,7 @@ namespace CASM {
 
   namespace xtal {
     IntegralCoordinateWithin_f make_bring_within_f(const Supercell &scel) {
-      IntegralCoordinateWithin_f bring_within_f(scel.prim().lattice(), scel.lattice());
+      IntegralCoordinateWithin_f bring_within_f(scel.transf_mat());
       return bring_within_f;
     }
   }

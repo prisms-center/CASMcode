@@ -13,9 +13,6 @@ namespace CASM {
     class UnitCellCoord;
     class Lattice;
 
-    //This is just a forward declaration. The routine is implemented in Lattice.cc
-    Eigen::Matrix3l make_transformation_matrix_to_super(const Lattice &tiling_unit, const Lattice &superlattice, double tol);
-
     /**
      * Handles bringing an integral coordinate (i,j,k value) within a particular
      * superlattice. Provide the tiling unit and superlattice at construction,
@@ -40,13 +37,6 @@ namespace CASM {
 
       IntegralCoordinateWithin_f(const Eigen::Matrix3i &superlattice_transformation_matrix)
         : IntegralCoordinateWithin_f(matrix_type(superlattice_transformation_matrix.cast<long>())) {
-      }
-
-      /// Specify the tiling unit, and the superlattice into which lattice points (UnitCells)
-      /// should be brought within. The superlattice must be an integer transformation of
-      /// the tiling unit
-      IntegralCoordinateWithin_f(const Lattice &tiling_unit, const Lattice &superlattice)
-        : IntegralCoordinateWithin_f(make_transformation_matrix_to_super(tiling_unit, superlattice, TOL)) {
       }
 
       /// Brings the given lattice point within the superlattice
