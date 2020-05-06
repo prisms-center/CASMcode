@@ -11,7 +11,6 @@ namespace CASM {
   namespace xtal {
     class UnitCell;
     class UnitCellCoord;
-    class Lattice;
 
     /**
      * Handles bringing an integral coordinate (i,j,k value) within a particular
@@ -160,6 +159,8 @@ namespace CASM {
     //********************************************************************************************************************************//
 
     std::vector<UnitCell> make_lattice_points(const Eigen::Matrix3l &transformation_matrix);
+
+    class Lattice;
     ///Returns all the lattice points that exists when tiling the tiling unit inside the superlattice
     std::vector<UnitCell> make_lattice_points(const Lattice &tiling_unit, const Lattice &superlattice, double tol);
 

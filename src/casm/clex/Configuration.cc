@@ -22,7 +22,6 @@
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/crystallography/LinearIndexConverter.hh"
-#include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"

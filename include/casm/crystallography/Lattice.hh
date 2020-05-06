@@ -158,11 +158,6 @@ namespace CASM {
       Eigen::Vector3i enclose_sphere(double radius) const;
 
       //TODO: Extract
-      /// Make a grid of lattice sites such that min_radius <= distance <= max_radius from \param lat_point
-      template <typename CoordType, typename CoordType2>
-      std::vector<CoordType> gridstruc_build(double max_radius, double min_radius, std::vector<CoordType> basis, CoordType2 lat_point);
-
-      //TODO: Extract
       void read(std::istream &stream);
       //TODO: Extract
       void print(std::ostream &stream, int _prec = 8) const;
