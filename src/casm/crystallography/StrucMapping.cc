@@ -87,7 +87,6 @@ namespace CASM {
           // Now we are filling up displacements
           calculator.finalize(node, child_struc);
 
-          // add small penalty (~_tol) for larger translation distances, so that shortest equivalent translation is used
           if(node.cost < max_cost) {
             *it = node;
           }
@@ -135,10 +134,9 @@ namespace CASM {
 
           // We are forcing on the first site assignment in t1: i.e.,  [0,currj]
           // this involves striking row 0 and col currj from t2's cost_mat
-          // and augmenting the cost_offset of t2 by the cost of [0,currj]
           currj = n1.assignment[0];
           realj = n1.icol[currj];
-          n2.cost_offset = n1.cost_offset + n1.cost_mat(0, currj);
+          //n2.cost_offset = n1.cost_offset + n1.cost_mat(0, currj);
 
 
 
@@ -303,19 +301,15 @@ namespace CASM {
     //*******************************************************************************************
 
     void MappingNode::calc() {
-
       if(is_viable) {
         if(atomic_node.irow.empty())
           atomic_node.irow = sequence<Index>(0, atomic_node.cost_mat.rows() - 1);
         if(atomic_node.icol.empty())
           atomic_node.icol = sequence<Index>(0, atomic_node.cost_mat.cols() - 1);
-        atomic_node.cost = hungarian_method(atomic_node.cost_mat, atomic_node.assignment, cost_tol()) + atomic_node.cost_offset;
-        if(StrucMapping::is_inf(atomic_node.cost)) {
+        double tcost = hungarian_method(atomic_node.cost_mat, atomic_node.assignment, cost_tol());// + atomic_node.cost_offset;
+        if(StrucMapping::is_inf(tcost)) {
           is_viable = false;
           cost = StrucMapping::big_inf();
-        }
-        else {
-          cost = lattice_weight * lattice_node.cost + atomic_weight * atomic_node.cost;
         }
       }
       else
@@ -365,6 +359,7 @@ namespace CASM {
       m_options(_options),
       m_cost_tol(max(1e-10, _cost_tol)),
       m_xtal_tol(TOL),
+      m_lattice_transformation_range(1),
       m_filtered(false) {
 
       set_min_va_frac(_min_va_frac);
@@ -467,8 +462,8 @@ namespace CASM {
                                                             Index k,
                                                             Index min_vol,
                                                             Index max_vol,
-                                                            double max_cost,
-                                                            double min_cost) const {
+                                                            double max_lattice_cost,
+                                                            double min_lattice_cost) const {
 
       if(!valid_index(min_vol) || !valid_index(min_vol) || max_vol < min_vol) {
         auto vol_range = _vol_range(child_struc);
@@ -490,8 +485,8 @@ namespace CASM {
                                                                     lat_vec,
         {Lattice(child_struc.lat_column_mat, xtal_tol())},
         k,
-        max_cost,
-        max(min_cost, cost_tol()));
+        max_lattice_cost,
+        max(min_lattice_cost, cost_tol()));
 
         mapping_seed.insert(std::make_move_iterator(t_seed.begin()), std::make_move_iterator(t_seed.end()));
 
@@ -577,11 +572,20 @@ namespace CASM {
                                                                               bool keep_invalid /*=false*/) const {
 
       int seed_k = 10 + 5 * k;
-      std::set<MappingNode> mapping_seed = _seed_from_vol_range(child_struc, seed_k, min_vol, max_vol, max_cost, max(min_cost, cost_tol()));
+      std::set<MappingNode> mapping_seed = _seed_from_vol_range(child_struc,
+                                                                seed_k,
+                                                                min_vol,
+                                                                max_vol,
+                                                                max_cost / (this->lattice_weight()),
+                                                                max(min_cost / (this->lattice_weight()), cost_tol()));
 
-      std::cout << "LatticeMap seed size: " << mapping_seed.size() << std::endl;
+      std::cout << "LatticeMap seed size: " << mapping_seed.size();
+      if(mapping_seed.size()) {
+        std::cout << "   Max lattice cost: " << mapping_seed.rbegin()->cost;
+      }
+      std::cout << std::endl;
 
-      bool no_partition = !(robust & options()) && k <= 1;
+      bool no_partition = (!(robust & options())) && k <= 1;
       k_best_maps_better_than(child_struc, mapping_seed, k, max_cost, min_cost, keep_invalid, false, no_partition);
 
       return mapping_seed;
@@ -600,8 +604,8 @@ namespace CASM {
       {imposed_lat},
       {Lattice(child_struc.lat_column_mat, xtal_tol())},
       k,
-      max_cost,
-      max(min_cost, cost_tol()));
+      max_cost / (this->lattice_weight()),
+      max(min_cost / (this->lattice_weight()), cost_tol()));
 
       bool no_partition = !(robust & options()) && k <= 1;
       k_best_maps_better_than(child_struc, mapping_seed, k, max_cost, min_cost, keep_invalid, false, no_partition);
@@ -803,37 +807,39 @@ namespace CASM {
                                                                     std::vector<Lattice> const &_parent_scels,
                                                                     std::vector<Lattice> const &_child_scels,
                                                                     Index k,
-                                                                    double max_cost /*=StrucMapping::small_inf()*/,
-                                                                    double min_cost /*=1e-6*/) const {
+                                                                    double max_lattice_cost /*=StrucMapping::small_inf()*/,
+                                                                    double min_lattice_cost /*=1e-6*/) const {
       Lattice p_prim_lat(parent().lat_column_mat, xtal_tol());
       Lattice c_prim_lat(child_struc.lat_column_mat, xtal_tol());
       std::set<MappingNode> result;
 
-      if(k == 0)
-        max_cost = min_cost;
+      if(k == 0 || !valid_index(k)) {
+        max_lattice_cost = min_lattice_cost;
+      }
 
       for(Lattice const &c_lat : _child_scels) {
         for(Lattice const &p_lat : _parent_scels) {
           int n_child_atom = round(std::abs(volume(c_lat) / volume(c_prim_lat))) * _n_species(child_struc);
-          LatticeMap strain_map(p_lat, c_lat, n_child_atom, 1, calculator().point_group(), m_strain_gram_mat, max_cost);
-          // strain_map is initialized to first mapping better than 'max_cost', if such a mapping exists
+          LatticeMap lattice_map(p_lat, c_lat, n_child_atom, this->lattice_transformation_range(), calculator().point_group(), m_strain_gram_mat, max_lattice_cost);
+          // lattice_map is initialized to first mapping better than 'max_lattice_cost', if such a mapping exists
           // We will continue checking possibilities until all such mappings are exhausted
-          while(strain_map.strain_cost() < max_cost) {
+          while(lattice_map.strain_cost() < (max_lattice_cost + cost_tol())) {
 
-            // Make k bigger if we find really exceptional mappings, with cost better than min-cost
-            if(strain_map.strain_cost() < min_cost
-               || (!result.empty() && (result.size() == k && almost_equal(result.rbegin()->cost, strain_map.strain_cost(), 1e-6)))) {
-              ++k;
+            // Mappings worse than min_lattice_cost count against k
+            if(lattice_map.strain_cost() > min_lattice_cost) {
+              if(k == 0 || !valid_index(k)) {
+                // If k is already depleted, we will still add this mapping, but adjust max_lattice_cost to avoid adding anything worse
+                max_lattice_cost = max(min_lattice_cost, lattice_map.strain_cost());
+              }
+              else {
+                // If k is not depleted, decrement k
+                k--;
+              }
             }
 
-            //auto res =
-            result.emplace(LatticeNode(strain_map, p_prim_lat, c_prim_lat), lattice_weight());
-            if(result.size() > k) {
-              result.erase(std::next(result.rbegin()).base());
-              if(!result.empty())
-                max_cost = max(min_cost, (result.rbegin())->cost);
-            }
-            strain_map.next_mapping_better_than(max_cost);
+            result.emplace(LatticeNode(lattice_map, p_prim_lat, c_prim_lat), this->lattice_weight());
+
+            lattice_map.next_mapping_better_than(max_lattice_cost);
           }
         }
       }

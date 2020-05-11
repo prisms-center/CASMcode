@@ -161,7 +161,7 @@ namespace CASM {
         }
       }
 
-      result_vec;
+      return result_vec;
     }
 
   }

@@ -11,7 +11,7 @@ namespace CASM {
   namespace xtal {
     namespace Local {
 
-      SimpleStructure::Info _replicate(SimpleStructure::Info const &_info, Index mult) {
+      static SimpleStructure::Info _replicate(SimpleStructure::Info const &_info, Index mult) {
         SimpleStructure::Info result;
         result.resize(_info.size()*mult);
 
@@ -42,26 +42,24 @@ namespace CASM {
       superstructure.lat_column_mat = _sstruc.lat_column_mat * _T.cast<double>();
       superstructure.properties = _sstruc.properties;
 
-      Lattice sstruc_lattice(_sstruc.lat_column_mat);
-      Lattice superstructure_lattice(superstructure.lat_column_mat);
+      auto all_lattice_points = make_lattice_points(_T.cast<long>());
 
-      auto all_lattice_points = make_lattice_points(sstruc_lattice, superstructure_lattice, TOL);
+      Index Nvol = all_lattice_points.size();
 
-      superstructure.mol_info = Local::_replicate(_sstruc.mol_info, all_lattice_points.size());
-      superstructure.atom_info = Local::_replicate(_sstruc.atom_info, all_lattice_points.size());
+      superstructure.mol_info = Local::_replicate(_sstruc.mol_info, Nvol);
+      superstructure.atom_info = Local::_replicate(_sstruc.atom_info, Nvol);
 
       Index nm = _sstruc.mol_info.size();
       Index na = _sstruc.atom_info.size();
 
-      Index Nvol = all_lattice_points.size();
-
       for(Index g = 0; g < Nvol; ++g) {
-        Coordinate lattice_point_coordinate = make_superlattice_coordinate(all_lattice_points[g], sstruc_lattice, superstructure_lattice);
+        Eigen::Vector3d lattice_point_vector = _sstruc.lat_column_mat * all_lattice_points[g].cast<double>();
+
         for(Index m = 0; m < nm; ++m) {
-          superstructure.mol_info.cart_coord(g + m * Nvol) += lattice_point_coordinate.const_cart();
+          superstructure.mol_info.cart_coord(g + m * Nvol) += lattice_point_vector;
         }
         for(Index a = 0; a < na; ++a) {
-          superstructure.atom_info.cart_coord(g + a * Nvol) += lattice_point_coordinate.const_cart();
+          superstructure.atom_info.cart_coord(g + a * Nvol) += lattice_point_vector;
         }
       }
 

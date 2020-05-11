@@ -61,7 +61,6 @@ namespace CASM {
       double atomic_cost(const MappingNode &mapped_config, Index Nsites);
     }
 
-
     /// \brief Class describing the lattice-mapping portion of a particular mapping
     /// A general map for child_struc onto parent_struc may require forming a supercell of
     /// parent_struc (most commonly) and/or of child_struc.
@@ -145,7 +144,7 @@ namespace CASM {
     /// to bring them into registration with the atoms of a parent structure
     /// (assuming periodic boundary conditions). Also records the constrained and unconstrained assignment costs
     struct AssignmentNode {
-      AssignmentNode(double _cost_tol = 1e-6) : time_reversal(false), cost(0), cost_offset(0), m_cost_tol(_cost_tol) {}
+      AssignmentNode(double _cost_tol = 1e-6) : time_reversal(false), cost(0), m_cost_tol(_cost_tol) {}
 
       /// \brief Mapping translation from child to parent
       /// Defined such that
@@ -189,12 +188,7 @@ namespace CASM {
       Eigen::MatrixXd cost_mat;
 
       /// \brief Total cost of best solution to the constrained assignment problem having some forced_on assignments
-      /// This value includes the contribution from cost_offset
       double cost;
-
-      /// \brief Cumulative cost of all forced_on assignments
-      /// This is added to best solution of reduced assignment problem to obtain cost of total constrained assignment problem
-      double cost_offset;
 
       double cost_tol() const {
         return m_cost_tol;
@@ -278,8 +272,7 @@ namespace CASM {
       /// If parent has N sites and child has M<N atoms, vacancies are designated by values j>=M
       std::vector<Index> atom_permutation;
 
-      /// mol_map[j] is set of indices of atoms in child superstructure that reside in molecule at
-      /// site 'j' of parent superstructure
+      /// mol_map[j] lists atom indices of parent superstructure that comprise the molecule at its j'th molecular site
       MoleculeMap mol_map;
 
       /// list of assigned molecule names
@@ -466,6 +459,16 @@ namespace CASM {
 
       void set_lattice_weight(double _lw) {
         m_lattice_weight = max(min(_lw, 1.0), 1e-9);
+      }
+
+      /// \brief Max element considered for integer unimodular matrix transformations (which define orientation relationship of mapping)
+      Index lattice_transformation_range() const {
+        return m_lattice_transformation_range;
+      }
+
+      /// \brief Max element considered for integer unimodular matrix transformations (which define orientation relationship of mapping)
+      void set_lattice_transformation_range(Index _new_range) {
+        m_lattice_transformation_range = _new_range;
       }
 
       /// \brief Returns the minimum fraction of sites allowed to be vacant in the mapping relation
@@ -691,23 +694,23 @@ namespace CASM {
       /// of supercells of the parent structure and a list supercells of the child structure
       ///
       ///\param k Number of k-best mapping relations to return
-      ///\param max_cost Search will terminate once no mappings better than max_cost are found
-      ///\param min_cost All mappings better than min_cost will be reported, without contributing to 'k'
+      ///\param max_lattice_cost Search will terminate once no lattice mappings better than max_lattice_cost are found
+      ///\param min_lattice_cost All lattice mappings better than min_lattice_cost will be returned, without contributing to 'k'
       std::set<MappingNode> _seed_k_best_from_super_lats(SimpleStructure const &child_struc,
                                                          std::vector<Lattice> const &_parent_scels,
                                                          std::vector<Lattice> const &_child_scels,
                                                          Index k,
-                                                         double max_cost,
-                                                         double min_cost) const;
+                                                         double max_strain_cost,
+                                                         double min_strain_cost) const;
 
-      /// \brief construc partial mapping nodes (with uninitialized atomic_node) based on current settings
+      /// \brief construct partial mapping nodes (with uninitialized atomic_node) based on current settings
       /// considers supercells with integer volume between min_vol and max_vol
       std::set<MappingNode> _seed_from_vol_range(SimpleStructure const &child_struc,
                                                  Index k,
                                                  Index min_vol,
                                                  Index max_vol,
-                                                 double max_cost,
-                                                 double min_cost) const;
+                                                 double max_strain_cost,
+                                                 double min_strain_cost) const;
 
       ///\brief returns number of species in a SimpleStructure given the current calculator settings.
       ///       Use instead of sstruc.n_atom() for consistency
@@ -731,6 +734,8 @@ namespace CASM {
       double m_xtal_tol;
       double m_min_va_frac;
       double m_max_va_frac;
+
+      Index m_lattice_transformation_range;
 
       bool m_filtered;
       std::function<bool(Lattice const &, Lattice const &)> m_filter_f;

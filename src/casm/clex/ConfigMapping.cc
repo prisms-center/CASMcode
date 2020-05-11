@@ -30,10 +30,10 @@
 namespace CASM {
 
   namespace Local {
-    static int _permute_dist(MappingNode::MoleculeMap const &_perm) {
+    static int _permute_dist(MappingNode::MoleculeMap const &_perm, MappingNode const &_node) {
       int result(0);
       for(int i = 0; i < _perm.size(); ++i) {
-        result += std::abs(int(*(_perm[i].begin()) - i));
+        result += std::abs(int(_node.atom_permutation[*(_perm[i].begin())]) - i);
       }
       return result;
     }
@@ -57,7 +57,7 @@ namespace CASM {
       double best_char = op.matrix().trace();
       double best_dist = op.tau().norm();
       int best_det = sgn(round(op.matrix().determinant()));
-      int best_pdist = _permute_dist(_node.mol_map);
+      int best_pdist = _permute_dist(_node.mol_map, _node);
 
       Coordinate tau(_node.lattice_node.parent.superlattice());
       while(begin != end) {
@@ -67,7 +67,7 @@ namespace CASM {
         if(tdet > best_det) {
           best_det = tdet;
           best_char = tdet * t_op.matrix().trace();
-          best_pdist = _permute_dist(begin->combined_permute() * _node.mol_map);
+          best_pdist = _permute_dist(begin->combined_permute() * _node.mol_map, _node);
           tau.cart() = t_op.tau();
           tau.voronoi_within();
           best_dist = tau.const_cart().norm();
@@ -76,7 +76,7 @@ namespace CASM {
         else if(tdet == best_det) {
           tchar = tdet * t_op.matrix().trace();
           if(almost_equal(tchar, best_char)) {
-            tpdist = _permute_dist(begin->combined_permute() * _node.mol_map);
+            tpdist = _permute_dist(begin->combined_permute() * _node.mol_map, _node);
             if(tpdist > best_pdist) {
               best_det = tdet;
               best_char = tchar;
@@ -101,7 +101,7 @@ namespace CASM {
           else if(tchar > best_char) {
             best_det = tdet;
             best_char = tchar;
-            best_pdist = _permute_dist(begin->combined_permute() * _node.mol_map);
+            best_pdist = _permute_dist(begin->combined_permute() * _node.mol_map, _node);
             tau.cart() = t_op.tau();
             tau.voronoi_within();
             best_dist = tau.const_cart().norm();

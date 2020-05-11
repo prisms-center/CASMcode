@@ -20,10 +20,10 @@ namespace CASM {
 
     IntegralCoordinateWithin_f::vector_type IntegralCoordinateWithin_f::operator()(const vector_type &ijk) const {
       vector_type vec2 = this->m_transformation_matrix_adjugate * ijk;
-      auto vol = this->m_transformation_matrix.determinant();   //this volume is signed, could be negative, that's fine.
-      vec2[0] = ((vec2[0] % vol) + vol) % vol;
-      vec2[1] = ((vec2[1] % vol) + vol) % vol;
-      vec2[2] = ((vec2[2] % vol) + vol) % vol;
+      long vol = this->m_transformation_matrix.determinant();   //this volume is signed, could be negative, that's fine.
+      vec2[0] = ((vec2[0] % vol) + abs(vol)) % vol;
+      vec2[1] = ((vec2[1] % vol) + abs(vol)) % vol;
+      vec2[2] = ((vec2[2] % vol) + abs(vol)) % vol;
       return (this->m_transformation_matrix * vec2) / vol;
     }
 
@@ -73,7 +73,7 @@ namespace CASM {
         auto total_lattice_points = generate_point.size();
 
         for(int i = 0; i < total_lattice_points; ++i) {
-          all_lattice_points.emplace_back(std::move(generate_point(i)));
+          all_lattice_points.emplace_back(generate_point(i));
         }
 
         return all_lattice_points;
@@ -88,7 +88,7 @@ namespace CASM {
     }
 
     std::vector<UnitCell> make_lattice_points(const Lattice &tiling_unit, const Lattice &superlattice, double tol) {
-      auto transformation_matrix = make_transformation_matrix(tiling_unit, superlattice, tol);
+      Eigen::Matrix3l transformation_matrix = make_transformation_matrix(tiling_unit, superlattice, tol);
       return make_lattice_points(transformation_matrix);
     }
 

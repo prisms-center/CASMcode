@@ -28,7 +28,31 @@ namespace CASM {
       }
     }
 
+    static int initialize() {
+      AnisoValTraits::disp();
+      AnisoValTraits::energy();
+      AnisoValTraits::cost();
+      AnisoValTraits::coordinate();
+      AnisoValTraits::latvec();
+      AnisoValTraits::selective_dynamics();
+      AnisoValTraits::SOmagspin();
+      AnisoValTraits::SOunitmagspin();
+      AnisoValTraits::NCmagspin();
+      AnisoValTraits::NCunitmagspin();
+      AnisoValTraits::Cmagspin();
+      AnisoValTraits::Cunitmagspin();
+      AnisoValTraits::isometry();
+      AnisoValTraits::strain("B");
+      AnisoValTraits::strain("U");
+      AnisoValTraits::strain("EA");
+      AnisoValTraits::strain("GL");
+      AnisoValTraits::strain("H");
+      AnisoValTraits::force();
+      return 1;
+    }
+
     static AnisoValTraits const &traits(std::string const &name) {
+      static int i = initialize();
       auto it = traits_map().find(name);
       if(it == traits_map().end()) {
         throw std::runtime_error("Attempted to construct AnisoValTraits '"
@@ -190,8 +214,8 @@ namespace CASM {
     true);
   }
 
-  AnisoValTraits AnisoValTraits::magspin() {
-    return AnisoValTraits("magspin",
+  AnisoValTraits AnisoValTraits::SOmagspin() {
+    return AnisoValTraits("SOmagspin",
     {"sx", "sy", "sz"},
     LOCAL | EXTENSIVE,
     AngularMomentumSymRepBuilder(),
@@ -202,9 +226,33 @@ namespace CASM {
     true);
   }
 
-  AnisoValTraits AnisoValTraits::magmom() {
-    return AnisoValTraits("magmom",
-    {"mx", "my", "mz"},
+  AnisoValTraits AnisoValTraits::SOunitmagspin() {
+    return AnisoValTraits("SOunitmagspin",
+    {"sx", "sy", "sz"},
+    LOCAL | UNIT_LENGTH | EXTENSIVE,
+    AngularMomentumSymRepBuilder(),
+    {},
+    {"atomize"},
+    {},
+    {},
+    true);
+  }
+
+  AnisoValTraits AnisoValTraits::NCmagspin() {
+    return AnisoValTraits("NCmagspin",
+    {"sx", "sy", "sz"},
+    LOCAL | EXTENSIVE,
+    TimeReversalSymRepBuilder(),
+    {},
+    {"atomize"},
+    {},
+    {},
+    true);
+  }
+
+  AnisoValTraits AnisoValTraits::NCunitmagspin() {
+    return AnisoValTraits("NCunitmagspin",
+    {"sx", "sy", "sz"},
     LOCAL | UNIT_LENGTH | EXTENSIVE,
     TimeReversalSymRepBuilder(),
     {},
@@ -213,5 +261,30 @@ namespace CASM {
     {},
     true);
   }
+
+  AnisoValTraits AnisoValTraits::Cmagspin() {
+    return AnisoValTraits("Cmagspin",
+    {"m"},
+    LOCAL | EXTENSIVE,
+    TimeReversalSymRepBuilder(),
+    {},
+    {"atomize"},
+    {},
+    {},
+    true);
+  }
+
+  AnisoValTraits AnisoValTraits::Cunitmagspin() {
+    return AnisoValTraits("Cunitmagspin",
+    {"m"},
+    LOCAL | UNIT_LENGTH | EXTENSIVE,
+    TimeReversalSymRepBuilder(),
+    {},
+    {"atomize"},
+    {},
+    {},
+    true);
+  }
+
 
 }

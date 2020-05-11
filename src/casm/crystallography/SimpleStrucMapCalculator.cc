@@ -6,8 +6,6 @@
 #include "casm/crystallography/StrucMapping.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 
-
-
 namespace CASM {
   namespace xtal {
     namespace Local {
@@ -127,7 +125,7 @@ namespace CASM {
           std::set<Index> const &mol = _node.mol_map[i];
 
           for(Index j : mol) {
-            if(j < (csize * cgrid.size())) {
+            if(_node.atom_permutation[j] < (csize * cgrid.size())) {
               mol_displacement.col(i) += _node.atom_displacement.col(j) / double(mol.size());
 
               r_info.names[i] = _node.mol_labels[i].first;//_child_struc.mol_info.names[j / cgrid.size()];
@@ -162,8 +160,9 @@ namespace CASM {
         auto it = r_info.properties.emplace(el.first, Eigen::MatrixXd::Zero(el.second.rows(), r_info.size())).first;
         for(Index i = 0; i < _node.mol_map.size(); ++i) {
           for(Index j : _node.mol_map[i]) {
-            if(j < (csize * cgrid.size())) {
-              (it->second).col(i) += tprop.col(j / cgrid.size());
+            Index k = _node.atom_permutation[j];
+            if(k < (csize * cgrid.size())) {
+              (it->second).col(i) += tprop.col(k / cgrid.size());
             }
             // else -- already checked for improper vacancy conditions above
           }
@@ -231,7 +230,6 @@ namespace CASM {
       // initialize displacement matrix with all zeros
       _node.atom_displacement.setZero(3, pgrid.size() * p_info.size());
 
-      Coordinate disp_coord(pgrid.superlattice());
       Index cN = c_info.size() * cgrid.size();
       // Populate displacements given as the difference in the Coordinates
       // as described by node.permutation.
@@ -246,18 +244,23 @@ namespace CASM {
         // to the distance used in the Cost Matrix and Hungarian Algorithm
         // The method returns the displacement vector pointing from the
         // IDEAL coordinate to the RELAXED coordinate
-        if(_node.atom_permutation[i] < cN) {
+        Index j = _node.atom_permutation[i];
+        if(j < cN) {
 
-          Coordinate child_coord(c_info.cart_coord(_node.atom_permutation[i] / cgrid.size())
-                                 + Local::_make_superlattice_coordinate(_node.atom_permutation[i] % cgrid.size(),
-                                                                        cgrid,
-                                                                        child_index_to_unitcell).const_cart()
-                                 + _node.atomic_node.translation,
-                                 pgrid.superlattice(), CART);
+          // Initialize displacement as child coordinate
+          Coordinate disp_coord(Local::_make_superlattice_coordinate(j % cgrid.size(),
+                                                                     cgrid,
+                                                                     child_index_to_unitcell).const_cart(),
+                                pgrid.superlattice(), CART);
+
+          disp_coord.cart() += c_info.cart_coord(j / cgrid.size()) + _node.atomic_node.translation;
 
           Coordinate parent_coord = Local::_make_superlattice_coordinate(i % pgrid.size(), pgrid, parent_index_to_unitcell);
           parent_coord.cart() += p_info.cart_coord(i / pgrid.size());
-          disp_coord = child_coord.min_translation(parent_coord);
+
+          // subtract parent_coord to get displacement
+          disp_coord -= parent_coord;
+          disp_coord.voronoi_within();
 
           _node.atom_displacement.col(i) = disp_coord.const_cart();
 
@@ -292,7 +295,7 @@ namespace CASM {
 
       Eigen::Vector3d const &translation(_node.atomic_node.translation);
       Eigen::MatrixXd &cost_matrix(_node.atomic_node.cost_mat);
-      Eigen::Matrix3d metric = (_node.lattice_node.stretch * _node.lattice_node.stretch).inverse();
+      Eigen::Matrix3d metric = ((_node.lattice_node.stretch * _node.lattice_node.stretch).inverse() + Eigen::Matrix3d::Identity()) / 2.;
       impl::OrderedLatticePointGenerator child_index_to_unitcell(cgrid.transformation_matrix());
       impl::OrderedLatticePointGenerator parent_index_to_unitcell(pgrid.transformation_matrix());
 
@@ -319,6 +322,9 @@ namespace CASM {
       // index of atom in child supercell
       Index ac = 0;
 
+      Coordinate shifted_parent_coord(pgrid.superlattice());
+      Coordinate shifted_child_coord(pgrid.superlattice());
+
       // loop through all the sites of the child structure
       // As always, each sublattice is traversed contiguously
       for(; bc < c_info.size(); bc++) {
@@ -331,9 +337,10 @@ namespace CASM {
 
         // For each sublattice, loop over lattice points, 'n'. 'ac' tracks linear index of atoms in child supercell
         for(Index lc = 0; lc < cgrid.size(); ++lc, ++ac) {
-          Coordinate child_coord(c_info.cart_coord(bc)
-                                 + Local::_make_superlattice_coordinate(lc, cgrid, child_index_to_unitcell).const_cart()
-                                 + translation, pgrid.superlattice(), CART);
+          shifted_child_coord.cart() = c_info.cart_coord(bc)
+                                       + Local::_make_superlattice_coordinate(lc, cgrid, child_index_to_unitcell).const_cart()
+                                       + translation;
+
           // loop through all the sites in the parent supercell
           Index ap = 0;
           for(Index bp = 0; bp < p_info.size(); ++bp) {
@@ -341,11 +348,12 @@ namespace CASM {
               ap += pgrid.size();
               continue;
             }
-            Coordinate parent_coord(p_info.cart_coord(bp), pgrid.superlattice(), CART);
 
             for(Index lp = 0; lp < pgrid.size(); ++lp, ++ap) {
+              shifted_parent_coord.cart() = p_info.cart_coord(bp)
+                                            + Local::_make_superlattice_coordinate(lp, pgrid, parent_index_to_unitcell).const_cart();
               cost_matrix(ap, ac) =
-                (parent_coord + Local::_make_superlattice_coordinate(lp, pgrid, parent_index_to_unitcell)).min_dist2(child_coord, metric);
+                shifted_parent_coord.min_dist2(shifted_child_coord, metric);
             }
           }
         }
@@ -383,7 +391,7 @@ namespace CASM {
       node.mol_labels.reserve(node.atom_permutation.size());
       Index j = 0;
       for(Index i : node.atom_permutation) {
-        node.mol_map.emplace_back(MappingNode::AtomIndexSet({i}));
+        node.mol_map.emplace_back(MappingNode::AtomIndexSet({j}));
         Index bc = i / cgrid.size();
         std::string sp = "Va";
         if(bc < _child_struc.atom_info.size())
