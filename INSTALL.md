@@ -97,6 +97,16 @@ bash clean.sh
 Run all tests:
 --------------
 
+The first time only, clone the googletest submodule:
+
+```
+cd submodules/googletest
+git submodule init
+git submodule update
+```
+
+Then, you can run:
+
 ```
 bash build_test.sh
 ```
