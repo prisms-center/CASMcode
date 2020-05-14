@@ -48,7 +48,8 @@ if grep dirty build-aux/casm_version.txt; then
   echo "version: $(git describe --abbrev=6 --dirty --always --tags)"
 
   DIFF=$(git --no-pager diff --name-only)
-  if [ -n "$DIFF" ]; then
+  DIFF_CACHED=$(git --no-pager diff --cached --name-only)
+  if [[ -n "$DIFF" || -n "$DIFF_CACHED" ]]; then
     echo "git status:"
     git status
 
@@ -57,6 +58,12 @@ if grep dirty build-aux/casm_version.txt; then
 
     echo "git --no-pager diff:"
     git --no-pager diff
+
+    echo "git --no-pager diff --cached --name-only:"
+    git --no-pager diff --cached --name-only
+
+    echo "git --no-pager diff --cached:"
+    git --no-pager diff --cached
 
     echo "git is dirty"
 
