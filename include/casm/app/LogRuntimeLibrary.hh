@@ -7,14 +7,12 @@
 namespace CASM {
 
   class RuntimeLibrary;
-  class Logging;
 
   std::shared_ptr<RuntimeLibrary> log_make_shared_runtime_lib(
     std::string filename_base,
     std::string compile_options,
     std::string so_options,
-    std::string compile_msg,
-    const Logging &logging);
+    std::string compile_msg);
 }
 
 #endif

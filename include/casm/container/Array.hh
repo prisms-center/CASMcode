@@ -751,7 +751,7 @@ namespace CASM {
     Array<int> queue_left, queue_right;
 
     // estimate queue size
-    int cap = (int) 3 * (log(size()) / log(2));
+    int cap = (int) 3 * (std::log(size()) / std::log(2));
     //cout << "cap: " << cap << endl;
     queue_left.reserve(cap);
     queue_right.reserve(cap);

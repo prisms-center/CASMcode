@@ -2,60 +2,65 @@
 
 #include <regex>
 #include <tuple>
-#include "casm/system/RuntimeLibrary.hh"
-#include "casm/casm_io/container/json_io.hh"
 #include "casm/app/EnumeratorHandler.hh"
-#include "casm/app/QueryHandler.hh"
 #include "casm/app/HamiltonianModules.hh"
+#include "casm/app/QueryHandler.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/SafeOfstream.hh"
+#include "casm/casm_io/container/json_io.hh"
+#include "casm/database/DatabaseTypes.hh"
+#include "casm/system/RuntimeLibrary.hh"
+
+// template definitions
+#include "casm/app/EnumeratorHandler_impl.hh"
+#include "casm/app/QueryHandler_impl.hh"
+#include "casm/app/HamiltonianModules_impl.hh"
 
 namespace CASM {
 
-  bool is_valid_project_name(std::string name) {
-    /// check if m_name is suitable:
-    if(!std::regex_match(name, std::regex(R"([_a-zA-Z]\w*)"))) {
+  bool is_valid_project_name(std::string project_name) {
+    /// check if project_name is suitable:
+    if(!std::regex_match(project_name, std::regex(R"([_a-zA-Z]\w*)"))) {
       return false;
     }
     return true;
   }
 
-  void check_project_name(std::string name) {
-    /// check if m_name is suitable:
-    if(!is_valid_project_name(name)) {
+  void check_project_name(std::string project_name) {
+    /// check if project_name is suitable:
+    if(!is_valid_project_name(project_name)) {
       throw std::runtime_error(
-        std::string("  Invalid Project name: '") + name + "'\n"
+        std::string("  Invalid Project name: '") + project_name + "'\n"
         "  Must be a valid C++ identifier: \n"
         "  - only alphanumeric characters and underscores allowed\n"
         "  - cannot start with a number");
     }
   }
 
-  ProjectSettings::ProjectSettings(std::string name, const Logging &logging) :
-    Logging(logging),
-    m_name(name),
+  ProjectSettings::ProjectSettings(std::string project_name) :
+    m_project_name(project_name),
     m_crystallography_tol(CASM::TOL),
     m_lin_alg_tol(1e-10),
-    m_db_name("jsonDB") {
+    m_default_database_name("jsonDB") {
 
-    check_project_name(name);
+    check_project_name(m_project_name);
   }
 
-  ProjectSettings::ProjectSettings(std::string name, fs::path root, const Logging &logging) :
-    Logging(logging),
-    m_name(name),
+  ProjectSettings::ProjectSettings(std::string project_name, fs::path root) :
+    m_project_name(project_name),
     m_dir(notstd::make_unique<DirectoryStructure>(root)),
     m_crystallography_tol(CASM::TOL),
     m_lin_alg_tol(1e-10),
-    m_db_name("jsonDB") {
+    m_default_database_name("jsonDB") {
 
-    check_project_name(name);
+    check_project_name(m_project_name);
 
   }
 
   ProjectSettings::~ProjectSettings() {}
 
-  std::string ProjectSettings::name() const {
-    return m_name;
+  std::string ProjectSettings::project_name() const {
+    return m_project_name;
   }
 
   bool ProjectSettings::has_dir() const {
@@ -70,10 +75,6 @@ namespace CASM {
   }
 
   bool ProjectSettings::set_root_dir(fs::path root) {
-    fs::path checkroot = find_casmroot(root);
-    if(checkroot == root) {
-      throw std::runtime_error(std::string("Error in ProjectSettings::set_root_dir: Project already exists at '") + root.string() + "'");
-    }
     m_dir = notstd::make_cloneable<DirectoryStructure>(root);
     return bool {m_dir};
   }
@@ -95,8 +96,11 @@ namespace CASM {
     return m_required_properties.find(type_name)->second.find(calctype)->second;
   }
 
-  std::vector<std::string> &ProjectSettings::required_properties(std::string type_name, std::string calctype) {
-    return m_required_properties[type_name][calctype];
+  void ProjectSettings::set_required_properties(
+    std::string type_name,
+    std::string calctype,
+    std::vector<std::string> const &_required_properties) {
+    m_required_properties[type_name][calctype] = _required_properties;
   }
 
 
@@ -213,7 +217,7 @@ namespace CASM {
     if(!m_enumerator_handler) {
       m_enumerator_handler = notstd::make_cloneable<EnumeratorHandler>(*this);
     }
-    return *m_enumerator_handler;
+    return static_cast<EnumeratorHandler &>(*m_enumerator_handler);
   }
 
   EnumeratorHandler const &ProjectSettings::enumerator_handler() const {
@@ -221,12 +225,12 @@ namespace CASM {
   }
 
 
-  void ProjectSettings::set_db_name(std::string _db_name) {
-    m_db_name = _db_name;
+  void ProjectSettings::set_default_database_name(std::string _default_database_name) {
+    m_default_database_name = _default_database_name;
   }
 
-  std::string ProjectSettings::db_name() const {
-    return m_db_name;
+  std::string ProjectSettings::default_database_name() const {
+    return m_default_database_name;
   }
 
   ProjectSettings::query_alias_map_type const &ProjectSettings::query_alias() const {
@@ -279,19 +283,19 @@ namespace CASM {
     if(!m_hamiltonian_modules) {
       m_hamiltonian_modules = notstd::make_cloneable<HamiltonianModules>(this);
     }
-    return *m_hamiltonian_modules;
+    return static_cast<HamiltonianModules &>(*m_hamiltonian_modules);
   }
 
   HamiltonianModules const &ProjectSettings::hamiltonian_modules()const {
     if(!m_hamiltonian_modules) {
       m_hamiltonian_modules = notstd::make_cloneable<HamiltonianModules>(this);
     }
-    return *m_hamiltonian_modules;
+    return static_cast<HamiltonianModules const &>(*m_hamiltonian_modules);
   }
 
 
   std::string ProjectSettings::global_clexulator_name() const {
-    return name() + "_Clexulator";
+    return project_name() + "_Clexulator";
   }
 
 
@@ -499,7 +503,7 @@ namespace CASM {
   jsonParser &to_json(const ProjectSettings &set, jsonParser &json) {
     json = jsonParser::object();
 
-    json["name"] = set.name();
+    json["name"] = set.project_name();
     json["cluster_expansions"] = set.cluster_expansions();
     json["required_properties"] = set.required_properties();
     json["default_clex"] = set.default_clex_name();
@@ -540,12 +544,10 @@ namespace CASM {
     return json;
   }
 
-  ProjectSettings jsonConstructor<ProjectSettings>::from_json(
-    jsonParser const &json,
-    Logging const &logging) {
+  ProjectSettings jsonConstructor<ProjectSettings>::from_json(jsonParser const &json) {
     try {
 
-      ProjectSettings settings {json["name"].get<std::string>(), logging};
+      ProjectSettings settings {json["name"].get<std::string>()};
 
       // read required_properties map
       if(json.contains("required_properties") && json["required_properties"].size()) {
@@ -652,31 +654,58 @@ namespace CASM {
 
     }
     catch(std::exception &e) {
-      logging.err_log() << "Error reading ProjectSettings from JSON." << std::endl;
+      err_log() << "Error reading ProjectSettings from JSON." << std::endl;
+      throw e;
+    }
+  }
+
+  void write_project_settings(ProjectSettings const &set, fs::path project_settings_path) {
+    jsonParser json;
+    to_json(set, json);
+
+    SafeOfstream file;
+    file.open(project_settings_path);
+    json.print(file.ofstream(), 2, 18);
+    file.close();
+  }
+
+  ProjectSettings read_project_settings(fs::path project_settings_path) {
+    try {
+      fs::ifstream file {project_settings_path};
+      jsonParser json {file};
+      return jsonConstructor<ProjectSettings>::from_json(json);
+    }
+    catch(std::exception &e) {
+      err_log() << "Error reading ProjectSettings from: '" << project_settings_path
+                << "'" << std::endl;
       throw e;
     }
   }
 
   void commit(ProjectSettings const &set) {
-    jsonParser json;
-    to_json(set, json);
-
-    SafeOfstream file;
-    file.open(set.dir().project_settings());
-    json.print(file.ofstream(), 2, 18);
-    file.close();
+    write_project_settings(set, set.dir().project_settings());
   }
 
-  ProjectSettings read_project_settings(fs::path path, Logging const &logging) {
-    try {
-      fs::ifstream file {path};
-      jsonParser json {file};
-      return jsonConstructor<ProjectSettings>::from_json(json, logging);
+  ProjectSettings open_project_settings(fs::path path) {
+    fs::path checkroot = find_casmroot(path);
+    if(checkroot.empty()) {
+      throw std::runtime_error(std::string("Error in open_project_settings:") +
+                               " No CASM project includes path: '" + path.string() + "'");
     }
-    catch(std::exception &e) {
-      logging.err_log() << "Error reading ProjectSettings from: '" << path << "'" << std::endl;
-      throw e;
-    }
+    DirectoryStructure dir {checkroot};
+    ProjectSettings result = read_project_settings(dir.project_settings());
+    result.set_root_dir(checkroot);
+    return result;
   }
 
+}
+
+// explicit instantiations
+
+#define INST_ProjectSettings_all(r, data, type) \
+template QueryHandler<type> &ProjectSettings::query_handler<type>(); \
+template const QueryHandler<type> &ProjectSettings::query_handler<type>() const;
+
+namespace CASM {
+  BOOST_PP_SEQ_FOR_EACH(INST_ProjectSettings_all, _, CASM_DB_TYPES)
 }

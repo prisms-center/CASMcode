@@ -19,14 +19,13 @@ namespace CASM {
 
   template<typename _DataObject>
   class QueryHandler : public notstd::Cloneable {
-
+    CLONEABLE_NEEDS_DESTRUCTOR_DEF(QueryHandler)
   public:
 
     typedef _DataObject DataObject;
 
     QueryHandler(const ProjectSettings &set);
 
-    ~QueryHandler();
 
     DataFormatterDictionary<DataObject> &dict();
 
@@ -52,10 +51,6 @@ namespace CASM {
       return m_aliases;
     }
 
-    std::unique_ptr<QueryHandler<DataObject> > clone() const {
-      return std::unique_ptr<QueryHandler<DataObject> >(this->_clone());
-    }
-
   private:
 
     /// \brief Access aliases map
@@ -64,14 +59,6 @@ namespace CASM {
     /// - value: alias command
     std::map<std::string, std::string> &_aliases() {
       return m_aliases;
-    }
-
-    QueryHandler<DataObject> *_clone() const override {
-      return new QueryHandler<DataObject>(*this);
-    }
-
-    QueryHandler<DataObject> *_move() override {
-      return new QueryHandler<DataObject>(std::move(*this));
     }
 
     const ProjectSettings *m_set;

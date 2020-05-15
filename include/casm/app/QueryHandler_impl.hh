@@ -83,10 +83,10 @@ namespace CASM {
     }
     // if a user-created alias, over-write with message
     else if(aliases().find(alias_name) != aliases().end()) {
-      m_set->err_log() << "WARNING: I already know '" << alias_name << "' as:\n"
-                       << "             " << _aliases()[alias_name] << "\n"
-                       << "         I will forget it and learn '" << alias_name << "' as:\n"
-                       << "             " << alias_command << std::endl;
+      err_log() << "WARNING: I already know '" << alias_name << "' as:\n"
+                << "             " << _aliases()[alias_name] << "\n"
+                << "         I will forget it and learn '" << alias_name << "' as:\n"
+                << "             " << alias_command << std::endl;
       m_dict->insert(new_formatter);
     }
     // else do not add, throw error
@@ -143,8 +143,7 @@ namespace CASM {
                            p_s.substr(0, p_size - 3),
                            set.compile_options() + " " + include_path(dir.query_plugins<DataObject>()),
                            set.so_options() + " -lcasm ",
-                           msg,
-                           set);
+                           msg);
 
           auto make_formatter = lib_ptr->template get_function<signature>(
             "make_" + f_s.substr(0, f_size - 3) + "_formatter");

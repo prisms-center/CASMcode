@@ -9,7 +9,6 @@
 #include "casm/global/eigen.hh"
 #include "casm/app/ClexDescription.hh"
 #include "casm/app/DirectoryStructure.hh"
-#include "casm/casm_io/Log.hh"
 #include "casm/misc/cloneable_ptr.hh"
 
 namespace CASM {
@@ -42,10 +41,10 @@ namespace CASM {
   /// - Must be a valid C++ identifier:
   ///   - only alphanumeric characters and underscores allowed
   ///   - cannot start with a number
-  bool is_valid_project_name(std::string name);
+  bool is_valid_project_name(std::string project_name);
 
   /// Throw if project name is invalid
-  void check_project_name(std::string name);
+  void check_project_name(std::string project_name);
 
   /// CASM project settings
   ///
@@ -110,28 +109,28 @@ namespace CASM {
   /// - Prior to v0.4: JSON file attribute "curr_properties" was expected to be an array of string
   ///   containing properties that must exist in properties.calc.json for a configuration to be
   //    considered calculated.
-  class ProjectSettings : public Logging {
+  class ProjectSettings {
 
   public:
 
     /// Construct CASM project settings for a new project (memory only)
     ///
-    /// \param name Name of new CASM project. Use a short title suitable for prepending to file names.
+    /// \param project_name Name of new CASM project. Use a short title suitable for prepending to file names.
     ///
-    explicit ProjectSettings(std::string name, Logging const &logging = Logging());
+    explicit ProjectSettings(std::string project_name);
 
     /// Construct CASM project settings for a new project (to be persisted on disk)
     ///
-    /// \param name Name of new CASM project. Use a short title suitable for prepending to file names.
+    /// \param project_name Name of new CASM project. Use a short title suitable for prepending to file names.
     /// \param root Path to new CASM project directory
     ///
-    explicit ProjectSettings(std::string name, fs::path root, Logging const &logging = Logging());
+    explicit ProjectSettings(std::string project_name, fs::path root);
 
     ~ProjectSettings();
 
 
     /// Get project name
-    std::string name() const;
+    std::string project_name() const;
 
 
     // --- optional: root_dir & DirectoryStructure ---
@@ -142,7 +141,7 @@ namespace CASM {
     /// Access DirectoryStructure object. Throw if not set.
     DirectoryStructure const &dir() const;
 
-    /// Set DirectoryStructure. Throw if project already exists (may be nested).
+    /// Set DirectoryStructure
     bool set_root_dir(fs::path root);
 
     /// Access dir().root_dir(). Throw if not set.
@@ -183,8 +182,7 @@ namespace CASM {
     ///
     /// \param type_name string, i.e. traits<Configuration>::name or traits<Kinetics::DiffTransConfiguration>::name
     /// \param calctype string
-    std::vector<std::string> &required_properties(std::string type_name, std::string calctype);
-
+    void set_required_properties(std::string type_name, std::string calctype, std::vector<std::string> const &_required_properties);
 
     // --- cluster expansion settings: ClexDescription, by ClexDescription.name ---
 
@@ -272,10 +270,10 @@ namespace CASM {
     // ** Database **
 
     /// Set default database type name (for future)
-    void set_db_name(std::string _db_name);
+    void set_default_database_name(std::string _default_database_name);
 
     /// Get default database type name
-    std::string db_name() const;
+    std::string default_database_name() const;
 
 
     // ** Querie aliases **
@@ -402,11 +400,14 @@ namespace CASM {
 
   private:
 
-    std::string m_name;
+    // project name
+    std::string m_project_name;
 
+    // directory structure (may be empty)
     notstd::cloneable_ptr<DirectoryStructure> m_dir;
 
-    notstd::cloneable_ptr<EnumeratorHandler> m_enumerator_handler;
+    // EnumeratorHandler (type erased)
+    notstd::cloneable_ptr<notstd::Cloneable> m_enumerator_handler;
 
     // Datatype name : QueryHandler<DataType> map (type erased)
     std::map<std::string, notstd::cloneable_ptr<notstd::Cloneable> > m_query_handler;
@@ -414,7 +415,8 @@ namespace CASM {
     // traits<ObjecType>::name -> std::pair{alias name, alias value}
     query_alias_map_type m_query_alias;
 
-    mutable notstd::cloneable_ptr<HamiltonianModules> m_hamiltonian_modules;
+    // HamiltonianModules (type erased)
+    mutable notstd::cloneable_ptr<notstd::Cloneable> m_hamiltonian_modules;
 
     // CASM project current settings
 
@@ -424,7 +426,7 @@ namespace CASM {
     // name of default cluster expansion
     std::string m_default_clex_name;
 
-    // neighbor list settings
+    // neighbor list parameters (may be empty)
     notstd::cloneable_ptr<Eigen::Matrix3l> m_nlist_weight_matrix;
     notstd::cloneable_ptr<std::set<int>> m_nlist_sublat_indices;
 
@@ -454,7 +456,7 @@ namespace CASM {
     double m_lin_alg_tol;
 
     // Database
-    std::string m_db_name;
+    std::string m_default_database_name;
   };
 
 
@@ -481,17 +483,39 @@ namespace CASM {
     /// Construct ProjectSettings from JSON
     ///
     /// \param json Input JSON
-    static ProjectSettings from_json(jsonParser const &json, Logging const &logging = Logging());
+    ///
+    /// Note:
+    /// - After construction, root dir is not set (`ProjectSettings::has_dir() == false`)
+    static ProjectSettings from_json(jsonParser const &json);
   };
 
-  /// Write settings to project settings file -- uses ProjectSettings.dir()
-  void commit(ProjectSettings const &set);
+  /// Write ProjectSettings to JSON file
+  ///
+  /// \param project_settings_path Location of ProjectSettings JSON file
+  /// \param logging For showing errors and warnings
+  void write_project_settings(ProjectSettings const &set, fs::path project_settings_path);
 
   /// Read ProjectSettings from JSON file
   ///
-  /// \param path Location of ProjectSettings JSON file
+  /// \param project_settings_path Location of ProjectSettings JSON file
   /// \param logging For showing errors and warnings
-  ProjectSettings read_project_settings(fs::path path, Logging const &logging = Logging());
+  ///
+  /// Note:
+  /// - After construction, root dir is not set (`ProjectSettings::has_dir() == false`)
+  ProjectSettings read_project_settings(fs::path project_settings_path);
+
+  /// Write project settings file for an existing project
+  ///
+  /// Equivalent to `write_project_settings(set, set.dir().project_settings())`
+  void commit(ProjectSettings const &set);
+
+  /// Open the project settings JSON file of an existing project
+  ///
+  /// Note:
+  /// - After construction, root dir is set (`ProjectSettings::has_dir() == true`)
+  /// - `path_in_project` does not need to be a root dir exactly, it may be anywere inside a CASM project
+  /// - Throws if `path_in_project` is not inside any CASM project or reading fails
+  ProjectSettings open_project_settings(fs::path path_in_project);
 
   /** @} */
 }

@@ -438,6 +438,14 @@ namespace CASM {
     return log;
   }
 
+  inline Log &log() {
+    return CASM::default_log();
+  }
+
+  inline Log &err_log() {
+    return CASM::default_err_log();
+  }
+
   inline Log &null_log() {
     static std::ostream nullout(nullptr);
     static Log log(nullout);

@@ -44,8 +44,7 @@ TEST(LogRuntimeLibraryTest, FunctionTest) {
                                           cc_filename_base,
                                           compile_opt,
                                           so_opt,
-                                          "Compiling RuntimeLibrary test code",
-                                          Logging());
+                                          "Compiling RuntimeLibrary test code");
 
   EXPECT_EQ(true, true);
 

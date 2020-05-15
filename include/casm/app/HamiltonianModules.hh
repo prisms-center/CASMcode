@@ -23,7 +23,8 @@ namespace CASM {
     class Traits;
   }
 
-  class HamiltonianModules {
+  class HamiltonianModules: public notstd::Cloneable {
+    CLONEABLE_NEEDS_DESTRUCTOR_DEF(HamiltonianModules)
   public:
 
 
@@ -32,8 +33,6 @@ namespace CASM {
     using AnisoValDictionary = ParsingDictionary<AnisoValTraits>;
 
     HamiltonianModules(ProjectSettings const *set = nullptr);
-
-    ~HamiltonianModules();
 
     DoFDictionary &dof_dict();
 
