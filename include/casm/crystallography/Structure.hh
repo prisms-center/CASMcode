@@ -138,7 +138,7 @@ namespace CASM {
 
   //************************************************************************************
 
-  class DoFSetInfo;
+  struct DoFSetInfo;
 
   std::vector<DoFKey> all_local_dof_types(xtal::BasicStructure const &_struc);
 

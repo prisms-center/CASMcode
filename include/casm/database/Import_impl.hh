@@ -107,6 +107,10 @@ namespace CASM {
       //   'configname' -> 'preexisting?
       std::map<std::string, bool> preexisting;
 
+      auto const &project_settings = this->primclex().settings();
+      auto calctype = project_settings.default_clex().calctype;
+      auto required_properties = project_settings.required_properties(traits<ConfigType>::name, calctype);
+
       Log &log = this->primclex().log();
       auto it = begin;
       for(; it != end; ++it) {
@@ -117,7 +121,7 @@ namespace CASM {
         // Outputs one or more mapping results from the structure located at specied path
         //   See _import documentation for more.
         m_structure_mapper.map(resolve_struc_path(it->string(), primclex()),
-                               this->primclex().settings().template properties<ConfigType>(),
+                               required_properties,
                                nullptr,
                                std::back_inserter(tvec));
         for(auto &res : tvec) {

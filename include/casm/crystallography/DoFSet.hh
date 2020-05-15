@@ -8,7 +8,7 @@
 
 namespace CASM {
   namespace xtal {
-    class SymOp;
+    struct SymOp;
 
     /**
      * DoFSet specifies all identifying information for a vector of continuous independent variables (Degrees of Freedom / DoFs)

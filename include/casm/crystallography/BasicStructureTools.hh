@@ -11,7 +11,7 @@ namespace CASM {
     class Site;
     class Coordinate;
     class BasicStructure;
-    class SymOp;
+    struct SymOp;
 
     /// return basis index of site that matches test_site, if it is in basis
     /// otherwise, returns the size of the basis

@@ -23,21 +23,35 @@
 
 namespace CASM {
 
+  BasicStructure read_prim(ProjectSettings const &project_settings) {
+    return read_prim(
+             project_settings.dir().prim(),
+             project_settings.crystallography_tol(),
+             &project_settings.hamiltonian_modules());
+  }
+
+  std::shared_ptr<Structure const> read_shared_prim(ProjectSettings const &project_settings) {
+    return std::make_shared<Structure const>(read_prim(project_settings));
+  }
+
+
   struct PrimClex::PrimClexData {
 
     typedef PrimClex::PrimType PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
 
-    PrimClexData(const Structure &_prim) :
-      prim_ptr(std::make_shared<PrimType>(_prim)) {
+    PrimClexData(
+      ProjectSettings const &_project_settings,
+      std::shared_ptr<const PrimType> _shared_prim) :
+      settings(_project_settings),
+      prim_ptr(_shared_prim) {
       //Guarantee presence of symmetry info;
       prim_ptr->factor_group();
     }
 
     PrimClexData(const fs::path &_root) :
-      dir(_root),
-      settings(_root),
-      prim_ptr(std::make_shared<PrimType>(read_prim(dir.prim(), settings.crystallography_tol(), &(settings.hamiltonian_modules())))) {
+      settings(open_project_settings(_root)),
+      prim_ptr(read_shared_prim(settings)) {
 
       //Guarantee presence of symmetry info;
       prim_ptr->factor_group();
@@ -46,7 +60,6 @@ namespace CASM {
 
     ~PrimClexData() {}
 
-    DirectoryStructure dir;
     ProjectSettings settings;
 
     PrimType_ptr prim_ptr;
@@ -77,9 +90,12 @@ namespace CASM {
   //  **** Constructors ****
 
   /// Initial construction of a PrimClex, from a primitive Structure
-  PrimClex::PrimClex(const Structure &_prim, const Logging &logging) :
+  PrimClex::PrimClex(
+    ProjectSettings const &_project_settings,
+    std::shared_ptr<const PrimType> _shared_prim,
+    const Logging &logging) :
     Logging(logging),
-    m_data(new PrimClexData(_prim)) {
+    m_data(new PrimClexData(_project_settings, _shared_prim)) {
 
     m_data->settings.set_crystallography_tol(TOL);
 
@@ -105,8 +121,10 @@ namespace CASM {
   ///  - If !root.empty(), read all saved data to generate all Supercells and Configurations, etc.
   void PrimClex::_init() {
 
-    log().construct("CASM Project");
-    log() << "from: " << dir().root_dir() << "\n" << std::endl;
+    if(has_dir()) {
+      log().construct("CASM Project");
+      log() << "from: " << dir().root_dir() << "\n" << std::endl;
+    }
 
     auto struc_mol_name = xtal::struc_molecule_name(prim());
     m_data->vacancy_allowed = false;
@@ -117,7 +135,7 @@ namespace CASM {
       }
     }
 
-    if(dir().root_dir().empty()) {
+    if(!has_dir()) {
       return;
     }
 
@@ -151,17 +169,17 @@ namespace CASM {
 
     if(read_settings) {
       try {
-        m_data->settings = ProjectSettings(dir().root_dir(), *this);
+        m_data->settings = open_project_settings(dir().root_dir());
       }
       catch(std::exception &e) {
         err_log().error("reading project_settings.json");
-        err_log() << "file: " << m_data->dir.project_settings() << "\n" << std::endl;
+        err_log() << "file: " << dir().project_settings() << "\n" << std::endl;
       }
     }
 
     if(read_composition) {
       m_data->has_composition_axes = false;
-      auto comp_axes = m_data->dir.composition_axes();
+      auto comp_axes = dir().composition_axes();
 
       try {
         if(fs::is_regular_file(comp_axes)) {
@@ -185,7 +203,7 @@ namespace CASM {
 
       // read chemical reference
       m_data->chem_ref.reset();
-      auto chem_ref_path = m_data->dir.chemical_reference(m_data->settings.default_clex().calctype, m_data->settings.default_clex().ref);
+      auto chem_ref_path = dir().chemical_reference(m_data->settings.default_clex().calctype, m_data->settings.default_clex().ref);
 
       try {
         if(fs::is_regular_file(chem_ref_path)) {
@@ -222,16 +240,20 @@ namespace CASM {
     log() << std::endl;
   }
 
-  const DirectoryStructure &PrimClex::dir() const {
-    return m_data->dir;
-  }
-
   ProjectSettings &PrimClex::settings() {
     return m_data->settings;
   }
 
   const ProjectSettings &PrimClex::settings() const {
     return m_data->settings;
+  }
+
+  bool PrimClex::has_dir() const {
+    return settings().has_dir();
+  }
+
+  const DirectoryStructure &PrimClex::dir() const {
+    return settings().dir();
   }
 
   /// \brief Get the crystallography_tol
@@ -398,7 +420,7 @@ namespace CASM {
   bool PrimClex::has_clexulator(const ClexDescription &key) const {
     auto it = m_data->clexulator.find(key);
     if(it == m_data->clexulator.end()) {
-      if(!fs::exists(dir().clexulator_src(settings().name(), key.bset))) {
+      if(!fs::exists(dir().clexulator_src(settings().project_name(), key.bset))) {
         return false;
       }
     }
@@ -410,14 +432,14 @@ namespace CASM {
     auto it = m_data->clexulator.find(key);
     if(it == m_data->clexulator.end()) {
 
-      if(!fs::exists(dir().clexulator_src(settings().name(), key.bset))) {
+      if(!fs::exists(dir().clexulator_src(settings().project_name(), key.bset))) {
         throw std::runtime_error(
           std::string("Error loading clexulator ") + key.bset + ". No basis functions exist.");
       }
 
       try {
         it = m_data->clexulator.insert(
-               std::make_pair(key, Clexulator(settings().name() + "_Clexulator",
+               std::make_pair(key, Clexulator(settings().project_name() + "_Clexulator",
                                               dir().clexulator_dir(key.bset),
                                               nlist(),
                                               log(),
@@ -425,13 +447,13 @@ namespace CASM {
                                               settings().so_options()))).first;
       }
       catch(std::exception &e) {
-        // not sure why this fails...
+        // TODO: not sure why this fails...
         // log() << "Error constructing Clexulator. Current settings: \n" << std::endl;
         // settings().print_compiler_settings_summary(log());
 
         std::cout << "Error constructing Clexulator. Current settings: \n" << std::endl;
         Log tlog(std::cout);
-        settings().print_compiler_settings_summary(tlog);
+        print_compiler_settings_summary(settings(), tlog);
         throw;
       }
     }

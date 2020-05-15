@@ -257,8 +257,8 @@ namespace CASM {
     std::string alias_command = boost::trim_copy(std::string(++it, new_alias_str.cend()));
 
     try {
-      set.query_handler<DataObject>().add_alias(alias_name, alias_command);
-      set.commit();
+      set.set_query_alias(traits<DataObject>::name, alias_name, alias_command);
+      commit(set);
       return 0;
     }
     catch(std::runtime_error &e) {

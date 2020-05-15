@@ -176,8 +176,8 @@ namespace CASM {
     const fs::path &root = args.root;
     if(!root.empty()) {
       std::stringstream ss;
-      DirectoryStructure dir(root);
-      ProjectSettings set(root);
+      ProjectSettings set = open_project_settings(root);
+      DirectoryStructure const &dir = set.dir();
       Structure prim(read_prim(dir.prim(), TOL, &(set.hamiltonian_modules())));
 
       ss << "       For this project, the expected order is:\n"

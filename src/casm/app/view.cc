@@ -113,8 +113,7 @@ namespace CASM {
       return ERR_NO_PROJ;
     }
 
-    DirectoryStructure dir(root);
-    ProjectSettings set(root);
+    ProjectSettings set = open_project_settings(root);
     if(set.view_command().empty()) {
       args.err_log() << "Error in 'casm view': No command set. Use 'casm settings "
                      "--set-view-command' to set the command to open visualization "

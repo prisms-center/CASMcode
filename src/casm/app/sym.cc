@@ -136,8 +136,8 @@ namespace CASM {
       return ERR_NO_PROJ;
     }
 
-    DirectoryStructure dir(root);
-    ProjectSettings set(root);
+    ProjectSettings set = open_project_settings(root);
+    DirectoryStructure const &dir = set.dir();
     Structure prim(read_prim(dir.prim(), set.crystallography_tol(), &(set.hamiltonian_modules())));
 
     args.log() << "Generating lattice point group. " << std::endl << std::endl;
@@ -222,7 +222,7 @@ namespace CASM {
 
 
     // Write symmetry info files
-    set.new_symmetry_dir();
+    dir.new_symmetry_dir();
 
     // Write lattice point group
     {

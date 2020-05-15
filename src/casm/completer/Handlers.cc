@@ -219,8 +219,9 @@ namespace CASM {
     }
 
     void ArgHandler::calctype_to_bash(std::vector<std::string> &arguments) {
-      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
-        const DirectoryStructure dir = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log()).dir();
+      auto checkroot = find_casmroot(boost::filesystem::current_path());
+      if(!checkroot.empty()) {
+        const DirectoryStructure dir {checkroot};
         for(auto &item : dir.all_calctype()) {
           arguments.push_back(item);
         }
@@ -229,8 +230,9 @@ namespace CASM {
     }
 
     void ArgHandler::bset_to_bash(std::vector<std::string> &arguments) {
-      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
-        const DirectoryStructure dir = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log()).dir();
+      auto checkroot = find_casmroot(boost::filesystem::current_path());
+      if(!checkroot.empty()) {
+        const DirectoryStructure dir {checkroot};
         for(auto &item : dir.all_bset()) {
           arguments.push_back(item);
         }
@@ -239,8 +241,9 @@ namespace CASM {
     }
 
     void ArgHandler::clex_to_bash(std::vector<std::string> &arguments) {
-      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
-        const ProjectSettings set = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log());
+      auto checkroot = find_casmroot(boost::filesystem::current_path());
+      if(!checkroot.empty()) {
+        const ProjectSettings set = open_project_settings(checkroot);
         for(auto &item : set.cluster_expansions()) {
           arguments.push_back(item.first);
         }
@@ -249,8 +252,9 @@ namespace CASM {
     }
 
     void ArgHandler::ref_to_bash(std::vector<std::string> &arguments) {
-      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
-        const ProjectSettings set = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log());
+      auto checkroot = find_casmroot(boost::filesystem::current_path());
+      if(!checkroot.empty()) {
+        const ProjectSettings set = open_project_settings(checkroot);
         for(auto &item : set.dir().all_ref(set.default_clex().calctype)) {
           arguments.push_back(item);
         }
@@ -259,8 +263,9 @@ namespace CASM {
     }
 
     void ArgHandler::eci_to_bash(std::vector<std::string> &arguments) {
-      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
-        const ProjectSettings set = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log());
+      auto checkroot = find_casmroot(boost::filesystem::current_path());
+      if(!checkroot.empty()) {
+        const ProjectSettings set = open_project_settings(checkroot);
         const ClexDescription d = set.default_clex();
         for(auto &item : set.dir().all_eci(d.property, d.calctype, d.ref, d.bset)) {
           arguments.push_back(item);
@@ -270,8 +275,9 @@ namespace CASM {
     }
 
     void ArgHandler::property_to_bash(std::vector<std::string> &arguments) {
-      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
-        const DirectoryStructure dir = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log()).dir();
+      auto checkroot = find_casmroot(boost::filesystem::current_path());
+      if(!checkroot.empty()) {
+        const DirectoryStructure dir {checkroot};
         for(auto &item : dir.all_property()) {
           arguments.push_back(item);
         }
@@ -280,8 +286,9 @@ namespace CASM {
     }
 
     void ArgHandler::dof_to_bash(std::vector<std::string> &arguments) {
-      if(!find_casmroot(boost::filesystem::current_path()).empty()) {
-        const DirectoryStructure dir = ProjectSettings(find_casmroot(boost::filesystem::current_path()), null_log()).dir();
+      auto checkroot = find_casmroot(boost::filesystem::current_path());
+      if(!checkroot.empty()) {
+        const DirectoryStructure dir {checkroot};
         //for(auto &item : dir.all_property()) {
         //arguments.push_back(item);
         //}

@@ -241,7 +241,7 @@ namespace CASM {
       if(!m_normal) {
         tnorm = m_dof_vals->site_value(m_site_selection[i]).norm();
         if(!m_unit_length) {
-          tnorm += -m_mag * log(m_mtrand->rand());
+          tnorm += -m_mag * std::log(m_mtrand->rand());
         }
         (m_dof_vals->site_value(m_site_selection[i])) /= tnorm;
       }

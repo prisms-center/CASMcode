@@ -84,7 +84,7 @@ namespace CASM {
       typedef std::pair<std::string, create_mode> pair_type;
 
       Data(PrimClex *_primclex,
-           DirectoryStructure &_dir,
+           DirectoryStructure const &_dir,
            ProjectSettings &_set,
            ClexDescription &_desc,
            Log &_log,
@@ -102,7 +102,7 @@ namespace CASM {
         eci(pair_type(desc.eci, do_not_create)) {}
 
       PrimClex *primclex;
-      DirectoryStructure &dir;
+      DirectoryStructure const &dir;
       ProjectSettings &set;
       ClexDescription &desc;
       Log &log;
@@ -124,35 +124,35 @@ namespace CASM {
           return contains(dir.all_property(), tdesc.property);
         },
         [&]() {
-          return set.new_clex_dir(tdesc.property);
+          return dir.new_clex_dir(tdesc.property);
         }) &&
         try_new("calctype", calctype,
         [&]() {
           return contains(dir.all_calctype(), tdesc.calctype);
         },
         [&]() {
-          return set.new_calc_settings_dir(tdesc.calctype);
+          return dir.new_calc_settings_dir(tdesc.calctype);
         }) &&
         try_new("ref", ref,
         [&]() {
           return contains(dir.all_ref(tdesc.calctype), tdesc.ref);
         },
         [&]() {
-          return set.new_ref_dir(tdesc.calctype, tdesc.ref);
+          return dir.new_ref_dir(tdesc.calctype, tdesc.ref);
         }) &&
         try_new("bset", bset,
         [&]() {
           return contains(dir.all_bset(), tdesc.bset);
         },
         [&]() {
-          return set.new_bset_dir(tdesc.bset);
+          return dir.new_bset_dir(tdesc.bset);
         }) &&
         try_new("eci", eci,
         [&]() {
           return contains(dir.all_eci(tdesc.property, tdesc.calctype, tdesc.ref, tdesc.bset), tdesc.eci);
         },
         [&]() {
-          return set.new_eci_dir(tdesc.property, tdesc.calctype, tdesc.ref, tdesc.bset, tdesc.eci);
+          return dir.new_eci_dir(tdesc.property, tdesc.calctype, tdesc.ref, tdesc.bset, tdesc.eci);
         });
 
         // If could not create settings directories
@@ -161,7 +161,7 @@ namespace CASM {
         }
 
         if(clex_exists(dir, tdesc) && set.set_default_clex(tdesc)) {
-          set.commit();
+          commit(set);
 
           bool read_settings = true;
           bool read_composition = false;
@@ -469,8 +469,8 @@ namespace CASM {
       return ERR_NO_PROJ;
     }
 
-    DirectoryStructure dir(root);
-    ProjectSettings set(root);
+    ProjectSettings set = open_project_settings(root);
+    DirectoryStructure const &dir = set.dir();
     ClexDescription clex_desc = set.default_clex();
 
     if(vm.count("clex")) {
@@ -489,7 +489,7 @@ namespace CASM {
 
     // disply all settings
     if(vm.count("list")) {
-      set.print_summary(args.log());
+      print_summary(set, args.log());
       return 0;
     }
 
@@ -544,7 +544,7 @@ namespace CASM {
     // create new cluster expansion settings group
     else if(vm.count("new-clex")) {
       clex_desc.name = single_input;
-      if(set.new_clex(clex_desc)) {
+      if(set.insert_clex(clex_desc)) {
         args.log() << "Created new cluster expansion named '" << single_input << "'\n\n";
       }
       else {
@@ -553,7 +553,7 @@ namespace CASM {
       }
 
       if(clex_exists(dir, clex_desc) && set.set_default_clex(clex_desc)) {
-        set.commit();
+        commit(set);
         if(args.primclex) {
           args.primclex->refresh(true, false, true, true, true);
         }
@@ -581,7 +581,7 @@ namespace CASM {
       }
 
       if(set.erase_clex(set.clex(single_input))) {
-        set.commit();
+        commit(set);
         if(args.primclex) {
           args.primclex->refresh(true, false, true, true, true);
         }
@@ -609,8 +609,8 @@ namespace CASM {
         set.erase_clex(it->second);
       }
       clex_desc.name = "formation_energy";
-      if(set.new_clex(clex_desc)) {
-        set.commit();
+      if(set.insert_clex(clex_desc)) {
+        commit(set);
         if(args.primclex) {
           args.primclex->refresh(true, false, true, true, true);
         }
@@ -627,8 +627,8 @@ namespace CASM {
 
     // set default clex
     else if(vm.count("set-default-clex")) {
-      if(set.set_default_clex(single_input)) {
-        set.commit();
+      if(set.set_default_clex_name(single_input)) {
+        commit(set);
         if(args.primclex) {
           args.primclex->refresh(true, false, true, true, true);
         }
@@ -709,7 +709,7 @@ namespace CASM {
     // set cxx
     else if(vm.count("set-cxx")) {
       set.set_cxx(single_input);
-      set.commit();
+      commit(set);
       if(args.primclex) {
         args.primclex->refresh(true, false, false, false, true);
       }
@@ -724,7 +724,7 @@ namespace CASM {
     // set cxxflags
     else if(vm.count("set-cxxflags")) {
       set.set_cxxflags(single_input);
-      set.commit();
+      commit(set);
       if(args.primclex) {
         args.primclex->refresh(true, false, false, false, true);
       }
@@ -738,7 +738,7 @@ namespace CASM {
     // set soflags
     else if(vm.count("set-soflags")) {
       set.set_soflags(single_input);
-      set.commit();
+      commit(set);
       if(args.primclex) {
         args.primclex->refresh(true, false, false, false, true);
       }
@@ -752,7 +752,7 @@ namespace CASM {
     // set casm prefix
     else if(vm.count("set-casm-prefix")) {
       set.set_casm_prefix(single_input);
-      set.commit();
+      commit(set);
       if(args.primclex) {
         args.primclex->refresh(true, false, false, false, true);
       }
@@ -768,7 +768,7 @@ namespace CASM {
     // set casm includedir
     else if(vm.count("set-casm-includedir")) {
       set.set_casm_includedir(single_input);
-      set.commit();
+      commit(set);
       if(args.primclex) {
         args.primclex->refresh(true, false, false, false, true);
       }
@@ -783,7 +783,7 @@ namespace CASM {
     // set casm libdir
     else if(vm.count("set-casm-libdir")) {
       set.set_casm_libdir(single_input);
-      set.commit();
+      commit(set);
       if(args.primclex) {
         args.primclex->refresh(true, false, false, false, true);
       }
@@ -798,7 +798,7 @@ namespace CASM {
     // set boost prefix
     else if(vm.count("set-boost-prefix")) {
       set.set_boost_prefix(single_input);
-      set.commit();
+      commit(set);
       if(args.primclex) {
         args.primclex->refresh(true, false, false, false, true);
       }
@@ -814,7 +814,7 @@ namespace CASM {
     // set boost includedir
     else if(vm.count("set-boost-includedir")) {
       set.set_boost_includedir(single_input);
-      set.commit();
+      commit(set);
       if(args.primclex) {
         args.primclex->refresh(true, false, false, false, true);
       }
@@ -829,7 +829,7 @@ namespace CASM {
     // set boost libdir
     else if(vm.count("set-boost-libdir")) {
       set.set_boost_libdir(single_input);
-      set.commit();
+      commit(set);
       if(args.primclex) {
         args.primclex->refresh(true, false, false, false, true);
       }
@@ -844,7 +844,7 @@ namespace CASM {
     // set 'casm view' command
     else if(vm.count("set-view-command")) {
       set.set_view_command(single_input);
-      set.commit();
+      commit(set);
       if(args.primclex) {
         args.primclex->refresh(true, false, false, false, false);
       }
@@ -857,7 +857,7 @@ namespace CASM {
     // set 'casm view' command
     else if(vm.count("set-view-command-video")) {
       set.set_view_command_video(single_input);
-      set.commit();
+      commit(set);
       if(args.primclex) {
         args.primclex->refresh(true, false, false, false, false);
       }

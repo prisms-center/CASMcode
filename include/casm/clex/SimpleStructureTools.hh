@@ -7,7 +7,7 @@ namespace CASM {
   class Supercell;
   class ConfigDoF;
   class Configuration;
-  class MappedProperties;
+  struct MappedProperties;
 
   namespace DoFType {
     class Traits;
