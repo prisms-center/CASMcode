@@ -329,53 +329,6 @@ namespace CASM {
     std::string global_clexulator_name() const;
 
 
-    // ** Add directories for additional project data **
-
-    /// Create new project data directory
-    bool new_casm_dir() const;
-
-    /// Create new symmetry directory
-    bool new_symmetry_dir() const;
-
-    /// Create new reports directory
-    bool new_reports_dir() const;
-
-    /// Add a basis set directory
-    bool new_bset_dir(std::string bset) const;
-
-    /// Add a cluster expansion directory
-    bool new_clex_dir(std::string property) const;
-
-
-    /// Add calculation settings directory path
-    bool new_calc_settings_dir(std::string calctype) const;
-
-    /// Add calculation settings directory path, for supercell specific settings
-    bool new_supercell_calc_settings_dir(std::string scelname, std::string calctype) const;
-
-    /// Add calculation settings directory path, for configuration specific settings
-    bool new_configuration_calc_settings_dir(std::string configname, std::string calctype) const;
-
-
-    /// Add a ref directory
-    bool new_ref_dir(std::string calctype, std::string ref) const;
-
-
-    /// Add an eci directory
-    bool new_eci_dir(std::string property, std::string calctype, std::string ref, std::string bset, std::string eci) const;
-
-    /// Add directories for a particular cluster expansion
-    ///
-    /// Create bset, calc_settings, ref, and eci directories for the cluster expansion `desc`.
-    bool new_dir(ClexDescription const &desc) const;
-
-    /// Add directories for all cluster expansions
-    ///
-    /// For all ClexDescription currently saved in `this->cluster_expansions()`,
-    ///   create bset, calc_settings, ref, and eci directories
-    bool create_all_directories() const;
-
-
     /// Check if neighbor list weight matrix exists
     bool has_m_nlist_weight_matrix() const;
 
@@ -383,6 +336,10 @@ namespace CASM {
     Eigen::Matrix3l nlist_weight_matrix() const;
 
     /// Set neighbor list weight matrix (will delete existing Clexulator source and compiled code)
+    ///
+    /// Note:
+    /// - Clexulators are dependent on the neighbor list parameters. If you changes these parameters
+    ///   you must regenerate all clexulators. This is no longer done by this function.
     bool set_nlist_weight_matrix(Eigen::Matrix3l M);
 
     /// Check if set of sublattice indices to include in neighbor lists exists
@@ -391,8 +348,11 @@ namespace CASM {
     /// Get set of sublattice indices to include in neighbor lists
     std::set<int> const &nlist_sublat_indices() const;
 
-    /// Set range of sublattice indices to include in neighbor lists (will delete existing
-    ///   Clexulator source and compiled code)
+    /// Set range of sublattice indices to include in neighbor lists
+    ///
+    /// Note:
+    /// - Clexulators are dependent on the neighbor list parameters. If you changes these parameters
+    ///   you must regenerate all clexulators. This is no longer done by this function.
     bool set_nlist_sublat_indices(std::set<int> value);
 
 
@@ -441,10 +401,6 @@ namespace CASM {
 
 
   private:
-
-    /// Changing the neighbor list parameters requires updating Clexulator source code
-    void _reset_clexulators();
-
 
     std::string m_name;
 
@@ -501,6 +457,13 @@ namespace CASM {
     std::string m_db_name;
   };
 
+
+  /// Add directories for all cluster expansions
+  ///
+  /// For all ClexDescription currently saved in `this->cluster_expansions()`,
+  ///   create bset, calc_settings, ref, and eci directories
+  bool create_all_directories(ProjectSettings const &set);
+
   /// Print summary of compiler settings, as for 'casm settings -l'
   void print_compiler_settings_summary(ProjectSettings const &set, Log &log);
 
@@ -521,7 +484,7 @@ namespace CASM {
     static ProjectSettings from_json(jsonParser const &json, Logging const &logging = Logging());
   };
 
-  /// Save settings to project settings file -- uses ProjectSettings.dir()
+  /// Write settings to project settings file -- uses ProjectSettings.dir()
   void commit(ProjectSettings const &set);
 
   /// Read ProjectSettings from JSON file

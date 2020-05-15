@@ -245,24 +245,24 @@ namespace CASM {
     return bset_dir(bset) / "basis.json";
   }
 
-  /// \brief Returns path to directory containing global clexulator
+  /// \brief Returns path to directory containing clexulator
   fs::path DirectoryStructure::clexulator_dir(std::string bset) const {
     return bset_dir(bset);
   }
 
-  /// \brief Returns path to global clexulator source file
-  fs::path DirectoryStructure::clexulator_src(std::string project, std::string bset) const {
-    return bset_dir(bset) / (project + "_Clexulator.cc");
+  /// \brief Returns path to clexulator source file
+  fs::path DirectoryStructure::clexulator_src(std::string project_name, std::string bset) const {
+    return bset_dir(bset) / (project_name + "_Clexulator.cc");
   }
 
-  /// \brief Returns path to global clexulator o file
-  fs::path DirectoryStructure::clexulator_o(std::string project, std::string bset) const {
-    return bset_dir(bset) / (project + "_Clexulator.o");
+  /// \brief Returns path to clexulator o file
+  fs::path DirectoryStructure::clexulator_o(std::string project_name, std::string bset) const {
+    return bset_dir(bset) / (project_name + "_Clexulator.o");
   }
 
-  /// \brief Returns path to global clexulator so file
-  fs::path DirectoryStructure::clexulator_so(std::string project, std::string bset) const {
-    return bset_dir(bset) / (project + "_Clexulator.so");
+  /// \brief Returns path to clexulator so file
+  fs::path DirectoryStructure::clexulator_so(std::string project_name, std::string bset) const {
+    return bset_dir(bset) / (project_name + "_Clexulator.so");
   }
 
   /// \brief Returns path to eci.in, in bset directory
@@ -414,6 +414,66 @@ namespace CASM {
     return m_root / m_casm_dir / "query_alias.json";
   }
 
+
+  // ** Add directories for additional project data **
+
+  bool DirectoryStructure::new_casm_dir() const {
+    return fs::create_directory(casm_dir());
+  }
+
+  bool DirectoryStructure::new_symmetry_dir() const {
+    return fs::create_directory(symmetry_dir());
+  }
+
+  bool DirectoryStructure::new_reports_dir() const {
+    return fs::create_directory(reports_dir());
+  }
+
+  bool DirectoryStructure::new_bset_dir(std::string bset) const {
+    return fs::create_directories(bset_dir(bset));
+  }
+
+  bool DirectoryStructure::new_clex_dir(std::string property) const {
+    return fs::create_directories(clex_dir(property));
+  }
+
+
+  bool DirectoryStructure::new_calc_settings_dir(std::string calctype) const {
+    return fs::create_directories(calc_settings_dir(calctype));
+  }
+
+  bool DirectoryStructure::new_supercell_calc_settings_dir(std::string scelname, std::string calctype) const {
+    return fs::create_directories(supercell_calc_settings_dir(scelname, calctype));
+  }
+
+  bool DirectoryStructure::new_configuration_calc_settings_dir(std::string configname, std::string calctype) const {
+    return fs::create_directories(configuration_calc_settings_dir(configname, calctype));
+  }
+
+
+  bool DirectoryStructure::new_ref_dir(std::string calctype, std::string ref) const {
+    return fs::create_directories(ref_dir(calctype, ref));
+  }
+
+  bool DirectoryStructure::new_eci_dir(std::string property, std::string calctype, std::string ref, std::string bset, std::string eci) const {
+    return fs::create_directories(eci_dir(property, calctype, ref, bset, eci));
+  }
+
+
+  void DirectoryStructure::delete_clexulator(std::string project_name, std::string bset) const {
+    fs::remove(clexulator_src(project_name, bset));
+    fs::remove(clexulator_o(project_name, bset));
+    fs::remove(clexulator_so(project_name, bset));
+  }
+
+  void DirectoryStructure::delete_all_clexulators(std::string project_name) const {
+    auto all_bset = this->all_bset();
+    for(auto it = all_bset.begin(); it != all_bset.end(); ++it) {
+      delete_clexulator(project_name, *it);
+    }
+  }
+
+
   std::string DirectoryStructure::_bset(std::string bset) const {
     return std::string("bset.") + bset;
   }
@@ -491,4 +551,3 @@ template fs::path DirectoryStructure::aliases<type>() const;
 namespace CASM {
   BOOST_PP_SEQ_FOR_EACH(INST_DirectoryStructure_all, _, CASM_DB_TYPES)
 }
-

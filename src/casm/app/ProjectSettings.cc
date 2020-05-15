@@ -30,10 +30,6 @@ namespace CASM {
     }
   }
 
-  /// \brief Construct CASM project settings for a new project, in memory only
-  ///
-  /// \param name Name of new CASM project. Use a short title suitable for prepending to file names.
-  ///
   ProjectSettings::ProjectSettings(std::string name, const Logging &logging) :
     Logging(logging),
     m_name(name),
@@ -44,11 +40,6 @@ namespace CASM {
     check_project_name(name);
   }
 
-  /// \brief Construct CASM project settings for a new project
-  ///
-  /// \param root Path to new CASM project directory
-  /// \param name Name of new CASM project. Use a short title suitable for prepending to file names.
-  ///
   ProjectSettings::ProjectSettings(std::string name, fs::path root, const Logging &logging) :
     Logging(logging),
     m_name(name),
@@ -63,17 +54,14 @@ namespace CASM {
 
   ProjectSettings::~ProjectSettings() {}
 
-  /// \brief Get project name
   std::string ProjectSettings::name() const {
     return m_name;
   }
 
-  /// \brief Check if DirectoryStructure exists
   bool ProjectSettings::has_dir() const {
     return bool {m_dir};
   }
 
-  /// \brief Access DirectoryStructure object. Throw if not set.
   DirectoryStructure const &ProjectSettings::dir() const {
     if(!m_dir) {
       throw std::runtime_error("Error accessing DirectoryStructure from ProjectSettings: Does not exist.");
@@ -81,7 +69,6 @@ namespace CASM {
     return *m_dir;
   }
 
-  /// \brief Set DirectoryStructure. Throw if project already exists (may be nested).
   bool ProjectSettings::set_root_dir(fs::path root) {
     fs::path checkroot = find_casmroot(root);
     if(checkroot == root) {
@@ -91,7 +78,6 @@ namespace CASM {
     return bool {m_dir};
   }
 
-  /// \brief Access dir().root_dir(). Throw if not set.
   fs::path ProjectSettings::root_dir() const {
     return dir().root_dir();
   }
@@ -223,8 +209,6 @@ namespace CASM {
   }
 
 
-  // ** Enumerators **
-
   EnumeratorHandler &ProjectSettings::enumerator_handler() {
     if(!m_enumerator_handler) {
       m_enumerator_handler = notstd::make_cloneable<EnumeratorHandler>(*this);
@@ -237,8 +221,6 @@ namespace CASM {
   }
 
 
-  // ** Database **
-
   void ProjectSettings::set_db_name(std::string _db_name) {
     m_db_name = _db_name;
   }
@@ -246,8 +228,6 @@ namespace CASM {
   std::string ProjectSettings::db_name() const {
     return m_db_name;
   }
-
-  // ** Queries **
 
   ProjectSettings::query_alias_map_type const &ProjectSettings::query_alias() const {
     return m_query_alias;
@@ -295,8 +275,6 @@ namespace CASM {
   }
 
 
-  // ** Hamiltonian Modules **
-
   HamiltonianModules &ProjectSettings::hamiltonian_modules() {
     if(!m_hamiltonian_modules) {
       m_hamiltonian_modules = notstd::make_cloneable<HamiltonianModules>(this);
@@ -311,77 +289,11 @@ namespace CASM {
     return *m_hamiltonian_modules;
   }
 
-  // ** Clexulator names **
 
   std::string ProjectSettings::global_clexulator_name() const {
     return name() + "_Clexulator";
   }
 
-
-  // ** Add directories for additional project data **
-
-  bool ProjectSettings::new_casm_dir() const {
-    return fs::create_directory(dir().casm_dir());
-  }
-
-  bool ProjectSettings::new_symmetry_dir() const {
-    return fs::create_directory(dir().symmetry_dir());
-  }
-
-  bool ProjectSettings::new_reports_dir() const {
-    return fs::create_directory(dir().reports_dir());
-  }
-
-  bool ProjectSettings::new_bset_dir(std::string bset) const {
-    return fs::create_directories(dir().bset_dir(bset));
-  }
-
-  bool ProjectSettings::new_clex_dir(std::string property) const {
-    return fs::create_directories(dir().clex_dir(property));
-  }
-
-
-  bool ProjectSettings::new_calc_settings_dir(std::string calctype) const {
-    return fs::create_directories(dir().calc_settings_dir(calctype));
-  }
-
-  bool ProjectSettings::new_supercell_calc_settings_dir(std::string scelname, std::string calctype) const {
-    return fs::create_directories(dir().supercell_calc_settings_dir(scelname, calctype));
-  }
-
-  bool ProjectSettings::new_configuration_calc_settings_dir(std::string configname, std::string calctype) const {
-    return fs::create_directories(dir().configuration_calc_settings_dir(configname, calctype));
-  }
-
-
-  bool ProjectSettings::new_ref_dir(std::string calctype, std::string ref) const {
-    return fs::create_directories(dir().ref_dir(calctype, ref));
-  }
-
-  bool ProjectSettings::new_eci_dir(std::string property, std::string calctype, std::string ref, std::string bset, std::string eci) const {
-    return fs::create_directories(dir().eci_dir(property, calctype, ref, bset, eci));
-  }
-
-  bool ProjectSettings::new_dir(ClexDescription const &desc) const {
-    bool result {true};
-    result &= new_bset_dir(desc.bset);
-    result &= new_calc_settings_dir(desc.calctype);
-    result &= new_ref_dir(desc.calctype, desc.ref);
-    result &= new_eci_dir(desc.property, desc.calctype, desc.ref, desc.bset, desc.eci);
-    return result;
-  }
-
-  bool ProjectSettings::create_all_directories() const {
-    bool result {true};
-    result &= new_casm_dir();
-    result &= new_symmetry_dir();
-    result &= new_reports_dir();
-    for(auto const &pair : cluster_expansions()) {
-      ClexDescription const &desc = pair.second;
-      result &= new_dir(desc);
-    }
-    return result;
-  }
 
   bool ProjectSettings::has_m_nlist_weight_matrix() const {
     return bool {m_nlist_weight_matrix};
@@ -392,13 +304,6 @@ namespace CASM {
   }
 
   bool ProjectSettings::set_nlist_weight_matrix(Eigen::Matrix3l M) {
-
-    // changing the neighbor list parameters requires updating Clexulator source code
-    // for now we just remove existing source/compiled files
-    if(m_dir) {
-      _reset_clexulators();
-    }
-
     m_nlist_weight_matrix = notstd::clone(M);
     return bool {m_nlist_weight_matrix};
   }
@@ -412,9 +317,6 @@ namespace CASM {
   }
 
   bool ProjectSettings::set_nlist_sublat_indices(std::set<int> value) {
-    if(m_dir) {
-      _reset_clexulators();
-    }
     m_nlist_sublat_indices = notstd::clone(value);
     return bool {m_nlist_sublat_indices};
   }
@@ -489,13 +391,19 @@ namespace CASM {
   }
 
 
-  void ProjectSettings::_reset_clexulators() {
-    auto all_bset = dir().all_bset();
-    for(auto it = all_bset.begin(); it != all_bset.end(); ++it) {
-      fs::remove(dir().clexulator_src(name(), *it));
-      fs::remove(dir().clexulator_o(name(), *it));
-      fs::remove(dir().clexulator_so(name(), *it));
+  bool create_all_directories(ProjectSettings const &set) {
+    auto const &dir = set.dir();
+    auto const &cluster_expansions = set.cluster_expansions();
+
+    bool result {true};
+    result &= dir.new_casm_dir();
+    result &= dir.new_symmetry_dir();
+    result &= dir.new_reports_dir();
+    for(auto const &pair : cluster_expansions) {
+      ClexDescription const &desc = pair.second;
+      result &= new_dir(dir, desc);
     }
+    return result;
   }
 
   namespace {
