@@ -1,81 +1,65 @@
 #ifndef CASM_ProjectBuilder
 #define CASM_ProjectBuilder
 
-#include <string>
-#include <vector>
-#include <map>
-#include <boost/filesystem/path.hpp>
+#include <set>
 #include "casm/global/definitions.hh"
-#include "casm/crystallography/BasicStructure.hh"
-#include "casm/crystallography/Site.hh"
+#include "casm/global/eigen.hh"
 
 namespace CASM {
-  namespace xtal {
-    class Site;
 
+  namespace xtal {
     class BasicStructure;
   }
 
+  class ProjectSettings;
+  class Structure;
 
-  /// \brief Sets up directories and files for a new CASM project
+  /// Build a CASM project directory tree and populate with standard files
   ///
-  /// \ingroup Project
+  /// Notes:
+  /// - The project is built at `project_settings.root_dir()`
+  /// - Throws if `!project_settings.has_dir()`
+  /// - Throws if a CASM project already exists at that location (subprojects are OK)
+  void build_project(
+    ProjectSettings const &project_settings,
+    Structure const &prim);
+
+  /// Construct default project settings for a given prim structure, without setting a root dir
   ///
-  class ProjectBuilder {
+  /// Notes:
+  /// - Uses `default_nlist_weight_matrix` and `default_nlist_sublat_indices`
+  /// - Create default clex using `default_configuration_clex`
+  /// - Sets required_properties for Configuration to "relaxed_energy"
+  ProjectSettings make_default_project_settings(
+    xtal::BasicStructure const &prim,
+    std::string project_name);
 
-  public:
+  /// Construct default project settings for a given prim structure, including a root dir
+  ///
+  /// Notes:
+  /// - Uses `default_nlist_weight_matrix` and `default_nlist_sublat_indices`
+  /// - Create default clex using `default_configuration_clex`
+  /// - Sets required_properties for Configuration to "relaxed_energy"
+  /// - Sets root dir in project settings
+  ProjectSettings make_default_project_settings(
+    xtal::BasicStructure const &prim,
+    std::string project_name,
+    fs::path root_dir);
 
-    static bool valid_title(std::string const &_title);
+  /// Make default weight matrix for approximately spherical neighborhood in Cartesian coordinates
+  ///
+  /// Equivalent to:
+  /// \code
+  /// PrimNeighborList::make_weight_matrix(prim.lattice().lat_column_mat(), 10, tol());
+  /// \endcode
+  Eigen::Matrix3l default_nlist_weight_matrix(xtal::BasicStructure const &prim, double tol);
 
-    /// \brief Construct a CASM ProjectBuilder
-    ///
-    /// \param _prim The primitive structure defining the new CASM project
-    /// \param _root The directory where a new CASM project should be created.
-    /// \param _title The title of the CASM project. Should be a short title suitable for prepending to files.
-    /// \param _property The name of the default cluster expansion property, i.e. "formation_energy"
-    ///
-    ProjectBuilder(xtal::BasicStructure const &_prim, fs::path _root, std::string _title, std::string _property);
-
-    /// \brief Construct a CASM ProjectBuilder
-    ///
-    /// \param _root The directory where a new CASM project should be created.
-    /// \param _title The title of the CASM project. Should be a short title suitable for prepending to files.
-    /// \param _property The name of the default cluster expansion property, i.e. "formation_energy"
-    ///
-    ProjectBuilder(fs::path _root, std::string _title, std::string _property);
-
-
-    ProjectBuilder &set_crystallography_tol(double _tol) {
-      m_crystallography_tol = _tol;
-      return *this;
-    }
-
-    ProjectBuilder &set_lin_alg_tol(double _tol) {
-      m_lin_alg_tol = _tol;
-      return *this;
-    }
-
-    /// \brief Builds a new CASM project
-    void build() const;
-
-
-  private:
-
-    // require user initialization:
-    xtal::BasicStructure m_prim;
-    fs::path m_root;
-    std::string m_title;
-    std::string m_property;
-
-    // allow default initialization:
-    std::map<std::string, std::vector<std::string> > m_properties {
-      {"Configuration", {"relaxed_energy"}},
-      {"DiffTransConfiguration", {"kra"}}
-    };
-    double m_crystallography_tol = CASM::TOL;
-    double m_lin_alg_tol = 1e-10;
-
-  };
+  /// Make default list of sublattice indices that will be included in the neighbor list
+  ///
+  /// Includes sublattices with either:
+  /// - 2 or more occupants (Site::occupant_dof().size() >= 2)
+  /// - Continuous degrees of freedom (Site::dof_size() > 0)
+  std::set<int> default_nlist_sublat_indices(xtal::BasicStructure const &prim);
 
 }
 
