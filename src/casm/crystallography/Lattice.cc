@@ -5,41 +5,50 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/algorithm.hh"
 
-namespace CASM {
-  namespace xtal {
+namespace CASM
+{
+namespace xtal
+{
 
-    Lattice::Lattice(Eigen::Ref<const Eigen::Vector3d> const &vec1,
-                     Eigen::Ref<const Eigen::Vector3d> const &vec2,
-                     Eigen::Ref<const Eigen::Vector3d> const &vec3,
-                     double xtal_tol,
-                     bool force)
-      : m_tol(xtal_tol) {
-      m_lat_mat << vec1, vec2, vec3;
-      if(!force && m_lat_mat.determinant() < 0) {
+Lattice::Lattice(Eigen::Ref<const Eigen::Vector3d> const& vec1,
+                 Eigen::Ref<const Eigen::Vector3d> const& vec2,
+                 Eigen::Ref<const Eigen::Vector3d> const& vec3,
+                 double xtal_tol,
+                 bool force)
+    : m_tol(xtal_tol)
+{
+    m_lat_mat << vec1, vec2, vec3;
+    if (!force && m_lat_mat.determinant() < 0)
+    {
         // this->make_right_handed();
         // throw std::runtime_error("Attempted to construct a left-handed lattice. Try again or override if you know what you're doing");
-      }
-      m_inv_lat_mat = m_lat_mat.inverse();
+    }
+    m_inv_lat_mat = m_lat_mat.inverse();
+}
+
+std::vector<Eigen::Matrix3d> _skew_transforms()
+{
+    // Creates 12 skew matrices + 12 "double skew" matrices
+    std::vector<Eigen::Matrix3d> skew(24, Eigen::Matrix3d::Identity());
+    Index i, j, k;
+    Index l = 0;
+    for (i = 0; i < 3; i++)
+    {
+        for (j = 0; j < 3; j++)
+        {
+            if (i != j)
+            {
+                // Checks to make sure we're not at a diagonal
+                skew[l](i, j) = 1;
+                skew[l + 12](i, j) = -1;
+                ++l;
+            }
+        }
     }
 
-    std::vector<Eigen::Matrix3d> _skew_transforms() {
-      // Creates 12 skew matrices + 12 "double skew" matrices
-      std::vector<Eigen::Matrix3d> skew(24, Eigen::Matrix3d::Identity());
-      Index i, j, k;
-      Index l = 0;
-      for(i = 0; i < 3; i++) {
-        for(j = 0; j < 3; j++) {
-          if(i != j) {
-            // Checks to make sure we're not at a diagonal
-            skew[l](i, j) = 1;
-            skew[l + 12](i, j) = -1;
-            ++l;
-          }
-        }
-      }
-
-      // the 12 "double skew" matrices corresponding to body diagonal substitution
-      for(i = 0; i < 3; i++) {
+    // the 12 "double skew" matrices corresponding to body diagonal substitution
+    for (i = 0; i < 3; i++)
+    {
         // column
 
         j = (i + 1) % 3;
@@ -60,46 +69,62 @@ namespace CASM {
         skew[l + 12](k, i) = 1;
 
         ++l;
-      }
-      return skew;
     }
+    return skew;
+}
 
-    std::vector<Eigen::Matrix3d> const &Lattice::skew_transforms() {
-      static std::vector<Eigen::Matrix3d> result = _skew_transforms();
-      return result;
-    }
+std::vector<Eigen::Matrix3d> const& Lattice::skew_transforms()
+{
+    static std::vector<Eigen::Matrix3d> result = _skew_transforms();
+    return result;
+}
 
-    /// Construct Lattice from a matrix of lattice vectors, where lattice vectors are columns
-    ///(e.g., lat_mat is equivalent to lat_column_mat())
-    Lattice::Lattice(const Eigen::Ref<const Eigen::Matrix3d> &lat_mat, double xtal_tol, bool force)
-      : m_lat_mat(lat_mat), m_inv_lat_mat(lat_mat.inverse()), m_tol(xtal_tol) {
-      if(!force && m_lat_mat.determinant() < 0) {
+/// Construct Lattice from a matrix of lattice vectors, where lattice vectors are columns
+///(e.g., lat_mat is equivalent to lat_column_mat())
+Lattice::Lattice(const Eigen::Ref<const Eigen::Matrix3d>& lat_mat, double xtal_tol, bool force)
+    : m_lat_mat(lat_mat), m_inv_lat_mat(lat_mat.inverse()), m_tol(xtal_tol)
+{
+    if (!force && m_lat_mat.determinant() < 0)
+    {
         // this->make_right_handed();
         // throw std::runtime_error("Attempted to construct a left-handed lattice. Try again or override if you know what you're doing");
-      }
     }
+}
 
-    Lattice Lattice::fcc(double tol) {
-      Eigen::Matrix3d latmat;
-      latmat << 0, 1, 1, 1, 0, 1, 1, 1, 0;
-      latmat /= pow(latmat.determinant(), 1.0 / 3.0);
-      return Lattice(latmat, tol);
-    }
+Lattice Lattice::fcc(double tol)
+{
+    Eigen::Matrix3d latmat;
+    // clang-format off
+    latmat << 0, 1, 1,
+              1, 0, 1,
+              1, 1, 0;
+    // clang-format on
+    latmat /= pow(latmat.determinant(), 1.0 / 3.0);
+    return Lattice(latmat, tol);
+}
 
-    Lattice Lattice::bcc(double tol) {
-      Eigen::Matrix3d latmat;
-      latmat << -1, 1, 1, 1, -1, 1, 1, 1, -1;
-      latmat /= pow(latmat.determinant(), 1.0 / 3.0);
-      return Lattice(latmat, tol);
-    }
+Lattice Lattice::bcc(double tol)
+{
+    Eigen::Matrix3d latmat;
+    // clang-format off
+    latmat << -1, 1, 1,
+              1, -1, 1,
+              1, 1, -1;
+    // clang-format on
+    latmat /= pow(latmat.determinant(), 1.0 / 3.0);
+    return Lattice(latmat, tol);
+}
 
-    Lattice Lattice::cubic(double tol) {
-      return Lattice(Eigen::Matrix3d::Identity(), tol);
-    }
+Lattice Lattice::cubic(double tol) { return Lattice(Eigen::Matrix3d::Identity(), tol); }
 
-    Lattice Lattice::hexagonal(double tol) {
-      Eigen::Matrix3d latmat;
-      latmat << 1, -1.0 / sqrt(3.0), 0, 0, 2.0 / sqrt(3.0), 0, 0, 0, sqrt(3.0);
+Lattice Lattice::hexagonal(double tol)
+{
+    Eigen::Matrix3d latmat;
+    // clang-format off
+      latmat << 1, -1.0 / sqrt(3.0),
+                0, 0, 2.0 / sqrt(3.0),
+                0, 0, 0, sqrt(3.0);
+      //clang-format off
 
       return Lattice(latmat.transpose(), tol);
     }
@@ -114,17 +139,6 @@ namespace CASM {
     }
 
     double Lattice::angle(Index i) const {
-      // double t_a = m_lat_mat.col((i + 1) % 3).dot(m_lat_mat.col((i + 2) % 3)) / (length((i + 1) % 3) * length((i + 2) % 3));
-      // Make sure that cos(angle) is between 0 and 1
-      // if((t_a - 1.0) > 0.0) {
-      // t_a = 1.0;
-      //}
-
-      // if((t_a + 1.0) < 0.0) {
-      // t_a = -1.0;
-      //}
-
-      // return (180.0 / M_PI) * acos(t_a);
       return (180.0 / M_PI) * CASM::angle(m_lat_mat.col((i + 1) % 3), m_lat_mat.col((i + 2) % 3));
     }
 
@@ -156,13 +170,7 @@ namespace CASM {
     }
 
     Lattice Lattice::reciprocal() const {
-      /* Old Expression
-         return Lattice(2 * M_PI * cross_prod(vecs[1], vecs[2])/vol,
-         2 * M_PI * cross_prod(vecs[2], vecs[0]) / vol,
-         2 * M_PI * cross_prod(vecs[0], vecs[1]) / vol);
-         return recip_lat;
-      */
-      return Lattice(2 * M_PI * inv_lat_column_mat().transpose(), tol()); // equivalent expression
+      return Lattice(2 * M_PI * inv_lat_column_mat().transpose(), tol());
     }
 
     double Lattice::boxiness() const {
@@ -209,8 +217,8 @@ namespace CASM {
       return super_kpoints;
     }
 
-    /**This function finds the reduced cell from the given primitive cell.
-     *
+    /**
+     * \brief This function finds the reduced cell from the given primitive cell.
      *
      * First, the translation vectors of the primitive cell are determined, then reduced.
      * The Bravais lattice is determined using Niggli's transformations. The method used to
@@ -291,7 +299,8 @@ namespace CASM {
       return Lattice(lat_column_mat() * trans, tol());
     }
 
-    /**This function finds the reduced cell from the given primitive cell.
+    /**
+     * \brief This function finds the reduced cell from the given primitive cell.
      *
      * This implementation is the LLL algorithm as laid out by Hoffstein, Jeffrey; Pipher, Jill; Silverman, J.H. (2008).
      * An Introduction to Mathematical Cryptography. Springer. ISBN 978-0-387-77993-5.
