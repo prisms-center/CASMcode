@@ -43,10 +43,11 @@ namespace CASM {
       static Superlattice smooth_prim(const Lattice &tiling_unit, const Lattice &superlattice);
 
 
+      //TODO: Implement the day you need it.
       /// Constructs by taking the primitive vectors to be the correct values, and then uses
       /// the rounded integer transformation matrix to slightly modify the superlattice so
       /// that the primitive lattice exactly transforms to it through the transformation matrix
-      static Superlattice smooth_superlattice(const Lattice &tiling_unit, const Lattice &superlattice);
+      /* static Superlattice smooth_superlattice(const Lattice &tiling_unit, const Lattice &superlattice); */
     };
 
   }
