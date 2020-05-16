@@ -4,8 +4,7 @@
 #include "casm/casm_io/container/stream_io.hh"
 #include <vector>
 
-namespace CASM
-{
+namespace CASM {
 
   std::ostream &operator<<(std::ostream &out, const Permutation &perm) {
     out << perm.perm_array();
@@ -23,7 +22,7 @@ namespace CASM
     try {
       std::vector<Index> permutation_vector;
       from_json(permutation_vector, json);
-      perm=Permutation(permutation_vector);
+      perm = Permutation(permutation_vector);
     }
     catch(...) {
       /// re-throw exceptions

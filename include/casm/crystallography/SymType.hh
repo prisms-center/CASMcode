@@ -74,7 +74,7 @@ namespace CASM {
     ///
     /// close_group<SymOpPeriodicCompare_f> close_group(&my_partial_group, my_lattice, CASM::TOL);
     template <typename SymOpCompareType>
-    void close_group(SymOpVector *partial_group, const SymOpCompareType& symop_binary_comp){
+    void close_group(SymOpVector *partial_group, const SymOpCompareType &symop_binary_comp) {
       int max_size = 500;
 
       bool is_closed = false;
@@ -90,7 +90,9 @@ namespace CASM {
             const SymOp &l_op = partial_group->at(i);
             const SymOp &r_op = partial_group->at(j);
             SymOp candidate = l_op * r_op;
-            auto equals_candidate=[symop_binary_comp,candidate](const SymOp& group_operation){return symop_binary_comp(candidate,group_operation);};
+            auto equals_candidate = [symop_binary_comp, candidate](const SymOp & group_operation) {
+              return symop_binary_comp(candidate, group_operation);
+            };
 
             //If you can't find find the operation then the group wasn't closed.
             //Add it and make sure to start over to continue closing with the new operations.
@@ -107,8 +109,8 @@ namespace CASM {
 
     template <typename SymOpCompareType, typename ...CompareArgs>
     void close_group(SymOpVector *partial_group, const CompareArgs &... args) {
-        SymOpCompareType symop_binary_comp(args...);
-        return close_group(partial_group,symop_binary_comp);
+      SymOpCompareType symop_binary_comp(args...);
+      return close_group(partial_group, symop_binary_comp);
     }
   } // namespace xtal
 } // namespace CASM
