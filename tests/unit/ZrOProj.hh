@@ -84,7 +84,7 @@ namespace test {
       EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Write:.*)" + title + R"(_Clexulator\.cc)")), true) << m_p.gets();
 
       EXPECT_EQ(true, fs::exists(m_dirs.clust(m_set->default_clex().bset))) << m_p.gets();
-      EXPECT_EQ(true, fs::exists(m_dirs.clexulator_src(m_set->name(), m_set->default_clex().bset))) << m_p.gets();
+      EXPECT_EQ(true, fs::exists(m_dirs.clexulator_src(m_set->project_name(), m_set->default_clex().bset))) << m_p.gets();
 
       std::string str;
 

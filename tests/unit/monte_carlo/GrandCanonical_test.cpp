@@ -48,7 +48,7 @@ TEST(GrandCanonicalTest, Test0) {
 
   // for autotools
   primclex.settings().set_casm_libdir(fs::current_path() / ".libs");
-  primclex.settings().commit();
+  commit(primclex.settings());
 
   auto check = [&](std::string str) {
     CommandArgs args(str, &primclex, primclex.dir().root_dir(), Logging::null());
