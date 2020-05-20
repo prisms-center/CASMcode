@@ -34,18 +34,6 @@
 
 #include "casm/app/AppIO.hh"
 
-namespace {
-  /// Create the symmtery representation for going from one basis to another
-  Eigen::MatrixXd make_symmetry_representation_for_basis_change(const Eigen::MatrixXd &from_basis, const Eigen::MatrixXd &to_basis, double tol) {
-    Eigen::MatrixXd U = from_basis.colPivHouseholderQr().solve(to_basis);
-    if(!(U.transpose()*U).eval().isIdentity(tol)) {
-      throw std::runtime_error("Cannot find orthogonal symmetry representation!");
-    }
-    return U;
-  }
-
-}
-
 namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -290,7 +278,7 @@ namespace CASM {
         }
         Eigen::MatrixXd basis_change_representation;
         try {
-          basis_change_representation =::make_symmetry_representation_for_basis_change(dof.basis(), transformed_dof.basis(), TOL);
+          basis_change_representation = xtal::dofset_transformation_matrix(dof.basis(), transformed_dof.basis(), TOL);
         }
         catch(std::runtime_error &e) {
           throw std::runtime_error(std::string(e.what()) + " Attempted to make representation for " + dof_name + ".");
