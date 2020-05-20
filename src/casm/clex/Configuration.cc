@@ -1530,11 +1530,11 @@ namespace CASM {
       for(const UnitCell &oriented_motif_uc : oriended_motif_lattice_points) {
         UnitCell oriented_motif_uc_relative_to_prim = oriented_motif_uc.reset_tiling_unit(oriented_motif_lat, prim.lattice());
 
-        Index prim_motif_tile_ind = m_scel->sym_info().unitcell_index_converter()[oriented_motif_uc_relative_to_prim];
+        Index prim_motif_tile_ind = m_scel->sym_info().unitcell_index_converter()(oriented_motif_uc_relative_to_prim);
 
         UnitCellCoord mc_uccoord(
           oriented_uccoord.sublattice(),
-          m_scel->sym_info().unitcell_index_converter()[(prim_motif_tile_ind)] + oriented_uccoord.unitcell());
+          m_scel->sym_info().unitcell_index_converter()(prim_motif_tile_ind) + oriented_uccoord.unitcell());
 
         m_index_table[s].push_back(m_scel->linear_index(mc_uccoord));
       }

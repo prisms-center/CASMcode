@@ -82,7 +82,7 @@ namespace CASM {
   /// linear_index / volume();
   /// \endcode
   Index Supercell::sublat(Index linear_index) const {
-    return this->sym_info().unitcellcoord_index_converter()[linear_index].sublattice();
+    return this->sym_info().unitcellcoord_index_converter()(linear_index).sublattice();
   }
 
   /// \brief Given a Coordinate and tolerance, return linear index into Configuration
@@ -107,13 +107,13 @@ namespace CASM {
   /// Linear indices are grouped by sublattice, then ordered as determined by
   /// xtal::OrderedLatticePointGenerator.
   Index Supercell::linear_index(const UnitCellCoord &bijk) const {
-    return this->sym_info().unitcellcoord_index_converter()[bijk];
+    return this->sym_info().unitcellcoord_index_converter()(bijk);
   }
 
   /// \brief Return the coordinate corresponding to linear index in the supercell
   ///
   Coordinate Supercell::coord(Index linear_index) const {
-    UnitCellCoord linear_index_ucc = this->sym_info().unitcellcoord_index_converter()[linear_index];
+    UnitCellCoord linear_index_ucc = this->sym_info().unitcellcoord_index_converter()(linear_index);
     return linear_index_ucc.coordinate(this->prim());
   }
 
@@ -122,7 +122,7 @@ namespace CASM {
   /// Linear indices are grouped by sublattice, then ordered as determined by
   /// xtal::OrderedLatticePointGenerator.
   UnitCellCoord Supercell::uccoord(Index linear_index) const {
-    return this->sym_info().unitcellcoord_index_converter()[linear_index];
+    return this->sym_info().unitcellcoord_index_converter()(linear_index);
   }
 
   /// \brief returns Supercell-compatible configdof with zeroed DoF values and user-specified tolerance
