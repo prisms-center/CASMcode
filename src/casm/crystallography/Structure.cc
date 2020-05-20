@@ -253,6 +253,8 @@ namespace CASM {
 
   //***********************************************************
 
+  //TODO: Simplify the DoF equivalence checks. You can probably completely erase
+  //the comparators in basis_set in favor of the ones in the xtal namespace
   void Structure::_generate_global_symreps() {
     if(factor_group().size() <= 0) {
       default_err_log() << "ERROR in generate_global_dof_representations" << std::endl;
