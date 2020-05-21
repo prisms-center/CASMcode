@@ -1,11 +1,12 @@
 #include <boost/filesystem/fstream.hpp>
+#include <fstream>
+#include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/external/Eigen/Core"
 #include "casm/external/Eigen/src/Core/Matrix.h"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/CoordinateSystems.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/SymType.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
@@ -15,6 +16,7 @@
 #include "casm/clex/Supercell_impl.hh"
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/clex/ConfigMapping.hh"
+#include "casm/clex/SimpleStructureTools.hh"
 #include "casm/database/Selection_impl.hh"
 #include "casm/database/DatabaseTypes.hh"
 #include "casm/database/ScelDatabase.hh"
@@ -225,7 +227,7 @@ namespace CASM {
     xtal::COORD_MODE C(coordtype);
 
     // lambda for printing
-    auto print = [&](const BasicStructure<Site> &struc) {
+    auto print = [&](const BasicStructure & struc) {
       VaspIO::PrintPOSCAR printer(make_simple_structure(struc), struc.title());
 
       if(vm.count("vasp5")) {
@@ -254,7 +256,8 @@ namespace CASM {
         args.log() << "ERROR: " << abs_tmatfile[0] << " not found." << std::endl;
         return 1;
       }
-      BasicStructure<Site> unitcell(abs_structfile);
+      std::ifstream abs_structfile_stream(abs_structfile.string());
+      BasicStructure unitcell = BasicStructure::from_poscar_stream(abs_structfile_stream);
 
       // -- read transf matrix ---
       if(!fs::exists(abs_tmatfile[0])) {
@@ -266,7 +269,7 @@ namespace CASM {
       file >> Tm;
       file.close();
 
-      auto super = unitcell.create_superstruc(make_superlattice(unitcell.lattice(), Tm));
+      BasicStructure super = xtal::make_superstructure(unitcell, Tm);
       super.set_title(std::string("Supercell of ") + unitcell.title());
 
       print(super);
@@ -513,13 +516,12 @@ namespace CASM {
         std::stringstream ss;
         const Configuration &con = *primclex.db<Configuration>().find(configname[0]);
 
-        VaspIO::PrintPOSCAR p(xtal::make_simple_structure(con), con.name());
+        VaspIO::PrintPOSCAR p(make_simple_structure(con), con.name());
         p.sort();
         p.print(ss);
 
         std::istringstream iss(ss.str());
-        BasicStructure<Site> unit;
-        unit.read(iss);
+        BasicStructure unit = BasicStructure::from_poscar_stream(iss);
 
         args.log() << "Unit structure:";
         args.log() << "\n------\n";
@@ -527,8 +529,8 @@ namespace CASM {
         args.log() << "\n------\n";
         args.log() << "\n\n";
 
-
-        BasicStructure<Site> super = unit.create_superstruc(make_superlattice(unit.lattice(), T));
+        //TODO: Why is there so much code copied and pasted in all the casm commands?
+        BasicStructure super = xtal::make_superstructure(unit, T);
         super.set_title(std::string("Supercell of ") + con.name());
 
         args.log() << "Super structure:";
@@ -583,7 +585,7 @@ namespace CASM {
       // super lattice of prim lattice
       else {
 
-        BasicStructure<Site> unit = primclex.prim();
+        BasicStructure unit = primclex.prim();
         SymGroup pg = Structure(unit).point_group();
 
         Eigen::Matrix3d U = unit.lattice().lat_column_mat();
@@ -640,7 +642,8 @@ namespace CASM {
       Lattice super_lat;
 
       if(vm.count("structure")) {
-        super_lat = BasicStructure<Site>(abs_structfile).lattice();
+        std::ifstream abs_structfile_stream(abs_structfile.string());
+        super_lat = BasicStructure::from_poscar_stream(abs_structfile_stream).lattice();
       }
       else if(vm.count("scelnames")) {
         super_lat = primclex.db<Supercell>().find(unitscelname)->lattice();

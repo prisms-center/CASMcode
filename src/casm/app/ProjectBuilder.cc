@@ -9,7 +9,7 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/BasicStructure.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/database/DatabaseTypes.hh"
 
@@ -79,7 +79,7 @@ namespace CASM {
   /// \param _title The title of the CASM project. Should be a short title suitable for prepending to files.
   /// \param _property The name of the default cluster expansion property, i.e. "formation_energy"
   ///
-  ProjectBuilder::ProjectBuilder(BasicStructure<Site> const &_prim, fs::path _root, std::string _title, std::string _property) :
+  ProjectBuilder::ProjectBuilder(BasicStructure const &_prim, fs::path _root, std::string _title, std::string _property) :
     m_prim(_prim),
     m_root(_root),
     m_title(_title),
@@ -164,8 +164,8 @@ namespace CASM {
       lattice_point_grp.character_table();
 
       // get factor group
-      prim.generate_factor_group();
-      prim.set_site_internals();
+      /* prim.generate_factor_group(); */
+      /* prim.set_site_internals(); */
 
       // Write symmetry info files
 

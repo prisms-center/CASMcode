@@ -35,7 +35,7 @@ namespace CASM {
       return;
     }
 
-    std::vector<UnitCellCoord> UnitCellCoordIndexConverter::_make_all_ordered_bijk_values(const OrderedLatticePointGenerator &make_point,
+    std::vector<UnitCellCoord> UnitCellCoordIndexConverter::_make_all_ordered_bijk_values(const impl::OrderedLatticePointGenerator &make_point,
         int basis_sites_in_prim) {
       std::vector<UnitCellCoord> all_bijk_values;
       auto total_lattice_points = make_point.size();
@@ -64,12 +64,12 @@ namespace CASM {
       return UnitCellCoord(bijk.sublattice(), this->m_bring_within_f(bijk.unitcell()));
     }
 
-    const UnitCellCoord &UnitCellCoordIndexConverter::operator[](Index ix) const {
+    const UnitCellCoord &UnitCellCoordIndexConverter::operator()(Index ix) const {
       _throw_if_incompatible_index(ix);
       return m_linear_index_to_bijk[ix];
     }
 
-    Index UnitCellCoordIndexConverter::operator[](const UnitCellCoord &bijk) const {
+    Index UnitCellCoordIndexConverter::operator()(const UnitCellCoord &bijk) const {
       //Make sure the UntiCellCoord is allowed
       this->_throw_if_incompatible_bijk(bijk);
 

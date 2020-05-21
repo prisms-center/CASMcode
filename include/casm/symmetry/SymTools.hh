@@ -9,7 +9,6 @@ namespace CASM {
   namespace xtal {
     class Lattice;
     class UnitCellCoord;
-    class Structure;
   } // namespace xtal
 
   namespace Kinetics {

@@ -1,24 +1,11 @@
 #include "casm/crystallography/Molecule.hh"
+#include "casm/crystallography/SpeciesAttribute.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
+#include <type_traits>
+#include <vector>
 
 namespace CASM {
   namespace xtal {
-
-    //****************************************************
-    //
-    //****************************************************
-
-    AtomPosition &AtomPosition::apply_sym(const SymOp &op) {
-      m_position = get_matrix(op) * m_position;
-      for(auto it = m_attribute_map.begin(); it != m_attribute_map.end(); ++it)
-        (it->second).apply_sym(op);
-
-      return *this;
-    }
-
-    //****************************************************
-    //
-    //****************************************************
 
     bool AtomPosition::identical(AtomPosition const &RHS, double _tol) const {
 
@@ -65,22 +52,6 @@ namespace CASM {
       return ::CASM::xtal::is_vacancy(m_atoms[0].name());
     }
 
-    //****************************************************
-    // Applies symmetry operation to a Molecule
-    //****************************************************
-
-    Molecule &Molecule::apply_sym(SymOp const &op) {
-      for(Index i = 0; i < size(); i++)
-        m_atoms[i].apply_sym(op);
-      for(auto it = m_attribute_map.begin(); it != m_attribute_map.end(); ++it)
-        (it->second).apply_sym(op);
-      return *this;
-    }
-
-    //****************************************************
-    //
-    //****************************************************
-
     bool Molecule::identical(Molecule const &RHS, double _tol) const {
       // compare number of attributes
       if(m_attribute_map.size() != RHS.m_attribute_map.size())
@@ -112,10 +83,6 @@ namespace CASM {
       return true;
     }
 
-    //****************************************************
-    //
-    //****************************************************
-
     bool Molecule::contains(std::string const &_name) const {
       for(Index i = 0; i < size(); i++)
         if(atom(i).name() == _name)
@@ -123,22 +90,57 @@ namespace CASM {
       return false;
     }
 
-    //****************************************************
-    /// \brief Return an atomic Molecule with specified name and Lattice
-    //****************************************************
-
     Molecule Molecule::make_atom(std::string const &atom_name) {
       return Molecule(atom_name, {AtomPosition(0., 0., 0., atom_name)});
     }
-
-    //****************************************************
-    //
-    //****************************************************
 
     Molecule Molecule::make_vacancy() {
       //return Molecule("Va", {});
       return make_atom("Va");
     }
 
+  }
+}
+
+namespace CASM {
+  namespace sym {
+    xtal::AtomPosition &apply(const xtal::SymOp &op, xtal::AtomPosition &mutating_atom_pos) {
+      xtal::AtomPosition transformed_atom_pos = copy_apply(op, mutating_atom_pos);
+      std::swap(mutating_atom_pos, transformed_atom_pos);
+      return mutating_atom_pos;
+    }
+
+    xtal::AtomPosition copy_apply(const xtal::SymOp &op, xtal::AtomPosition atom_pos) {
+      Eigen::Vector3d transformed_position = get_matrix(op) * atom_pos.cart();
+      xtal::AtomPosition transformed_atom_pos(transformed_position, atom_pos.name());
+      std::map<std::string, xtal::SpeciesAttribute> transformed_attribute_map;
+      for(const auto &name_attr_pr : atom_pos.attributes()) {
+        transformed_attribute_map.emplace(name_attr_pr.first, sym::copy_apply(op, name_attr_pr.second));
+      }
+      transformed_atom_pos.set_attributes(transformed_attribute_map);
+
+      return transformed_atom_pos;
+    }
+
+    xtal::Molecule &apply(const xtal::SymOp &op, xtal::Molecule &mutating_mol) {
+      std::vector<xtal::AtomPosition> transformed_atoms;
+      for(const xtal::AtomPosition &atom_pos : mutating_mol.atoms()) {
+        transformed_atoms.emplace_back(copy_apply(op, atom_pos));
+      }
+      mutating_mol.set_atoms(transformed_atoms);
+
+      std::map<std::string, xtal::SpeciesAttribute> transformed_attribute_map;
+      for(const auto &name_attr_pr : mutating_mol.attributes()) {
+        transformed_attribute_map.emplace(name_attr_pr.first, copy_apply(op, name_attr_pr.second));
+      }
+      mutating_mol.set_attributes(transformed_attribute_map);
+
+      return mutating_mol;
+    }
+
+    xtal::Molecule copy_apply(const xtal::SymOp &op, xtal::Molecule mol) {
+      xtal::Molecule transformed_mol = apply(op, mol);
+      return transformed_mol;
+    }
   }
 }

@@ -6,7 +6,6 @@
 
 /// What is being used to test it:
 #include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
 
 using namespace CASM;
 
@@ -55,6 +54,7 @@ TEST(RuntimeLibraryTest, FunctionTest) {
   // use it to do something
   EXPECT_EQ(5, add(2, 3));
 
+  //TODO: This causes googletest to hit a segmentation fault when exiting the test case
   // delete the library
   lib.rm();
 

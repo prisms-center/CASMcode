@@ -1,11 +1,15 @@
 #include "casm/clex/ConfigMapping.hh"
 
+#include "casm/crystallography/Adapter.hh"
+#include "casm/crystallography/BasicStructureTools.hh"
+#include "casm/crystallography/SymType.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/ParamComposition.hh"
+#include "casm/clex/SimpleStructureTools.hh"
 #include "casm/strain/StrainConverter.hh"
 #include "casm/clex/ConfigIsEquivalent.hh"
 #include "casm/app/QueryHandler_impl.hh"
@@ -20,6 +24,8 @@
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/database/ScelDatabase.hh"
+#include "casm/symmetry/SymGroup.hh"
+#include <vector>
 
 namespace CASM {
 
@@ -134,12 +140,12 @@ namespace CASM {
   //*******************************************************************************************
   namespace ConfigMapping {
 
-    xtal::StrucMapping::AllowedSpecies _allowed_species(BasicStructure<Site> const &_prim,
+    xtal::StrucMapping::AllowedSpecies _allowed_species(BasicStructure const &_prim,
                                                         SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM) {
       xtal::StrucMapping::AllowedSpecies result(_prim.basis().size());
       Index i = 0;
       for(Site const &site : _prim.basis()) {
-        for(Molecule const &mol : site.occupant_dof().domain()) {
+        for(Molecule const &mol : site.occupant_dof()) {
           if(_species_mode == SimpleStructure::SpeciesMode::MOL) {
             result[i].push_back(mol.name());
           }
@@ -231,13 +237,13 @@ namespace CASM {
     for(Index b = 0; b < prim.basis().size(); ++b) {
       for(Index l = 0; l < _scel.volume(); ++l, ++i) {
         Index j = 0;
-        for(; j < prim.basis(b).occupant_dof().size(); ++j) {
-          if(c_info.names[i] == prim.basis(b).occupant_dof()[j]) {
+        for(; j < prim.basis()[b].occupant_dof().size(); ++j) {
+          if(c_info.names[i] == prim.basis()[b].occupant_dof()[j]) {
             result.first.occ(i) = j;
             break;
           }
         }
-        if(j == prim.basis(b).occupant_dof().size())
+        if(j == prim.structure().basis()[b].occupant_dof().size())
           throw std::runtime_error("Attempting to initialize ConfigDoF from SimpleStructure. Species '"
                                    + c_info.names[i] + "' is not allowed on sublattice " + std::to_string(b));
       }
@@ -260,7 +266,7 @@ namespace CASM {
   }
   //*******************************************************************************************
 
-  PrimStrucMapCalculator::PrimStrucMapCalculator(BasicStructure<Site> const &_prim,
+  PrimStrucMapCalculator::PrimStrucMapCalculator(BasicStructure const &_prim,
                                                  std::vector<SymOp> const &_symgroup,
                                                  SimpleStructure::SpeciesMode _species_mode/*=StrucMapping::ATOM*/) :
     SimpleStrucMapCalculator(make_simple_structure(_prim),
@@ -270,8 +276,8 @@ namespace CASM {
 
     m_prim(_prim) {
     if(_symgroup.empty()) {
-      SymGroup fg;
-      _prim.generate_factor_group(fg);
+      xtal::SymOpVector factor_group_operations = xtal::make_factor_group(_prim);
+      SymGroup fg = adapter::Adapter<SymGroup, xtal::SymOpVector>()(factor_group_operations, m_prim.lattice());
       set_point_group(fg);
     }
   }
@@ -352,7 +358,7 @@ namespace CASM {
     //bool is_new_config(true);
     double hint_cost;
     if(hint_ptr != nullptr) {
-      StrucMapper tmapper(*struc_mapper().calculator().quasi_clone(xtal::make_simple_structure(*hint_ptr, _hint_dofs),
+      StrucMapper tmapper(*struc_mapper().calculator().quasi_clone(make_simple_structure(*hint_ptr, _hint_dofs),
                                                                    make_point_group(hint_ptr->point_group(), hint_ptr->supercell().sym_info().supercell_lattice()),
                                                                    SimpleStructure::SpeciesMode::ATOM),
                           struc_mapper().strain_weight(),

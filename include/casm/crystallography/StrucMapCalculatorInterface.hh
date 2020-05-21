@@ -40,15 +40,12 @@ namespace CASM {
         m_point_group(std::move(_point_group)),
         m_species_mode(_species_mode) {
 
-        //std::cout << "allowed_species:\n";
         if(allowed_species.empty()) {
           auto const &p_info(this->struc_info(parent()));
           allowed_species.resize(p_info.size());
           for(Index i = 0; i < p_info.size(); ++i) {
             allowed_species[i].push_back(p_info.names[i]);
-            //std::cout << *(m_allowed_species[i].begin()) << "  ";
           }
-          //std::cout << "\n";
         }
         set_allowed_species(allowed_species);
       }
@@ -107,13 +104,11 @@ namespace CASM {
           }
         }
 
-        //std::cout << "Fixed_species: ";
         for(auto it = m_fixed_species.begin(); it != m_fixed_species.end();) {
           auto curr = it;
           ++it;
           if((curr->second) == 0)
             m_fixed_species.erase(curr);
-          //std::cout << it->first << "  ";
         }
 
       }

@@ -13,7 +13,6 @@
 #include "casm/crystallography/Adapter.hh"
 
 namespace CASM {
-  class jsonParser;
   namespace xtal {
 
     /** \defgroup LatticeEnum Lattice Enumerators
@@ -376,8 +375,6 @@ namespace CASM {
     }
 
   }
-  jsonParser &to_json(const xtal::ScelEnumProps &props, jsonParser &json);
-
 }
 
 #endif

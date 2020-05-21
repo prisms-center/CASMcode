@@ -57,11 +57,11 @@ casm_app_io_json_include_HEADERS = \
 
 casm_basis_set_includedir=$(includedir)/casm/basis_set
 casm_basis_set_include_HEADERS = \
+    include/casm/basis_set/Adapter.hh\
     include/casm/basis_set/BasisFunction.hh\
     include/casm/basis_set/BasisSet.hh\
     include/casm/basis_set/DisplacementDoFTraits.hh\
     include/casm/basis_set/DoF.hh\
-    include/casm/basis_set/DoFDecl.hh\
     include/casm/basis_set/DoFIsEquivalent.hh\
     include/casm/basis_set/DoFIsEquivalent_impl.hh\
     include/casm/basis_set/DoFSet.hh\
@@ -184,6 +184,7 @@ casm_clex_include_HEADERS = \
     include/casm/clex/ScelEnum.hh\
     include/casm/clex/ScelEnumEquivalents.hh\
     include/casm/clex/ScelEnum_impl.hh\
+    include/casm/clex/SimpleStructureTools.hh\
     include/casm/clex/SuperConfigEnum.hh\
     include/casm/clex/Supercell.hh\
     include/casm/clex/SupercellIO.hh\
@@ -245,22 +246,29 @@ casm_container_include_HEADERS = \
 
 #-------------------------------------------------------------------------------#
 
+casm_container_io_includedir=$(includedir)/casm/container/io
+casm_container_io_include_HEADERS = \
+    include/casm/container/io/PermutationIO.hh
+
+#-------------------------------------------------------------------------------#
+
 casm_crystallography_includedir=$(includedir)/casm/crystallography
 casm_crystallography_include_HEADERS = \
     include/casm/crystallography/Adapter.hh\
     include/casm/crystallography/AnisoValTraits.hh\
     include/casm/crystallography/BasicStructure.hh\
-    include/casm/crystallography/BasicStructure_impl.hh\
+    include/casm/crystallography/BasicStructureTools.hh\
     include/casm/crystallography/CanonicalForm.hh\
     include/casm/crystallography/Coordinate.hh\
     include/casm/crystallography/CoordinateSystems.hh\
+    include/casm/crystallography/DoFDecl.hh\
+    include/casm/crystallography/DoFSet.hh\
     include/casm/crystallography/HermiteCounter.hh\
+    include/casm/crystallography/IntegralCoordinateWithin.hh\
     include/casm/crystallography/Lattice.hh\
     include/casm/crystallography/LatticeEnumEquivalents.hh\
     include/casm/crystallography/LatticeIsEquivalent.hh\
     include/casm/crystallography/LatticeMap.hh\
-    include/casm/crystallography/LatticePointWithin.hh\
-    include/casm/crystallography/Lattice_impl.hh\
     include/casm/crystallography/LinearIndexConverter.hh\
     include/casm/crystallography/Molecule.hh\
     include/casm/crystallography/Niggli.hh\
@@ -269,13 +277,16 @@ casm_crystallography_include_HEADERS = \
     include/casm/crystallography/SimpleStructureTools.hh\
     include/casm/crystallography/Site.hh\
     include/casm/crystallography/SpeciesAttribute.hh\
+    include/casm/crystallography/Strain.hh\
     include/casm/crystallography/StrucMapCalculatorInterface.hh\
     include/casm/crystallography/StrucMapping.hh\
     include/casm/crystallography/Structure.hh\
+    include/casm/crystallography/Superlattice.hh\
     include/casm/crystallography/SuperlatticeEnumerator.hh\
     include/casm/crystallography/SymRepBuilder.hh\
     include/casm/crystallography/SymTools.hh\
     include/casm/crystallography/SymType.hh\
+    include/casm/crystallography/SymTypeComparator.hh\
     include/casm/crystallography/UnitCellCoord.hh\
     include/casm/crystallography/UnitCellCoordTraits.hh
 
@@ -283,7 +294,13 @@ casm_crystallography_include_HEADERS = \
 
 casm_crystallography_io_includedir=$(includedir)/casm/crystallography/io
 casm_crystallography_io_include_HEADERS = \
-    include/casm/crystallography/io/VaspIO.hh
+    include/casm/crystallography/io/DoFSetIO.hh\
+    include/casm/crystallography/io/LatticeIO.hh\
+    include/casm/crystallography/io/SimpleStructureIO.hh\
+    include/casm/crystallography/io/SuperlatticeEnumeratorIO.hh\
+    include/casm/crystallography/io/UnitCellCoordIO.hh\
+    include/casm/crystallography/io/VaspIO.hh\
+    include/casm/crystallography/io/jsonStruc.hh
 
 #-------------------------------------------------------------------------------#
 

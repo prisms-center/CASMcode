@@ -2,6 +2,7 @@
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/SymType.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/io/UnitCellCoordIO.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/ConfigEnumRandomOccupations.hh"
 #include "casm/clex/ConfigEnumRandomLocal.hh"
@@ -59,7 +60,7 @@ namespace CASM {
   }
 
   void ConfigEnumInput::_add_site(UnitCellCoord const &_ucc) {
-    m_sites_selection.insert(this->supercell().sym_info().unitcellcoord_index_converter()[_ucc]);
+    m_sites_selection.insert(this->supercell().sym_info().unitcellcoord_index_converter()(_ucc));
     return;
   }
 

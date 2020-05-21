@@ -182,7 +182,7 @@ namespace {
           const auto &g = base[base_i].generating_sym_g;
           auto proto = enumerator->local_orbit()[orbit_i].prototype();
           const auto &scel = base[base_i].config.supercell();
-          ScelPeriodicSymCompare<IntegralCluster> sym_compare(scel.primclex().shared_prim(), xtal::make_bring_within_f(scel), scel.crystallography_tol());
+          ScelPeriodicSymCompare<IntegralCluster> sym_compare(scel.primclex().shared_prim(), scel.transf_mat(), scel.crystallography_tol());
         }
       }
 

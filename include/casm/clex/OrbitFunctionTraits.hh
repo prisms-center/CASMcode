@@ -8,20 +8,19 @@
 #include <memory>
 #include "casm/global/definitions.hh"
 #include "casm/clusterography/ClusterDecl.hh"
-#include "casm/basis_set/DoFDecl.hh"
+#include "casm/crystallography/DoFDecl.hh"
 
 namespace CASM {
   namespace xtal {
     class UnitCellCoord;
-    class Structure;
   }
   using xtal::UnitCellCoord;
-  using xtal::Structure;
 
   class BasisSet;
   class SymGroup;
   class ClexBasis;
   class PrimNeighborList;
+  class Structure;
 
 
   class ClexBasisBuilder {

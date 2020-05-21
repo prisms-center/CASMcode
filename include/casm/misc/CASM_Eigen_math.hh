@@ -98,9 +98,9 @@ namespace CASM {
 
 
   template<typename Derived>
-  typename Derived::Scalar triple_prod(const Derived &vec0,
-                                       const Derived &vec1,
-                                       const Derived &vec2) {
+  typename Derived::Scalar triple_product(const Derived &vec0,
+                                          const Derived &vec1,
+                                          const Derived &vec2) {
     return (vec0.cross(vec1)).dot(vec2);
   }
 

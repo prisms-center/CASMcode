@@ -3,9 +3,8 @@
 
 #include <vector>
 #include <string>
+#include <unordered_set>
 #include "casm/basis_set/DoF.hh"
-
-
 
 namespace CASM {
 
@@ -125,6 +124,8 @@ namespace CASM {
     ///    \endcode
     DoFSet(AnisoValTraits const &_type);
 
+    DoFSet(BasicTraits const &_type, const std::unordered_set<std::string> &_excluded_occupants);
+
     /// \brief Returns number of components in this DoFSet
     Index size() const {
       return m_components.size();
@@ -149,6 +150,13 @@ namespace CASM {
       for(auto &c : m_components)
         c.set_ID(_ID);
     }
+
+    /// Locks IDs of every component so they can no longer be updated
+    void lock_IDs();
+
+    /// Sets the IDs of each component of the DoFSet to be their index
+    /// within the set. That is, each component of the set gets labelled 0-n-1
+    void set_sequential_IDs();
 
     /// \brief Returns reference to DoFSetInfo (which contains SymGroupRepID and basis vectors of coordinate system
     DoFSetInfo const &info() const {
@@ -227,11 +235,13 @@ namespace CASM {
 
 
   private:
-    AnisoValTraits m_traits;
+
+    //AnisovalTraits, defines the intrinsic space of a type of DoF
+    BasicTraits m_traits;
     std::vector<ContinuousDoF> m_components;
     mutable DoFSetInfo m_info;
 
-    std::set<std::string> m_excluded_occs;
+    std::unordered_set<std::string> m_excluded_occs;
 
   };
 

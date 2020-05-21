@@ -1,36 +1,35 @@
-#include "casm/casm_io/container/json_io.hh"
-#include "casm/casm_io/json/jsonParser.hh"
-#include "casm/container/Counter.hh"
 #include "casm/crystallography/Lattice.hh"
+#include "casm/container/Counter.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/global/eigen.hh"
-#include "casm/misc/algorithm.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
+#include "casm/misc/algorithm.hh"
 
 namespace CASM {
   namespace xtal {
 
     Lattice::Lattice(Eigen::Ref<const Eigen::Vector3d> const &vec1,
                      Eigen::Ref<const Eigen::Vector3d> const &vec2,
-                     Eigen::Ref<const Eigen::Vector3d> const &vec3,
-                     double xtal_tol,
-                     bool force) : m_tol(xtal_tol) {
+                     Eigen::Ref<const Eigen::Vector3d> const &vec3,                     double xtal_tol,
+                     bool force)
+      : m_tol(xtal_tol) {
       m_lat_mat << vec1, vec2, vec3;
       if(!force && m_lat_mat.determinant() < 0) {
-        //this->make_right_handed();
-        //throw std::runtime_error("Attempted to construct a left-handed lattice. Try again or override if you know what you're doing");
+        // this->make_right_handed();
+        // throw std::runtime_error("Attempted to construct a left-handed lattice. Try again or override if you know what you're doing");
       }
       m_inv_lat_mat = m_lat_mat.inverse();
     }
 
     std::vector<Eigen::Matrix3d> _skew_transforms() {
-      //Creates 12 skew matrices + 12 "double skew" matrices
+      // Creates 12 skew matrices + 12 "double skew" matrices
       std::vector<Eigen::Matrix3d> skew(24, Eigen::Matrix3d::Identity());
       Index i, j, k;
       Index l = 0;
       for(i = 0; i < 3; i++) {
         for(j = 0; j < 3; j++) {
-          if(i != j) { //Checks to make sure we're not at a diagonal
+          if(i != j) {
+            // Checks to make sure we're not at a diagonal
             skew[l](i, j) = 1;
             skew[l + 12](i, j) = -1;
             ++l;
@@ -38,8 +37,9 @@ namespace CASM {
         }
       }
 
-      //the 12 "double skew" matrices corresponding to body diagonal substitution
-      for(i = 0; i < 3; i++) {		// column
+      // the 12 "double skew" matrices corresponding to body diagonal substitution
+      for(i = 0; i < 3; i++) {
+        // column
 
         j = (i + 1) % 3;
         k = (i + 2) % 3;
@@ -59,7 +59,6 @@ namespace CASM {
         skew[l + 12](k, i) = 1;
 
         ++l;
-
       }
       return skew;
     }
@@ -69,34 +68,34 @@ namespace CASM {
       return result;
     }
 
-    ///Construct Lattice from a matrix of lattice vectors, where lattice vectors are columns
+    /// Construct Lattice from a matrix of lattice vectors, where lattice vectors are columns
     ///(e.g., lat_mat is equivalent to lat_column_mat())
-    Lattice::Lattice(const Eigen::Ref<const Eigen::Matrix3d> &lat_mat, double xtal_tol, bool force) :
-      m_lat_mat(lat_mat),
-      m_inv_lat_mat(lat_mat.inverse()),
-      m_tol(xtal_tol) {
+    Lattice::Lattice(const Eigen::Ref<const Eigen::Matrix3d> &lat_mat, double xtal_tol, bool force)
+      : m_lat_mat(lat_mat), m_inv_lat_mat(lat_mat.inverse()), m_tol(xtal_tol) {
       if(!force && m_lat_mat.determinant() < 0) {
-        //this->make_right_handed();
-        //throw std::runtime_error("Attempted to construct a left-handed lattice. Try again or override if you know what you're doing");
+        // this->make_right_handed();
+        // throw std::runtime_error("Attempted to construct a left-handed lattice. Try again or override if you know what you're doing");
       }
     }
 
     Lattice Lattice::fcc(double tol) {
       Eigen::Matrix3d latmat;
-      latmat <<
-             0, 1, 1,
+      // clang-format off
+      latmat << 0, 1, 1,
              1, 0, 1,
              1, 1, 0;
+      // clang-format on
       latmat /= pow(latmat.determinant(), 1.0 / 3.0);
       return Lattice(latmat, tol);
     }
 
     Lattice Lattice::bcc(double tol) {
       Eigen::Matrix3d latmat;
-      latmat <<
-             -1, 1, 1,
+      // clang-format off
+      latmat << -1, 1, 1,
              1, -1, 1,
              1, 1, -1;
+      // clang-format on
       latmat /= pow(latmat.determinant(), 1.0 / 3.0);
       return Lattice(latmat, tol);
     }
@@ -107,10 +106,11 @@ namespace CASM {
 
     Lattice Lattice::hexagonal(double tol) {
       Eigen::Matrix3d latmat;
-      latmat <<
-             1, -1.0 / sqrt(3.0), 0,
-             0, 2.0 / sqrt(3.0),  0,
-             0, 0, sqrt(3.0);
+      // clang-format off
+      latmat << 1, -1.0 / sqrt(3.0),
+             0, 0, 2.0 / sqrt(3.0),
+             0, 0, 0, sqrt(3.0);
+      //clang-format off
 
       return Lattice(latmat.transpose(), tol);
     }
@@ -125,17 +125,6 @@ namespace CASM {
     }
 
     double Lattice::angle(Index i) const {
-      //double t_a = m_lat_mat.col((i + 1) % 3).dot(m_lat_mat.col((i + 2) % 3)) / (length((i + 1) % 3) * length((i + 2) % 3));
-      //Make sure that cos(angle) is between 0 and 1
-      //if((t_a - 1.0) > 0.0) {
-      //t_a = 1.0;
-      //}
-
-      //if((t_a + 1.0) < 0.0) {
-      //t_a = -1.0;
-      //}
-
-      //return (180.0 / M_PI) * acos(t_a);
       return (180.0 / M_PI) * CASM::angle(m_lat_mat.col((i + 1) % 3), m_lat_mat.col((i + 2) % 3));
     }
 
@@ -157,7 +146,7 @@ namespace CASM {
       stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
       Eigen::IOFormat format(_prec);
 
-      stream  << 1.0 << '\n';
+      stream << 1.0 << '\n';
       stream << m_lat_mat.transpose().format(format);
 
       stream.precision(tprec);
@@ -167,13 +156,7 @@ namespace CASM {
     }
 
     Lattice Lattice::reciprocal() const {
-      /* Old Expression
-         return Lattice(2 * M_PI * cross_prod(vecs[1], vecs[2])/vol,
-         2 * M_PI * cross_prod(vecs[2], vecs[0]) / vol,
-         2 * M_PI * cross_prod(vecs[0], vecs[1]) / vol);
-         return recip_lat;
-      */
-      return Lattice(2 * M_PI * inv_lat_column_mat().transpose(), tol()); //equivalent expression
+      return Lattice(2 * M_PI * inv_lat_column_mat().transpose(), tol());
     }
 
     double Lattice::boxiness() const {
@@ -185,10 +168,8 @@ namespace CASM {
       //    Lattice prim_recip_lat = (lattice.primitive->reciprocal());
       Lattice prim_recip_lat = (prim_lat.reciprocal());
       Lattice recip_lat = (*this).reciprocal();
-      double prim_density = (prim_kpoints[0] * prim_kpoints[1] * prim_kpoints[2]) / (prim_recip_lat.vol());
+      double prim_density = (prim_kpoints[0] * prim_kpoints[1] * prim_kpoints[2]) / (prim_recip_lat.volume());
       double super_density = 0;
-
-
 
       std::vector<double> prim_vec_lengths;
 
@@ -205,8 +186,7 @@ namespace CASM {
         super_kpoints[i] = int(ceil(scale * recip_lat.length(i)));
       }
 
-      super_density = (super_kpoints[0] * super_kpoints[1] * super_kpoints[2]) / (recip_lat.vol());
-
+      super_density = (super_kpoints[0] * super_kpoints[1] * super_kpoints[2]) / (recip_lat.volume());
 
       while(super_density < prim_density) {
         prim_kpoints[short_ind]++;
@@ -217,15 +197,14 @@ namespace CASM {
           super_kpoints[i] = int(ceil(scale * recip_lat.length(i)));
         }
 
-        super_density = (super_kpoints[0] * super_kpoints[1] * super_kpoints[2]) / (recip_lat.vol());
-
+        super_density = (super_kpoints[0] * super_kpoints[1] * super_kpoints[2]) / (recip_lat.volume());
       }
 
       return super_kpoints;
     }
 
-    /**This function finds the reduced cell from the given primitive cell.
-     *
+    /**
+     * \brief This function finds the reduced cell from the given primitive cell.
      *
      * First, the translation vectors of the primitive cell are determined, then reduced.
      * The Bravais lattice is determined using Niggli's transformations. The method used to
@@ -243,35 +222,28 @@ namespace CASM {
      *
      */
     Lattice Lattice::reduced_cell2() const {
-      //std::cout << "reduced_cell2()\n";
-      std::vector<Eigen::Matrix3d > const &skew(skew_transforms());
-      std::vector<Eigen::Matrix3d > const &ntrans(NiggliRep::cell_invariant_transforms());
-      //std::cout << "Before reduction: \n";
-      //print(std::cout);
-
-
+      std::vector<Eigen::Matrix3d> const &skew(skew_transforms());
+      std::vector<Eigen::Matrix3d> const &ntrans(NiggliRep::cell_invariant_transforms());
 
       Eigen::Matrix3d trans;
       trans.setIdentity();
 
-      Eigen::Matrix3d t_metric, reduced_metric,
-            t_imetric, reduced_imetric;
+      Eigen::Matrix3d t_metric, reduced_metric, t_imetric, reduced_imetric;
 
       reduced_metric = lat_column_mat().transpose() * lat_column_mat();
       reduced_imetric = reduced_metric.inverse();
-
 
       bool minimized = false;
       while(!minimized) {
         minimized = true;
         for(Index i = 0; i < skew.size(); ++i) {
-          //Lattice vectors times their transpose give length and angle info
+          // Lattice vectors times their transpose give length and angle info
           t_metric = skew[i].transpose() * reduced_metric * skew[i];
           t_imetric = skew[(i + 12) % 12].transpose() * reduced_imetric * skew[(i + 12) % 12];
 
-          if(almost_equal(t_metric.trace(), reduced_metric.trace(), tol()*tol())) {
-            if(almost_equal(t_imetric.trace(), reduced_imetric.trace(), tol()*tol())) {
-              if(niggli_index(lat_column_mat()*trans * skew[i], tol()) > niggli_index(lat_column_mat()*trans, tol())) {
+          if(almost_equal(t_metric.trace(), reduced_metric.trace(), tol() * tol())) {
+            if(almost_equal(t_imetric.trace(), reduced_imetric.trace(), tol() * tol())) {
+              if(niggli_index(lat_column_mat() * trans * skew[i], tol()) > niggli_index(lat_column_mat() * trans, tol())) {
                 /*if(fabs(t_metric(0,1)) < fabs(reduced_metric(0,1))
                  || fabs(t_metric(0,2)) < fabs(reduced_metric(0,2))
                  || fabs(t_metric(1,2)) < fabs(reduced_metric(1,2))) {*/
@@ -295,7 +267,6 @@ namespace CASM {
             trans *= skew[i];
             minimized = false;
           }
-
         }
 
         Index b_index = niggli_index(lat_column_mat() * trans, tol());
@@ -312,10 +283,10 @@ namespace CASM {
       }
 
       return Lattice(lat_column_mat() * trans, tol());
-
     }
 
-    /**This function finds the reduced cell from the given primitive cell.
+    /**
+     * \brief This function finds the reduced cell from the given primitive cell.
      *
      * This implementation is the LLL algorithm as laid out by Hoffstein, Jeffrey; Pipher, Jill; Silverman, J.H. (2008).
      * An Introduction to Mathematical Cryptography. Springer. ISBN 978-0-387-77993-5.
@@ -374,17 +345,16 @@ namespace CASM {
       return Lattice(reduced_lat);
     }
 
-    double Lattice::max_voronoi_measure(const Eigen::Vector3d &pos, Eigen::Vector3d &lattice_trans)const {
+    double Lattice::max_voronoi_measure(const Eigen::Vector3d &pos, Eigen::Vector3d &lattice_trans) const {
       Eigen::MatrixXd::Index maxv;
       double maxproj = (voronoi_table() * pos).maxCoeff(&maxv);
 
-      lattice_trans = (2.*floor(maxproj / 2. + (0.5 - TOL / 2.)) / m_voronoi_table.row(maxv).squaredNorm()) * m_voronoi_table.row(maxv);
+      lattice_trans = (2. * floor(maxproj / 2. + (0.5 - TOL / 2.)) / m_voronoi_table.row(maxv).squaredNorm()) * m_voronoi_table.row(maxv);
 
       return maxproj;
-
     }
 
-    int Lattice::voronoi_number(const Eigen::Vector3d &pos)const {
+    int Lattice::voronoi_number(const Eigen::Vector3d &pos) const {
 
       int tnum = 0;
       double tproj = 0;
@@ -401,12 +371,11 @@ namespace CASM {
         }
       }
 
-
       return tnum;
     }
 
     void Lattice::_generate_voronoi_table() const {
-      //There are no fewer than 12 points in the voronoi table
+      // There are no fewer than 12 points in the voronoi table
       m_voronoi_table.resize(12, 3);
 
       m_inner_voronoi_radius = 1e20;
@@ -416,22 +385,23 @@ namespace CASM {
       int nrows = 1;
       Lattice tlat_reduced(reduced_cell());
 
-      //Count over all lattice vectors, face diagonals, and body diagonals
-      //originating from origin;
-      EigenCounter<Eigen::Vector3i > combo_count(Eigen::Vector3i(-1, -1, -1),
-                                                 Eigen::Vector3i(1, 1, 1),
-                                                 Eigen::Vector3i(1, 1, 1));
+      // Count over all lattice vectors, face diagonals, and body diagonals
+      // originating from origin;
+      EigenCounter<Eigen::Vector3i> combo_count(Eigen::Vector3i(-1, -1, -1), Eigen::Vector3i(1, 1, 1), Eigen::Vector3i(1, 1, 1));
 
-
-      //For each linear combination, check to see if it is on a face, edge, or vertex of the voronoi cell
+      // For each linear combination, check to see if it is on a face, edge, or vertex of the voronoi cell
       for(; combo_count.valid(); ++combo_count) {
-        if(combo_count().isZero()) continue;
-        //A linear combination does not fall on the voronoi boundary if the angle between
-        //any two of the vectors forming that combination are acute
+        if(combo_count().isZero())
+          continue;
+        // A linear combination does not fall on the voronoi boundary if the angle between
+        // any two of the vectors forming that combination are acute
         for(i = 0; i < 3; i++) {
           if(combo_count[(i + 1) % 3] == 0 || combo_count[(i + 2) % 3] == 0)
             continue;
-          if((180. / M_PI)*CASM::angle(combo_count[(i + 1) % 3]*tlat_reduced[(i + 1) % 3], combo_count[(i + 2) % 3]*tlat_reduced[(i + 2) % 3]) + TOL < 90.) {
+          if((180. / M_PI) * CASM::angle(combo_count[(i + 1) % 3] * tlat_reduced[(i + 1) % 3],
+                                         combo_count[(i + 2) % 3] * tlat_reduced[(i + 2) % 3]) +
+             TOL <
+             90.) {
             break;
           }
         }
@@ -449,7 +419,6 @@ namespace CASM {
           m_voronoi_table.row(nrows - 1) = (2. / (t_rad * t_rad)) * tpoint;
           nrows++;
         }
-
       }
       return;
     }
@@ -475,7 +444,7 @@ namespace CASM {
       for(int i = 0; i < 3; i++) {
         recip.col(i) *= radius / recip.col(i).norm();
       }
-      //recip contains three column vectors of length 'radius' pointed along plane normals
+      // recip contains three column vectors of length 'radius' pointed along plane normals
       auto lambda = [](double val) {
         return ceil(val);
       };
@@ -500,9 +469,9 @@ namespace CASM {
     }
 
     Eigen::Vector3i Lattice::millers(Eigen::Vector3d plane_normal) const {
-      //Get fractional coordinates of plane_normal in recip_lattice
-      //These are h, k, l
-      //For miller indeces h, k and l    plane_normal[CART]=h*a.recip+k*b.recip+l*c.recip
+      // Get fractional coordinates of plane_normal in recip_lattice
+      // These are h, k, l
+      // For miller indeces h, k and l    plane_normal[CART]=h*a.recip+k*b.recip+l*c.recip
       return scale_to_int(lat_column_mat().transpose() * plane_normal, tol());
     }
 
@@ -519,12 +488,13 @@ namespace CASM {
      *  that is still smaller than max_vol
      */
 
-    Lattice Lattice::lattice_in_plane(Eigen::Vector3i millers, int max_vol) const {  //John G 121030
-      //Hold new lattice vectors in these. Then at the end we make an actual Lattice out of it
-      Eigen::Matrix3d surface_cell, last_surface_cell;    //Holds new lattice vectors, two of which are in the surface plane
+    Lattice Lattice::lattice_in_plane(Eigen::Vector3i millers, int max_vol) const {
+      // John G 121030
+      // Hold new lattice vectors in these. Then at the end we make an actual Lattice out of it
+      Eigen::Matrix3d surface_cell, last_surface_cell; // Holds new lattice vectors, two of which are in the surface plane
 
-      //Miller indeces of 100, 010 or 001 mean you don't need a new cell to expose the plane, however
-      //you may want to reorient the vectors so that the ab plane is exposed (useful for Structure::stitch)
+      // Miller indeces of 100, 010 or 001 mean you don't need a new cell to expose the plane, however
+      // you may want to reorient the vectors so that the ab plane is exposed (useful for Structure::stitch)
 
       if(millers == Eigen::Vector3i(0, 1, 0)) {
         return Lattice(lat_column_mat().col(2), lat_column_mat().col(0), lat_column_mat().col(1), tol());
@@ -534,17 +504,18 @@ namespace CASM {
         return Lattice(lat_column_mat().col(1), lat_column_mat().col(2), lat_column_mat().col(0), tol());
       }
 
-      else if(millers == Eigen::Vector3i(0, 0, 1)) { // || millers==Eigen::Vector3i(0,1,0) || millers==Eigen::Vector3i(1,0,0))
+      else if(millers == Eigen::Vector3i(0, 0, 1)) {
+        // || millers==Eigen::Vector3i(0,1,0) || millers==Eigen::Vector3i(1,0,0))
         return *this;
       }
 
-      //Miller indeces of xx0, 0xx or x0x mean one of the lattice vectors is the same as
-      //one of the primitive lattice vectors. This means we only need to get TWO
-      //points that are on the plane, which we connect to get the second lattice vector
+      // Miller indeces of xx0, 0xx or x0x mean one of the lattice vectors is the same as
+      // one of the primitive lattice vectors. This means we only need to get TWO
+      // points that are on the plane, which we connect to get the second lattice vector
       else if(millers[0] == 0 || millers[1] == 0 || millers[2] == 0) {
         int zero = 0;
 
-        //Find out which miller index is 0
+        // Find out which miller index is 0
         while(true) {
           if(millers[zero] == 0) {
             break;
@@ -561,15 +532,14 @@ namespace CASM {
         Eigen::Vector3d HK;
         Eigen::Vector3d millers_dubs;
 
-        //Turn integer millers into doubles for mathematical purposes (inverse)
+        // Turn integer millers into doubles for mathematical purposes (inverse)
         millers_dubs = millers.cast<double>();
 
         Eigen::Vector3d inv_miller_dubs;
         Eigen::Vector3i inv_miller;
 
-
-        //In actualility, the inverse miller of 0 is infinity, we set it to 0 here so that we can use
-        //scale_to_int without going crazy. Since we won't be using this inverse miller index it's OK
+        // In actualility, the inverse miller of 0 is infinity, we set it to 0 here so that we can use
+        // scale_to_int without going crazy. Since we won't be using this inverse miller index it's OK
         inv_miller_dubs[zero] = 0;
         inv_miller_dubs[(zero + 1) % 3] = 1.0 / millers_dubs[(zero + 1) % 3];
         inv_miller_dubs[(zero + 2) % 3] = 1.0 / millers_dubs[(zero + 2) % 3];
@@ -582,16 +552,14 @@ namespace CASM {
         surface_cell.col(1) = HK;
       }
 
-
-
       else {
-        //Get three points that lie on the plane
-        //We'll want to find points that lie on the plane AND land of lattice points. In order to do
-        //this we need the miller inverses multiplied by a factor that makes them integers
+        // Get three points that lie on the plane
+        // We'll want to find points that lie on the plane AND land of lattice points. In order to do
+        // this we need the miller inverses multiplied by a factor that makes them integers
         Eigen::Vector3d H_miller_point, K_miller_point, L_miller_point;
         Eigen::Vector3d inv_miller_dubs;
         Eigen::Vector3i inv_miller;
-        //Turn integer millers into doubles for mathematical purposes (inverse)
+        // Turn integer millers into doubles for mathematical purposes (inverse)
         Eigen::Vector3d millers_dubs;
         millers_dubs = millers.cast<double>();
 
@@ -605,25 +573,24 @@ namespace CASM {
         K_miller_point = inv_miller[1] * lat_column_mat().col(1);
         L_miller_point = inv_miller[2] * lat_column_mat().col(2);
 
-        //Get three vectors that connect the three points on the plane to each other. Any two of the following
-        //vectors could be used for constructing the new lattice, but it's convenient to pick the two
-        //most orthogonal vectors
+        // Get three vectors that connect the three points on the plane to each other. Any two of the following
+        // vectors could be used for constructing the new lattice, but it's convenient to pick the two
+        // most orthogonal vectors
         Eigen::Vector3d HK, KL, LH;
         Eigen::Vector3d tangles;
-
 
         HK = K_miller_point - H_miller_point;
         KL = L_miller_point - K_miller_point;
         LH = H_miller_point - L_miller_point;
 
-        //John G 121212
-        //The vectors that we got at this point are valid, but sometimes larger than they need to be.
+        // John G 121212
+        // The vectors that we got at this point are valid, but sometimes larger than they need to be.
         Eigen::Matrix3d templat;
         templat.col(0) = HK;
         templat.col(1) = KL;
         templat.col(2) = LH;
 
-        //Find shortest vector
+        // Find shortest vector
         int s = 0;
         for(int i = 1; i < 3; i++) {
           if(lat_column_mat().col(i).norm() < lat_column_mat().col(s).norm()) {
@@ -631,12 +598,12 @@ namespace CASM {
           }
         }
 
-        //Try dividing by integers and see if they're still lattice combinations. If they are
-        //shorten and continue
+        // Try dividing by integers and see if they're still lattice combinations. If they are
+        // shorten and continue
         for(int i = 0; i < 3; i++) {
           int maxval = round(templat.col(i).norm() / lat_column_mat().col(i).norm() + 1);
           for(int j = maxval; j > 1; j--) {
-            Eigen::Vector3d shortened = inv_lat_column_mat() * templat.col(i) / j; //Shorten and convert to fractional
+            Eigen::Vector3d shortened = inv_lat_column_mat() * templat.col(i) / j; // Shorten and convert to fractional
             bool combo = true;
 
             for(int k = 0; k < 3; k++) {
@@ -657,7 +624,7 @@ namespace CASM {
         KL = templat.col(1);
         LH = templat.col(2);
 
-        //We select the two vectors that spawn the smallest area
+        // We select the two vectors that spawn the smallest area
 
         double HKKL, KLLH, LHHK;
         HKKL = HK.cross(KL).norm();
@@ -680,20 +647,19 @@ namespace CASM {
         }
       }
       //\John G 121212
-      //We now have lattice vectors a and b. The c vector can be any vector that is a linear combination
-      //of the original primitive cell lattice vectors. Ideally the vector will be short and orthogonal
-      //to the plane.
+      // We now have lattice vectors a and b. The c vector can be any vector that is a linear combination
+      // of the original primitive cell lattice vectors. Ideally the vector will be short and orthogonal
+      // to the plane.
       Eigen::Vector3d normal;
       Eigen::Vector3i L_combination;
       int factor;
 
-
-      normal = inv_lat_column_mat() * surface_cell.col(0).cross(surface_cell.col(1)); //101112
+      normal = inv_lat_column_mat() * surface_cell.col(0).cross(surface_cell.col(1)); // 101112
       factor = 1;
 
-      //Divide by largest value in normal vector. We'll do something similar to when finding the miller
-      //indeces. We'll approximate the real normal vector with an integer normal vector, increasing
-      //the "resolution" of the integer vector in steps, until the desired accuary is reached.
+      // Divide by largest value in normal vector. We'll do something similar to when finding the miller
+      // indeces. We'll approximate the real normal vector with an integer normal vector, increasing
+      // the "resolution" of the integer vector in steps, until the desired accuary is reached.
       if(fabs(normal[0]) >= fabs(normal[1]) && fabs(normal[0]) >= fabs(normal[2]) && normal[0] != 0) {
         normal = normal / normal[0];
       }
@@ -707,7 +673,7 @@ namespace CASM {
       }
 
       Eigen::Vector3d tnormal;
-      //orthoscore represents how close the linear combination is to the plane normal. 1 is perfect, 0 is stupid.
+      // orthoscore represents how close the linear combination is to the plane normal. 1 is perfect, 0 is stupid.
       double orthoscore = 1;
       double torthoscore = 0;
 
@@ -719,20 +685,20 @@ namespace CASM {
       do {
         normal = tnormal * factor;
 
-        //Get linear combinations by rounding the normal to integers
+        // Get linear combinations by rounding the normal to integers
         L_combination[0] = int(floor(normal[0] + 0.5));
         L_combination[1] = int(floor(normal[1] + 0.5));
         L_combination[2] = int(floor(normal[2] + 0.5));
 
-        //After getting the normal vector in terms of integers, make a linear combination of the initial
-        //lattice vectors to get third new lattice vector
+        // After getting the normal vector in terms of integers, make a linear combination of the initial
+        // lattice vectors to get third new lattice vector
         surface_cell.col(2) = lat_column_mat() * L_combination.cast<double>();
         orthoscore = fabs(cos(CASM::angle(lat_column_mat() * normal, surface_cell.col(2))));
-        //Only use new linear combination if it's more orthogonal than the previous one
+        // Only use new linear combination if it's more orthogonal than the previous one
         if(orthoscore > torthoscore + TOL) {
           torthoscore = orthoscore;
 
-          last_surface_cell = surface_cell; //Remember currect generated cell, in case we can't find anything better later
+          last_surface_cell = surface_cell; // Remember currect generated cell, in case we can't find anything better later
           one_found = true;
 
           new_vol = fabs(surface_cell.col(2).dot(surface_cell.col(0).cross(surface_cell.col(1))));
@@ -750,8 +716,7 @@ namespace CASM {
         }
 
       }
-      while(new_vol / vol() < max_vol && orthoscore < 1); //John G 121030
-
+      while(new_vol / this->volume() < max_vol && orthoscore < 1);    // John G 121030
 
       Lattice surface_lat(surface_cell.col(0), surface_cell.col(1), surface_cell.col(2));
       surface_lat.make_right_handed();
@@ -773,37 +738,19 @@ namespace CASM {
       return standard_orientation_compare(lat_column_mat(), RHS.lat_column_mat(), TOL);
     }
 
-    ///Are lattice vectors identical for two lattices
+    /// Are lattice vectors identical for two lattices
     bool Lattice::_eq(const Lattice &RHS) const {
       return almost_equal(RHS.lat_column_mat(), lat_column_mat());
     }
 
-
     bool Lattice::is_right_handed() const {
-      if(vol() < 0) {
+      if(this->volume() < 0) {
         return false;
       }
       else {
         return true;
       }
     }
-
-    //***********************************************************
-
-    Superlattice::Superlattice(const Lattice &tiling_unit, const Lattice &superlattice):
-      m_primitive_lattice(tiling_unit),
-      m_superlattice(superlattice),
-      m_transformation_matrix(xtal::make_transformation_matrix(this->prim_lattice(), this->superlattice(), TOL)),
-      m_size(std::abs(m_transformation_matrix.determinant()))
-    {}
-
-    Superlattice::Superlattice(const Lattice &tiling_unit, const Eigen::Matrix3l &transformation_matrix):
-      m_primitive_lattice(tiling_unit),
-      m_superlattice(xtal::make_superlattice(tiling_unit, transformation_matrix)),
-      m_transformation_matrix(transformation_matrix),
-      m_size(std::abs(m_transformation_matrix.determinant()))
-    {}
-
 
     ///\brief returns Lattice that is smallest possible superlattice of both input Lattice
     ///
@@ -817,8 +764,8 @@ namespace CASM {
     //  It is assumed that L_1 = L * M_1 and L_2 = L * M_2  (i.e., L_1 and L_2 are superlattices of PRIM lattice L having
     //  integer transformation matrices M_1 and M_2, respectively).
     //
-    //  Algorithm proceeds by noting inv(L_2)*L_1 = N_2*inv(N_1) = inv(M_2)*inv(M_1) = A/n, where A is an integer matrix and n = det(M_2). Assuming that
-    //  'n' is small (n<10000), we can attempt to find 'n' and 'A'.
+    //  Algorithm proceeds by noting inv(L_2)*L_1 = N_2*inv(N_1) = inv(M_2)*inv(M_1) = A/n, where A is an integer matrix and n = det(M_2).
+    //  Assuming that 'n' is small (n<10000), we can attempt to find 'n' and 'A'.
     //
     //  Solution: N_2 = A*N_1/n, s.t. det(N_1) is minimized and N_2 is integer
     //
@@ -830,7 +777,7 @@ namespace CASM {
     //*******************************************************************************************
     Lattice make_superduperlattice(const Lattice &lat1, const Lattice &lat2) {
 
-      Eigen::Matrix3d dA(lat2.inv_lat_column_mat()*lat1.lat_column_mat());
+      Eigen::Matrix3d dA(lat2.inv_lat_column_mat() * lat1.lat_column_mat());
       long N = 1, num, denom;
       for(Index i = 0; i < 3; i++) {
         for(Index j = 0; j < 3; j++) {
@@ -840,51 +787,27 @@ namespace CASM {
         }
       }
 
-
       Eigen::Matrix3l U, S, V;
       smith_normal_form(lround(dA), U, S, V);
 
       denom = N;
 
-      //reuse matrix S for matrix 'R', as above
+      // reuse matrix S for matrix 'R', as above
       for(Index i = 0; i < 3; i++) {
         S(i, i) = N / gcf(S(i, i), N);
       }
-      //Matrix 'N_1', as above is now equal to inverse(V) * S
+      // Matrix 'N_1', as above is now equal to inverse(V) * S
 
-      Lattice tlat(lat1.lat_column_mat() * (inverse(V)*S).cast<double>());
+      Lattice tlat(lat1.lat_column_mat() * (inverse(V) * S).cast<double>());
       return tlat.reduced_cell();
     }
 
     //*******************************************************************************************
 
-    /// Check if scel is a superlattice of unitcell unit and some integer transformation matrix T
-    // First, find unit*Matrix3i approximation of 'scel', then check if reconstructing 'unit' from this approximation
-    // results in residual vectors less than length 'tol'
-    std::pair<bool, Eigen::Matrix3d> is_superlattice(const Lattice &scel, const Lattice &unit, double tol) {
-      // check scel = unit*T, with integer T
-      std::pair<bool, Eigen::Matrix3d> result(std::make_pair(true, unit.inv_lat_column_mat() * scel.lat_column_mat()));
-
-      Eigen::Matrix3d diff = unit.lat_column_mat() - scel.lat_column_mat() * iround(result.second).cast<double>().inverse();
-
-      result.first = almost_zero((diff.transpose() * diff).diagonal(), tol * tol);
-
-      return result;
-
-    }
-
-    /// \brief Returns a minimum volume Lattice obtainable by replacing one
-    ///        Lattice vector with tau
-    ///
-    /// - No guarantee on the result being canonical in any way
-    ///
-    ///
-    /// \relates Lattice
-    ///
     Lattice replace_vector(const Lattice &lat, const Eigen::Vector3d &new_vector, double tol) {
 
       // replace a lattice vector with translation
-      Lattice new_lat {lat};
+      Lattice new_lat{lat};
       double min_vol = std::abs(volume(new_lat));
 
       for(int i = 0; i < 3; i++) {
@@ -897,53 +820,41 @@ namespace CASM {
           min_vol = vol;
           new_lat = tmp_lat;
         }
-
       }
 
       return new_lat;
     }
 
-    Eigen::Matrix3l make_transformation_matrix(const Lattice &tiling_unit, const Lattice &superlattice, double tol) {
+    /// Check if scel is a superlattice of unitcell unit and some integer transformation matrix T
+    // First, find unit*Matrix3i approximation of 'scel', then check if reconstructing 'unit' from this approximation
+    // results in residual vectors less than length 'tol'
+    std::pair<bool, Eigen::Matrix3d> is_superlattice(const Lattice &scel, const Lattice &unit, double tol) {
+      // check scel = unit*T, with integer T
+      std::pair<bool, Eigen::Matrix3d> result(std::make_pair(true, unit.inv_lat_column_mat() * scel.lat_column_mat()));
 
-      Eigen::Matrix3d direct_transformation_matrix = tiling_unit.lat_column_mat().inverse() * superlattice.lat_column_mat();
+      Eigen::Matrix3d diff = unit.lat_column_mat() - scel.lat_column_mat() * iround(result.second).cast<double>().inverse();
+
+      result.first = almost_zero((diff.transpose() * diff).diagonal(), tol * tol) && !almost_zero(result.second, tol);
+
+      return result;
+    }
+
+
+    Eigen::Matrix3l make_transformation_matrix_to_super(const Lattice &tiling_unit, const Lattice &superlattice, double tol) {
+
+      Eigen::Matrix3d direct_transformation_matrix;
+      bool is_integer_transformation;
+
+      //TODO: convention is usually "prim" always goes first, but this is contradicte by is_superlattice. Which should change?
+      std::tie(is_integer_transformation, direct_transformation_matrix) = is_superlattice(superlattice, tiling_unit, tol);
+
+      if(!is_integer_transformation) {
+        throw std::runtime_error("The provided tiling unit and superlattice are not related by a non-singular integer transformation.");
+      }
+
       Eigen::Matrix3l rounded_transformation_matrix = round(direct_transformation_matrix).cast<long>();
-
-      if(rounded_transformation_matrix.determinant() == 0) {
-        throw std::runtime_error(
-          "The transformation matrix that converts the tiling unit to the superlattice is singular, and therefore not valid.");
-      }
-
-      Eigen::Matrix3d matrix_error = direct_transformation_matrix - rounded_transformation_matrix.cast<double>();
-
-      if(!matrix_error.isZero(tol)) {
-        throw std::runtime_error("The provided tiling unit and superlattice are not related by an integer transformation.");
-      }
-
       return rounded_transformation_matrix;
     }
-  }
+  } // namespace xtal
 
-  // write Lattice in json as array of vectors
-  jsonParser &to_json(const xtal::Lattice &lat, jsonParser &json) {
-    json.put_array();
-    json.push_back(lat[0]);
-    json.push_back(lat[1]);
-    json.push_back(lat[2]);
-    return json;
-  }
-
-  // read Lattice from a json array of Eigen::Vector3d
-  void from_json(xtal::Lattice &lat, const jsonParser &json, double xtal_tol) {
-    try {
-      lat = xtal::Lattice(
-              json[0].get<Eigen::Vector3d >(),
-              json[1].get<Eigen::Vector3d >(),
-              json[2].get<Eigen::Vector3d >(),
-              xtal_tol);
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
-  }
-}
+} // namespace CASM

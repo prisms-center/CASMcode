@@ -12,7 +12,7 @@ namespace CASM {
       }
 
       /// \brief Apply DoF values for this DoF to _struc
-      void apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const override;
+      void apply_dof(ConfigDoF const &_dof, BasicStructure const &_reference, SimpleStructure &_struc) const override;
 
 
       std::vector<BasisSet> construct_site_bases(Structure const &_prim,

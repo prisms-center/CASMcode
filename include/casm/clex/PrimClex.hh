@@ -8,11 +8,6 @@
 /// Cluster expansion class
 namespace CASM {
 
-  namespace xtal {
-    class Structure;
-  }
-  using xtal::Structure;
-
   class DirectoryStructure;
   class ProjectSettings;
   struct ClexDescription;
@@ -22,6 +17,7 @@ namespace CASM {
   class ClexBasis;
   class Clexulator;
   class ECIContainer;
+  class Structure;
 
 
   namespace DB {
@@ -56,7 +52,7 @@ namespace CASM {
   class PrimClex : public Logging {
 
   public:
-    typedef xtal::Structure PrimType;
+    typedef Structure PrimType;
 
     // **** Constructors ****
 

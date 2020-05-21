@@ -1,5 +1,8 @@
 #include "casm/basis_set/OccupationDoFTraits.hh"
+#include "casm/basis_set/DoF.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
+#include "casm/basis_set/Adapter.hh"
+#include "casm/crystallography/Adapter.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/clusterography/IntegralCluster.hh"
@@ -140,7 +143,7 @@ namespace CASM {
         }
 
 
-        result[b_ind].construct_orthonormal_discrete_functions(_site.occupant_dof(),
+        result[b_ind].construct_orthonormal_discrete_functions(adapter::Adapter<OccupantDoF<Molecule>, std::vector<Molecule>>()(_site.occupant_dof(), b_ind),
                                                                tprob,
                                                                _asym_unit[i].prototype()[0].sublattice(),
                                                                SymGroup(_asym_unit[i].equivalence_map(0).first,
@@ -384,11 +387,14 @@ namespace CASM {
       return stream.str();
     }
 
-    std::string OccupationDoFTraits::site_basis_description(BasisSet site_bset, Site site) const {
+    std::string OccupationDoFTraits::site_basis_description(BasisSet site_bset, Site site, Index site_ix) const {
       std::stringstream ss;
       if(site_bset.size() == 0)
         ss << "        [No site basis functions]\n\n";
-      std::vector<DoF::RemoteHandle> handles(1, site.occupant_dof().handle());
+      /* std::vector<DoF::RemoteHandle> handles(1, site.occupant_dof().handle()); */
+      //TODO: What is "s"? Do I need to know about this "s" elsewhere to use the remote handles
+      //!!TODO!! is site_ix the right thing to pass?
+      std::vector<DoF::RemoteHandle> handles{DoF::RemoteHandle(DoFType::occupation().name(), "s", site_ix)};
       int s;
       handles[0] = s;
       site_bset.register_remotes(handles);
@@ -396,7 +402,7 @@ namespace CASM {
         for(s = 0; s < site.occupant_dof().size(); s++) {
           if(s == 0)
             ss << "    ";
-          ss << "    \\phi_" << site.basis_ind() << '_' << f << '[' << site.occupant_dof()[s].name() << "] = "
+          ss << "    \\phi_" << site_ix << '_' << f << '[' << site.occupant_dof()[s].name() << "] = "
              << site_bset[f]->remote_eval();
           if(s + 1 == site.occupant_dof().size())
             ss << "\n";

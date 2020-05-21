@@ -1,6 +1,6 @@
 #include "casm/app/io/json/SpeciesSetParser_impl.hh"
 #include "casm/casm_io/container/json_io.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/BasicStructure.hh"
 
 namespace CASM {
 
@@ -78,10 +78,10 @@ namespace CASM {
         std::copy(names.begin(), names.end(), std::inserter(allowed_names, allowed_names.end()));
       };
       if(m_allowed_species_types == ALLOWED_SPECIES_TYPES::ATOM || m_allowed_species_types == ALLOWED_SPECIES_TYPES::ALL) {
-        copy(struc_species(prim()));
+        copy(xtal::struc_species(prim()));
       }
       if(m_allowed_species_types == ALLOWED_SPECIES_TYPES::MOLECULE || m_allowed_species_types == ALLOWED_SPECIES_TYPES::ALL) {
-        copy(struc_molecule_name(prim()));
+        copy(xtal::struc_molecule_name(prim()));
       }
       jsonParser json;
 

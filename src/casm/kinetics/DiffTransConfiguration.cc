@@ -8,14 +8,15 @@
 #include "casm/crystallography/io/VaspIO.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/clex/Clexulator.hh"
+#include "casm/clex/SimpleStructureTools.hh"
 #include "casm/database/Named_impl.hh"
 #include "casm/database/DiffTransConfigDatabase.hh"
 
 namespace {
   using namespace CASM;
   ScelPeriodicDiffTransSymCompare _construct_scel_sym_compare(const Supercell &scel) {
-    xtal::IntegralCoordinateWithin_f bring_within_f(scel.prim().lattice(), scel.lattice());
-    return ScelPeriodicDiffTransSymCompare(scel.primclex().shared_prim(), bring_within_f, scel.crystallography_tol());
+    /* xtal::IntegralCoordinateWithin_f bring_within_f(scel.prim().lattice(), scel.lattice()); */
+    return ScelPeriodicDiffTransSymCompare(scel.primclex().shared_prim(), scel.transf_mat(), scel.crystallography_tol());
   }
 }
 
@@ -48,6 +49,7 @@ namespace CASM {
       m_config_B(_from_config),
       m_sym_compare(::_construct_scel_sym_compare(_from_config.supercell())),
       m_diff_trans(_diff_trans) {
+
       m_from_config_is_A = true;
       if(_diff_trans != m_sym_compare.prepare(_diff_trans)) {
         throw std::runtime_error("Error in DiffTransConfiguration constructor diff trans not prepared");
@@ -59,6 +61,7 @@ namespace CASM {
         throw std::runtime_error("Error in DiffTransConfiguration constructor diff_trans and from_config inconsistent");
       }
       m_diff_trans.apply_to(m_config_B);
+
       _sort();
       if(m_config_A == m_config_B) {
         throw std::runtime_error("Error in DiffTransConfiguration constructor both endpoints are exactly the same config!");
@@ -445,12 +448,12 @@ namespace CASM {
     std::string pos_string(DiffTransConfiguration const &dtc) {
       std::stringstream ss;
       ss << "Initial POS:" << std::endl;
-      VaspIO::PrintPOSCAR from(xtal::make_simple_structure(dtc.sorted().from_config()), dtc.sorted().from_config().name());
+      VaspIO::PrintPOSCAR from(make_simple_structure(dtc.sorted().from_config()), dtc.sorted().from_config().name());
       from.sort();
       from.print(ss);
       ss << std::endl;
       ss << "Final POS:" << std::endl;
-      VaspIO::PrintPOSCAR to(xtal::make_simple_structure(dtc.sorted().to_config()), dtc.sorted().to_config().name());
+      VaspIO::PrintPOSCAR to(make_simple_structure(dtc.sorted().to_config()), dtc.sorted().to_config().name());
       to.sort();
       to.print(ss);
       return ss.str();

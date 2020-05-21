@@ -15,6 +15,8 @@ namespace CASM {
     class DiffTransConfiguration;
   }
   namespace xtal {
+    class BasicStructure;
+    class Site;
     class SimpleStructure;
   }
 

@@ -15,16 +15,12 @@
 namespace CASM {
 
   namespace xtal {
-    template<typename T> class BasicStructure;
     class Site;
-    class Structure;
     class Coordinate;
     class UnitCellCoord;
     class IntegralCoordinateWithin_f;
   }
-  using xtal::BasicStructure;
   using xtal::Site;
-  using xtal::Structure;
   using xtal::Coordinate;
   using xtal::UnitCellCoord;
 
@@ -35,6 +31,7 @@ namespace CASM {
   class ConfigDoF;
   class Configuration;
   class SuperNeighborList;
+  class Structure;
 
   namespace DB {
     template<typename T> class DatabaseIterator;
@@ -108,7 +105,7 @@ namespace CASM {
 
     SymGroupRep const &permutation_symrep() const;
 
-    Eigen::Matrix3i transf_mat() const;
+    Eigen::Matrix3l transf_mat() const;
 
     /// \brief The super lattice
     const Lattice &lattice() const;

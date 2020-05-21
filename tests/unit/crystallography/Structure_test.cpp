@@ -89,8 +89,18 @@ void prim2_read_test(Structure &struc) {
       EXPECT_EQ(almost_equal(struc.basis()[0].occupant_dof()[j].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
       EXPECT_EQ(struc.basis()[i].occupant_dof()[j].atom(0).name(), check_name[j]);
     }
-    EXPECT_EQ(struc.basis()[i].occupant_dof().value(), check_value[i]);
   }
+
+  //Modify the structure that there's different occupants at each site
+  std::vector<Site> new_basis;
+  new_basis.emplace_back(struc.basis()[0], "A");
+  new_basis.emplace_back(struc.basis()[1], "A");
+  new_basis.emplace_back(struc.basis()[2], "B");
+  new_basis.emplace_back(struc.basis()[3], "C");
+
+  BasicStructure struc_with_new_basis = struc.structure();
+  struc_with_new_basis.set_basis(new_basis);
+  struc = Structure(struc_with_new_basis);
 
   // ordering on FCC motif
   EXPECT_EQ(16, struc.factor_group().size());
@@ -200,7 +210,7 @@ TEST(StructureTest, POS1Test) {
   // Write test PRIM back out
   fs::path tmp_file = testdir / "POS1_out.txt";
   fs::ofstream sout(tmp_file);
-  VaspIO::PrintPOSCAR printer(make_simple_structure(struc), struc.title());
+  VaspIO::PrintPOSCAR printer(xtal::make_simple_structure(struc), struc.structure().title());
   printer.set_append_atom_names_off();
   printer.print(sout);
   sout.close();
@@ -222,7 +232,7 @@ TEST(StructureTest, POS1Vasp5Test) {
   // Write test PRIM back out
   fs::path tmp_file = testdir / "POS1_vasp5_out.txt";
   fs::ofstream sout(tmp_file);
-  VaspIO::PrintPOSCAR(make_simple_structure(struc), struc.title()).print(sout);
+  VaspIO::PrintPOSCAR(xtal::make_simple_structure(struc), struc.structure().title()).print(sout);
   sout.close();
 
   // Read new file and run tests again

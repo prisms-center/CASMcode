@@ -1,21 +1,19 @@
 #ifndef CASM_SupercellSymInfo
 #define CASM_SupercellSymInfo
 
-#include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/Superlattice.hh"
 #include "casm/crystallography/LinearIndexConverter.hh"
 #include "casm/global/eigen.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymGroupRepID.hh"
-#include "casm/basis_set/DoFDecl.hh"
+#include "casm/crystallography/DoFDecl.hh"
 #include <vector>
 
 namespace CASM {
   namespace xtal {
-    class Structure;
     class UnitCell;
   }
-  using xtal::Structure;
   using xtal::UnitCell;
 
   class PermuteIterator;
@@ -90,8 +88,8 @@ namespace CASM {
       return m_supercell_superlattice;
     }
 
-    Eigen::Matrix3l transformation_matrix() const {
-      return this->superlattice().transformation_matrix();
+    Eigen::Matrix3l transformation_matrix_to_super() const {
+      return this->superlattice().transformation_matrix_to_super();
     }
 
     /// \brief Begin iterator over pure translational permutations

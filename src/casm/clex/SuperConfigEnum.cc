@@ -2,7 +2,6 @@
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "casm/clex/ConfigEnumEquivalents.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
@@ -230,7 +229,7 @@ namespace CASM {
     m_sub_scel = &(m_sub_config.begin()->supercell());
 
     m_unitcell_index_converter = notstd::make_cloneable<xtal::UnitCellIndexConverter>(
-                                   xtal::make_transformation_matrix(
+                                   xtal::make_transformation_matrix_to_super(
                                      _sub_supercell().lattice(),
                                      _target_supercell().lattice(), _target_supercell().lattice().tol())
                                  );
@@ -247,7 +246,7 @@ namespace CASM {
     // and same for all other site DoF
     m_index_map.resize(this->_unitcell_index_converter().total_sites());
     for(int i = 0; i < this->_unitcell_index_converter().total_sites(); ++i) {
-      UnitCell ref = _sub_supercell().transf_mat().cast<Index>() * this->_unitcell_index_converter()[i];
+      UnitCell ref = _sub_supercell().transf_mat().cast<Index>() * this->_unitcell_index_converter()(i);
       for(int j = 0; j < _sub_supercell().num_sites(); ++j) {
         UnitCellCoord uccord = _sub_supercell().uccoord(j) + ref;
         Index linear_index = _target_supercell().linear_index(uccord);

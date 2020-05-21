@@ -49,7 +49,6 @@ TEST(AppTest, ProjectCommands) {
   p.popen(autotools::abs_ccasm_path() + " init -h");
   EXPECT_EQ(p.exit_code(), 0) << p.gets();
 
-  //TODO: This does not check the compiled ccasm, it checks whatever ccasm is already on the system!!!!
   for(auto it = command.begin(); it != command.end(); ++it) {
     p.popen(autotools::abs_ccasm_path() + " " + it->type + " " + it->no_proj_command);
     EXPECT_EQ(p.exit_code(), 3) << p.gets();

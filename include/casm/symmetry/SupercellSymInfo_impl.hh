@@ -64,7 +64,7 @@ namespace CASM {
       trep.setZero();
       for(IterType it = begin; it != end; ++it) {
         /* Index b = _syminfo.prim_grid().sublat(*it); */
-        Index b = _syminfo.unitcellcoord_index_converter()[*it].sublattice();
+        Index b = _syminfo.unitcellcoord_index_converter()(*it).sublattice();
         auto ptr = (subreps[b][perm.factor_group_index()]->MatrixXd());
         trep.block(subdim * (*it), subdim * perm.permute_ind(*it), ptr->rows(), ptr->cols()) = *ptr;
       }

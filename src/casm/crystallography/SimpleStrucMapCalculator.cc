@@ -2,7 +2,7 @@
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/AnisoValTraits.hh"
 #include "casm/misc/algorithm.hh"
-#include "casm/crystallography/LatticePointWithin.hh"
+#include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/crystallography/StrucMapping.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 
@@ -12,7 +12,7 @@ namespace CASM {
   namespace xtal {
     namespace Local {
       static Coordinate
-      _make_superlattice_coordinate(Index ijk_ix, const Superlattice &superlattice, OrderedLatticePointGenerator index_to_ijk_f) {
+      _make_superlattice_coordinate(Index ijk_ix, const Superlattice &superlattice, impl::OrderedLatticePointGenerator index_to_ijk_f) {
         UnitCell ijk = index_to_ijk_f(ijk_ix);
         return make_superlattice_coordinate(ijk, superlattice);
       }
@@ -84,7 +84,7 @@ namespace CASM {
       Eigen::MatrixXd mol_displacement;
       mol_displacement.setZero(3, _node.mol_map.size());
 
-      OrderedLatticePointGenerator parent_index_to_unitcell(pgrid.transformation_matrix());
+      impl::OrderedLatticePointGenerator parent_index_to_unitcell(pgrid.transformation_matrix_to_super());
 
       // transform and expand the coordinates of child to fill the resolved structure
       {
@@ -188,8 +188,8 @@ namespace CASM {
       SimpleStructure::Info const &p_info(this->struc_info(parent()));
       SimpleStructure::Info const &c_info(this->struc_info(child_struc));
       // TODO: Just use linear index converter? could make things more obvious
-      OrderedLatticePointGenerator child_index_to_unitcell(cgrid.transformation_matrix());
-      OrderedLatticePointGenerator parent_index_to_unitcell(pgrid.transformation_matrix());
+      impl::OrderedLatticePointGenerator child_index_to_unitcell(cgrid.transformation_matrix_to_super());
+      impl::OrderedLatticePointGenerator parent_index_to_unitcell(pgrid.transformation_matrix_to_super());
 
       _node.atom_permutation = _node.basis_node.permutation();
 
@@ -222,7 +222,7 @@ namespace CASM {
 
           Coordinate parent_coord = Local::_make_superlattice_coordinate(i % pgrid.size(), pgrid, parent_index_to_unitcell);
           parent_coord.cart() += p_info.cart_coord(i / pgrid.size());
-          child_coord.min_dist(parent_coord, disp_coord);
+          disp_coord = child_coord.min_translation(parent_coord);
 
           _node.atom_displacement.col(i) = disp_coord.const_cart();
 
@@ -257,8 +257,8 @@ namespace CASM {
       Eigen::Vector3d const &translation(_node.basis_node.translation);
       Eigen::MatrixXd &cost_matrix(_node.basis_node.cost_mat);
       Eigen::Matrix3d metric = (_node.lat_node.stretch * _node.lat_node.stretch).inverse();
-      OrderedLatticePointGenerator child_index_to_unitcell(cgrid.transformation_matrix());
-      OrderedLatticePointGenerator parent_index_to_unitcell(pgrid.transformation_matrix());
+      impl::OrderedLatticePointGenerator child_index_to_unitcell(cgrid.transformation_matrix_to_super());
+      impl::OrderedLatticePointGenerator parent_index_to_unitcell(pgrid.transformation_matrix_to_super());
 
       SimpleStructure::Info const &p_info(this->struc_info(parent()));
       SimpleStructure::Info const &c_info(this->struc_info(child_struc));

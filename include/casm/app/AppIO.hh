@@ -18,18 +18,14 @@
 namespace CASM {
   namespace xtal {
     class COORD_MODE;
-    class Structure;
-    class SimpleStructure;
     class SpeciesAttribute;
     class AtomPosition;
     class Molecule;
     class Site;
     class UnitCellCoord;
-    template<typename CoordType> class BasicStructure;
+    class BasicStructure;
   }
   using xtal::COORD_MODE;
-  using xtal::Structure;
-  using xtal::SimpleStructure;
   using xtal::SpeciesAttribute;
   using xtal::AtomPosition;
   using xtal::Molecule;
@@ -45,6 +41,7 @@ namespace CASM {
   class ChemicalReference;
   class SymGroup;
   class PrimClex;
+  class Structure;
 
   /** \defgroup ProjectIO
    *
@@ -110,15 +107,15 @@ namespace CASM {
 
 
 
-  BasicStructure<Site> read_prim(fs::path filename, double xtal_tol, HamiltonianModules const *_modules = nullptr);
+  BasicStructure read_prim(fs::path filename, double xtal_tol, HamiltonianModules const *_modules = nullptr);
 
-  BasicStructure<Site> read_prim(jsonParser const &json, double xtal_tol, HamiltonianModules const *_modules = nullptr);
+  BasicStructure read_prim(jsonParser const &json, double xtal_tol, HamiltonianModules const *_modules = nullptr);
 
   /// \brief Write prim.json to file
-  void write_prim(const BasicStructure<Site> &prim, fs::path filename, COORD_TYPE mode, bool include_va = false);
+  void write_prim(const BasicStructure &prim, fs::path filename, COORD_TYPE mode, bool include_va = false);
 
   /// \brief Write prim.json as JSON
-  void write_prim(const BasicStructure<Site> &prim, jsonParser &json, COORD_TYPE mode, bool include_va = false);
+  void write_prim(const BasicStructure &prim, jsonParser &json, COORD_TYPE mode, bool include_va = false);
 
   /*
   /// \brief Write prim.json as JSON
@@ -140,9 +137,9 @@ namespace CASM {
 
   // --------- ChemicalReference IO Declarations --------------------------------------------------
 
-  ChemicalReference read_chemical_reference(fs::path filename, const BasicStructure<Site> &prim, double tol);
+  ChemicalReference read_chemical_reference(fs::path filename, const BasicStructure &prim, double tol);
 
-  ChemicalReference read_chemical_reference(const jsonParser &json, const BasicStructure<Site> &prim, double tol);
+  ChemicalReference read_chemical_reference(const jsonParser &json, const BasicStructure &prim, double tol);
 
   void write_chemical_reference(const ChemicalReference &chem_ref, fs::path filename);
 
@@ -352,7 +349,7 @@ namespace CASM {
   /// \brief Print Orbit<SymCompareType> & ClexBasis, including prototypes and prototype basis functions
   struct ProtoFuncsPrinter : public SitesPrinter {
 
-    typedef xtal::BasicStructure<xtal::Site> PrimType;
+    typedef xtal::BasicStructure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
 
     ClexBasis const &clex_basis;

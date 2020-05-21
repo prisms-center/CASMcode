@@ -350,7 +350,7 @@ namespace CASM {
       from_json(generating_matrix, input["unit_cell"]);
     }
     else if(input["unit_cell"].is_string()) {
-      generating_matrix = primclex.db<Supercell>().find(input["unit_cell"].get<std::string>())->transf_mat();
+      generating_matrix = primclex.db<Supercell>().find(input["unit_cell"].get<std::string>())->transf_mat().cast<int>();
     }
     else {
       throw std::invalid_argument(

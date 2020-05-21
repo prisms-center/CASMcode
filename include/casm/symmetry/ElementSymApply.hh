@@ -9,10 +9,7 @@
 namespace CASM {
 
   class SymOp;
-
-  namespace xtal {
-    class Structure;
-  }
+  class Structure;
 
   namespace sym {
     /// Apply a transformation, in place, return reference to the provided object.
@@ -75,7 +72,7 @@ namespace CASM {
      */
 
     class CopyApplyWithPrim_f : public CASM::CopyApplyWithPrim_crtp<CRTPBase<CopyApplyWithPrim_f>> {
-      typedef xtal::Structure PrimType;
+      typedef Structure PrimType;
       typedef std::shared_ptr<const PrimType> PrimType_ptr;
       typedef CASM::CopyApplyWithPrim_crtp<CRTPBase<CopyApplyWithPrim_f>> Base;
       typedef typename Base::MostDerived MostDerived;

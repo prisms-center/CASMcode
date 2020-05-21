@@ -34,12 +34,6 @@ TEST(UnitCellCoordIndexConverterTest, construct_via_transformation) {
   xtal::UnitCellCoordIndexConverter ix_bijk_converter(trans_mat, 10);
 }
 
-TEST(UnitCellCoordIndexConverterTest, construct_via_superlattice) {
-  auto trans_mat = transformation_matrix();
-  auto fcc_superlattice = xtal::make_superlattice(::fcc_lattice(), trans_mat);
-  xtal::UnitCellCoordIndexConverter ix_bijk_converter(::fcc_lattice(), fcc_superlattice, 3);
-}
-
 TEST(UnitCellCoordIndexConverterTest, construct_via_bad_basis_sites) {
   auto trans_mat = transformation_matrix();
   bool good_catch = false;
@@ -61,10 +55,10 @@ TEST(UnitCellCoordIndexConverterTest, get_index) {
   trans_mat << 10, 0, 0, 0, 10, 0, 0, 0, 10;
   xtal::UnitCellCoordIndexConverter ix_bijk_converter(trans_mat, 10);
 
-  auto ix = ix_bijk_converter[0];
+  auto ix = ix_bijk_converter(0);
   EXPECT_EQ(ix, xtal::UnitCellCoord(0, 0, 0, 0));
 
-  ix = ix_bijk_converter[trans_mat.determinant() * 10 - 1];
+  ix = ix_bijk_converter(trans_mat.determinant() * 10 - 1);
   EXPECT_EQ(ix, xtal::UnitCellCoord(9, 9, 9, 9));
 }
 
@@ -74,9 +68,9 @@ TEST(UnitCellCoordIndexConverterTest, self_consistency) {
   xtal::UnitCellCoordIndexConverter ix_bijk_converter(trans_mat, total_basis_atoms);
 
   for(int i = 0; i < std::abs(trans_mat.determinant()) * total_basis_atoms; ++i) {
-    auto bijk = ix_bijk_converter[i];
-    auto ix_recover = ix_bijk_converter[bijk];
-    auto bijk_recover = ix_bijk_converter[ix_recover];
+    auto bijk = ix_bijk_converter(i);
+    auto ix_recover = ix_bijk_converter(bijk);
+    auto bijk_recover = ix_bijk_converter(ix_recover);
     EXPECT_EQ(bijk, bijk_recover);
   }
 }
@@ -89,9 +83,9 @@ TEST(UnitCellCoordIndexConverterTest, caching_consistency) {
   // This guy falls outside the superlattice
   xtal::UnitCellCoord bijk_outside(9, 1000, 1000, 1000);
 
-  auto ix_within = ix_bijk_converter[bijk_outside];
-  auto bijk_within = ix_bijk_converter[ix_within];
-  auto ix_within_recover = ix_bijk_converter[bijk_within];
+  auto ix_within = ix_bijk_converter(bijk_outside);
+  auto bijk_within = ix_bijk_converter(ix_within);
+  auto ix_within_recover = ix_bijk_converter(bijk_within);
 
   EXPECT_EQ(ix_within, ix_within_recover) << ix_within << " vs " << ix_within_recover;
 }
@@ -104,7 +98,7 @@ TEST(UnitCellCoordIndexConverterTest, bad_basis_site_index_query) {
   xtal::UnitCellCoordIndexConverter ix_bijk_converter(trans_mat, total_basis_atoms);
 
   try {
-    auto ix = ix_bijk_converter[xtal::UnitCellCoord(10, 0, 0, 0)];
+    auto ix = ix_bijk_converter(xtal::UnitCellCoord(10, 0, 0, 0));
   }
   catch(const std::runtime_error &e) {
     good_catch = true;
@@ -121,7 +115,7 @@ TEST(UnitCellCoordIndexConverterTest, bad_index_query) {
   xtal::UnitCellCoordIndexConverter ix_bijk_converter(trans_mat, total_basis_atoms);
 
   try {
-    auto bijk = ix_bijk_converter[1000000];
+    auto bijk = ix_bijk_converter(1000000);
   }
   catch(const std::runtime_error &e) {
     good_catch = true;
@@ -139,7 +133,7 @@ TEST(UnitCellCoordIndexConverterTest, bad_fall_outside_superlattice_query) {
   ix_bijk_converter.never_bring_within();
 
   try {
-    auto ix = ix_bijk_converter[xtal::UnitCellCoord(1000, 1000, 1000, 0)];
+    auto ix = ix_bijk_converter(xtal::UnitCellCoord(1000, 1000, 1000, 0));
   }
   catch(const std::runtime_error &e) {
     good_catch = true;

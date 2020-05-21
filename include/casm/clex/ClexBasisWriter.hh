@@ -4,10 +4,6 @@
 #include "casm/global/definitions.hh"
 #include "casm/clex/ClexBasis.hh"
 namespace CASM {
-  namespace xtal {
-    class Structure;
-  }
-  using xtal::Structure;
 
   class ClexBasis;
   class PrimNeighborList;
@@ -222,7 +218,6 @@ namespace CASM {
   }
 }
 
+#endif
 
 #include "casm/clex/ClexBasisWriter_impl.hh"
-
-#endif

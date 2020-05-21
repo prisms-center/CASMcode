@@ -1,9 +1,8 @@
 #include "casm/clex/io/json/ChemicalReference.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/clex/ChemicalReference.hh"
+#include "casm/crystallography/BasicStructure.hh"
 #include "casm/clex/ConfigMapping.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
-
 #include "casm/casm_io/container/json_io.hh"
 
 namespace CASM {
@@ -172,7 +171,7 @@ namespace CASM {
   jsonParser &to_json(const ChemicalReference &ref, jsonParser &json) {
     json.put_obj();
 
-    json["species_order"] = struc_molecule_name(ref.prim());
+    json["species_order"] = xtal::struc_molecule_name(ref.prim());
 
     if(ref.global_ref_states().empty()) {
       to_json(ref.global().transpose(), json["global"]);
@@ -245,14 +244,14 @@ namespace CASM {
   ///   \endcode
   ///
   std::pair<Eigen::VectorXd, std::vector<ChemicalReferenceState> >
-  one_chemical_reference_from_json(BasicStructure<Site> const &prim,
+  one_chemical_reference_from_json(BasicStructure const &prim,
                                    jsonParser const &json) {
 
     typedef std::pair<Eigen::VectorXd, std::vector<ChemicalReferenceState> > ReturnType;
 
     ReturnType result;
 
-    std::vector<std::string> struc_mol_name = struc_molecule_name(prim);
+    std::vector<std::string> struc_mol_name = xtal::struc_molecule_name(prim);
 
     // if: {"A": X, "C": X, "D": X} // expects all species in prim, except vacancy
     if(json.is_obj()) {
@@ -319,7 +318,7 @@ namespace CASM {
   /// \endcode expected form.
   ChemicalReference jsonConstructor<ChemicalReference>::from_json(
     jsonParser const &json,
-    BasicStructure<Site> const &prim,
+    BasicStructure const &prim,
     double tol) {
 
     std::unique_ptr<ChemicalReference> ref;
@@ -364,7 +363,7 @@ namespace CASM {
   /// \brief Read chemical reference from JSON
   void from_json(ChemicalReference &ref,
                  jsonParser const &json,
-                 BasicStructure<Site> const &prim,
+                 BasicStructure const &prim,
                  double tol) {
     ref = jsonConstructor<ChemicalReference>::from_json(json, prim, tol);
   }
