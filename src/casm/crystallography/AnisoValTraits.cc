@@ -214,6 +214,7 @@ namespace CASM {
     true);
   }
 
+  // Spin-orbit-coupled magnetic spin
   AnisoValTraits AnisoValTraits::SOmagspin() {
     return AnisoValTraits("SOmagspin",
     {"sx", "sy", "sz"},
@@ -226,6 +227,7 @@ namespace CASM {
     true);
   }
 
+  // Spin-orbit-coupled magnetic spin -- constrained to unit length
   AnisoValTraits AnisoValTraits::SOunitmagspin() {
     return AnisoValTraits("SOunitmagspin",
     {"sx", "sy", "sz"},
@@ -238,6 +240,7 @@ namespace CASM {
     true);
   }
 
+  // Non-collinear magnetic spin (Without spin-orbit coupling)
   AnisoValTraits AnisoValTraits::NCmagspin() {
     return AnisoValTraits("NCmagspin",
     {"sx", "sy", "sz"},
@@ -250,6 +253,7 @@ namespace CASM {
     true);
   }
 
+  // Non-collinear magnetic spin  (Without spin-orbit coupling)-- constrained to unit length
   AnisoValTraits AnisoValTraits::NCunitmagspin() {
     return AnisoValTraits("NCunitmagspin",
     {"sx", "sy", "sz"},
@@ -262,6 +266,7 @@ namespace CASM {
     true);
   }
 
+  // Collinear magnetic spin
   AnisoValTraits AnisoValTraits::Cmagspin() {
     return AnisoValTraits("Cmagspin",
     {"m"},
@@ -274,6 +279,7 @@ namespace CASM {
     true);
   }
 
+  // Collinear magnetic spin -- constrained unit
   AnisoValTraits AnisoValTraits::Cunitmagspin() {
     return AnisoValTraits("Cunitmagspin",
     {"m"},

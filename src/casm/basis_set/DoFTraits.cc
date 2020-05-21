@@ -27,7 +27,12 @@ namespace CASM {
     dict.insert(
       DoFType::occupation(),
       DoFType::displacement(),
-      DoFType::magspin(),
+      DoFType::magspin("C"),
+      DoFType::magspin("Cunit"),
+      DoFType::magspin("NC"),
+      DoFType::magspin("NCunit"),
+      DoFType::magspin("SO"),
+      DoFType::magspin("SOunit"),
       DoFType::EAstrain(),
       DoFType::Hstrain(),
       DoFType::GLstrain());

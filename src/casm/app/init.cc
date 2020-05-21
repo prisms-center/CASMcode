@@ -192,11 +192,22 @@ namespace CASM {
       }
 
       // Add the new DoFs before doing anything else
-      std::map<DoFKey, xtal::DoFSet> prim_global_dofs;
+      std::map<DoFKey, xtal::DoFSet> new_global_dofs = prim.global_dofs();
+      std::map<DoFKey, xtal::SiteDoFSet> new_site_dofs;
       for(std::string const &doftype : init_opt.dof_strs()) {
-        prim_global_dofs.emplace(doftype, doftype);
+        AnisoValTraits ttraits(doftype);
+        if(ttraits.global() && !new_global_dofs.count(doftype))
+          new_global_dofs.emplace(doftype, ttraits);
+        else
+          new_site_dofs.emplace(doftype, ttraits);
       }
-      prim.set_global_dofs(prim_global_dofs);
+      prim.set_global_dofs(new_global_dofs);
+
+      for(xtal::Site &site : prim.set_basis()) {
+        std::map<DoFKey, xtal::SiteDoFSet> site_dofs = site.dofs();
+        site_dofs.insert(new_site_dofs.begin(), new_site_dofs.end());
+        site.set_dofs(std::move(site_dofs));
+      }
 
       // Check error message to see if PRIM did not meet standards; report if so
       if(!err_msg.empty()) {

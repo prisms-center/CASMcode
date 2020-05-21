@@ -463,7 +463,8 @@ namespace CASM {
                                                             Index min_vol,
                                                             Index max_vol,
                                                             double max_lattice_cost,
-                                                            double min_lattice_cost) const {
+                                                            double min_lattice_cost,
+                                                            SymOpVector const &child_factor_group) const {
 
       if(!valid_index(min_vol) || !valid_index(min_vol) || max_vol < min_vol) {
         auto vol_range = _vol_range(child_struc);
@@ -486,7 +487,8 @@ namespace CASM {
         {Lattice(child_struc.lat_column_mat, xtal_tol())},
         k,
         max_lattice_cost,
-        max(min_lattice_cost, cost_tol()));
+        max(min_lattice_cost, cost_tol()),
+        child_factor_group);
 
         mapping_seed.insert(std::make_move_iterator(t_seed.begin()), std::make_move_iterator(t_seed.end()));
 
@@ -556,9 +558,10 @@ namespace CASM {
                                                           Index k /*=1*/,
                                                           double max_cost /*=StrucMapping::big_inf()*/,
                                                           double min_cost /*=-TOL*/,
-                                                          bool keep_invalid /*=false*/) const {
+                                                          bool keep_invalid /*=false*/,
+                                                          SymOpVector const &child_factor_group) const {
       auto vols = _vol_range(child_struc);
-      return map_deformed_struc_impose_lattice_vols(child_struc, vols.first, vols.second, k, max_cost, min_cost, keep_invalid);
+      return map_deformed_struc_impose_lattice_vols(child_struc, vols.first, vols.second, k, max_cost, min_cost, keep_invalid, child_factor_group);
     }
 
     //*******************************************************************************************
@@ -569,7 +572,8 @@ namespace CASM {
                                                                               Index k /*=1*/,
                                                                               double max_cost /*=StrucMapping::big_inf()*/,
                                                                               double min_cost /*=-TOL*/,
-                                                                              bool keep_invalid /*=false*/) const {
+                                                                              bool keep_invalid /*=false*/,
+                                                                              SymOpVector const &child_factor_group) const {
 
       int seed_k = 10 + 5 * k;
       std::set<MappingNode> mapping_seed = _seed_from_vol_range(child_struc,
@@ -577,13 +581,8 @@ namespace CASM {
                                                                 min_vol,
                                                                 max_vol,
                                                                 max_cost / (this->lattice_weight()),
-                                                                max(min_cost / (this->lattice_weight()), cost_tol()));
-
-      std::cout << "LatticeMap seed size: " << mapping_seed.size();
-      if(mapping_seed.size()) {
-        std::cout << "   Max lattice cost: " << mapping_seed.rbegin()->cost;
-      }
-      std::cout << std::endl;
+                                                                max(min_cost / (this->lattice_weight()), cost_tol()),
+                                                                child_factor_group);
 
       bool no_partition = (!(robust & options())) && k <= 1;
       k_best_maps_better_than(child_struc, mapping_seed, k, max_cost, min_cost, keep_invalid, false, no_partition);
@@ -598,14 +597,16 @@ namespace CASM {
                                                                          Index k /*=1*/,
                                                                          double max_cost /*=StrucMapping::big_inf()*/,
                                                                          double min_cost /*=-TOL*/,
-                                                                         bool keep_invalid /*=false*/) const {
+                                                                         bool keep_invalid /*=false*/,
+                                                                         SymOpVector const &child_factor_group) const {
 
       std::set<MappingNode> mapping_seed = _seed_k_best_from_super_lats(child_struc,
       {imposed_lat},
       {Lattice(child_struc.lat_column_mat, xtal_tol())},
       k,
       max_cost / (this->lattice_weight()),
-      max(min_cost / (this->lattice_weight()), cost_tol()));
+      max(min_cost / (this->lattice_weight()), cost_tol()),
+      child_factor_group);
 
       bool no_partition = !(robust & options()) && k <= 1;
       k_best_maps_better_than(child_struc, mapping_seed, k, max_cost, min_cost, keep_invalid, false, no_partition);
@@ -718,11 +719,9 @@ namespace CASM {
           // If supercell volumes have already been determined incompatible, we do nothing;
           // current node is deleted
           if(!vol_mismatch.count(current->vol_pair())) {
-            std::cout << "Before -- nfound: " << nfound << "; k: " << k <<  "; current cost: " << current->cost << std::endl;
-            std::cout << "min_cost: " << min_cost << ";  max_cost: " << max_cost << "\n";
+
             // Consider two exlusive cases (and base case, in which current node isn't even viable)
             if(current->atomic_node.empty()) {
-              std::cout << "IS LATTICE MAP! Size before: " << queue.size() << "\n";
               // Case 1: Current node only describes a lattice mapping with no basis mapping
               //         Perform basis mapping, insert result into queue, and erase current
               //         (new node must have cost greather than the current node, so will
@@ -735,11 +734,8 @@ namespace CASM {
                 // If no basis maps are viable, it indicates volume mismatch; add to vol_mismatch
                 vol_mismatch.insert(current->vol_pair());
               }
-              std::cout << "Size after: " << queue.size() << "\n";
             }
             else if(current->is_viable) {
-
-              std::cout << "COMPLETE MAPPING! Size before: " << queue.size() << std::endl;
               // Case 2: Current node is a complete mapping and is viable
               //         Either it is a valid node, and thus part of the solution set,
               //         or it is invalid, but we must add its partition to the queue
@@ -789,9 +785,6 @@ namespace CASM {
         //  3) Everything that needs to be inserted has been inserted
         ++it;
 
-        std::cout << "After -- nfound: " << nfound << "; k: " << k <<  "; next cost: " << it->cost << std::endl;
-        std::cout << "min_cost: " << min_cost << ";  max_cost: " << max_cost << "\n";
-
         // Erase current if no longer needed
         if(erase)
           queue.erase(current);
@@ -808,7 +801,8 @@ namespace CASM {
                                                                     std::vector<Lattice> const &_child_scels,
                                                                     Index k,
                                                                     double max_lattice_cost /*=StrucMapping::small_inf()*/,
-                                                                    double min_lattice_cost /*=1e-6*/) const {
+                                                                    double min_lattice_cost /*=1e-6*/,
+                                                                    SymOpVector const &child_factor_group) const {
       Lattice p_prim_lat(parent().lat_column_mat, xtal_tol());
       Lattice c_prim_lat(child_struc.lat_column_mat, xtal_tol());
       std::set<MappingNode> result;
@@ -818,9 +812,24 @@ namespace CASM {
       }
 
       for(Lattice const &c_lat : _child_scels) {
+        auto pg_indices = invariant_subgroup_indices(c_lat, child_factor_group);
+        SymOpVector c_lat_factor_group;
+        c_lat_factor_group.reserve(pg_indices.size());
+        for(Index i : pg_indices) {
+          c_lat_factor_group.push_back(child_factor_group[i]);
+        }
+
         for(Lattice const &p_lat : _parent_scels) {
           int n_child_atom = round(std::abs(volume(c_lat) / volume(c_prim_lat))) * _n_species(child_struc);
-          LatticeMap lattice_map(p_lat, c_lat, n_child_atom, this->lattice_transformation_range(), calculator().point_group(), m_strain_gram_mat, max_lattice_cost);
+          LatticeMap lattice_map(p_lat,
+                                 c_lat,
+                                 n_child_atom,
+                                 this->lattice_transformation_range(),
+                                 calculator().point_group(),
+                                 c_lat_factor_group,
+                                 m_strain_gram_mat,
+                                 max_lattice_cost);
+
           // lattice_map is initialized to first mapping better than 'max_lattice_cost', if such a mapping exists
           // We will continue checking possibilities until all such mappings are exhausted
           while(lattice_map.strain_cost() < (max_lattice_cost + cost_tol())) {

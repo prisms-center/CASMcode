@@ -10,6 +10,7 @@
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/Superlattice.hh"
+#include "casm/crystallography/SymType.hh"
 
 namespace CASM {
   namespace xtal {
@@ -577,7 +578,8 @@ namespace CASM {
                                                Index k = 1,
                                                double max_cost = StrucMapping::big_inf(),
                                                double min_cost = -TOL,
-                                               bool keep_invalid = false) const;
+                                               bool keep_invalid = false,
+                                               SymOpVector const &child_factor_group = {SymOp::identity()}) const;
 
       ///\brief k-best mappings of arbitrary child structure onto parent structure
       ///       imposes simplifying assumption that solution is a superstructure of parent structure having
@@ -598,7 +600,8 @@ namespace CASM {
                                                                    Index k = 1,
                                                                    double max_cost = StrucMapping::big_inf(),
                                                                    double min_cost = -TOL,
-                                                                   bool keep_invalid = false) const;
+                                                                   bool keep_invalid = false,
+                                                                   SymOpVector const &child_factor_group = {SymOp::identity()}) const;
 
 
       ///\brief k-best mappings of arbitrary child structure onto parent structure
@@ -619,7 +622,8 @@ namespace CASM {
                                                               Index k = 1,
                                                               double max_cost = StrucMapping::big_inf(),
                                                               double min_cost = -TOL,
-                                                              bool keep_invalid = false) const;
+                                                              bool keep_invalid = false,
+                                                              SymOpVector const &child_factor_group = {SymOp::identity()}) const;
 
 
       ///\brief k-best mappings of arbitrary child structure onto parent structure
@@ -701,7 +705,8 @@ namespace CASM {
                                                          std::vector<Lattice> const &_child_scels,
                                                          Index k,
                                                          double max_strain_cost,
-                                                         double min_strain_cost) const;
+                                                         double min_strain_cost,
+                                                         SymOpVector const &child_factor_group = {SymOp::identity()}) const;
 
       /// \brief construct partial mapping nodes (with uninitialized atomic_node) based on current settings
       /// considers supercells with integer volume between min_vol and max_vol
@@ -710,7 +715,8 @@ namespace CASM {
                                                  Index min_vol,
                                                  Index max_vol,
                                                  double max_strain_cost,
-                                                 double min_strain_cost) const;
+                                                 double min_strain_cost,
+                                                 SymOpVector const &child_factor_group = {SymOp::identity()}) const;
 
       ///\brief returns number of species in a SimpleStructure given the current calculator settings.
       ///       Use instead of sstruc.n_atom() for consistency

@@ -67,16 +67,18 @@ namespace CASM {
       LatticeMap(Lattice const &_parent,
                  Lattice const &_child,
                  Index _num_atoms,
-                 int _range /*= 2*/,
-                 SymOpVector const &_point_group/*={}*/,
+                 int _range,
+                 SymOpVector const &_parent_point_group,
+                 SymOpVector const &_child_point_group,
                  Eigen::Ref<const Eigen::MatrixXd> const &strain_gram_mat = Eigen::MatrixXd::Identity(9, 9),
                  double _init_better_than = 1e20);
 
       LatticeMap(Eigen::Ref<const DMatType> const &_parent,
                  Eigen::Ref<const DMatType> const &_child,
                  Index _num_atoms,
-                 int _range /*= 2*/,
-                 SymOpVector const &_point_group/*={}*/,
+                 int _range,
+                 SymOpVector const &_parent_point_group,
+                 SymOpVector const &_child_point_group,
                  Eigen::Ref<const Eigen::MatrixXd> const &strain_gram_mat = Eigen::MatrixXd::Identity(9, 9),
                  double _init_better_than = 1e20);
 
@@ -123,8 +125,11 @@ namespace CASM {
       // pointer to static list of unimodular matrices
       std::vector<Eigen::Matrix3i> const *m_mvec_ptr;
 
-      // point group matrices, in fractional coordinates
-      std::vector<Eigen::Matrix3i> m_fsym_mats;
+      // parent point group matrices, in fractional coordinates
+      std::vector<Eigen::Matrix3i> m_parent_fsym_mats;
+
+      // child point group matrices, in fractional coordinates
+      std::vector<Eigen::Matrix3i> m_child_fsym_mats;
 
       mutable double m_cost;
       mutable Index m_currmat;
@@ -138,10 +143,12 @@ namespace CASM {
         return (*m_mvec_ptr)[m_currmat];
       }
 
+      ///\brief Number of unimodular matrices
       Index n_mat() const {
         return m_mvec_ptr->size();
       }
 
+      /// \brief Returns true if current transformation is the canonical equivalent
       bool _check_canonical() const;
 
       LatticeMap const &_next_mapping_better_than(double max_cost) const;

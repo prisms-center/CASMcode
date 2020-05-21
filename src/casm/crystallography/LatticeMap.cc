@@ -104,11 +104,11 @@ namespace CASM {
     LatticeMap::LatticeMap(const Lattice &_parent,
                            const Lattice &_child,
                            Index num_atoms,
-                           int _range/*=2*/,
-                           SymOpVector const &_point_group /*={}*/,
+                           int _range,
+                           SymOpVector const &_parent_point_group,
+                           SymOpVector const &_child_point_group,
                            Eigen::Ref<const Eigen::MatrixXd> const &strain_gram_mat,
                            double _init_better_than /* = 1e20 */) :
-      m_child(_child.reduced_cell().lat_column_mat()),
       m_calc(strain_gram_mat),
       m_vol_factor(pow(std::abs(volume(_child) / volume(_parent)), 1. / 3.)),
       m_range(_range),
@@ -118,6 +118,8 @@ namespace CASM {
       Lattice reduced_parent = _parent.reduced_cell();
       m_parent = reduced_parent.lat_column_mat();
 
+      Lattice reduced_child = _child.reduced_cell();
+      m_child = reduced_child.lat_column_mat();
 
       m_U = _parent.inv_lat_column_mat() * m_parent;
       m_V_inv = m_child.inverse() * _child.lat_column_mat();
@@ -133,23 +135,46 @@ namespace CASM {
       else
         throw std::runtime_error("LatticeMap cannot currently be invoked for range>4");
 
-      // Construct inverse fractional symops
-      LatticeIsEquivalent symcheck(reduced_parent);
-      m_fsym_mats.reserve(_point_group.size());
-      for(auto const &op : _point_group) {
-        if(!symcheck(op))
-          continue;
-        if(symcheck.U().isIdentity())
-          continue;
-        //std::cout << "Testing point op:\n" << get_matrix(op) << "\n";
-        m_fsym_mats.push_back(iround(symcheck.U().inverse()));
-        for(Index i = 0; i < (m_fsym_mats.size() - 1); ++i) {
-          if(m_fsym_mats[i] == m_fsym_mats.back()) {
-            m_fsym_mats.pop_back();
-            break;
+      // Construct inverse fractional symops for parent
+      {
+        LatticeIsEquivalent symcheck(reduced_parent);
+        m_parent_fsym_mats.reserve(_parent_point_group.size());
+        for(auto const &op : _parent_point_group) {
+          if(!symcheck(op))
+            continue;
+          if(symcheck.U().isIdentity())
+            continue;
+          //std::cout << "Testing point op:\n" << get_matrix(op) << "\n";
+          m_parent_fsym_mats.push_back(iround(symcheck.U().inverse()));
+          for(Index i = 0; i < (m_parent_fsym_mats.size() - 1); ++i) {
+            if(m_parent_fsym_mats[i] == m_parent_fsym_mats.back()) {
+              m_parent_fsym_mats.pop_back();
+              break;
+            }
           }
         }
       }
+
+      // Construct fractional symops for child
+      {
+        LatticeIsEquivalent symcheck(reduced_child);
+        m_child_fsym_mats.reserve(_child_point_group.size());
+        for(auto const &op : _child_point_group) {
+          if(!symcheck(op))
+            continue;
+          if(symcheck.U().isIdentity())
+            continue;
+          //std::cout << "Testing point op:\n" << get_matrix(op) << "\n";
+          m_child_fsym_mats.push_back(iround(symcheck.U()));
+          for(Index i = 0; i < (m_child_fsym_mats.size() - 1); ++i) {
+            if(m_child_fsym_mats[i] == m_child_fsym_mats.back()) {
+              m_child_fsym_mats.pop_back();
+              break;
+            }
+          }
+        }
+      }
+
 
       reset(_init_better_than);
     }
@@ -158,15 +183,17 @@ namespace CASM {
     LatticeMap::LatticeMap(Eigen::Ref<const LatticeMap::DMatType> const &_parent,
                            Eigen::Ref<const LatticeMap::DMatType> const &_child,
                            Index _num_atoms,
-                           int _range /*= 2*/,
-                           SymOpVector const &_point_group /*={}*/,
+                           int _range,
+                           SymOpVector const &_parent_point_group,
+                           SymOpVector const &_child_point_group,
                            Eigen::Ref<const Eigen::MatrixXd> const &strain_gram_mat,
                            double _init_better_than /* = 1e20 */) :
       LatticeMap(Lattice(_parent),
                  Lattice(_child),
                  _num_atoms,
                  _range,
-                 _point_group,
+                 _parent_point_group,
+                 _child_point_group,
                  strain_gram_mat,
                  _init_better_than) {}
 
@@ -306,22 +333,24 @@ namespace CASM {
     //*******************************************************************************************
 
     bool LatticeMap::_check_canonical() const {
-      for(auto const &op : m_fsym_mats) {
-        m_icache = inv_mat() * op;
-        // Skip ops that transform matrix out of range; they won't be enumerated
-        if(std::abs(m_icache(0, 0)) > m_range
-           || std::abs(m_icache(0, 1)) > m_range
-           || std::abs(m_icache(0, 2)) > m_range
-           || std::abs(m_icache(1, 0)) > m_range
-           || std::abs(m_icache(1, 1)) > m_range
-           || std::abs(m_icache(1, 2)) > m_range
-           || std::abs(m_icache(2, 0)) > m_range
-           || std::abs(m_icache(2, 1)) > m_range
-           || std::abs(m_icache(2, 2)) > m_range)
-          continue;
+      for(auto const &inv_parent_op : m_parent_fsym_mats) {
+        for(auto const &child_op : m_child_fsym_mats) {
+          m_icache = child_op * inv_mat() * inv_parent_op;
+          // Skip ops that transform matrix out of range; they won't be enumerated
+          if(std::abs(m_icache(0, 0)) > m_range
+             || std::abs(m_icache(0, 1)) > m_range
+             || std::abs(m_icache(0, 2)) > m_range
+             || std::abs(m_icache(1, 0)) > m_range
+             || std::abs(m_icache(1, 1)) > m_range
+             || std::abs(m_icache(1, 2)) > m_range
+             || std::abs(m_icache(2, 0)) > m_range
+             || std::abs(m_icache(2, 1)) > m_range
+             || std::abs(m_icache(2, 2)) > m_range)
+            continue;
 
-        if(std::lexicographical_compare(m_icache.data(), m_icache.data() + 9, inv_mat().data(), inv_mat().data() + 9))
-          return false;
+          if(std::lexicographical_compare(m_icache.data(), m_icache.data() + 9, inv_mat().data(), inv_mat().data() + 9))
+            return false;
+        }
       }
       return true;
     }

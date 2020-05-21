@@ -43,8 +43,8 @@ namespace CASM {
 
   namespace DoFType {
 
-    DoF_impl::MagSpinDoFTraits magspin() {
-      return DoF_impl::MagSpinDoFTraits();
+    DoF_impl::MagSpinDoFTraits magspin(std::string const &flavor_name) {
+      return DoF_impl::MagSpinDoFTraits(flavor_name);
     }
   }
 

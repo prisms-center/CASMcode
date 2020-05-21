@@ -580,9 +580,13 @@ namespace CASM {
   std::map<std::string, std::string> point_group_info(SymGroup const &g) {
     SymGroup pg = g.copy_no_trans(false);
     SymGroup nonmag;
+    bool grey = false;
     for(SymOp const &op : pg) {
       if(!op.time_reversal()) {
         nonmag.push_back(op);
+      }
+      else if(!grey && op.matrix().isIdentity(TOL)) {
+        grey = true;
       }
     }
     nonmag.set_lattice(g.lattice());
@@ -594,7 +598,7 @@ namespace CASM {
     }
 
     //grey group:
-    if((2 * nonmag.size()) == pg.size()) {
+    if(grey) { //(2 * nonmag.size()) == pg.size()) {
       nonmag_info["space_group_range"] = "Magnetic group (not supported)";
       nonmag_info["international_name"] += "1'";
       nonmag_info["name"] += "'";
@@ -642,7 +646,7 @@ namespace CASM {
         }
         else {
           result["international_name"] = "23";
-          result["name"] = "T (Chiral)";
+          result["name"] = "T";
           result["latex_name"] = "T";
           result["space_group_range"] = "195-199";
         }
@@ -657,7 +661,7 @@ namespace CASM {
         else {
           if(rgroups[6] == 6) {
             result["international_name"] = "432";
-            result["name"] = "O (Chiral)";
+            result["name"] = "O";
             result["latex_name"] = "O";
             result["space_group_range"] = "207-214";
           }
@@ -689,7 +693,7 @@ namespace CASM {
         else {
           if(rgroups[10] == 2) {
             result["international_name"] = "6";
-            result["name"] = "C6 (Chiral)";
+            result["name"] = "C6";
             result["latex_name"] = "C_6";
             result["space_group_range"] = "168-173";
           }
@@ -715,7 +719,7 @@ namespace CASM {
           if(rgroups[10] == 2) {
             if(rgroups[2] == 7) {
               result["international_name"] = "622";
-              result["name"] = "D6 (Chiral)";
+              result["name"] = "D6";
               result["latex_name"] = "D_{6h}";
               result["space_group_range"] = "177-182";
             }
@@ -780,7 +784,7 @@ namespace CASM {
         else {
           if(rgroups[2] == 3) {
             result["international_name"] = "32";
-            result["name"] = "D3 (Chiral)";
+            result["name"] = "D3";
             result["latex_name"] = "D_3";
             result["space_group_range"] = "149-155";
           }
@@ -816,7 +820,7 @@ namespace CASM {
         }
         else if(rgroups[6] == 1) {
           result["international_name"] = "4";
-          result["name"] = "C4 (Chiral)";
+          result["name"] = "C4";
           result["latex_name"] = "C_4";
           result["space_group_range"] = "75-80";
         }
@@ -844,7 +848,7 @@ namespace CASM {
       case 7:
         if(rgroups[6] == 1 && rgroups[2] == 5) {
           result["international_name"] = "422";
-          result["name"] = "D4 (Chiral)";
+          result["name"] = "D4";
           result["latex_name"] = "D_4";
           result["space_group_range"] = "89-98";
         }
@@ -878,7 +882,7 @@ namespace CASM {
       else {
         if(rgroups[2] == 3) {
           result["international_name"] = "222";
-          result["name"] = "D2 (Chiral)";
+          result["name"] = "D2";
           result["latex_name"] = "D_2";
           result["space_group_range"] = "16-24";
         }
@@ -905,7 +909,7 @@ namespace CASM {
       else {
         if(rgroups[2] == 1) {
           result["international_name"] = "2";
-          result["name"] = "C2 (Chiral)";
+          result["name"] = "C2";
           result["latex_name"] = "C_2";
           result["space_group_range"] = "3-5";
         }
@@ -930,7 +934,7 @@ namespace CASM {
       }
       else {
         result["international_name"] = "1";
-        result["name"] = "C1 (Chiral)";
+        result["name"] = "C1";
         result["latex_name"] = "C_1";
         result["space_group_range"] = "1";
       }
