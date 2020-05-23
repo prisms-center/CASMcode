@@ -863,7 +863,7 @@ namespace CASM {
                  + std::conj(phase[nph]) * kernel.col(kcj) * kernel.col(kci).adjoint(); // adjoint of outer product
           //std::cout << "tmat:\n" << tmat << std::endl;
           //apply reynolds operator
-          Index ns = 0;
+
           for(SymOp const &op : head_group) {
             //std::cout << "Op " << ns++ << ":\n" << (*(_rep.MatrixXd(op))) << std::endl;
             tcommute += (*(_rep.MatrixXd(op))) * tmat * (*(_rep.MatrixXd(op))).transpose();

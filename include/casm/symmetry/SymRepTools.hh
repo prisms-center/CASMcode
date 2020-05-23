@@ -1,6 +1,7 @@
 #ifndef CASM_SymRepTools
 #define CASM_SymRepTools
 
+#include <set>
 #include "casm/container/multivector.hh"
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
