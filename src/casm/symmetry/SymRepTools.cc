@@ -98,7 +98,123 @@ namespace CASM {
       return result;
     }
 
+    //*******************************************************************************************
+    /// \brief Matrix such that result(i,j) is sum of squares over 'p' of  op_rep[p].matrix(i,j). 'p' only spans operations in head_group
+    /// The resulting matrix reveals the block_diagonalization of SymGroupRep _rep for the subset of operations contained in head_group
+    static Eigen::MatrixXd _block_shape_matrix(SymGroupRep const &_rep, SymGroup const &head_group) {
+      if(!_rep.size() || !head_group.size() || !_rep.MatrixXd(head_group[0]))
+        return Eigen::MatrixXd();
 
+      Eigen::MatrixXd block_shape(_rep.MatrixXd(head_group[0])->cwiseProduct(*_rep.MatrixXd(head_group[0])));
+
+      for(Index i = 1; i < head_group.size(); i++) {
+        block_shape += _rep.MatrixXd(head_group[i])->cwiseProduct(*_rep.MatrixXd(head_group[i]));
+      }
+
+      return block_shape;
+    }
+
+    //*******************************************************************************************
+
+    //assumes that representation is real-valued and irreducible
+    static Eigen::MatrixXcd _irrep_symmetrizer_from_directions(multivector<Eigen::VectorXcd>::X<2> const &special_directions,
+                                                               Eigen::Ref<const Eigen::MatrixXcd> const &_subspace,
+                                                               double vec_compare_tol) {
+
+      // Four strategies, in order of desparation
+      // 1) find a spanning set of orthogonal axes within a single orbit of special directions
+      // 2) find a spanning set of orthogonal axes within the total set of special directions
+      // 3) perform qr decomposition on lowest-multiplicity orbit to find spanning set of axes
+      // 4) find column-echelon form of _subspace matrix to get a sparse/pretty set of axes
+      Eigen::MatrixXcd result;
+      Index dim = _subspace.cols();
+      Index min_mult = 10000;
+      bool orb_orthog = false;
+      bool tot_orthog = false;
+
+      Eigen::MatrixXcd axes, orb_axes, tot_axes;
+      Index tot_col(0);
+      tot_axes.setZero(_subspace.rows(), dim);
+
+      for(auto const &orbit : special_directions) {
+        // Strategy 1
+        if((orb_orthog && orbit.size() < min_mult) || !orb_orthog) {
+          orb_axes.setZero(_subspace.rows(), dim);
+          Index col = 0;
+          for(auto const &el : orbit) {
+            if(almost_zero((el.adjoint()*orb_axes).eval(), vec_compare_tol)) {
+              if(col < orb_axes.cols())
+                orb_axes.col(col++) = el;
+              else {
+                std::stringstream errstr;
+                errstr << "Error in irrep_symmtrizer_from_directions(). Constructing coordinate axes from special directions of space spanned by row vectors:\n "
+                       << _subspace.transpose()
+                       << "\nAxes collected thus far are the row vectors:\n" << orb_axes.transpose()
+                       << "\nBut an additional orthogonal row vector has been found:\n" << el.transpose()
+                       << "\nindicating that subspace matrix is malformed.";
+                throw std::runtime_error(errstr.str());
+              }
+            }
+          }
+          if(col == dim) {
+            //std::cout << "PLAN A-- col: " << col << "; dim: " << dim << "; min_mult: " << min_mult << "; orthog: " << orb_orthog << ";\naxes: \n" << axes << "\norb_axes: \n" << orb_axes << "\n\n";
+            orb_orthog = true;
+            min_mult = orbit.size();
+            axes = orb_axes;
+          }
+        }
+
+        // Greedy(ish) implementation of strategy 2 -- may not find a solution, even if it exists
+        if(!orb_orthog && !tot_orthog) {
+          for(auto const &el : orbit) {
+            if(almost_zero((el.adjoint()*tot_axes).eval(), vec_compare_tol)) {
+              if(tot_col < tot_axes.cols())
+                tot_axes.col(tot_col++) = el;
+              else {
+                std::stringstream errstr;
+                errstr << "Error in irrep_symmtrizer_from_directions(). Constructing coordinate axes from special directions of space spanned by row vectors:\n "
+                       << _subspace.transpose()
+                       << "\nAxes collected thus far are the row vectors:\n" << tot_axes.transpose()
+                       << "\nBut an additional orthogonal row vector has been found:\n" << el.transpose()
+                       << "\nindicating that subspace matrix is malformed.";
+                throw std::runtime_error(errstr.str());
+              }
+            }
+          }
+          if(tot_col == dim) {
+            //std::cout << "PLAN B-- col: " << tot_col << "; dim: " << dim << "; min_mult: " << min_mult << "; orthog: " << tot_orthog << ";\naxes: \n" << axes << "\ntot_axes: \n" << tot_axes << "\n\n";
+            tot_orthog = true;
+            axes = tot_axes;
+          }
+        }
+
+        // Strategy 3
+        if(!orb_orthog && !tot_orthog && orbit.size() < min_mult) {
+          orb_axes.setZero(_subspace.rows(), orbit.size());
+          for(Index col = 0; col < orbit.size(); ++col) {
+            orb_axes.col(col) = orbit[col];
+          }
+          //std::cout << "PLAN C--  dim: " << dim << "; min_mult: " << min_mult << "; orthog: " << orb_orthog << ";\naxes: \n" << axes;
+          min_mult = orbit.size();
+          axes = Eigen::MatrixXcd(orb_axes.colPivHouseholderQr().matrixQ()).leftCols(dim);
+          //std::cout << "\norb_axes: \n" << orb_axes << "\n\n";
+        }
+      }
+      //std::cout << "axes: \n" << axes << "\n";
+      if(axes.cols() == 0) {
+        //std::cout << "Plan D\n";
+        // SubspaceSymCompare doesn't actually use _rep
+        result = _subspace.colPivHouseholderQr().solve(representation_prepare_impl(_subspace, vec_compare_tol));
+      }
+      else {
+        // Strategy 4
+        result = _subspace.colPivHouseholderQr().solve(axes);
+      }
+
+      //std::cout << "result: \n" << result << "\n"
+      //<< "_subspace*result: \n" << _subspace *result << "\n";
+      return result;//.transpose();
+    }
 
     //*******************************************************************************************
 
@@ -195,23 +311,11 @@ namespace CASM {
 
 
   }
-  Eigen::MatrixXd block_shape_matrix(SymGroupRep const &_rep, SymGroup const &head_group) {
-    if(!_rep.size() || !head_group.size() || !_rep.MatrixXd(head_group[0]))
-      return Eigen::MatrixXd();
-
-    Eigen::MatrixXd block_shape(_rep.MatrixXd(head_group[0])->cwiseProduct(*_rep.MatrixXd(head_group[0])));
-
-    for(Index i = 1; i < head_group.size(); i++) {
-      block_shape += _rep.MatrixXd(head_group[i])->cwiseProduct(*_rep.MatrixXd(head_group[i]));
-    }
-
-    return block_shape;
-  }
 
   //*******************************************************************************************
 
   Index num_blocks(SymGroupRep const &_rep, SymGroup const &head_group) {
-    Eigen::MatrixXd bmat(block_shape_matrix(_rep, head_group));
+    Eigen::MatrixXd bmat(Local::_block_shape_matrix(_rep, head_group));
 
     if(bmat.cols() == 0)
       return 0;
@@ -230,127 +334,26 @@ namespace CASM {
   //*******************************************************************************************
 
   //assumes that representation is real-valued and irreducible
-  SymRepTools::Symmetrizer irrep_symmetrizer_and_directions(SymGroupRep const &_rep,
-                                                            SymGroup const &head_group,
-                                                            double vec_compare_tol) {
+  SymRepTools::Symmetrizer irrep_symmetrizer(SymGroupRep const &_rep,
+                                             SymGroup const &head_group,
+                                             double vec_compare_tol) {
     Index dim = _rep.MatrixXd(0)->cols();
-    return irrep_symmetrizer_and_directions(_rep, head_group, Eigen::MatrixXcd::Identity(dim, dim), vec_compare_tol);
+    return irrep_symmetrizer(_rep, head_group, Eigen::MatrixXcd::Identity(dim, dim), vec_compare_tol);
   }
 
   //*******************************************************************************************
 
   //assumes that representation is real-valued and irreducible
-  SymRepTools::Symmetrizer irrep_symmetrizer_and_directions(SymGroupRep const &_rep,
-                                                            SymGroup const &head_group,
-                                                            Eigen::Ref<const Eigen::MatrixXcd> const &_subspace,
-                                                            double vec_compare_tol) {
+  SymRepTools::Symmetrizer irrep_symmetrizer(SymGroupRep const &_rep,
+                                             SymGroup const &head_group,
+                                             Eigen::Ref<const Eigen::MatrixXcd> const &_subspace,
+                                             double vec_compare_tol) {
 
     // Result of sdirs is ordered by symmetry breaking properties of different directions.
     // We won't do any element-based comparisons after this point, in order to ensure that
     // our choice of axes is totally determined by symmetry
     multivector<Eigen::VectorXcd>::X<2>  sdirs = special_irrep_directions(_rep, head_group, _subspace, vec_compare_tol);
-    return std::make_pair(irrep_symmetrizer_from_directions(sdirs, _subspace, vec_compare_tol), std::move(sdirs));
-  }
-  //*******************************************************************************************
-
-  //assumes that representation is real-valued and irreducible
-  Eigen::MatrixXcd irrep_symmetrizer_from_directions(multivector<Eigen::VectorXcd>::X<2> const &special_directions,
-                                                     Eigen::Ref<const Eigen::MatrixXcd> const &_subspace,
-                                                     double vec_compare_tol) {
-
-    // Four strategies, in order of desparation
-    // 1) find a spanning set of orthogonal axes within a single orbit of special directions
-    // 2) find a spanning set of orthogonal axes within the total set of special directions
-    // 3) perform qr decomposition on lowest-multiplicity orbit to find spanning set of axes
-    // 4) find column-echelon form of _subspace matrix to get a sparse/pretty set of axes
-    Eigen::MatrixXcd result;
-    Index dim = _subspace.cols();
-    Index min_mult = 10000;
-    bool orb_orthog = false;
-    bool tot_orthog = false;
-
-    Eigen::MatrixXcd axes, orb_axes, tot_axes;
-    Index tot_col(0);
-    tot_axes.setZero(_subspace.rows(), dim);
-
-    for(auto const &orbit : special_directions) {
-      // Strategy 1
-      if((orb_orthog && orbit.size() < min_mult) || !orb_orthog) {
-        orb_axes.setZero(_subspace.rows(), dim);
-        Index col = 0;
-        for(auto const &el : orbit) {
-          if(almost_zero((el.adjoint()*orb_axes).eval(), vec_compare_tol)) {
-            if(col < orb_axes.cols())
-              orb_axes.col(col++) = el;
-            else {
-              std::stringstream errstr;
-              errstr << "Error in irrep_symmtrizer_from_directions(). Constructing coordinate axes from special directions of space spanned by row vectors:\n "
-                     << _subspace.transpose()
-                     << "\nAxes collected thus far are the row vectors:\n" << orb_axes.transpose()
-                     << "\nBut an additional orthogonal row vector has been found:\n" << el.transpose()
-                     << "\nindicating that subspace matrix is malformed.";
-              throw std::runtime_error(errstr.str());
-            }
-          }
-        }
-        if(col == dim) {
-          //std::cout << "PLAN A-- col: " << col << "; dim: " << dim << "; min_mult: " << min_mult << "; orthog: " << orb_orthog << ";\naxes: \n" << axes << "\norb_axes: \n" << orb_axes << "\n\n";
-          orb_orthog = true;
-          min_mult = orbit.size();
-          axes = orb_axes;
-        }
-      }
-
-      // Greedy(ish) implementation of strategy 2 -- may not find a solution, even if it exists
-      if(!orb_orthog && !tot_orthog) {
-        for(auto const &el : orbit) {
-          if(almost_zero((el.adjoint()*tot_axes).eval(), vec_compare_tol)) {
-            if(tot_col < tot_axes.cols())
-              tot_axes.col(tot_col++) = el;
-            else {
-              std::stringstream errstr;
-              errstr << "Error in irrep_symmtrizer_from_directions(). Constructing coordinate axes from special directions of space spanned by row vectors:\n "
-                     << _subspace.transpose()
-                     << "\nAxes collected thus far are the row vectors:\n" << tot_axes.transpose()
-                     << "\nBut an additional orthogonal row vector has been found:\n" << el.transpose()
-                     << "\nindicating that subspace matrix is malformed.";
-              throw std::runtime_error(errstr.str());
-            }
-          }
-        }
-        if(tot_col == dim) {
-          //std::cout << "PLAN B-- col: " << tot_col << "; dim: " << dim << "; min_mult: " << min_mult << "; orthog: " << tot_orthog << ";\naxes: \n" << axes << "\ntot_axes: \n" << tot_axes << "\n\n";
-          tot_orthog = true;
-          axes = tot_axes;
-        }
-      }
-
-      // Strategy 3
-      if(!orb_orthog && !tot_orthog && orbit.size() < min_mult) {
-        orb_axes.setZero(_subspace.rows(), orbit.size());
-        for(Index col = 0; col < orbit.size(); ++col) {
-          orb_axes.col(col) = orbit[col];
-        }
-        //std::cout << "PLAN C--  dim: " << dim << "; min_mult: " << min_mult << "; orthog: " << orb_orthog << ";\naxes: \n" << axes;
-        min_mult = orbit.size();
-        axes = Eigen::MatrixXcd(orb_axes.colPivHouseholderQr().matrixQ()).leftCols(dim);
-        //std::cout << "\norb_axes: \n" << orb_axes << "\n\n";
-      }
-    }
-    //std::cout << "axes: \n" << axes << "\n";
-    if(axes.cols() == 0) {
-      //std::cout << "Plan D\n";
-      // SubspaceSymCompare doesn't actually use _rep
-      result = _subspace.colPivHouseholderQr().solve(representation_prepare_impl(_subspace, vec_compare_tol));
-    }
-    else {
-      // Strategy 4
-      result = _subspace.colPivHouseholderQr().solve(axes);
-    }
-
-    //std::cout << "result: \n" << result << "\n"
-    //<< "_subspace*result: \n" << _subspace *result << "\n";
-    return result;//.transpose();
+    return std::make_pair(Local::_irrep_symmetrizer_from_directions(sdirs, _subspace, vec_compare_tol), std::move(sdirs));
   }
 
   //*******************************************************************************************
@@ -752,7 +755,7 @@ namespace CASM {
     return irrep_decomposition(_rep,
                                head_group,
     [&](Eigen::Ref<const Eigen::MatrixXcd> const & f_subspace) {
-      return irrep_symmetrizer_and_directions(_rep, head_group, f_subspace, TOL);
+      return irrep_symmetrizer(_rep, head_group, f_subspace, TOL);
     },
     _subspace,
     allow_complex);
@@ -928,14 +931,11 @@ namespace CASM {
 
           // make transformed copy of the representation
           std::vector<Eigen::MatrixXcd> trans_rep(head_group.size());
-          Eigen::MatrixXd block_shape(Eigen::MatrixXd::Zero(kernel.cols(), kernel.cols()));
 
           for(Index i = 0; i < head_group.size(); i++) {
             trans_rep[i] = tmat.adjoint() * (*_rep.MatrixXd(head_group[i])) * tmat;
-            block_shape += (trans_rep[i].cwiseProduct(trans_rep[i].conjugate())).real();
           }
           //std::cout << "Eigenvals: " << esolve.eigenvalues().transpose() << " \ndims: " << subspace_dims << std::endl;
-          //std::cout << "block_shape: \n" << block_shape << std::endl;
 
           Index last_i = 0;
           for(Index ns = 0; ns < subspace_dims.size(); ns++) {
@@ -1037,7 +1037,7 @@ namespace CASM {
     return full_trans_mat(irrep_decomposition(_rep,
                                               head_group,
     [&](Eigen::Ref<const Eigen::MatrixXcd> const & _subspace) {
-      return irrep_symmetrizer_and_directions(_rep, head_group, _subspace, TOL); //.transpose();
+      return irrep_symmetrizer(_rep, head_group, _subspace, TOL); //.transpose();
     },
     false));
   }
@@ -1068,22 +1068,10 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  /// \brief Make copy of (*this) that is transformed so that axes are oriented along high-symmetry direction
-  /// and confined to subspaces that transform as irreps.
-  SymGroupRep symmetry_adapted_copy(SymGroupRep const &_rep, SymGroup const &head_group) {
-    return coord_transformed_copy(_rep, irrep_trans_mat(_rep, head_group));
-  }
-
-  //*******************************************************************************************
-
-  SymGroupRep subset_permutation_rep(SymGroupRep const &permute_rep, const std::vector<std::vector<Index>> &subsets) {
+  SymGroupRep subset_permutation_rep(SymGroupRep const &permute_rep, const std::vector<std::set<Index>> &subsets) {
     SymGroupRep new_rep(SymGroupRep::NO_HOME, permute_rep.size());
     if(permute_rep.has_valid_master())
       new_rep = SymGroupRep(permute_rep.master_group());
-
-    std::vector<Index> perm_sub;
-    if(subsets.size())
-      perm_sub.resize(subsets[0].size());
 
     std::vector<Index> tperm(subsets.size());
     for(Index np = 0; np < permute_rep.size(); ++np) {
@@ -1097,16 +1085,20 @@ namespace CASM {
       }
       Permutation iperm = perm_ptr->inverse();
       for(Index ns = 0; ns < subsets.size(); ++ns) {
-        for(Index ne = 0; ne < subsets[ns].size(); ++ne) {
-          perm_sub[ne] = iperm[subsets[ns][ne]];
+        std::set<Index> perm_sub;
+
+        for(Index i : subsets[ns]) {
+          perm_sub.insert(iperm[i]);
         }
+
         Index ns2;
         for(ns2 = 0; ns2 < subsets.size(); ++ns2) {
-          if(contains_all(subsets[ns2], perm_sub)) {
+          if(subsets[ns] == perm_sub) {
             tperm[ns] = ns2;
             break;
           }
         }
+
         if(ns2 >= subsets.size()) {
           default_err_log() << "CRITICAL ERROR: In subset_permutation_rep(SymGroupRep,std::vector<Index>::X2), subsets are not closed under permute_rep permutations!\n"
                             << "                Exiting...\n";

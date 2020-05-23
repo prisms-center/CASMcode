@@ -8,6 +8,8 @@ namespace CASM {
 
   class DoFSpaceSymReport;
 
+  ///\brief Compositiong of enumeration environment (as ConfigEnumInput), DoF type (as DoFKey),
+  // and vector subpsace. This simplifies generation of a VectorSpaceSymReport for a range of inputs
   struct DoFSpace {
     /// Definition of Configuration region for which enumeration/analysis is to be performed
     ConfigEnumInput config_region;

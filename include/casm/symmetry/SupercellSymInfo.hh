@@ -22,86 +22,122 @@ namespace CASM {
 
   class PermuteIterator;
 
+  /// \brief A class that collects all symmetry information for for performing symmetry transformations on the
+  /// site indices, site DoFs, and global DoFs of a Supercell or Configuration
   class SupercellSymInfo {
   public:
     using permute_const_iterator = PermuteIterator;
     using SublatSymReps = std::vector<SymGroupRep::RemoteHandle>;
 
+    ///\brief Construct with primitive and super lattice, number of sublattice and all relevant representation IDs
     SupercellSymInfo(Lattice const &_prim_lat,
                      Lattice const &_super_lat,
-                     Index NB,
+                     Index number_of_sublats,
                      SymGroup const &_prim_factor_group,
                      SymGroupRepID basis_permutation_symrep_ID,
                      std::map<DoFKey, SymGroupRepID> const &global_dof_symrep_IDs,
                      std::vector<SymGroupRepID> const &occ_symrep_IDs,
                      std::map<DoFKey, std::vector<SymGroupRepID> > const &local_dof_symrep_IDs);
 
+    /// \brief  SymGroupRep handle for SUBLATTICE permutation representation of supercell's factor group
+    /// a sublattice permutation consists of an index permutation and an integer lattice translation
     SymGroupRep::RemoteHandle const &basis_permutation_symrep() const {
       return m_basis_perm_symrep;
     }
 
-    // the permutation_symrep is the SymGroupRep of prim().factor_group() that describes how
-    // operations of m_factor_group permute sites of the Supercell.
+    /// \brief  SymGroupRep handle for SITE permutation representation of supercell's factor group
+    /// a site permutation consists of an index permutation for the sites of the supercell
+    /// NOTE: If site_coordinate(index_after) = apply(operation,site_coordinate(index_before)), then this encodes permutation as
+    ///         permutation[index_after]=index_before
+    /// This convention treats fixed positions in space as having an unchanging order, and the permutation describes a rearrangement of
+    /// objects among those sites, due to a transformation
     SymGroupRep::RemoteHandle const &site_permutation_symrep() const;
 
+
+    /// \brief  SymGroupRep handle for global DoF matrix representation of supercell's factor group
     SymGroupRep::RemoteHandle const &global_dof_symrep(DoFKey const &_key) const {
       return m_global_dof_symreps.at(_key);
     }
 
+    /// \brief SymGroupRep handle for occupant permutation representation of supercell's factor group
+    /// An occupant permutation describes how the occupants at a site change identity due to a spatial transformation
+    /// EXAMPLE: The label of a x-oriented dimer and a y-oriented dimer will be exchanged due to a 90-degree rotation about z
+    ///          If these are the only two species at the site, the permutation will have the form p=[1,0], with p[index_after]=index_before
+    ///          If sites are also permuted, then the occ_symrep is used as
+    ///              site_at(site_index_after).specie(index_after)=site_at(site_index_before).specie(p[index_after]);
     SublatSymReps const &occ_symreps() const {
       return m_occ_symreps;
     }
 
+    /// \brief SymGroupRep handle for site DoF matrix representation of supercell's factor group
+    ///          If sites are also permuted, then the local_dof_symrep is used as
+    ///              site_at(site_index_after).dof_value(_key) = representation_matrix * site_at(site_index_before).dof_value(_key)
     SublatSymReps const &local_dof_symreps(DoFKey const &_key) const {
       return m_local_dof_symreps.at(_key);
     }
 
+    /// \brief UnitCellIndexConverter for this superlattice/primlattice pair
+    /// Used to convert from lattice translations to site permutations
     const xtal::UnitCellIndexConverter &unitcell_index_converter() const {
       return m_unitcell_to_index_converter;
     }
 
+    /// \brief UnitCellCoordIndexConverter for this superstructure/primstructure pair
+    /// Used to convert from lattice translations to site permutations
     const xtal::UnitCellCoordIndexConverter &unitcellcoord_index_converter() const {
       return m_unitcellcoord_to_index_converter;
     }
 
+    /// \brief Permutations describing reordering of sites of supercell due to a lattice translation of the primitive
+    /// translation_permutation()[l] gives the site permutation due to translating to origin cell to unitcell[l] of the supercell
     const std::vector<Permutation> &translation_permutations() const {
       return m_translation_permutations;
     }
 
+    /// \brief Subgroup of primitive-cell factor group operations that leave supercell lattice invariant
     SymGroup const &factor_group() const {
       return m_factor_group;
     }
 
+    /// \brief true if any species are anisotropic, such that the occ_symreps are non-trivial
     bool has_aniso_occs() const {
       return m_has_aniso_occs;
     }
 
+    /// \brief true if any sublattice has more than one allowed occupant
     bool has_occupation_dofs() const {
       return m_has_occupation_dofs;
     }
 
+    /// \brief const reference to supercell lattice
     const xtal::Lattice &supercell_lattice() const {
       return m_supercell_superlattice.superlattice();
     }
 
+    /// \brief const reference to primitive lattice
     const xtal::Lattice &prim_lattice() const {
       return m_supercell_superlattice.prim_lattice();
     }
 
+    /// \brief const reference to superlattice
     const xtal::Superlattice &superlattice() const {
       return m_supercell_superlattice;
     }
 
+    /// \brief long-int transformation from primitive lattice vectors to supercell lattice vectors
+    ///   supercell_lattice().lat_column_mat() = prim_lattice().lat_column_mat() * transformation_matrix()
     Eigen::Matrix3l transformation_matrix() const {
       return this->superlattice().transformation_matrix();
     }
 
-    /// \brief Begin iterator over pure translational permutations
+    /// \brief Begin PermuteIterator over pure translational permutations
+    //// Equivalent to permute_begin()
     permute_const_iterator translate_begin() const;
 
-    /// \brief End iterator over pure translational permutations
+    /// \brief End PermuteIterator over pure translational permutations
     permute_const_iterator translate_end() const;
 
+    /// \brief Site permutation corresponding to factor group operation i
     const Permutation &factor_group_permute(Index i) const;
 
     // begin and end iterators for iterating over translation and factor group permutations
@@ -162,7 +198,6 @@ namespace CASM {
     //       the the Supercel::factor_group_permute(int) method, so that you don't encounter the gaps
     //       OR, see note for Supercell::permutation_symrep() below.
     mutable SymGroupRep::RemoteHandle m_site_perm_symrep;
-
   };
 
   /// \brief Find the subgroup of supercell factor group (specified by _syminfo) that leaves a subset of sites invariant
@@ -208,8 +243,7 @@ namespace CASM {
   /// @param _syminfo SupercellSymInfo object that defines all symmetry properties of supercell
   /// @param _key DoFKey specifying which local DoF is of interest
   /// @param _group vector of PermuteIterators forming the group that is to be represented (this may be larger than a crystallographic factor group)
-  /// \result Pair containin an orthogonal matrix comprising normal coordinate basis vectors as its rows and a list of subspace dimensions, corresponding to
-  /// irreducible invariant subspaces in which the normal coordinate basis vectors reside
+  /// \result vector of IrrepInfo corresponding to irrep decomposition of the action of the provided group on the specified DoF type, within the provided supercell
   template<typename IterType>
   std::vector<SymRepTools::IrrepInfo> irrep_decomposition(IterType begin,
                                                           IterType end,
@@ -225,8 +259,8 @@ namespace CASM {
   /// @param _key DoFKey specifying which local DoF is of interest
   /// @param _group vector of PermuteIterators forming the group that is to be represented (this may be larger than a crystallographic factor group)
   /// @param __subspace matrix whose columns span a subspace of allowed DoF values for selected sites
-  /// \result Pair containin an orthogonal matrix comprising normal coordinate basis vectors as its rows and a list of subspace dimensions, corresponding to
-  /// irreducible invariant subspaces in which the normal coordinate basis vectors reside
+  /// \result vector of IrrepInfo corresponding to irrep decomposition of the action of the provided group on the specified DoF type, within the provided supercell
+  ///         and restricted to the specified subspace
   template<typename IterType>
   std::vector<SymRepTools::IrrepInfo> irrep_decomposition(IterType begin,
                                                           IterType end,
