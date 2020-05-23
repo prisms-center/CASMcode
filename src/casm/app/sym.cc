@@ -267,6 +267,7 @@ namespace CASM {
       outfile.close();
     }
 
+    // Perform DoF Analysis for specified degrees of freedom (DoFs)
     if(Local::_dof_analysis(opt())) {
       jsonParser kwargs;
       if(vm().count("settings")) {
@@ -279,10 +280,14 @@ namespace CASM {
         kwargs = jsonParser::parse(std::string("{\"supercells\" : {\"min\" : 0, \"max\" : 0}}"));
       }
 
+      // Create supercells, configurations, and/or local environments
       std::vector<ConfigEnumInput> configs = make_enumerator_input_configs(primclex(), kwargs, opt(), nullptr);
 
+      // For each enumeration envrionment, perform analysis and write files.
       for(ConfigEnumInput const &config : configs) {
         fs::path sym_dir = primclex().dir().symmetry_dir(config.name());
+        fs::create_directories(sym_dir);
+
         // Write lattice point group
         {
           SymGroup lattice_pg(SymGroup::lattice_point_group(config.config().ideal_lattice()));
@@ -338,9 +343,6 @@ namespace CASM {
 
           to_json(dspace, report);
 
-
-
-          fs::create_directories(sym_dir);
           report.write(sym_dir / filename);
 
         }
