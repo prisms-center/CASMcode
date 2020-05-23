@@ -20,19 +20,19 @@ void print_mapping_nodes(std::set<xtal::MappingNode> const &set) {
   int i = 0;
   for(auto const &el : set) {
     std::cout << "ELEMENT " << ++i << ":\n";
-    std::cout << "   cost: " << el.cost << "  bcost: " << el.basis_node.cost << "  lcost: " << el.lat_node.cost << "\n"
-              << "   translation: " << el.basis_node.translation.transpose() << "\n"
-              << "   isometry: \n" << el.lat_node.isometry << "\n"
-              << "   stretch: \n" << el.lat_node.stretch << "\n"
-              << "   parent: \n" << el.lat_node.parent.superlattice().lat_column_mat() << "\n"
-              << "   cost_mat: \n" << el.basis_node.cost_mat << "\n"
+    std::cout << "   cost: " << el.cost << "  bcost: " << el.atomic_node.cost << "  lcost: " << el.lattice_node.cost << "\n"
+              << "   translation: " << el.atomic_node.translation.transpose() << "\n"
+              << "   isometry: \n" << el.lattice_node.isometry << "\n"
+              << "   stretch: \n" << el.lattice_node.stretch << "\n"
+              << "   parent: \n" << el.lattice_node.parent.superlattice().lat_column_mat() << "\n"
+              << "   cost_mat: \n" << el.atomic_node.cost_mat << "\n"
               << "   partitioned: " << el.is_partitioned << "\n"
               << "   forced_on: \n";
-    for(auto const &pr : el.basis_node.forced_on)
+    for(auto const &pr : el.atomic_node.forced_on)
       std::cout << "     (" << pr.first << ", " << pr.second << ")\n";
-    std::cout << "   irow: " << el.basis_node.irow << "\n"
-              << "   icol: " << el.basis_node.icol << "\n"
-              << "   assignment: " << el.basis_node.assignment << "\n"
+    std::cout << "   irow: " << el.atomic_node.irow << "\n"
+              << "   icol: " << el.atomic_node.icol << "\n"
+              << "   assignment: " << el.atomic_node.assignment << "\n"
               << "   displacement: \n" << el.atom_displacement << "\n"
               << "   tot assignment: " << el.atom_permutation << "\n\n-----\n\n";
   }
