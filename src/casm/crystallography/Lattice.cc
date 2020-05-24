@@ -10,8 +10,7 @@ namespace CASM {
 
     Lattice::Lattice(Eigen::Ref<const Eigen::Vector3d> const &vec1,
                      Eigen::Ref<const Eigen::Vector3d> const &vec2,
-                     Eigen::Ref<const Eigen::Vector3d> const &vec3,
-                     double xtal_tol,
+                     Eigen::Ref<const Eigen::Vector3d> const &vec3,                     double xtal_tol,
                      bool force)
       : m_tol(xtal_tol) {
       m_lat_mat << vec1, vec2, vec3;
@@ -81,14 +80,22 @@ namespace CASM {
 
     Lattice Lattice::fcc(double tol) {
       Eigen::Matrix3d latmat;
-      latmat << 0, 1, 1, 1, 0, 1, 1, 1, 0;
+      // clang-format off
+      latmat << 0, 1, 1,
+             1, 0, 1,
+             1, 1, 0;
+      // clang-format on
       latmat /= pow(latmat.determinant(), 1.0 / 3.0);
       return Lattice(latmat, tol);
     }
 
     Lattice Lattice::bcc(double tol) {
       Eigen::Matrix3d latmat;
-      latmat << -1, 1, 1, 1, -1, 1, 1, 1, -1;
+      // clang-format off
+      latmat << -1, 1, 1,
+             1, -1, 1,
+             1, 1, -1;
+      // clang-format on
       latmat /= pow(latmat.determinant(), 1.0 / 3.0);
       return Lattice(latmat, tol);
     }
@@ -99,7 +106,11 @@ namespace CASM {
 
     Lattice Lattice::hexagonal(double tol) {
       Eigen::Matrix3d latmat;
-      latmat << 1, -1.0 / sqrt(3.0), 0, 0, 2.0 / sqrt(3.0), 0, 0, 0, sqrt(3.0);
+      // clang-format off
+      latmat << 1, -1.0 / sqrt(3.0),
+             0, 0, 2.0 / sqrt(3.0),
+             0, 0, 0, sqrt(3.0);
+      //clang-format off
 
       return Lattice(latmat.transpose(), tol);
     }
@@ -114,17 +125,6 @@ namespace CASM {
     }
 
     double Lattice::angle(Index i) const {
-      // double t_a = m_lat_mat.col((i + 1) % 3).dot(m_lat_mat.col((i + 2) % 3)) / (length((i + 1) % 3) * length((i + 2) % 3));
-      // Make sure that cos(angle) is between 0 and 1
-      // if((t_a - 1.0) > 0.0) {
-      // t_a = 1.0;
-      //}
-
-      // if((t_a + 1.0) < 0.0) {
-      // t_a = -1.0;
-      //}
-
-      // return (180.0 / M_PI) * acos(t_a);
       return (180.0 / M_PI) * CASM::angle(m_lat_mat.col((i + 1) % 3), m_lat_mat.col((i + 2) % 3));
     }
 
@@ -156,13 +156,7 @@ namespace CASM {
     }
 
     Lattice Lattice::reciprocal() const {
-      /* Old Expression
-         return Lattice(2 * M_PI * cross_prod(vecs[1], vecs[2])/vol,
-         2 * M_PI * cross_prod(vecs[2], vecs[0]) / vol,
-         2 * M_PI * cross_prod(vecs[0], vecs[1]) / vol);
-         return recip_lat;
-      */
-      return Lattice(2 * M_PI * inv_lat_column_mat().transpose(), tol()); // equivalent expression
+      return Lattice(2 * M_PI * inv_lat_column_mat().transpose(), tol());
     }
 
     double Lattice::boxiness() const {
@@ -209,8 +203,8 @@ namespace CASM {
       return super_kpoints;
     }
 
-    /**This function finds the reduced cell from the given primitive cell.
-     *
+    /**
+     * \brief This function finds the reduced cell from the given primitive cell.
      *
      * First, the translation vectors of the primitive cell are determined, then reduced.
      * The Bravais lattice is determined using Niggli's transformations. The method used to
@@ -291,7 +285,8 @@ namespace CASM {
       return Lattice(lat_column_mat() * trans, tol());
     }
 
-    /**This function finds the reduced cell from the given primitive cell.
+    /**
+     * \brief This function finds the reduced cell from the given primitive cell.
      *
      * This implementation is the LLL algorithm as laid out by Hoffstein, Jeffrey; Pipher, Jill; Silverman, J.H. (2008).
      * An Introduction to Mathematical Cryptography. Springer. ISBN 978-0-387-77993-5.
@@ -845,7 +840,7 @@ namespace CASM {
     }
 
 
-    Eigen::Matrix3l make_transformation_matrix(const Lattice &tiling_unit, const Lattice &superlattice, double tol) {
+    Eigen::Matrix3l make_transformation_matrix_to_super(const Lattice &tiling_unit, const Lattice &superlattice, double tol) {
 
       Eigen::Matrix3d direct_transformation_matrix;
       bool is_integer_transformation;

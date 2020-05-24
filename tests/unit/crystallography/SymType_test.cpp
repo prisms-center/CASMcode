@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <vector>
 
 #include "casm/crystallography/Lattice.hh"
@@ -8,8 +9,8 @@
 #include "casm/crystallography/SymTypeComparator.hh"
 #include "casm/external/Eigen/Core"
 #include "casm/global/definitions.hh"
-#include "casm/misc/CASM_math.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
+#include "casm/misc/CASM_math.hh"
 
 using namespace CASM;
 
@@ -25,9 +26,8 @@ namespace {
 
   xtal::Lattice hcp_lattice() {
     Eigen::Matrix3d hcp_matrix;
-    hcp_matrix << 3.1837728024, -1.5918864012, 0.0000000000,
-               0.0000000000, 2.7572281267, 0.0000000000,
-               0.0000000000, 0.0000000000, 5.2494397163;
+    hcp_matrix << 3.1837728024, -1.5918864012, 0.0000000000, 0.0000000000, 2.7572281267, 0.0000000000, 0.0000000000, 0.0000000000,
+               5.2494397163;
 
     return xtal::Lattice(hcp_matrix);
   }
@@ -74,8 +74,9 @@ TEST(SymOpTest, multiplication) {
   xtal::SymOp translate_up = xtal::SymOp::translation_operation(translate_up_matrix);
   xtal::SymOp translate_down = xtal::SymOp::translation_operation(translate_down_matrix);
   xtal::SymOp net_zero_translation = translate_up * translate_down;
+  xtal::SymOp identity = xtal::SymOp::identity();
 
-  xtal::SymOpCompare_f is_identity(xtal::SymOp::identity(), CASM::TOL);
+  UnaryCompare_f<xtal::SymOpCompare_f> is_identity(identity, TOL);
   EXPECT_TRUE(is_identity(net_zero_translation));
 
   xtal::SymOp rotate_60 = xtal::SymOp::point_operation(::flat_rotation_matrix(60));
@@ -94,7 +95,7 @@ TEST(SymOpTest, point_group_closure) {
 }
 
 TEST(SymOpTest, periodic_group_closure) {
-  xtal::Lattice hcp_lattice =::hcp_lattice();
+  xtal::Lattice hcp_lattice = ::hcp_lattice();
   Eigen::Vector3d translate_6th = hcp_lattice[2] * (1.0 / 6);
 
   xtal::SymOp screw_60 = xtal::SymOp(::flat_rotation_matrix(60), translate_6th, false);
@@ -104,9 +105,9 @@ TEST(SymOpTest, periodic_group_closure) {
   EXPECT_EQ(screw_60_group.size(), 6);
 }
 
-//TODO: Break this into separate tests?
+// TODO: Break this into separate tests?
 TEST(SymOpTest, comparisons) {
-  xtal::Lattice hcp_lattice =::hcp_lattice();
+  xtal::Lattice hcp_lattice = ::hcp_lattice();
   Eigen::Vector3d translate_6th = hcp_lattice[2] * (1.0 / 6);
 
   xtal::SymOp identity = xtal::SymOp::identity();
@@ -119,24 +120,33 @@ TEST(SymOpTest, comparisons) {
 
   std::vector<xtal::SymOp> fake_group{identity, time_reversal, rotate_60, screw_60};
 
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpCompare_f(identity, TOL)), 1);
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpCompare_f(time_reversal, TOL)), 1);
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpCompare_f(rotate_60, TOL)), 1);
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpCompare_f(screw_60, TOL)), 1);
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpCompare_f(rotate_72, TOL)), 0);
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpCompare_f(screw_60_equivalent, TOL)), 0);
+  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), UnaryCompare_f<xtal::SymOpCompare_f>(identity, TOL)), 1);
+  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), UnaryCompare_f<xtal::SymOpCompare_f>(time_reversal, TOL)), 1);
+  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), UnaryCompare_f<xtal::SymOpCompare_f>(rotate_60, TOL)), 1);
+  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), UnaryCompare_f<xtal::SymOpCompare_f>(screw_60, TOL)), 1);
+  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), UnaryCompare_f<xtal::SymOpCompare_f>(rotate_72, TOL)), 0);
+  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), UnaryCompare_f<xtal::SymOpCompare_f>(screw_60_equivalent, TOL)), 0);
 
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpPeriodicCompare_f(identity, hcp_lattice, TOL)), 1);
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpPeriodicCompare_f(time_reversal, hcp_lattice, TOL)), 1);
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpPeriodicCompare_f(rotate_60, hcp_lattice, TOL)), 1);
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpPeriodicCompare_f(screw_60, hcp_lattice, TOL)), 1);
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpPeriodicCompare_f(rotate_72, hcp_lattice, TOL)), 0);
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpPeriodicCompare_f(screw_60_equivalent, hcp_lattice, TOL)), 1);
+  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), UnaryCompare_f<xtal::SymOpPeriodicCompare_f>(identity, hcp_lattice, TOL)),
+            1);
+  EXPECT_EQ(
+    std::count_if(fake_group.begin(), fake_group.end(), UnaryCompare_f<xtal::SymOpPeriodicCompare_f>(time_reversal, hcp_lattice, TOL)),
+    1);
+  EXPECT_EQ(
+    std::count_if(fake_group.begin(), fake_group.end(), UnaryCompare_f<xtal::SymOpPeriodicCompare_f>(rotate_60, hcp_lattice, TOL)), 1);
+  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), UnaryCompare_f<xtal::SymOpPeriodicCompare_f>(screw_60, hcp_lattice, TOL)),
+            1);
+  EXPECT_EQ(
+    std::count_if(fake_group.begin(), fake_group.end(), UnaryCompare_f<xtal::SymOpPeriodicCompare_f>(rotate_72, hcp_lattice, TOL)), 0);
+  EXPECT_EQ(std::count_if(fake_group.begin(),
+                          fake_group.end(),
+                          UnaryCompare_f<xtal::SymOpPeriodicCompare_f>(screw_60_equivalent, hcp_lattice, TOL)),
+            1);
 
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpMatrixCompare_f(identity, TOL)), 2);
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpMatrixCompare_f(time_reversal, TOL)), 2);
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpMatrixCompare_f(rotate_60, TOL)), 2);
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpMatrixCompare_f(screw_60, TOL)), 2);
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpMatrixCompare_f(rotate_72, TOL)), 0);
-  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), xtal::SymOpMatrixCompare_f(screw_60_equivalent, TOL)), 2);
+  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), UnaryCompare_f<xtal::SymOpMatrixCompare_f>(identity, TOL)), 2);
+  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), UnaryCompare_f<xtal::SymOpMatrixCompare_f>(time_reversal, TOL)), 2);
+  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), UnaryCompare_f<xtal::SymOpMatrixCompare_f>(rotate_60, TOL)), 2);
+  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), UnaryCompare_f<xtal::SymOpMatrixCompare_f>(screw_60, TOL)), 2);
+  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), UnaryCompare_f<xtal::SymOpMatrixCompare_f>(rotate_72, TOL)), 0);
+  EXPECT_EQ(std::count_if(fake_group.begin(), fake_group.end(), UnaryCompare_f<xtal::SymOpMatrixCompare_f>(screw_60_equivalent, TOL)), 2);
 }

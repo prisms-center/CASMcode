@@ -19,12 +19,12 @@ namespace CASM {
     //Loops over lattice points
     for(Index translation_ix = 0; translation_ix < ijk_index_converter.total_sites(); ++translation_ix) {
       std::vector<Index> single_translation_permutation(bijk_index_converter.total_sites(), -1);
-      UnitCell translation_uc = ijk_index_converter[translation_ix];
+      UnitCell translation_uc = ijk_index_converter(translation_ix);
 
       //Loops over all the sites
       for(Index old_site_ix = 0; old_site_ix < bijk_index_converter.total_sites(); ++old_site_ix) {
-        UnitCellCoord old_site_ucc = bijk_index_converter[old_site_ix];
-        Index new_site_ix = bijk_index_converter[old_site_ucc + translation_uc];
+        UnitCellCoord old_site_ucc = bijk_index_converter(old_site_ix);
+        Index new_site_ix = bijk_index_converter(old_site_ucc + translation_uc);
 
         single_translation_permutation[new_site_ix] = old_site_ix;
       }
@@ -44,9 +44,9 @@ namespace CASM {
                                      std::vector<SymGroupRepID> const &occ_symrep_IDs,
                                      std::map<DoFKey, std::vector<SymGroupRepID> > const &local_dof_symrep_IDs) :
     m_supercell_superlattice(_prim_lat, _super_lat),
-    m_unitcell_to_index_converter(m_supercell_superlattice.transformation_matrix()),
-    m_unitcellcoord_to_index_converter(m_supercell_superlattice.transformation_matrix(), num_sites_in_prim),
-    m_translation_permutations(make_translation_permutations(this->superlattice().transformation_matrix(), num_sites_in_prim)),
+    m_unitcell_to_index_converter(m_supercell_superlattice.transformation_matrix_to_super()),
+    m_unitcellcoord_to_index_converter(m_supercell_superlattice.transformation_matrix_to_super(), num_sites_in_prim),
+    m_translation_permutations(make_translation_permutations(this->superlattice().transformation_matrix_to_super(), num_sites_in_prim)),
     m_factor_group(sym::invariant_subgroup(_prim_factor_group, _super_lat)),
     m_basis_perm_symrep(factor_group(), basis_permutation_symrep_ID),
     m_has_aniso_occs(false),
@@ -85,9 +85,9 @@ namespace CASM {
       const auto &operation = group[operation_ix];
       std::vector<Index> permutation(total_sites);
       for(Index old_l = 0; old_l < total_sites; ++old_l) {
-        const UnitCellCoord &old_ucc = bijk_index_converter[old_l];
+        const UnitCellCoord &old_ucc = bijk_index_converter(old_l);
         UnitCellCoord new_ucc = sym::copy_apply(operation, old_ucc, prim_lattice, prim_symrep_ID);
-        Index new_l = bijk_index_converter[new_ucc];
+        Index new_l = bijk_index_converter(new_ucc);
         permutation[new_l] = old_l;
       }
 
@@ -143,7 +143,7 @@ namespace CASM {
   }
 
   SupercellSymInfo::permute_const_iterator SupercellSymInfo::permute_it(Index fg_index, UnitCell trans) const {
-    Index trans_index = this->unitcell_index_converter()[trans];
+    Index trans_index = this->unitcell_index_converter()(trans);
     return permute_it(fg_index, trans_index);
   }
 

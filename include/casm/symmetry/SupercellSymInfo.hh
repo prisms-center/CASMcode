@@ -126,8 +126,8 @@ namespace CASM {
 
     /// \brief long-int transformation from primitive lattice vectors to supercell lattice vectors
     ///   supercell_lattice().lat_column_mat() = prim_lattice().lat_column_mat() * transformation_matrix()
-    Eigen::Matrix3l transformation_matrix() const {
-      return this->superlattice().transformation_matrix();
+    Eigen::Matrix3l transformation_matrix_to_super() const {
+      return this->superlattice().transformation_matrix_to_super();
     }
 
     /// \brief Begin PermuteIterator over pure translational permutations

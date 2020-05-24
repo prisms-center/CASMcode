@@ -64,28 +64,6 @@ TEST(LatticePointWithinTest, construct_via_bad_transformation) {
   EXPECT_TRUE(good_catch) << "Determinant is " << trans_mat.determinant();
 }
 
-TEST(LatticePointWithinTest, construct_via_superlattice) {
-  auto trans_mat = transformation_matrix();
-  auto fcc_superlattice = xtal::make_superlattice(::fcc_lattice(), trans_mat);
-
-  xtal::IntegralCoordinateWithin_f bring_within(::fcc_lattice(), fcc_superlattice);
-}
-
-TEST(LatticePointWithinTest, construct_via_bad_superlattice) {
-  auto trans_mat = transformation_matrix();
-  auto fcc_superlattice = xtal::make_superlattice(::fcc_lattice(), trans_mat);
-
-  bool good_catch = false;
-  try {
-    xtal::IntegralCoordinateWithin_f bring_within(::bcc_lattice(), fcc_superlattice);
-  }
-  catch(const std::runtime_error &e) {
-    good_catch = true;
-  }
-
-  EXPECT_TRUE(good_catch);
-}
-
 TEST(LatticePointWithinTest, lattice_point_within_doest_change) {
   auto trans_mat = transformation_matrix();
   xtal::IntegralCoordinateWithin_f bring_within(trans_mat);
@@ -117,7 +95,7 @@ TEST(LatticePointWithinTest, bring_within_consistent_with_coordinate) {
   auto fcc_lat =::fcc_lattice();
   auto fcc_superlattice = xtal::make_superlattice(fcc_lat, trans_mat);
 
-  xtal::IntegralCoordinateWithin_f bring_within(::fcc_lattice(), fcc_superlattice);
+  xtal::IntegralCoordinateWithin_f bring_within(trans_mat);
 
   std::vector<Eigen::Vector3l> sites_outside;
   sites_outside.emplace_back(35, 28, -84);

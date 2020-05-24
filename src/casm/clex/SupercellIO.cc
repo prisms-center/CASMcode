@@ -4,7 +4,6 @@
 #include "casm/casm_io/dataformatter/DataFormatterTools_impl.hh"
 #include "casm/symmetry/SymOp.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "casm/clex/Supercell_impl.hh"
 #include "casm/database/Selected_impl.hh"

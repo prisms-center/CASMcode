@@ -97,7 +97,7 @@ namespace CASM {
   }
 
   SymOp PermuteIterator::sym_op()const {
-    UnitCell translation_lattice_site = this->sym_info().unitcell_index_converter()[this->translation_index()];
+    UnitCell translation_lattice_site = this->sym_info().unitcell_index_converter()(this->translation_index());
     SymOp lattice_translation_op = SymOp::translation(make_superlattice_coordinate(translation_lattice_site, this->sym_info().superlattice()).cart());
     return lattice_translation_op * sym_info().factor_group()[m_factor_group_index];
   }
@@ -175,7 +175,7 @@ namespace CASM {
     // Result is the portion of the inverse sym_op that needs to be described by a lattice point translation
     Eigen::Vector3d translation_cart = (sym_op().inverse().tau() - factor_group()[it.factor_group_index()].tau());
     UnitCell translation_uc = UnitCell::from_cartesian(translation_cart, this->sym_info().prim_lattice());
-    it.m_translation_index = this->sym_info().unitcell_index_converter()[translation_uc];
+    it.m_translation_index = this->sym_info().unitcell_index_converter()(translation_uc);
 
     return it;
   }
@@ -191,7 +191,7 @@ namespace CASM {
     // Result is the portion of the product sym_op that needs to be described by a lattice point translation
     Eigen::Vector3d translation_cart = (sym_op() * RHS.sym_op()).tau() - factor_group()[it.factor_group_index()].tau();
     UnitCell translation_uc = UnitCell::from_cartesian(translation_cart, this->sym_info().prim_lattice());
-    it.m_translation_index = this->sym_info().unitcell_index_converter()[translation_uc];
+    it.m_translation_index = this->sym_info().unitcell_index_converter()(translation_uc);
 
     return it;
   }

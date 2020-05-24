@@ -3,8 +3,8 @@
 
 #include <set>
 #include "casm/container/multivector.hh"
+#include "casm/external/Eigen/Core"
 #include "casm/global/definitions.hh"
-#include "casm/global/eigen.hh"
 
 namespace CASM {
   class SymGroupRep;
