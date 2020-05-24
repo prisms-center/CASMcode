@@ -111,8 +111,8 @@ namespace test {
 
     //EXPECT_EQ(json["conjugacy_class"].size(), N_class);
 
-    EXPECT_EQ(json["symop"].size(), N_op);
-    EXPECT_EQ((*json["symop"].begin())["info"]["type"].get<std::string>(), "identity");
+    EXPECT_EQ(json["group_operations"].size(), N_op);
+    EXPECT_EQ((*json["group_operations"].begin())["info"]["type"].get<std::string>(), "identity");
 
     EXPECT_EQ(json["group_structure"]["multiplication_table"].size(), N_op);
     for(auto i = 0; i < json["group_structure"]["multiplication_table"].size(); ++i) {
