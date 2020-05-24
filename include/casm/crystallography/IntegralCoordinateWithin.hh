@@ -11,10 +11,6 @@ namespace CASM {
   namespace xtal {
     class UnitCell;
     class UnitCellCoord;
-    class Lattice;
-
-    //This is just a forward declaration. The routine is implemented in Lattice.cc
-    Eigen::Matrix3l make_transformation_matrix(const Lattice &tiling_unit, const Lattice &superlattice, double tol);
 
     /**
      * Handles bringing an integral coordinate (i,j,k value) within a particular
@@ -40,13 +36,6 @@ namespace CASM {
 
       IntegralCoordinateWithin_f(const Eigen::Matrix3i &superlattice_transformation_matrix)
         : IntegralCoordinateWithin_f(matrix_type(superlattice_transformation_matrix.cast<long>())) {
-      }
-
-      /// Specify the tiling unit, and the superlattice into which lattice points (UnitCells)
-      /// should be brought within. The superlattice must be an integer transformation of
-      /// the tiling unit
-      IntegralCoordinateWithin_f(const Lattice &tiling_unit, const Lattice &superlattice)
-        : IntegralCoordinateWithin_f(make_transformation_matrix(tiling_unit, superlattice, TOL)) {
       }
 
       /// Brings the given lattice point within the superlattice
@@ -170,6 +159,8 @@ namespace CASM {
     //********************************************************************************************************************************//
 
     std::vector<UnitCell> make_lattice_points(const Eigen::Matrix3l &transformation_matrix);
+
+    class Lattice;
     ///Returns all the lattice points that exists when tiling the tiling unit inside the superlattice
     std::vector<UnitCell> make_lattice_points(const Lattice &tiling_unit, const Lattice &superlattice, double tol);
 

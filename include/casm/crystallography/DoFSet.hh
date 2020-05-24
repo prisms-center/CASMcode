@@ -184,6 +184,9 @@ namespace CASM {
       }
     };
 
+    /// Create the symmtery representation for going from one basis to another
+    Eigen::MatrixXd dofset_transformation_matrix(const Eigen::MatrixXd &from_basis, const Eigen::MatrixXd &to_basis, double tol);
+
   } // namespace xtal
 }
 

@@ -10,7 +10,8 @@ namespace CASM {
 
       Lattice m_primitive_lattice;
       Lattice m_superlattice;
-      Eigen::Matrix3l m_transformation_matrix;
+      ///Integer matrix that convers the primitive lattice into the superlattice
+      Eigen::Matrix3l m_transformation_matrix_to_super;
 
       Index m_size;
     public:
@@ -24,8 +25,8 @@ namespace CASM {
       }
 
       ///The integer transformation matrix that converts the tiling unit (primitive lattice) into the superlattice
-      const Eigen::Matrix3l &transformation_matrix() const {
-        return m_transformation_matrix;
+      const Eigen::Matrix3l &transformation_matrix_to_super() const {
+        return m_transformation_matrix_to_super;
       }
 
       ///Returns the number of tiling units (primitive lattices) that fit inside the superlattice
@@ -42,10 +43,11 @@ namespace CASM {
       static Superlattice smooth_prim(const Lattice &tiling_unit, const Lattice &superlattice);
 
 
+      //TODO: Implement the day you need it.
       /// Constructs by taking the primitive vectors to be the correct values, and then uses
       /// the rounded integer transformation matrix to slightly modify the superlattice so
       /// that the primitive lattice exactly transforms to it through the transformation matrix
-      static Superlattice smooth_superlattice(const Lattice &tiling_unit, const Lattice &superlattice);
+      /* static Superlattice smooth_superlattice(const Lattice &tiling_unit, const Lattice &superlattice); */
     };
 
   }

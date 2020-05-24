@@ -45,12 +45,6 @@ namespace CASM {
         this->always_bring_within();
       }
 
-      /// Initialize with the primitie tiling unit, the superlattice, and the number of basis sites
-      /// in the primitive unit
-      UnitCellCoordIndexConverter(const Lattice &tiling_unit, const Lattice &superlattice, int basis_sites_in_prim)
-        : UnitCellCoordIndexConverter(make_transformation_matrix(tiling_unit, superlattice, TOL), basis_sites_in_prim) {
-      }
-
       /// Prevent the index converter from bringing UnitCellCoord within the supercell when querying for the index
       void never_bring_within();
 
@@ -61,11 +55,11 @@ namespace CASM {
       UnitCellCoord bring_within(const UnitCellCoord &bijk) const;
 
       /// Given the linear index, retreive the corresponding UnitCellCoord
-      const UnitCellCoord &operator[](Index ix) const;
+      const UnitCellCoord &operator()(Index ix) const;
 
       /// Given the UnitCellCoord, retreive its corresponding linear index.
       /// If applicable, brings the UnitCellCoord within the superlattice
-      Index operator[](const UnitCellCoord &bijk) const;
+      Index operator()(const UnitCellCoord &bijk) const;
 
       /// Returns the total number of sites within the superlattice
       Index total_sites() const {
@@ -138,14 +132,14 @@ namespace CASM {
       }
 
       /// Given the linear index, retreive the corresponding UnitCell
-      const UnitCell &operator[](Index ix) const {
-        return UnitCellCoordIndexConverter::operator[](ix).unitcell();
+      const UnitCell &operator()(Index ix) const {
+        return UnitCellCoordIndexConverter::operator()(ix).unitcell();
       }
 
       /// Given the UnitCell, retreive its corresponding linear index.
       /// If applicable, brings the UnitCell within the superlattice
-      Index operator[](const UnitCell &ijk) const {
-        return UnitCellCoordIndexConverter::operator[](UnitCellCoord(0, ijk));
+      Index operator()(const UnitCell &ijk) const {
+        return UnitCellCoordIndexConverter::operator()(UnitCellCoord(0, ijk));
       }
 
     private:

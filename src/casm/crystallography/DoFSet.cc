@@ -51,6 +51,13 @@ namespace CASM {
       return this->_traits_match(other_value) && this->_axis_names_match(other_value) && this->_basis_spans_same_space(other_value);
     }
 
+    Eigen::MatrixXd dofset_transformation_matrix(const Eigen::MatrixXd &from_basis, const Eigen::MatrixXd &to_basis, double tol) {
+      Eigen::MatrixXd U = from_basis.colPivHouseholderQr().solve(to_basis);
+      if(!(U.transpose()*U).eval().isIdentity(tol)) {
+        throw std::runtime_error("Cannot find orthogonal symmetry representation!");
+      }
+      return U;
+    }
   } // namespace xtal
 }
 

@@ -158,11 +158,6 @@ namespace CASM {
       Eigen::Vector3i enclose_sphere(double radius) const;
 
       //TODO: Extract
-      /// Make a grid of lattice sites such that min_radius <= distance <= max_radius from \param lat_point
-      template <typename CoordType, typename CoordType2>
-      std::vector<CoordType> gridstruc_build(double max_radius, double min_radius, std::vector<CoordType> basis, CoordType2 lat_point);
-
-      //TODO: Extract
       void read(std::istream &stream);
       //TODO: Extract
       void print(std::ostream &stream, int _prec = 8) const;
@@ -183,7 +178,7 @@ namespace CASM {
       Eigen::Vector3i millers(Eigen::Vector3d plane_normal) const;
 
       /// Generates a lattice with vectors a and b parallel to the plane described by the miller indeces
-      Lattice lattice_in_plane(Eigen::Vector3i millers, int max_vol = 20) const; // John G 121030
+      Lattice lattice_in_plane(Eigen::Vector3i millers, int max_vol = 0) const; // John G 121030
 
       double tol() const {
         return m_tol;
@@ -282,7 +277,7 @@ namespace CASM {
 
     /// Calculates the transformation matrix that takes the tiling unit to the superlattice.
     /// Throws exceptions if the superlattice isn't compatible with its tiling unit
-    Eigen::Matrix3l make_transformation_matrix(const Lattice &tiling_unit, const Lattice &superlattice, double tol);
+    Eigen::Matrix3l make_transformation_matrix_to_super(const Lattice &tiling_unit, const Lattice &superlattice, double tol);
 
   } // namespace xtal
 } // namespace CASM

@@ -1,16 +1,16 @@
 #include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/crystallography/BasicStructure.hh"
-#include "casm/crystallography/SymTypeComparator.hh"
 #include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/DoFSet.hh"
 #include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/crystallography/Niggli.hh"
-#include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/crystallography/Site.hh"
+#include "casm/crystallography/Superlattice.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/SymType.hh"
-#include "casm/crystallography/DoFSet.hh"
-#include "casm/crystallography/Superlattice.hh"
+#include "casm/crystallography/SymTypeComparator.hh"
+#include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/external/Eigen/Core"
 #include "casm/external/Eigen/src/Core/Matrix.h"
 #include "casm/misc/CASM_Eigen_math.hh"
@@ -146,11 +146,11 @@ namespace {
         // Now that the translation has been adjusted, create the symmetry
         // operation and add it if we don't have an equivalent one already
         xtal::SymOp translation_operation = xtal::SymOp::translation_operation(translation.const_cart());
-        xtal::SymOp factor_group_operation(translation_operation * point_group_operation);
-        xtal::SymOpPeriodicCompare_f fg_op_compare(factor_group_operation, struc.lattice(), tol);
+        xtal::SymOp new_factor_group_operation(translation_operation * point_group_operation);
+        UnaryCompare_f<xtal::SymOpPeriodicCompare_f> equals_new_factor_group_operation(new_factor_group_operation, struc.lattice(), tol);
 
-        if(std::find_if(factor_group.begin(), factor_group.end(), fg_op_compare) == factor_group.end()) {
-          factor_group.push_back(factor_group_operation);
+        if(std::find_if(factor_group.begin(), factor_group.end(), equals_new_factor_group_operation) == factor_group.end()) {
+          factor_group.push_back(new_factor_group_operation);
         }
 
         if(is_primitive) {
@@ -212,8 +212,8 @@ namespace CASM {
 
       // The candidate lattice vectors are the original lattice vectors, plus all the possible translations that map the basis
       // of the non primitive structure onto itself
-      std::vector<Eigen::Vector3d> possible_lattice_vectors{non_primitive_struc.lattice()[0], non_primitive_struc.lattice()[1],
-                                                            non_primitive_struc.lattice()[2]};
+      std::vector<Eigen::Vector3d> possible_lattice_vectors{
+        non_primitive_struc.lattice()[0], non_primitive_struc.lattice()[1], non_primitive_struc.lattice()[2]};
 
       for(const SymOp &trans_op : translation_group) {
         Coordinate debug(trans_op.translation, non_primitive_struc.lattice(), CART);
@@ -255,13 +255,13 @@ namespace CASM {
         }
       }
 
-      //TODO: Do we want this?
+      // TODO: Do we want this?
       primitive_struc.set_title(non_primitive_struc.title());
       return primitive_struc;
     }
 
     std::vector<SymOp> make_factor_group(const BasicStructure &struc, double tol) {
-      auto prim_factor_group_pair =::make_primitive_factor_group(struc, tol);
+      auto prim_factor_group_pair = ::make_primitive_factor_group(struc, tol);
       const BasicStructure &primitive_struc = prim_factor_group_pair.first;
       const std::vector<SymOp> &primitive_factor_group = prim_factor_group_pair.second;
 
@@ -271,14 +271,14 @@ namespace CASM {
       std::vector<SymOp> factor_group;
 
       for(const SymOp &prim_op : primitive_factor_group) {
-        //If the primitive factor group operation with translations removed can't map the original structure's
-        //lattice onto itself, then ditch that operation.
-        SymOpMatrixCompare_f match_ignoring_translations(prim_op, tol);
-        if(std::find_if(point_group.begin(), point_group.end(), match_ignoring_translations) == point_group.end()) {
+        // If the primitive factor group operation with translations removed can't map the original structure's
+        // lattice onto itself, then ditch that operation.
+        UnaryCompare_f<SymOpMatrixCompare_f> equals_prim_op_ignoring_trans(prim_op, tol);
+        if(std::find_if(point_group.begin(), point_group.end(), equals_prim_op_ignoring_trans) == point_group.end()) {
           continue;
         }
 
-        //Otherwise take that factor operation, and expand it by adding additional translations within the structure
+        // Otherwise take that factor operation, and expand it by adding additional translations within the structure
         for(const UnitCell &lattice_point : all_lattice_points) {
           xtal::Coordinate lattice_point_coordinate = make_superlattice_coordinate(lattice_point, primitive_struc.lattice(), struc.lattice());
           factor_group.emplace_back(SymOp::translation_operation(lattice_point_coordinate.cart())*prim_op);
@@ -327,7 +327,8 @@ namespace CASM {
     }
 
     template <typename IntegralType, int Options>
-    BasicStructure make_superstructure(const BasicStructure &tiling_unit, const Eigen::Matrix<IntegralType, 3, 3, Options> &transformation_matrix) {
+    BasicStructure make_superstructure(const BasicStructure &tiling_unit,
+                                       const Eigen::Matrix<IntegralType, 3, 3, Options> &transformation_matrix) {
       static_assert(std::is_integral<IntegralType>::value, "Transfomration matrix must be integer matrix");
 
       Lattice superlat = make_superlattice(tiling_unit.lattice(), transformation_matrix);
@@ -346,8 +347,10 @@ namespace CASM {
       return superstruc;
     }
 
-    template BasicStructure make_superstructure<int, 0>(const BasicStructure &tiling_unit, const Eigen::Matrix<int, 3, 3, 0> &transformation_matrix);
-    template BasicStructure make_superstructure<long, 0>(const BasicStructure &tiling_unit, const Eigen::Matrix<long, 3, 3, 0> &transformation_matrix);
+    template BasicStructure make_superstructure<int, 0>(const BasicStructure &tiling_unit,
+                                                        const Eigen::Matrix<int, 3, 3, 0> &transformation_matrix);
+    template BasicStructure make_superstructure<long, 0>(const BasicStructure &tiling_unit,
+                                                         const Eigen::Matrix<long, 3, 3, 0> &transformation_matrix);
 
   } // namespace xtal
 } // namespace CASM

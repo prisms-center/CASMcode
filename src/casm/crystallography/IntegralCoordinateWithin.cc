@@ -10,6 +10,7 @@
 
 namespace CASM {
   namespace xtal {
+
     void IntegralCoordinateWithin_f::_throw_if_bad_transformation_matrix(const matrix_type &transformation_matrix) {
       if(transformation_matrix.determinant() == 0) {
         throw std::runtime_error(
@@ -88,7 +89,7 @@ namespace CASM {
     }
 
     std::vector<UnitCell> make_lattice_points(const Lattice &tiling_unit, const Lattice &superlattice, double tol) {
-      Eigen::Matrix3l transformation_matrix = make_transformation_matrix(tiling_unit, superlattice, tol);
+      Eigen::Matrix3l transformation_matrix = make_transformation_matrix_to_super(tiling_unit, superlattice, tol);
       return make_lattice_points(transformation_matrix);
     }
 

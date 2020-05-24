@@ -6,7 +6,6 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/Strain.hh"
 #include "casm/crystallography/Lattice.hh"
-#include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/CanonicalForm.hh"
@@ -241,10 +240,10 @@ namespace CASM {
     bool less(LatticeNode const &A, LatticeNode const &B, double cost_tol) {
       if(!almost_equal(A.cost, B.cost, cost_tol))
         return A.cost < B.cost;
-      if(A.child.transformation_matrix() != B.child.transformation_matrix())
-        return Local::lex_lt(A.child.transformation_matrix(), B.child.transformation_matrix());
-      if(A.parent.transformation_matrix() != B.parent.transformation_matrix())
-        return Local::lex_lt(A.parent.transformation_matrix(), B.parent.transformation_matrix());
+      if(A.child.transformation_matrix_to_super() != B.child.transformation_matrix_to_super())
+        return Local::lex_lt(A.child.transformation_matrix_to_super(), B.child.transformation_matrix_to_super());
+      if(A.parent.transformation_matrix_to_super() != B.parent.transformation_matrix_to_super())
+        return Local::lex_lt(A.parent.transformation_matrix_to_super(), B.parent.transformation_matrix_to_super());
       return false;
     }
 
@@ -253,9 +252,9 @@ namespace CASM {
     bool identical(LatticeNode const &A, LatticeNode const &B, double cost_tol) {
       if(!almost_equal(A.cost, B.cost, cost_tol))
         return false;
-      if(A.parent.transformation_matrix() != B.parent.transformation_matrix())
+      if(A.parent.transformation_matrix_to_super() != B.parent.transformation_matrix_to_super())
         return false;
-      if(A.child.transformation_matrix() != B.child.transformation_matrix())
+      if(A.child.transformation_matrix_to_super() != B.child.transformation_matrix_to_super())
         return false;
       return true;
     }
