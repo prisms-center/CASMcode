@@ -148,7 +148,7 @@ namespace CASM {
       double prec;
       MonteSampler *ptr;
 
-      for(size_type i = 0; i < primclex.clexulator(formation_energy(primclex)).corr_size(); i++) {
+      for(size_type i = 0; i < primclex.clexulator(formation_energy(primclex).bset).corr_size(); i++) {
 
         prop_name = "corr";
         print_name = std::string("corr(") + std::to_string(i) + ")";

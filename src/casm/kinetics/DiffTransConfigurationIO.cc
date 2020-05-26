@@ -238,7 +238,7 @@ namespace CASM {
           //The evaluation should return a characteristic value (negative value) for mismatch hops to corr request
           ClexDescription desc = m_clex_name.empty() ?
                                  primclex.settings().default_clex() : primclex.settings().clex(m_clex_name);
-          m_clexulator = primclex.clexulator(desc);
+          m_clexulator = primclex.clexulator(desc.bset);
         }
 
         VectorXdAttribute<DiffTransConfiguration>::init(_tmplt);
@@ -317,7 +317,7 @@ namespace CASM {
           const PrimClex &primclex = _tmplt.primclex();
           ClexDescription desc = m_clex_name.empty() ?
                                  primclex.settings().default_clex() : primclex.settings().clex(m_clex_name);
-          m_clexulator = primclex.clexulator(desc);
+          m_clexulator = primclex.clexulator(desc.bset);
           m_eci = primclex.eci(desc);
           if(m_eci.index().back() >= m_clexulator.corr_size()) {
             Log &err_log = default_err_log();

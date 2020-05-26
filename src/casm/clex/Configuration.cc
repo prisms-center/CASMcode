@@ -1214,7 +1214,7 @@ namespace CASM {
   double clex_formation_energy(const Configuration &config) {
     const auto &primclex = config.primclex();
     auto formation_energy = primclex.settings().clex("formation_energy");
-    Clexulator clexulator = primclex.clexulator(formation_energy);
+    Clexulator clexulator = primclex.clexulator(formation_energy.bset);
     const ECIContainer &eci = primclex.eci(formation_energy);
 
     if(eci.index().back() >= clexulator.corr_size()) {

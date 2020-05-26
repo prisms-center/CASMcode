@@ -16,7 +16,7 @@ namespace CASM {
   const ClexBasis &Clex::clex_basis() const {
 
     if(m_clex_basis == nullptr) {
-      m_clex_basis = &primclex().clex_basis(m_desc);
+      m_clex_basis = &primclex().clex_basis(m_desc.bset);
     }
     return *m_clex_basis;
   }
@@ -24,7 +24,7 @@ namespace CASM {
   Clexulator &Clex::clexulator(Log &status_log) const {
 
     if(!m_clexulator.initialized()) {
-      m_clexulator = primclex().clexulator(m_desc);
+      m_clexulator = primclex().clexulator(m_desc.bset);
     }
     return m_clexulator;
   }
