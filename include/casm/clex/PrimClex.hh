@@ -18,6 +18,7 @@ namespace CASM {
   class Clexulator;
   class ECIContainer;
   class Structure;
+  class jsonParser; // TODO: temporary for basis_set_specs
 
 
   namespace DB {
@@ -59,7 +60,7 @@ namespace CASM {
     /// Initial construction of a PrimClex, from ProjectSettings and shared prim
     explicit PrimClex(
       ProjectSettings const &_project_settings,
-      std::shared_ptr<const PrimType> _shared_prim,
+      std::shared_ptr<PrimType const> _shared_prim,
       const Logging &logging = Logging());
 
     /// Construct PrimClex from existing CASM project directory
@@ -117,7 +118,7 @@ namespace CASM {
     const PrimType &prim() const;
 
     /// Access to the primitive Structure as a shared resource
-    std::shared_ptr<const PrimType> &shared_prim() const;
+    std::shared_ptr<PrimType const> &shared_prim() const;
 
     /// const Access to number of basis atoms
     Index n_basis() const;
@@ -160,17 +161,22 @@ namespace CASM {
     const DB::DatabaseHandler &const_db_handler() const;
 
 
-    bool has_orbits(const ClexDescription &key) const;
+    // ** Basis set specs, neighbor lists, Clexulators ** ------------------
+
+    bool has_basis_set_specs(std::string const &basis_set_name) const;
+    jsonParser const &basis_set_specs(std::string const &basis_set_name) const;
+
+    bool has_orbits(std::string const &basis_set_name) const;
     template<typename OrbitOutputIterator, typename SymCompareType>
-    OrbitOutputIterator orbits(const ClexDescription &key,
+    OrbitOutputIterator orbits(std::string const &basis_set_name,
                                OrbitOutputIterator result,
-                               const SymCompareType &sym_compare) const;
+                               SymCompareType const &sym_compare) const;
 
-    bool has_clex_basis(const ClexDescription &key) const;
-    const ClexBasis &clex_basis(const ClexDescription &key) const;
+    bool has_clex_basis(std::string const &basis_set_name) const;
+    const ClexBasis &clex_basis(std::string const &basis_set_name) const;
 
-    bool has_clexulator(const ClexDescription &key) const;
-    Clexulator clexulator(const ClexDescription &key) const;
+    bool has_clexulator(std::string const &basis_set_name) const;
+    Clexulator clexulator(std::string const &basis_set_name) const;
 
     bool has_eci(const ClexDescription &key) const;
     const ECIContainer &eci(const ClexDescription &key) const;
@@ -188,6 +194,20 @@ namespace CASM {
     std::unique_ptr<PrimClexData> m_data;
 
   };
+
+  /// Generate Clexulator source code (overwrite any existing files)
+  void write_clexulator(
+    std::shared_ptr<Structure const> shared_prim,
+    ProjectSettings const &settings,
+    std::string const &basis_set_name,
+    jsonParser const &basis_set_specs,
+    PrimNeighborList &prim_neighbor_list);
+
+  /// Construct a Clexulator (that has already been written)
+  Clexulator read_clexulator(
+    ProjectSettings const &settings,
+    std::string const &basis_set_name,
+    PrimNeighborList &prim_neighbor_list);
 
 }
 #endif

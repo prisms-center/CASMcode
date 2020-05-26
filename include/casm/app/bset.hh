@@ -1,12 +1,33 @@
 #ifndef CASM_bset
 #define CASM_bset
 
+#include "casm/app/APICommand.hh"
+
 namespace CASM {
+  namespace Completer {
+    class BsetOption;
+  }
 
-  struct CommandArgs;
+  /// 'casm enum' implementation
+  class BsetCommand : public APICommand<Completer::BsetOption> {
 
-  int bset_command(const CommandArgs &args);
+  public:
 
+    static const std::string name;
+
+    BsetCommand(const CommandArgs &_args, Completer::BsetOption &_opt);
+
+    ~BsetCommand();
+
+    int vm_count_check() const override;
+
+    int help() const override;
+
+    int desc() const override;
+
+    int run() const override;
+
+  };
 }
 
 #endif
