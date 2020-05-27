@@ -14,6 +14,20 @@
 
 namespace CASM {
 
+  // might be useful for other casm commands...
+  template<typename OptionType>
+  jsonParser make_json_input(const OptionType &opt) {
+    if(!opt.settings_path().empty()) {
+      return jsonParser {opt.settings_path()};
+    }
+    else if(!opt.input_str().empty()) {
+      return jsonParser::parse(opt.input_str());
+    }
+    else {
+      return jsonParser::object();
+    }
+  }
+
   /// \brief Standardizes insertion from enumerators that construct unique
   /// primitive canonical configurations
   ///

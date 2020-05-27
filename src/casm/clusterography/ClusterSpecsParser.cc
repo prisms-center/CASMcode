@@ -228,15 +228,16 @@ namespace CASM {
     InputParser(_input, _path, _required) {
 
     if(exists()) {
-      this->kwargs["orbit_branch_specs"] =
-        std::make_shared<PrimPeriodicOrbitBranchSpecsParser>(
-          input, relpath("orbit_branch_specs"), false);
-      this->kwargs["orbit_specs"] =
-        std::make_shared<PrimPeriodicOrbitSpecsParser>(
-          _primclex, _generating_grp, _sym_compare, input, relpath("orbit_specs"), false);
+      auto orbit_branch_specs_subparser = std::make_shared<PrimPeriodicOrbitBranchSpecsParser>(
+                                            input, relpath("orbit_branch_specs"), false);
+      this->insert(orbit_branch_specs_subparser->path, orbit_branch_specs_subparser);
+
+      auto orbit_specs_subparser = std::make_shared<PrimPeriodicOrbitSpecsParser>(
+                                     _primclex, _generating_grp, _sym_compare, input, relpath("orbit_specs"), false);
+      this->insert(orbit_specs_subparser->path, orbit_specs_subparser);
 
       // require one of {"orbit_branch_specs", "orbit_specs"}
-      if(!this->kwargs["orbit_branch_specs"]->exists() && !this->kwargs["orbit_specs"]->exists()) {
+      if(!orbit_branch_specs_subparser->exists() && !orbit_specs_subparser->exists()) {
         error.insert(std::string("Error: ") + "One of \"orbit_branch_specs\" or \"orbit_specs\" is required.");
       }
 
@@ -258,11 +259,11 @@ namespace CASM {
   }
 
   const PrimPeriodicOrbitBranchSpecsParser &PrimPeriodicClustersByMaxLength::orbit_branch_specs() const {
-    return static_cast<const PrimPeriodicOrbitBranchSpecsParser &>(*this->kwargs.find("orbit_branch_specs")->second);
+    return static_cast<const PrimPeriodicOrbitBranchSpecsParser &>(*this->find(relpath("orbit_branch_specs"))->second);
   }
 
   const PrimPeriodicOrbitSpecsParser &PrimPeriodicClustersByMaxLength::orbit_specs() const {
-    return static_cast<const PrimPeriodicOrbitSpecsParser &>(*this->kwargs.find("orbit_specs")->second);
+    return static_cast<const PrimPeriodicOrbitSpecsParser &>(*this->find(relpath("orbit_specs"))->second);
   }
 
 

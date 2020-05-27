@@ -551,8 +551,6 @@ namespace CASM {
 
     /// \brief Default make_from_json is equivalent to \code CASM::make_from_json<ValueType>(json) \endcode
     static std::unique_ptr<ValueType> make_from_json(const jsonParser &json) {
-      std::cout << "begin ptr jsonMake::make_from_json()" << std::endl;
-      std::cout << *CASM::make_from_json<ValueType>(json) << std::endl;
       return CASM::make_from_json<ValueType>(json);
     }
   };
@@ -569,10 +567,6 @@ namespace CASM {
   /// Default uses 'from_json<T>(const jsonParser&)' with copy constructor
   template<typename T>
   std::unique_ptr<T> make_from_json(const jsonParser &json) {
-    std::cout << "begin ptr make_from_json(json)" << std::endl;
-    std::cout << from_json<T>(json) << std::endl;
-    auto tmp = std::unique_ptr<T>(new T(from_json<T>(json)));
-    std::cout << *tmp << std::endl;
     return std::unique_ptr<T>(new T(from_json<T>(json)));
   }
 
@@ -585,7 +579,6 @@ namespace CASM {
   /// Make from JSON for basic types
   template<typename T, typename... Args>
   void make_from_json(std::unique_ptr<T> &ptr, const jsonParser &json, Args &&... args) {
-    std::cout << "begin make_from_json(ptr)" << std::endl;
     ptr = jsonMake<T>::make_from_json(json, std::forward<Args>(args)...);
   }
 
@@ -794,7 +787,6 @@ namespace CASM {
   ///
   template<typename T, typename...Args>
   std::unique_ptr<T> jsonParser::make(Args &&... args) const {
-    std::cout << "begin jsonParser::make" << std::endl;
     return jsonMake<T>::make_from_json(*this, std::forward<Args>(args)...);
   }
 
@@ -807,7 +799,6 @@ namespace CASM {
   ///
   template<typename T, typename...Args>
   void jsonParser::make(std::unique_ptr<T> &ptr, Args &&... args) const {
-    std::cout << "begin jsonParser::make(ptr)" << std::endl;
     make_from_json(ptr, *this, std::forward<Args>(args)...);
   }
 

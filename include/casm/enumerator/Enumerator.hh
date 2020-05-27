@@ -480,6 +480,12 @@ namespace CASM {
   typedef InterfaceBase<Completer::EnumOption> EnumInterfaceBase;
   typedef InterfaceMap<Completer::EnumOption> EnumeratorMap;
 
+  jsonParser &to_json(const Completer::EnumOption &enum_opt, jsonParser &json);
+
+  // might be useful for other casm commands...
+  template<typename OptionType>
+  jsonParser make_json_input(const OptionType &opt);
+
   /// \brief Standardizes parsing casm enum input options to make ScelEnum JSON input
   jsonParser make_enumerator_scel_enum_input(
     jsonParser kwargs,
@@ -516,6 +522,18 @@ namespace CASM {
   inline std::string dry_run_msg(bool dry_run) {
     return dry_run ? "(dry run) " : "";
   }
+
+  struct InsertAlgorithmsOptions {
+
+    std::string method;
+    std::vector<std::string> filter_expr;
+    bool dry_run = false;
+    COORD_TYPE coord_type = COORD_TYPE::FRAC;
+    bool primitive_only = true;
+    int verbosity = 10;
+  };
+
+
 
   /// \brief Standardizes insertion from enumerators that construct unique
   /// primitive canonical configurations

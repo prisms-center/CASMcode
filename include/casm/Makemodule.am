@@ -27,6 +27,7 @@ casm_app_include_HEADERS = \
     include/casm/app/casm_functions.hh\
     include/casm/app/composition.hh\
     include/casm/app/enum.hh\
+    include/casm/app/errors.hh\
     include/casm/app/files.hh\
     include/casm/app/format.hh\
     include/casm/app/import.hh\
