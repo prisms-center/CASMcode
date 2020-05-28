@@ -24,16 +24,18 @@ namespace CASM {
 
     namespace StrucMapping {
       double atomic_cost_child(const MappingNode &mapped_result, Index Nsites) {
+        Nsites = max(Nsites, Index(1));
         // mean square displacement distance in deformed coordinate system
         double atomic_vol = mapped_result.lattice_node.parent.superlattice().volume() / double(Nsites) / mapped_result.lattice_node.stretch.determinant();
-        return pow(3.*abs(atomic_vol) / (4.*M_PI), -2. / 3.) * (mapped_result.lattice_node.stretch.inverse() * mapped_result.atom_displacement).squaredNorm() / double(max(Nsites, Index(1)));
+        return pow(3.*abs(atomic_vol) / (4.*M_PI), -2. / 3.) * (mapped_result.lattice_node.stretch.inverse() * mapped_result.atom_displacement).squaredNorm() / double(Nsites);
       }
       //*******************************************************************************************
 
       double atomic_cost_parent(const MappingNode &mapped_result, Index Nsites) {
+        Nsites = max(Nsites, Index(1));
         // mean square displacement distance in deformed coordinate system
         double atomic_vol = mapped_result.lattice_node.parent.superlattice().volume() / double(Nsites);
-        return pow(3.*abs(atomic_vol) / (4.*M_PI), -2. / 3.) * (mapped_result.atom_displacement).squaredNorm() / double(max(Nsites, Index(1)));
+        return pow(3.*abs(atomic_vol) / (4.*M_PI), -2. / 3.) * (mapped_result.atom_displacement).squaredNorm() / double(Nsites);
       }
 
       //*******************************************************************************************
@@ -747,7 +749,7 @@ namespace CASM {
 
                 // Need to account for case where mapping k+1 is as good as mapping k
                 // A few ways to make this happen, but we will do it by increasing k when nfound==k,
-                // and shrink max_cost to be *just* higher than current cost
+                // and shrink max_cost to be current cost
                 if(nfound == k) {
                   ++k;
                   max_cost = current->cost;// + tol();

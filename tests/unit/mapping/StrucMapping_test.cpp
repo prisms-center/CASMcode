@@ -64,15 +64,42 @@ void k_best_mapping_test(xtal::SimpleStructure const &sstruc, double d) {
     fgroup = adapter::Adapter<xtal::SymOpVector, decltype(sym_set)>()(sym_set);
 
     //std::cout << "BASE MAPPINGS:\n";
-    print_mapping_nodes(sym_set);
+
   }
 
   {
-    std::string comment("Check for best all mappings better than the pure swap mapping, which has a cost of d^2. There are 8");
-    xtal::StrucMapper mapper((xtal::SimpleStrucMapCalculator(sstruc, fgroup)));
-    auto sym_set = mapper.map_deformed_struc_impose_lattice(sstruc, xtal::Lattice(sstruc.lat_column_mat), 200, d * d + 1e-6, -1e-3);
+    std::string comment("Check for all mappings better than the pure swap mapping, which has a cost of 0.5*d^2. Without considering symmetry of child structure there are 8.");
+    xtal::StrucMapper mapper(xtal::SimpleStrucMapCalculator(sstruc, fgroup),
+                             0.5,
+                             0.5,
+                             xtal::StrucMapper::robust);
+    auto sym_set = mapper.map_deformed_struc_impose_lattice(sstruc, xtal::Lattice(sstruc.lat_column_mat), 0, xtal::StrucMapping::big_inf(), 0.5 * d * d + 1e-6);
 
     EXPECT_EQ(sym_set.size(), 8) << comment;
+
+    //std::cout << "SUB MAPPINGS:\n";
+    //print_mapping_nodes(sym_set);
+
+    EXPECT_NEAR(sym_set.begin()->cost, 0, 1e-6) << comment;
+
+    EXPECT_NEAR(sym_set.rbegin()->cost, 0.5 * d * d, 1e-6) << comment;
+  }
+
+  {
+    std::string comment("Check for all mappings better than the pure swap mapping, which has a cost of 0.5 * d^2. Considering symmetry of child structure, there are 4.");
+    xtal::StrucMapper mapper(xtal::SimpleStrucMapCalculator(sstruc, fgroup),
+                             0.5,
+                             0.5,
+                             xtal::StrucMapper::robust);
+    auto sym_set = mapper.map_deformed_struc_impose_lattice(sstruc,
+                                                            xtal::Lattice(sstruc.lat_column_mat),
+                                                            0,
+                                                            xtal::StrucMapping::big_inf(),
+                                                            0.5 * d * d + 1e-6,
+                                                            false,
+                                                            fgroup);
+
+    EXPECT_EQ(sym_set.size(), 4) << comment;
 
     //std::cout << "SUB MAPPINGS:\n";
     //print_mapping_nodes(sym_set);
@@ -201,7 +228,8 @@ TEST(SymMappingTest2, ZrOPrim) {
 
 TEST(KBestMappingTest, Struc1) {
   // Read in test PRIM and run tests
-  k_best_mapping_test(map_struc1(5., 0.5), 0.5);
+
+  k_best_mapping_test(map_struc1(pow(8. * M_PI / 3, 1. / 3.), 0.3), 0.3);
 }
 
 

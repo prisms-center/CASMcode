@@ -142,8 +142,8 @@ namespace CASM {
         for(auto const &op : _parent_point_group) {
           if(!symcheck(op))
             continue;
-          if(symcheck.U().isIdentity())
-            continue;
+          //if(symcheck.U().isIdentity())
+          //continue;
           //std::cout << "Testing point op:\n" << get_matrix(op) << "\n";
           m_parent_fsym_mats.push_back(iround(symcheck.U().inverse()));
           for(Index i = 0; i < (m_parent_fsym_mats.size() - 1); ++i) {
@@ -162,8 +162,8 @@ namespace CASM {
         for(auto const &op : _child_point_group) {
           if(!symcheck(op))
             continue;
-          if(symcheck.U().isIdentity())
-            continue;
+          //if(symcheck.U().isIdentity())
+          //continue;
           //std::cout << "Testing point op:\n" << get_matrix(op) << "\n";
           m_child_fsym_mats.push_back(iround(symcheck.U()));
           for(Index i = 0; i < (m_child_fsym_mats.size() - 1); ++i) {
@@ -333,8 +333,13 @@ namespace CASM {
     //*******************************************************************************************
 
     bool LatticeMap::_check_canonical() const {
-      for(auto const &inv_parent_op : m_parent_fsym_mats) {
-        for(auto const &child_op : m_child_fsym_mats) {
+      // Purpose of jmin is to exclude (i,j)=(0,0) element
+      // jmin is set to 0 at end of i=0 pass;
+      Index jmin = 1;
+      for(Index i = 0; i < m_parent_fsym_mats.size(); ++i, jmin = 0) {
+        auto const &inv_parent_op = m_parent_fsym_mats[i];
+        for(Index j = jmin; j < m_child_fsym_mats.size(); ++j) {
+          auto const &child_op = m_child_fsym_mats[j];
           m_icache = child_op * inv_mat() * inv_parent_op;
           // Skip ops that transform matrix out of range; they won't be enumerated
           if(std::abs(m_icache(0, 0)) > m_range

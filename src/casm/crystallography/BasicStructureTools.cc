@@ -207,6 +207,9 @@ namespace CASM {
     }
 
     BasicStructure make_primitive(const BasicStructure &non_primitive_struc, double tol) {
+      if(non_primitive_struc.basis().size() == 0) {
+        return non_primitive_struc;
+      }
       SymOpVector translation_group = ::make_translation_group(non_primitive_struc, tol);
       double minimum_possible_volume = std::abs(0.5 * non_primitive_struc.lattice().volume() / non_primitive_struc.basis().size());
 
@@ -330,11 +333,11 @@ namespace CASM {
     BasicStructure make_superstructure(const BasicStructure &tiling_unit,
                                        const Eigen::Matrix<IntegralType, 3, 3, Options> &transformation_matrix) {
       static_assert(std::is_integral<IntegralType>::value, "Transfomration matrix must be integer matrix");
-
       Lattice superlat = make_superlattice(tiling_unit.lattice(), transformation_matrix);
       BasicStructure superstruc(superlat);
 
       std::vector<UnitCell> all_lattice_points = make_lattice_points(tiling_unit.lattice(), superlat, superlat.tol());
+
       std::vector<Site> superstruc_basis;
       for(const Site &unit_basis_site : tiling_unit.basis()) {
         for(const UnitCell &lattice_point : all_lattice_points) {
@@ -342,7 +345,6 @@ namespace CASM {
           superstruc_basis.emplace_back(unit_basis_site + lattice_point_coordinate);
         }
       }
-
       superstruc.set_basis(superstruc_basis, CART);
       return superstruc;
     }
