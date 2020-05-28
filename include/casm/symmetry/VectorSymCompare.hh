@@ -8,6 +8,22 @@ namespace CASM {
   template<typename Base>
   class VectorSymCompare;
 
+  /// \brief Traits class for DirectionSymCompare
+  template<typename _Element, typename _SymApply>
+  struct traits<DirectionSymCompare<_Element, _SymApply>> {
+    typedef _Element Element;
+    typedef _SymApply SymApply;
+    typedef DirectionSymCompare<_Element, _SymApply> MostDerived;
+  };
+
+  /// \brief Traits class for SubspaceSymCompare
+  template<typename _Element, typename _SymApply>
+  struct traits<SubspaceSymCompare<_Element, _SymApply>> {
+    typedef _Element Element;
+    typedef _SymApply SymApply;
+    typedef SubspaceSymCompare<_Element, _SymApply> MostDerived;
+  };
+
   /// \brief Traits class for VectorSymCompare
   ///
   template<typename Base>

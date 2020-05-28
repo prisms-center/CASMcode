@@ -3,10 +3,13 @@
 
 #include <vector>
 #include <iostream>
-#include <memory>
-#include <algorithm>
+
+#include "casm/global/eigen.hh"
+#include "casm/misc/cloneable_ptr.hh"
 
 namespace CASM {
+
+  class IntegralCluster;
 
   /** \defgroup Clusterography
 
@@ -23,46 +26,20 @@ namespace CASM {
   ///
   /// \ingroup Clusterography
   ///
-  template<typename ClusterType>
-  class ClusterInvariants {
-
+  class ClusterInvariants : public notstd::Cloneable {
+    CLONEABLE(ClusterInvariants)
   public:
 
     /// \brief Construct and calculate cluster invariants
-    explicit ClusterInvariants(const ClusterType &cluster) {
-
-      // save size of cluster
-      m_size = cluster.size();
-
-      // calculate distances between points
-      std::vector<double> disp;
-      for(int i = 0; i < m_size; i++) {
-        for(int j = i + 1; j < m_size; j++) {
-          m_disp.push_back((cluster.coordinate(i) - cluster.coordinate(j)).const_cart().norm());
-        }
-      }
-      std::sort(m_disp.begin(), m_disp.end());
-    }
+    explicit ClusterInvariants(IntegralCluster const &cluster);
 
     /// \brief Number of elements in the cluster
-    int size() const {
-      return m_size;
-    }
+    int size() const;
 
     /// \brief const Access displacements between coordinates in the cluster, sorted in ascending order
-    const std::vector<double> &displacement() const {
-      return m_disp;
-    }
-
-    std::unique_ptr<ClusterInvariants> clone() const {
-      return std::unique_ptr<ClusterInvariants>(this->_clone());
-    }
+    std::vector<double> const &displacement() const;
 
   private:
-
-    ClusterInvariants *_clone() const {
-      return new ClusterInvariants(*this);
-    }
 
     /// \brief Number of UnitCellCoords in cluster
     int m_size;
@@ -73,16 +50,56 @@ namespace CASM {
   };
 
   /// \brief Check if ClusterInvariants are equal
-  template<typename ClusterType>
-  bool almost_equal(const ClusterInvariants<ClusterType> &A, const ClusterInvariants<ClusterType> &B, double tol);
+  bool almost_equal(ClusterInvariants const &A, ClusterInvariants const &B, double tol);
 
   /// \brief Compare ClusterInvariants
-  template<typename ClusterType>
-  bool compare(const ClusterInvariants<ClusterType> &A, const ClusterInvariants<ClusterType> &B, double tol);
+  bool compare(ClusterInvariants const &A, ClusterInvariants const &B, double tol);
 
   /// \brief Print ClusterInvariants
-  template<typename ClusterType>
-  std::ostream &operator<<(std::ostream &sout, const ClusterInvariants<ClusterType> &invariants);
+  std::ostream &operator<<(std::ostream &sout, ClusterInvariants const &invariants);
+
+
+  /// \brief Stores cluster invariants: number of sites and site distances (using robust_min_dist)
+  ///
+  /// Default expects (as for CoordCluster):
+  /// - \code ClusterType::size() \endcode
+  /// - \code ClusterType::coordinate(size_type index) \endcode
+  ///
+  /// \ingroup Clusterography
+  ///
+  class WithinScelClusterInvariants : public notstd::Cloneable {
+    CLONEABLE(WithinScelClusterInvariants)
+  public:
+
+    /// \brief Construct and calculate cluster invariants, using robust_min_dist in the supercell lattice
+    explicit WithinScelClusterInvariants(
+      IntegralCluster const &cluster,
+      Eigen::Matrix3l const &transf_mat);
+
+    /// \brief Number of elements in the cluster
+    int size() const;
+
+    /// \brief const Access displacements between coordinates in the cluster, sorted in ascending order, calculated using robust_min_dist in the supercell lattice
+    std::vector<double> const &displacement() const;
+
+  private:
+
+    /// \brief Number of UnitCellCoords in cluster
+    int m_size;
+
+    /// \brief Displacement between each pair of UnitCellCoords, sorted in ascending order
+    std::vector<double> m_disp;
+
+  };
+
+  /// \brief Check if WithinScelClusterInvariants are equal
+  bool almost_equal(WithinScelClusterInvariants const &A, WithinScelClusterInvariants const &B, double tol);
+
+  /// \brief Compare WithinScelClusterInvariants
+  bool compare(WithinScelClusterInvariants const &A, WithinScelClusterInvariants const &B, double tol);
+
+  /// \brief Print WithinScelClusterInvariants
+  std::ostream &operator<<(std::ostream &sout, WithinScelClusterInvariants const &invariants);
 
 }
 

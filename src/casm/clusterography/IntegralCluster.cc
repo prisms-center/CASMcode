@@ -1,63 +1,75 @@
+#include "casm/clusterography/IntegralCluster.hh"
+#include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/Structure.hh"
+
+namespace CASM {
+
+  // const std::string traits<IntegralCluster>::name = "IntegralCluster";
+
+
+  IntegralCluster::IntegralCluster(PrimType const &prim):
+    m_prim_ptr(&prim) {}
+
+  typename IntegralCluster::PrimType const &IntegralCluster::prim() const {
+    return *m_prim_ptr;
+  }
+
+  /// \brief Access vector of elements
+  std::vector<xtal::UnitCellCoord> &IntegralCluster::elements() {
+    return m_element;
+  }
+
+  /// \brief const Access vector of elements
+  const std::vector<xtal::UnitCellCoord> &IntegralCluster::elements() const {
+    return m_element;
+  }
+
+  /// \brief Return the coordinate corresponding to element(i)
+  xtal::Coordinate IntegralCluster::coordinate(size_type i) const {
+    return this->element(i).coordinate(prim());
+  }
+
+  /// \brief Translate the cluster by a UnitCell translation
+  IntegralCluster &IntegralCluster::operator+=(xtal::UnitCell trans) {
+    for(auto it = this->begin(); it != this->end(); ++it) {
+      *it += trans;
+    }
+    return *this;
+  }
+}
+
+#include "casm/symmetry/SymTools.hh"
+namespace CASM {
+
+  namespace sym {
+    /// Apply SymOp to IntegralCluster
+    ///
+    /// Specialization of template from casm/symmetry/Symtools.hh:
+    ///   template <typename Transform, typename Object, typename... Args>
+    ///   Object &apply(const Transform &transformation, Object &obj, const Args &... args);
+    template<>
+    IntegralCluster &apply(SymOp const &op, IntegralCluster &clust, Structure const &prim) {
+      for(auto &e : clust) {
+        sym::apply(op, e, prim);
+      }
+      return clust;
+    }
+  }
+}
+
+
 #include "casm/app/AppIO.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/casm_io/json/jsonParser.hh"
-#include "casm/clex/PrimClex.hh"
 #include "casm/clusterography/ClusterInvariants.hh"
-#include "casm/clusterography/ClusterSymCompare_impl.hh"
-#include "casm/clusterography/IntegralCluster.hh"
-#include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/io/UnitCellCoordIO.hh"
 #include "casm/global/enum/json_io.hh"
 
 namespace CASM {
 
-  template class ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<IntegralCluster> > > >;
-  template class AperiodicSymCompare<IntegralCluster>;
-  /*
-  template bool ClusterSymCompare<AperiodicSymCompare<IntegralCluster> >::compare_impl(
-    IntegralCluster const &,
-    IntegralCluster const &) const;
-  template bool ClusterSymCompare<AperiodicSymCompare<IntegralCluster> >::invariants_compare_impl(
-    ClusterInvariants<IntegralCluster> const &,
-    ClusterInvariants<IntegralCluster> const &) const;
-  */
-
-  template class ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<IntegralCluster> > > >;
-  template class PrimPeriodicSymCompare<IntegralCluster>;
-  /*
-  template bool ClusterSymCompare<PrimPeriodicSymCompare<IntegralCluster> >::compare_impl(
-    IntegralCluster const &,
-    IntegralCluster const &) const;
-  template bool ClusterSymCompare<PrimPeriodicSymCompare<IntegralCluster> >::invariants_compare_impl(
-    ClusterInvariants<IntegralCluster> const &,
-    ClusterInvariants<IntegralCluster> const &) const;
-  */
-
-  template class ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<IntegralCluster> > > >;
-  template class ScelPeriodicSymCompare<IntegralCluster>;
-  /*
-  template bool ClusterSymCompare<ScelPeriodicSymCompare<IntegralCluster> >::compare_impl(
-    IntegralCluster const &,
-    IntegralCluster const &) const;
-  template bool ClusterSymCompare<ScelPeriodicSymCompare<IntegralCluster> >::invariants_compare_impl(
-    ClusterInvariants<IntegralCluster> const &,
-    ClusterInvariants<IntegralCluster> const &) const;
-  */
-
-  template class ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<IntegralCluster> > > >;
-  template class WithinScelSymCompare<IntegralCluster>;
-  /*
-  template bool ClusterSymCompare<WithinScelSymCompare<IntegralCluster> >::compare_impl(
-    IntegralCluster const &,
-    IntegralCluster const &) const;
-  template bool ClusterSymCompare<WithinScelSymCompare<IntegralCluster> >::invariants_compare_impl(
-    ClusterInvariants<IntegralCluster> const &,
-    ClusterInvariants<IntegralCluster> const &) const;
-  */
-
   /// \brief Print IntegralCluster to stream, using default Printer<IntegralCluster>
-  std::ostream &operator<<(std::ostream &sout, const IntegralCluster &clust) {
+  std::ostream &operator<<(std::ostream &sout, IntegralCluster const &clust) {
     OrbitPrinterOptions opt;
     opt.coord_type = INTEGRAL;
     SitesPrinter printer {opt};
@@ -79,10 +91,11 @@ namespace CASM {
   ///   ]
   /// }
   /// \endcode
-  jsonParser &to_json(const IntegralCluster &clust, jsonParser &json) {
+  jsonParser &to_json(IntegralCluster const &clust, jsonParser &json) {
     json.put_obj();
-    json["min_length"] = clust.min_length();
-    json["max_length"] = clust.max_length();
+    ClusterInvariants invariants {clust};
+    json["min_length"] = invariants.displacement().front();
+    json["max_length"] = invariants.displacement().back();
     json["sites"].put_array(clust.begin(), clust.end());
     return json;
   }
@@ -103,7 +116,7 @@ namespace CASM {
   /// \endcode
   ///
   /// - Also accepts "prototype" in place of "sites"
-  void from_json(IntegralCluster &clust, const jsonParser &json, double xtal_tol) {
+  void from_json(IntegralCluster &clust, jsonParser const &json, double xtal_tol) {
 
     std::string name;
     if(json.contains("sites")) {
@@ -143,29 +156,12 @@ namespace CASM {
   }
 
   IntegralCluster jsonConstructor<IntegralCluster>::from_json(
-    const jsonParser &json,
-    const Structure &prim,
+    jsonParser const &json,
+    Structure const &prim,
     double xtal_tol) {
     IntegralCluster clust(prim);
     CASM::from_json(clust, json, xtal_tol);
     return clust;
   }
 
-  IntegralCluster jsonConstructor<IntegralCluster>::from_json(
-    const jsonParser &json,
-    const PrimClex &primclex) {
-    IntegralCluster clust(primclex.prim());
-    CASM::from_json(clust, json, primclex.crystallography_tol());
-    return clust;
-  }
-
-  namespace sym {
-    template<>
-    CoordCluster<UnitCellCoord> &apply<SymOp, CoordCluster<UnitCellCoord>, Structure>(const SymOp &op, CoordCluster<UnitCellCoord> &clust, const Structure &prim) {
-      for(auto &e : clust) {
-        sym::apply(op, e, prim);
-      }
-      return clust;
-    }
-  }
 }

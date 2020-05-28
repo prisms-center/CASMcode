@@ -189,7 +189,7 @@ namespace CASM {
           auto f_it = val.find("include_subclusters");
           if(f_it == val.end() ||
              (f_it != val.end() && f_it->get<bool>())) {
-            insert_subcluster_generators(input_cluster, custom_generators, primclex.log());
+            insert_subcluster_generators(input_cluster, custom_generators);
           }
           else {
             custom_generators.insert(input_cluster);

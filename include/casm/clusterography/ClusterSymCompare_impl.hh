@@ -2,12 +2,18 @@
 #define CASM_ClusterSymCompare_impl
 
 #include "casm/clusterography/ClusterSymCompare.hh"
-#include "casm/crystallography/IntegralCoordinateWithin.hh"
-#include "casm/global/eigen.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/symmetry/SymPermutation.hh"
-#include "casm/crystallography/UnitCellCoord.hh"
 
 namespace CASM {
+
+  /// \brief Make orbit invariants from one element in the orbit
+  template<typename Base>
+  typename ClusterSymCompare<Base>::InvariantsType
+  ClusterSymCompare<Base>::make_invariants_impl(const Element &obj) const {
+    return traits<MostDerived>::make_invariants(obj, this->derived());
+  }
+
 
   /// \brief Orders 'prepared' elements in the same orbit
   ///
@@ -18,20 +24,28 @@ namespace CASM {
   /// - First compares by number of sites in cluster
   /// - Then compare all displacements, from longest to shortest
   template<typename Base>
-  bool ClusterSymCompare<Base>::invariants_compare_impl(const Element &A, const Element &B) const {
-    return CASM::compare(A.invariants(), B.invariants(), this->derived().tol());
+  bool ClusterSymCompare<Base>::
+  invariants_compare_impl(const InvariantsType &A, const InvariantsType &B) const {
+    return CASM::compare(A, B, this->derived().tol());
   }
 
-  /// \brief Compares 'prepared' elements
+  /// \brief Compares 'prepared' clusters
   ///
   /// - Returns 'true' to indicate A < B
   /// - Equivalence is indicated by \code !compare(A,B) && !compare(B,A) \endcode
   /// - Assumes elements are 'prepared' before being compared
   template<typename Base>
-  bool ClusterSymCompare<Base>::compare_impl(const Element &A, const Element &B) const {
+  bool ClusterSymCompare<Base>::
+  compare_impl(const ClusterType &A, const ClusterType &B) const {
     return A < B;
   }
 
+  /// \brief Applies SymOp to cluster
+  template<typename Base>
+  typename ClusterSymCompare<Base>::ClusterType ClusterSymCompare<Base>::
+  copy_apply_impl(SymOp const &op, ClusterType obj) const {
+    return traits<MostDerived>::copy_apply(op, obj, this->derived());
+  }
 
   /// \brief Returns transformation that takes 'obj' to its prepared (canonical) form
   ///
@@ -41,16 +55,8 @@ namespace CASM {
     return std::unique_ptr<SymOpRepresentation>(new SymPermutation(obj.sort_permutation()));
   }
 
-  /// \brief type-specific way to get position of element
-  ///
-  /// - Returns traits<Element>::position(el)
-  template<typename Base>
-  UnitCellCoord ClusterSymCompare<Base>::position(const Element &el) {
-    return traits<Element>::position(el);
-  }
 
-
-  // -- LocalSymCompare<IntegralCluster> -------------------------------------
+  // -- AperiodicSymCompare<IntegralCluster> -------------------------------------
 
   /// \brief Constructor
   ///
@@ -65,8 +71,16 @@ namespace CASM {
   /// - Returns sorted
   template<typename Element>
   Element AperiodicSymCompare<Element>::
-  representation_prepare_impl(Element obj) const {
-    return obj.sort();
+  spatial_prepare_impl(Element obj) const {
+    return obj;
+  }
+
+  /// \brief Access spatial transform that was used during most recent spatial preparation of an element
+  /// - Always identity
+  template<typename Element>
+  SymOp const &AperiodicSymCompare<Element>::
+  spatial_transform_impl() const {
+    return m_spatial_transform;
   }
 
   /// \brief Prepare an element for comparison
@@ -74,11 +88,9 @@ namespace CASM {
   /// - Returns sorted
   template<typename Element>
   Element AperiodicSymCompare<Element>::
-  spatial_prepare_impl(Element obj) const {
-
-    return obj;
+  representation_prepare_impl(Element obj) const {
+    return obj.sort();
   }
-
 
   // -- PrimPeriodicSymCompare<IntegralCluster> -------------------------------------
 
@@ -99,12 +111,17 @@ namespace CASM {
     if(!obj.size()) {
       return obj;
     }
-
-    const auto pos = position(obj);
-    this->m_spatial_transform = SymOp::translation(-this->m_prim->lattice().lat_column_mat() * pos.unitcell().template cast<double>());
+    const auto pos = traits<PrimPeriodicSymCompare<Element>>::position(obj, this->derived());
+    this->m_spatial_transform = SymOp::translation(-prim().lattice().lat_column_mat() * pos.unitcell().template cast<double>());
     return obj - pos.unitcell();
   }
 
+  /// \brief Access spatial transform that was used during most recent spatial preparation of an element
+  template<typename Element>
+  SymOp const &PrimPeriodicSymCompare<Element>::
+  spatial_transform_impl() const {
+    return m_spatial_transform;
+  }
 
   /// \brief Prepare an element for comparison
   ///
@@ -129,15 +146,13 @@ namespace CASM {
   ///
   template<typename Element>
   ScelPeriodicSymCompare<Element>::
-  ScelPeriodicSymCompare(PrimType_ptr prim_ptr, const xtal::IntegralCoordinateWithin_f &bring_within_f, double tol):
-    m_bring_within_f(bring_within_f),
+  ScelPeriodicSymCompare(
+    PrimType_ptr prim_ptr,
+    transf_mat_type transf_mat,
+    double tol):
     m_prim(prim_ptr),
+    m_bring_within_f(transf_mat),
     m_tol(tol) {}
-
-  template<typename Element>
-  ScelPeriodicSymCompare<Element>::
-  ScelPeriodicSymCompare(PrimType_ptr prim_ptr, const Eigen::Matrix3l &transformation_matrix, double tol):
-    ScelPeriodicSymCompare(prim_ptr, xtal::IntegralCoordinateWithin_f(transformation_matrix), tol) {}
 
   /// \brief Prepare an element for comparison
   ///
@@ -148,11 +163,17 @@ namespace CASM {
     if(!obj.size()) {
       return obj;
     }
-    const auto pos = position(obj);
+    const auto pos = traits<ScelPeriodicSymCompare<Element>>::position(obj, *this);
     this->m_spatial_transform = SymOp::translation(this->m_prim->lattice().lat_column_mat() * (m_bring_within_f(pos).unitcell() - pos.unitcell()).template cast<double>());
     return obj + (m_bring_within_f(pos).unitcell() - pos.unitcell());
   }
 
+  /// \brief Access spatial transform that was used during most recent spatial preparation of an element
+  template<typename Element>
+  SymOp const &ScelPeriodicSymCompare<Element>::
+  spatial_transform_impl() const {
+    return m_spatial_transform;
+  }
 
   /// \brief Prepare an element for comparison
   ///
@@ -177,9 +198,12 @@ namespace CASM {
   ///
   template<typename Element>
   WithinScelSymCompare<Element>::
-  WithinScelSymCompare(PrimType_ptr prim_ptr, const xtal::IntegralCoordinateWithin_f &bring_within_f, double tol):
-    m_bring_within_f(bring_within_f),
+  WithinScelSymCompare(
+    PrimType_ptr prim_ptr,
+    transf_mat_type transf_mat,
+    double tol):
     m_prim(prim_ptr),
+    m_bring_within_f(transf_mat),
     m_tol(tol) {}
 
   /// \brief Returns transformation that takes 'obj' to its prepared (canonical) form
@@ -188,11 +212,7 @@ namespace CASM {
   template<typename Element>
   std::unique_ptr<SymOpRepresentation> WithinScelSymCompare<Element>::
   canonical_transform_impl(Element const &obj)const {
-    Element tobj = obj;
-    for(Index i = 0; i < tobj.size(); ++i) {
-      tobj[i] = m_bring_within_f(tobj[i]);
-    }
-
+    Element tobj = traits<WithinScelSymCompare<Element>>::bring_within(obj, this->derived());
     return std::unique_ptr<SymOpRepresentation>(new SymPermutation(tobj.sort_permutation()));
   }
 
@@ -205,6 +225,14 @@ namespace CASM {
     return obj;
   }
 
+  /// \brief Access spatial transform that was used during most recent spatial preparation of an element
+  /// - Always identity
+  template<typename Element>
+  SymOp const &WithinScelSymCompare<Element>::
+  spatial_transform_impl() const {
+    return m_spatial_transform;
+  }
+
   /// \brief Prepare an element for comparison
   ///
   /// - Puts all sites within the supercell, then sorts
@@ -214,9 +242,7 @@ namespace CASM {
     if(!obj.size()) {
       return obj;
     }
-    for(Index i = 0; i < obj.size(); ++i) {
-      obj[i] = m_bring_within_f(obj[i]);
-    }
+    obj = traits<WithinScelSymCompare<Element>>::bring_within(obj, this->derived());
     obj.sort();
     return obj;
   }
