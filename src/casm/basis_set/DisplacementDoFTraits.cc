@@ -34,7 +34,7 @@ namespace CASM {
         if(!_prim.basis()[b].has_dof(name()))
           continue;
 
-        CASM::DoFSet adapted_dofset = adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(_prim.basis()[b].dof(name()), b);
+        CASM::DoFSet adapted_dofset = adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(_prim.basis()[b].dof(name()), _prim.site_dof_symrep_IDs()[b].at(name()), b);
         result[b].set_variable_basis(adapted_dofset);
         //std::cout << "+:+:+:+Created variable set for site " << b << ", size " << result[b].size() << "\n";
       }

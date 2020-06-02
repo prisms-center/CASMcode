@@ -12,6 +12,8 @@ namespace CASM {
   class jsonParser;
   class SymGroupRepID;
   class SymOp;
+  template<typename T>
+  struct jsonConstructor;
 
   /// \brief A container class for the different degrees of freedom a Configuration
   /// might have

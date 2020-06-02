@@ -164,15 +164,50 @@ namespace CASM {
       _sstruc.atom_info.coords.resize(3, N_atoms);
       _sstruc.atom_info.names.resize(N_atoms);
 
-      // a indexes atom, s indexes site (molecule)
+      // s indexes site (i.e., molecule), a is index of atom within the entire structure
       Index a = 0;
       s = 0;
       for(Index b = 0; b < nb; ++b) {
         for(Index v = 0; v < nv; ++v, ++s) {
           Molecule const &molref = _reference.basis()[b].occupant_dof()[_mol_occ[s]];
-          for(Index ms = 0; ms < molref.size(); ++ms, ++a) {
-            _sstruc.atom_info.cart_coord(a) = _sstruc.mol_info.cart_coord(s) + molref.atom(ms).cart();
-            _sstruc.atom_info.names[a] = molref.atom(ms).name();
+
+          // Initialize atom_info.properties for *molecule* attributes
+          for(auto const &property : _sstruc.mol_info.properties) {
+            auto it = _sstruc.atom_info.properties.find(property.first);
+            if(it == _sstruc.atom_info.properties.end()) {
+              Index dim = AnisoValTraits(property.first).dim();
+              _sstruc.atom_info.properties.emplace(property.first, Eigen::MatrixXd::Zero(dim, N_atoms));
+            }
+          }
+
+          // ma is index of atom within individual molecule
+          for(Index ma = 0; ma < molref.size(); ++ma, ++a) {
+            // Record position of atom
+            _sstruc.atom_info.cart_coord(a) = _sstruc.mol_info.cart_coord(s) + molref.atom(ma).cart();
+            // Record name of atom
+            _sstruc.atom_info.names[a] = molref.atom(ma).name();
+
+            // Initialize atom_info.properties for *atom* attributes
+            for(auto const &attr : molref.atom(ma).attributes()) {
+              auto it = _sstruc.atom_info.properties.find(attr.first);
+              if(it == _sstruc.atom_info.properties.end()) {
+                it = _sstruc.atom_info.properties.emplace(attr.first, Eigen::MatrixXd::Zero(attr.second.traits().dim(), N_atoms)).first;
+              }
+              // Record attributes of atom
+              it->second.col(a) = attr.second.value();
+            }
+
+            // Split molecule attributes into atom attributes using appropriate extensivity rules
+            // If an attribute is specified both at the atom and molecule levels then the two are added
+            for(auto const &property : _sstruc.mol_info.properties) {
+              auto it = _sstruc.atom_info.properties.find(property.first);
+              if(AnisoValTraits(property.first).extensive()) {
+                it->second.col(a) += property.second.col(s) / double(molref.size());
+              }
+              else {
+                it->second.col(a) += property.second.col(s);
+              }
+            }
           }
         }
       }

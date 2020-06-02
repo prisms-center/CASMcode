@@ -50,8 +50,22 @@ namespace CASM {
 
     for(Index b = 0, l = 0; b < _dof.n_sublat(); ++b) {
       for(Index v = 0; v < _dof.n_vol(); ++v, ++l) {
-        std::string mol_name = _scel.prim().basis()[ b ].occupant_dof()[_dof.occ(l)].name();
-        result.mol_info.names[l] = std::move(mol_name);
+        Molecule const &mol = _scel.prim().basis()[ b ].occupant_dof()[_dof.occ(l)];
+
+        // Fill up the molecule's SpeciesAttributes
+        for(auto const &attr : mol.attributes()) {
+          // Has this attribute been encountered yet??
+          auto it = result.mol_info.properties.find(attr.first);
+          /// If not, initialize it
+          if(it == result.mol_info.properties.end()) {
+            // Iterator now points to initialized matrix
+            it = result.mol_info.properties.emplace(attr.first, Eigen::MatrixXd::Zero(attr.second.traits().dim(), _dof.size())).first;
+          }
+          it->second.col(l) = attr.second.value();
+        }
+
+        // Record name
+        result.mol_info.names[l] = mol.name();
       }
     }
 

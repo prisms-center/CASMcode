@@ -37,16 +37,15 @@ namespace CASM {
   // returns {error message, new file extension, new structure}
   std::tuple<std::string, std::string, BasicStructure > standardize_prim(BasicStructure const &prim, bool force) {
     /// Check if PRIM is primitive
-    xtal::BasicStructure true_prim = prim;
+    xtal::BasicStructure true_prim = xtal::make_primitive(prim);
     std::string err;
-    if(!xtal::is_primitive(prim)) {
+    if(true_prim.basis().size() < prim.basis().size()) {
       //err
       err +=
         "       The structure in the provided file is not primitive. Some CASM\n"
         "       features cannot be used with a non-primitive starting structure.\n\n";
 
       if(!force) {
-
         // current is_primitive
         Lattice lat_niggli = xtal::canonical::equivalent(true_prim.lattice());
         true_prim.set_lattice(lat_niggli, CART);
@@ -187,7 +186,7 @@ namespace CASM {
       }
       catch(std::runtime_error &e) {
         args.err_log() << e.what() << std::endl;
-
+        args.err_log() << "To initialize your project anyway, use the --force option." << std::endl;
         return ERR_INVALID_INPUT_FILE;
       }
 
