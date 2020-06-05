@@ -207,9 +207,9 @@ namespace CASM {
     return m_root / m_sym_dir;
   }
 
-  /// \brief Return symmetry directory path
+  /// \brief Return symmetry directory path for a specific configuration or supercell
   fs::path DirectoryStructure::symmetry_dir(std::string configname) const {
-    return m_root / m_sym_dir / "supercells" / configname;
+    return m_root / m_sym_dir / "analysis" / configname;
   }
 
   /// \brief Return lattice_point_group.json path
