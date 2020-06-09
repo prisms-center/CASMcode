@@ -14,7 +14,6 @@ namespace CASM {
     class Coordinate;
     class Site;
     class BasicStructure;
-    class Structure;
     class Lattice;
     class UnitCellCoord;
     class Superlattice;
@@ -254,4 +253,3 @@ namespace std {
   };
 }
 #endif
-

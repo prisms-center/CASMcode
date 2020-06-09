@@ -34,7 +34,7 @@ namespace CASM {
     /// Copy and apply a transformation, retun a new transformed copy.
     template <typename Transform, typename Object, typename... Args>
     Object copy_apply(const Transform &transformation, Object obj_copy, const Args &... args) {
-      apply(transformation, obj_copy, args...);
+      sym::apply(transformation, obj_copy, args...);
       return obj_copy;
     }
   } // namespace sym

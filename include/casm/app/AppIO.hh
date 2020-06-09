@@ -38,6 +38,7 @@ namespace CASM {
   class jsonParser;
   class ClexBasis;
   class HamiltonianModules;
+  class IntegralCluster;
   class ChemicalReference;
   class SymGroup;
   class PrimClex;

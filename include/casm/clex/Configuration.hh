@@ -25,6 +25,7 @@ namespace CASM {
   using xtal::Molecule;
   using xtal::UnitCellCoord;
 
+  class IntegralCluster;
   class PrimClex;
   class Supercell;
   class Clexulator;

@@ -594,10 +594,10 @@ namespace CASM {
 
     // TODO: update this function with ClusterSpecs
 
-    PERIODICITY_TYPE clex_periodicity_type = basis_set_specs.contains("local_bpsecs") ?
-                                             PERIODICITY_TYPE::LOCAL : PERIODICITY_TYPE::PERIODIC;
+    CLUSTER_PERIODICITY_TYPE clex_periodicity_type = basis_set_specs.contains("local_bpsecs") ?
+                                                     CLUSTER_PERIODICITY_TYPE::LOCAL : CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC;
 
-    if(clex_periodicity_type == PERIODICITY_TYPE::PERIODIC) {
+    if(clex_periodicity_type == CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC) {
       std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
 
       log().construct("Orbitree");

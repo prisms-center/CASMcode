@@ -7,6 +7,7 @@
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/clex/io/json/ChemicalReference.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/clusterography/ClusterSpecs_impl.hh"
 #include "casm/clusterography/ClusterSymCompare.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/DoFSet.hh"

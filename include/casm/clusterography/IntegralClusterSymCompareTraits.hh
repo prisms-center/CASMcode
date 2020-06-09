@@ -34,7 +34,7 @@ namespace CASM {
   /// - AperiodicSymCompare<IntegralCluster>
   /// - ScelPeriodicSymCompare<IntegralCluster>
   template <typename SymCompareType>
-  struct IntegralClusterOrbitTraits {
+  struct IntegralClusterSymCompareTraits {
     using Element = IntegralCluster;
     using InvariantsType = ClusterInvariants;
 
@@ -54,13 +54,13 @@ namespace CASM {
   };
 
   template <>
-  struct traits<AperiodicSymCompare<IntegralCluster>> : public IntegralClusterOrbitTraits<AperiodicSymCompare<IntegralCluster>> {};
+  struct traits<AperiodicSymCompare<IntegralCluster>> : public IntegralClusterSymCompareTraits<AperiodicSymCompare<IntegralCluster>> {};
 
   template <>
-  struct traits<PrimPeriodicSymCompare<IntegralCluster>> : public IntegralClusterOrbitTraits<PrimPeriodicSymCompare<IntegralCluster>> {};
+  struct traits<PrimPeriodicSymCompare<IntegralCluster>> : public IntegralClusterSymCompareTraits<PrimPeriodicSymCompare<IntegralCluster>> {};
 
   template <>
-  struct traits<ScelPeriodicSymCompare<IntegralCluster>> : public IntegralClusterOrbitTraits<ScelPeriodicSymCompare<IntegralCluster>> {};
+  struct traits<ScelPeriodicSymCompare<IntegralCluster>> : public IntegralClusterSymCompareTraits<ScelPeriodicSymCompare<IntegralCluster>> {};
 
   typedef AperiodicOrbit<IntegralCluster> AperiodicIntegralClusterOrbit;
   typedef LocalOrbit<IntegralCluster> LocalIntegralClusterOrbit;
