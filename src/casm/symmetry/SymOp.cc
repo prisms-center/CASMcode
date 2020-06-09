@@ -45,7 +45,7 @@ namespace CASM {
   SymOp SymOp::operator*(const SymOp &RHS) const {
     SymOp t_op(matrix() * RHS.matrix(),
                tau() + matrix() * RHS.tau(),
-               time_reversal() != RHS.time_reversal(),
+               time_reversal() != RHS.time_reversal(),  //time reversal set by XOR operation
                sqrt(map_error()*map_error() + RHS.map_error()*RHS.map_error()),
                -1,
                nullptr);

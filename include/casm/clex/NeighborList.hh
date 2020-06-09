@@ -256,7 +256,7 @@ namespace CASM {
 
     bool any_new = false;
     for(auto it = begin; it != end; ++it) {
-      any_new = any_new || _expand(*it);
+      any_new = _expand(*it) || any_new;
     }
 
     if(!any_new) {

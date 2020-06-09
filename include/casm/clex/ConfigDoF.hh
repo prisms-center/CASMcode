@@ -12,6 +12,8 @@ namespace CASM {
   class jsonParser;
   class SymGroupRepID;
   class SymOp;
+  template<typename T>
+  struct jsonConstructor;
 
   /// \brief A container class for the different degrees of freedom a Configuration
   /// might have
@@ -252,6 +254,11 @@ namespace CASM {
       m_local_dofs[dof.first] = LocalContinuousConfigDoFValues(ttraits, _N_sublat, _N_vol, Eigen::MatrixXd::Zero(dim, _N_sublat * _N_vol), dof.second);
     }
   }
+
+  class Structure;
+
+  std::vector<SymGroupRepID> occ_symrep_IDs(Structure const &_struc);
+
 }
 
 #endif

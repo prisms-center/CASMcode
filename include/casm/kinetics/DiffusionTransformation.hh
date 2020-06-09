@@ -14,11 +14,6 @@
 
 namespace CASM {
 
-  namespace xtal {
-    class Structure;
-  }
-  using xtal::Structure;
-
   class Configuration;
   class SymOp;
   class jsonParser;
@@ -34,7 +29,7 @@ namespace CASM {
     /// configurational degrees of freedom)
     struct SpeciesLocation : public Comparisons<CRTPBase<SpeciesLocation>> {
 
-      typedef xtal::BasicStructure<xtal::Site> PrimType;
+      typedef xtal::BasicStructure PrimType;
 
       /// Constructor Create SpeciesLocation using a bijk and
       /// an occ index into that basis site's occupant array
@@ -90,7 +85,7 @@ namespace CASM {
     class SpeciesTrajectory : public Comparisons<CRTPBase<SpeciesTrajectory>> {
 
     public:
-      typedef xtal::Structure PrimType;
+      typedef Structure PrimType;
 
       /// Constructor Creates SpeciesTrajectory from two SpecieLocation objects
       /// SpecieLocation objects should have the same Specie information

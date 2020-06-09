@@ -46,8 +46,8 @@ namespace CASM {
       explicit Coordinate(const Lattice &_home) :
         m_home(&_home),
         m_frac_coord(vector_type::Zero()),
-        m_cart_coord(vector_type::Zero()),
-        m_basis_ind(-1) {
+        m_cart_coord(vector_type::Zero()) {
+        assert(m_home && "home lattice pointer was set to null!");
       }
 
       Coordinate(Eigen::Ref<const vector_type> const &_vec, const Lattice &_home, COORD_TYPE _mode);
@@ -193,16 +193,6 @@ namespace CASM {
       /// \endparblock
       void set_lattice(const Lattice &new_lat, COORD_TYPE mode); //John G, use to specify whether to keep CART or FRAC the same, when assigning a new lattice
 
-      /// \brief Set basis Index
-      void set_basis_ind(Index _basis_ind) {
-        m_basis_ind = _basis_ind;
-      }
-
-      /// \brief Access basis Index
-      Index basis_ind() const {
-        return m_basis_ind;
-      }
-
       /// \brief Access the home lattice of the coordinate
       const Lattice &home() const {
         assert(m_home && "Coordinate doesn't have valid home lattice");
@@ -230,11 +220,11 @@ namespace CASM {
       /// Is unsafe if min_dist is comparable to half a lattice vector in length
       double min_dist(const Coordinate &neighbor) const;
 
-      /// \brief Returns distance (in Angstr) to nearest periodic image of neighbor
+      /// \brief Returns translation coordinate (in Angstr) to nearest periodic image of neighbor
       ///
       /// This version calculates the translation such that
       /// (neighbor+translation) is the nearest periodic image of neighbor
-      double min_dist(const Coordinate &neighbor, Coordinate &translation)const;
+      Coordinate min_translation(const Coordinate &neighbor)const;
 
       /// \brief Returns distance (in Angstr) to nearest periodic image of neighbor
       ///
@@ -242,27 +232,8 @@ namespace CASM {
       /// determine the nearest image, but this makes it slower than min_dist
       double robust_min_dist(const Coordinate &neighbor) const;
 
-      /// \brief Returns distance (in Angstr) to nearest periodic image of neighbor
-      ///
-      /// This version calculates the translation such that
-      /// (neighbor+translation) is the periodic nearest period image of neighbor
-      /// It is safe in all cases, because it uses the lattice Wigner-Seitz cell to
-      /// determine the nearest image, but this makes it slower than min_dist
-      double robust_min_dist(const Coordinate &neighbor, Coordinate &translation)const;
-
       ///Finds same shift as min_dist but returns shift(CART).transpose()*metric*shift(CART)
       double min_dist2(const Coordinate &neighbor, const Eigen::Ref<const Eigen::Matrix3d> &metric) const;
-
-      ///Transform coordinate by symmetry operation (including translation)
-      Coordinate &apply_sym(const SymOp &op); //AAB
-
-      template <typename ExternSymOp>
-      Coordinate &apply_sym(const ExternSymOp &op) {
-        return this->apply_sym(adapter::Adapter<SymOp, ExternSymOp>()(op));
-      }
-
-      ///Transform coordinate by symmetry operation (without translation)
-      /* Coordinate &apply_sym_no_trans(const SymOp &op); //AAB */
 
     private:
 
@@ -272,6 +243,7 @@ namespace CASM {
 
 
       void _update_frac() {
+        assert(this->m_home && "No home lattice to access");
         m_frac_coord = home().inv_lat_column_mat() * m_cart_coord;
       }
 
@@ -307,8 +279,6 @@ namespace CASM {
       Lattice const *m_home;
 
       vector_type m_frac_coord, m_cart_coord;
-
-      Index m_basis_ind;
     };
 
     inline
@@ -615,6 +585,20 @@ namespace CASM {
     }
 
   }
+}
+
+namespace CASM {
+  namespace sym {
+    /// \brief apply SymOp to a Coordinate
+    xtal::Coordinate &apply(const xtal::SymOp &op, xtal::Coordinate &coord);
+    /// \brief Copy and apply SymOp to a Coordinate
+    xtal::Coordinate copy_apply(const xtal::SymOp &op, xtal::Coordinate coord);
+
+    template <typename ExternSymOp>
+    xtal::Coordinate copy_apply(const ExternSymOp &op, xtal::Coordinate coord) {
+      return sym::copy_apply(adapter::Adapter<xtal::SymOp, ExternSymOp>()(op), coord);
+    }
+  } // namespace sym
 }
 
 namespace std {

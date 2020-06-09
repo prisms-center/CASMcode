@@ -192,12 +192,6 @@ namespace CASM {
 
     std::vector<SymGroup> unique_subgroups() const;
 
-    ///Space group (added by Donghee );
-    std::vector<Index> get_rotation_groups()const;
-
-    std::map<std::string, std::string> point_group_info()const;
-    void print_space_group_info(std::ostream &out) const;
-
     ///Fill up a SymGroup with *this minus the shifts
     SymGroup copy_no_trans(bool keep_repeated = false) const;
 
@@ -269,6 +263,16 @@ namespace CASM {
 
   };
 
+
+  ///Space group (added by Donghee );
+  std::vector<Index> get_rotation_groups(SymGroup const &group);
+
+  std::map<std::string, std::string> point_group_info(SymGroup const &group);
+
+  std::map<std::string, std::string> nonmagnetic_point_group_info(SymGroup const &group);
+
+  std::string space_group_info_string(SymGroup const &group);
+
   jsonParser &to_json(const SymGroup &group, jsonParser &json);
 
   // Note: as a hack this expects group[0] to be present and have the right lattice!!!
@@ -294,6 +298,7 @@ namespace CASM {
     MasterSymGroup(PERIODICITY_TYPE init_type = PERIODIC) :
       SymGroup(init_type),
       m_group_index(GROUP_COUNT++) {
+
     }
 
     MasterSymGroup(const MasterSymGroup &RHS);
@@ -304,6 +309,12 @@ namespace CASM {
     }
 
     MasterSymGroup &operator=(const MasterSymGroup &RHS);
+
+    /// Notify this object that it is a temporary copy of RHS to avoid weird errors
+    /// This should only be used if absolutely necessary!
+    void is_temporary_of(MasterSymGroup const &RHS) {
+      m_group_index = RHS.group_index();
+    }
 
     /// push_back sets home_group and op_index of added SymOp;
     /// virtual in SymGroup, so this overrides
@@ -379,6 +390,8 @@ namespace CASM {
     mutable SymGroup m_point_group;
   };
 
+  MasterSymGroup make_master_sym_group(SymGroup const &_group, Lattice const &_lattice);
+
   jsonParser &to_json(const SymGroup &group, jsonParser &json);
 
   // Note: as a hack this expects group[0] to be present and have the right lattice!!!
@@ -439,6 +452,44 @@ namespace CASM {
     }
     return tcosets;
 
+  }
+
+  namespace adapter {
+    template <typename ToType, typename FromType>
+    struct Adapter;
+
+    /// Convertes any symmetry type to CASM::SymOp.
+    /// Works for any symmetry type that has the get_matrix, get_translation, and
+    /// get_time_reversal accessors defined.
+    ///
+    /// If there is a different symmetry type you would like to adapt for CASM::SymOp,
+    /// simply declare and define accessors get_matrix, get_translation, and
+    /// get_time_reversal
+    template <typename FromType>
+    struct Adapter<SymOp, FromType> {
+      SymOp operator()(const FromType &adaptable) {
+        //TODO: This mapping error is totally arbitrary and I'm not sure what to do about it
+        return SymOp(get_matrix(adaptable), get_translation(adaptable), get_time_reversal(adaptable), CASM::TOL);
+      }
+    };
+
+    /// Converts any container of any symmetry type with begin() and end() defined into SymGroup
+    template <typename FromType>
+    struct Adapter<SymGroup, FromType> {
+      template <typename FromTypeIt>
+      SymGroup operator()(FromTypeIt begin, FromTypeIt end, const Lattice &group_home_lattice) {
+        std::vector<SymOp> casted_group_vector;
+        Adapter<SymOp, typename FromTypeIt::value_type> to_symop_type;
+        for(auto it = begin; it != end; ++it) {
+          casted_group_vector.emplace_back(to_symop_type(*it));
+        }
+        return SymGroup(casted_group_vector, &group_home_lattice);
+      }
+
+      SymGroup operator()(const FromType &adaptable, const Lattice &group_home_lattice) {
+        return this->operator()(adaptable.begin(), adaptable.end(), group_home_lattice);
+      }
+    };
   }
 
 

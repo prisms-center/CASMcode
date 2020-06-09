@@ -10,6 +10,7 @@
 /// What is being used to test it:
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/io/UnitCellCoordIO.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/database/Database.hh"

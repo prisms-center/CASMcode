@@ -189,7 +189,7 @@ namespace CASM {
 
   /// \brief Construct a CompositionConverter
   ///
-  /// \param _prim A primitive BasicStructure<Site>
+  /// \param _prim A primitive BasicStructure
   /// \param _origin Origin for parametric composition space
   /// \param _end_members Column vector matrix of end members for parameteric composition space axes
   ///

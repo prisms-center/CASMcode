@@ -10,12 +10,9 @@
 #include "casm/misc/Comparisons.hh"
 
 namespace CASM {
-  class jsonParser;
-
   namespace xtal {
     class Coordinate;
     class Site;
-    template <typename CoordType>
     class BasicStructure;
     class Structure;
     class Lattice;
@@ -121,7 +118,7 @@ namespace CASM {
     class UnitCellCoord : public Comparisons<Translatable<CRTPBase<UnitCellCoord>>> {
 
     public:
-      typedef BasicStructure<Site> PrimType;
+      typedef BasicStructure PrimType;
 
       UnitCellCoord(Index _sublat, const UnitCell &_unitcell) : m_unitcell(_unitcell), m_sublat(_sublat) {
         if(!valid_index(_sublat)) {
@@ -237,13 +234,6 @@ namespace CASM {
     Coordinate make_superlattice_coordinate(const UnitCell &ijk, const Lattice &tiling_unit, const Lattice &superlattice);
 
   } // namespace xtal
-
-  /// \brief Print to json as [b, i, j, k]
-  jsonParser &to_json(const xtal::UnitCellCoord &ucc_val, jsonParser &fill_json);
-
-  /// \brief Read from json [b, i, j, k]
-  void from_json(xtal::UnitCellCoord &fill_value, const jsonParser &read_json);
-
 } // namespace CASM
 
 /* #include "casm/crystallography/Coordinate.hh" */

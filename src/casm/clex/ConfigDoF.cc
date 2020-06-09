@@ -6,22 +6,10 @@
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/symmetry/SymPermutation.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/basis_set/Adapter.hh"
 
 
 namespace CASM {
-
-  /*  ConfigDoF::ConfigDoF(Index _N, double _tol) :
-    m_occupation(_N, 0),
-    m_tol(_tol) {
-    }*/
-
-  //*******************************************************************************
-
-  // ConfigDoF::ConfigDoF(const std::vector<int> &_occ, double _tol):
-  //  m_occupation(_occ),
-  //  m_tol(_tol) {
-  // }
-
 
   //*******************************************************************************
 
@@ -88,8 +76,10 @@ namespace CASM {
     for(auto &dof : m_local_dofs) {
       LocalContinuousConfigDoFValues tmp = dof.second;
 
-      for(Index b = 0; b < tmp.n_sublat(); ++b)
-        tmp.sublat(b) = *(it.local_dof_rep(dof.first, b).MatrixXd()) * dof.second.sublat(b);
+      for(Index b = 0; b < tmp.n_sublat(); ++b) {
+        Index rows = it.local_dof_rep(dof.first, b).MatrixXd()->rows();
+        tmp.sublat(b).topRows(rows) = *(it.local_dof_rep(dof.first, b).MatrixXd()) * dof.second.sublat(b).topRows(rows);
+      }
       for(Index l = 0; l < size(); ++l) {
         dof.second.site_value(l) = tmp.site_value(tperm[l]);
       }
@@ -204,6 +194,9 @@ namespace CASM {
     A.swap(B);
   }
 
+  std::vector<SymGroupRepID> occ_symrep_IDs(Structure const &_struc) {
+    return _struc.occupant_symrep_IDs();
+  }
 
 }
 

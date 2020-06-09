@@ -1,19 +1,22 @@
 #include "casm/app/AppIO_impl.hh"
 
 #include "casm/app/HamiltonianModules.hh"
+#include "casm/basis_set/DoFTraits.hh"
+#include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/casm_io/container/json_io.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
 #include "casm/clex/io/json/ChemicalReference.hh"
-#include "casm/clusterography/ClusterSymCompare.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
-#include "casm/basis_set/FunctionVisitor.hh"
-#include "casm/basis_set/DoFTraits.hh"
+#include "casm/clusterography/ClusterSymCompare.hh"
+#include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/DoFSet.hh"
+#include "casm/crystallography/io/DoFSetIO.hh"
 #include "casm/global/enum/json_io.hh"
 #include "casm/global/enum/stream_io.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
-#include "casm/symmetry/SymInfo.hh"
 #include "casm/symmetry/Orbit_impl.hh"
+#include "casm/symmetry/SymInfo.hh"
+#include <fstream>
 
 namespace CASM {
 
@@ -163,7 +166,7 @@ namespace CASM {
     // change this to use FormatFlag
     if(coordtype == FRAC)
       c2f = site.home().inv_lat_column_mat();
-    CASM::to_json(site.occupant_dof().domain(), json["occupants"], c2f);
+    CASM::to_json(site.occupant_dof(), json["occupants"], c2f);
 
     if(site.dofs().size()) {
       json["dofs"] = site.dofs();
@@ -203,7 +206,7 @@ namespace CASM {
 
     // Local continuous dofs
 
-    std::map<std::string, DoFSet> _dof_map;
+    std::map<std::string, xtal::SiteDoFSet> _dof_map;
     if(json.contains("dofs")) {
 
       auto it = json["dofs"].begin(), end_it = json["dofs"].end();
@@ -212,7 +215,9 @@ namespace CASM {
           throw std::runtime_error("Error parsing global field \"dofs\" from JSON. DoF type " + it.name() + " cannot be repeated.");
 
         try {
-          _dof_map.emplace(std::make_pair(it.name(), it->get<DoFSet>(_modules.aniso_val_dict().lookup(it.name()))));
+          /* _dof_map.emplace(std::make_pair(it.name(), it->get<xtal::DoFSet>(_modules.aniso_val_dict().lookup(it.name())))); */
+          _dof_map.emplace(std::make_pair(it.name(), it->get<xtal::SiteDoFSet>(_modules.aniso_val_dict().lookup(it.name()))));
+          /* _dof_map.emplace(std::make_pair(it.name(), from_json<xtal::SiteDoFSet>(*it))); */
         }
         catch(std::exception &e) {
           throw std::runtime_error("Error parsing global field \"dofs\" from JSON. Failure for DoF type " + it.name() + ": " + e.what());
@@ -246,21 +251,48 @@ namespace CASM {
     site.set_allowed_occupants(t_occ);
   }
 
-  BasicStructure<Site> read_prim(fs::path filename, double xtal_tol, HamiltonianModules const *_modules) {
+  BasicStructure read_prim(fs::path filename, double xtal_tol, HamiltonianModules const *_modules) {
+    jsonParser json;
+    std::ifstream f(filename.string());
+    if(!f) {
+      throw std::invalid_argument("Error reading prim from file '" + filename.string() + "'. Does not contain valid input.");
+    }
+    while(!f.eof() && std::isspace(f.peek())) {
+      f.get();
+    }
 
-    try {
-      jsonParser json(filename);
+    //TODO: Use functions. One for checking file type, one for reading json, one for reading vasp.
+    // Check if JSON
+    if(f.peek() == '{') {
+      try {
+        json = jsonParser(f);
+      }
+      catch(std::exception const &ex) {
+        std::stringstream err_msg;
+        err_msg
+            << "Error reading prim from JSON file '" << filename << "':" << std::endl
+            << ex.what();
+        throw std::invalid_argument(err_msg.str());
+      }
       return read_prim(json, xtal_tol, _modules);
     }
-    catch(...) {
-      std::cerr << "Error reading prim from " << filename << std::endl;
-      /// re-throw exceptions
-      throw;
+    // else tread as vasp-like file
+    BasicStructure prim;
+    try {
+      prim = BasicStructure::from_poscar_stream(f);
     }
+    catch(std::exception const &ex) {
+      std::stringstream err_msg;
+      err_msg
+          << "Error reading prim from VASP-formatted file '" << filename << "':" << std::endl
+          << ex.what();
+      throw std::invalid_argument(err_msg.str());
+    }
+    return prim;
   }
 
   /// \brief Read prim.json
-  BasicStructure<Site> read_prim(const jsonParser &json, double xtal_tol, HamiltonianModules const *_modules) {
+  BasicStructure read_prim(const jsonParser &json, double xtal_tol, HamiltonianModules const *_modules) {
     HamiltonianModules default_module;
     if(_modules == nullptr)
       _modules = &default_module;
@@ -275,7 +307,7 @@ namespace CASM {
       Lattice lat(latvec_transpose.transpose(), xtal_tol);
 
       // create prim using lat
-      BasicStructure<Site> prim(lat);
+      BasicStructure prim(lat);
 
       // read title
       prim.set_title(json["title"].get<std::string>());
@@ -284,7 +316,7 @@ namespace CASM {
 
       // Global DoFs
       {
-        std::map<std::string, DoFSet> _dof_map;
+        std::map<std::string, xtal::DoFSet> _dof_map;
         if(json.contains("dofs")) {
           auto it = json["dofs"].begin(), end_it = json["dofs"].end();
           for(; it != end_it; ++it) {
@@ -292,7 +324,9 @@ namespace CASM {
               throw std::runtime_error("Error parsing global field \"dofs\" from JSON. DoF type " + it.name() + " cannot be repeated.");
 
             try {
-              _dof_map.emplace(std::make_pair(it.name(), it->get<DoFSet>(_modules->aniso_val_dict().lookup(it.name()))));
+              //TODO: Am I messing something up here? Why was it constructed so weird before?
+              /* _dof_map.emplace(std::make_pair(it.name(), it->get<xtal::DoFSet>(_modules->aniso_val_dict().lookup(it.name())))); */
+              _dof_map.emplace(std::make_pair(it.name(), it->get<xtal::DoFSet>(_modules->aniso_val_dict().lookup(it.name()))));
             }
             catch(std::exception &e) {
               throw std::runtime_error("Error parsing global field \"dofs\" from JSON. Failure for DoF type " + it.name() + ": " + e.what());
@@ -342,20 +376,21 @@ namespace CASM {
   }
 
   /// \brief Write prim.json to file
-  void write_prim(const BasicStructure<Site> &prim, fs::path filename, COORD_TYPE mode) {
+  void write_prim(const BasicStructure &prim, fs::path filename, COORD_TYPE mode, bool include_va) {
 
     SafeOfstream outfile;
     outfile.open(filename);
 
     jsonParser json;
-    write_prim(prim, json, mode);
+    write_prim(prim, json, mode, include_va);
     json.print(outfile.ofstream());
 
     outfile.close();
   }
 
   /// \brief Write prim.json as JSON
-  void write_prim(const BasicStructure<Site> &prim, jsonParser &json, COORD_TYPE mode) {
+  void write_prim(const BasicStructure &prim, jsonParser &json, COORD_TYPE mode, bool include_va) {
+    //TODO: Use functions. One for each type that's getting serialized.
 
     json = jsonParser::object();
 
@@ -381,11 +416,15 @@ namespace CASM {
     for(auto const &_dof : prim.global_dofs()) {
       json["dofs"][_dof.first] = _dof.second;
     }
+
     auto mol_names = allowed_molecule_unique_names(prim);
-    jsonParser &bjson = (json["basis"] = jsonParser::array(prim.basis().size()));
+    jsonParser &bjson = (json["basis"].put_array());
     for(int i = 0; i < prim.basis().size(); i++) {
-      bjson[i] = jsonParser::object();
-      jsonParser &cjson = bjson[i]["coordinate"].put_array();
+      if(!include_va && prim.basis()[i].occupant_dof().size() == 1 && prim.basis()[i].occupant_dof()[0].is_vacancy())
+        continue;
+      bjson.push_back(jsonParser::object());
+      jsonParser &sjson = bjson[bjson.size() - 1];
+      jsonParser &cjson = sjson["coordinate"].put_array();
       if(mode == FRAC) {
         cjson.push_back(prim.basis()[i].frac(0));
         cjson.push_back(prim.basis()[i].frac(1));
@@ -398,11 +437,11 @@ namespace CASM {
       }
 
       if(prim.basis()[i].dofs().size()) {
-        bjson[i]["dofs"] = prim.basis()[i].dofs();
+        sjson["dofs"] = prim.basis()[i].dofs();
       }
 
 
-      jsonParser &ojson = (bjson[i]["occupants"] = jsonParser::array(prim.basis()[i].occupant_dof().size()));
+      jsonParser &ojson = (sjson["occupants"] = jsonParser::array(prim.basis()[i].occupant_dof().size()));
 
       for(int j = 0; j < prim.basis()[i].occupant_dof().size(); j++) {
         ojson[j] = mol_names[i][j];
@@ -423,49 +462,72 @@ namespace CASM {
 
     const SymOp &op = grp[i];
 
-    to_json(op.matrix(), j["matrix"]["CART"]);
-    to_json(grp.lattice().inv_lat_column_mat()*op.matrix()*grp.lattice().lat_column_mat(), j["matrix"]["FRAC"]);
+    to_json(op.matrix(), j["CART"]["matrix"]);
+    to_json_array(op.tau(), j["CART"]["tau"]);
+    to_json(op.time_reversal(), j["CART"]["time_reversal"]);
 
-    to_json_array(op.tau(), j["tau"]["CART"]);
-    to_json_array(grp.lattice().inv_lat_column_mat()*op.tau(), j["tau"]["FRAC"]);
+    to_json(grp.lattice().inv_lat_column_mat()*op.matrix()*grp.lattice().lat_column_mat(), j["FRAC"]["matrix"]);
+    to_json_array(grp.lattice().inv_lat_column_mat()*op.tau(), j["FRAC"]["tau"]);
+    to_json(op.time_reversal(), j["FRAC"]["time_reversal"]);
 
-    to_json(grp.class_of_op(i), j["conjugacy_class"]);
-    to_json(grp.ind_inverse(i), j["inverse"]);
 
-    add_sym_info(grp.info(i), j);
+    to_json(grp.class_of_op(i) + 1, j["info"]["conjugacy_class"]);
+    to_json(grp.ind_inverse(i) + 1, j["info"]["inverse_operation"]);
+
+    add_sym_info(grp.info(i), j["info"]);
   }
 
   void write_symgroup(const SymGroup &grp, jsonParser &json) {
     json = jsonParser::object();
-
-    json["symop"] = jsonParser::array(grp.size());
-    for(int i = 0; i < grp.size(); i++) {
-      write_symop(grp, i, json["symop"][i]);
-    }
-
-    json["name"] = grp.get_name();
-    json["latex_name"] = grp.get_latex_name();
-    json["periodicity"] = grp.periodicity();
-    if(grp.periodicity() == PERIODIC) {
-      json["possible_space_groups"] = grp.possible_space_groups();
-    }
-    json["conjugacy_class"] = grp.get_conjugacy_classes();
-    json["inverse"] = jsonParser::array(grp.size());
-    for(int i = 0; i < grp.size(); i++) {
-      json["inverse"][i] = grp.ind_inverse(i);
-    }
-    json["multiplication_table"] = grp.get_multi_table();
-    bool has_time_reversal = false;
-    for(SymOp const &op : grp) {
-      if(op.time_reversal()) {
-        has_time_reversal = true;
-        break;
+    {
+      jsonParser &json_ops = json["group_operations"];
+      for(int i = 0; i < grp.size(); i++) {
+        std::string op_name = "op_" + to_sequential_string(i + 1, grp.size());
+        write_symop(grp, i, json_ops[op_name]);
       }
     }
-    if(!has_time_reversal) {
-      // For now, only print character table for nonmagnetic groups (character table routine does not work for magnetic groups)
-      json["character_table"] = grp.character_table();
+    {
+      jsonParser &json_info = json["group_classification"];
+      json_info["name"] = grp.get_name();
+      json_info["latex_name"] = grp.get_latex_name();
+      json_info["periodicity"] = grp.periodicity();
+      if(grp.periodicity() == PERIODIC)
+        json_info["possible_space_groups"] = grp.possible_space_groups();
     }
+
+    {
+      jsonParser &json_struc = json["group_structure"];
+      auto const &classes = grp.get_conjugacy_classes();
+
+      for(Index c = 0; c < classes.size(); ++c) {
+        std::string class_name = "class_" + to_sequential_string(c + 1, classes.size());
+        jsonParser &json_class = json_struc["conjugacy_classes"][class_name];
+
+
+        SymInfo info = grp.info(classes[c][0]);
+        json_class["operation_type"] = info.op_type;
+        if(info.op_type == symmetry_type::rotation_op ||
+           info.op_type == symmetry_type::screw_op ||
+           info.op_type == symmetry_type::rotoinversion_op) {
+          json_class["rotation_angle"] = info.angle;
+        }
+        json_class["operations"].put_array();
+        for(Index o : classes[c]) {
+          json_class["operations"].push_back(o + 1);
+        }
+      }
+      auto multi_table = grp.get_multi_table();
+      for(auto &v : multi_table) {
+        for(auto &i : v) {
+          ++i;
+        }
+      }
+      json_struc["multiplication_table"] = multi_table;
+    }
+
+    // Character table excluded for now. Will revisit after SymGroup is refactored
+    //json["character_table"] = grp.character_table();
+
   }
 
 
@@ -475,7 +537,7 @@ namespace CASM {
   ///
   /// See documentation in related function for expected form of the JSON
   ChemicalReference read_chemical_reference(fs::path filename,
-                                            BasicStructure<Site> const &prim,
+                                            BasicStructure const &prim,
                                             double tol) {
     try {
       jsonParser json(filename);
@@ -509,7 +571,7 @@ namespace CASM {
   ///
   /// See one_chemical_reference_from_json for documentation of the \code {...} \endcode expected form.
   ChemicalReference read_chemical_reference(jsonParser const &json,
-                                            BasicStructure<Site> const &prim,
+                                            BasicStructure const &prim,
                                             double tol) {
 
     if(json.find("chemical_reference") == json.end()) {
@@ -706,38 +768,6 @@ namespace CASM {
     }
   }
 
-  // ---------- prim_nlist.json IO -------------------------------------------------------------
-  /*
-    void write_prim_nlist(const Array<UnitCellCoord> &prim_nlist, const fs::path &nlistpath) {
-
-      SafeOfstream outfile;
-      outfile.open(nlistpath);
-      jsonParser nlist_json;
-      nlist_json = prim_nlist;
-      nlist_json.print(outfile.ofstream());
-      outfile.close();
-
-      return;
-    }
-
-    Array<UnitCellCoord> read_prim_nlist(const fs::path &nlistpath, const BasicStructure<Site>& prim) {
-
-      try {
-        jsonParser json(nlistpath);
-        Array<UnitCellCoord> prim_nlist(json.size(), UnitCellCoord(prim));
-        auto nlist_it = prim_nlist.begin();
-        for(auto it=json.begin(); it!=json.end(); ++it) {
-          from_json(*nlist_it++, *it);
-        }
-        return prim_nlist;
-      }
-      catch(...) {
-        std::cerr << "Error reading: " << nlistpath;
-        throw;
-      }
-    }
-  */
-
   // ---------- Orbit<IntegralCluster> & ClexBasis IO ------------------------------------------------------------------
 
   const std::string traits<ORBIT_PRINT_MODE>::name = "orbit_print_mode";
@@ -840,7 +870,8 @@ namespace CASM {
       Eigen::IOFormat format(prec, width);
       for(const auto &coord : clust) {
         out << out.indent_str() << coord << " ";
-        coord.site(clust.prim()).occupant_dof().print(out);
+        Site::print_occupant_dof(coord.site(clust.prim()).occupant_dof(), out);
+
         out << std::flush;
         if(this->opt.delim) out << this->opt.delim;
         out << std::flush;
@@ -850,8 +881,8 @@ namespace CASM {
 
   ProtoFuncsPrinter::ProtoFuncsPrinter(ClexBasis const &_clex_basis, PrimType_ptr _prim_ptr, OrbitPrinterOptions const &_opt) :
     SitesPrinter(_opt),
-    prim_ptr(_prim_ptr),
-    clex_basis(_clex_basis) {
+    clex_basis(_clex_basis),
+    prim_ptr(_prim_ptr) {
     for(auto const &dofset : clex_basis.site_bases()) {
       for(BasisSet const &bset : dofset.second) {
         if(dofset.first != "occ"
@@ -891,7 +922,7 @@ namespace CASM {
               << "  ";
           if(printer_mode.check() == INTEGRAL) {
             out << indent << indent << asym_unit[no][ne][0] << ' ';
-            asym_unit[no][ne][0].site(prim).occupant_dof().print(out);
+            Site::print_occupant_dof(asym_unit[no][ne][0].site(prim).occupant_dof(), out);
             out << std::flush;
           }
           else
@@ -906,7 +937,8 @@ namespace CASM {
               BasisSet tbasis(dofset.second[b]);
 
               int s;
-              std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", prim.basis()[b].occupant_dof().ID()));
+              /* std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", prim.basis()[b].occupant_dof().ID())); */
+              std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", b));
               remote[0] = s;
               tbasis.register_remotes(remote);
 
@@ -993,7 +1025,8 @@ namespace CASM {
               fname << "\\phi_" << b << '_' << f;
               BasisSet tbasis(dofset.second[b]);
               int s;
-              std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", prim.basis()[b].occupant_dof().ID()));
+              /* std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", prim.basis()[b].occupant_dof().ID())); */
+              std::vector<DoF::RemoteHandle> remote(1, DoF::RemoteHandle("occ", "s", b));
               remote[0] = s;
               tbasis.register_remotes(remote);
 

@@ -4,24 +4,17 @@
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/Molecule.hh"
-#include "casm/basis_set/DoF.hh"
-#include "casm/basis_set/DoFSet.hh"
+#include "casm/crystallography/DoFSet.hh"
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 namespace CASM {
-  class jsonParser;
-
-  template<typename OccType>
-  class OccupantDoF;
-  class DoFSet;
-
   namespace xtal {
 
     struct SymOp;
     class Molecule;
-
 
     /** \ingroup Coordinate
      *  @{
@@ -33,14 +26,20 @@ namespace CASM {
 
       Site(const Coordinate &init_pos, const std::string &occ_name);
 
-      /// \brief Construct site with initial position and the allowed Molecule
-      Site(const Coordinate &init_pos, std::initializer_list<Molecule> site_occ);
+      /// \brief Construct site with initial position, allowed molecules (occupants)
+      Site(const Coordinate &init_pos, const std::vector<Molecule> &site_occ);
+
+      /// \brief Construct site with initial position, allowed molecules (occupants), and local degrees of freedom
+      Site(const Coordinate &init_pos, const std::vector<Molecule> &site_occ, const std::map<std::string, SiteDoFSet> &site_dof);
 
       ~Site();
 
-      const OccupantDoF<Molecule> &occupant_dof() const;
+      //TODO: Decide where this should actually go
+      static void print_occupant_dof(const std::vector<Molecule> &allowed_occupants, std::ostream &out_stream);
 
-      DoFSet const &dof(std::string const &_dof_type) const;
+      const std::vector<Molecule> &occupant_dof() const;
+
+      SiteDoFSet const &dof(std::string const &_dof_type) const;
 
       Index dof_size() const;
 
@@ -50,23 +49,12 @@ namespace CASM {
 
       bool time_reversal_active() const;
 
-      /// Checks if current occupant is a vacancy
-      bool is_vacant() const;
-
       ///access m_label;
       Index label() const;
 
-      /// Name of current occupant (name of molecule, but for single atom, molecule name is species name)
-
-      std::string occ_name()const;
-
-      /// Const reference to occupying molecule. ***WARNING*** only use if you are certain the occupant has been set.
-      /// If you only need to know occupant name or whether site is vacant, use Site::is_vacant() or Site::occ_name() instead
-      const Molecule &occ() const;
-
+      //TODO: Make comparators independent classes?
       bool compare(const Coordinate &test_coord) const;
       bool compare(const Site &test_site) const; //Ivy
-      bool compare(const Site &test_site, const Coordinate &shift) const;
       bool compare_type(const Site &test_site) const; //Ivy
       bool operator==(const Site &test_site) const;
       bool almost_equal(const Site &test_site) const;
@@ -75,35 +63,19 @@ namespace CASM {
       bool contains(const std::string &name) const;
       bool contains(const std::string &name, int &index) const;
 
-      void set_allowed_occupants(std::vector<Molecule> const &_occ_domain);
+      void set_allowed_occupants(const std::vector<Molecule> &new_occ_domain);
 
-      void set_occ_value(int new_val);
+      void set_dofs(std::map<std::string, SiteDoFSet> _dofs);
 
-      void set_occ(const Molecule &new_occ);
-
-      void set_dofs(std::map<std::string, DoFSet> _dofs);
-
-      std::map<std::string, DoFSet> const &dofs() const {
+      std::map<std::string, SiteDoFSet> const &dofs() const {
         return m_dof_map;
       }
 
+      //TODO: Change this to allowed_occupant_names or something
       std::vector<std::string> allowed_occupants() const;
 
-      /// set basis_ind of site and its occupant functions
-      void set_basis_ind(Index _basis_ind);
-
-      /// set m_label of Site
+      /// Set label of Site. The label is used to distinguish between otherwise identical sites.
       void set_label(Index _new_label);
-
-      Site &apply_sym(const SymOp &op);
-
-      template <typename ExternSymOp>
-      Site &apply_sym(const ExternSymOp &op) {
-        return this->apply_sym(adapter::Adapter<SymOp, ExternSymOp>()(op));
-      }
-
-
-      /* Site &apply_sym_no_trans(const SymOp &op); */
 
       void read(std::istream &stream, bool SD_is_on = false);
       void read(std::istream &stream, std::string &elem, bool SD_is_on);
@@ -114,25 +86,25 @@ namespace CASM {
       Site &operator-=(const Coordinate &translation);
 
     private:
+      //TODO: What is this?
       static std::vector<Site> &_type_prototypes() {
         static std::vector<Site> m_type_prototypes;
         return m_type_prototypes;
       }
 
-      Site &_apply_sym_attributes(const SymOp &op);
-
       /// Integer label used to differentiate sites of otherwise identical type
       Index m_label;
 
+      //TODO: What is this?
       mutable Index m_type_ID;
 
       // Configuration state is fundamentally different from most other degrees of freedom,
       // so we'll treat it separately. 'occupant' is the discrete degree of freedom associated
       // with the molecule that occupies the site
-      notstd::cloneable_ptr<OccupantDoF<Molecule>> m_occupant_dof;
+      std::vector<Molecule> m_occupant_dof;
 
       /// additional continuous degrees of freedom
-      std::map <std::string, DoFSet > m_dof_map;
+      std::map <std::string, SiteDoFSet > m_dof_map;
 
       //============
 
@@ -155,6 +127,15 @@ namespace CASM {
     Site operator+(const Coordinate &LHS, const Site &RHS);
 
     /** @} */
+  }
+
+  namespace sym {
+    /// \brief Apply SymOp to a Site. Transforms the Coordinate as well as the allowed occupants (Molecules)
+    /// and other degrees of freedom.
+    xtal::Site &apply(const xtal::SymOp &op, xtal::Site &mutating_site);
+    /// \brief Copy and apply SymOp to a Site. Transforms the Coordinate as well as the allowed occupants (Molecules)
+    /// and other degrees of freedom.
+    xtal::Site copy_apply(const xtal::SymOp &op, xtal::Site site);
   }
 }
 

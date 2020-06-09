@@ -4,14 +4,12 @@
 #include "casm/crystallography/LatticeEnumEquivalents.hh"
 
 /// What is being used to test it:
-#include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "crystallography/TestStructures.hh"
 
 using namespace CASM;
 using namespace test;
-using xtal::LatticeEnumEquivalents;
 
 void generate_master_lat_pt_grp(MasterSymGroup *master, const Lattice &lat) {
   master->set_lattice(lat);

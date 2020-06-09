@@ -14,17 +14,20 @@
 #include "casm/crystallography/LatticeMap.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
+#include "casm/crystallography/io/LatticeIO.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/kinetics/DiffTransConfiguration.hh"
 #include "casm/kinetics/DiffTransConfigInterpolation.hh"
+#include "casm/crystallography/io/jsonStruc.hh"
 #include "casm/symmetry/Orbit.hh"
 #include "casm/symmetry/OrbitDecl.hh"
 #include "casm/symmetry/OrbitGeneration.hh"
 #include "casm/symmetry/OrbitGeneration_impl.hh"
 #include "casm/kinetics/DiffusionTransformationTraits.hh"
 #include "casm/database/DiffTransOrbitDatabase.hh"
+#include <fstream>
 namespace CASM {
   namespace Kinetics {
     //*******************************************************************************************
@@ -76,33 +79,32 @@ namespace CASM {
       MappingNode from_node = *from_set.begin();
       MappingNode to_node = *to_set.begin();
 
-      auto scel_ptr = std::make_shared<Supercell>(&(mapper.primclex()), from_node.lat_node.parent.superlattice());
+      auto scel_ptr = std::make_shared<Supercell>(&(mapper.primclex()), from_node.lattice_node.parent.superlattice());
       std::vector<UnitCellCoord> from_uccoords;
       std::vector<UnitCellCoord> to_uccoords;
 
       std::set<UnitCellCoord> vacancy_from;
       std::set<UnitCellCoord> vacancy_to;
       //This rigid rotation and rigid shift seems unnecessary surprisingly
-      Coordinate first_site = Coordinate(result.structures[0].basis(0).const_frac(), scel_ptr->lattice(), FRAC);
+      Coordinate first_site = Coordinate(result.structures[0].basis()[0].const_frac(), scel_ptr->lattice(), FRAC);
 
       Coordinate t_shift =
-        copy_apply(SymOp::point_op(from_node.lat_node.isometry), first_site)
+        sym::copy_apply(xtal::SymOp::point_operation(from_node.lattice_node.isometry), first_site)
         - Coordinate(scel_ptr->uccoord(find_index(from_node.atom_permutation, 0)).coordinate(this->primclex().prim()));
-
       t_shift.set_lattice(primclex().prim().lattice(), CART);
 
       //std::cout << "t shift " << t_shift.const_frac() << std::endl;
       //Maybe check coordinate similarity after applying deformations
       //Check the unitcell coordinate within a tolerance of the maxium displacement of any atom in the from config
       //This max_displacement is not considering rigid translational shifts of the structures's basis to the primclex's basis
-      BasicStructure<Site> from = result.structures[0];
-      BasicStructure<Site> to = result.structures[result.structures.size() - 1];
+      BasicStructure from = result.structures[0];
+      BasicStructure to = result.structures[result.structures.size() - 1];
       //std::cout << "unconditioned from struc" << std::endl;
       //from.print_xyz(std::cout,true);
       //std::cout << "unconditioned to struc" << std::endl;
       //to.print_xyz(std::cout,true);
-      _precondition_from_and_to(from_node.lat_node.isometry,
-                                from_node.lat_node.stretch,
+      _precondition_from_and_to(from_node.lattice_node.isometry,
+                                from_node.lattice_node.stretch,
                                 t_shift.const_cart(),
                                 from,
                                 to);
@@ -112,7 +114,7 @@ namespace CASM {
       //from.print_xyz(std::cout,true);
       //std::cout << "to struc" << std::endl;
       //to.print_xyz(std::cout,true);
-      double uccoord_tol = 1.1 * max(from_node.atom_displacement.colwise().norm().maxCoeff(), to_node.atom_displacement.colwise().norm().maxCoeff()) + cuberoot(abs(scel_ptr->lattice().vol())) * primclex().crystallography_tol();
+      double uccoord_tol = 1.1 * max(from_node.atom_displacement.colwise().norm().maxCoeff(), to_node.atom_displacement.colwise().norm().maxCoeff()) + cuberoot(abs(scel_ptr->lattice().volume())) * primclex().crystallography_tol();
       //std::cout << "uccoord_tol " << uccoord_tol <<std::endl;
       std::vector<Index> moving_atoms = _analyze_atoms_ideal(from,
                                                              to,
@@ -216,8 +218,8 @@ namespace CASM {
       return result;
     }
 
-    std::vector<Index> DiffTransConfigMapper::_analyze_atoms_ideal(const BasicStructure<Site> &from,
-                                                                   const BasicStructure<Site> &to,
+    std::vector<Index> DiffTransConfigMapper::_analyze_atoms_ideal(const BasicStructure &from,
+                                                                   const BasicStructure &to,
                                                                    const Supercell &scel,
                                                                    double uccoord_tol,
                                                                    std::vector<UnitCellCoord> &from_uccoords,
@@ -270,7 +272,7 @@ namespace CASM {
       return UnitCellCoord::from_coordinate(pclex.prim(), site, tol);
     }
 
-    void DiffTransConfigMapper::_precondition_from_and_to(const Eigen::Matrix3d &cart_op, const Eigen::Matrix3d &strain, const Eigen::Vector3d &trans, BasicStructure<Site> &from, BasicStructure<Site> &to) const {
+    void DiffTransConfigMapper::_precondition_from_and_to(const Eigen::Matrix3d &cart_op, const Eigen::Matrix3d &strain, const Eigen::Vector3d &trans, BasicStructure &from, BasicStructure &to) const {
       from.set_lattice(Lattice(strain.inverse() * (cart_op.transpose()*from.lattice().lat_column_mat())), FRAC);
       from += Coordinate(trans, from.lattice(), CART);
       for(auto &site : from.set_basis()) {
@@ -311,7 +313,7 @@ namespace CASM {
       return final_diff_trans;
     }
 
-    Kinetics::DiffusionTransformation DiffTransConfigMapper::_make_hop(const BasicStructure<Site> &from_struc,
+    Kinetics::DiffusionTransformation DiffTransConfigMapper::_make_hop(const BasicStructure &from_struc,
                                                                        const std::vector<UnitCellCoord> &from_coords,
                                                                        const std::vector<UnitCellCoord> &to_coords,
                                                                        const std::set<UnitCellCoord> &vacancy_from,
@@ -326,18 +328,19 @@ namespace CASM {
         diff_trans.occ_transform().emplace_back(*vacancy_from.begin(), 0, 0);
       }
       for(int i = 0; i < moving_atoms.size(); i++) {
+        assert(from_struc.basis()[moving_atoms[i]].occupant_dof().size() == 1);
         std::vector<std::string> allowed_from_occs = primclex().prim().basis()[from_coords[moving_atoms[i]].sublattice()].allowed_occupants();
         Index from_occ_index = std::distance(allowed_from_occs.begin(),
                                              std::find(allowed_from_occs.begin(),
                                                        allowed_from_occs.end(),
-                                                       from_struc.basis()[moving_atoms[i]].occ_name()));
+                                                       from_struc.basis()[moving_atoms[i]].allowed_occupants()[0]));
         //for now pos is 0 because Molecules are hard
         Kinetics::SpeciesLocation from_loc(from_coords[moving_atoms[i]], from_occ_index, 0);
         std::vector<std::string> allowed_to_occs = primclex().prim().basis()[to_coords[moving_atoms[i]].sublattice()].allowed_occupants();
         Index to_occ_index = std::distance(allowed_to_occs.begin(),
                                            std::find(allowed_to_occs.begin(),
                                                      allowed_to_occs.end(),
-                                                     from_struc.basis()[moving_atoms[i]].occ_name()));
+                                                     from_struc.basis()[moving_atoms[i]].allowed_occupants()[0]));
 
         //for now pos is 0 because Molecules are hard
         Kinetics::SpeciesLocation to_loc(to_coords[moving_atoms[i]], to_occ_index, 0);
@@ -372,14 +375,14 @@ namespace CASM {
     }
 
 
-    std::vector<BasicStructure<Site>> DiffTransConfigMapper::_get_structures(const fs::path &pos_path) const {
-      std::map<Index, BasicStructure<Site>> bins;
-      std::vector<BasicStructure<Site>> images;
+    std::vector<BasicStructure> DiffTransConfigMapper::_get_structures(const fs::path &pos_path) const {
+      std::map<Index, BasicStructure> bins;
+      std::vector<BasicStructure> images;
       if(pos_path.extension() == ".json" || pos_path.extension() == ".JSON") {
         jsonParser all_strucs;
         to_json(pos_path, all_strucs);
         for(auto it =  all_strucs.begin(); it != all_strucs.end(); ++it) {
-          BasicStructure<Site> struc;
+          BasicStructure struc;
           try {
             throw std::runtime_error("DiffTransConfigMapper must be re-implemented to use SimpleStructure");
             //int img_no = std::stoi(it.name());
@@ -397,10 +400,12 @@ namespace CASM {
             int img_no = std::stoi(begin->path().filename().string());
             if(fs::is_directory(*begin)) {
               if(fs::is_regular(*begin / "CONTCAR")) {
-                bins.insert(std::make_pair(img_no, BasicStructure<Site>(*begin / "CONTCAR")));
+                std::ifstream contcar_stream((*begin / "CONTCAR").string());
+                bins.insert(std::make_pair(img_no, BasicStructure::from_poscar_stream(contcar_stream)));
               }
               else if(fs::is_regular(*begin / "POSCAR")) {
-                bins.insert(std::make_pair(img_no, BasicStructure<Site>(*begin / "POSCAR")));
+                std::ifstream poscar_stream((*begin / "POSCAR").string());
+                bins.insert(std::make_pair(img_no, BasicStructure::from_poscar_stream(poscar_stream)));
               }
               else {
                 std::cerr << "NO POSCAR OR CONTCAR FOUND IN " << *begin << std::endl;

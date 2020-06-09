@@ -1,4 +1,5 @@
 #include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/SymTools.hh"
 
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/Lattice.hh"
@@ -9,19 +10,18 @@ namespace CASM {
     Coordinate::Coordinate(const Eigen::Ref<const Coordinate::vector_type> &init_vec,
                            const Lattice &init_home,
                            COORD_TYPE mode)
-      : m_home(&init_home),
-        m_basis_ind(-1) {
+      : m_home(&init_home) {
       if(mode == FRAC)
         _set_frac(init_vec);
       if(mode == CART)
         _set_cart(init_vec);
+      assert(m_home && "home lattice pointer was set to null!");
     }
 
     //********************************************************************
 
     Coordinate::Coordinate(double _x, double _y, double _z, const Lattice &init_home, COORD_TYPE mode)
-      : m_home(&init_home),
-        m_basis_ind(-1) {
+      : m_home(&init_home) {
       if(mode == FRAC) {
         m_frac_coord << _x, _y, _z;
         _update_cart();
@@ -30,6 +30,7 @@ namespace CASM {
         m_cart_coord << _x, _y, _z;
         _update_frac();
       }
+      assert(m_home && "home lattice pointer was set to null!");
     }
 
     //********************************************************************
@@ -42,6 +43,9 @@ namespace CASM {
     //********************************************************************
 
     Coordinate &Coordinate::operator-=(const Coordinate &RHS) {
+      assert(this->m_home && "Home lattice is null");
+      assert(RHS.m_home && "RHS home lattice is null");
+
       cart() -= RHS.cart();
       return *this;
 
@@ -59,13 +63,11 @@ namespace CASM {
       return CASM::almost_equal(m_cart_coord, RHS.m_cart_coord);
     }
 
-
     //********************************************************************
 
     bool Coordinate::almost_equal(const Coordinate &RHS) const {
       return dist(RHS) < lattice().tol();
     }
-
 
     //********************************************************************
 
@@ -133,7 +135,6 @@ namespace CASM {
 
     //********************************************************************
 
-    /// \brief Print normalized vector
     void Coordinate::print_axis(std::ostream &stream, COORD_TYPE mode, char term, Eigen::IOFormat format) const {
 
       Eigen::Vector3d vec;
@@ -146,54 +147,29 @@ namespace CASM {
     }
 
     //********************************************************************
-    // Finds distance between two coordinates
 
     double Coordinate::dist(const Coordinate &neighbor) const {
       return (cart() - neighbor.cart()).norm();
     }
 
-    //********************************************************************
-    // Finds minimum distance from any periodic image of a coordinate to any
-    // periodic image of a neighboring coordinate
-    //********************************************************************
-
     double Coordinate::min_dist(const Coordinate &neighbor) const {
-      vector_type tfrac(frac() - neighbor.frac());
-      tfrac -= lround(tfrac).cast<double>();
-
-      return (home().lat_column_mat() * tfrac).norm();
+      return this->min_translation(neighbor).const_cart().norm();
     }
 
-    //********************************************************************
-    // Finds minimum distance from any periodic image of a coordinate to any
-    // periodic image of a neighboring coordinate.  Also passes the
-    // calculated translation in the argument.
-    //********************************************************************
+    Coordinate Coordinate::min_translation(const Coordinate &neighbor) const {
+      assert(this->m_home && "Home lattice is null");
+      assert(neighbor.m_home && "Neighbor home lattice is null");
+      Coordinate translation = (*this) - neighbor;
 
+      Eigen::Vector3d frac_lattice_translation = lround(translation.const_frac()).cast<double>();
 
-    double Coordinate::min_dist(const Coordinate &neighbor, Coordinate &translation) const {
-      translation = (*this) - neighbor;
-      translation.frac() -= lround(translation.const_frac()).cast<double>();
-      return translation.const_cart().norm();
+      translation.frac() -= frac_lattice_translation;
+      return translation;
     }
-    //********************************************************************
-    // Finds minimum distance from any periodic image of a coordinate to any
-    // periodic image of a neighboring coordinate
-    //********************************************************************
 
     double Coordinate::robust_min_dist(const Coordinate &neighbor) const {
-      Coordinate translation(home());
-      return robust_min_dist(neighbor, translation);
-    }
-
-    //********************************************************************
-    // Finds minimum distance from any periodic image of a coordinate to any
-    // periodic image of a neighboring coordinate.  Also passes the
-    // calculated translation in the argument.
-    //********************************************************************
-
-    double Coordinate::robust_min_dist(const Coordinate &neighbor, Coordinate &translation) const {
-      double fast_result = min_dist(neighbor, translation);
+      Coordinate translation = this->min_translation(neighbor);
+      double fast_result = translation.const_cart().norm();
 
       if(fast_result < (home().inner_voronoi_radius() + TOL))
         return fast_result;
@@ -201,11 +177,6 @@ namespace CASM {
       translation.voronoi_within();
       return translation.const_cart().norm();
     }
-
-    //********************************************************************
-    // Finds minimum distance from any periodic image of a coordinate to any
-    // periodic image of a neighboring coordinate
-    //********************************************************************
 
     double Coordinate::min_dist2(const Coordinate &neighbor, const Eigen::Ref<const Eigen::Matrix3d> &metric) const {
       vector_type tfrac(frac() - neighbor.frac());
@@ -215,40 +186,10 @@ namespace CASM {
     }
 
     //********************************************************************
-    // Applies symmetry to a coordinate.
-    //********************************************************************
-
-    Coordinate &Coordinate::apply_sym(const SymOp &op) {
-      cart() = get_matrix(op) * this->const_cart() + get_translation(op);
-
-      return *this;
-    }
-
-    //********************************************************************
-    // Applies symmetry to a coordinate, but doesn't apply translation
-    //********************************************************************
-
-    /* Coordinate &Coordinate::apply_sym_no_trans(const SymOp &op) { */
-    /*   cart() = op.matrix() * const_cart(); */
-    /*   return *this; */
-    /* } */
-
-    //********************************************************************
-    // Change the home lattice of the coordinate, selecting one representation (either CART or FRAC)
-    // that remains invariant
-    //
-    // invariant_mode == CART: Cartesian coordinates stay the same, and fractional coordinates are updated
-    //    Ex: (my_coord.set_lattice(superlattice, CART); // this is how superlattices get filled.
-    //
-    // invariant_mode == FRAC: Fractional coordinates stay the same, and Cartesian coordinates are updated
-    //    Ex:  you can apply a strain by changing the lattice and keepin FRAC invariant
-    //            (my_coord.set_lattice(strained_lattice, FRAC);
-    //    Ex:  you can apply a rotation by changing the lattice and keeping FRAC invariant
-    //            (my_coord.set_lattice(rotated_lattice, FRAC);
-    //********************************************************************
 
     void Coordinate::set_lattice(const Lattice &new_lat, COORD_TYPE invariant_mode) {
       m_home = &new_lat;
+      assert(m_home && "home lattice pointer was set to null!");
 
       if(invariant_mode == CART)
         _update_frac();
@@ -258,9 +199,6 @@ namespace CASM {
       return;
     }
 
-    //********************************************************************
-    // Within: if a point is outiside the cell defined by Lattice home
-    // then map that point back into the cell via translation by lattice vectors
     //********************************************************************
 
     bool Coordinate::within() {
@@ -284,6 +222,7 @@ namespace CASM {
 
     bool Coordinate::within(Coordinate &translation) {
       translation.m_home = m_home;
+      assert(m_home && "home lattice pointer was set to null!");
       if(PERIODICITY_MODE::IS_LOCAL()) return true;
 
       bool was_within = true;
@@ -352,6 +291,7 @@ namespace CASM {
 
     bool Coordinate::voronoi_within(Coordinate &translation) {
       translation.m_home = m_home;
+      assert(m_home && "home lattice pointer was set to null!");
       translation.cart() = vector_type::Zero();
 
       Eigen::Vector3d lattice_trans;
@@ -390,7 +330,8 @@ namespace CASM {
 
     Coordinate operator*(const SymOp &LHS, const Coordinate &RHS) {
       Coordinate tcoord(RHS);
-      return tcoord.apply_sym(LHS);
+      sym::apply(LHS, tcoord);
+      return tcoord;
     }
 
     //********************************************************************
@@ -403,5 +344,17 @@ namespace CASM {
     }
 
   }
+
+  namespace sym {
+    xtal::Coordinate &apply(const xtal::SymOp &op, xtal::Coordinate &mutating_coord) {
+      mutating_coord.cart() = get_matrix(op) * mutating_coord.const_cart() + get_translation(op);
+      return mutating_coord;
+    }
+
+    xtal::Coordinate copy_apply(const xtal::SymOp &op, xtal::Coordinate coord) {
+      apply(op, coord);
+      return coord;
+    }
+  } // namespace sym
 }
 

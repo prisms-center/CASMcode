@@ -1,7 +1,7 @@
 #ifndef LINEARINDEXCONVERTER_HH
 #define LINEARINDEXCONVERTER_HH
 
-#include "casm/crystallography/LatticePointWithin.hh"
+#include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include <unordered_map>
 #include <vector>
@@ -24,12 +24,12 @@ namespace CASM {
 
     class UnitCellCoordIndexConverter {
     public:
-      typedef OrderedLatticePointGenerator::matrix_type matrix_type;
+      typedef impl::OrderedLatticePointGenerator::matrix_type matrix_type;
 
       /// Initialize with the transformation that defines how to convert from the tiling unit (prim)
       /// to the superlattice, and the number of basis sites in the primitive cell
       UnitCellCoordIndexConverter(const matrix_type &transformation_matrix, int basis_sites_in_prim)
-        : m_linear_index_to_bijk(_make_all_ordered_bijk_values(OrderedLatticePointGenerator(transformation_matrix), basis_sites_in_prim)),
+        : m_linear_index_to_bijk(_make_all_ordered_bijk_values(impl::OrderedLatticePointGenerator(transformation_matrix), basis_sites_in_prim)),
           m_basis_sites_in_prim(basis_sites_in_prim),
           m_automatically_bring_bijk_within(true),
           m_bring_within_f(transformation_matrix) {
@@ -45,12 +45,6 @@ namespace CASM {
         this->always_bring_within();
       }
 
-      /// Initialize with the primitie tiling unit, the superlattice, and the number of basis sites
-      /// in the primitive unit
-      UnitCellCoordIndexConverter(const Lattice &tiling_unit, const Lattice &superlattice, int basis_sites_in_prim)
-        : UnitCellCoordIndexConverter(make_transformation_matrix(tiling_unit, superlattice, TOL), basis_sites_in_prim) {
-      }
-
       /// Prevent the index converter from bringing UnitCellCoord within the supercell when querying for the index
       void never_bring_within();
 
@@ -61,11 +55,11 @@ namespace CASM {
       UnitCellCoord bring_within(const UnitCellCoord &bijk) const;
 
       /// Given the linear index, retreive the corresponding UnitCellCoord
-      const UnitCellCoord &operator[](Index ix) const;
+      const UnitCellCoord &operator()(Index ix) const;
 
       /// Given the UnitCellCoord, retreive its corresponding linear index.
       /// If applicable, brings the UnitCellCoord within the superlattice
-      Index operator[](const UnitCellCoord &bijk) const;
+      Index operator()(const UnitCellCoord &bijk) const;
 
       /// Returns the total number of sites within the superlattice
       Index total_sites() const {
@@ -101,7 +95,7 @@ namespace CASM {
 
       /// Enumerates every possible UnitCellCoord and returns them in the expected order (blocks by
       /// basis site, with the Smith Normal Form order within each block
-      static std::vector<UnitCellCoord> _make_all_ordered_bijk_values(const OrderedLatticePointGenerator &make_point,
+      static std::vector<UnitCellCoord> _make_all_ordered_bijk_values(const impl::OrderedLatticePointGenerator &make_point,
                                                                       int basis_sites_in_prim);
 
       /// Throws exception if the number of sites specified in the tiling unit is less than 1
@@ -138,14 +132,14 @@ namespace CASM {
       }
 
       /// Given the linear index, retreive the corresponding UnitCell
-      const UnitCell &operator[](Index ix) const {
-        return UnitCellCoordIndexConverter::operator[](ix).unitcell();
+      const UnitCell &operator()(Index ix) const {
+        return UnitCellCoordIndexConverter::operator()(ix).unitcell();
       }
 
       /// Given the UnitCell, retreive its corresponding linear index.
       /// If applicable, brings the UnitCell within the superlattice
-      Index operator[](const UnitCell &ijk) const {
-        return UnitCellCoordIndexConverter::operator[](UnitCellCoord(0, ijk));
+      Index operator()(const UnitCell &ijk) const {
+        return UnitCellCoordIndexConverter::operator()(UnitCellCoord(0, ijk));
       }
 
     private:

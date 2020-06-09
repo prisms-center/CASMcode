@@ -3,6 +3,7 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/symmetry/SymOp.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
+#include <iostream>
 
 namespace CASM {
 
@@ -299,6 +300,10 @@ namespace CASM {
 
 
   double OccupantFunction::remote_eval() const {
+
+
+
+
     return m_eval_table[dof().remote_value()];
   }
 

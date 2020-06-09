@@ -1,11 +1,10 @@
 #include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"
 
-#include "casm/crystallography/LatticePointWithin.hh"
+#include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/kinetics/DiffusionTransformationTraits.hh"
 #include "casm/kinetics/DiffTransConfiguration_impl.hh"
 #include "casm/symmetry/ConfigSubOrbits_impl.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
-#include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
@@ -29,8 +28,8 @@ extern "C" {
 namespace {
   using namespace CASM;
   ScelPeriodicSymCompare<IntegralCluster> _construct_scel_sym_compare(const Supercell &scel) {
-    xtal::IntegralCoordinateWithin_f bring_within_f(scel.prim().lattice(), scel.lattice());
-    return ScelPeriodicSymCompare<IntegralCluster>(scel.primclex().shared_prim(), bring_within_f, scel.crystallography_tol());
+    /* xtal::IntegralCoordinateWithin_f bring_within_f(scel.prim().lattice(), scel.lattice()); */
+    return ScelPeriodicSymCompare<IntegralCluster>(scel.primclex().shared_prim(), scel.transf_mat(), scel.crystallography_tol());
   }
 }
 
@@ -668,11 +667,7 @@ namespace CASM {
       m_curr.perturb.apply_to(perturbed_from_config);
       // here we use the group of operations that leaves the diff_trans invariant,
       // and not necessarily the from_config, to find the canonical perturbed from_config
-
-      /*auto to_canonical = perturbed_from_config.to_canonical(
-                            m_base_it->diff_trans_g.begin(),
-                            m_base_it->diff_trans_g.end());
-      */PermuteIterator to_canonical = *(m_base_it->diff_trans_g.begin());
+      PermuteIterator to_canonical = *(m_base_it->diff_trans_g.begin());
       Configuration greatest = perturbed_from_config;
       for(auto it = m_base_it->diff_trans_g.begin(); it != m_base_it->diff_trans_g.end(); ++it) {
         DiffTransConfiguration tmp(make_attachable(m_base_it->diff_trans, copy_apply(*it, perturbed_from_config)), m_base_it->diff_trans);

@@ -44,11 +44,11 @@ libcasm_la_SOURCES = \
     include/casm/app/sym.hh\
     include/casm/app/update.hh\
     include/casm/app/view.hh\
+    include/casm/basis_set/Adapter.hh\
     include/casm/basis_set/BasisFunction.hh\
     include/casm/basis_set/BasisSet.hh\
     include/casm/basis_set/DisplacementDoFTraits.hh\
     include/casm/basis_set/DoF.hh\
-    include/casm/basis_set/DoFDecl.hh\
     include/casm/basis_set/DoFIsEquivalent.hh\
     include/casm/basis_set/DoFIsEquivalent_impl.hh\
     include/casm/basis_set/DoFSet.hh\
@@ -141,6 +141,7 @@ libcasm_la_SOURCES = \
     include/casm/clex/ScelEnum.hh\
     include/casm/clex/ScelEnumEquivalents.hh\
     include/casm/clex/ScelEnum_impl.hh\
+    include/casm/clex/SimpleStructureTools.hh\
     include/casm/clex/SuperConfigEnum.hh\
     include/casm/clex/Supercell.hh\
     include/casm/clex/SupercellIO.hh\
@@ -178,20 +179,24 @@ libcasm_la_SOURCES = \
     include/casm/container/Template_Algorithms.hh\
     include/casm/container/Tensor.hh\
     include/casm/container/algorithm.hh\
+    include/casm/container/io/PermutationIO.hh\
     include/casm/container/multivector.hh\
     include/casm/crystallography/Adapter.hh\
     include/casm/crystallography/AnisoValTraits.hh\
     include/casm/crystallography/BasicStructure.hh\
-    include/casm/crystallography/BasicStructure_impl.hh\
+    include/casm/crystallography/BasicStructureTools.hh\
     include/casm/crystallography/CanonicalForm.hh\
     include/casm/crystallography/Coordinate.hh\
     include/casm/crystallography/CoordinateSystems.hh\
+    include/casm/crystallography/DoFDecl.hh\
+    include/casm/crystallography/DoFSet.hh\
     include/casm/crystallography/HermiteCounter.hh\
+    include/casm/crystallography/IntegralCoordinateWithin.hh\
     include/casm/crystallography/Lattice.hh\
     include/casm/crystallography/LatticeEnumEquivalents.hh\
     include/casm/crystallography/LatticeIsEquivalent.hh\
     include/casm/crystallography/LatticeMap.hh\
-    include/casm/crystallography/Lattice_impl.hh\
+    include/casm/crystallography/LinearIndexConverter.hh\
     include/casm/crystallography/Molecule.hh\
     include/casm/crystallography/Niggli.hh\
     include/casm/crystallography/SimpleStrucMapCalculator.hh\
@@ -199,16 +204,25 @@ libcasm_la_SOURCES = \
     include/casm/crystallography/SimpleStructureTools.hh\
     include/casm/crystallography/Site.hh\
     include/casm/crystallography/SpeciesAttribute.hh\
+    include/casm/crystallography/Strain.hh\
     include/casm/crystallography/StrucMapCalculatorInterface.hh\
     include/casm/crystallography/StrucMapping.hh\
     include/casm/crystallography/Structure.hh\
+    include/casm/crystallography/Superlattice.hh\
     include/casm/crystallography/SuperlatticeEnumerator.hh\
     include/casm/crystallography/SymRepBuilder.hh\
     include/casm/crystallography/SymTools.hh\
     include/casm/crystallography/SymType.hh\
+    include/casm/crystallography/SymTypeComparator.hh\
     include/casm/crystallography/UnitCellCoord.hh\
     include/casm/crystallography/UnitCellCoordTraits.hh\
+    include/casm/crystallography/io/DoFSetIO.hh\
+    include/casm/crystallography/io/LatticeIO.hh\
+    include/casm/crystallography/io/SimpleStructureIO.hh\
+    include/casm/crystallography/io/SuperlatticeEnumeratorIO.hh\
+    include/casm/crystallography/io/UnitCellCoordIO.hh\
     include/casm/crystallography/io/VaspIO.hh\
+    include/casm/crystallography/io/jsonStruc.hh\
     include/casm/database/Cache.hh\
     include/casm/database/ConfigData.hh\
     include/casm/database/ConfigData_impl.hh\
@@ -244,11 +258,13 @@ libcasm_la_SOURCES = \
     include/casm/database/Update_impl.hh\
     include/casm/database/json/jsonDatabase.hh\
     include/casm/database/json/jsonPropertiesDatabase.hh\
+    include/casm/enumerator/DoFSpace.hh\
     include/casm/enumerator/EnumInputParser.hh\
     include/casm/enumerator/Enumerator.hh\
     include/casm/enumerator/Enumerator_impl.hh\
     include/casm/enumerator/InputEnumerator.hh\
     include/casm/enumerator/RandomAccessEnumerator.hh\
+    include/casm/enumerator/io/json/DoFSpace.hh\
     include/casm/external/Eigen/Array\
     include/casm/external/Eigen/CASM_AddOns\
     include/casm/external/Eigen/CMakeLists.txt\
@@ -702,6 +718,8 @@ libcasm_la_SOURCES = \
     include/casm/symmetry/VectorOrbits.hh\
     include/casm/symmetry/VectorSymCompare.hh\
     include/casm/symmetry/VectorSymCompare_impl.hh\
+    include/casm/symmetry/io/json/SymRepTools.hh\
+    include/casm/symmetry/json_io.hh\
     include/casm/system/Popen.hh\
     include/casm/system/RuntimeLibrary.hh\
     include/casm/version/version.hh\
@@ -798,6 +816,7 @@ libcasm_la_SOURCES = \
     src/casm/clex/RemoveSupercell.cc\
     src/casm/clex/ScelEnum.cc\
     src/casm/clex/ScelEnumEquivalents.cc\
+    src/casm/clex/SimpleStructureTools.cc\
     src/casm/clex/SuperConfigEnum.cc\
     src/casm/clex/Supercell.cc\
     src/casm/clex/SupercellIO.cc\
@@ -809,17 +828,20 @@ libcasm_la_SOURCES = \
     src/casm/completer/Complete.cc\
     src/casm/completer/Handlers.cc\
     src/casm/container/Permutation.cc\
+    src/casm/container/io/PermutationIO.cc\
     src/casm/crystallography/AnisoValTraits.cc\
     src/casm/crystallography/BasicStructure.cc\
+    src/casm/crystallography/BasicStructureTools.cc\
     src/casm/crystallography/CanonicalForm.cc\
     src/casm/crystallography/Coordinate.cc\
     src/casm/crystallography/CoordinateSystems.cc\
+    src/casm/crystallography/DoFSet.cc\
     src/casm/crystallography/HermiteCounter.cc\
+    src/casm/crystallography/IntegralCoordinateWithin.cc\
     src/casm/crystallography/Lattice.cc\
     src/casm/crystallography/LatticeEnumEquivalents.cc\
     src/casm/crystallography/LatticeIsEquivalent.cc\
     src/casm/crystallography/LatticeMap.cc\
-    src/casm/crystallography/LatticePointWithin.cc\
     src/casm/crystallography/LinearIndexConverter.cc\
     src/casm/crystallography/Molecule.cc\
     src/casm/crystallography/Niggli.cc\
@@ -828,13 +850,21 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/SimpleStructureTools.cc\
     src/casm/crystallography/Site.cc\
     src/casm/crystallography/SpeciesAttribute.cc\
+    src/casm/crystallography/Strain.cc\
     src/casm/crystallography/StrucMapping.cc\
     src/casm/crystallography/Structure.cc\
+    src/casm/crystallography/Superlattice.cc\
     src/casm/crystallography/SuperlatticeEnumerator.cc\
     src/casm/crystallography/SymTools.cc\
     src/casm/crystallography/SymType.cc\
+    src/casm/crystallography/SymTypeComparator.cc\
     src/casm/crystallography/UnitCellCoord.cc\
     src/casm/crystallography/UnitCellCoordTraits.cc\
+    src/casm/crystallography/io/DoFSetIO.cc\
+    src/casm/crystallography/io/LatticeIO.cc\
+    src/casm/crystallography/io/SimpleStructureIO.cc\
+    src/casm/crystallography/io/SuperlatticeEnumeratorIO.cc\
+    src/casm/crystallography/io/UnitCellCoordIO.cc\
     src/casm/crystallography/io/VaspIO.cc\
     src/casm/database/ConfigData.cc\
     src/casm/database/ConfigDatabase.cc\
@@ -853,8 +883,10 @@ libcasm_la_SOURCES = \
     src/casm/database/Selection.cc\
     src/casm/database/json/jsonDatabase.cc\
     src/casm/database/json/jsonPropertiesDatabase.cc\
+    src/casm/enumerator/DoFSpace.cc\
     src/casm/enumerator/EnumInputParser.cc\
     src/casm/enumerator/Enumerator.cc\
+    src/casm/enumerator/io/json/DoFSpace.cc\
     src/casm/external/gzstream/gzstream.C\
     src/casm/external/qhull/libqhull_r/geom2_r.c\
     src/casm/external/qhull/libqhull_r/geom_r.c\
@@ -956,6 +988,7 @@ libcasm_la_SOURCES = \
     src/casm/symmetry/SymPermutation.cc\
     src/casm/symmetry/SymRepTools.cc\
     src/casm/symmetry/SymTools.cc\
+    src/casm/symmetry/io/json/SymRepTools.cc\
     src/casm/system/Popen.cc\
     src/casm/system/RuntimeLibrary.cc\
     src/casm/version/autoversion.cc

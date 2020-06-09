@@ -73,10 +73,6 @@ namespace CASM {
     /// \brief Return prim.json path
     fs::path prim() const;
 
-    /// \brief Return PRIM path
-    fs::path PRIM() const;
-
-
     // -- Hidden .casm directory --------
 
     /// \brief Return hidden .casm dir path
@@ -115,6 +111,9 @@ namespace CASM {
 
     /// \brief Return symmetry directory path
     fs::path symmetry_dir() const;
+
+    /// \brief Return symmetry directory path for configuration
+    fs::path symmetry_dir(std::string config_name) const;
 
     /// \brief Return lattice_point_group.json path
     fs::path lattice_point_group() const;

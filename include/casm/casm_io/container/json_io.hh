@@ -2,6 +2,7 @@
 #define CASM_support_container_json_io
 
 #include <set>
+#include <unordered_set>
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
@@ -218,6 +219,25 @@ namespace CASM {
   /// Clears any previous contents, constructs via jsonConstructor<T>
   template<typename T, typename Compare, typename...Args>
   void from_json(std::set<T, Compare> &set, const jsonParser &json, Args &&...args) {
+    set.clear();
+    for(auto it = json.begin(); it != json.end(); ++it) {
+      set.insert(jsonConstructor<T>::from_json(*it, args...));
+    }
+  }
+
+  // --- std::unordered_set<T> --------------
+
+  /// Converts to a JSON array
+  template<typename T, typename Compare>
+  jsonParser &to_json(const std::unordered_set<T, Compare> &set, jsonParser &json) {
+    return json.put_array(set.begin(), set.end());
+  }
+
+  /// Read std::set from JSON array
+  ///
+  /// Clears any previous contents, constructs via jsonConstructor<T>
+  template<typename T, typename Compare, typename...Args>
+  void from_json(std::unordered_set<T, Compare> &set, const jsonParser &json, Args &&...args) {
     set.clear();
     for(auto it = json.begin(); it != json.end(); ++it) {
       set.insert(jsonConstructor<T>::from_json(*it, args...));

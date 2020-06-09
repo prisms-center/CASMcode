@@ -15,6 +15,12 @@ namespace CASM {
      *  @{
      */
 
+    namespace SimpleStructureTools {
+      //TODO: Capitalize so it looks the same as COORD_MODE? Put it in some crystallography declarations file?
+      ///\brief enum to refer to a particular representation of the occupants (atomic or molecular)
+      enum class SpeciesMode {ATOM, MOL};
+    }
+
     /// \brief Representation of a crystal of molecular and/or atomic occupants,
     /// and any additional properties.
     /// It does not require a primitive Structure or BasicStructure object to act
@@ -23,8 +29,7 @@ namespace CASM {
     class SimpleStructure {
     public:
 
-      ///\brief enum to refer to a particular representation of the occupants (atomic or molecular)
-      enum class SpeciesMode {ATOM, MOL};
+      using SpeciesMode = SimpleStructureTools::SpeciesMode;
 
       /// \brief Struct to encode all information about the crystal basis
       /// Info may describe the basis in a atomic context or molecular context

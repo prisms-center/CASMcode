@@ -170,7 +170,7 @@ namespace CASM {
       if(opt.coord_type == INTEGRAL) {
         out << coord;
         out << " ";
-        coord.site(*prim_ptr).occupant_dof().print(out);
+        Site::print_occupant_dof(coord.site(*prim_ptr).occupant_dof(), out);
         out << std::flush;
       }
       else {

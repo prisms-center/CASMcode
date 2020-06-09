@@ -108,7 +108,7 @@ namespace CASM {
     log().construct("CASM Project");
     log() << "from: " << dir().root_dir() << "\n" << std::endl;
 
-    auto struc_mol_name = struc_molecule_name(prim());
+    auto struc_mol_name = xtal::struc_molecule_name(prim());
     m_data->vacancy_allowed = false;
     for(int i = 0; i < struc_mol_name.size(); ++i) {
       if(xtal::is_vacancy(struc_mol_name[i])) {

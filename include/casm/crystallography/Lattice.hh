@@ -11,10 +11,8 @@
 #include "casm/misc/Comparisons.hh"
 
 namespace CASM {
-  class jsonParser;
 
   namespace xtal {
-    class ScelEnumProps;
 
     /** \defgroup Crystallography
      *
@@ -85,7 +83,7 @@ namespace CASM {
       double length(Index i) const;
 
       /// \brief Return *signed* volume of this lattice
-      double vol() const {
+      double volume() const {
         return lat_column_mat().determinant();
       }
 
@@ -159,19 +157,13 @@ namespace CASM {
       /// The eight parallelipipeds touching the origin enclose a sphere of given radius
       Eigen::Vector3i enclose_sphere(double radius) const;
 
-      /// Make a grid of lattice sites such that min_radius <= distance <= max_radius from \param lat_point
-      // ***This should live somewhere else
-      template <typename CoordType, typename CoordType2>
-      std::vector<CoordType> gridstruc_build(double max_radius, double min_radius, std::vector<CoordType> basis, CoordType2 lat_point);
-
+      //TODO: Extract
       void read(std::istream &stream);
+      //TODO: Extract
       void print(std::ostream &stream, int _prec = 8) const;
 
       /// \brief Compare two Lattice
       bool operator<(const Lattice &RHS) const;
-
-      /// Matrix that relates two lattices (e.g., strain or slat)
-      // Eigen::Matrix3d operator/(const Lattice &RHS);
 
       /// Return a lattice with diagonal matrix that fits around starting lattice
       Lattice box(const Lattice &prim, const Lattice &scel, bool verbose = false) const;
@@ -186,7 +178,7 @@ namespace CASM {
       Eigen::Vector3i millers(Eigen::Vector3d plane_normal) const;
 
       /// Generates a lattice with vectors a and b parallel to the plane described by the miller indeces
-      Lattice lattice_in_plane(Eigen::Vector3i millers, int max_vol = 20) const; // John G 121030
+      Lattice lattice_in_plane(Eigen::Vector3i millers, int max_vol = 0) const; // John G 121030
 
       double tol() const {
         return m_tol;
@@ -224,38 +216,6 @@ namespace CASM {
      * the tiling unit to the superlattice.
      */
 
-    class Superlattice {
-    private:
-
-      Lattice m_primitive_lattice;
-      Lattice m_superlattice;
-      Eigen::Matrix3l m_transformation_matrix;
-
-      Index m_size;
-    public:
-
-      const Lattice &superlattice() const {
-        return m_superlattice;
-      }
-
-      const Lattice &prim_lattice() const {
-        return m_primitive_lattice;
-      }
-
-      ///The integer transformation matrix that converts the tiling unit (primitive lattice) into the superlattice
-      const Eigen::Matrix3l &transformation_matrix() const {
-        return m_transformation_matrix;
-      }
-
-      ///Returns the number of tiling units (primitive lattices) that fit inside the superlattice
-      Index size() const {
-        return m_size;
-      }
-
-      Superlattice(const Lattice &tiling_unit, const Lattice &superlattice);
-      Superlattice(const Lattice &tiling_unit, const Eigen::Matrix3l &transformation_matrix);
-    };
-
     /// \brief Returns the volume of a Lattice
     double volume(const Lattice &lat);
 
@@ -267,6 +227,10 @@ namespace CASM {
     ///\brief returns Lattice that is smallest possible superlattice of both input Lattice
     Lattice make_superduperlattice(const Lattice &lat1, const Lattice &lat2);
 
+    /// \brief Returns a minimum volume Lattice obtainable by replacing one Lattice vector
+    ///
+    /// - No guarantee on the result being canonical in any way
+    /// \relates Lattice
     Lattice replace_vector(const Lattice &lat, const Eigen::Vector3d &new_vector, double tol);
 
     ///\brief Returns 'frac_mat' which is transformation of 'cart_mat'
@@ -313,12 +277,8 @@ namespace CASM {
 
     /// Calculates the transformation matrix that takes the tiling unit to the superlattice.
     /// Throws exceptions if the superlattice isn't compatible with its tiling unit
-    Eigen::Matrix3l make_transformation_matrix(const Lattice &tiling_unit, const Lattice &superlattice, double tol);
+    Eigen::Matrix3l make_transformation_matrix_to_super(const Lattice &tiling_unit, const Lattice &superlattice, double tol);
 
   } // namespace xtal
-  // write Lattice in json as array of vectors
-  jsonParser &to_json(const xtal::Lattice &lat, jsonParser &json);
-  void from_json(xtal::Lattice &lat, const jsonParser &json, double xtal_tol);
-
 } // namespace CASM
 #endif

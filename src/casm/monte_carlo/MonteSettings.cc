@@ -5,7 +5,7 @@
 #include "casm/monte_carlo/MonteCarlo.hh"
 #include "casm/monte_carlo/MonteCarloEnum.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/BasicStructure.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/HallOfFame.hh"

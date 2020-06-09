@@ -16,6 +16,8 @@
 #include "casm/symmetry/SymInfo.hh"
 #include "casm/casm_io/Log.hh"
 
+#include "casm/casm_io/container/stream_io.hh"
+
 #include "casm/casm_io/container/json_io.hh"
 
 namespace CASM {
@@ -97,6 +99,11 @@ namespace CASM {
     m_reg_rep_ID = m_coord_rep_ID = SymGroupRepID();
 
     m_identity_rep_IDs.clear();
+
+    //Yes, by the time you return GROUP_COUNT is greater than m_group_index, and that's
+    //how we like it around here.
+    this->m_group_index = ++MasterSymGroup::GROUP_COUNT;
+
     return;
   }
 
@@ -344,7 +351,7 @@ namespace CASM {
     }
 
     for(Index i = 0 ; i < new_rep->size() ; i++) {
-      //std::cout << "Rota Rep final mats " << i << "\n" << *(new_rep->MatrixXd(i)) << std::endl;
+      //std::cout << "Rota Rep final mats " << i << std::endl << *(new_rep->MatrixXd(i)) << std::endl;
     }
 
     return _add_representation(new_rep);
@@ -437,20 +444,8 @@ namespace CASM {
   //*******************************************************************************************
   SymGroup SymGroup::lattice_point_group(Lattice const &_lat) {
 
-    //TODO
-    //Should an adapter exist for this?
-    //There was talk about making SymGroup not depend on CASM::SymOp,
-    //so when that happens you can just pass it whatever calc_point_group
-    //returns
-
-    auto lattice_point_group = xtal::make_point_group(_lat);
-    std::vector<CASM::SymOp> casted_point_group;
-    for(const auto &op : lattice_point_group) {
-      //The tolerance passed here is totally arbitrary...
-      casted_point_group.emplace_back(get_matrix(op), get_translation(op), get_time_reversal(op), CASM::TOL);
-    }
-
-    SymGroup point_group(casted_point_group, &_lat);
+    xtal::SymOpVector lattice_point_group_operations = xtal::make_point_group(_lat);
+    SymGroup point_group = adapter::Adapter<SymGroup, xtal::SymOpVector>()(lattice_point_group_operations, _lat);
 
 
     if(!point_group.is_group(_lat.tol())) {
@@ -459,7 +454,7 @@ namespace CASM {
                 << "    (i.e., a well-defined point group could not be found with the current tolerance of " << _lat.tol() << ").\n"
                 << "    CASM will use the group closure of the symmetry operations that were found.  Please consider using the \n"
                 << "    CASM symmetrization tool on your input files.\n";
-      std::cout << "lat_column_mat:\n" << _lat.lat_column_mat() << "\n\n";
+      std::cerr << "lat_column_mat:\n" << _lat.lat_column_mat() << "\n\n";
 
       point_group.enforce_group(_lat.tol());
 
@@ -555,10 +550,10 @@ namespace CASM {
   //
   // Donghee
   //*****************************************************************
-  std::vector<Index> SymGroup::get_rotation_groups() const {
+  std::vector<Index> get_rotation_groups(SymGroup const &group) {
     std::vector<Index> result(12, 0);
-    for(Index i = 0; i < size(); i++) {
-      SymInfo info(at(i), lattice());
+    for(SymOp const &op : group) {
+      SymInfo info(op, group.lattice());
       if(info.op_type == symmetry_type::identity_op) {
         result[0]++;
       }
@@ -567,10 +562,10 @@ namespace CASM {
       }
       else {
         Index bit = 0;
-        if(at(i).matrix().determinant() < 0)
+        if(op.matrix().determinant() < 0)
           bit = 1;
         for(Index n = 2; n <= 6; ++n) {
-          if(almost_equal<double>(360. / n, info.angle)) {
+          if(almost_equal<double>(360. / double(n), info.angle)) {
             result[2 * (n - 1) + bit]++;
             break;
           }
@@ -580,9 +575,52 @@ namespace CASM {
     }
     return result;
   }
+
   //*****************************************************************
-  std::map<std::string, std::string> SymGroup::point_group_info() const {
-    std::vector<Index> rgroups = get_rotation_groups();
+  std::map<std::string, std::string> point_group_info(SymGroup const &g) {
+    SymGroup pg = g.copy_no_trans(false);
+    SymGroup nonmag;
+    bool grey = false;
+    for(SymOp const &op : pg) {
+      if(!op.time_reversal()) {
+        nonmag.push_back(op);
+      }
+      else if(!grey && op.matrix().isIdentity(TOL)) {
+        grey = true;
+      }
+    }
+    nonmag.set_lattice(g.lattice());
+    auto nonmag_info = nonmagnetic_point_group_info(nonmag);
+
+    //nonmagnetic group:
+    if(nonmag.size() == pg.size()) {
+      return nonmag_info;
+    }
+
+    //grey group:
+    if(grey) { //(2 * nonmag.size()) == pg.size()) {
+      nonmag_info["space_group_range"] = "Magnetic group (not supported)";
+      nonmag_info["international_name"] += "1'";
+      nonmag_info["name"] += "'";
+      nonmag_info["latex_name"].insert(nonmag_info["latex_name"].find('_'), "'");
+      return nonmag_info;
+    }
+
+    auto tot_info = nonmagnetic_point_group_info(pg);
+
+    //magnetic group:
+    tot_info["international_name"] = "Magnetic group (not supported)";
+    tot_info["space_group_range"] = "Magnetic group (not supported)";
+    tot_info["name"] += ("(" + nonmag_info["name"] + ")");
+    tot_info["latex_name"] += ("(" + nonmag_info["latex_name"] + ")");
+
+    return tot_info;
+
+  }
+  //*****************************************************************
+  std::map<std::string, std::string> nonmagnetic_point_group_info(SymGroup const &g) {
+    SymGroup pg = g.copy_no_trans(false);
+    std::vector<Index> rgroups = get_rotation_groups(pg);
     std::map<std::string, std::string> result;
     // Calculate total number of rotation elements
     Index nm = rgroups[2] + 1;
@@ -608,7 +646,7 @@ namespace CASM {
         }
         else {
           result["international_name"] = "23";
-          result["name"] = "T (Chiral)";
+          result["name"] = "T";
           result["latex_name"] = "T";
           result["space_group_range"] = "195-199";
         }
@@ -623,7 +661,7 @@ namespace CASM {
         else {
           if(rgroups[6] == 6) {
             result["international_name"] = "432";
-            result["name"] = "O (Chiral)";
+            result["name"] = "O";
             result["latex_name"] = "O";
             result["space_group_range"] = "207-214";
           }
@@ -655,7 +693,7 @@ namespace CASM {
         else {
           if(rgroups[10] == 2) {
             result["international_name"] = "6";
-            result["name"] = "C6 (Chiral)";
+            result["name"] = "C6";
             result["latex_name"] = "C_6";
             result["space_group_range"] = "168-173";
           }
@@ -679,13 +717,13 @@ namespace CASM {
         }
         else {
           if(rgroups[10] == 2) {
-            if(rgroups[3] == 7) {
+            if(rgroups[2] == 7) {
               result["international_name"] = "622";
-              result["name"] = "D6 (Chiral)";
+              result["name"] = "D6";
               result["latex_name"] = "D_{6h}";
               result["space_group_range"] = "177-182";
             }
-            else if(rgroups[4] == 6) {
+            else if(rgroups[3] == 6) {
               result["international_name"] = "6mm";
               result["name"] = "C6v";
               result["latex_name"] = "C_{6v}";
@@ -708,21 +746,32 @@ namespace CASM {
         default_err_log() << "\n Error Hexagonal \n";
       }
     } // for hexagonal
-    else if((rgroups[4] + rgroups[5]) == 2) {
+    else if((rgroups[4] + rgroups[5]) >= 1) {
       result["crystal_system"] = "Trigonal";
       switch(nm) {
+      case 2:
+        if(rgroups[3] == 3) {
+          result["international_name"] = "3m";
+          result["name"] = "C3v";
+          result["latex_name"] = "C_{3v}";
+          result["space_group_range"] = "156-161";
+        }
+        else if(rgroups[3] == 0) {
+          result["international_name"] = "3";
+          result["name"] = "C3";
+          result["latex_name"] = "C_{3}";
+          result["space_group_range"] = "143-146";
+        }
+        else {
+          default_err_log() << "\n Error Trigonal case 2 Acentric \n ";
+        }
+        break;
       case 3:
         if(centric) {
           result["international_name"] = "-3";
           result["name"] = "S6";
           result["latex_name"] = "S_6";
           result["space_group_range"] = "147-148";
-        }
-        else {
-          result["international_name"] = "3";
-          result["name"] = "C3 (Chiral)";
-          result["latex_name"] = "C_3";
-          result["space_group_range"] = "143-146";
         }
         break;
       case 6:
@@ -735,15 +784,9 @@ namespace CASM {
         else {
           if(rgroups[2] == 3) {
             result["international_name"] = "32";
-            result["name"] = "D3 (Chiral)";
+            result["name"] = "D3";
             result["latex_name"] = "D_3";
             result["space_group_range"] = "149-155";
-          }
-          else if(rgroups[3] == 3) {
-            result["international_name"] = "3m";
-            result["name"] = "C3v";
-            result["latex_name"] = "C_{3v}";
-            result["space_group_range"] = "156-161";
           }
           else {
             default_err_log() << "\n Error Trigonal case 6 Acentric \n ";
@@ -754,9 +797,20 @@ namespace CASM {
         default_err_log() << "\n Error Trigonal \n";
       }
     } // for trigonal
-    else if((rgroups[6] + rgroups[7]) == 2) {
+    else if((rgroups[6] + rgroups[7]) >= 1) {
       result["crystal_system"] = "Tetragonal";
       switch(nm) {
+      case 3:
+        if(rgroups[3] == 4) {
+          result["international_name"] = "4mm";
+          result["name"] = "C4v";
+          result["latex_name"] = "C_{4v}";
+          result["space_group_range"] = "99-110";
+        }
+        else {
+          default_err_log() << "\n Error Tetragonal case 3 Acentric \n ";
+        }
+        break;
       case 4:
         if(centric) {
           result["international_name"] = "4/m";
@@ -764,24 +818,43 @@ namespace CASM {
           result["latex_name"] = "C_{4h}";
           result["space_group_range"] = "83-88";
         }
-        else {
-          if(rgroups[6] == 2) {
-            result["international_name"] = "4";
-            result["name"] = "C4 (Chiral)";
-            result["latex_name"] = "C_4";
-            result["space_group_range"] = "75-80";
-          }
-          else if(rgroups[7] == 2) {
-            result["international_name"] = "-4";
-            result["name"] = "S4";
-            result["latex_name"] = "S_4";
-            result["space_group_range"] = "81-82";
-          }
-          else {
-            default_err_log() << "\n Error Tetragonal case 4 Acentric \n ";
-          }
+        else if(rgroups[6] == 1) {
+          result["international_name"] = "4";
+          result["name"] = "C4";
+          result["latex_name"] = "C_4";
+          result["space_group_range"] = "75-80";
         }
-
+        else if(rgroups[7] == 1) {
+          result["international_name"] = "-4";
+          result["name"] = "S4";
+          result["latex_name"] = "S_4";
+          result["space_group_range"] = "81-82";
+        }
+        else {
+          default_err_log() << "\n Error Tetragonal case 4 Acentric \n ";
+        }
+        break;
+      case 5:
+        if(rgroups[7] == 1) {
+          result["international_name"] = "-42m";
+          result["name"] = "D2d";
+          result["latex_name"] = "D_{2d}";
+          result["space_group_range"] = "111-122";
+        }
+        else {
+          default_err_log() << "\n Error Tetragonal case 7 Acentric \n ";
+        }
+        break;
+      case 7:
+        if(rgroups[6] == 1 && rgroups[2] == 5) {
+          result["international_name"] = "422";
+          result["name"] = "D4";
+          result["latex_name"] = "D_4";
+          result["space_group_range"] = "89-98";
+        }
+        else {
+          default_err_log() << "\n Error Tetragonal case 7 Ancentric #4 \n";
+        }
         break;
       case 8:
         if(centric) {
@@ -791,30 +864,7 @@ namespace CASM {
           result["space_group_range"] = "123-142";
         }
         else {
-          if(rgroups[6] == 2) {
-            if(rgroups[3] == 5) {
-              result["international_name"] = "422";
-              result["name"] = "D4 (Chiral)";
-              result["latex_name"] = "D_4";
-              result["space_group_range"] = "89-98";
-            }
-            else if(rgroups[4] == 4) {
-              result["international_name"] = "4mm";
-              result["name"] = "C4v";
-              result["latex_name"] = "C_{4v}";
-              result["space_group_range"] = "99-110";
-            }
-            else default_err_log() << "\n Error Tetragonal case 8 Ancentric #4 \n";
-          }
-          else if(rgroups[7] == 2) {
-            result["international_name"] = "-42m";
-            result["name"] = "D2d";
-            result["latex_name"] = "D_{2d}";
-            result["space_group_range"] = "111-122";
-          }
-          else {
-            default_err_log() << "\n Error Tetragonal case 8 Acentric \n ";
-          }
+          default_err_log() << "\n Error Tetragonal case 8\n ";
         }
         break;
       default:
@@ -830,13 +880,13 @@ namespace CASM {
         result["space_group_range"] = "47-84";
       }
       else {
-        if(rgroups[3] == 3) {
+        if(rgroups[2] == 3) {
           result["international_name"] = "222";
-          result["name"] = "D2 (Chiral)";
+          result["name"] = "D2";
           result["latex_name"] = "D_2";
           result["space_group_range"] = "16-24";
         }
-        else if(rgroups[4] == 2) {
+        else if(rgroups[3] == 2) {
           result["international_name"] = "mm2";
           result["name"] = "C2v";
           result["latex_name"] = "C_{2v}";
@@ -857,13 +907,13 @@ namespace CASM {
         result["space_group_range"] = "10-15";
       }
       else {
-        if(rgroups[3] == 1) {
+        if(rgroups[2] == 1) {
           result["international_name"] = "2";
-          result["name"] = "C2 (Chiral)";
+          result["name"] = "C2";
           result["latex_name"] = "C_2";
           result["space_group_range"] = "3-5";
         }
-        else if(rgroups[4] == 1) {
+        else if(rgroups[3] == 1) {
           result["international_name"] = "m";
           result["name"] = "Cs";
           result["latex_name"] = "C_s";
@@ -884,25 +934,28 @@ namespace CASM {
       }
       else {
         result["international_name"] = "1";
-        result["name"] = "C1 (Chiral)";
+        result["name"] = "C1";
         result["latex_name"] = "C_1";
         result["space_group_range"] = "1";
       }
     }
     else {
-      default_err_log() << "Error foind point group type \n";
+      default_err_log() << "Error finding point group type \n";
     }
     return result;
   }
 
   //*******************************************************************************************
 
-  void SymGroup::print_space_group_info(std::ostream &out) const {
+  std::string space_group_info_string(SymGroup const &g) {
 
-    auto result = point_group_info();
-    out << "  Crystal System : " << result["crystal_system"] << "\n";
-    out << "  Space Group # : " << result["space_group_range"] << "\n";
-    out << "  Point Group is " << result["centricity"] << " " << result["international_name"] << " ( " << result["name"] << " ) \n";
+    auto result = point_group_info(g);
+    std::stringstream ss;
+    ss <<
+       "  Crystal System : " << result["crystal_system"] << std::endl <<
+       "  Space Group # : " << result["space_group_range"] << std::endl <<
+       "  Point Group is " << result["centricity"] << " " << result["international_name"] << "(H-M) :: " << result["name"] << " (Schoenflies) \n";
+    return ss.str();
   }
 
   //*******************************************************************************************
@@ -1045,7 +1098,7 @@ namespace CASM {
       }
     }
     //std::cout << irrep_names << std::endl;
-    //std::cout << "Check if all of the current names are unique... " << all_unique << "\n";
+    //std::cout << "Check if all of the current names are unique... " << all_unique << std::endl;
 
     if(!all_unique) {
       repeats.clear();
@@ -1061,7 +1114,7 @@ namespace CASM {
       }
     }
 
-    //    //std::cout << "Repeats in ..." << repeats << "\n";
+    //    //std::cout << "Repeats in ..." << repeats << std::endl;
     //std::cout << "STEP 2: Name according to sigma_v or C2p symmetry...\n";
     //Check for symmetry wrt vertical mirror plane or C2' axis...
     //I don't know how to do this for non-1D representations =(
@@ -1179,14 +1232,12 @@ namespace CASM {
       for(Index k = 0; k < irrep_names.size() && all_unique; k++) {
         all_unique = true;
         if((j != k) && (irrep_names[j].compare(irrep_names[k]) == 0)) {
-          //	    //std::cout << irrep_names[j] << " = " << irrep_names[k] << std::endl;
           all_unique = false;
         }
       }
     }
-    //    //std::cout << irrep_names << std::endl;
-    //    //std::cout << "Check if all of the current names are unique... " << all_unique << "\n";
 
+    //    //std::cout << "Check if all of the current names are unique... " << all_unique << std::endl;
     if(!all_unique) {
       repeats.clear();
       for(Index j = 0; j < irrep_names.size(); j++) {
@@ -1200,7 +1251,7 @@ namespace CASM {
         }
       }
     }
-    //    //std::cout << "Repeats in ..." << repeats << "\n";
+
     //std::cout << "STEP 3: Name according to inversion symmetry...\n";
     for(Index i = 0; i < irrep_names.size(); i++) {
       if((inversion == true) && (!all_unique) && (contains(repeats, int(m_character_table[0][i].real())))) {
@@ -1223,13 +1274,12 @@ namespace CASM {
       for(Index k = 0; k < irrep_names.size() && all_unique; k++) {
         all_unique = true;
         if((j != k) && (irrep_names[j].compare(irrep_names[k]) == 0)) {
-          //	    //std::cout << irrep_names[j] << " = " << irrep_names[k] << std::endl;
           all_unique = false;
         }
       }
     }
-    //    //std::cout << irrep_names << std::endl;
-    //std::cout << "Check if all of the current names are unique... " << all_unique << "\n";
+
+    //std::cout << "Check if all of the current names are unique... " << all_unique << std::endl;
 
     if(!all_unique) {
       repeats.clear();
@@ -1245,7 +1295,7 @@ namespace CASM {
       }
     }
 
-    //    //std::cout << "Repeats in ..." << repeats << "\n";
+    //    //std::cout << "Repeats in ..." << repeats << std::endl;
 
     //    //std::cout << "STEP 4: Name according to sigma_h symmetry...\n";
     for(Index i = 0; i < irrep_names.size(); i++) {
@@ -1272,21 +1322,14 @@ namespace CASM {
       for(Index k = 0; k < irrep_names.size() && all_unique; k++) {
         all_unique = true;
         if((j != k) && (irrep_names[j].compare(irrep_names[k]) == 0)) {
-          std::cout << irrep_names[j] << " = " << irrep_names[k] << std::endl;
           all_unique = false;
         }
       }
     }
 
-    //    std::cout << "Check if all of the current names are unique... " << all_unique << "\n";
-
     if(!all_unique) {
       default_err_log() << "WARNING: Failed to name all irreps uniquely...  \n";
     }
-    for(auto &irrep_name : irrep_names) {
-      std::cout << irrep_name << "   ";
-    }
-    std::cout << std::endl;
     return;
   }
 
@@ -1837,13 +1880,13 @@ namespace CASM {
         //  stream << "--------------|";
         //}
 
-        stream << "\n";
+        stream << std::endl;
       } //Closes the i loop
       stream << " ";
       for(Index i = 0; i < m_character_table.size() + 1; i++) {
         stream << "----------------";
       }
-      stream << "\n";
+      stream << std::endl;
     }//Closes else loop (non-integers)
 
     return;
@@ -2808,11 +2851,11 @@ namespace CASM {
 
       // use equiv_map to find the equivalent subgroups
       result.push_back({});
-      //std::cout << "tgroup.size(): " << tgroup.size() << "\n";
+      //std::cout << "tgroup.size(): " << tgroup.size() << std::endl;
       //std::cout << "tgroup : ";
       //for(i : tgroup)
       //std::cout << i << "  ";
-      //std::cout << "\n";
+      //std::cout << std::endl;
       for(auto const &coset : left_cosets(tgroup.begin(), tgroup.end())) {
         std::set<Index> tequiv;
         for(Index op : tgroup) {
@@ -2916,9 +2959,9 @@ namespace CASM {
       sg_names.push_back(sgroup.name);
       //std::cout << sgroup.name << "-" << i << " has equivalencies:\n";
       for(Index j = 0; j < m_subgroups[i].size(); j++) {
-        //std::cout << "  " << m_subgroups[i][j] << "\n";
+        //std::cout << "  " << m_subgroups[i][j] << std::endl;
       }
-      //std::cout << "\n";
+      //std::cout << std::endl;
     }
 
     std::vector< std::vector< Index > > sg_tree(m_subgroups.size(), std::vector<Index>());
@@ -2940,7 +2983,7 @@ namespace CASM {
           }
         }
       }
-      //std::cout << "\n";
+      //std::cout << std::endl;
     }
 
     /* // commented out for now because datatype of m_subgroups has changed
@@ -3025,7 +3068,7 @@ namespace CASM {
           //std::cout << " so " << k << " goes in class " << conjugacy_classes.size()-1;
           conjugacy_classes.back().push_back(k);
         }
-        //std::cout << "\n";
+        //std::cout << std::endl;
       }
       std::sort(conjugacy_classes.back().begin(), conjugacy_classes.back().end());
     }
@@ -3045,7 +3088,7 @@ namespace CASM {
   Index SymGroup::ind_inverse(Index i) const {
     if(get_alt_multi_table().size() != size() || !valid_index(i) || i >= size())
       return -1;
-    //std::cout << "Inside ind_inverse. 'i' is " << i << " and alt_multi_table size is " << alt_multi_table.size() << "\n";
+    //std::cout << "Inside ind_inverse. 'i' is " << i << " and alt_multi_table size is " << alt_multi_table.size() << std::endl;
     return alt_multi_table[i][0];
   }
 
@@ -3057,11 +3100,11 @@ namespace CASM {
        || !valid_index(j) || j >= size()) {
 
 
-      //default_err_log() << "WARNING: SymGroup::ind_prod() failed for " << i << ", " << j << "\n";// and multi_table\n" << get_multi_table() << "\n\n";
+      //default_err_log() << "WARNING: SymGroup::ind_prod() failed for " << i << ", " << j << std::endl;// and multi_table\n" << get_multi_table() << "\n\n";
       //assert(0);
       return -1;
     }
-    //std::cout << "Inside ind_prod. 'i' is " << i << " and j is " << j << " and multi_table size is " << multi_table.size() << "\n";
+    //std::cout << "Inside ind_prod. 'i' is " << i << " and j is " << j << " and multi_table size is " << multi_table.size() << std::endl;
     return multi_table[i][j];
   }
 
@@ -3188,12 +3231,15 @@ namespace CASM {
 
   const std::string &SymGroup::get_name() const {
     if(!name.size()) {
-      _generate_character_table();
+      auto info = point_group_info(*this);
+      name = info["name"];
+      latex_name = info["latex_name"];
       if(!name.size()) {
 
         default_err_log() << "WARNING: In SymGroup::get_name(), unable to get symgroup type.\n";
         default_err_log() << "group size is " << size() << '\n';
         name = "unknown";
+        latex_name = "unknown";
       }
     }
 
@@ -3203,7 +3249,8 @@ namespace CASM {
   //*******************************************************************************************
 
   const std::string &SymGroup::get_latex_name() const {
-    character_table();
+    get_name();
+
     return latex_name;
   }
 
@@ -3240,9 +3287,9 @@ namespace CASM {
               for(Index n = 0; n < multi_table[m].size(); n++) {
                 default_err_log() << multi_table[m][n] << "   ";
               }
-              default_err_log() << "\n";
+              default_err_log() << std::endl;
             }
-            default_err_log() << "\n";
+            default_err_log() << std::endl;
             multi_table.resize(size(), std::vector<Index>(size(), -1));
             //multi_table.clear();
             return false;
@@ -3403,7 +3450,7 @@ namespace CASM {
     if(mode == FRAC)
       c2f_mat = lattice().inv_lat_column_mat();
     for(Index i = 0; i < size(); i++) {
-      out << i << "  " << description(at(i), lattice(), mode) << "\n";
+      out << i << "  " << description(at(i), lattice(), mode) << std::endl;
       at(i).print(out, c2f_mat);
       out << std::endl;
     }
@@ -3769,7 +3816,7 @@ namespace CASM {
     // mutable double max_error;
     json["max_error"] = m_max_error;
 
-    for(auto const &info : point_group_info())
+    for(auto const &info : point_group_info(*this))
       json[info.first] = info.second;
 
     return json;
@@ -3912,6 +3959,17 @@ namespace CASM {
 
   //*******************************************************************************************
 
+  MasterSymGroup make_master_sym_group(SymGroup const &_group, Lattice const &_lattice) {
+    MasterSymGroup result;
+    result.set_lattice(_lattice);
+    for(auto const &op : _group) {
+      result.push_back(op);
+    }
+    return result;
+  }
+
+  //*******************************************************************************************
+
   jsonParser &to_json(const MasterSymGroup &sym, jsonParser &json) {
     return sym.to_json(json);
   }
@@ -3940,8 +3998,8 @@ namespace CASM {
     //std::cout << "Operations:\n"
     //<< a.matrix() << "\n and \n"
     //<< b.matrix() << "\n are equal \n"
-    //<< "a-tau " << a.tau().transpose() << "\n"
-    //<< "b-tau " << b.tau().transpose() << "\n";
+    //<< "a-tau " << a.tau().transpose() << std::endl
+    //<< "b-tau " << b.tau().transpose() << std::endl;
     if(periodicity != PERIODIC)
       return almost_equal(a.tau(), b.tau(), _tol);
 

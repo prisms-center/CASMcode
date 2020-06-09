@@ -18,21 +18,23 @@
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clex/MappedPropertiesTools.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
-#include "casm/crystallography/LatticePointWithin.hh"
+#include "casm/clex/SimpleStructureTools.hh"
+#include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/crystallography/LinearIndexConverter.hh"
-#include "casm/crystallography/Lattice_impl.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/io/VaspIO.hh"
+#include "casm/crystallography/io/SimpleStructureIO.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/DiffTransConfigDatabase.hh"
 #include "casm/database/Named_impl.hh"
 #include "casm/database/ScelDatabase.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
+#include "casm/strain/StrainConverter.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/symmetry/SymTools.hh"
 
@@ -645,7 +647,7 @@ namespace CASM {
 
   //*********************************************************************************
   /// Returns composition, not counting vacancies
-  ///    composition[ molecule_type ]: molecule_type ordered as prim structure's struc_molecule_name(), with [Va]=0.0
+  ///    composition[ molecule_type ]: molecule_type ordered as prim structure's xtal::struc_molecule_name(), with [Va]=0.0
   Eigen::VectorXd Configuration::composition() const {
 
     // get the number of each molecule type
@@ -655,7 +657,7 @@ namespace CASM {
     int num_atoms = 0;
 
     // need to know which molecules are vacancies
-    auto struc_mol = struc_molecule_name(prim());
+    auto struc_mol = xtal::struc_molecule_name(prim());
 
     Index i;
     for(i = 0; i < struc_mol.size(); i++) {
@@ -673,13 +675,13 @@ namespace CASM {
 
   //*********************************************************************************
   /// Returns composition, including vacancies
-  ///    composition[ molecule_type ]: molecule_type ordered as prim structure's struc_molecule_name()
+  ///    composition[ molecule_type ]: molecule_type ordered as prim structure's xtal::struc_molecule_name()
   Eigen::VectorXd Configuration::true_composition() const {
     return num_each_molecule().cast<double>() / size();
   }
 
   //*********************************************************************************
-  /// Returns num_each_molecule[ molecule_type], where 'molecule_type' is ordered as Structure::struc_molecule_name()
+  /// Returns num_each_molecule[ molecule_type], where 'molecule_type' is ordered as Structure::xtal::struc_molecule_name()
   Eigen::VectorXi Configuration::num_each_molecule() const {
     return CASM::num_each_molecule(m_configdof, supercell());
   }
@@ -875,7 +877,7 @@ namespace CASM {
 
   std::string pos_string(Configuration const  &_config) {
     std::stringstream ss;
-    VaspIO::PrintPOSCAR p(xtal::make_simple_structure(_config), _config.name());
+    VaspIO::PrintPOSCAR p(make_simple_structure(_config), _config.name());
     p.sort();
     p.print(ss);
     return ss.str();
@@ -905,7 +907,7 @@ namespace CASM {
     std::stringstream ss;
 
     jsonParser tjson;// = json_supplement(_config);
-    to_json(xtal::make_simple_structure(_config), tjson);
+    to_json(make_simple_structure(_config), tjson);
     tjson.print(ss);
     return ss.str();
   }
@@ -1006,7 +1008,7 @@ namespace CASM {
       Index fg_index = boost::lexical_cast<Index>(tokens[2]);
       Index trans_index = boost::lexical_cast<Index>(tokens[3]);
 
-      return apply(canon_config.supercell().sym_info().permute_it(fg_index, trans_index), canon_config);
+      return CASM::apply(canon_config.supercell().sym_info().permute_it(fg_index, trans_index), canon_config);
     }
 
     /// \brief Make general super Configuration from name string
@@ -1233,8 +1235,8 @@ namespace CASM {
   }
 
   /// \brief Cost function that describes the degree to which basis sites have relaxed
-  double basis_deformation(const Configuration &_config) {
-    return _config.calc_properties().scalar("basis_deformation");
+  double atomic_deformation(const Configuration &_config) {
+    return _config.calc_properties().scalar("atomic_deformation");
   }
 
   /// \brief Cost function that describes the degree to which lattice has relaxed
@@ -1244,7 +1246,8 @@ namespace CASM {
 
   /// \brief Change in volume due to relaxation, expressed as the ratio V/V_0
   double volume_relaxation(const Configuration &_config) {
-    return _config.calc_properties().scalar("volume_relaxation");
+    StrainConverter tconvert("BIOT");
+    return tconvert.rollup_E(_config.calc_properties().global.at("Ustrain")).determinant();
   }
 
   /// \brief Returns the relaxed magnetic moment, normalized per unit cell
@@ -1372,8 +1375,8 @@ namespace CASM {
     return it != props.site.end() && it->second.cols();
   }
 
-  bool has_basis_deformation(const Configuration &_config) {
-    return _config.calc_properties().has_scalar("basis_deformation");
+  bool has_atomic_deformation(const Configuration &_config) {
+    return _config.calc_properties().has_scalar("atomic_deformation");
   }
 
   bool has_lattice_deformation(const Configuration &_config) {
@@ -1381,7 +1384,7 @@ namespace CASM {
   }
 
   bool has_volume_relaxation(const Configuration &_config) {
-    return _config.calc_properties().has_scalar("volume_relaxation");
+    return _config.calc_properties().global.count("Ustrain");
   }
 
   bool has_relaxed_magmom(const Configuration &_config) {
@@ -1527,11 +1530,11 @@ namespace CASM {
       for(const UnitCell &oriented_motif_uc : oriended_motif_lattice_points) {
         UnitCell oriented_motif_uc_relative_to_prim = oriented_motif_uc.reset_tiling_unit(oriented_motif_lat, prim.lattice());
 
-        Index prim_motif_tile_ind = m_scel->sym_info().unitcell_index_converter()[oriented_motif_uc_relative_to_prim];
+        Index prim_motif_tile_ind = m_scel->sym_info().unitcell_index_converter()(oriented_motif_uc_relative_to_prim);
 
         UnitCellCoord mc_uccoord(
           oriented_uccoord.sublattice(),
-          m_scel->sym_info().unitcell_index_converter()[(prim_motif_tile_ind)] + oriented_uccoord.unitcell());
+          m_scel->sym_info().unitcell_index_converter()(prim_motif_tile_ind) + oriented_uccoord.unitcell());
 
         m_index_table[s].push_back(m_scel->linear_index(mc_uccoord));
       }
@@ -1662,10 +1665,10 @@ namespace CASM {
   }
 
 
-  /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is ordered as Structure::struc_molecule_name()
+  /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is ordered as Structure::xtal::struc_molecule_name()
   Eigen::VectorXi num_each_molecule(const ConfigDoF &configdof, const Supercell &scel) {
 
-    auto mol_names = struc_molecule_name(scel.prim());
+    auto mol_names = xtal::struc_molecule_name(scel.prim());
     // [basis_site][site_occupant_index]
     auto convert = make_index_converter(scel.prim(), mol_names);
 
@@ -1680,7 +1683,7 @@ namespace CASM {
     return num_each_molecule;
   }
 
-  /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::struc_molecule_name()
+  /// \brief Returns comp_n, the number of each molecule per primitive cell, ordered as Structure::xtal::struc_molecule_name()
   Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel) {
     return num_each_molecule(configdof, scel).cast<double>() / scel.volume();
   }

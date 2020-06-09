@@ -46,7 +46,7 @@ namespace {
 
 TEST(UnitCellCoordTest, Test1) {
 
-  BasicStructure<Site> prim = test::FCC_ternary_prim();
+  BasicStructure prim = test::FCC_ternary_prim();
   {
     UnitCellCoord uccoord(0, -1, 1, 1);
     Eigen::Vector3d vec = uccoord.site(prim).cart();

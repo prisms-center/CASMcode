@@ -43,16 +43,21 @@ namespace CASM {
           //std::cout << "   priority: " << priority << "\n";
           // Maximize composition in direction specified by the current 'priority'
           Eigen::VectorXi tend(Eigen::VectorXi::Zero(dim));
+          bool success = false;
           for(auto const &sublat : sublats) {
+            success = false;
             for(Index i : priority) {
               if(sublat.first.count(i)) {
                 tend[i] += sublat.second; //increment by multiplicity of the sublattice
+                success = true;
                 break;
               }
             }
+            if(!success)
+              break;
           }
           // Keep unique extrema
-          if(!contains(result, tend))
+          if(success && !contains(result, tend))
             result.push_back(tend);
 
           //std::cout << "tend_members.size(): " << tend_members.size() << "\n";
@@ -146,7 +151,7 @@ namespace CASM {
       //std::cout << " ::\n";
       //for(auto const& occ : sub.second){
       //  for(Index i : occ.first){
-      //    std::cout << " " << i;
+      //  std::cout << " " << i;
       //  }
       //  std::cout << ": " << occ.second << "\n";
       //}

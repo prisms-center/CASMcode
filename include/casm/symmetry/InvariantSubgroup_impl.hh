@@ -110,7 +110,7 @@ namespace CASM {
 
     ScelPeriodicSymCompare<Element> sym_compare(
       scel.primclex().shared_prim(),
-      xtal::make_bring_within_f(scel),
+      scel.transf_mat(),
       scel.crystallography_tol());
     Element e(sym_compare.prepare(element));
     std::vector<PermuteIterator> result;
@@ -149,7 +149,7 @@ namespace CASM {
 
     ScelPeriodicSymCompare<Element> sym_compare(
       scel.primclex().shared_prim(),
-      xtal::make_bring_within_f(scel),
+      scel.transf_mat(),
       scel.crystallography_tol());
     Element e(sym_compare.prepare(element));
     std::vector<PermuteIterator> result;

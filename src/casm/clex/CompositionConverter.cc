@@ -452,14 +452,9 @@ namespace CASM {
     // end_members.col(i) corresponds to x such that x[i] = 1, x[j!=i] = 0,
     //  -> end_members.col(i) = origin + m_to_n.col(i)
 
-    // r > c
-    int r = m_components.size();
     int c = m_end_members.cols();
 
-    m_to_n = Eigen::MatrixXd(r, c);
-    for(int i = 0; i < c; i++) {
-      m_to_n.col(i) = m_end_members.col(i) - m_origin;
-    }
+    m_to_n = m_end_members.leftCols(c).colwise() - m_origin;
 
     // x = m_to_x*(n - origin)
     //   -> x = m_to_x*(origin + m_to_n*x - origin)
@@ -589,12 +584,12 @@ namespace CASM {
 
   /// \brief Generate a column matrix containing all the possible molecular end members
   ///
-  /// \param _allowed_occs A BasicStructure<Site> to find the end members of (does
+  /// \param _allowed_occs A BasicStructure to find the end members of (does
   ///             not check if it is actually primitive).
   ///
   /// - Each column corresponds to a point in composition space (specifying number
   ///   of each Molecule per prim)
-  /// - Each row corresponds to a Molecule, ordered as from BasicStructure<Site>::struc_molecule,
+  /// - Each row corresponds to a Molecule, ordered as from BasicStructure::struc_molecule,
   ///   with units number Molecule / prim
   Eigen::MatrixXd end_members(const ParamComposition::AllowedOccupants &_allowed_occs) {
     ParamComposition param_comp(_allowed_occs);
@@ -628,14 +623,14 @@ namespace CASM {
     return M;
   }
 
-  /// \brief Return the composition space of a BasicStructure<Site>
+  /// \brief Return the composition space of a BasicStructure
   ///
-  /// \param _allowed_occs A BasicStructure<Site> to find the standard composition space for (does
+  /// \param _allowed_occs A BasicStructure to find the standard composition space for (does
   ///             not check if it is actually primitive).
   /// \param tol tolerance for checking rank (default 1e-14)
   ///
   /// - Each column corresponds to an orthogonal vector in atom fraction space
-  /// - Each row corresponds to a Molecule, ordered as from BasicStructure<Site>::struc_molecule
+  /// - Each row corresponds to a Molecule, ordered as from BasicStructure::struc_molecule
   Eigen::MatrixXd composition_space(const ParamComposition::AllowedOccupants &_allowed_occs, double tol) {
     auto Qr = _composition_space(_allowed_occs, tol).fullPivHouseholderQr();
     Qr.setThreshold(tol);
@@ -643,14 +638,14 @@ namespace CASM {
     return Q.leftCols(Qr.rank());
   }
 
-  /// \brief Return the null composition space of a BasicStructure<Site>
+  /// \brief Return the null composition space of a BasicStructure
   ///
-  /// \param _allowed_occs A BasicStructure<Site> to find the standard composition space for (does
+  /// \param _allowed_occs A BasicStructure to find the standard composition space for (does
   ///             not check if it is actually primitive).
   /// \param tol tolerance for checking rank (default 1e-14)
   ///
   /// - Each column corresponds to an orthogonal vector in atom fraction space
-  /// - Each row corresponds to a Molecule, ordered as from BasicStructure<Site>::struc_molecule
+  /// - Each row corresponds to a Molecule, ordered as from BasicStructure::struc_molecule
   Eigen::MatrixXd null_composition_space(const ParamComposition::AllowedOccupants &_allowed_occs, double tol) {
     auto Qr = _composition_space(_allowed_occs, tol).fullPivHouseholderQr();
     Qr.setThreshold(tol);

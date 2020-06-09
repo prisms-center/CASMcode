@@ -142,12 +142,7 @@ namespace CASM {
 
   /// \brief Return prim.json path
   fs::path DirectoryStructure::prim() const {
-    return m_root / "prim.json";
-  }
-
-  /// \brief Return PRIM path
-  fs::path DirectoryStructure::PRIM() const {
-    return m_root / "PRIM";
+    return casm_dir() / "prim.json";
   }
 
 
@@ -210,6 +205,11 @@ namespace CASM {
   /// \brief Return symmetry directory path
   fs::path DirectoryStructure::symmetry_dir() const {
     return m_root / m_sym_dir;
+  }
+
+  /// \brief Return symmetry directory path
+  fs::path DirectoryStructure::symmetry_dir(std::string configname) const {
+    return m_root / m_sym_dir / "supercells" / configname;
   }
 
   /// \brief Return lattice_point_group.json path

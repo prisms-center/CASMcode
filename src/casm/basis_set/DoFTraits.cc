@@ -27,7 +27,12 @@ namespace CASM {
     dict.insert(
       DoFType::occupation(),
       DoFType::displacement(),
-      DoFType::magspin(),
+      DoFType::magspin("C"),
+      DoFType::magspin("Cunit"),
+      DoFType::magspin("NC"),
+      DoFType::magspin("NCunit"),
+      DoFType::magspin("SO"),
+      DoFType::magspin("SOunit"),
       DoFType::EAstrain(),
       DoFType::Hstrain(),
       DoFType::GLstrain());
@@ -52,7 +57,7 @@ namespace CASM {
     }
 
 
-    /// \brief Retrieve the standard values for a DoF from dictionary of properties from properties.calc.json
+    /// \brief Retrieve the standard values for a DoF from dictionary of properties from a SimpleStructure or MappedProperties object
     ///  Returns matrix with standard values, and names of properties that were used to construct the matrix
     std::pair<Eigen::MatrixXd, std::set<std::string> > Traits::find_values(std::map<std::string, Eigen::MatrixXd> const &values) const {
       std::pair<Eigen::MatrixXd, std::set<std::string> > result;
@@ -91,12 +96,12 @@ namespace CASM {
     }
 
     //************************************************************
-    void Traits::apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const {
+    void Traits::apply_dof(ConfigDoF const &_dof, BasicStructure const &_reference, SimpleStructure &_struc) const {
       return;
     }
 
     //************************************************************
-    jsonParser Traits::dof_to_json(ConfigDoF const &_dof, BasicStructure<Site> const &_reference) const {
+    jsonParser Traits::dof_to_json(ConfigDoF const &_dof, BasicStructure const &_reference) const {
       jsonParser result;
       result.put_obj();
 
@@ -119,7 +124,7 @@ namespace CASM {
       if(val_traits().global()) {
         ss <<
            indent << "  if(m_params.eval_mode(m_" << name() << "_var_param_key) != ParamPack::READ) {\n";
-        for(Index a = 0; a < _prim.global_dof(name()).size(); ++a) {
+        for(Index a = 0; a < _prim.structure().global_dof(name()).dim(); ++a) {
           ss << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << name() << "_var_param_key, " << a
              << ", eval_" << name() << "_var(" << a << "));\n";
         }
@@ -158,7 +163,7 @@ namespace CASM {
               if(!_prim.basis()[b].has_dof(name()))
                 continue;
 
-              for(Index a = 0; a < _prim.basis()[b].dof(name()).size(); ++a) {
+              for(Index a = 0; a < _prim.basis()[b].dof(name()).dim(); ++a) {
                 ssvar << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << name() << "_var_param_key, " << a << ", " << n
                       << ", eval_" << name() << "_var_" << b << "_" << a << "(" << n << "));\n";
               }
@@ -203,7 +208,7 @@ namespace CASM {
       if(val_traits().global()) {
         ss <<
            indent << "  if(m_params.eval_mode(m_" << name() << "_var_param_key) != ParamPack::READ) {\n";
-        for(Index a = 0; a < _prim.global_dof(name()).size(); ++a) {
+        for(Index a = 0; a < _prim.structure().global_dof(name()).dim(); ++a) {
           ss << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << name() << "_var_param_key, " << a
              << ", eval_" << name() << "_var(" << a << "));\n";
         }
@@ -235,7 +240,7 @@ namespace CASM {
             if(!_prim.basis()[b].has_dof(name()))
               continue;
 
-            for(Index a = 0; a < _prim.basis()[b].dof(name()).size(); ++a) {
+            for(Index a = 0; a < _prim.basis()[b].dof(name()).dim(); ++a) {
               ssvar << indent << "    ParamPack::Val<Scalar>::set(m_params, m_" << name() << "_var_param_key, " << a << ", " << n
                     << ", eval_" << name() << "_var_" << b << "_" << a << "(" << n << "));\n";
             }
@@ -273,7 +278,7 @@ namespace CASM {
       //TODO: It is not ideal to make a copy of the prim, but everything generated in this function should
       //go out of scope. Solving this will involve rethinking which parts of the prim are needed for the
       //function call, and will affect the implementation of the SymCompare classes
-      auto _prim_ptr = std::make_shared<const Structure>(_prim);
+      auto _prim_ptr = std::shared_ptr<const Structure>(&_prim, [](const Structure *) {});
       make_prim_periodic_asymmetric_unit(_prim_ptr,
                                          CASM_TMP::ConstantFunctor<bool>(true),
                                          TOL,
@@ -368,7 +373,7 @@ namespace CASM {
       //TODO: It is not ideal to make a copy of the prim, but everything generated in this function should
       //go out of scope. Solving this will involve rethinking which parts of the prim are needed for the
       //function call, and will affect the implementation of the SymCompare classes
-      auto _prim_ptr = std::make_shared<const Structure>(_prim);
+      auto _prim_ptr = std::shared_ptr<const Structure>(&_prim, [](const Structure *) {});
       make_prim_periodic_asymmetric_unit(_prim_ptr,
                                          CASM_TMP::ConstantFunctor<bool>(true),
                                          TOL,
@@ -390,8 +395,8 @@ namespace CASM {
             continue;
           stream <<
                  indent << "// " << name() << " evaluators and accessors for basis site " << nb << ":\n";
-          max_na = max(max_na, _prim.basis()[nb].dof(name()).size());
-          for(Index a = 0; a < _prim.basis()[nb].dof(name()).size(); ++a) {
+          max_na = max(max_na, _prim.basis()[nb].dof(name()).dim());
+          for(Index a = 0; a < _prim.basis()[nb].dof(name()).dim(); ++a) {
 
             stream <<
                    indent << "double eval_" << name() << "_var_" << nb << '_' << a << "(const int &nlist_ind) const {\n" <<
@@ -461,9 +466,10 @@ namespace CASM {
       }
 
 
-      for(Site const &site : _prim.basis())
-        NV = max(NV, site.dof(name()).size());
-
+      for(Site const &site : _prim.basis()) {
+        if(site.has_dof(name()))
+          NV = max(NV, site.dof(name()).dim());
+      }
       //for(Index i = 0; i < NB; i++)
       result.push_back(ParamAllocation(std::string(name() + "_var"), Index(NV), Index(-1), true));
 
@@ -483,18 +489,8 @@ namespace CASM {
       stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
       stream.precision(10);
 
-      std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
       std::ostream nullstream(0);
 
-      //TODO: It is not ideal to make a copy of the prim, but everything generated in this function should
-      //go out of scope. Solving this will involve rethinking which parts of the prim are needed for the
-      //function call, and will affect the implementation of the SymCompare classes
-      auto _prim_ptr = std::make_shared<const Structure>(_prim);
-      make_prim_periodic_asymmetric_unit(_prim_ptr,
-                                         CASM_TMP::ConstantFunctor<bool>(true),
-                                         TOL,
-                                         std::back_inserter(asym_unit),
-                                         nullstream);
       return stream.str();
     }
 
@@ -520,7 +516,7 @@ namespace CASM {
     }
 
 
-    std::string Traits::site_basis_description(BasisSet site_bset, Site site) const {
+    std::string Traits::site_basis_description(BasisSet site_bset, Site site, Index site_ix) const {
       return std::string();
     }
 

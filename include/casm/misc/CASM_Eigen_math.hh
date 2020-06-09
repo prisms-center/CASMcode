@@ -15,6 +15,23 @@
 
 #include "casm/external/Eigen/Eigenvalues"
 
+namespace Local {
+  template<typename T>
+  bool _compare(T const &a, T const &b, double tol) {
+    return a < b;
+  }
+
+  template<>
+  inline bool _compare(std::complex<double> const &a, std::complex<double> const &b, double tol) {
+    if(!CASM::almost_equal(real(a), real(b), tol)) {
+      return real(a) < real(b);
+    }
+    else if(!CASM::almost_equal(imag(a), imag(b), tol)) {
+      return imag(a) < imag(b);
+    }
+    return false;
+  }
+}
 namespace CASM {
 
   /// \brief Floating point lexicographical comparison with tol
@@ -23,13 +40,14 @@ namespace CASM {
   }
 
   /// \brief Floating point lexicographical comparison with tol
-  inline bool colmajor_lex_compare(const Eigen::Ref<const Eigen::MatrixXd> &A, const Eigen::Ref<const Eigen::MatrixXd> &B, double tol) {
+  template<typename Derived>
+  bool colmajor_lex_compare(const Eigen::MatrixBase<Derived> &A, const Eigen::MatrixBase<Derived> &B, double tol) {
     if(A.cols() == B.cols()) {
       if(A.rows() == B.rows()) {
         for(Index j = 0; j < A.cols(); ++j) {
           for(Index i = 0; i < A.rows(); ++i) {
             if(!almost_equal(A(i, j), B(i, j), tol))
-              return A(i, j) < B(i, j);
+              return Local::_compare(A(i, j), B(i, j), tol);
           }
         }
         return false;
@@ -46,13 +64,37 @@ namespace CASM {
   }
 
 
-  Eigen::MatrixXd reduced_column_echelon(Eigen::Ref<const Eigen::MatrixXd> const &M, double tol);
+  //Eigen::MatrixXd reduced_column_echelon(Eigen::Ref<const Eigen::MatrixXd> const &M, double tol);
+
+  template<typename Derived>
+  typename Derived::PlainObject reduced_column_echelon(Eigen::MatrixBase<Derived> const &M, double _tol) {
+    typename Derived::PlainObject R(M);
+    Index col = 0;
+    for(Index row = 0; row < R.rows(); ++row) {
+      Index i = 0;
+      for(i = col; i < R.cols(); ++i) {
+        if(!almost_zero(R(row, i), _tol)) {
+          if(i != col)
+            R.col(i).swap(R.col(col));
+          break;
+        }
+      }
+      if(i == R.cols())
+        continue;
+      R.col(col) /= R(row, col);
+      for(i = 0; i < R.cols(); ++i) {
+        if(i != col)
+          R.col(i) -= R(row, i) * R.col(col);
+      }
+      ++col;
+    }
+    return R.leftCols(col);
+  }
+
 
   Eigen::VectorXd eigen_vector_from_string(const std::string &tstr, const int &size);
 
   // *******************************************************************************************
-
-  void poly_fit(Eigen::VectorXcd &xvec, Eigen::VectorXcd &yvec, Eigen::VectorXcd &coeffs, int degree); //Ivy
 
   // Finds optimal assignments, based on cost_matrix, and returns total optimal cost
   double hungarian_method(const Eigen::MatrixXd &cost_matrix, std::vector<Index> &optimal_assignments, const double _tol);
@@ -80,7 +122,6 @@ namespace CASM {
 
   void get_Hermitian(Eigen::MatrixXcd &original_mat, Eigen::MatrixXcd &hermitian_mat, Eigen::MatrixXcd &antihermitian_mat); //Ivy
   bool is_Hermitian(Eigen::MatrixXcd &mat); //Ivy
-  void poly_fit(Eigen::VectorXcd &xvec, Eigen::VectorXcd &yvec, Eigen::VectorXcd &coeffs, int degree);
 
   /// \brief Return the hermite normal form, M == H*V
   std::pair<Eigen::MatrixXi, Eigen::MatrixXi> hermite_normal_form(const Eigen::MatrixXi &M);
@@ -98,9 +139,9 @@ namespace CASM {
 
 
   template<typename Derived>
-  typename Derived::Scalar triple_prod(const Derived &vec0,
-                                       const Derived &vec1,
-                                       const Derived &vec2) {
+  typename Derived::Scalar triple_product(const Derived &vec0,
+                                          const Derived &vec1,
+                                          const Derived &vec2) {
     return (vec0.cross(vec1)).dot(vec2);
   }
 

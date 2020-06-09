@@ -1,8 +1,9 @@
 #ifndef CASM_ClusterSymCompare
 #define CASM_ClusterSymCompare
 
-#include "casm/crystallography/LatticePointWithin.hh"
+#include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/clusterography/CoordCluster.hh"
+#include "casm/global/eigen.hh"
 #include "casm/symmetry/ElementSymApply.hh"
 #include "casm/symmetry/SymCompare.hh"
 #include "casm/symmetry/SymTools.hh"
@@ -11,8 +12,6 @@
 namespace CASM {
   namespace xtal {
     class UnitCellCoord;
-    template <typename CoordType>
-    class BasicStructure;
     class Site;
   } // namespace xtal
   using xtal::UnitCellCoord;
@@ -92,7 +91,7 @@ namespace CASM {
         ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Element>>> >> {
 
   public:
-    typedef xtal::Structure PrimType;
+    typedef Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
     typedef typename traits<Element>::template copy_apply_crtp_type <
       ClusterSymCompare<SymCompare<CRTPBase<AperiodicSymCompare<Element>>> >>
@@ -151,7 +150,7 @@ namespace CASM {
   ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>> >> {
 
 public:
-    typedef xtal::Structure PrimType;
+    typedef Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
     typedef typename traits<Element>::template copy_apply_crtp_type <
       ClusterSymCompare<SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>> >>
@@ -212,7 +211,7 @@ private:
   ClusterSymCompare<SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>> >> {
 
 public:
-    typedef xtal::Structure PrimType;
+    typedef Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
 
     typedef typename traits<Element>::template copy_apply_crtp_type <
@@ -224,7 +223,7 @@ public:
       ///
       /// \param tol Tolerance for invariants_compare of site-to-site distances
       ///
-      ScelPeriodicSymCompare(PrimType_ptr prim_ptr, const xtal::IntegralCoordinateWithin_f &bring_within_f, double tol);
+      ScelPeriodicSymCompare(PrimType_ptr prim_ptr, const Eigen::Matrix3l &transformation_matrix, double tol);
 
       /// \brief Return tolerance
     double tol() const {
@@ -232,6 +231,8 @@ public:
     }
 
 private:
+
+    ScelPeriodicSymCompare(PrimType_ptr prim_ptr, const xtal::IntegralCoordinateWithin_f &bring_within_f, double tol);
     friend SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>;
     // Allow private access to whatever copy_apply_crtp_type is, because sometimes you need that prim
     friend Base;
@@ -276,7 +277,7 @@ private:
   ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>> >> {
 
 public:
-    typedef xtal::Structure PrimType;
+    typedef Structure PrimType;
     typedef std::shared_ptr<const PrimType> PrimType_ptr;
     typedef typename traits<Element>::template copy_apply_crtp_type <
       ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>> >>

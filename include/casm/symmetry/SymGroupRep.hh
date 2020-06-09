@@ -72,6 +72,11 @@ namespace CASM {
       return *m_master_group;
     }
 
+    /// Matrix dimension of representation
+    Index dim() const {
+      return MatrixXd(0)->cols();
+    }
+
     /// \brief Returns true if this SymGroupRep has valid pointer to a MasterSymGroup
     bool has_valid_master() const {
       return m_master_group != nullptr;
@@ -217,18 +222,6 @@ namespace CASM {
 
     SymOpRepresentation const *operator[](Index i) const {
       return m_group_rep->at(m_subgroup_op_inds[i]);
-    }
-
-    const SymOp &sym_op(Index i) const {
-      return (m_group_rep->master_group())[m_subgroup_op_inds[i]];
-    }
-
-    Index ind_inverse(Index i) const {
-      return find_index(m_subgroup_op_inds, (m_group_rep->master_group()).ind_inverse(m_subgroup_op_inds[i]));
-    }
-
-    Index ind_prod(Index i, Index j) const {
-      return find_index(m_subgroup_op_inds, (m_group_rep->master_group()).ind_prod(m_subgroup_op_inds[i], m_subgroup_op_inds[j]));
     }
 
     bool operator==(const SymGroupRepHandle &RHS) const {

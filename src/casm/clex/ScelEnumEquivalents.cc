@@ -1,6 +1,5 @@
 #include "casm/clex/ScelEnumEquivalents.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/Lattice_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/symmetry/SymTools.hh"

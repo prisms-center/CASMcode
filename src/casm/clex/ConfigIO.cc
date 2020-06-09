@@ -42,7 +42,7 @@ namespace CASM {
 
     /// \brief Adds index rules corresponding to the parsed args
     bool MolDependent::init(const Configuration &_tmplt) const {
-      auto struc_mol = struc_molecule_name(_tmplt.primclex().prim());
+      auto struc_mol = xtal::struc_molecule_name(_tmplt.primclex().prim());
 
       if(m_mol_names.size() == 0) {
         for(Index i = 0; i < struc_mol.size(); i++) {
@@ -602,11 +602,11 @@ namespace CASM {
                                             has_rms_force);
     }
 
-    GenericConfigFormatter<double> basis_deformation() {
-      return GenericConfigFormatter<double>("basis_deformation",
+    GenericConfigFormatter<double> atomic_deformation() {
+      return GenericConfigFormatter<double>("atomic_deformation",
                                             "Cost function that describes the degree to which basis sites have relaxed",
-                                            CASM::basis_deformation,
-                                            has_basis_deformation);
+                                            CASM::atomic_deformation,
+                                            has_atomic_deformation);
     }
 
     GenericConfigFormatter<double> lattice_deformation() {
@@ -715,7 +715,7 @@ namespace CASM {
       formation_energy(),
       formation_energy_per_species(),
       rms_force(),
-      basis_deformation(),
+      atomic_deformation(),
       lattice_deformation(),
       volume_relaxation(),
       relaxed_magmom(),

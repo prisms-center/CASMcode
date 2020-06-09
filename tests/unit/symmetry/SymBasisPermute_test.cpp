@@ -57,7 +57,7 @@ TEST(SymBasisPermuteTest, Test0) {
       EXPECT_EQ(
         true,
         almost_equal(
-          copy_apply(g[op_i], u.coordinate(primclex.prim())).const_cart(),
+          sym::copy_apply(g[op_i], u.coordinate(primclex.prim())).const_cart(),
           sym::copy_apply(g[op_i], u, primclex.prim()).coordinate(primclex.prim()).const_cart(),
           primclex.crystallography_tol()));
     }

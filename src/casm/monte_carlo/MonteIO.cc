@@ -1,15 +1,18 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
+#include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/monte_carlo/MonteIO.hh"
 #include "casm/external/gzstream/gzstream.h"
 #include "casm/crystallography/io/VaspIO.hh"
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
-#include "casm/crystallography/BasicStructure_impl.hh"
+#include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
 #include "casm/monte_carlo/MonteSettings.hh"
+#include "casm/clex/ConfigDoF.hh"
+#include "casm/clex/SimpleStructureTools.hh"
 
 namespace CASM {
 
@@ -405,7 +408,7 @@ namespace CASM {
       // write file
       fs::ofstream sout(dir.POSCAR_initial(cond_index));
       _log << "write: " << dir.POSCAR_initial(cond_index) << "\n";
-      VaspIO::PrintPOSCAR p(xtal::make_simple_structure(mc.supercell(), config_dof));
+      VaspIO::PrintPOSCAR p(make_simple_structure(mc.supercell(), config_dof));
       p.sort();
       p.print(sout);
       return;
@@ -436,7 +439,7 @@ namespace CASM {
       // write file
       fs::ofstream sout(dir.POSCAR_final(cond_index));
       _log << "write: " << dir.POSCAR_final(cond_index) << "\n";
-      VaspIO::PrintPOSCAR p(xtal::make_simple_structure(mc.supercell(), config_dof));
+      VaspIO::PrintPOSCAR p(make_simple_structure(mc.supercell(), config_dof));
       p.sort();
       p.print(sout);
       return;
@@ -455,9 +458,7 @@ namespace CASM {
       std::vector<size_type> step;
       std::vector<ConfigDoF> trajectory;
 
-      // create super structure matching supercell
-      BasicStructure<Site> primstruc = mc.supercell().prim();
-      BasicStructure<Site> superstruc = primstruc.create_superstruc(mc.supercell().lattice());
+      Structure const &primstruc = mc.supercell().prim();
 
       if(mc.settings().write_json()) {
 
@@ -508,7 +509,7 @@ namespace CASM {
           sin >> _pass >> _step;
           pass.push_back(_pass);
           step.push_back(_step);
-          for(size_type i = 0; i < superstruc.basis().size(); i++) {
+          for(size_type i = 0; i < config_dof.size(); i++) {
             sin >> config_dof.occ(i);
           }
           trajectory.push_back(config_dof);
@@ -517,20 +518,14 @@ namespace CASM {
 
       for(size_type i = 0; i < trajectory.size(); i++) {
 
-        // copy occupation
-        for(size_type j = 0; j < trajectory[i].size(); j++) {
-          superstruc.set_occ(j, trajectory[i].occ(j));
-        }
-
         // POSCAR title comment is printed with "Sample: #  Pass: #  Step: #"
         std::stringstream ss;
         ss << "Sample: " << i << "  Pass: " << pass[i] << "  Step: " << step[i];
-        superstruc.set_title(ss.str());
 
         // write file
         fs::ofstream sout(dir.POSCAR_snapshot(cond_index, i));
         _log << "write: " << dir.POSCAR_snapshot(cond_index, i) << "\n";
-        VaspIO::PrintPOSCAR p(xtal::make_simple_structure(mc.supercell(), trajectory[i]));
+        VaspIO::PrintPOSCAR p(make_simple_structure(mc.supercell(), trajectory[i]));
         p.set_title(ss.str());
         p.sort();
         p.print(sout);

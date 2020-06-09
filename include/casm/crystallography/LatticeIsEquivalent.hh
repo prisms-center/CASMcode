@@ -28,25 +28,30 @@ namespace CASM {
 
       LatticeIsEquivalent(const Lattice &_lat);
 
-      /// Checks if lat = other*U, with unimodular U
-      bool operator()(const Lattice &other) const;
+      /// Checks if lat = other*U, with unimodular U, tolerance is relative,
+      /// default tolerance is sentinal value to default to  m_lat.tol()
+      bool operator()(const Lattice &other, double tol = -1.) const;
 
       /// Checks if lat = copy_apply(B,lat)*U, with unimodular U
-      bool operator()(const SymOp &B) const;
+      /// default tolerance is sentinal value to default to  m_lat.tol()
+      bool operator()(const SymOp &B, double tol = -1.) const;
 
       template <typename ExternSymOp>
-      bool operator()(const ExternSymOp &B) const {
-        return this->operator()(adapter::Adapter<SymOp, ExternSymOp>()(B));
+      bool operator()(const ExternSymOp &B, double tol = -1.) const {
+        return this->operator()(adapter::Adapter<SymOp, ExternSymOp>()(B), tol);
       }
 
       /// Checks if copy_apply(A, lat) = copy_apply(B,lat)*U, with unimodular U
-      bool operator()(const SymOp &A, const SymOp &B) const;
+      /// default tolerance is sentinal value to default to  m_lat.tol()
+      bool operator()(const SymOp &A, const SymOp &B, double tol = -1.) const;
 
       /// Checks if lat = apply(B,other)*U, with unimodular U
-      bool operator()(const SymOp &B, const Lattice &other) const;
+      /// default tolerance is sentinal value to default to  m_lat.tol()
+      bool operator()(const SymOp &B, const Lattice &other, double tol = -1.) const;
 
       /// Checks if copy_apply(A, lat) = apply(B,other)*U, with unimodular U
-      bool operator()(const SymOp &A, const SymOp &B, const Lattice &other) const;
+      /// default tolerance is sentinal value to default to  m_lat.tol()
+      bool operator()(const SymOp &A, const SymOp &B, const Lattice &other, double tol = -1.) const;
 
       /// Returns U found for last check
       Eigen::Matrix3d U() const;

@@ -350,7 +350,7 @@ namespace CASM {
       from_json(generating_matrix, input["unit_cell"]);
     }
     else if(input["unit_cell"].is_string()) {
-      generating_matrix = primclex.db<Supercell>().find(input["unit_cell"].get<std::string>())->transf_mat();
+      generating_matrix = primclex.db<Supercell>().find(input["unit_cell"].get<std::string>())->transf_mat().cast<int>();
     }
     else {
       throw std::invalid_argument(
@@ -371,13 +371,13 @@ namespace CASM {
     else {
       from_json(min_vol, input["min"]);
     }
-    if(!(min_vol > 0)) {
+    if(!(min_vol >= 0)) {
       throw std::invalid_argument(
-        "Error in ScelEnumProps JSON input: 'min_volume' must be >0");
+        "Error in ScelEnumProps JSON input: 'min_volume' must be >=0");
     }
 
     // read "max" scel size, or by default use largest existing supercell
-    ScelEnumProps::size_type max_scel_size = 1;
+    ScelEnumProps::size_type max_scel_size = 0;
     for(const auto &scel : primclex.db<Supercell>()) {
       if(scel.volume() > max_scel_size) {
         max_scel_size = scel.volume();
@@ -395,7 +395,9 @@ namespace CASM {
 
     std::string dirs;
     input.get_else<std::string>(dirs, "dirs", "abc");
-
+    if(max_vol == 0) {
+      return ScelEnumProps(1, 1, dirs, generating_matrix);
+    }
     return ScelEnumProps(min_vol, max_vol + 1, dirs, generating_matrix);
   }
 

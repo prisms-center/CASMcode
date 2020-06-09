@@ -1,6 +1,7 @@
 #ifndef CASM_SpeciesAttribute
 #define CASM_SpeciesAttribute
 
+#include "casm/crystallography/Adapter.hh"
 #include "casm/global/eigen.hh"
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/misc/unique_cloneable_map.hh"
@@ -59,8 +60,6 @@ namespace CASM {
 
       bool identical(SpeciesAttribute const &other, double _tol) const;
 
-      SpeciesAttribute &apply_sym(SymOp const &op);
-
       BasicTraits const &traits() const {
         return m_traits;
       }
@@ -69,6 +68,18 @@ namespace CASM {
       Eigen::VectorXd m_value;
     };
 
+  }
+}
+
+namespace CASM {
+  namespace sym {
+    xtal::SpeciesAttribute &apply(const xtal::SymOp &op, xtal::SpeciesAttribute &mutating_attribute);
+    xtal::SpeciesAttribute copy_apply(const xtal::SymOp &op, xtal::SpeciesAttribute attribute);
+
+    template <typename ExternSymOp>
+    xtal::SpeciesAttribute copy_apply(const ExternSymOp &op, xtal::SpeciesAttribute attribute) {
+      return sym::copy_apply(adapter::Adapter<xtal::SymOp, ExternSymOp>()(op), attribute);
+    }
   }
 }
 #endif

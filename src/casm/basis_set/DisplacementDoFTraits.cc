@@ -1,3 +1,7 @@
+#include "casm/basis_set/DoFSet.hh"
+#include "casm/basis_set/Adapter.hh"
+#include "casm/crystallography/Adapter.hh"
+#include "casm/crystallography/DoFSet.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/basis_set/DisplacementDoFTraits.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
@@ -30,14 +34,15 @@ namespace CASM {
         if(!_prim.basis()[b].has_dof(name()))
           continue;
 
-        result[b].set_variable_basis(_prim.basis()[b].dof(name()));
+        CASM::DoFSet adapted_dofset = adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(_prim.basis()[b].dof(name()), _prim.site_dof_symrep_IDs()[b].at(name()), b);
+        result[b].set_variable_basis(adapted_dofset);
         //std::cout << "+:+:+:+Created variable set for site " << b << ", size " << result[b].size() << "\n";
       }
       return result;
     }
 
     //  Apply DoF values for this DoF to _struc
-    void DisplacementDoFTraits::apply_dof(ConfigDoF const &_dof, BasicStructure<Site> const &_reference, SimpleStructure &_struc) const {
+    void DisplacementDoFTraits::apply_dof(ConfigDoF const &_dof, BasicStructure const &_reference, SimpleStructure &_struc) const {
       _struc.mol_info.coords += _dof.local_dof(name()).standard_values();
       // Any considerations here for Selective Dynamics?
     }
