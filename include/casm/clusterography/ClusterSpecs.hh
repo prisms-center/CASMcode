@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/crystallography/DoFDecl.hh"
 #include "casm/global/enum.hh"
 #include "casm/misc/cloneable_ptr.hh"
 

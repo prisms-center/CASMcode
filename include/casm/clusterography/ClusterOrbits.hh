@@ -214,10 +214,56 @@ namespace CASM {
 
   /* -- SymCompareType-Specific IntegralCluster Orbit functions --- */
 
-  /// \brief Generate the asymmetric unit, including all sites
+  /// \brief Generate the prim periodic asymmetric unit
+  ///
+  /// \param prim A PrimType
+  /// \param site_filter A filter function that returns true for Site that
+  ///        should be considered for the neighborhood (i.e. to check the number
+  ///        of components)
+  /// \param xtal_tol Crystallography tolerance
+  /// \param result An output iterator for orbits of IntegralCluster
+  /// \param status Stream for status messages
+  ///
+  /// - Uses prim.factor_group as the generating group
+  /// - Uses PrimPeriodicSymCompare<IntegralCluster>(xtal_tol) for cluster equivalence
+  /// - Figures out candidate_sites from max_length and site_filter input to
+  ///   create OrbitBranchSpecs and calls make_orbits
+  ///
+  /// \relates IntegralCluster
+  ///
   template<typename OrbitOutputIterator>
   OrbitOutputIterator make_prim_periodic_asymmetric_unit(
     std::shared_ptr<Structure const> prim_ptr,
+    SiteFilterFunction const &site_filter,
+    double xtal_tol,
+    OrbitOutputIterator result,
+    std::ostream &status);
+
+  /// \brief Generate Orbit<IntegralCluster> by specifying max cluster length for each branch
+  ///
+  /// \param prim Primitive structure
+  /// \param max_length vector of max_length of pairs of cluster sites. Expects
+  ///        that max_length[b] is the max_length for orbit branch b. The values
+  ///        for the null cluster and point clusters are ignored.
+  /// \param custom_generators A vector of custom orbit generating clusters
+  /// \param site_filter A filter function that returns true for Site that
+  ///        should be considered for the neighborhood (i.e. to check the number
+  ///        of components)
+  /// \param xtal_tol Crystallography tolerance
+  /// \param result An output iterator for Orbit
+  /// \param status Stream for status messages
+  ///
+  /// - Uses prim.factor_group as the generating group
+  /// - Uses PrimPeriodicSymCompare<IntegralCluster>(xtal_tol) for cluster equivalence
+  /// - Figures out candidate_sites from max_length and site_filter input to
+  ///   create OrbitBranchSpecs and calls make_orbits
+  ///
+  /// \relates IntegralCluster
+  template<typename OrbitOutputIterator>
+  OrbitOutputIterator make_prim_periodic_orbits(
+    std::shared_ptr<Structure const> prim_ptr,
+    std::vector<double> const &max_length,
+    std::vector<IntegralClusterOrbitGenerator> const &custom_generators,
     SiteFilterFunction const &site_filter,
     double xtal_tol,
     OrbitOutputIterator result,

@@ -12,6 +12,8 @@
 
 namespace CASM {
 
+  class Structure;
+
   /** \defgroup ClusterSymCompare
 
       \brief Functions and classes for creating cluster SymCompare functors for orbit generation
