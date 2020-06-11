@@ -174,13 +174,13 @@ namespace CASM {
 
     /// const Access properties required for an object to be considered calculated
     ///
-    /// \param type_name string, i.e. traits<Configuration>::name or traits<Kinetics::DiffTransConfiguration>::name
+    /// \param type_name string, i.e. traits<Configuration>::name
     /// \param calctype string
     std::vector<std::string> const &required_properties(std::string type_name, std::string calctype) const;
 
     /// Access properties required for an object to be considered calculated
     ///
-    /// \param type_name string, i.e. traits<Configuration>::name or traits<Kinetics::DiffTransConfiguration>::name
+    /// \param type_name string, i.e. traits<Configuration>::name
     /// \param calctype string
     void set_required_properties(std::string type_name, std::string calctype, std::vector<std::string> const &_required_properties);
 

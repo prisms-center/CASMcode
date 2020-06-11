@@ -207,26 +207,49 @@ casm_clusterography_includedir=$(includedir)/casm/clusterography
 casm_clusterography_include_HEADERS = \
     include/casm/clusterography/ClusterDecl.hh\
     include/casm/clusterography/ClusterInvariants.hh\
-    include/casm/clusterography/ClusterInvariants_impl.hh\
     include/casm/clusterography/ClusterOrbits.hh\
     include/casm/clusterography/ClusterOrbits_impl.hh\
-    include/casm/clusterography/ClusterSpecsParser.hh\
-    include/casm/clusterography/ClusterSpecsParser_impl.hh\
+    include/casm/clusterography/ClusterSpecs.hh\
+    include/casm/clusterography/ClusterSpecs_impl.hh\
     include/casm/clusterography/ClusterSymCompare.hh\
+    include/casm/clusterography/ClusterSymCompareDecl.hh\
     include/casm/clusterography/ClusterSymCompare_impl.hh\
-    include/casm/clusterography/CoordCluster.hh\
-    include/casm/clusterography/CoordClusterTraits.hh\
     include/casm/clusterography/GenericCluster.hh\
     include/casm/clusterography/IntegralCluster.hh\
+    include/casm/clusterography/IntegralClusterSymCompareTraits.hh\
+    include/casm/clusterography/IntegralClusterSymCompareTraits_impl.hh\
     include/casm/clusterography/IntegralCluster_impl.hh\
     include/casm/clusterography/SubClusterGenerator.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_clusterography_io_includedir=$(includedir)/casm/clusterography/io
+casm_clusterography_io_include_HEADERS = \
+    include/casm/clusterography/io/json_io.hh\
+    include/casm/clusterography/io/stream_io.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_clusterography_io_json_includedir=$(includedir)/casm/clusterography/io/json
+casm_clusterography_io_json_include_HEADERS = \
+    include/casm/clusterography/io/json/ClusterOrbits_json_io.hh\
+    include/casm/clusterography/io/json/ClusterSpecs_json_io.hh\
+    include/casm/clusterography/io/json/IntegralCluster_json_io.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_clusterography_io_stream_includedir=$(includedir)/casm/clusterography/io/stream
+casm_clusterography_io_stream_include_HEADERS = \
+    include/casm/clusterography/io/stream/ClusterInvariants_stream_io.hh\
+    include/casm/clusterography/io/stream/IntegralCluster_stream_io.hh
 
 #-------------------------------------------------------------------------------#
 
 casm_completer_includedir=$(includedir)/casm/completer
 casm_completer_include_HEADERS = \
     include/casm/completer/Complete.hh\
-    include/casm/completer/Handlers.hh
+    include/casm/completer/Handlers.hh\
+    include/casm/completer/help.hh
 
 #-------------------------------------------------------------------------------#
 
@@ -322,10 +345,6 @@ casm_database_include_HEADERS = \
     include/casm/database/DatabaseTypesTraits.hh\
     include/casm/database/DatabaseTypes_impl.hh\
     include/casm/database/Database_impl.hh\
-    include/casm/database/DiffTransConfigDatabase.hh\
-    include/casm/database/DiffTransConfigImport.hh\
-    include/casm/database/DiffTransDatabase.hh\
-    include/casm/database/DiffTransOrbitDatabase.hh\
     include/casm/database/Import.hh\
     include/casm/database/Import_impl.hh\
     include/casm/database/Named.hh\
@@ -357,6 +376,12 @@ casm_enumerator_include_HEADERS = \
     include/casm/enumerator/Enumerator_impl.hh\
     include/casm/enumerator/InputEnumerator.hh\
     include/casm/enumerator/RandomAccessEnumerator.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_enumerator_io_includedir=$(includedir)/casm/enumerator/io
+casm_enumerator_io_include_HEADERS = \
+    include/casm/enumerator/io/json_io.hh
 
 #-------------------------------------------------------------------------------#
 
@@ -915,7 +940,8 @@ casm_global_includedir=$(includedir)/casm/global
 casm_global_include_HEADERS = \
     include/casm/global/definitions.hh\
     include/casm/global/eigen.hh\
-    include/casm/global/enum.hh
+    include/casm/global/enum.hh\
+    include/casm/global/errors.hh
 
 #-------------------------------------------------------------------------------#
 
@@ -933,38 +959,6 @@ casm_hull_include_HEADERS = \
 
 #-------------------------------------------------------------------------------#
 
-casm_kinetics_includedir=$(includedir)/casm/kinetics
-casm_kinetics_include_HEADERS = \
-    include/casm/kinetics/DiffTransConfigEnumOccPerturbations.hh\
-    include/casm/kinetics/DiffTransConfigInterpolation.hh\
-    include/casm/kinetics/DiffTransConfigIsEqual.hh\
-    include/casm/kinetics/DiffTransConfigMapping.hh\
-    include/casm/kinetics/DiffTransConfiguration.hh\
-    include/casm/kinetics/DiffTransConfigurationIO.hh\
-    include/casm/kinetics/DiffTransConfigurationTraits.hh\
-    include/casm/kinetics/DiffTransConfiguration_impl.hh\
-    include/casm/kinetics/DiffusionTransformation.hh\
-    include/casm/kinetics/DiffusionTransformationEnum.hh\
-    include/casm/kinetics/DiffusionTransformationEnum_impl.hh\
-    include/casm/kinetics/DiffusionTransformationTraits.hh\
-    include/casm/kinetics/DiffusionTransformation_impl.hh\
-    include/casm/kinetics/DoFTransformation.hh\
-    include/casm/kinetics/DoFTransformation_impl.hh\
-    include/casm/kinetics/EnumDiffTransConfigEndpoints.hh\
-    include/casm/kinetics/KineticsDecl.hh\
-    include/casm/kinetics/KineticsOrbits.hh\
-    include/casm/kinetics/KineticsOrbits_impl.hh\
-    include/casm/kinetics/OccPerturbation.hh\
-    include/casm/kinetics/OccPerturbation_impl.hh\
-    include/casm/kinetics/OccupationTransformation.hh\
-    include/casm/kinetics/OccupationTransformationTraits.hh\
-    include/casm/kinetics/PrimPeriodicDiffTransOrbitIO.hh\
-    include/casm/kinetics/PrimPeriodicDiffTransOrbitTraits.hh\
-    include/casm/kinetics/RemovePrimPeriodicDiffTransOrbit.hh\
-    include/casm/kinetics/SubOrbitGenerators.hh
-
-#-------------------------------------------------------------------------------#
-
 casm_misc_includedir=$(includedir)/casm/misc
 casm_misc_include_HEADERS = \
     include/casm/misc/CASM_Array_math.hh\
@@ -978,6 +972,7 @@ casm_misc_include_HEADERS = \
     include/casm/misc/PCA.hh\
     include/casm/misc/ParsingDictionary.hh\
     include/casm/misc/TypeInfo.hh\
+    include/casm/misc/Validator.hh\
     include/casm/misc/algorithm.hh\
     include/casm/misc/cloneable_ptr.hh\
     include/casm/misc/type_traits.hh\

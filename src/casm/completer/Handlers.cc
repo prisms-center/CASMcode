@@ -7,8 +7,6 @@
 #include "casm/casm_io/enum/stream_io.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
-#include "casm/kinetics/DiffTransConfiguration.hh"
-#include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/database/DatabaseTypes.hh"
 #include "casm/enumerator/Enumerator.hh"
@@ -179,20 +177,7 @@ namespace CASM {
           arguments.push_back("scel:" + it->name());
         }
       }
-      DataFormatterDictionary<Kinetics::PrimPeriodicDiffTransOrbit> dt_dict = make_dictionary<Kinetics::PrimPeriodicDiffTransOrbit>();
 
-      for(auto it = dt_dict.begin(); it != dt_dict.cend(); ++it) {
-        if(it->type() ==  BaseDatumFormatter<Kinetics::PrimPeriodicDiffTransOrbit>::Property) {
-          arguments.push_back("diff_trans:" + it->name());
-        }
-      }
-      DataFormatterDictionary<Kinetics::DiffTransConfiguration> dtc_dict = make_dictionary<Kinetics::DiffTransConfiguration>();
-
-      for(auto it = dtc_dict.begin(); it != dtc_dict.cend(); ++it) {
-        if(it->type() ==  BaseDatumFormatter<Kinetics::DiffTransConfiguration>::Property) {
-          arguments.push_back("diff_trans_config:" + it->name());
-        }
-      }
       return;
     }
 

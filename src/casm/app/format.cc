@@ -108,8 +108,6 @@ namespace CASM {
                  "          diff_trans_config_list.json                               \n"
                  "        query/                                                      \n"
                  "          Configuration/                                            \n"
-                 "          DiffTransConfiguration/                                   \n"
-                 "          PrimPeriodicDiffTransOrbit/                               \n"
                  "          Supercell/                                                \n"
                  "      symmetry/                                                     \n"
                  "        lattice_point_group.json                                    \n"
@@ -2209,4 +2207,3 @@ namespace CASM {
   }
 
 }
-

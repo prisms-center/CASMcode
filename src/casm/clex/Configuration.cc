@@ -19,6 +19,7 @@
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clex/MappedPropertiesTools.hh"
 #include "casm/clex/SimpleStructureTools.hh"
+#include "casm/clusterography/IntegralCluster.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/crystallography/LinearIndexConverter.hh"
@@ -30,7 +31,6 @@
 #include "casm/crystallography/io/VaspIO.hh"
 #include "casm/crystallography/io/SimpleStructureIO.hh"
 #include "casm/database/ConfigDatabase.hh"
-#include "casm/database/DiffTransConfigDatabase.hh"
 #include "casm/database/Named_impl.hh"
 #include "casm/database/ScelDatabase.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
@@ -224,38 +224,6 @@ namespace CASM {
     }
 
     return tconfig;
-  }
-
-  //*******************************************************************************
-
-  /// \brief Check if Configuration is an endpoint of an existing diff_trans_config
-  bool Configuration::is_diff_trans_endpoint() const {
-    auto it = primclex().db<Kinetics::DiffTransConfiguration>().scel_range(supercell().name()).begin();
-    for(; it != primclex().db<Kinetics::DiffTransConfiguration>().scel_range(supercell().name()).end(); ++it) {
-      if(is_sym_equivalent(it->from_config()) || is_sym_equivalent(it->to_config())) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /// \brief tells which diff_trans this configuration is an endpoint of
-  std::string Configuration::diff_trans_endpoint_of() const {
-    std::set<std::string> collection;
-    auto it = primclex().db<Kinetics::DiffTransConfiguration>().scel_range(supercell().name()).begin();
-    for(; it != primclex().db<Kinetics::DiffTransConfiguration>().scel_range(supercell().name()).end(); ++it) {
-      if(is_sym_equivalent(it->from_config()) || is_sym_equivalent(it->to_config())) {
-        collection.insert(it->orbit_name());
-      }
-    }
-    std::string result = "none";
-    if(collection.size()) {
-      result = "";
-    }
-    for(auto &n : collection) {
-      result += n + ", ";
-    }
-    return result;
   }
 
   //*******************************************************************************
