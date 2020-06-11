@@ -69,8 +69,6 @@ namespace CASM {
     /// \brief Check equivalence of 'prepared' elements
     bool equal(const Element &A, const Element &B) const;
 
-    // TODO: specify InvariantsType in the SymCompareType instead of traits<Element>
-    //
     /// \brief type `InvariantsType` is used to screen elements for equivalence and sort orbits
     using InvariantsType = typename traits<MostDerived>::InvariantsType;
 

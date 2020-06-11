@@ -8,6 +8,7 @@
 #include "casm/clusterography/ClusterSymCompare.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 
 namespace CASM {

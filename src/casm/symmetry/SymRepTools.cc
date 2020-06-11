@@ -12,6 +12,8 @@
 #include "casm/misc/algorithm.hh"
 #include "casm/container/Counter.hh"
 
+#include "casm/casm_io/Log.hh" // TODO: replace error log with exceptions
+
 namespace CASM {
 
   //*******************************************************************************************
@@ -273,7 +275,7 @@ namespace CASM {
     // reveal the invariant subgroups.
 
     using SymCompareType = DirectionSymCompare<Eigen::VectorXd, EigenSymRepApply<Eigen::VectorXd>>;
-    using VectorOrbit = GenericOrbit<SymCompareType>;
+    using VectorOrbit = Orbit<SymCompareType>;
     std::set<VectorOrbit> orbit_result;
     make_orbits(tdirs.begin(),
                 tdirs.end(),
@@ -282,7 +284,7 @@ namespace CASM {
                 std::inserter(orbit_result, orbit_result.begin()));
 
     multivector<Eigen::VectorXd>::X<2> result;
-    Index o(0);
+    //Index o(0);
     for(VectorOrbit const &orbit : orbit_result) {
       //std::cout << "Orbit " << ++o << ": \n";
       //for(auto const &v : orbit) {

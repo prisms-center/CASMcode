@@ -11,10 +11,6 @@ namespace CASM {
     class UnitCellCoord;
   } // namespace xtal
 
-  namespace Kinetics {
-    class DiffusionTransformation;
-  }
-
   namespace sym {
     /// Returns the subgroup of the given group that keeps the lattice invariant
     SymGroup invariant_subgroup(const SymGroup &super_group, const xtal::Lattice &lat);
