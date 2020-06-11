@@ -1,16 +1,15 @@
-#include "casm/basis_set/OccupationDoFTraits.hh"
+#include <memory>
+#include "casm/basis_set/Adapter.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
-#include "casm/basis_set/Adapter.hh"
-#include "casm/crystallography/Adapter.hh"
-#include "casm/crystallography/Structure.hh"
-#include "casm/symmetry/Orbit_impl.hh"
-#include "casm/clusterography/IntegralCluster.hh"
-#include "casm/clusterography/ClusterSymCompare_impl.hh"
-#include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/basis_set/OccupationDoFTraits.hh"
 #include "casm/clex/ClexBasis.hh"
 #include "casm/clex/NeighborList.hh"
-#include <memory>
+#include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/crystallography/Adapter.hh"
+#include "casm/crystallography/Structure.hh"
+
+#include "casm/clusterography/ClusterOrbits_impl.hh"
 
 namespace CASM {
   namespace DoFType {
@@ -143,7 +142,7 @@ namespace CASM {
         }
 
 
-        result[b_ind].construct_orthonormal_discrete_functions(adapter::Adapter<OccupantDoF<Molecule>, std::vector<Molecule>>()(_site.occupant_dof(), b_ind),
+        result[b_ind].construct_orthonormal_discrete_functions(adapter::Adapter<OccupantDoF<xtal::Molecule>, std::vector<xtal::Molecule>>()(_site.occupant_dof(), b_ind),
                                                                tprob,
                                                                _asym_unit[i].prototype()[0].sublattice(),
                                                                SymGroup(_asym_unit[i].equivalence_map(0).first,

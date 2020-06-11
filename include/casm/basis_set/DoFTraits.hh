@@ -6,6 +6,7 @@
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/symmetry/OrbitDecl.hh"
 #include "casm/clusterography/ClusterDecl.hh"
+#include "casm/clusterography/IntegralClusterSymCompareTraits.hh"
 
 namespace CASM {
   namespace xtal {
