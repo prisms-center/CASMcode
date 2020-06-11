@@ -9,11 +9,35 @@
 
 namespace CASM {
 
-  DoFSet::DoFSet(BasicTraits const &_type, const std::unordered_set<std::string> &_excluded_occupants)
-    : m_traits(_type), m_info(SymGroupRepID(), Eigen::MatrixXd::Zero(m_traits.dim(), 0)), m_excluded_occs(_excluded_occupants) {
-  }
+  DoFSet::DoFSet(AnisoValTraits const &_type,
+                 std::vector<std::string> components,
+                 Eigen::MatrixXd basis,
+                 std::unordered_set<std::string> _excluded_occupants)
+    : m_traits(_type), m_info(SymGroupRepID(), Eigen::MatrixXd::Zero(m_traits.dim(), 0)), m_excluded_occs(std::move(_excluded_occupants)) {
 
-  DoFSet::DoFSet(BasicTraits const &_type) : DoFSet(_type, std::unordered_set<std::string>()) {}
+    if(components.empty()) {
+      components = traits().standard_var_names();
+      basis.setIdentity(traits().dim(), traits().dim());
+    }
+
+
+    if(basis.rows() != traits().dim()) {
+      throw std::runtime_error("Cannot construct DoFSet of type " + type_name() + ", number of rows in basis matrix is "
+                               + std::to_string(basis.rows()) + " but must be "
+                               + std::to_string(traits().dim()));
+    }
+    if(basis.cols() != components.size()) {
+      throw std::runtime_error("Cannot construct DoFSet of type " + type_name() + ", number of columns in basis matrix is "
+                               + std::to_string(basis.cols()) + " but number of variable names is "
+                               + std::to_string(components.size()) + ". These numbers must be equal.");
+    }
+
+    for(std::string const &name : components)
+      m_components.push_back(ContinuousDoF(traits(), name,
+                                           -1, // ID
+                                           -std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()));
+    m_info.set_basis(basis);
+  }
 
   //********************************************************************
   void DoFSet::allocate_symrep(SymGroup const &_group) const {

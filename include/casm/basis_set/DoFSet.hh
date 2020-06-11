@@ -122,9 +122,10 @@ namespace CASM {
     ///    \code
     ///    DoFSet my_disp_dof(DoF::traits("disp"))
     ///    \endcode
-    DoFSet(AnisoValTraits const &_type);
-
-    DoFSet(BasicTraits const &_type, const std::unordered_set<std::string> &_excluded_occupants);
+    DoFSet(AnisoValTraits const &_type,
+           std::vector<std::string> components = {},
+           Eigen::MatrixXd basis = Eigen::MatrixXd(),
+           std::unordered_set<std::string> excluded_occupants = {});
 
     /// \brief Returns number of components in this DoFSet
     Index size() const {

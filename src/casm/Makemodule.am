@@ -258,6 +258,7 @@ libcasm_la_SOURCES = \
     include/casm/database/Update_impl.hh\
     include/casm/database/json/jsonDatabase.hh\
     include/casm/database/json/jsonPropertiesDatabase.hh\
+    include/casm/enumerator/DoFSpace.hh\
     include/casm/enumerator/EnumInputParser.hh\
     include/casm/enumerator/Enumerator.hh\
     include/casm/enumerator/Enumerator_impl.hh\
@@ -716,6 +717,8 @@ libcasm_la_SOURCES = \
     include/casm/symmetry/VectorOrbits.hh\
     include/casm/symmetry/VectorSymCompare.hh\
     include/casm/symmetry/VectorSymCompare_impl.hh\
+    include/casm/symmetry/io/json/SymRepTools.hh\
+    include/casm/symmetry/json_io.hh\
     include/casm/system/Popen.hh\
     include/casm/system/RuntimeLibrary.hh\
     include/casm/version/version.hh\
@@ -879,8 +882,10 @@ libcasm_la_SOURCES = \
     src/casm/database/Selection.cc\
     src/casm/database/json/jsonDatabase.cc\
     src/casm/database/json/jsonPropertiesDatabase.cc\
+    src/casm/enumerator/DoFSpace.cc\
     src/casm/enumerator/EnumInputParser.cc\
     src/casm/enumerator/Enumerator.cc\
+    src/casm/enumerator/io/json/DoFSpace.cc\
     src/casm/external/gzstream/gzstream.C\
     src/casm/external/qhull/libqhull_r/geom2_r.c\
     src/casm/external/qhull/libqhull_r/geom_r.c\
@@ -982,6 +987,7 @@ libcasm_la_SOURCES = \
     src/casm/symmetry/SymPermutation.cc\
     src/casm/symmetry/SymRepTools.cc\
     src/casm/symmetry/SymTools.cc\
+    src/casm/symmetry/io/json/SymRepTools.cc\
     src/casm/system/Popen.cc\
     src/casm/system/RuntimeLibrary.cc\
     src/casm/version/autoversion.cc
@@ -994,4 +1000,4 @@ libcasm_la_LIBADD = \
 libcasm_la_LDFLAGS = \
     $(BOOST_LDFLAGS)\
     -avoid-version
-# src/casm/version/autoversion.lo: .FORCE
+src/casm/version/autoversion.lo: .FORCE

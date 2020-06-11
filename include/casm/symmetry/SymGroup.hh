@@ -192,12 +192,6 @@ namespace CASM {
 
     std::vector<SymGroup> unique_subgroups() const;
 
-    ///Space group (added by Donghee );
-    std::vector<Index> get_rotation_groups()const;
-
-    std::map<std::string, std::string> point_group_info()const;
-    void print_space_group_info(std::ostream &out) const;
-
     ///Fill up a SymGroup with *this minus the shifts
     SymGroup copy_no_trans(bool keep_repeated = false) const;
 
@@ -268,6 +262,20 @@ namespace CASM {
     mutable double m_max_error;
 
   };
+
+  ///\brief return dictionary of point group info:
+  ///  result["centricity"] : "Centric" or "Acentric"
+  ///  result["crystal_system"] : cubic, hexagonal, etc
+  ///  result["international_name"] : Hermann-Mauguin point group name
+  ///  result["name"] : Schoenflies name
+  ///  result["latex_name"] : Schoenflies name (in LaTeX markup)
+  ///  result["space_group_range"] : range of possible space group numbers
+  /// If group is magnetic, then point group name has form "G1(G2)"
+  /// where G1 is point group name of entire group (with time-reversal turned of) and G2 is the subgroup of
+  /// operations that do not effect time reversal.
+  /// If G1 is identical to G2 (every operation has a time-reversed partner), then the name is G1'
+  /// does not work for icosahedral groups
+  std::map<std::string, std::string> point_group_info(SymGroup const &group);
 
   jsonParser &to_json(const SymGroup &group, jsonParser &json);
 
@@ -385,6 +393,8 @@ namespace CASM {
     /// Copy of *this with translations removed
     mutable SymGroup m_point_group;
   };
+
+  MasterSymGroup make_master_sym_group(SymGroup const &_group, Lattice const &_lattice);
 
   jsonParser &to_json(const SymGroup &group, jsonParser &json);
 

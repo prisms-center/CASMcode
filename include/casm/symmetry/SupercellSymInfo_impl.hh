@@ -40,7 +40,7 @@ namespace CASM {
                                                                  std::vector<PermuteIterator> const &_group) {
 
 
-    std::pair<MasterSymGroup, SymGroupRepID> result;// = std::make_pair(make_sym_group(_group),SymGroupRepID());
+    std::pair<MasterSymGroup, SymGroupRepID> result;
     if(_group.empty())
       throw std::runtime_error("Empty group passed to collective_dof_symrep()");
     result.first.set_lattice(_syminfo.supercell_lattice());
@@ -53,6 +53,8 @@ namespace CASM {
     Index subdim = 0;
     SupercellSymInfo::SublatSymReps const &subreps = _key == "occ" ? _syminfo.occ_symreps() : _syminfo.local_dof_symreps(_key);
 
+    //NOTE: If some sublats have different DoF subspaces, the collective representation will have
+    //      rows and columns that are all zero. Not sure what to do in this case
     for(auto const &rep : subreps)
       subdim = max(subdim, rep.dim());
 
@@ -76,36 +78,33 @@ namespace CASM {
   //***********************************************************
 
   template<typename IterType>
-  std::pair<Eigen::MatrixXd, std::vector<Index>> collective_dof_normal_coords_and_irrep_dims(IterType begin,
-                                              IterType end,
-                                              SupercellSymInfo const &_syminfo,
-                                              DoFKey const &_key,
-  std::vector<PermuteIterator> const &_group) {
+  std::vector<SymRepTools::IrrepInfo> irrep_decomposition(IterType begin,
+                                                          IterType end,
+                                                          SupercellSymInfo const &_syminfo,
+                                                          DoFKey const &_key,
+                                                          std::vector<PermuteIterator> const &_group) {
 
     Index dim = _syminfo.local_dof_symreps(_key)[0].dim() * std::distance(begin, end);
-    return collective_dof_normal_coords_and_irrep_dims(begin, end, _syminfo, _key, _group, Eigen::MatrixXd::Identity(dim, dim));
+    return irrep_decomposition(begin, end, _syminfo, _key, _group, Eigen::MatrixXd::Identity(dim, dim));
   }
 
   template<typename IterType>
-  std::pair<Eigen::MatrixXd, std::vector<Index>> collective_dof_normal_coords_and_irrep_dims(IterType begin,
-                                              IterType end,
-                                              SupercellSymInfo const &_syminfo,
-                                              DoFKey const &_key,
-                                              std::vector<PermuteIterator> const &_group,
-  Eigen::Ref<const Eigen::MatrixXd> const &_subspace) {
-    //std::vector<PermuteIterator> perms = scel_subset_group(begin,end,_syminfo);
+  std::vector<SymRepTools::IrrepInfo> irrep_decomposition(IterType begin,
+                                                          IterType end,
+                                                          SupercellSymInfo const &_syminfo,
+                                                          DoFKey const &_key,
+                                                          std::vector<PermuteIterator> const &_group,
+                                                          Eigen::Ref<const Eigen::MatrixXd> const &_subspace) {
+
     std::pair<MasterSymGroup, SymGroupRepID> rep_info = collective_dof_symrep(begin, end, _syminfo, _key, _group);
 
     SymGroupRep const &rep = rep_info.first.representation(rep_info.second);
-    auto result = irrep_trans_mat_and_dims(rep,
-                                           rep_info.first,
-    [&](Eigen::Ref<const Eigen::MatrixXd> const & f_subspace) {
-      Eigen::MatrixXd result = irrep_symmetrizer(rep, rep_info.first, f_subspace, TOL);
-      return result;
-    },
-    _subspace);
-    //result.first = result.first * _subspace.transpose();
-    return result;
+
+    return irrep_decomposition(rep,
+                               rep_info.first,
+                               _subspace,
+                               false);
+
   }
 
 }

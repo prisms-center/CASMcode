@@ -150,10 +150,11 @@ namespace CASM {
 
       }
       else {
-        std::cout << "Error in 'void from_json(SymOpRepresentation *rep, const jsonParser &json)'" << std::endl;
-        std::cout << "Unrecognized 'SymOpRep_type': '" << json["SymOpRep_type"] << "'." << std::endl;
-        std::cout << "Options are: 'SymPermutation', 'SymMatrixXd', or 'SymOp'." << std::endl;
-        exit(1);
+        std::stringstream ss;
+        ss << "In 'void from_json(SymOpRepresentation *rep, const jsonParser &json)'" << std::endl;
+        ss << "Unrecognized 'SymOpRep_type': '" << json["SymOpRep_type"] << "'." << std::endl;
+        ss << "Options are: 'SymPermutation', 'SymMatrixXd', or 'SymOp'." << std::endl;
+        throw std::runtime_error(ss.str());
       }
     }
     catch(...) {

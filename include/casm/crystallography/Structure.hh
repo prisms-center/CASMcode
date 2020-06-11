@@ -43,20 +43,20 @@ namespace CASM {
     SymGroupRepID m_basis_perm_rep_ID;
 
     /// Hold the SymRepIDs for the occupant DoF, one for each of the basis sites
-    std::vector<SymGroupRepID> m_occupant_symrepIDs;
+    std::vector<SymGroupRepID> m_occupant_symrep_IDs;
 
-    /// Hold the SymRepIDs for the continuous DoF, one for each of the basis sites
-    std::vector<SymGroupRepID> m_site_dof_symrepIDs;
+    /// Hold the SymRepIDs for the continuous DoFs, map of DoFKey : SymGroupRepIDs for each basis site
+    std::vector<std::map<DoFKey, SymGroupRepID>> m_site_dof_symrep_IDs;
 
     /// Holds SymRepIDs for each of the global DoFs, using the DoF name
     /// as the key to access the SymRepID value
-    std::unordered_map<std::string, SymGroupRepID> m_global_dof_symrepIDs;
+    std::unordered_map<std::string, SymGroupRepID> m_global_dof_symrep_IDs;
 
     //Flushes out every SymGroupRepID for each site (occupant DoF) and gives it a default value of identity
-    void _reset_occupant_symrepIDs();
+    void _reset_occupant_symrep_IDs();
 
     //Flushes out every SymGroupRepID for each site (continuous DoF) and gives it a default values
-    void _reset_site_dof_symrepIDs();
+    void _reset_site_dof_symrep_IDs();
 
     /// Obtain the basis permutation symrep and site dof symreps of factor_group
     /// sets internal m_basis_perm_rep_ID
@@ -115,9 +115,9 @@ namespace CASM {
     const SymGroup &point_group() const;
     SymGroupRep const *basis_permutation_symrep()const;
     SymGroupRepID basis_permutation_symrep_ID()const;
-    std::vector<SymGroupRepID> occupant_symrepIDs() const;
-    std::vector<SymGroupRepID> site_dof_symrepIDs() const;
-    SymGroupRepID global_dof_symrepID(const std::string dof_name)const;
+    std::vector<SymGroupRepID> occupant_symrep_IDs() const;
+    std::vector<std::map<DoFKey, SymGroupRepID>> site_dof_symrep_IDs() const;
+    SymGroupRepID global_dof_symrep_ID(const std::string dof_name)const;
 
     /// Have to explicitly define the assignment operator so that sites in this structure
     /// do not depend on the lattice of 'RHS'

@@ -49,10 +49,12 @@ namespace CASM {
                                  std::set<std::string> const &_incompatible /*= {}*/,
                                  std::set<std::string> const &_must_apply_before /*= {}*/,
                                  std::set<std::string> const &_must_apply_after /*= {}*/,
+                                 std::vector<std::string> const &_variable_descriptions /*= {}*/,
                                  bool _default /*= false*/) :
     m_name(name_suffix(_name)),
     m_default(_default),
     m_standard_var_names(_std_var_names),
+    m_variable_descriptions(_variable_descriptions),
     m_opt(_options),
     m_symrep_builder(_symrep_builder.clone()),
     m_incompatible(_incompatible),
@@ -63,6 +65,9 @@ namespace CASM {
       throw std::runtime_error("Attempting to initialize AnisoValTraits object that does not satisfy naming constraints. Name '" + _name + "' was reduced to '" + m_name + "'."
                                + " Note: The underscore character '_' is not allowed.\n");
     }
+    if(m_variable_descriptions.empty())
+      m_variable_descriptions = m_standard_var_names;
+
     Local::register_traits(*this);
   }
 
@@ -73,6 +78,7 @@ namespace CASM {
                           LOCAL,
                           NullSymRepBuilder(),
                           {},
+                          {},
                           {});
   }
 
@@ -81,6 +87,7 @@ namespace CASM {
     {"E"},
     GLOBAL,
     SymRepBuilder::Identity(),
+    {},
     {},
     {},
     {},
@@ -95,6 +102,7 @@ namespace CASM {
     {},
     {},
     {},
+    {},
     true);
   }
 
@@ -103,6 +111,7 @@ namespace CASM {
     {"xflag", "yflag", "zflag"},
     LOCAL,
     SymRepBuilder::Identity(),
+    {},
     {},
     {},
     {},
@@ -117,6 +126,7 @@ namespace CASM {
     {},
     {},
     {"atomize"},
+    {},
     true);
   }
 
@@ -128,6 +138,7 @@ namespace CASM {
     {},
     {},
     {"atomize"},
+    {},
     true);
   }
 
@@ -139,6 +150,7 @@ namespace CASM {
     {},
     {},
     {"atomize"},
+    {},
     true);
   }
 
@@ -149,6 +161,7 @@ namespace CASM {
     CartesianSymRepBuilder(),
     {},
     {"atomize"},
+    {},
     {},
     true);
   }
@@ -161,6 +174,7 @@ namespace CASM {
     {},
     {"atomize", "disp"},
     {},
+    {},
     true);
   }
 
@@ -172,6 +186,7 @@ namespace CASM {
     {},
     {"atomize", "disp"},
     {},
+    {"Exx", "Eyy", "Ezz", "sqrt(2)Exz", "sqrt(2)Eyz", "sqrt(2)Exy"},
     true);
   }
 
@@ -183,6 +198,7 @@ namespace CASM {
     {},
     {"atomize"},
     {},
+    {},
     true);
   }
 
@@ -193,6 +209,7 @@ namespace CASM {
     TimeReversalSymRepBuilder(),
     {},
     {"atomize"},
+    {},
     {},
     true);
   }

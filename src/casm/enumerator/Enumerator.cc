@@ -95,9 +95,9 @@ namespace CASM {
   /// \brief Standardizes parsing casm enum input options to make ScelEnum JSON input
   jsonParser make_enumerator_scel_enum_input(
     jsonParser kwargs,
-    const Completer::EnumOption &enum_opt) {
+    const Completer::EnumOptionBase &enum_opt) {
 
-    if(kwargs.is_null()) {
+    if(!kwargs.is_obj()) {
       kwargs = jsonParser::object();
     }
 
@@ -131,11 +131,8 @@ namespace CASM {
 
       for(std::string const &scelname : scelnames)
         scel_input["names"].push_back(scelname);
-
-      //if(scel_input.begin() == scel_input.end() && !scel_input["names"].is_array())
-      //scel_input["names"].put_array();
     }
-    if(!scel_input.contains("existing_only"))
+    if(scel_input.size() > 0 && !scel_input.contains("existing_only"))
       scel_input["existing_only"] = true;
 
     return scel_input;
@@ -145,7 +142,7 @@ namespace CASM {
   ScelEnumProps make_enumerator_scel_enum_props(
     const PrimClex &primclex,
     const jsonParser &_kwargs,
-    const Completer::EnumOption &enum_opt) {
+    const Completer::EnumOptionBase &enum_opt) {
 
     return make_scel_enum_props(
              primclex,
@@ -158,7 +155,7 @@ namespace CASM {
   std::unique_ptr<SuperlatticeEnumerator> make_enumerator_superlat_enum(
     const PrimClex &primclex,
     const jsonParser &_kwargs,
-    const Completer::EnumOption &enum_opt) {
+    const Completer::EnumOptionBase &enum_opt) {
 
     ScelEnumProps enum_props = make_enumerator_scel_enum_props(
                                  primclex,
@@ -181,7 +178,7 @@ namespace CASM {
   std::unique_ptr<ScelEnum> make_enumerator_scel_enum(
     const PrimClex &primclex,
     const jsonParser &_kwargs,
-    const Completer::EnumOption &enum_opt) {
+    const Completer::EnumOptionBase &enum_opt) {
 
     return notstd::make_unique<ScelEnum>(
              primclex,
@@ -191,7 +188,7 @@ namespace CASM {
   std::vector<ConfigEnumInput> make_enumerator_input_configs(
     PrimClex const &primclex,
     jsonParser const &_kwargs,
-    Completer::EnumOption const &enum_opt,
+    Completer::EnumOptionBase const &enum_opt,
     EnumeratorMap const *interface_map) {
     std::vector<ConfigEnumInput> result;
     std::vector<std::string> confignames;

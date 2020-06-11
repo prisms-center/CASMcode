@@ -1378,14 +1378,11 @@ namespace CASM {
         throw std::runtime_error("Attempted to initialize 2D DatumFormatter with incompatible index expression: " + _expr);
       }
 
-      std::cout << "_index_rules().size(): " << _index_rules().size() << "\n";
       Index r = 0;
       for(difference_type i = bounds.first[0]; i < bounds.second[0]; ++i, ++r) {
         for(difference_type j = bounds.first[1]; j < bounds.second[1]; ++j) {
           _add_rule(r, std::make_pair(i, j));
-          std::cout << "(" << i << ", " << j << ")  ";
         }
-        std::cout << std::endl;
       }
 
     }

@@ -262,9 +262,6 @@ namespace CASM {
 
       return;
 
-      CASM::VaspIO::PrintPOSCAR print(make_simple_structure(*this));
-      print.print(std::cout);
-
     }
 
     //***********************************************************
