@@ -5,7 +5,6 @@
 #include "casm/clusterography/IntegralClusterSymCompareTraits.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/crystallography/SymTools.hh"
-// #include "casm/symmetry/Orbit_impl.hh"
 
 namespace CASM {
 

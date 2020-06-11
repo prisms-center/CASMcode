@@ -55,9 +55,6 @@ namespace CASM {
   /// \brief Compare ClusterInvariants
   bool compare(ClusterInvariants const &A, ClusterInvariants const &B, double tol);
 
-  /// \brief Print ClusterInvariants
-  std::ostream &operator<<(std::ostream &sout, ClusterInvariants const &invariants);
-
 
   /// \brief Stores cluster invariants: number of sites and site distances (using robust_min_dist)
   ///
@@ -97,9 +94,6 @@ namespace CASM {
 
   /// \brief Compare WithinScelClusterInvariants
   bool compare(WithinScelClusterInvariants const &A, WithinScelClusterInvariants const &B, double tol);
-
-  /// \brief Print WithinScelClusterInvariants
-  std::ostream &operator<<(std::ostream &sout, WithinScelClusterInvariants const &invariants);
 
 }
 

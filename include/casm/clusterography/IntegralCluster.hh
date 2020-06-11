@@ -74,30 +74,4 @@ namespace CASM {
   };
 }
 
-// TODO: remove
-// #include <iosfwd>
-//
-// namespace CASM {
-//
-//   class jsonParser;
-//   template<typename T> struct jsonConstructor;
-//
-//   /// \brief Print IntegralCluster to stream, using default Printer<IntegralCluster>
-//   std::ostream &operator<<(std::ostream &sout, IntegralCluster const &clust);
-//
-//   /// \brief Write IntegralCluster to JSON object
-//   jsonParser &to_json(IntegralCluster const &clust, jsonParser &json);
-//
-//   /// \brief Read from JSON
-//   void from_json(IntegralCluster &clust, jsonParser const &json, double xtal_tol);
-//
-//   template<>
-//   struct jsonConstructor<IntegralCluster> {
-//
-//     /// \brief Construct from JSON
-//     static IntegralCluster from_json(jsonParser const &json, Structure const &prim, double xtal_tol);
-//   };
-//
-// }
-
 #endif

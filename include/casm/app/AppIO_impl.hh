@@ -8,15 +8,14 @@
 #include "casm/clex/ClexBasis.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
-
-#include "casm/casm_io/json/jsonParser.hh"
-#include "casm/casm_io/SafeOfstream.hh"
-
 #include "casm/database/Selection_impl.hh"
 #include "casm/symmetry/SymInfo.hh"
 #include "casm/symmetry/SymTools.hh"
 #include "casm/symmetry/InvariantSubgroup_impl.hh"
 
+#include "casm/casm_io/json/jsonParser.hh"
+#include "casm/casm_io/SafeOfstream.hh"
+#include "casm/clusterography/io/json/IntegralCluster_json_io.hh"
 
 namespace CASM {
 
@@ -268,8 +267,8 @@ namespace CASM {
       out << out.indent_str() << "** " << orbit_index << " of " << Norbits << " Orbits **"
           << "  Points: " << it->prototype().size()
           << "  Mult: " << it->size()
-          << "  MinLength: " << it->prototype().min_length()
-          << "  MaxLength: " << it->prototype().max_length() << std::endl;
+          << "  MinLength: " << it->invariants().displacement().front()
+          << "  MaxLength: " << it->invariants().displacement().back() << std::endl;
       printer.increase_indent(out);
       printer(*it, out, orbit_index, Norbits);
       out << std::endl;
