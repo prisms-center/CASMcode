@@ -270,14 +270,11 @@ namespace CASM {
                                                  std::vector<SymOp> const &_symgroup,
                                                  SimpleStructure::SpeciesMode _species_mode/*=StrucMapping::ATOM*/) :
     SimpleStrucMapCalculator(make_simple_structure(_prim),
-                             _symgroup,
+                             _symgroup.empty() ? xtal::make_factor_group(_prim) : _symgroup,
                              _species_mode,
                              ConfigMapping::_allowed_species(_prim)),
 
     m_prim(_prim) {
-    if(_symgroup.empty()) {
-      set_sym_info(xtal::make_factor_group(_prim));
-    }
   }
 
   //*******************************************************************************************

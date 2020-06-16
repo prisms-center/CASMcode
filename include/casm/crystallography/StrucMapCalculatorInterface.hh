@@ -39,7 +39,7 @@ namespace CASM {
         m_parent(std::move(_parent)),
         m_species_mode(_species_mode) {
 
-        this->set_sym_info(_factor_group);
+        this->_set_sym_info(_factor_group);
 
         if(allowed_species.empty()) {
           auto const &p_info(this->struc_info(parent()));
@@ -48,7 +48,7 @@ namespace CASM {
             allowed_species[i].push_back(p_info.names[i]);
           }
         }
-        set_allowed_species(allowed_species);
+        _set_allowed_species(allowed_species);
       }
 
       SimpleStructure::Info const &struc_info(SimpleStructure const &_struc) const {
@@ -76,70 +76,6 @@ namespace CASM {
       ///\brief List of internal translations that map parent onto itself
       std::vector<Eigen::Vector3d> const &internal_translations() const {
         return m_internal_translations;
-      }
-
-      ///\brief Sets point_group and internal_translations by breaking factor group into pure translations and rotations/rotoreflections
-      /// _factor_group should be sorted in order of decreasing character
-      void set_sym_info(SymOpVector const &_factor_group) {
-        m_point_group.clear();
-        m_internal_translations.clear();
-
-        // Internal translations are any translation associated with identity
-        m_point_group.push_back(SymOp::identity());
-
-        for(SymOp const &op : _factor_group) {
-          if(get_matrix(op).isIdentity(TOL) && !get_time_reversal(op)) {
-            m_internal_translations.push_back(get_translation(op));
-          }
-          if(!almost_equal(get_matrix(op), get_matrix(m_point_group.back()), TOL)
-             || get_time_reversal(op) != get_time_reversal(m_point_group.back())) {
-            m_point_group.push_back(op);
-            m_point_group.back().translation.setZero();
-          }
-        }
-      }
-
-      template <typename ExternSymOpVector>
-      void set_sym_info(ExternSymOpVector const &_factor_group) {
-        return this->set_sym_info(adapter::Adapter<SymOpVector, ExternSymOpVector>()(_factor_group));
-      }
-
-      void set_allowed_species(StrucMapping::AllowedSpecies allowed_species) {
-        m_allowed_species = std::move(allowed_species);
-
-        //Analyze allowed_species:
-        for(Index i = 0; i < m_allowed_species.size(); ++i) {
-          for(std::string &sp : m_allowed_species[i]) {
-            if(sp == "Va" || sp == ("VA") || sp == "va") {
-              //Is vacancy
-              sp = "Va";
-              m_va_allowed.insert(i);
-            }
-            else if(m_allowed_species[i].size() > 1) {
-              //Not vacancy, but variable species
-              m_fixed_species[sp] = 0;
-            }
-            else {
-              //potentially fixed species
-              auto it = m_fixed_species.find(sp);
-              if(it == m_fixed_species.end())
-                m_fixed_species[sp] = 1;
-              else if((it->second) > 0)
-                ++(it->second);
-            }
-            if(!m_max_n_species.count(sp))
-              m_max_n_species[sp] = 0;
-            ++m_max_n_species[sp];
-          }
-        }
-
-        for(auto it = m_fixed_species.begin(); it != m_fixed_species.end();) {
-          auto curr = it;
-          ++it;
-          if((curr->second) == 0)
-            m_fixed_species.erase(curr);
-        }
-
       }
 
       std::unordered_set<Index> const &va_allowed() const {
@@ -197,6 +133,64 @@ namespace CASM {
       }
 
     protected:
+
+      void _set_allowed_species(StrucMapping::AllowedSpecies allowed_species) {
+        m_allowed_species = std::move(allowed_species);
+
+        //Analyze allowed_species:
+        for(Index i = 0; i < m_allowed_species.size(); ++i) {
+          for(std::string &sp : m_allowed_species[i]) {
+            if(sp == "Va" || sp == ("VA") || sp == "va") {
+              //Is vacancy
+              sp = "Va";
+              m_va_allowed.insert(i);
+            }
+            else if(m_allowed_species[i].size() > 1) {
+              //Not vacancy, but variable species
+              m_fixed_species[sp] = 0;
+            }
+            else {
+              //potentially fixed species
+              auto it = m_fixed_species.find(sp);
+              if(it == m_fixed_species.end())
+                m_fixed_species[sp] = 1;
+              else if((it->second) > 0)
+                ++(it->second);
+            }
+            if(!m_max_n_species.count(sp))
+              m_max_n_species[sp] = 0;
+            ++m_max_n_species[sp];
+          }
+        }
+
+        for(auto it = m_fixed_species.begin(); it != m_fixed_species.end();) {
+          auto curr = it;
+          ++it;
+          if((curr->second) == 0)
+            m_fixed_species.erase(curr);
+        }
+      }
+
+      ///\brief Sets point_group and internal_translations by breaking factor group into pure translations and rotations/rotoreflections
+      /// _factor_group should be sorted in order of decreasing character
+      void _set_sym_info(SymOpVector const &_factor_group) {
+        m_point_group.clear();
+        m_internal_translations.clear();
+
+        // Internal translations are any translation associated with identity
+        m_point_group.push_back(SymOp::identity());
+
+        for(SymOp const &op : _factor_group) {
+          if(get_matrix(op).isIdentity(TOL) && !get_time_reversal(op)) {
+            m_internal_translations.push_back(get_translation(op));
+          }
+          if(!almost_equal(get_matrix(op), get_matrix(m_point_group.back()), TOL)
+             || get_time_reversal(op) != get_time_reversal(m_point_group.back())) {
+            m_point_group.push_back(op);
+            m_point_group.back().translation.setZero();
+          }
+        }
+      }
 
       StrucMapping::AllowedSpecies const &_allowed_species() const {
         return m_allowed_species;
