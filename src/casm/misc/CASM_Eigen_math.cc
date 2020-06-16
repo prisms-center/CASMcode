@@ -3,32 +3,6 @@
 #include <iostream>
 
 namespace CASM {
-  /*
-  Eigen::MatrixXd reduced_column_echelon(Eigen::Ref<const Eigen::MatrixXd> const &M, double _tol) {
-    Eigen::MatrixXd R(M);
-    Index col = 0;
-    for(Index row = 0; row < R.rows(); ++row) {
-      Index i = 0;
-      for(i = col; i < R.cols(); ++i) {
-        if(!almost_zero(R(row, i), _tol)) {
-          if(i != col)
-            R.col(i).swap(R.col(col));
-          break;
-        }
-      }
-      if(i == R.cols())
-        continue;
-      R.col(col) /= R(row, col);
-      for(i = 0; i < R.cols(); ++i) {
-        if(i != col)
-          R.col(i) -= R(row, i) * R.col(col);
-      }
-      ++col;
-    }
-    return R.leftCols(col);
-  }
-  */
-
   //Given a string and the size expected in the array. Converts it to an Eigen::VectorXd
   Eigen::VectorXd eigen_vector_from_string(const std::string &tstr, const int &size) {
     std::stringstream tstream;

@@ -39,6 +39,7 @@ namespace CASM {
                                                bool calc_wedges) {
 
     // We need a temporary mastersymgroup to manage the symmetry representation for the DoF
+    // The particular group used is specified by DoFSpace, and defaults to factor group of configuration/supercell
     MasterSymGroup g;
     SymGroupRepID id;
     DoFKey dof_key = _space.dof_key;

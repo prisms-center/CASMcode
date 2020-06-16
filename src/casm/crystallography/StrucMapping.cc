@@ -112,7 +112,15 @@ namespace CASM {
 
         Index cN = _node.lattice_node.child.size() * _calculator.struc_info(child_struc).size();
 
-        Index j, jj, currj, realj;
+        // We will increment from i=0 to number of rows in cost matrix of '_node'
+        // For each (i,j) assignment of '_node', we will will spawn a new node, where the (i,j) assignment is
+        // forced OFF and all (k,l) assignments with k<i will be forced ON. This involves
+        //   (1) setting the cost of element (i,j) to infinity (forccing it off)
+        //   (2) striking the first 'k' rows from the staring cost matrix, and all columns corresponding to
+        //       their atomic assignments.
+        //   (3) recording the (i,j) pairs that have been turned on
+        //   (4) resolving the reduced assignment problem with the new cost matrix
+        Index old_j, new_j, deleted_j;
         Index n = _node.atomic_node.assignment.size();
         MappingNode t1(_node),
                     t2(_node);
@@ -133,49 +141,45 @@ namespace CASM {
           n2.cost_mat.resize(m - 1, m - 1);
           n2.forced_on = n1.forced_on;
 
-          // We are forcing on the first site assignment in t1: i.e.,  [0,currj]
-          // this involves striking row 0 and col currj from t2's cost_mat
-          currj = n1.assignment[0];
-          realj = n1.icol[currj];
-          //n2.cost_offset = n1.cost_offset + n1.cost_mat(0, currj);
+          // We are forcing on the first site assignment in t1: i.e.,  [0,deleted_j]
+          // this involves striking row 0 and col deleted_j from t2's cost_mat
+          deleted_j = n1.assignment[0];
 
-
-
-          // [0,currj] have local context only. We store the forced assignment in forced_on
+          // [0,deleted_j] have local context only. We store the forced assignment in forced_on
           // using the original indexing from n1
-          n2.forced_on.emplace(n1.irow[0], n1.icol[currj]);
+          n2.forced_on.emplace(n1.irow[0], n1.icol[deleted_j]);
 
-          // Strike row 0 and col currj to form new AssignmentNode for t2
-          // (i,j) indexes the starting cost_mat, (i-1, jj) indexes the resulting cost_mat
+          // Strike row 0 and col deleted_j to form new AssignmentNode for t2
+          // (i,j) indexes the starting cost_mat, (i-1, new_j) indexes the resulting cost_mat
           n2.irow = std::vector<Index>(++n1.irow.begin(), n1.irow.end());
           // We will also store an updated assignment vector in t2, which will be
           // used to construct next node of partition
           n2.assignment = std::vector<Index>(++n1.assignment.begin(), n1.assignment.end());
-          for(j = 0, jj = 0; j < m; ++j, ++jj) {
-            if(j == currj) {
-              --jj;
+          for(old_j = 0, new_j = 0; old_j < m; ++old_j, ++new_j) {
+            if(old_j == deleted_j) {
+              --new_j;
               continue;
             }
-            n2.icol.push_back(n1.icol[j]);
+            n2.icol.push_back(n1.icol[old_j]);
 
             // We will also store an updated assignment vector in t2, which will be
             // used to construct next node of partition
-            if(n2.assignment[jj] > currj)
-              n2.assignment[jj]--;
+            if(n2.assignment[new_j] > deleted_j)
+              n2.assignment[new_j]--;
 
-            // Fill col jj of t2's cost mat
+            // Fill col new_j of t2's cost mat
             for(Index i = 1; i < m; ++i)
-              n2.cost_mat(i - 1, jj) = n1.cost_mat(i, j);
+              n2.cost_mat(i - 1, new_j) = n1.cost_mat(i, old_j);
           }
-          //t2 properly initialized; we can now force OFF [0,currj] in t1, and add it to node list
-          n1.cost_mat(0, currj) = StrucMapping::big_inf();
-          // IMPORTANT: If realj>=cN, it is a virtual vacancy.
+          //t2 properly initialized; we can now force OFF [0,deleted_j] in t1, and add it to node list
+          n1.cost_mat(0, deleted_j) = StrucMapping::big_inf();
+          // IMPORTANT: If n1.icol[deleted_j]=cN, it is a virtual vacancy.
           // If we exclude a single virtual vacancy from occupying this parent site, the marginal cost
           // of assigning a different virtual vacancy to the same site is zero, and the mapping is equivalent.
           // So, we need to exclude ALL virtual vacancies from occupying this parent site:
-          if(realj >= cN) {
-            for(j = n1.icol.size() - 1; j >= 0 && n1.icol[j] >= cN; --j) {
-              n1.cost_mat(0, j) = StrucMapping::big_inf();
+          if(n1.icol[deleted_j] >= cN) {
+            for(old_j = n1.icol.size() - 1; old_j >= 0 && n1.icol[old_j] >= cN; --old_j) {
+              n1.cost_mat(0, old_j) = StrucMapping::big_inf();
             }
           }
           n1.assignment.clear();
@@ -228,11 +232,11 @@ namespace CASM {
                              Lattice const &parent_prim,
                              Lattice const &child_prim) :
       // stretch is from (de-rotated, strained) child to ideal parent
-      stretch(polar_decomposition(_lat_map.matrixF()).inverse()),
+      stretch(polar_decomposition(_lat_map.deformation_gradient()).inverse()),
       // isometry is from child to strained parent
-      isometry((_lat_map.matrixF() * stretch).transpose()),
+      isometry((_lat_map.deformation_gradient() * stretch).transpose()),
       parent(parent_prim, Lattice(_lat_map.parent_matrix(), parent_prim.tol())),
-      child(Lattice(_lat_map.matrixF().inverse() * child_prim.lat_column_mat(), parent_prim.tol()), Lattice(_lat_map.parent_matrix(), parent_prim.tol())),
+      child(Lattice(_lat_map.deformation_gradient().inverse() * child_prim.lat_column_mat(), parent_prim.tol()), Lattice(_lat_map.parent_matrix(), parent_prim.tol())),
       cost(_lat_map.strain_cost()) {
     }
 
