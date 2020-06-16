@@ -137,7 +137,7 @@ namespace CASM {
 
       // Construct inverse fractional symops for parent
       {
-        LatticeIsEquivalent symcheck(reduced_parent);
+        IsPointGroupOp symcheck(reduced_parent);
         m_parent_fsym_mats.reserve(_parent_point_group.size());
         for(auto const &op : _parent_point_group) {
           if(!symcheck(op))
@@ -145,7 +145,7 @@ namespace CASM {
           //if(symcheck.U().isIdentity())
           //continue;
           //std::cout << "Testing point op:\n" << get_matrix(op) << "\n";
-          m_parent_fsym_mats.push_back(iround(symcheck.U().inverse()));
+          m_parent_fsym_mats.push_back(iround(reduced_parent.inv_lat_column_mat()*op.matrix.transpose()*reduced_parent.lat_column_mat()));
           for(Index i = 0; i < (m_parent_fsym_mats.size() - 1); ++i) {
             if(m_parent_fsym_mats[i] == m_parent_fsym_mats.back()) {
               m_parent_fsym_mats.pop_back();
@@ -165,7 +165,7 @@ namespace CASM {
           //if(symcheck.U().isIdentity())
           //continue;
           //std::cout << "Testing point op:\n" << get_matrix(op) << "\n";
-          m_child_fsym_mats.push_back(iround(symcheck.U()));
+          m_child_fsym_mats.push_back(iround(reduced_child.inv_lat_column_mat()*op.matrix * reduced_child.lat_column_mat()));
           for(Index i = 0; i < (m_child_fsym_mats.size() - 1); ++i) {
             if(m_child_fsym_mats[i] == m_child_fsym_mats.back()) {
               m_child_fsym_mats.pop_back();

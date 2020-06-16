@@ -12,29 +12,43 @@ namespace {
   /// Relax the vectors of the given lattice such that it obeys the symmetry of the given group,
   /// where the symmetry operations are given in fractional representations
   Lattice symmetrized_with_fractional(const Lattice &lattice, const std::vector<Eigen::Matrix3i> &fractional_point_group) {
-    Eigen::Matrix3d tLat2(Eigen::Matrix3d::Zero());
+    Eigen::Matrix3d symmetrized_lat_matrix_squared(Eigen::Matrix3d::Zero());
 
+    //This loop performs the Reynolds operator on the input lattice
     for(const auto &frac_mat : fractional_point_group) {
-      tLat2 += frac_mat.cast<double>().transpose() * lattice.lat_column_mat().transpose() * lattice.lat_column_mat() *
-               frac_mat.cast<double>();
+      symmetrized_lat_matrix_squared += frac_mat.cast<double>().transpose() * lattice.lat_column_mat().transpose() * lattice.lat_column_mat() *
+                                        frac_mat.cast<double>();
     }
-    tLat2 /= double(fractional_point_group.size());
+    symmetrized_lat_matrix_squared /= double(fractional_point_group.size());
 
-    // tLat2 has the symmetrized lengths and angles -- it is equal to L.transpose()*L, where L=lat_column_mat()
-    // we will find the sqrt of tLat2 and then reorient it so that it matches the original lattice
-    Eigen::Matrix3d tMat;
+    // symmetrized_lat_matrix_squared has the symmetrized lengths and angles -- it is equal to symmetrized_L.transpose()*symmetrized_L
+    // we will find the sqrt of symmetrized_lat_matrix_squared and then reorient it so that it matches the original lattice
+    Eigen::Matrix3d symmetrized_lat_matrix_misoriented;
+    //This decomposition does the following transformation:
+    // symmetrized_lat_matrix_squared = U * S * V.transpose()
+    Eigen::JacobiSVD<Eigen::Matrix3d> singular_value_decomposition(symmetrized_lat_matrix_squared, Eigen::ComputeFullU | Eigen::ComputeFullV);
 
-    Eigen::JacobiSVD<Eigen::Matrix3d> tSVD(tLat2, Eigen::ComputeFullU | Eigen::ComputeFullV);
-
-    // tMat is sqrt of symlat.transpose()*symlat
-    tMat = tSVD.matrixU() * tSVD.singularValues().cwiseSqrt().asDiagonal() * tSVD.matrixV().transpose();
+    // symmetrized_lat_matrix_misoriented is sqrt of symlat.transpose()*symlat
+    // symmetrized_lat_matrix_misoriented = U * sqrt(S) * V.transpose() = R * symmetrized_L = R * X * input_L
+    // R * X * input_L = symmetrized_lat_matrix_misoriented
+    // R * X = symmetrized_lat_matrix_misoriented * input_L.inverse()
+    symmetrized_lat_matrix_misoriented = singular_value_decomposition.matrixU() * singular_value_decomposition.singularValues().cwiseSqrt().asDiagonal() * singular_value_decomposition.matrixV().transpose();
 
     // if starting lattice were perfect, we would have origlat=rotation*tMat
-    tSVD.compute(tMat * lattice.inv_lat_column_mat());
+    // R * X = symmetrized_lat_matrix_misoriented * input_L.inverse()
+    // R * X = symmetrized_lat_matrix_misoriented * input_L.inverse() = A * S' * B.transpose()
+    // X = B * S' * B.transpose() due to X = X.transpose()
+    // R = A * B.transpose()
+    singular_value_decomposition.compute(symmetrized_lat_matrix_misoriented * lattice.inv_lat_column_mat());
 
-    tLat2 = tSVD.matrixV() * tSVD.matrixU().transpose() * tMat;
 
-    return Lattice(tLat2, lattice.tol());
+    // symmetrized_lat_matrix_misoriented = R * symmetrized_L
+    // R.transpose() = R.inverse() because R is a rotation
+    // R.transpose()= B * A.transpose()
+    // symmetrized_L = B * A.transpose() * symmetrized_lat_matrix_misoriented
+    Eigen::Matrix3d symmetrized_lat_matrix = singular_value_decomposition.matrixV() * singular_value_decomposition.matrixU().transpose() * symmetrized_lat_matrix_misoriented;
+
+    return Lattice(symmetrized_lat_matrix, lattice.tol());
   }
 } // namespace
 
@@ -60,30 +74,13 @@ namespace CASM {
     }
 
     Lattice symmetrize(const Lattice &lattice, const std::vector<SymOp> &enforced_group) {
-      Eigen::Matrix3d tLat2(Eigen::Matrix3d::Zero());
-      Eigen::Matrix3d frac_mat;
+      Eigen::Matrix3i frac_mat;
+      std::vector<Eigen::Matrix3i> fractional_point_group;
       for(Index ng = 0; ng < enforced_group.size(); ng++) {
-        frac_mat = iround(lattice.inv_lat_column_mat() * get_matrix(enforced_group[ng]) * lattice.lat_column_mat())
-                   .cast<double>();
-        tLat2 += frac_mat.transpose() * lattice.lat_column_mat().transpose() * lattice.lat_column_mat() * frac_mat;
+        frac_mat = iround(lattice.inv_lat_column_mat() * get_matrix(enforced_group[ng]) * lattice.lat_column_mat());
+        fractional_point_group.push_back(frac_mat);
       }
-      tLat2 /= double(enforced_group.size());
-
-      // tLat2 has the symmetrized lengths and angles -- it is equal to L.transpose()*L, where L=lat_column_mat()
-      // we will find the sqrt of tLat2 and then reorient it so that it matches the original lattice
-      Eigen::Matrix3d tMat;
-
-      Eigen::JacobiSVD<Eigen::Matrix3d> tSVD(tLat2, Eigen::ComputeFullU | Eigen::ComputeFullV);
-
-      // tMat is sqrt of symlat.transpose()*symlat
-      tMat = tSVD.matrixU() * tSVD.singularValues().cwiseSqrt().asDiagonal() * tSVD.matrixV().transpose();
-
-      // if starting lattice were perfect, we would have origlat=rotation*tMat
-      tSVD.compute(tMat * lattice.inv_lat_column_mat());
-
-      tLat2 = tSVD.matrixV() * tSVD.matrixU().transpose() * tMat;
-
-      return Lattice(tLat2, lattice.tol());
+      return symmetrized_with_fractional(lattice, fractional_point_group);
     }
 
     Lattice symmetrize(const Lattice &lattice, double point_group_tolerance) {

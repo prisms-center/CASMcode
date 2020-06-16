@@ -13,7 +13,6 @@
 #include "casm/crystallography/Adapter.hh"
 #include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/crystallography/DoFSet.hh"
-#include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/SymType.hh"
