@@ -49,7 +49,6 @@ namespace {
       is_group.push_back(factor_group.is_group(i));
       factor_group.enforce_group(i);
       num_enforced_ops.push_back(factor_group.size());
-      factor_group.character_table();
       name.push_back(factor_group.get_name());
     }
     lattice.set_tol(orig_tol);
@@ -200,7 +199,6 @@ namespace CASM {
     Structure const &prim = primclex().prim();
 
     SymGroup lattice_pg(SymGroup::lattice_point_group(prim.lattice()));
-    lattice_pg.character_table();
 
     if(!Local::_dof_analysis(opt())) {
       log() << "  Lattice point group size: " << lattice_pg.size() << std::endl;

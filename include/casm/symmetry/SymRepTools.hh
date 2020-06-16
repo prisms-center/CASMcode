@@ -262,13 +262,6 @@ namespace CASM {
   /// Columns of each subspace matrix are orthogonal and normalized to unit length
   std::vector<std::vector< Eigen::MatrixXd> > special_subspaces(SymGroupRep const &_rep, const SymGroup &head_group);
 
-  /// \brief Returns number of each irrep of head_group comprising _rep, listed in same order as the character table of head_group
-  std::vector<Index> num_each_irrep(SymGroupRep const &_rep, const SymGroup &head_group, bool verbose = false);
-
-  /// \brief Returns number of each irrep of head_group comprising _rep, listed in same order as the character table of head_group
-  /// _rep is assumed to be real, and irreps that are otherwise complex conjugates of each other are combined into a single real 'irrep'
-  std::vector<Index> num_each_real_irrep(SymGroupRep const &_rep, const SymGroup &head_group, bool verbose = false);
-
   /// \brief Find irrep decomposition of _rep wrt group head_group and returns it as a list of SymGroupRepIDs corresponding to representtions of master_group
   std::vector<SymGroupRepID> irrep_IDs(SymGroupRep const &_rep, const SymGroup &head_group);
 

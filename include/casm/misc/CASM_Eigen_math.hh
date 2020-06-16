@@ -17,8 +17,8 @@
 
 namespace Local {
   template<typename T>
-  bool _compare(T const &a, T const &b, double tol) {
-    return a < b;
+  inline static bool _compare(T const &a, T const &b, double tol) {
+    return (a + tol) < b;
   }
 
   template<>

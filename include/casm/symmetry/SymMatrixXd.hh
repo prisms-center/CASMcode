@@ -41,13 +41,7 @@ namespace CASM {
       return mat.trace();
     }
 
-    jsonParser &to_json(jsonParser &json) const override;
-
-    void from_json(const jsonParser &json) override;
   };
-
-  jsonParser &to_json(const SymMatrixXd &sym, jsonParser &json);
-  void from_json(SymMatrixXd &sym, const jsonParser &json);
 
   /** @} */
 }

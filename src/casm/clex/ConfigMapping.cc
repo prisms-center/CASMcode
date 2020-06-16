@@ -24,7 +24,6 @@
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/database/ScelDatabase.hh"
-#include "casm/symmetry/SymGroup.hh"
 #include <vector>
 
 namespace CASM {
@@ -267,13 +266,12 @@ namespace CASM {
   //*******************************************************************************************
 
   PrimStrucMapCalculator::PrimStrucMapCalculator(BasicStructure const &_prim,
-                                                 std::vector<SymOp> const &_symgroup,
+                                                 std::vector<xtal::SymOp> const &_symgroup,
                                                  SimpleStructure::SpeciesMode _species_mode/*=StrucMapping::ATOM*/) :
     SimpleStrucMapCalculator(make_simple_structure(_prim),
                              _symgroup.empty() ? xtal::make_factor_group(_prim) : _symgroup,
                              _species_mode,
                              ConfigMapping::_allowed_species(_prim)),
-
     m_prim(_prim) {
   }
 
@@ -302,7 +300,7 @@ namespace CASM {
                              double _tol/*=-1.*/) :
     m_pclex(&_pclex),
     m_struc_mapper(PrimStrucMapCalculator(_pclex.prim(),
-                                          _pclex.prim().factor_group()),
+                                          adapter::Adapter<xtal::SymOpVector, SymGroup>()(_pclex.prim().factor_group())),
                    _settings.lattice_weight,
                    _settings.max_vol_change,
                    _settings.options(),

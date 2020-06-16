@@ -145,7 +145,7 @@ namespace CASM {
   class PrimStrucMapCalculator : public SimpleStrucMapCalculator {
   public:
     PrimStrucMapCalculator(BasicStructure const &_prim,
-                           std::vector<SymOp> const &symgroup = {},
+                           std::vector<xtal::SymOp> const &symgroup = {},
                            SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM);
 
   private:
