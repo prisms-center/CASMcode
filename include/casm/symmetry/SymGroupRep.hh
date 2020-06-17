@@ -135,10 +135,6 @@ namespace CASM {
       return m_rep_ID;
     }
 
-    jsonParser &to_json(jsonParser &json) const;
-
-    // If 'm_master_group' is not nullptr, should be initialized accordingly
-    void from_json(const jsonParser &json);
   private:
 
     void clear();
@@ -157,11 +153,6 @@ namespace CASM {
 
 
   };
-
-  jsonParser &to_json(const SymGroupRep &rep, jsonParser &json);
-
-  // If 'm_home_group' is not nullptr, should be initialized accordingly
-  void from_json(SymGroupRep &rep, const jsonParser &json);
 
   /// \brief Make a copy of representation on vector space 'V' that is transformed into a representation on vector space 'W'
   /// 'trans_mat' is the unitary matrix that isomorphically maps 'V'->'W' (i.e., [w = trans_mat * v] and [v = trans_mat.transpose() * w] )

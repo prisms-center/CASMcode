@@ -13,7 +13,6 @@
 #include "casm/crystallography/Adapter.hh"
 #include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/crystallography/DoFSet.hh"
-#include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/SymType.hh"
@@ -205,7 +204,7 @@ namespace CASM {
               symrep_from = m_factor_group.allocate_representation();
               Index s2;
               for(s2 = 0; s2 < s; ++s2) {
-                m_factor_group[s2].set_rep(symrep_from, SymPermutation(sequence<Index>(0, dofref_from.size())));
+                m_factor_group[s2].set_rep(symrep_from, SymPermutation(sequence<Index>(0, dofref_from.size() - 1)));
               }
               m_factor_group[s2].set_rep(symrep_from, SymPermutation(eq.perm().inverse()));
             }
@@ -228,9 +227,9 @@ namespace CASM {
           xtal::DoFSet const &_dofref_to = basis()[to_b].dof(dof_dim.first);
 
           //Transform the xtal::SiteDoFSet to the CASM::DoFSet version
-          CASM::DoFSet dofref_from = adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(_dofref_from, from_b);
+          CASM::DoFSet dofref_from = adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(_dofref_from, SymGroupRepID(), from_b);
 
-          CASM::DoFSet dofref_to = adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(_dofref_to, to_b);
+          CASM::DoFSet dofref_to = adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(_dofref_to, SymGroupRepID(), to_b);
 
           DoFIsEquivalent eq(dofref_from);
           //TODO
@@ -405,15 +404,15 @@ namespace CASM {
     return result;
   }
 
-  std::map<DoFKey, DoFSetInfo> global_dof_info(BasicStructure const &_struc) {
+  std::map<DoFKey, DoFSetInfo> global_dof_info(Structure const &_struc) {
     std::map<DoFKey, DoFSetInfo> result;
-    for(auto const &dof :  _struc.global_dofs()) {
-      result.emplace(dof.first, adapter::Adapter<CASM::DoFSet, xtal::DoFSet>()(dof.second).info());
+    for(auto const &dof :  _struc.structure().global_dofs()) {
+      result.emplace(dof.first, adapter::Adapter<CASM::DoFSet, xtal::DoFSet>()(dof.second, _struc.global_dof_symrep_ID(dof.first)).info());
     }
     return result;
   }
 
-  std::map<DoFKey, std::vector<DoFSetInfo> > local_dof_info(BasicStructure const &_struc) {
+  std::map<DoFKey, std::vector<DoFSetInfo> > local_dof_info(Structure const &_struc) {
     std::map<DoFKey, std::vector<DoFSetInfo> > result;
 
     for(DoFKey const &type : continuous_local_dof_types(_struc)) {
@@ -422,7 +421,7 @@ namespace CASM {
       for(Index b = 0; b < _struc.basis().size(); ++b) {
         if(_struc.basis()[b].has_dof(type)) {
           const auto &dofset = _struc.basis()[b].dof(type);
-          tresult[b] = adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(dofset, b).info();
+          tresult[b] = adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(dofset, _struc.site_dof_symrep_IDs()[b].at(type), b).info();
         }
       }
       result.emplace(type, std::move(tresult));

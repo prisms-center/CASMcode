@@ -170,8 +170,6 @@ namespace CASM {
     const std::vector<std::vector<Index>> &get_alt_multi_table() const;
     void invalidate_multi_tables() const;
     const std::vector<std::vector<Index>> &get_conjugacy_classes() const;
-    const std::vector<std::vector<std::complex<double> >> &character_table() const;
-    const std::vector<bool> &get_complex_irrep_list() const;
     const std::string &get_name() const;
     const std::string &get_latex_name() const;
 
@@ -186,18 +184,12 @@ namespace CASM {
 
     const std::vector<std::set<std::set<Index> > > &subgroups() const;
 
-    void print_character_table(std::ostream &stream);
-    std::vector<Index> get_irrep_decomposition() const;
     bool is_irreducible() const;
 
     std::vector<SymGroup> unique_subgroups() const;
 
     ///Fill up a SymGroup with *this minus the shifts
     SymGroup copy_no_trans(bool keep_repeated = false) const;
-
-    jsonParser &to_json(jsonParser &json) const;
-
-    void from_json(const jsonParser &json);
 
     SymInfo info(Index i) const;
 
@@ -207,11 +199,9 @@ namespace CASM {
 
   protected:
     void _generate_conjugacy_classes() const;
-    void _generate_character_table() const;
     void _generate_centralizers() const;
     void _generate_elem_order_table() const;
     void _generate_class_names() const;
-    void _generate_irrep_names() const;
     bool _generate_multi_table() const;
     void _generate_alt_multi_table() const;
     void _generate_subgroups() const;
@@ -241,11 +231,7 @@ namespace CASM {
     mutable std::vector<Index> index2conjugacy_class;
 
     // Information about irreducible representations
-    // m_character_table[i][j] is character of conjugacy class 'j' in irrep 'i'
-    mutable multivector<std::complex<double>>::X<2> m_character_table;
     mutable std::vector<SymGroupRepID> irrep_IDs;
-    mutable std::vector<bool> complex_irrep;
-    mutable std::vector<std::string> irrep_names;
 
     // subgroups are found by finding the closure for each possible union of small_subgroups
     // organized the same way as small_subgroups
@@ -276,12 +262,6 @@ namespace CASM {
   /// If G1 is identical to G2 (every operation has a time-reversed partner), then the name is G1'
   /// does not work for icosahedral groups
   std::map<std::string, std::string> point_group_info(SymGroup const &group);
-
-  jsonParser &to_json(const SymGroup &group, jsonParser &json);
-
-  // Note: as a hack this expects group[0] to be present and have the right lattice!!!
-  //   it's just used to set the lattice for all the Molecules
-  void from_json(SymGroup &group, const jsonParser &json);
 
   // return SymGroup with all molecular point group sym ops
   // I will centerize your coord_map, fyi.
@@ -356,10 +336,6 @@ namespace CASM {
     SymGroupRepID add_transformed_rep(SymGroupRepID orig_ID, const Eigen::MatrixXd &trans_mat) const;
     SymGroupRepID add_rotation_rep() const;
 
-    jsonParser &to_json(jsonParser &json) const;
-
-    void from_json(const jsonParser &json);
-
   private:
 
     SymGroupRep *_representation_ptr(SymGroupRepID _id) const;
@@ -395,12 +371,6 @@ namespace CASM {
   };
 
   MasterSymGroup make_master_sym_group(SymGroup const &_group, Lattice const &_lattice);
-
-  jsonParser &to_json(const SymGroup &group, jsonParser &json);
-
-  // Note: as a hack this expects group[0] to be present and have the right lattice!!!
-  //   it's just used to set the lattice for all the Molecules
-  void from_json(SymGroup &group, const jsonParser &json);
 
   bool compare_periodic(const SymOp &a,
                         const SymOp &b,

@@ -2,7 +2,6 @@
 
 #include <numeric>
 #include "casm/global/eigen.hh"
-#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/container/stream_io.hh"
 #include "casm/misc/CASM_math.hh"
@@ -158,69 +157,6 @@ namespace CASM {
 
 
   //*******************************************************************************************
-
-  // If 'm_home_group' is not nullptr, should be initialized accordingly
-  void SymGroupRep::from_json(const jsonParser &json) {
-    // Member not included in json:
-    //
-    //   Pointer to the m_master_group that generated this SymGroupRep
-    //   MasterSymGroup const *m_master_group;
-
-    // class SymGroupRep : public std::vector<SymOpRepresentation *>
-
-    for(Index i = 0; i < size(); i++) {
-      delete at(i);
-    }
-    clear();
-    //std::cout << "Resizing SymGroupRep to " << json["symop_representations"].size() << std::endl;
-    resize(json["symop_representations"].size());
-    //std::cout << "Reading in the symmetry operations" << std::endl;
-    for(int i = 0; i < json["symop_representations"].size(); i++) {
-      // This allocates a new object to 'at(i)'.
-      CASM::from_json(at(i), json["symop_representations"][i]);
-    }
-
-    //std::cout << "Reading in m_rep_id" << std::endl;
-    // int m_rep_ID;
-    CASM::from_json(m_rep_ID, json["m_rep_ID"]);
-
-    //std::cout << "Done reading in the permute_group" << std::endl;
-  }
-
-  //*******************************************************************************************
-
-  jsonParser &SymGroupRep::to_json(jsonParser &json) const {
-    json.put_obj();
-
-    // Member not included in json:
-    //
-    //   Pointer to the m_master_group that generated this SymGroupRep
-    //   MasterSymGroup const *m_master_group;
-
-    // class SymGroupRep : public std::vector<SymOpRepresentation *>
-    json["symop_representations"].put_array();
-    for(Index i = 0; i < size(); i++) {
-      at(i)->to_json(json["symop_representations"]);
-    }
-
-    // int m_rep_ID;
-    json["m_rep_ID"] = m_rep_ID;
-
-    return json;
-  }
-
-  //*******************************************************************************************
-
-  jsonParser &to_json(const SymGroupRep &rep, jsonParser &json) {
-    return rep.to_json(json);
-  }
-
-
-  // If 'm_master_group' is not NULL, should be initialized accordingly
-  void from_json(SymGroupRep &rep, const jsonParser &json) {
-    rep.from_json(json);
-  }
-
 
   //*******************************************************************************************
   // Calculates new SymGroupRep that is the results of performing coordinate transformation specified by trans_mat

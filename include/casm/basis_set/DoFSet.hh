@@ -8,16 +8,7 @@
 
 namespace CASM {
 
-  template<typename T> struct jsonConstructor;
-
-
   class AnisoValTraits;
-
-  namespace xtal {
-    struct SymOp;
-  }
-
-  class SymGroup;
 
   // All identifying information for a vector of continuous independent variables (Degrees of Freedom / DoFs)
   // DoFSets are associated with a specific DoF 'type', which has a predefined 'standard' coordinate system
@@ -123,8 +114,8 @@ namespace CASM {
     ///    DoFSet my_disp_dof(DoF::traits("disp"))
     ///    \endcode
     DoFSet(AnisoValTraits const &_type,
-           std::vector<std::string> components = {},
-           Eigen::MatrixXd basis = Eigen::MatrixXd(),
+           std::vector<std::string> components,
+           DoFSetInfo _info,
            std::unordered_set<std::string> excluded_occupants = {});
 
     /// \brief Returns number of components in this DoFSet
@@ -212,10 +203,6 @@ namespace CASM {
       return m_info.symrep_ID();
     }
 
-    /// \brief Allocates an empty symmetry representation in \param _group and records its SymGroupRepID
-    /// This representation becomes THE representation for this DoFSet, to be initialized accordingly
-    void allocate_symrep(SymGroup const &_group) const;
-
     /// \brief returns true of \param rhs has identical components and basis to this DoFSet
     bool identical(DoFSet const &rhs) const;
 
@@ -228,19 +215,12 @@ namespace CASM {
     /// ID in after_IDs and returns true; otherwise returns false.
     bool update_IDs(const std::vector<Index> &before_IDs, const std::vector<Index> &after_IDs);
 
-    /// \brief Parse DoFSet basis vectors, components, and excluded_occs from JSON input
-    void from_json(jsonParser const &json);
-
-    /// \brief Write DoFSet basis vectors, components, and excluded_occs to JSON
-    jsonParser &to_json(jsonParser &json) const;
-
-
   private:
 
     //AnisovalTraits, defines the intrinsic space of a type of DoF
     BasicTraits m_traits;
     std::vector<ContinuousDoF> m_components;
-    mutable DoFSetInfo m_info;
+    DoFSetInfo m_info;
 
     std::unordered_set<std::string> m_excluded_occs;
 
@@ -259,36 +239,6 @@ namespace CASM {
   bool operator!=(DoFSet const &A, DoFSet const &B) {
     return !A.identical(B);
   }
-
-  //********************************************************************
-
-  /// \brief Apply SymOp to a DoFSet
-  DoFSet &apply(const xtal::SymOp &op, DoFSet &_dof);
-
-  //********************************************************************
-
-  /// \brief Copy and apply SymOp to a DoFSet
-  DoFSet copy_apply(const xtal::SymOp &op, const DoFSet &_dof);
-
-  //********************************************************************
-  template<>
-  struct jsonConstructor<DoFSet> {
-    static DoFSet from_json(const jsonParser &json, AnisoValTraits const &_type);
-  };
-
-  //********************************************************************
-  inline
-  void from_json(DoFSet &_dof, jsonParser &json) {
-    return _dof.from_json(json);
-  }
-
-  //********************************************************************
-  inline
-  jsonParser &to_json(DoFSet const &_dof, jsonParser &json) {
-    return _dof.to_json(json);
-  }
-
-
 
 }
 

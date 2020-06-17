@@ -1,6 +1,5 @@
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Adapter.hh"
-#include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/crystallography/Site.hh"

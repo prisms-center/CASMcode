@@ -6,7 +6,7 @@
 
 namespace CASM {
 
-  class DoFSpace;
+  struct DoFSpace;
 
   jsonParser &to_json(DoFSpace const &dofspace, jsonParser &json);
 

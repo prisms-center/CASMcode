@@ -6,7 +6,6 @@
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/casm_io/Log.hh"
-#include "casm/casm_io/container/json_io.hh"
 
 namespace CASM {
 
@@ -180,66 +179,6 @@ namespace CASM {
     return op.time_reversal();
   }
 
-  //*******************************************************************************************
-
-  jsonParser &SymOp::to_json(jsonParser &json) const {
-    json.put_obj();
-
-    // Members not included:
-    //
-    // From SymOpRepresentation:
-    //   MasterSymGroup const master_group();
-    //
-    // From SymOp:
-    //   Lattice const *home;
-    //   Array<SymOpRepresentation *> representation;
-
-    json["SymOpRep_type"] = "SymOp";
-
-    json["op_index"] = m_op_index;
-    json["rep_ID"] = m_rep_ID;
-
-    // mutable SymOp::matrix_type symmetry_mat[2];
-    json["symmetry_mat"] = matrix();
-
-    // mutable Coordinate tau_vec;
-    to_json_array(tau(), json["tau"]);
-
-    // double map_error;
-    json["map_error"] = map_error();
-
-    return json;
-  }
-
-  //*******************************************************************************************
-
-  void SymOp::from_json(const jsonParser &json) {
-    try {
-      //std::cout<<"Inside of SymOp::from_json"<<std::endl;
-      //std::cout<<"Reading in op_index"<<std::endl;
-      CASM::from_json(m_op_index, json["op_index"]);
-      //std::cout<<"Reading in rep_id"<<std::endl;
-      CASM::from_json(m_rep_ID, json["rep_ID"]);
-
-      // mutable SymOp::matrix_type symmetry_mat[2];
-      //std::cout<<"Reading in symmetry_mat"<<std::endl;
-      CASM::from_json(m_mat, json["symmetry_mat"]);
-
-      // mutable Coordinate tau_vec;
-      //std::cout<<"Reading in tau_vec"<<std::endl;
-      if(json.contains("tau"))
-        CASM::from_json(m_tau, json["tau"]);
-      _set_integral_tau();
-      //std::cout<<"Reading in map_error"<<std::endl;
-      // double map_error;
-      CASM::from_json(m_map_error, json["map_error"]);
-      //std::cout<<"Done Reading in the SymOp"<<std::endl;
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
-  }
 
 
   void SymOp::_set_integral_tau() {
@@ -256,25 +195,6 @@ namespace CASM {
     }
   }
 
-
-
-
-  //*******************************************************************************************
-
-  jsonParser &to_json(const SymOp &sym, jsonParser &json) {
-    return sym.to_json(json);
-  }
-
-  //*******************************************************************************************
-  void from_json(SymOp &sym, const jsonParser &json) {
-    try {
-      sym.from_json(json);
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
-  }
 
   /// \brief Print formatted SymOp matrix and tau
   ///

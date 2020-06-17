@@ -46,7 +46,10 @@ namespace CASM {
   std::string::const_iterator end_of_literal(std::string::const_iterator it, std::string::const_iterator end_it) {
 
     for(++it; it != end_it; ++it) {
-      if((*it) == '\'')
+      // if character specifies escape, consume  additional character
+      if(*it == '\\')
+        ++it;
+      else if((*it) == '\'')
         return ++it;
     }
     return it;
@@ -77,8 +80,12 @@ namespace CASM {
       }
       else {
         // find end of formatter tag
-        while(it != it_end && !(isspace(*it) || (*it) == ',') && (*it) != '(' && (*it) != ')')
+        while(it != it_end && !(isspace(*it) || (*it) == ',') && (*it) != '(' && (*it) != ')') {
+          // if character specifies escape, consume an additional character
+          if(*it == '\\')
+            ++it;
           ++it;
+        }
 
         if(*it == ')')
           throw std::runtime_error("Mismatched parentheses in expression:\n    \"" + input_expr + "\"\n");
@@ -104,7 +111,10 @@ namespace CASM {
       // stop at end of string, or if we hit the non-nested closing paren
       Index paren_depth(0);
       while(it != it_end && !((*it) == ')' && paren_depth == 0)) {
-        if((*it) == '(')
+        // if escape character, consume an additional character
+        if(*it == '\\')
+          ++it;
+        else if((*it) == '(')
           ++paren_depth;
         else if((*it) == ')')
           --paren_depth;

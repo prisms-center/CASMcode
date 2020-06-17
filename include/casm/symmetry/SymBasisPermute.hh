@@ -14,7 +14,6 @@ namespace CASM {
   using xtal::UnitCellCoord;
 
   class MasterSymGroup;
-  class jsonParser;
 
   /** \ingroup SymOp
    *  @{
@@ -95,11 +94,6 @@ namespace CASM {
     const Eigen::Matrix3l &matrix() const {
       return m_point_mat;
     }
-
-    jsonParser &to_json(jsonParser &json) const override {
-      return json;
-    };
-    void from_json(const jsonParser &json) override {};
 
   };
 

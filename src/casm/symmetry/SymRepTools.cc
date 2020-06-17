@@ -610,75 +610,6 @@ namespace CASM {
 
     return ssubs;
   }
-
-  //*******************************************************************************************
-  //assumes that representation is real-valued, and combines complex-valued irreps with their complex conjugate
-  std::vector<Index> num_each_real_irrep(SymGroupRep const &_rep, SymGroup const &head_group, bool verbose) {
-    const std::vector<bool > &complex_irrep(head_group.get_complex_irrep_list());
-    std::vector<Index> tarray(num_each_irrep(_rep, head_group, verbose));
-
-    if(tarray.size() != complex_irrep.size()) {
-      default_err_log() << "CRITICAL ERROR: Dimension mismatch in num_each_real_irrep. Exiting..\n";
-      assert(0);
-      exit(1);
-    }
-
-    // Go through and remove double counting of complex irreps
-    for(Index i = 0; i < tarray.size(); i++) {
-      if(tarray[i] && complex_irrep[i]) {
-        if(i + 1 == tarray.size() || tarray[i] != tarray[i + 1]) {
-          default_err_log() << "CRITICAL ERROR: Invalid irrep decomposition found in num_each_real_irrep. Exiting..\n";
-          assert(0);
-          exit(1);
-        }
-        tarray[i + 1] = 0;
-        i++;
-      }
-    }
-    return tarray;
-  }
-
-  //*******************************************************************************************
-
-  std::vector<Index> num_each_irrep(SymGroupRep const &_rep, SymGroup const &head_group, bool verbose) {
-    const std::vector<std::vector<Index> > &conj_class(head_group.get_conjugacy_classes());
-    const std::vector<std::vector<std::complex<double> > > &char_table(head_group.character_table());
-
-    std::vector<Index> tdec(conj_class.size(), 0);
-    std::vector<double> repchar(conj_class.size(), 0);
-
-    if(verbose) {
-      std::cout << "Decomposing representation:\n ";
-      for(Index i = 0; i < head_group.size(); i++) {
-        std::cout << *(_rep.MatrixXd(head_group[i])) << "\n\n";
-      }
-    }
-
-    //std::cout << "Character table is\n";
-    for(Index i = 0; i < conj_class.size(); i++) {
-      Index rep_index(head_group[conj_class[i][0]].index());
-      repchar[i] = _rep[rep_index]->character();
-      //std::cout << char_table[i] << "\n\n";
-    }
-
-    if(verbose)
-      std::cout << " Irrep decomposition: ";
-    for(Index i = 0; i < char_table.size(); i++) { // Loop over irreducible representations
-      double temp(0);
-      for(Index j = 0; j < char_table[i].size(); j++) { // Loop over conjugacy classes
-        temp += double(conj_class[j].size()) * repchar[j] * (char_table[i][j]).real();
-      }
-      tdec[i] = round(temp / double(head_group.size()));
-      if(verbose)
-        std::cout << "  " << tdec[i];
-    }
-    if(verbose)
-      std::cout << '\n';
-
-
-    return tdec;
-  }
-
   //*******************************************************************************************
 
   bool is_irrep(SymGroupRep const &_rep, SymGroup const &head_group) {
@@ -1040,30 +971,6 @@ namespace CASM {
       return irrep_symmetrizer(_rep, head_group, _subspace, TOL); //.transpose();
     },
     false));
-  }
-
-  //*******************************************************************************************
-
-  std::vector<Eigen::MatrixXd> irrep_projection_operators(SymGroupRep const &_rep, SymGroup const &head_group) {
-
-    const std::vector<std::vector<Index> > &conj_class(head_group.get_conjugacy_classes());
-    const std::vector<std::vector<std::complex<double> > > &char_table(head_group.character_table());
-
-    Eigen::MatrixXd tmat((*(_rep.MatrixXd(0))).rows(), (*(_rep.MatrixXd(0))).cols());
-    tmat.setZero();
-    std::vector<Eigen::MatrixXd> tarray(conj_class.size());
-
-    for(Index i = 0; i < conj_class.size(); i++) {
-      double dimension = char_table[i][0].real();
-      for(Index j = 0; j < head_group.size(); j++) {
-        double character =  char_table[i][head_group.class_of_op(j)].real();
-        Eigen::MatrixXd rep_mat = *(_rep.MatrixXd(j));
-        tmat += (character * rep_mat);
-      }
-      tarray[i] = ((dimension) / (head_group.size())) * tmat;
-    }
-
-    return tarray;
   }
 
   //*******************************************************************************************

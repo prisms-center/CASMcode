@@ -830,11 +830,11 @@ namespace CASM {
     // results in residual vectors less than length 'tol'
     std::pair<bool, Eigen::Matrix3d> is_superlattice(const Lattice &scel, const Lattice &unit, double tol) {
       // check scel = unit*T, with integer T
-      std::pair<bool, Eigen::Matrix3d> result(std::make_pair(true, unit.inv_lat_column_mat() * scel.lat_column_mat()));
+      std::pair<bool, Eigen::Matrix3d> result(true, lround(unit.inv_lat_column_mat() * scel.lat_column_mat()).cast<double>());
 
-      Eigen::Matrix3d diff = unit.lat_column_mat() - scel.lat_column_mat() * iround(result.second).cast<double>().inverse();
+      Eigen::Matrix3d diff = unit.lat_column_mat() - scel.lat_column_mat() * result.second.inverse();
 
-      result.first = almost_zero((diff.transpose() * diff).diagonal(), tol * tol) && !almost_zero(result.second, tol);
+      result.first = almost_zero((diff.transpose() * diff).diagonal(), 2 * tol) && !almost_zero(result.second, tol);
 
       return result;
     }
@@ -842,18 +842,17 @@ namespace CASM {
 
     Eigen::Matrix3l make_transformation_matrix_to_super(const Lattice &tiling_unit, const Lattice &superlattice, double tol) {
 
-      Eigen::Matrix3d direct_transformation_matrix;
+      Eigen::Matrix3d transformation_matrix;
       bool is_integer_transformation;
 
       //TODO: convention is usually "prim" always goes first, but this is contradicte by is_superlattice. Which should change?
-      std::tie(is_integer_transformation, direct_transformation_matrix) = is_superlattice(superlattice, tiling_unit, tol);
+      std::tie(is_integer_transformation, transformation_matrix) = is_superlattice(superlattice, tiling_unit, tol);
 
       if(!is_integer_transformation) {
         throw std::runtime_error("The provided tiling unit and superlattice are not related by a non-singular integer transformation.");
       }
 
-      Eigen::Matrix3l rounded_transformation_matrix = round(direct_transformation_matrix).cast<long>();
-      return rounded_transformation_matrix;
+      return lround(transformation_matrix);
     }
   } // namespace xtal
 

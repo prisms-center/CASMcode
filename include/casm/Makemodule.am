@@ -360,6 +360,12 @@ casm_enumerator_include_HEADERS = \
 
 #-------------------------------------------------------------------------------#
 
+casm_enumerator_io_json_includedir=$(includedir)/casm/enumerator/io/json
+casm_enumerator_io_json_include_HEADERS = \
+    include/casm/enumerator/io/json/DoFSpace.hh
+
+#-------------------------------------------------------------------------------#
+
 casm_external_Eigen_includedir=$(includedir)/casm/external/Eigen
 casm_external_Eigen_include_HEADERS = \
     include/casm/external/Eigen/Array\

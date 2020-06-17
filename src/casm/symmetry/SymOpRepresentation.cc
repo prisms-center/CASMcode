@@ -4,7 +4,6 @@
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
 #include "casm/symmetry/SymPermutation.hh"
-#include "casm/casm_io/json/jsonParser.hh"
 
 namespace CASM {
   //*******************************************************************************************
@@ -105,62 +104,5 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-
-
-  /// creates jsonParser using polymorphism
-  jsonParser &to_json(const SymOpRepresentation *rep, jsonParser &json) {
-    return rep->to_json(json);
-  }
-
-  //*******************************************************************************************
-
-  /// This allocates a new object to 'rep'.
-  void from_json(SymOpRepresentation *rep, const jsonParser &json) {
-    try {
-      if(json["SymOpRep_type"] == "SymPermutation") {
-
-        // prepare a SymPermutation and then read from json
-        Array<Index> perm;
-        SymPermutation trep(perm.begin(), perm.end());
-        CASM::from_json(trep, json);
-
-        // copy to rep
-        rep = new SymPermutation(trep);
-
-      }
-      else if(json["SymOpRep_type"] == "SymMatrixXd") {
-
-        // prepare a SymMatrixXd and then read from json
-        SymMatrixXd  *op_ptr = new SymMatrixXd(Eigen::MatrixXd::Identity(1, 1));
-
-        CASM::from_json(*op_ptr, json);
-
-        // copy to rep
-        rep = op_ptr;
-
-      }
-      else if(json["SymOpRep_type"] == "SymOp") {
-        // prepare a SymOp and then read from json
-        SymOp *op_ptr = new SymOp();
-
-        CASM::from_json(*op_ptr, json);
-
-        // copy to rep
-        rep = op_ptr;
-
-      }
-      else {
-        std::stringstream ss;
-        ss << "In 'void from_json(SymOpRepresentation *rep, const jsonParser &json)'" << std::endl;
-        ss << "Unrecognized 'SymOpRep_type': '" << json["SymOpRep_type"] << "'." << std::endl;
-        ss << "Options are: 'SymPermutation', 'SymMatrixXd', or 'SymOp'." << std::endl;
-        throw std::runtime_error(ss.str());
-      }
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
-  }
 
 }

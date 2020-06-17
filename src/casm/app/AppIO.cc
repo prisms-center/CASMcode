@@ -416,6 +416,7 @@ namespace CASM {
     for(auto const &_dof : prim.global_dofs()) {
       json["dofs"][_dof.first] = _dof.second;
     }
+
     auto mol_names = allowed_molecule_unique_names(prim);
     jsonParser &bjson = (json["basis"].put_array());
     for(int i = 0; i < prim.basis().size(); i++) {

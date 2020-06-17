@@ -508,7 +508,6 @@ Instructions for fitting ECI:                                          \n\n\
 
     // it'd be nice to just read this...
     SymGroup prim_pg(SymGroup::lattice_point_group(primclex.prim().lattice()));
-    prim_pg.character_table();
     args.log() << "- Lattice point group size: " << prim_pg.size() << std::endl;
     args.log() << "- Lattice point group is " << prim_pg.get_name() << std::endl;
     args.log() << "- Factor group size: " << primclex.prim().factor_group().size() << std::endl;

@@ -48,61 +48,31 @@ namespace {
     return;
   }
 
-  /// Adds the translation to every basis site
-  std::vector<xtal::Site> apply_translation(std::vector<xtal::Site> &translatable_basis, const xtal::Coordinate &translation) {
-    std::vector<xtal::Site> translated_basis;
-    for(const xtal::Site &s : translatable_basis) {
-      translated_basis.emplace_back(s + translation);
-    }
+  /// Returns pair (success, drift). 'success' is true if translatable_basis + translation can be permuted to map onto 'basis',
+  /// to within distance 'tol' (in Angstr.). 'drift' is vector from center of mass of 'translatable_basis' to center of mass of 'basis'
+  std::pair<bool, xtal::Coordinate> map_translated_basis_and_calc_drift(const std::vector<xtal::Site> &basis,
+                                                                        const std::vector<xtal::Site> &translatable_basis,
+                                                                        const xtal::Coordinate &translation,
+                                                                        double tol) {
 
-    return translated_basis;
-  }
+    xtal::Coordinate drift = xtal::Coordinate::origin(translation.lattice());
 
-  /// Returns the indexes of basis where you can find sites of the translated basis. If the site can't be found, then the size
-  /// of the basis is pushed back
-  std::vector<Index> map_translated_basis(const std::vector<xtal::Site> &basis,
-                                          const std::vector<xtal::Site> &translatable_basis,
-                                          const xtal::Coordinate &translation) {
-    assert(basis.size() == translatable_basis.size());
-    std::vector<Index> basis_map;
+    if(basis.size() != translatable_basis.size())
+      return {false, drift};
 
     for(const xtal::Site &s_tb : translatable_basis) {
-      Index ix = xtal::find_index(basis, s_tb + translation);
-      basis_map.push_back(ix);
+      Index ix = xtal::find_index(basis, s_tb + translation, tol);
+      if(ix >= basis.size())
+        return {false, xtal::Coordinate::origin(translation.lattice())};
+      // (basis[ix]-s_tb) is exact_translation for mapping pair, translation is proposed translation
+      // translation.min_translation(exact_translation) is vector FROM nearest periodic image of
+      // exact_translation TO proposed translation.
+      // Average of this vector is CoM drift due to proposed translation
+      drift += translation.min_translation(basis[ix] - s_tb);
     }
 
-    return basis_map;
-  }
-
-  /// Returns the average distance between the original basis and the transformed basis.
-  /// The basis map describes the relationship between basis and transformed basis.
-  /// For site at index i in basis, the corresponding index in transformed basis is given
-  /// by basis_map[i]. So basis[i] maps to translated_transformed_basis[basis_map[i]].
-  /// The lattice is given to ensure that all the sites are consistent with the structure you're
-  /// working on, since all sites should have the same lattice.
-  /// The mapping translation error is calculated using translated_transformed_basis-basis
-  xtal::Coordinate average_mapping_translation_error(const std::vector<xtal::Site> &basis,
-                                                     const std::vector<xtal::Site> &translated_transformed_basis,
-                                                     const std::vector<Index> &basis_map,
-                                                     const xtal::Lattice &structure_lattice) {
-    assert(basis.size() == translated_transformed_basis.size());
-    assert(basis.size() == basis_map.size());
-    xtal::Coordinate average_mapping_translation(structure_lattice);
-
-    for(Index ix = 0; ix < basis_map.size(); ++ix) {
-      assert(basis_map[ix] < translated_transformed_basis.size());
-      assert(ix < basis.size());
-      const xtal::Site &mapped_site = translated_transformed_basis[basis_map[ix]];
-      const xtal::Site &mapped_to_site = basis[ix];
-      assert(mapped_site.lattice() == mapped_to_site.lattice());
-      assert(mapped_site.lattice() == structure_lattice);
-
-      xtal::Coordinate single_mapping_translation = mapped_site.min_translation(mapped_to_site);
-      average_mapping_translation += single_mapping_translation;
-    }
-
-    average_mapping_translation.cart() *= (1.0 / basis.size());
-    return average_mapping_translation;
+    drift.cart() /= double(basis.size());
+    return {true, drift};
   }
 
   /// Takes each translation from the SymOp and brings it within the lattice
@@ -120,15 +90,16 @@ namespace {
   /// The structure is considered to map onto itself by just looking at the position of the sites,
   /// so it does not take into account orientation of molecules, or global degrees of freedom.
   /// This routine is slow for non primitive structures!
-  xtal::SymOpVector
-  make_factor_group_from_point_group_translations(const xtal::BasicStructure &struc, const xtal::SymOpVector &point_group, double tol) {
+  xtal::SymOpVector make_factor_group_from_point_group(const xtal::BasicStructure &struc, const xtal::SymOpVector &point_group, bool is_primitive, double tol) {
     if(struc.basis().size() == 0) {
       return point_group;
     }
 
     xtal::SymOpVector factor_group;
-
+    Index i = 0;
     for(const xtal::SymOp &point_group_operation : point_group) {
+      ++i;
+
       if(!::global_dofs_are_compatible_with_operation(point_group_operation, struc.global_dofs())) {
         continue;
       }
@@ -149,21 +120,18 @@ namespace {
           continue;
         }
 
-        xtal::Coordinate translation(struc.lattice());
-        translation = reference_site - transformed_site;
+        xtal::Coordinate translation = reference_site - transformed_site;
         translation.within();
 
-        std::vector<xtal::Site> translated_transformed_basis = apply_translation(transformed_basis, translation);
-
+        xtal::Coordinate drift(struc.lattice());
+        bool success = false;
         // By construction, the current transformed_site matches the first
-        // basis site, do the rest of them match too? If not, continue to the
-        // next site for a new translation
-        std::vector<Index> basis_map = map_translated_basis(struc.basis(), transformed_basis, translation);
+        // basis site, do the rest of them match too?
+        // Determine if mapping is successful, and calculate center-of-mass drift
+        std::tie(success, drift) = map_translated_basis_and_calc_drift(struc.basis(), transformed_basis, translation, tol);
 
-        // The mapping failed if any of the sites couldn't get mapped (i.e. given index the size
-        // of the container)
-        Index map_misses = std::count(basis_map.begin(), basis_map.end(), struc.basis().size());
-        if(map_misses != 0) {
+        //The mapping failed, continue to the next site for a new translation
+        if(!success) {
           continue;
         }
 
@@ -173,9 +141,7 @@ namespace {
         // constructed the translation by taking the first basis site of the
         // structure as a reference. Here we use the average mapping error to
         // correct this.
-        xtal::Coordinate mapping_translation_error =
-          average_mapping_translation_error(struc.basis(), translated_transformed_basis, basis_map, struc.lattice());
-        translation -= mapping_translation_error;
+        translation -= drift;
 
         // Now that the translation has been adjusted, create the symmetry
         // operation and add it if we don't have an equivalent one already
@@ -185,6 +151,11 @@ namespace {
 
         if(std::find_if(factor_group.begin(), factor_group.end(), equals_new_factor_group_operation) == factor_group.end()) {
           factor_group.push_back(new_factor_group_operation);
+        }
+
+        if(is_primitive) {
+          // If structure is primitive, there is no need to attempt other translations
+          break;
         }
       }
     }
@@ -197,7 +168,7 @@ namespace {
 
   xtal::SymOpVector make_translation_group(const xtal::BasicStructure &struc, double tol) {
     xtal::SymOpVector identity_group{xtal::SymOp::identity()};
-    xtal::SymOpVector translation_group = make_factor_group_from_point_group_translations(struc, identity_group, tol);
+    xtal::SymOpVector translation_group = make_factor_group_from_point_group(struc, identity_group, false, tol);
     return translation_group;
   }
 
@@ -212,8 +183,7 @@ namespace {
       ::expand_with_time_reversal(&primitive_point_group);
     }
 
-    xtal::SymOpVector primitive_factor_group =
-      ::make_factor_group_from_point_group_translations(primitive_struc, primitive_point_group, tol);
+    xtal::SymOpVector primitive_factor_group = ::make_factor_group_from_point_group(primitive_struc, primitive_point_group, true, tol);
     return std::make_pair(primitive_struc, primitive_factor_group);
   }
 
@@ -221,9 +191,9 @@ namespace {
 
 namespace CASM {
   namespace xtal {
-    Index find_index(const std::vector<Site> &basis, const Site &test_site) {
+    Index find_index(const std::vector<Site> &basis, const Site &test_site, double tol) {
       for(Index i = 0; i < basis.size(); i++) {
-        if(basis[i].compare(test_site)) {
+        if(basis[i].compare_type(test_site) && basis[i].min_dist(test_site) < tol) {
           return i;
         }
       }
@@ -237,8 +207,11 @@ namespace CASM {
     }
 
     BasicStructure make_primitive(const BasicStructure &non_primitive_struc, double tol) {
+      if(non_primitive_struc.basis().size() == 0) {
+        return non_primitive_struc;
+      }
       SymOpVector translation_group = ::make_translation_group(non_primitive_struc, tol);
-      double minimum_possible_primitive_volume = std::abs(0.5 * non_primitive_struc.lattice().volume() / non_primitive_struc.basis().size());
+      double minimum_possible_volume = std::abs(0.5 * non_primitive_struc.lattice().volume() / non_primitive_struc.basis().size());
 
       // The candidate lattice vectors are the original lattice vectors, plus all the possible translations that map the basis
       // of the non primitive structure onto itself
@@ -258,7 +231,7 @@ namespace CASM {
         for(const Eigen::Vector3d b_vector_candidate : possible_lattice_vectors) {
           for(const Eigen::Vector3d c_vector_candidate : possible_lattice_vectors) {
             double possible_volume = std::abs(triple_product(a_vector_candidate, b_vector_candidate, c_vector_candidate));
-            if(possible_volume < minimum_volume && possible_volume > TOL) {
+            if(possible_volume < minimum_volume && possible_volume > minimum_possible_volume) {
               minimum_volume = possible_volume;
               a_vector_primitive = a_vector_candidate;
               b_vector_primitive = b_vector_candidate;
@@ -279,7 +252,7 @@ namespace CASM {
       BasicStructure primitive_struc(primitive_lattice);
       for(Site site_for_prim : non_primitive_struc.basis()) {
         site_for_prim.set_lattice(primitive_struc.lattice(), CART);
-        if(find_index(primitive_struc.basis(), site_for_prim) == primitive_struc.basis().size()) {
+        if(find_index(primitive_struc.basis(), site_for_prim, tol) == primitive_struc.basis().size()) {
           site_for_prim.within();
           primitive_struc.set_basis().emplace_back(std::move(site_for_prim));
         }
@@ -310,8 +283,8 @@ namespace CASM {
 
         // Otherwise take that factor operation, and expand it by adding additional translations within the structure
         for(const UnitCell &lattice_point : all_lattice_points) {
-          Coordinate lattice_point_coordinate = make_superlattice_coordinate(lattice_point, primitive_struc.lattice(), struc.lattice());
-          factor_group.emplace_back(SymOp::translation_operation(lattice_point_coordinate.cart()) * prim_op);
+          xtal::Coordinate lattice_point_coordinate = make_superlattice_coordinate(lattice_point, primitive_struc.lattice(), struc.lattice());
+          factor_group.emplace_back(SymOp::translation_operation(lattice_point_coordinate.cart())*prim_op);
         }
       }
 
@@ -360,11 +333,11 @@ namespace CASM {
     BasicStructure make_superstructure(const BasicStructure &tiling_unit,
                                        const Eigen::Matrix<IntegralType, 3, 3, Options> &transformation_matrix) {
       static_assert(std::is_integral<IntegralType>::value, "Transfomration matrix must be integer matrix");
-
       Lattice superlat = make_superlattice(tiling_unit.lattice(), transformation_matrix);
       BasicStructure superstruc(superlat);
 
       std::vector<UnitCell> all_lattice_points = make_lattice_points(tiling_unit.lattice(), superlat, superlat.tol());
+
       std::vector<Site> superstruc_basis;
       for(const Site &unit_basis_site : tiling_unit.basis()) {
         for(const UnitCell &lattice_point : all_lattice_points) {
@@ -372,7 +345,6 @@ namespace CASM {
           superstruc_basis.emplace_back(unit_basis_site + lattice_point_coordinate);
         }
       }
-
       superstruc.set_basis(superstruc_basis, CART);
       return superstruc;
     }
