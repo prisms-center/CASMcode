@@ -20,10 +20,10 @@ namespace CASM {
       StrainCostCalculator(Eigen::Ref<const Eigen::MatrixXd> const &strain_gram_mat = Eigen::MatrixXd::Identity(9, 9));
 
       //\brief Isotropic strain cost, without gram matrix
-      static double iso_strain_cost(Eigen::Matrix3d const &_deformation_gradient);
+      static double isotropic_strain_cost(Eigen::Matrix3d const &_deformation_gradient);
 
       //\brief Isotropic strain cost, without gram matrix
-      static double iso_strain_cost(Eigen::Matrix3d const &_deformation_gradient, double _vol_factor);
+      static double isotropic_strain_cost(Eigen::Matrix3d const &_deformation_gradient, double _vol_factor);
 
       // \brief Volumetric factor : pow(abs(_deformation_gradient.determinant()),1./3.), used to normalize the strain cost to make it volume-independent
       static double vol_factor(Eigen::Matrix3d const &_deformation_gradient) {

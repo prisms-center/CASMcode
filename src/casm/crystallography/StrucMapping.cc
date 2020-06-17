@@ -223,7 +223,7 @@ namespace CASM {
       isometry = (F * stretch).transpose();
 
       if(StrucMapping::is_inf(cost))
-        cost = StrainCostCalculator::iso_strain_cost(stretch);
+        cost = StrainCostCalculator::isotropic_strain_cost(stretch);
     }
 
     //*******************************************************************************************

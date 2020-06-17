@@ -50,7 +50,7 @@ namespace CASM {
 
     //*******************************************************************************************
     //static function
-    double StrainCostCalculator::iso_strain_cost(const Eigen::Matrix3d &_deformation_gradient, double _vol_factor) {
+    double StrainCostCalculator::isotropic_strain_cost(const Eigen::Matrix3d &_deformation_gradient, double _vol_factor) {
       Eigen::Matrix3d tmat = polar_decomposition(_deformation_gradient / _vol_factor);
 
       // -> epsilon=(_deformation_gradient_deviatoric-identity)
@@ -60,8 +60,8 @@ namespace CASM {
 
     //*******************************************************************************************
     //static function
-    double StrainCostCalculator::iso_strain_cost(const Eigen::Matrix3d &_deformation_gradient) {
-      return iso_strain_cost(_deformation_gradient, vol_factor(_deformation_gradient));
+    double StrainCostCalculator::isotropic_strain_cost(const Eigen::Matrix3d &_deformation_gradient) {
+      return isotropic_strain_cost(_deformation_gradient, vol_factor(_deformation_gradient));
     }
 
     //*******************************************************************************************
@@ -90,7 +90,7 @@ namespace CASM {
         return cost;
       }
 
-      return iso_strain_cost(_deformation_gradient, _vol_factor);
+      return isotropic_strain_cost(_deformation_gradient, _vol_factor);
     }
 
     //*******************************************************************************************

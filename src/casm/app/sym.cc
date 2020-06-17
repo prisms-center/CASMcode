@@ -26,9 +26,9 @@
 #include "casm/completer/Handlers.hh"
 #include "casm/symmetry/SymGroup.hh"
 
-namespace {
+namespace Local {
   using namespace CASM;
-  void print_factor_group_convergence(const Structure &struc, double small_tol, double large_tol, double increment, std::ostream &print_stream) {
+  static void _print_factor_group_convergence(const Structure &struc, double small_tol, double large_tol, double increment, std::ostream &print_stream) {
     std::vector<double> tols;
     std::vector<bool> is_group;
     std::vector<int> num_ops, num_enforced_ops;
@@ -58,6 +58,43 @@ namespace {
     }
 
     return;
+  }
+
+  static void _write_config_symmetry_files(ConfigEnumInput const &config, fs::path sym_dir) {
+    // Write lattice point group
+    {
+      SymGroup lattice_pg(SymGroup::lattice_point_group(config.config().ideal_lattice()));
+      fs::ofstream outfile;
+      jsonParser json;
+      outfile.open(sym_dir / "lattice_point_group.json");
+      write_symgroup(lattice_pg, json);
+      json.print(outfile);
+      outfile.close();
+    }
+
+    // Write factor group
+    {
+      fs::ofstream outfile;
+      jsonParser json;
+      outfile.open(sym_dir / "factor_group.json");
+      write_symgroup(make_sym_group(config.group().begin(),
+                                    config.group().end(),
+                                    config.config().ideal_lattice()), json);
+      json.print(outfile);
+      outfile.close();
+    }
+
+    // Write crystal point group
+    {
+      fs::ofstream outfile;
+      jsonParser json;
+      outfile.open(sym_dir / "crystal_point_group.json");
+      write_symgroup(make_point_group(config.group().begin(),
+                                      config.group().end(),
+                                      config.config().ideal_lattice()), json);
+      json.print(outfile);
+      outfile.close();
+    }
   }
 }
 
@@ -169,7 +206,7 @@ namespace CASM {
 
       tmp.factor_group();
       // b) find factor group with same tolerance
-      ::print_factor_group_convergence(tmp, tmp.structure().lattice().tol(), tol, (tol - tmp.structure().lattice().tol()) / 10.0, std::cout);
+      Local::_print_factor_group_convergence(tmp, tmp.structure().lattice().tol(), tol, (tol - tmp.structure().lattice().tol()) / 10.0, std::cout);
       // c) symmetrize the basis sites
       SymGroup g = tmp.factor_group();
       tmp = xtal::symmetrize(tmp, g);
@@ -286,40 +323,7 @@ namespace CASM {
         fs::path sym_dir = primclex().dir().symmetry_dir(config.name());
         fs::create_directories(sym_dir);
 
-        // Write lattice point group
-        {
-          SymGroup lattice_pg(SymGroup::lattice_point_group(config.config().ideal_lattice()));
-          fs::ofstream outfile;
-          jsonParser json;
-          outfile.open(sym_dir / "lattice_point_group.json");
-          write_symgroup(lattice_pg, json);
-          json.print(outfile);
-          outfile.close();
-        }
-
-        // Write factor group
-        {
-          fs::ofstream outfile;
-          jsonParser json;
-          outfile.open(sym_dir / "factor_group.json");
-          write_symgroup(make_sym_group(config.group().begin(),
-                                        config.group().end(),
-                                        config.config().ideal_lattice()), json);
-          json.print(outfile);
-          outfile.close();
-        }
-
-        // Write crystal point group
-        {
-          fs::ofstream outfile;
-          jsonParser json;
-          outfile.open(sym_dir / "crystal_point_group.json");
-          write_symgroup(make_point_group(config.group().begin(),
-                                          config.group().end(),
-                                          config.config().ideal_lattice()), json);
-          json.print(outfile);
-          outfile.close();
-        }
+        Local::_write_config_symmetry_files(config, sym_dir);
 
         std::vector<DoFKey> dofs = opt().dof_strs();
         if(dofs.empty()) {

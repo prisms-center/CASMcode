@@ -22,9 +22,9 @@ namespace CASM {
     IntegralCoordinateWithin_f::vector_type IntegralCoordinateWithin_f::operator()(const vector_type &ijk) const {
       vector_type vec2 = this->m_transformation_matrix_adjugate * ijk;
       long vol = this->m_transformation_matrix.determinant();   //this volume is signed, could be negative, that's fine.
-      vec2[0] = ((vec2[0] % vol) + abs(vol)) % vol;
-      vec2[1] = ((vec2[1] % vol) + abs(vol)) % vol;
-      vec2[2] = ((vec2[2] % vol) + abs(vol)) % vol;
+      vec2[0] = ((vec2[0] % vol) + std::abs(vol)) % vol;
+      vec2[1] = ((vec2[1] % vol) + std::abs(vol)) % vol;
+      vec2[2] = ((vec2[2] % vol) + std::abs(vol)) % vol;
       return (this->m_transformation_matrix * vec2) / vol;
     }
 

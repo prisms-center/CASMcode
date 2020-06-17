@@ -64,8 +64,7 @@ namespace CASM {
   }
 
 
-  //Eigen::MatrixXd reduced_column_echelon(Eigen::Ref<const Eigen::MatrixXd> const &M, double tol);
-
+  /// Returns reduced_column_echelon form of M. @param _tol is used to identify zero values.
   template<typename Derived>
   typename Derived::PlainObject reduced_column_echelon(Eigen::MatrixBase<Derived> const &M, double _tol) {
     typename Derived::PlainObject R(M);
