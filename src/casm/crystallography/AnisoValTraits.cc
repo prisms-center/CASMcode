@@ -292,5 +292,26 @@ namespace CASM {
     true);
   }
 
+  // d-orbital occupation -- single spin channel
+  AnisoValTraits AnisoValTraits::d_orbital_occupation() {
+    return AnisoValTraits("dorbitaloccupation",
+    {"v_1", "v_2", "v_3", "v_4", "v_5", "v_6", "v_7", "v_8", "v_9", "v_10", "v_11", "v_12", "v_13", "v_14", "v_15"},
+    LOCAL,
+    dOrbitalOccupationSymRepBuilder(),
+    {},
+    {"atomize"});
+  }
+
+  // d-orbital occupation -- spin-polarized (collinear)
+  AnisoValTraits AnisoValTraits::d_orbital_occupation_spin_polarized() {
+    return AnisoValTraits("dorbitaloccupationspinpolarized",
+    {"u_1", "u_2", "u_3", "u_4", "u_5", "u_6", "u_7", "u_8", "u_9", "u_10", "u_11", "u_12", "u_13", "u_14", "u_15",
+     "d_1", "d_2", "d_3", "d_4", "d_5", "d_6", "d_7", "d_8", "d_9", "d_10", "d_11", "d_12", "d_13", "d_14", "d_15"},
+    LOCAL,
+    dOrbitalOccupationSpinPolarizedSymRepBuilder(),
+    {},
+    {"atomize"});
+  }
+
 
 }
