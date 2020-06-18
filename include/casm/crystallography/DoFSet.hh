@@ -25,7 +25,9 @@ namespace CASM {
     public:
       using BasicTraits = AnisoValTraits;
 
-      DoFSet(const BasicTraits &init_traits, const std::vector<std::string> &init_component_names, const Eigen::MatrixXd &init_basis)
+      DoFSet(const BasicTraits &init_traits,
+             const std::vector<std::string> &init_component_names,
+             const Eigen::MatrixXd &init_basis)
         : m_traits(init_traits), m_component_names(init_component_names), m_basis(init_basis), m_basis_inverse(this->basis().inverse()) {
         assert(m_component_names.size() == this->dim());
         assert(m_basis.cols() == this->dim());
@@ -61,9 +63,6 @@ namespace CASM {
         return m_basis;
       }
 
-      /// \brief returns true of \param rhs has identical components and basis to this DoFSet
-      bool is_identical(DoFSet const &rhs) const;
-
     private:
       /// AnisoValTraits. Describes the type of DoF, and can convert Cartesian symmetry representations into the appropriate representation
       BasicTraits m_traits;
@@ -76,6 +75,9 @@ namespace CASM {
       Eigen::MatrixXd m_basis;
       Eigen::MatrixXd m_basis_inverse;
     };
+
+    /// Returns descriptive names of the components in a DoFSet, using AnisoValTraits::variable_descriptors()
+    std::vector<std::string> component_descriptions(DoFSet const &dofset);
 
     /**
      * Identical to xtal::DoFSet, but also keeps track of a list of molecule names that the DoFSet does not
@@ -181,6 +183,9 @@ namespace CASM {
         return this->m_reference_excluded_occs == other_value.excluded_occupants();
       }
     };
+
+    /// Create the symmtery representation for going from one basis to another
+    Eigen::MatrixXd dofset_transformation_matrix(const Eigen::MatrixXd &from_basis, const Eigen::MatrixXd &to_basis, double tol);
 
   } // namespace xtal
 }

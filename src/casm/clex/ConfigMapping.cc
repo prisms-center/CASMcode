@@ -24,16 +24,15 @@
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/database/ScelDatabase.hh"
-#include "casm/symmetry/SymGroup.hh"
 #include <vector>
 
 namespace CASM {
 
   namespace Local {
-    static int _permute_dist(MappingNode::MoleculeMap const &_perm) {
+    static int _permute_dist(MappingNode::MoleculeMap const &_perm, MappingNode const &_node) {
       int result(0);
       for(int i = 0; i < _perm.size(); ++i) {
-        result += std::abs(int(*(_perm[i].begin()) - i));
+        result += std::abs(int(_node.atom_permutation[*(_perm[i].begin())]) - i);
       }
       return result;
     }
@@ -48,7 +47,7 @@ namespace CASM {
 
     template<typename IterType>
     static IterType _strictest_equivalent(IterType begin, IterType end, MappingNode const &_node) {
-      SymOp op(_node.isometry(), _node.translation(), false, _node.tol());
+      SymOp op(_node.isometry(), _node.translation(), false, _node.cost_tol());
       SymOp t_op;
       IterType best_it = begin;
 
@@ -57,9 +56,9 @@ namespace CASM {
       double best_char = op.matrix().trace();
       double best_dist = op.tau().norm();
       int best_det = sgn(round(op.matrix().determinant()));
-      int best_pdist = _permute_dist(_node.mol_map);
+      int best_pdist = _permute_dist(_node.mol_map, _node);
 
-      Coordinate tau(_node.lat_node.parent.superlattice());
+      Coordinate tau(_node.lattice_node.parent.superlattice());
       while(begin != end) {
         t_op = begin->sym_op() * op;
         tdet = sgn(round(t_op.matrix().determinant()));
@@ -67,7 +66,7 @@ namespace CASM {
         if(tdet > best_det) {
           best_det = tdet;
           best_char = tdet * t_op.matrix().trace();
-          best_pdist = _permute_dist(begin->combined_permute() * _node.mol_map);
+          best_pdist = _permute_dist(begin->combined_permute() * _node.mol_map, _node);
           tau.cart() = t_op.tau();
           tau.voronoi_within();
           best_dist = tau.const_cart().norm();
@@ -76,7 +75,7 @@ namespace CASM {
         else if(tdet == best_det) {
           tchar = tdet * t_op.matrix().trace();
           if(almost_equal(tchar, best_char)) {
-            tpdist = _permute_dist(begin->combined_permute() * _node.mol_map);
+            tpdist = _permute_dist(begin->combined_permute() * _node.mol_map, _node);
             if(tpdist > best_pdist) {
               best_det = tdet;
               best_char = tchar;
@@ -101,7 +100,7 @@ namespace CASM {
           else if(tchar > best_char) {
             best_det = tdet;
             best_char = tchar;
-            best_pdist = _permute_dist(begin->combined_permute() * _node.mol_map);
+            best_pdist = _permute_dist(begin->combined_permute() * _node.mol_map, _node);
             tau.cart() = t_op.tau();
             tau.voronoi_within();
             best_dist = tau.const_cart().norm();
@@ -171,7 +170,7 @@ namespace CASM {
     SymOp op = _it.sym_op();
 
     //Apply symmetry to LatticeNode:
-    // lat_node.parent and lat_node.child remain unchanged, but isometry and stretch tensors are augmented
+    // lattice_node.parent and lattice_node.child remain unchanged, but isometry and stretch tensors are augmented
     //   parent superlattice Lp and child superlattice Lc are related via
     //      Lp = U * R * Lc  (where R is isometry and U is right stretch tensor of _node)
     //   'op' must be in point group of Lp, and invariance relation for Lp is
@@ -181,8 +180,8 @@ namespace CASM {
     //   where terms are grouped to reveal the transformation rules for matrices 'U' and 'R' for the symmetry-related mapping
     //   The fractional matrix 'N' is not used in this routine, since _node records the child lattice in its undeformed state
     //   and all atomic coordinates are recorded in undeformed cartesian coordinates
-    result.lat_node.isometry = op.matrix() * _node.isometry();
-    result.lat_node.stretch = op.matrix() * _node.stretch() * op.matrix().transpose();
+    result.lattice_node.isometry = op.matrix() * _node.isometry();
+    result.lattice_node.stretch = op.matrix() * _node.stretch() * op.matrix().transpose();
 
     //Apply symmetry to HungarianNode:
     // parent coordinates Cp (3xN) and child coordinates Cc (3xN) are related via the mapping relation
@@ -196,10 +195,10 @@ namespace CASM {
     // Inserting the mapping relation for Cp into the invariance relation yields
     //    Cp = [op.matrix() * U * op.matrix.transpose()] * [op.matrix * R] * Cc * [P.transpose() * Ps.transpose()] - [op.matrix() * D * Ps] + [op.matrix() * T + op.tau()]
     // where terms are grouped to reveal the transformation rules for mapping permutation 'P', displacement field 'D', and mapping translation 'T'
-    // The transormation rules for 'U' and 'R' are identical to those above and are recorded in _node.lat_node.
+    // The transormation rules for 'U' and 'R' are identical to those above and are recorded in _node.lattice_node.
     // These five translation rules specify all considerations necessary to describe how a symop in the space group of the parent crystal
     // relates a mapping of the child crystal onto the parent crystal to an equivalent mapping
-    result.basis_node.translation = op.matrix() * _node.translation() + op.tau();
+    result.atomic_node.translation = op.matrix() * _node.translation() + op.tau();
     result.atom_displacement = op.matrix() * result.atom_displacement;
     for(Index i = 0; i < result.mol_map.size(); ++i) {
       result.mol_map[i] = _node.mol_map[_it.permute_ind(i)];
@@ -213,12 +212,12 @@ namespace CASM {
     //permutation, which should have the same effect in the end
     if(false) { //Disabled due to changes related to molecule
       PermuteIterator inv_it = _it.inverse();
-      for(Index i = 0; i < result.basis_node.irow.size(); ++i)
-        result.basis_node.irow[i] = inv_it.permute_ind(_node.basis_node.irow[i]);
+      for(Index i = 0; i < result.atomic_node.irow.size(); ++i)
+        result.atomic_node.irow[i] = inv_it.permute_ind(_node.atomic_node.irow[i]);
 
-      result.basis_node.forced_on.clear();
-      for(auto const &el : _node.basis_node.forced_on)
-        result.basis_node.forced_on.emplace(inv_it.permute_ind(el.first), el.second);
+      result.atomic_node.forced_on.clear();
+      for(auto const &el : _node.atomic_node.forced_on)
+        result.atomic_node.forced_on.emplace(inv_it.permute_ind(el.first), el.second);
       //No need to transform assignment vector or cost_mat, which are in terms of the nominal indexing
     }
     return result;
@@ -267,19 +266,13 @@ namespace CASM {
   //*******************************************************************************************
 
   PrimStrucMapCalculator::PrimStrucMapCalculator(BasicStructure const &_prim,
-                                                 std::vector<SymOp> const &_symgroup,
+                                                 std::vector<xtal::SymOp> const &_symgroup,
                                                  SimpleStructure::SpeciesMode _species_mode/*=StrucMapping::ATOM*/) :
     SimpleStrucMapCalculator(make_simple_structure(_prim),
-                             _symgroup,
+                             _symgroup.empty() ? xtal::make_factor_group(_prim) : _symgroup,
                              _species_mode,
                              ConfigMapping::_allowed_species(_prim)),
-
     m_prim(_prim) {
-    if(_symgroup.empty()) {
-      xtal::SymOpVector factor_group_operations = xtal::make_factor_group(_prim);
-      SymGroup fg = adapter::Adapter<SymGroup, xtal::SymOpVector>()(factor_group_operations, m_prim.lattice());
-      set_point_group(fg);
-    }
   }
 
   //*******************************************************************************************
@@ -307,7 +300,7 @@ namespace CASM {
                              double _tol/*=-1.*/) :
     m_pclex(&_pclex),
     m_struc_mapper(PrimStrucMapCalculator(_pclex.prim(),
-                                          _pclex.prim().factor_group()),
+                                          adapter::Adapter<xtal::SymOpVector, SymGroup>()(_pclex.prim().factor_group())),
                    _settings.lattice_weight,
                    _settings.max_vol_change,
                    _settings.options(),
@@ -361,10 +354,10 @@ namespace CASM {
       StrucMapper tmapper(*struc_mapper().calculator().quasi_clone(make_simple_structure(*hint_ptr, _hint_dofs),
                                                                    make_point_group(hint_ptr->point_group(), hint_ptr->supercell().sym_info().supercell_lattice()),
                                                                    SimpleStructure::SpeciesMode::ATOM),
-                          struc_mapper().strain_weight(),
+                          struc_mapper().lattice_weight(),
                           0.,
                           struc_mapper().options(),
-                          struc_mapper().tol());
+                          struc_mapper().cost_tol());
 
       /*
       auto config_maps = tmapper.map_deformed_struc_impose_lattice(child_struc,
@@ -391,20 +384,20 @@ namespace CASM {
     std::set<MappingNode> struc_maps;
 
     if(hint_ptr && settings().ideal) {
-      xtal::LatticeNode lat_node(hint_ptr->prim().lattice(),
-                                 hint_ptr->ideal_lattice(),
-                                 Lattice(child_struc.lat_column_mat),
-                                 Lattice(child_struc.lat_column_mat),
-                                 child_struc.atom_info.size());
+      xtal::LatticeNode lattice_node(hint_ptr->prim().lattice(),
+                                     hint_ptr->ideal_lattice(),
+                                     Lattice(child_struc.lat_column_mat),
+                                     Lattice(child_struc.lat_column_mat),
+                                     child_struc.atom_info.size());
       struc_maps = struc_mapper().map_deformed_struc_impose_lattice_node(child_struc,
-                                                                         lat_node,
+                                                                         lattice_node,
                                                                          k);
     }
     else if(hint_ptr && settings().fix_lattice) {
       struc_maps = struc_mapper().map_deformed_struc_impose_lattice(child_struc,
                                                                     hint_ptr->ideal_lattice(),
                                                                     k,
-                                                                    best_cost + struc_mapper().tol());
+                                                                    best_cost + struc_mapper().cost_tol());
       if(struc_maps.empty())
         result.fail_msg = "Unable to map structure using same lattice as " + hint_ptr->name() + ". Try setting \"fix_lattice\" : false.";
 
@@ -415,7 +408,7 @@ namespace CASM {
                                                                          vol,
                                                                          vol,
                                                                          k,
-                                                                         best_cost + struc_mapper().tol());
+                                                                         best_cost + struc_mapper().cost_tol());
       if(struc_maps.empty())
         result.fail_msg = "Unable to map structure assuming volume = " + std::to_string(vol) + ". Try setting \"fix_volume\" : false.";
 
@@ -429,14 +422,14 @@ namespace CASM {
     else {
       struc_maps = struc_mapper().map_deformed_struc(child_struc,
                                                      k,
-                                                     best_cost + struc_mapper().tol());
+                                                     best_cost + struc_mapper().cost_tol());
       if(struc_maps.empty())
         result.fail_msg = "Unable to map structure to prim. May be incompatible structure, or provided settings may be too restrictive.";
     }
 
     // Refactor into external routine A. This is too annoying with the current way that supercells are managed
     for(auto const &map : struc_maps) {
-      std::shared_ptr<Supercell> shared_scel = std::make_shared<Supercell>(&primclex(), map.lat_node.parent.superlattice());
+      std::shared_ptr<Supercell> shared_scel = std::make_shared<Supercell>(&primclex(), map.lattice_node.parent.superlattice());
       SimpleStructure resolved_struc = struc_mapper().calculator().resolve_setting(map, child_struc);
       std::pair<ConfigDoF, std::set<std::string> > tdof = to_configdof(resolved_struc, *shared_scel);
       Configuration tconfig(shared_scel, jsonParser(), tdof.first);

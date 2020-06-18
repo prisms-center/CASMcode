@@ -72,6 +72,11 @@ namespace CASM {
       return *m_master_group;
     }
 
+    /// Matrix dimension of representation
+    Index dim() const {
+      return MatrixXd(0)->cols();
+    }
+
     /// \brief Returns true if this SymGroupRep has valid pointer to a MasterSymGroup
     bool has_valid_master() const {
       return m_master_group != nullptr;
@@ -130,10 +135,6 @@ namespace CASM {
       return m_rep_ID;
     }
 
-    jsonParser &to_json(jsonParser &json) const;
-
-    // If 'm_master_group' is not nullptr, should be initialized accordingly
-    void from_json(const jsonParser &json);
   private:
 
     void clear();
@@ -152,11 +153,6 @@ namespace CASM {
 
 
   };
-
-  jsonParser &to_json(const SymGroupRep &rep, jsonParser &json);
-
-  // If 'm_home_group' is not nullptr, should be initialized accordingly
-  void from_json(SymGroupRep &rep, const jsonParser &json);
 
   /// \brief Make a copy of representation on vector space 'V' that is transformed into a representation on vector space 'W'
   /// 'trans_mat' is the unitary matrix that isomorphically maps 'V'->'W' (i.e., [w = trans_mat * v] and [v = trans_mat.transpose() * w] )
@@ -217,18 +213,6 @@ namespace CASM {
 
     SymOpRepresentation const *operator[](Index i) const {
       return m_group_rep->at(m_subgroup_op_inds[i]);
-    }
-
-    const SymOp &sym_op(Index i) const {
-      return (m_group_rep->master_group())[m_subgroup_op_inds[i]];
-    }
-
-    Index ind_inverse(Index i) const {
-      return find_index(m_subgroup_op_inds, (m_group_rep->master_group()).ind_inverse(m_subgroup_op_inds[i]));
-    }
-
-    Index ind_prod(Index i, Index j) const {
-      return find_index(m_subgroup_op_inds, (m_group_rep->master_group()).ind_prod(m_subgroup_op_inds[i], m_subgroup_op_inds[j]));
     }
 
     bool operator==(const SymGroupRepHandle &RHS) const {

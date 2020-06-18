@@ -27,7 +27,12 @@ namespace CASM {
     dict.insert(
       DoFType::occupation(),
       DoFType::displacement(),
-      DoFType::magspin(),
+      DoFType::magspin("C"),
+      DoFType::magspin("Cunit"),
+      DoFType::magspin("NC"),
+      DoFType::magspin("NCunit"),
+      DoFType::magspin("SO"),
+      DoFType::magspin("SOunit"),
       DoFType::EAstrain(),
       DoFType::Hstrain(),
       DoFType::GLstrain());
@@ -273,7 +278,7 @@ namespace CASM {
       //TODO: It is not ideal to make a copy of the prim, but everything generated in this function should
       //go out of scope. Solving this will involve rethinking which parts of the prim are needed for the
       //function call, and will affect the implementation of the SymCompare classes
-      auto _prim_ptr = std::make_shared<const Structure>(_prim);
+      auto _prim_ptr = std::shared_ptr<const Structure>(&_prim, [](const Structure *) {});
       make_prim_periodic_asymmetric_unit(_prim_ptr,
                                          CASM_TMP::ConstantFunctor<bool>(true),
                                          TOL,
@@ -368,7 +373,7 @@ namespace CASM {
       //TODO: It is not ideal to make a copy of the prim, but everything generated in this function should
       //go out of scope. Solving this will involve rethinking which parts of the prim are needed for the
       //function call, and will affect the implementation of the SymCompare classes
-      auto _prim_ptr = std::make_shared<const Structure>(_prim);
+      auto _prim_ptr = std::shared_ptr<const Structure>(&_prim, [](const Structure *) {});
       make_prim_periodic_asymmetric_unit(_prim_ptr,
                                          CASM_TMP::ConstantFunctor<bool>(true),
                                          TOL,
@@ -484,18 +489,8 @@ namespace CASM {
       stream.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
       stream.precision(10);
 
-      std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
       std::ostream nullstream(0);
 
-      //TODO: It is not ideal to make a copy of the prim, but everything generated in this function should
-      //go out of scope. Solving this will involve rethinking which parts of the prim are needed for the
-      //function call, and will affect the implementation of the SymCompare classes
-      auto _prim_ptr = std::make_shared<const Structure>(_prim);
-      make_prim_periodic_asymmetric_unit(_prim_ptr,
-                                         CASM_TMP::ConstantFunctor<bool>(true),
-                                         TOL,
-                                         std::back_inserter(asym_unit),
-                                         nullstream);
       return stream.str();
     }
 

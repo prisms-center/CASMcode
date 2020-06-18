@@ -176,14 +176,6 @@ namespace CASM {
       return m_argument;
     }
 
-    static void print_table() {
-      for(Index i = 0; i < inner_prod_table.size(); i++) {
-        for(Index j = 0; j < inner_prod_table[i].size(); j++)
-          std::cout << inner_prod_table[i][j] << "  ";
-        std::cout << '\n';
-      }
-    }
-
     virtual jsonParser &to_json(jsonParser &json) const;
 
   protected:

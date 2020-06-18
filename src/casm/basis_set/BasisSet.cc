@@ -924,30 +924,6 @@ namespace CASM {
   }
 
   //*******************************************************************************************
-  // Checks block_shape_matrix of BasisSet symmetry representation to see that there are
-  // as many blocks as there are irreducible representations
-
-  bool BasisSet::is_normal_basis_for(const SymGroup &head_group) {
-    //First do some basic checks to ensure problem is well-defined
-    if(m_basis_symrep_ID.empty()) {
-      get_symmetry_representation(head_group);
-    }
-    if(m_basis_symrep_ID.empty()) {
-      std::cerr << "CRITICAL ERROR: Inside BasisSet::is_normal_basis_for() and cannot calculate a valid SymGroup representation. Exiting...\n";
-      exit(1);
-    }
-    if(!head_group.size())
-      return true;
-
-    SymGroupRep const &t_rep(head_group[0].master_group().representation(m_basis_symrep_ID));
-
-    //Check that block-diagonalization matches number of irreps
-    auto vec = num_each_real_irrep(t_rep, head_group);
-    return num_blocks(t_rep, head_group) == std::accumulate(vec.begin(), vec.end(), 0);
-
-  }
-
-  //*******************************************************************************************
 
   BasisSet BasisSet::calc_normal_basis(const SymGroup &head_group, Eigen::MatrixXd &trans_mat) const {
     if(m_basis_symrep_ID.empty()) {

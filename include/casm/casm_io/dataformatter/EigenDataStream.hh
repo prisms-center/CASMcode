@@ -81,7 +81,6 @@ namespace CASM {
         DataStream::operator<<(failbit);
       }
       else if(_skipfail() && fail() && row() + 1 == labels().size()) {
-        std::cout << "*******I'm Discarding " << m_labels.back() << "\n";
         m_labels.pop_back();
       }
 

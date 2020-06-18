@@ -48,8 +48,8 @@ namespace CASM {
         }
       }
 
-      result.scalar("lattice_deformation_cost") = _node.lat_node.cost;
-      result.scalar("basis_deformation_cost") = _node.basis_node.cost;
+      result.scalar("lattice_deformation_cost") = _node.lattice_node.cost;
+      result.scalar("atomic_deformation_cost") = _node.atomic_node.cost;
       result.scalar("total_cost") = _node.cost;
       return result;
     }
@@ -256,7 +256,7 @@ namespace CASM {
       "        Candidate configurations are compared using \"deformation_cost\" to \n"
       "        determine the best mapping of the import structure to a             \n"
       "        configuration. The \"lattice_weight\" determines the relative weight\n"
-      "        of the \"lattice_deformation_cost\" and \"basis_deformation_cost\"  \n"
+      "        of the \"lattice_deformation_cost\" and \"atomic_deformation_cost\"  \n"
       "        when calculating the total \"deformation_cost\". See _____ for      \n"
       "        details. \n\n"
 
@@ -425,7 +425,7 @@ namespace CASM {
       "        Candidate configurations are compared using \"deformation_cost\" to \n"
       "        determine the best mapping of the import structure to a             \n"
       "        configuration. The \"lattice_weight\" determines the relative weight\n"
-      "        of the \"lattice_deformation_cost\" and \"basis_deformation_cost\"  \n"
+      "        of the \"lattice_deformation_cost\" and \"atomic_deformation_cost\"  \n"
       "        when calculating the total \"deformation_cost\". See _____ for      \n"
       "        details. \n\n"
 
@@ -519,7 +519,7 @@ namespace CASM {
       "  The \"deformation_cost\" is:\n\n"
 
       "      deformation_cost = w*lattice_deformation_cost + \n"
-      "                         (1.0-w)*basis_deformation_cost,\n\n"
+      "                         (1.0-w)*atomic_deformation_cost,\n\n"
 
       "  where \"w\" is the \"lattice_weight\" factor (default=0.5),\n\n"
 
@@ -536,13 +536,13 @@ namespace CASM {
       "      lattice_deformation_cost = pow( 3.*V / (4.*pi), 2.0/3.0) / 3.0 * \n"
       "          (0.5 * (F.t * F / pow(std::abs(F.determinant()), 2.0/3.0) - I)).squaredNorm()\n\n"
 
-      "  and the \"basis_deformation_cost\" is a cost function for the amount of\n"
+      "  and the \"atomic_deformation_cost\" is a cost function for the amount of\n"
       "  basis site relaxation:\n\n"
 
       "      D = 3xN matrix of basis site displacements (displacements are applied \n"
       "          before strain)\n"
       "      Natoms = number of atoms in configuration\n"
-      "      basis_deformation_cost = (F*D * D.transpose() * F.transpose()).trace() \n"
+      "      atomic_deformation_cost = (F*D * D.transpose() * F.transpose()).trace() \n"
       "          / (max(Natoms, 1.))\n\n";
 
 
@@ -557,7 +557,7 @@ namespace CASM {
         "initial_path",  "selected", "to_configname", "final_path", "is_new_config", "has_data", "has_complete_data",
         "preexisting_data", "import_data", "import_additional_files",
         "score", "best_score", "is_best",
-        "lattice_deformation_cost", "basis_deformation_cost",
+        "lattice_deformation_cost", "atomic_deformation_cost",
         "relaxed_energy"
       };
 
@@ -643,7 +643,7 @@ namespace CASM {
       std::vector<std::string> col = {
         "data_origin", "selected", "to_configname", "has_data", "has_complete_data",
         "score", "best_score", "is_best",
-        "lattice_deformation_cost", "basis_deformation_cost",
+        "lattice_deformation_cost", "atomic_deformation_cost",
         "relaxed_energy"
       };
 

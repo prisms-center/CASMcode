@@ -6,6 +6,15 @@
 
 namespace CASM {
   namespace xtal {
+    /// Returns descriptive names of the components in a DoFSet, using AnisoValTraits::variable_descriptors()
+    std::vector<std::string> component_descriptions(DoFSet const &dofset) {
+      if(dofset.basis().isIdentity(TOL))
+        return dofset.traits().variable_descriptions();
+      else
+        return dofset.component_names();
+    }
+
+
     bool DoFSetIsEquivalent_f::_traits_match(const DoFSet &other_value) const {
       return m_reference_dofset.traits().name() == other_value.traits().name();
     }
@@ -42,6 +51,13 @@ namespace CASM {
       return this->_traits_match(other_value) && this->_axis_names_match(other_value) && this->_basis_spans_same_space(other_value);
     }
 
+    Eigen::MatrixXd dofset_transformation_matrix(const Eigen::MatrixXd &from_basis, const Eigen::MatrixXd &to_basis, double tol) {
+      Eigen::MatrixXd U = from_basis.colPivHouseholderQr().solve(to_basis);
+      if(!(U.transpose()*U).eval().isIdentity(tol)) {
+        throw std::runtime_error("Cannot find orthogonal symmetry representation!");
+      }
+      return U;
+    }
   } // namespace xtal
 }
 
@@ -49,9 +65,8 @@ namespace CASM {
   namespace sym {
     /// \brief Copy and apply SymOp to a DoFSet
     xtal::DoFSet copy_apply(const xtal::SymOp &op, const xtal::DoFSet &dof) {
-      Eigen::Matrix3d transformation_matrix = dof.traits().symop_to_matrix(get_matrix(op), get_translation(op), get_time_reversal(op));
-      Eigen::Matrix3d new_basis = transformation_matrix * dof.basis();
-      return xtal::DoFSet(dof.traits(), dof.component_names(), new_basis);
+      Eigen::MatrixXd transformation_matrix = dof.traits().symop_to_matrix(get_matrix(op), get_translation(op), get_time_reversal(op));
+      return xtal::DoFSet(dof.traits(), dof.component_names(), transformation_matrix * dof.basis());
     }
   } // namespace sym
 

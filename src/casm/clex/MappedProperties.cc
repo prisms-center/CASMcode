@@ -105,7 +105,7 @@ namespace CASM {
       return -obj.scalar(m_opt.name);
     }
     case Method::deformation_cost: {
-      return obj.scalar("lattice_deformation_cost") * m_opt.lattice_weight + obj.scalar("basis_deformation_cost") * (1.0 - m_opt.lattice_weight);
+      return obj.scalar("lattice_deformation_cost") * m_opt.lattice_weight + obj.scalar("atomic_deformation_cost") * (1.0 - m_opt.lattice_weight);
     }
     case Method::direct_selection: {
       if(obj.to == m_opt.name) {
@@ -128,7 +128,7 @@ namespace CASM {
       return obj.global.count(m_opt.name);
     case Method::deformation_cost:
       return obj.has_scalar("lattice_deformation_cost") &&
-             obj.has_scalar("basis_deformation_cost");
+             obj.has_scalar("atomic_deformation_cost");
     case Method::direct_selection:
       return true;
     default:

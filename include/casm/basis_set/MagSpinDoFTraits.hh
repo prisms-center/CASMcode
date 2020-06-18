@@ -9,8 +9,12 @@ namespace CASM {
   namespace DoF_impl {
     class MagSpinDoFTraits : public DoFType::Traits {
     public:
-      MagSpinDoFTraits():
-        DoFType::Traits(AnisoValTraits::magspin(), true) {
+      // Initialize with particular 'flavor' of magnetic spin. Options are:
+      //  collinear: "C" and "Cunit"
+      //  non-collinear (w/o spin-orbit): "NC" and "NCunit"
+      //  non-collinear (with spin-orbit): "SO" and "SOunit"
+      MagSpinDoFTraits(std::string const &flavor_name):
+        DoFType::Traits(AnisoValTraits(flavor_name + "magspin"), true) {
 
       }
 
@@ -26,7 +30,12 @@ namespace CASM {
   }
 
   namespace DoFType {
-    DoF_impl::MagSpinDoFTraits magspin();
+    // Initialize with particular 'flavor' of magnetic spin. Options are:
+    //  collinear: "C" and "Cunit"
+    //  non-collinear (w/o spin-orbit): "NC" and "NCunit"
+    //  non-collinear (with spin-orbit): "SO" and "SOunit"
+
+    DoF_impl::MagSpinDoFTraits magspin(std::string const &flavor_name);
   }
 
 }

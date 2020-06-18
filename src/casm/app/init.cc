@@ -38,16 +38,15 @@ namespace CASM {
   // returns {error message, new file extension, new structure}
   std::tuple<std::string, std::string, BasicStructure > standardize_prim(BasicStructure const &prim, bool force) {
     /// Check if PRIM is primitive
-    xtal::BasicStructure true_prim = prim;
+    xtal::BasicStructure true_prim = xtal::make_primitive(prim);
     std::string err;
-    if(!xtal::is_primitive(prim)) {
+    if(true_prim.basis().size() < prim.basis().size()) {
       //err
       err +=
         "       The structure in the provided file is not primitive. Some CASM\n"
         "       features cannot be used with a non-primitive starting structure.\n\n";
 
       if(!force) {
-
         // current is_primitive
         Lattice lat_niggli = xtal::canonical::equivalent(true_prim.lattice());
         true_prim.set_lattice(lat_niggli, CART);
@@ -188,16 +187,27 @@ namespace CASM {
       }
       catch(std::runtime_error &e) {
         args.err_log() << e.what() << std::endl;
-
+        args.err_log() << "To initialize your project anyway, use the --force option." << std::endl;
         return ERR_INVALID_INPUT_FILE;
       }
 
       // Add the new DoFs before doing anything else
-      std::map<DoFKey, xtal::DoFSet> prim_global_dofs;
+      std::map<DoFKey, xtal::DoFSet> new_global_dofs = prim.global_dofs();
+      std::map<DoFKey, xtal::SiteDoFSet> new_site_dofs;
       for(std::string const &doftype : init_opt.dof_strs()) {
-        prim_global_dofs.emplace(doftype, doftype);
+        AnisoValTraits ttraits(doftype);
+        if(ttraits.global() && !new_global_dofs.count(doftype))
+          new_global_dofs.emplace(doftype, ttraits);
+        else
+          new_site_dofs.emplace(doftype, ttraits);
       }
-      prim.set_global_dofs(prim_global_dofs);
+      prim.set_global_dofs(new_global_dofs);
+
+      for(xtal::Site &site : prim.set_basis()) {
+        std::map<DoFKey, xtal::SiteDoFSet> site_dofs = site.dofs();
+        site_dofs.insert(new_site_dofs.begin(), new_site_dofs.end());
+        site.set_dofs(std::move(site_dofs));
+      }
 
       // Check error message to see if PRIM did not meet standards; report if so
       if(!err_msg.empty()) {

@@ -37,14 +37,12 @@ namespace CASM {
     // Write project_settings.json file -------
     commit(set);
 
-    // Write prim.json file -------------------
+    // Write prim.json file (into .casm directory) -------------------
     log().indent() << "Writing prim file: " << dir.prim() << std::endl;
     write_prim(prim, dir.prim(), FRAC);
 
     // Calculate symmetry  --------------------
-    // get lattice point group and character table
-    SymGroup lattice_point_grp(SymGroup::lattice_point_group(prim.lattice()));
-    lattice_point_grp.character_table();
+    SymGroup lattice_point_grp {SymGroup::lattice_point_group(prim.lattice())};
 
     // Write symmetry info files
 

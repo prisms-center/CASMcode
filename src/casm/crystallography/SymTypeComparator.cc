@@ -5,7 +5,7 @@
 namespace CASM {
   namespace xtal {
 
-    bool SymOpCompare_f::operator()(const SymOp &lhs, const SymOp& rhs) const {
+    bool SymOpCompare_f::operator()(const SymOp &lhs, const SymOp &rhs) const {
       if(lhs.is_time_reversal_active != rhs.is_time_reversal_active) {
         return false;
       }
@@ -21,11 +21,11 @@ namespace CASM {
       return true;
     }
 
-    bool SymOpMatrixCompare_f::operator()(const SymOp &lhs, const SymOp& rhs) const {
+    bool SymOpMatrixCompare_f::operator()(const SymOp &lhs, const SymOp &rhs) const {
       return almost_equal(lhs.matrix, rhs.matrix, this->m_tolerance);
     }
 
-    bool SymOpPeriodicCompare_f::operator()(const SymOp &lhs, const SymOp& rhs) const {
+    bool SymOpPeriodicCompare_f::operator()(const SymOp &lhs, const SymOp &rhs) const {
       if(lhs.is_time_reversal_active != rhs.is_time_reversal_active) {
         return false;
       }

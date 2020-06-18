@@ -21,7 +21,6 @@ namespace CASM {
   class AnisoValTraits;
 
   class SymGroup;
-  class jsonParser;
 
   template<typename OccType>
   class OccupantDoF;
@@ -228,13 +227,9 @@ namespace CASM {
       return m_symrep_ID;
     }
 
-    void set_symrep_ID(SymGroupRepID _id) const {
+    void set_symrep_ID(SymGroupRepID _id) {
       m_symrep_ID = _id;
     }
-
-    /// \brief Allocates an empty symmetry representation in \param _group and records its SymGroupRepID
-    /// This representation becomes THE representation for this DiscreteDoF, to be initialized accordingly
-    void allocate_symrep(SymGroup const &_group) const;
 
     bool is_specified() const {
       return valid_index(m_current_state);
@@ -300,7 +295,7 @@ namespace CASM {
     mutable int const *m_remote_state;
 
     /// ID for the permutation representation for occupants
-    mutable SymGroupRepID m_symrep_ID;
+    SymGroupRepID m_symrep_ID;
 
   private:
     virtual DiscreteDoF *_clone() const = 0;
@@ -312,18 +307,16 @@ namespace CASM {
   template< typename T>
   class OccupantDoF : public DiscreteDoF {
   public:
-    OccupantDoF(BasicTraits const &_traits) :
-      DiscreteDoF(_traits, "s") { }
-
     OccupantDoF(BasicTraits const &_traits,
                 std::string const &_var_name,
+                SymGroupRepID symrep_ID,
                 std::vector<T> const &_domain,
                 int _current_state = 0) :
       DiscreteDoF(_traits,
                   _var_name,
                   -1,
                   _current_state,
-                  SymGroupRepID::identity(_domain.size())),
+                  symrep_ID),
       m_domain(_domain) { }
 
 
@@ -418,12 +411,12 @@ namespace CASM {
       return new OccupantDoF(*this);
     }
     /**** Inherited from DiscreteDoF ****
-    // index into domain of the current state, -1 if unspecified
-    //  int m_current_state;
+     // index into domain of the current state, -1 if unspecified
+     //  int m_current_state;
 
-    // Allows DoF to point to a remote value for faster/easier evaluation
-    //  const int *m_remote_state;
-    **/
+     // Allows DoF to point to a remote value for faster/easier evaluation
+     //  const int *m_remote_state;
+     **/
 
     /// Allowed values, assume class T has method 'T.name()()'
     std::vector<T> m_domain;
