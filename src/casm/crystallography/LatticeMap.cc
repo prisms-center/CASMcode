@@ -50,32 +50,29 @@ namespace CASM {
 
     //*******************************************************************************************
     //static function
-    double StrainCostCalculator::iso_strain_cost(const Eigen::Matrix3d &F, double relaxed_atomic_vol, double _vol_factor) {
-      Eigen::Matrix3d tmat = polar_decomposition(F / _vol_factor);
+    double StrainCostCalculator::isotropic_strain_cost(const Eigen::Matrix3d &_deformation_gradient, double _vol_factor) {
+      Eigen::Matrix3d tmat = polar_decomposition(_deformation_gradient / _vol_factor);
 
-      // -> epsilon=(F_deviatoric-identity)
-      double unscaled = ((tmat - Eigen::Matrix3d::Identity(3, 3)).squaredNorm()
-                         + (tmat.inverse() - Eigen::Matrix3d::Identity(3, 3)).squaredNorm()) / 2.;
-
-      // geometric factor: (3*V/(4*pi))^(2/3)/3 = V^(2/3)/7.795554179
-      return std::pow(std::abs(relaxed_atomic_vol), 2.0 / 3.0) * unscaled / 7.795554179;
+      // -> epsilon=(_deformation_gradient_deviatoric-identity)
+      return ((tmat - Eigen::Matrix3d::Identity(3, 3)).squaredNorm()
+              + (tmat.inverse() - Eigen::Matrix3d::Identity(3, 3)).squaredNorm()) / 6.;
     }
 
     //*******************************************************************************************
     //static function
-    double StrainCostCalculator::iso_strain_cost(const Eigen::Matrix3d &F, double relaxed_atomic_vol) {
-      return iso_strain_cost(F, relaxed_atomic_vol, vol_factor(F));
+    double StrainCostCalculator::isotropic_strain_cost(const Eigen::Matrix3d &_deformation_gradient) {
+      return isotropic_strain_cost(_deformation_gradient, vol_factor(_deformation_gradient));
     }
 
     //*******************************************************************************************
 
-    // strain_cost is the mean-square displacement of a point on the surface of a sphere having volume = relaxed_atomic_vol
-    // when it is deformed by the volume-preserving deformation F_deviatoric = F/det(F)^(1/3)
-    double StrainCostCalculator::strain_cost(const Eigen::Matrix3d &F, double relaxed_atomic_vol, double _vol_factor) const {
+    // strain_cost is the mean-square displacement of a point on the surface of a unit sphere
+    // when it is deformed by the volume-preserving deformation _deformation_gradient_deviatoric = _deformation_gradient/det(_deformation_gradient)^(1/3)
+    double StrainCostCalculator::strain_cost(const Eigen::Matrix3d &_deformation_gradient, double _vol_factor) const {
 
       if(m_sym_cost) {
         double cost = 0;
-        m_cache = polar_decomposition(F / _vol_factor);
+        m_cache = polar_decomposition(_deformation_gradient / _vol_factor);
         m_cache_inv = m_cache.inverse() - Eigen::Matrix3d::Identity(3, 3);
         m_cache -= Eigen::Matrix3d::Identity(3, 3);
         Index m = 0;
@@ -84,22 +81,22 @@ namespace CASM {
             Index n = 0;
             for(Index k = 0; k < 3; ++k) {
               for(Index l = k; l < 3; ++l, ++n) {
-                cost += m_gram_mat(m, n) * (m_cache(i, j) * m_cache(j, k) + m_cache_inv(i, j) * m_cache_inv(j, k)) / 2;
+                cost += m_gram_mat(m, n) * (m_cache(i, j) * m_cache(j, k) + m_cache_inv(i, j) * m_cache_inv(j, k)) / 6.;
               }
             }
           }
         }
         // geometric factor: (3*V/(4*pi))^(2/3)/3 = V^(2/3)/7.795554179
-        return std::pow(std::abs(relaxed_atomic_vol), 2.0 / 3.0) * cost / 7.795554179;
+        return cost;
       }
 
-      return iso_strain_cost(F, relaxed_atomic_vol, _vol_factor);
+      return isotropic_strain_cost(_deformation_gradient, _vol_factor);
     }
 
     //*******************************************************************************************
 
-    double StrainCostCalculator::strain_cost(const Eigen::Matrix3d &F, double relaxed_atomic_vol) const {
-      return strain_cost(F, relaxed_atomic_vol, vol_factor(F));
+    double StrainCostCalculator::strain_cost(const Eigen::Matrix3d &_deformation_gradient) const {
+      return strain_cost(_deformation_gradient, vol_factor(_deformation_gradient));
     }
 
     //*******************************************************************************************
@@ -107,16 +104,13 @@ namespace CASM {
     LatticeMap::LatticeMap(const Lattice &_parent,
                            const Lattice &_child,
                            Index num_atoms,
-                           double _tol,
-                           int _range/*=2*/,
-                           SymOpVector const &_point_group /*={}*/,
+                           int _range,
+                           SymOpVector const &_parent_point_group,
+                           SymOpVector const &_child_point_group,
                            Eigen::Ref<const Eigen::MatrixXd> const &strain_gram_mat,
                            double _init_better_than /* = 1e20 */) :
-      m_child(_child.reduced_cell().lat_column_mat()),
       m_calc(strain_gram_mat),
       m_vol_factor(pow(std::abs(volume(_child) / volume(_parent)), 1. / 3.)),
-      m_atomic_vol(std::abs(volume(_child) / (double)num_atoms)),
-      m_tol(_tol),
       m_range(_range),
       m_cost(1e20),
       m_currmat(0) {
@@ -124,6 +118,8 @@ namespace CASM {
       Lattice reduced_parent = _parent.reduced_cell();
       m_parent = reduced_parent.lat_column_mat();
 
+      Lattice reduced_child = _child.reduced_cell();
+      m_child = reduced_child.lat_column_mat();
 
       m_U = _parent.inv_lat_column_mat() * m_parent;
       m_V_inv = m_child.inverse() * _child.lat_column_mat();
@@ -139,23 +135,46 @@ namespace CASM {
       else
         throw std::runtime_error("LatticeMap cannot currently be invoked for range>4");
 
-      // Construct inverse fractional symops
-      LatticeIsEquivalent symcheck(reduced_parent);
-      m_fsym_mats.reserve(_point_group.size());
-      for(auto const &op : _point_group) {
-        if(!symcheck(op))
-          continue;
-        if(symcheck.U().isIdentity())
-          continue;
-        //std::cout << "Testing point op:\n" << get_matrix(op) << "\n";
-        m_fsym_mats.push_back(iround(symcheck.U().inverse()));
-        for(Index i = 0; i < (m_fsym_mats.size() - 1); ++i) {
-          if(m_fsym_mats[i] == m_fsym_mats.back()) {
-            m_fsym_mats.pop_back();
-            break;
+      // Construct inverse fractional symops for parent
+      {
+        IsPointGroupOp symcheck(reduced_parent);
+        m_parent_fsym_mats.reserve(_parent_point_group.size());
+        for(auto const &op : _parent_point_group) {
+          if(!symcheck(op))
+            continue;
+          //if(symcheck.U().isIdentity())
+          //continue;
+          //std::cout << "Testing point op:\n" << get_matrix(op) << "\n";
+          m_parent_fsym_mats.push_back(iround(reduced_parent.inv_lat_column_mat()*op.matrix.transpose()*reduced_parent.lat_column_mat()));
+          for(Index i = 0; i < (m_parent_fsym_mats.size() - 1); ++i) {
+            if(m_parent_fsym_mats[i] == m_parent_fsym_mats.back()) {
+              m_parent_fsym_mats.pop_back();
+              break;
+            }
           }
         }
       }
+
+      // Construct fractional symops for child
+      {
+        IsPointGroupOp symcheck(reduced_child);
+        m_child_fsym_mats.reserve(_child_point_group.size());
+        for(auto const &op : _child_point_group) {
+          if(!symcheck(op))
+            continue;
+          //if(symcheck.U().isIdentity())
+          //continue;
+          //std::cout << "Testing point op:\n" << get_matrix(op) << "\n";
+          m_child_fsym_mats.push_back(iround(reduced_child.inv_lat_column_mat()*op.matrix * reduced_child.lat_column_mat()));
+          for(Index i = 0; i < (m_child_fsym_mats.size() - 1); ++i) {
+            if(m_child_fsym_mats[i] == m_child_fsym_mats.back()) {
+              m_child_fsym_mats.pop_back();
+              break;
+            }
+          }
+        }
+      }
+
 
       reset(_init_better_than);
     }
@@ -164,17 +183,17 @@ namespace CASM {
     LatticeMap::LatticeMap(Eigen::Ref<const LatticeMap::DMatType> const &_parent,
                            Eigen::Ref<const LatticeMap::DMatType> const &_child,
                            Index _num_atoms,
-                           double _tol,
-                           int _range /*= 2*/,
-                           SymOpVector const &_point_group /*={}*/,
+                           int _range,
+                           SymOpVector const &_parent_point_group,
+                           SymOpVector const &_child_point_group,
                            Eigen::Ref<const Eigen::MatrixXd> const &strain_gram_mat,
                            double _init_better_than /* = 1e20 */) :
       LatticeMap(Lattice(_parent),
                  Lattice(_child),
                  _num_atoms,
-                 _tol,
                  _range,
-                 _point_group,
+                 _parent_point_group,
+                 _child_point_group,
                  strain_gram_mat,
                  _init_better_than) {}
 
@@ -183,9 +202,9 @@ namespace CASM {
       m_currmat = 0;
 
       // From relation F * parent * inv_mat.inverse() = child
-      m_F = m_child * inv_mat().cast<double>() * m_parent.inverse(); // -> F
+      m_deformation_gradient = m_child * inv_mat().cast<double>() * m_parent.inverse(); // -> _deformation_gradient
 
-      double tcost = m_calc.strain_cost(m_F, m_atomic_vol, m_vol_factor);
+      double tcost = m_calc.strain_cost(m_deformation_gradient, m_vol_factor);
 
       // Initialize to first valid mapping
       if(tcost <= _better_than && _check_canonical()) {
@@ -201,7 +220,7 @@ namespace CASM {
     /*
      *  For L_child = (*this).lat_column_mat() and L_parent = _parent_lat.lat_column_mat(), we find the mapping:
      *
-     *        L_child = F * L_parent * N      -- (Where 'N' is an integer matrix of determinant=1)
+     *        L_child = _deformation_gradient * L_parent * N      -- (Where 'N' is an integer matrix of determinant=1)
      *
      *  That minimizes the cost function:
      *
@@ -213,17 +232,17 @@ namespace CASM {
      *
      *  where the Green-Lagrange strain is
      *
-     *        E = (F.transpose()*F-Identity)/2
+     *        E = (_deformation_gradient.transpose()*_deformation_gradient-Identity)/2
      *
      *  The cost function approximates the mean-square-displacement of a point in a cube of volume (*this).volume() when it is
-     *  deformed by deformation matrix 'F', but neglecting volumetric effects
+     *  deformed by deformation matrix '_deformation_gradient', but neglecting volumetric effects
      *
      *  The algorithm proceeds by counting over 'N' matrices (integer matrices of determinant 1) with elements on the interval (-2,2).
      *  (we actually count over N.inverse(), because....)
      *
      *  The green-lagrange strain for that 'N' is then found using the relation
      *
-     *        F.transpose()*F = L_parent.inverse().transpose()*N.inverse().transpose()*L_child.transpose()*L_child*N.inverse()*L_parent.inverse()
+     *        _deformation_gradient.transpose()*_deformation_gradient = L_parent.inverse().transpose()*N.inverse().transpose()*L_child.transpose()*L_child*N.inverse()*L_parent.inverse()
      *
      *  The minimal 'C' is returned at the end of the optimization.
      */
@@ -236,15 +255,12 @@ namespace CASM {
       m_N = DMatType::Identity(3, 3);
       // m_dcache -> value of inv_mat() that gives m_N = identity;
       m_dcache = m_V_inv * m_U;
-      m_F = m_child * m_dcache * m_parent.inverse();
-      //std::cout << "starting m_F is \n" << m_F << "  det: " << m_F.determinant() << "\n";
-      double best_cost = m_calc.strain_cost(m_F, m_atomic_vol, m_vol_factor);
-      //std::cout << "starting cost is " << m_cost << "\n";
-      //std::cout << "Starting cost is " << m_cost << ", starting N is \n" << m_N << "\nand starting F is \n" << m_F << "\n";
-      //std::cout << "Best_cost progression: " << best_cost;
+      m_deformation_gradient = m_child * m_dcache * m_parent.inverse();
+
+      double best_cost = m_calc.strain_cost(m_deformation_gradient, m_vol_factor);
+
       while(next_mapping_better_than(best_cost).strain_cost() < best_cost) {
         best_cost = strain_cost();
-        //std::cout << "    " << best_cost;
       }
 
       m_cost = best_cost;
@@ -263,50 +279,39 @@ namespace CASM {
     //       -- the search breaks when a mapping is found with cost < max_cost
     const LatticeMap &LatticeMap::_next_mapping_better_than(double max_cost) const {
 
-      DMatType init_F(m_F);
+      DMatType init_deformation_gradient(m_deformation_gradient);
       // tcost initial value shouldn't matter unles m_inv_count is invalid
       double tcost = max_cost;
 
       while(++m_currmat < n_mat()) {
         if(!_check_canonical()) {
-          //std::cout << "Not canonical: \n" << inv_mat() << "\n";
           continue;
         }
 
-        // From relation F * parent * inv_mat.inverse() = child
-        m_F = m_child * inv_mat().cast<double>() * m_parent.inverse(); // -> F
-        tcost = m_calc.strain_cost(m_F, m_atomic_vol, m_vol_factor);
-        //DEBUG
-        //Eigen::Matrix3d M=m_parent.transpose()*m_parent;
-        //Eigen::Matrix3d M2=inv_mat().cast<double>().inverse().transpose()*M*inv_mat().cast<double>().inverse();
-        //if(almost_equal(M,M2,1e-4)){
-        //std::cout << "***POINT OP: \n" << "N: \n" << (m_U * inv_mat().cast<double>().inverse() * m_V_inv) << "\nF: \n" << m_F<< "\ncost: " << tcost << "\n***\n";
-        //}
-        //\DEBUG
+        // From relation _deformation_gradient * parent * inv_mat.inverse() = child
+        m_deformation_gradient = m_child * inv_mat().cast<double>() * m_parent.inverse(); // -> _deformation_gradient
+        tcost = m_calc.strain_cost(m_deformation_gradient, m_vol_factor);
         if(tcost < max_cost) {
-          //std::cout << "cost: " << max_cost << " -> " << tcost << "\n";
           m_cost = tcost;
 
           // need to undo the effect of transformation to reduced cell on 'N'
-          // Maybe better to get m_N from m_F instead?  m_U and m_V_inv depend on the lattice reduction
+          // Maybe better to get m_N from m_deformation_gradient instead?  m_U and m_V_inv depend on the lattice reduction
           // that was performed in the constructor, so we would need to store "non-reduced" parent and child
           m_N = m_U * inv_mat().cast<double>().inverse() * m_V_inv;
           //std::cout << "N:\n" << m_N << "\n";
           //  We already have:
-          //        m_F = m_child * inv_mat().cast<double>() * m_parent.inverse();
+          //        m_deformation_gradient = m_child * inv_mat().cast<double>() * m_parent.inverse();
           break;
         }
       }
       if(!(tcost < max_cost)) {
-        // If no good mappings were found, uncache the starting value of m_F
-        m_F = init_F;
+        // If no good mappings were found, uncache the starting value of m_deformation_gradient
+        m_deformation_gradient = init_deformation_gradient;
         // m_N hasn't changed if tcost>max_cost
         // m_cost hasn't changed either
       }
-      // m_N, m_F, and m_cost will describe the best mapping encountered, even if nothing better than max_cost was encountered
+      // m_N, m_deformation_gradient, and m_cost will describe the best mapping encountered, even if nothing better than max_cost was encountered
 
-
-      //std::cout << "Final N is:\n" << N << "\n\nAND final cost is " << min_cost << "\n\n";
       return *this;
     }
 
@@ -314,22 +319,29 @@ namespace CASM {
     //*******************************************************************************************
 
     bool LatticeMap::_check_canonical() const {
-      for(auto const &op : m_fsym_mats) {
-        m_icache = inv_mat() * op;
-        // Skip ops that transform matrix out of range; they won't be enumerated
-        if(std::abs(m_icache(0, 0)) > m_range
-           || std::abs(m_icache(0, 1)) > m_range
-           || std::abs(m_icache(0, 2)) > m_range
-           || std::abs(m_icache(1, 0)) > m_range
-           || std::abs(m_icache(1, 1)) > m_range
-           || std::abs(m_icache(1, 2)) > m_range
-           || std::abs(m_icache(2, 0)) > m_range
-           || std::abs(m_icache(2, 1)) > m_range
-           || std::abs(m_icache(2, 2)) > m_range)
-          continue;
+      // Purpose of jmin is to exclude (i,j)=(0,0) element
+      // jmin is set to 0 at end of i=0 pass;
+      Index jmin = 1;
+      for(Index i = 0; i < m_parent_fsym_mats.size(); ++i, jmin = 0) {
+        auto const &inv_parent_op = m_parent_fsym_mats[i];
+        for(Index j = jmin; j < m_child_fsym_mats.size(); ++j) {
+          auto const &child_op = m_child_fsym_mats[j];
+          m_icache = child_op * inv_mat() * inv_parent_op;
+          // Skip ops that transform matrix out of range; they won't be enumerated
+          if(std::abs(m_icache(0, 0)) > m_range
+             || std::abs(m_icache(0, 1)) > m_range
+             || std::abs(m_icache(0, 2)) > m_range
+             || std::abs(m_icache(1, 0)) > m_range
+             || std::abs(m_icache(1, 1)) > m_range
+             || std::abs(m_icache(1, 2)) > m_range
+             || std::abs(m_icache(2, 0)) > m_range
+             || std::abs(m_icache(2, 1)) > m_range
+             || std::abs(m_icache(2, 2)) > m_range)
+            continue;
 
-        if(std::lexicographical_compare(m_icache.data(), m_icache.data() + 9, inv_mat().data(), inv_mat().data() + 9))
-          return false;
+          if(std::lexicographical_compare(m_icache.data(), m_icache.data() + 9, inv_mat().data(), inv_mat().data() + 9))
+            return false;
+        }
       }
       return true;
     }

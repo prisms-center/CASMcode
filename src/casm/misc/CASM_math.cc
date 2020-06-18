@@ -258,6 +258,19 @@ namespace CASM {
 
 
   //*******************************************************************************************
+  std::string to_sequential_string(Index i, Index max_i, char prepend_char/*='0'*/) {
+    max_i = max(i, max_i);
+    Index length = 1;
+    while(max_i /= 10)
+      length++;
+
+    std::string tresult = std::to_string(i);
+
+    std::string result(length - tresult.size(), prepend_char);
+    return result.append(tresult);
+  }
+
+  //*******************************************************************************************
   //John G 010413
   int mod(int a, int b) {
     if(b < 0)

@@ -37,7 +37,7 @@ namespace CASM {
     /// \brief Construct indices of the subgroup for which this->is_equivalent(copy_apply(op, *this))
     template <typename OutputIt>
     OutputIt invariant_subgroup_indices(const Lattice &lat, const std::vector<SymOp> &super_group, OutputIt result) {
-      LatticeIsEquivalent is_equiv(lat);
+      IsPointGroupOp is_equiv(lat);
 
       Index ix = 0;
       for(auto it = super_group.begin(); it != super_group.end(); ++it) {

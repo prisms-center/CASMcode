@@ -458,10 +458,7 @@ namespace CASM {
       std::vector<size_type> step;
       std::vector<ConfigDoF> trajectory;
 
-      xtal::BasicStructure primstruc = mc.supercell().prim();
-      //!!TODO!! Was this here for a reason? Because I can't see what the purpose of it was
-      /* xtal::BasicStructure superstruc = primstruc.create_superstruc(mc.supercell().lattice()); */
-      xtal::BasicStructure superstruc = xtal::make_superstructure(primstruc, mc.supercell().transf_mat());
+      Structure const &primstruc = mc.supercell().prim();
 
       if(mc.settings().write_json()) {
 
@@ -485,7 +482,7 @@ namespace CASM {
           trajectory.push_back(it->get<ConfigDoF>(primstruc.basis().size(),
                                                   global_dof_info(primstruc),
                                                   local_dof_info(primstruc),
-                                                  occ_symrep_IDs(Structure(primstruc)),
+                                                  occ_symrep_IDs(primstruc),
                                                   primstruc.lattice().tol()));
         }
 
@@ -512,7 +509,7 @@ namespace CASM {
           sin >> _pass >> _step;
           pass.push_back(_pass);
           step.push_back(_step);
-          for(size_type i = 0; i < superstruc.basis().size(); i++) {
+          for(size_type i = 0; i < config_dof.size(); i++) {
             sin >> config_dof.occ(i);
           }
           trajectory.push_back(config_dof);
@@ -521,16 +518,9 @@ namespace CASM {
 
       for(size_type i = 0; i < trajectory.size(); i++) {
 
-        //!!TODO!! Was this here for a reason? Because I can't see what the purpose of it was
-        // copy occupation
-        /* for(size_type j = 0; j < trajectory[i].size(); j++) { */
-        /*   superstruc.set_occ(j, trajectory[i].occ(j)); */
-        /* } */
-
         // POSCAR title comment is printed with "Sample: #  Pass: #  Step: #"
         std::stringstream ss;
         ss << "Sample: " << i << "  Pass: " << pass[i] << "  Step: " << step[i];
-        /* superstruc.set_title(ss.str()); */
 
         // write file
         fs::ofstream sout(dir.POSCAR_snapshot(cond_index, i));

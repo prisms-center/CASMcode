@@ -2,8 +2,10 @@
 #define CASM_LatticeCanonicalForm
 
 #include <vector>
-#include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/global/definitions.hh"
+#include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/Adapter.hh"
+
 
 namespace CASM {
   namespace xtal {

@@ -151,14 +151,14 @@ namespace CASM {
         });
       }
 
-      GenericDatumFormatter<double, ConfigIO::Result> basis_deformation_cost() {
+      GenericDatumFormatter<double, ConfigIO::Result> atomic_deformation_cost() {
         return GenericDatumFormatter<double, Result>(
-                 "basis_deformation_cost", "",
+                 "atomic_deformation_cost", "",
         [](const Result & res) {
-          return res.properties.scalar("basis_deformation_cost");
+          return res.properties.scalar("atomic_deformation_cost");
         },
         [](const Result & res) {
-          return res.properties.has_scalar("basis_deformation_cost");
+          return res.properties.has_scalar("atomic_deformation_cost");
         });
       }
 
@@ -251,7 +251,7 @@ namespace CASM {
           has_data(),
           has_complete_data(),
           lattice_deformation_cost(),
-          basis_deformation_cost(),
+          atomic_deformation_cost(),
           relaxed_energy(),
           score(db_props),
           best_score(db_props),

@@ -13,7 +13,6 @@
 #include "casm/crystallography/Adapter.hh"
 #include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/crystallography/DoFSet.hh"
-#include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/SymType.hh"
@@ -33,18 +32,6 @@
 #include "casm/casm_io/Log.hh"
 
 #include "casm/app/AppIO.hh"
-
-namespace {
-  /// Create the symmtery representation for going from one basis to another
-  Eigen::MatrixXd make_symmetry_representation_for_basis_change(const Eigen::MatrixXd &from_basis, const Eigen::MatrixXd &to_basis, double tol) {
-    Eigen::MatrixXd U = from_basis.colPivHouseholderQr().solve(to_basis);
-    if(!(U.transpose()*U).eval().isIdentity(tol)) {
-      throw std::runtime_error("Cannot find orthogonal symmetry representation!");
-    }
-    return U;
-  }
-
-}
 
 namespace CASM {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -91,7 +78,7 @@ namespace CASM {
   void Structure::copy_attributes_from(const Structure &RHS) {
 
     m_basis_perm_rep_ID = RHS.m_basis_perm_rep_ID; //this *should* work
-    m_site_dof_symrepIDs = RHS.m_site_dof_symrepIDs; //this *should* work
+    m_site_dof_symrep_IDs = RHS.m_site_dof_symrep_IDs; //this *should* work
     m_factor_group = RHS.m_factor_group;
     m_factor_group.set_lattice(this->lattice());
   }
@@ -140,28 +127,28 @@ namespace CASM {
 
   //************************************************************
 
-  std::vector<SymGroupRepID> Structure::occupant_symrepIDs() const {
-    return this->m_occupant_symrepIDs;
+  std::vector<SymGroupRepID> Structure::occupant_symrep_IDs() const {
+    return this->m_occupant_symrep_IDs;
   }
 
-  std::vector<SymGroupRepID> Structure::site_dof_symrepIDs() const {
-    return this->m_site_dof_symrepIDs;
+  std::vector<std::map<DoFKey, SymGroupRepID>> Structure::site_dof_symrep_IDs() const {
+    return this->m_site_dof_symrep_IDs;
   }
 
-  SymGroupRepID Structure::global_dof_symrepID(const std::string dof_name)const {
-    return this->m_global_dof_symrepIDs.at(dof_name);
+  SymGroupRepID Structure::global_dof_symrep_ID(const std::string dof_name)const {
+    return this->m_global_dof_symrep_IDs.at(dof_name);
   }
 
-  void Structure::_reset_occupant_symrepIDs() {
-    this->m_occupant_symrepIDs.clear();
+  void Structure::_reset_occupant_symrep_IDs() {
+    this->m_occupant_symrep_IDs.clear();
     for(const Site &s : this->basis()) {
-      this->m_occupant_symrepIDs.emplace_back(SymGroupRepID::identity(s.allowed_occupants().size()));
+      this->m_occupant_symrep_IDs.emplace_back(SymGroupRepID::identity(s.allowed_occupants().size()));
     }
     return;
   }
 
-  void Structure::_reset_site_dof_symrepIDs() {
-    this->m_site_dof_symrepIDs = std::vector<SymGroupRepID>(this->basis().size());
+  void Structure::_reset_site_dof_symrep_IDs() {
+    this->m_site_dof_symrep_IDs = std::vector<std::map<DoFKey, SymGroupRepID>>(this->basis().size());
   }
 
   //This function gets the permutation representation of the
@@ -182,12 +169,10 @@ namespace CASM {
 
     m_basis_perm_rep_ID = m_factor_group.allocate_representation();
 
-    this->_reset_site_dof_symrepIDs();
-    for(std::string const &dof : continuous_local_dof_types(*this)) {
-      for(Index b = 0; b < basis().size(); ++b) {
-        if(basis()[b].has_dof(dof)) {
-          this->m_site_dof_symrepIDs[b] = this->m_factor_group.allocate_representation();
-        }
+    this->_reset_site_dof_symrep_IDs();
+    for(Index b = 0; b < basis().size(); ++b) {
+      for(auto const &dof : basis()[b].dofs()) {
+        this->m_site_dof_symrep_IDs[b][dof.first] = this->m_factor_group.allocate_representation();
       }
     }
 
@@ -197,7 +182,7 @@ namespace CASM {
     //   basis()[b].symrep(doftype.name()) = basis()[b].dof(doftype.name()).basis().transpose()
     //                                       * doftype.symop_to_matrix(op)
     //                                       * basis()[sitemap[b].sublattice()].dof(doftype.name().basis())
-    this->_reset_occupant_symrepIDs();
+    this->_reset_occupant_symrep_IDs();
     Eigen::MatrixXd trep, trepblock;
     for(Index s = 0; s < m_factor_group.size(); ++s) {
       auto const &op = m_factor_group[s];
@@ -210,7 +195,7 @@ namespace CASM {
         auto const &dofref_to = basis()[sitemap[b].sublattice()].occupant_dof();
         auto const &dofref_from = basis()[b].occupant_dof();
 
-        auto &symrep_from = this->m_occupant_symrepIDs[b];
+        auto &symrep_from = this->m_occupant_symrep_IDs[b];
         OccupantDoFIsEquivalent<Molecule> eq(dofref_from);
 
         if(eq(adapter::Adapter<xtal::SymOp, CASM::SymOp>()(op), dofref_to)) {
@@ -219,7 +204,7 @@ namespace CASM {
               symrep_from = m_factor_group.allocate_representation();
               Index s2;
               for(s2 = 0; s2 < s; ++s2) {
-                m_factor_group[s2].set_rep(symrep_from, SymPermutation(sequence<Index>(0, dofref_from.size())));
+                m_factor_group[s2].set_rep(symrep_from, SymPermutation(sequence<Index>(0, dofref_from.size() - 1)));
               }
               m_factor_group[s2].set_rep(symrep_from, SymPermutation(eq.perm().inverse()));
             }
@@ -232,16 +217,20 @@ namespace CASM {
       }
 
       for(auto const &dof_dim : local_dof_dims(*this)) {
-        for(Index b = 0; b < basis().size(); ++b) {
-          if(!basis()[b].has_dof(dof_dim.first))
+        for(Index from_b = 0; from_b < basis().size(); ++from_b) {
+          if(!basis()[from_b].has_dof(dof_dim.first))
             continue;
 
-          xtal::DoFSet const &_dofref_to = basis()[sitemap[b].sublattice()].dof(dof_dim.first);
-          xtal::DoFSet const &_dofref_from = basis()[b].dof(dof_dim.first);
+          xtal::DoFSet const &_dofref_from = basis()[from_b].dof(dof_dim.first);
+
+          Index to_b = sitemap[from_b].sublattice();
+          xtal::DoFSet const &_dofref_to = basis()[to_b].dof(dof_dim.first);
 
           //Transform the xtal::SiteDoFSet to the CASM::DoFSet version
-          CASM::DoFSet dofref_to = adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(_dofref_to, b);
-          CASM::DoFSet dofref_from = adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(_dofref_to, b);
+          CASM::DoFSet dofref_from = adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(_dofref_from, SymGroupRepID(), from_b);
+
+          CASM::DoFSet dofref_to = adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(_dofref_to, SymGroupRepID(), to_b);
+
           DoFIsEquivalent eq(dofref_from);
           //TODO
           //Calling the adapter here, because we said we don't want anything outside
@@ -255,7 +244,10 @@ namespace CASM {
 
           trep.setIdentity(dof_dim.second, dof_dim.second);
           trep.topLeftCorner(dofref_from.size(), dofref_from.size()) = eq.U();
-          op.set_rep(dofref_from.symrep_ID(), SymMatrixXd(trep));
+
+          SymGroupRepID from_symrep_ID = this->site_dof_symrep_IDs()[from_b][dof_dim.first];
+
+          op.set_rep(from_symrep_ID, SymMatrixXd(trep));
         }
       }
     }
@@ -265,6 +257,8 @@ namespace CASM {
 
   //***********************************************************
 
+  //TODO: Simplify the DoF equivalence checks. You can probably completely erase
+  //the comparators in basis_set in favor of the ones in the xtal namespace
   void Structure::_generate_global_symreps() {
     if(factor_group().size() <= 0) {
       default_err_log() << "ERROR in generate_global_dof_representations" << std::endl;
@@ -275,7 +269,7 @@ namespace CASM {
       std::string dof_name = name_dof_pr.first;
       const xtal::DoFSet &dof = name_dof_pr.second;
 
-      this->m_global_dof_symrepIDs[dof_name] = this->factor_group().allocate_representation();
+      this->m_global_dof_symrep_IDs[dof_name] = this->factor_group().allocate_representation();
 
       for(auto const &op : m_factor_group) {
         /* DoFIsEquivalent eq(dof.second); */
@@ -290,12 +284,12 @@ namespace CASM {
         }
         Eigen::MatrixXd basis_change_representation;
         try {
-          basis_change_representation =::make_symmetry_representation_for_basis_change(dof.basis(), transformed_dof.basis(), TOL);
+          basis_change_representation = xtal::dofset_transformation_matrix(dof.basis(), transformed_dof.basis(), TOL);
         }
         catch(std::runtime_error &e) {
           throw std::runtime_error(std::string(e.what()) + " Attempted to make representation for " + dof_name + ".");
         }
-        op.set_rep(this->m_global_dof_symrepIDs.at(dof_name), SymMatrixXd(basis_change_representation));
+        op.set_rep(this->m_global_dof_symrep_IDs.at(dof_name), SymMatrixXd(basis_change_representation));
       }
 
     }
@@ -410,15 +404,15 @@ namespace CASM {
     return result;
   }
 
-  std::map<DoFKey, DoFSetInfo> global_dof_info(BasicStructure const &_struc) {
+  std::map<DoFKey, DoFSetInfo> global_dof_info(Structure const &_struc) {
     std::map<DoFKey, DoFSetInfo> result;
-    for(auto const &dof :  _struc.global_dofs()) {
-      result.emplace(dof.first, adapter::Adapter<CASM::DoFSet, xtal::DoFSet>()(dof.second).info());
+    for(auto const &dof :  _struc.structure().global_dofs()) {
+      result.emplace(dof.first, adapter::Adapter<CASM::DoFSet, xtal::DoFSet>()(dof.second, _struc.global_dof_symrep_ID(dof.first)).info());
     }
     return result;
   }
 
-  std::map<DoFKey, std::vector<DoFSetInfo> > local_dof_info(BasicStructure const &_struc) {
+  std::map<DoFKey, std::vector<DoFSetInfo> > local_dof_info(Structure const &_struc) {
     std::map<DoFKey, std::vector<DoFSetInfo> > result;
 
     for(DoFKey const &type : continuous_local_dof_types(_struc)) {
@@ -427,7 +421,7 @@ namespace CASM {
       for(Index b = 0; b < _struc.basis().size(); ++b) {
         if(_struc.basis()[b].has_dof(type)) {
           const auto &dofset = _struc.basis()[b].dof(type);
-          tresult[b] = adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(dofset, b).info();
+          tresult[b] = adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(dofset, _struc.site_dof_symrep_IDs()[b].at(type), b).info();
         }
       }
       result.emplace(type, std::move(tresult));

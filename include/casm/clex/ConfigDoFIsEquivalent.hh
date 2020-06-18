@@ -493,7 +493,8 @@ namespace CASM {
         if(A.factor_group_index() != m_fg_index_A || !m_tmp_valid) {
           for(Index b = 0; b < m_values_ptr->n_sublat(); ++b) {
             m_fg_index_A = A.factor_group_index();
-            m_new_dof_A.sublat(b) = *(A.local_dof_rep(key(), b).MatrixXd()) * before.sublat(b);
+            Index rows = A.local_dof_rep(key(), b).MatrixXd()->rows();
+            m_new_dof_A.sublat(b).topRows(rows) = *(A.local_dof_rep(key(), b).MatrixXd()) * before.sublat(b).topRows(rows);
           }
         }
       }
@@ -502,7 +503,9 @@ namespace CASM {
         if(B.factor_group_index() != m_fg_index_B || !m_tmp_valid) {
           for(Index b = 0; b < m_values_ptr->n_sublat(); ++b) {
             m_fg_index_B = B.factor_group_index();
-            m_new_dof_B.sublat(b) = *(B.local_dof_rep(key(), b).MatrixXd()) * before.sublat(b);
+            Index rows = B.local_dof_rep(key(), b).MatrixXd()->rows();
+
+            m_new_dof_B.sublat(b).topRows(rows) = *(B.local_dof_rep(key(), b).MatrixXd()) * before.sublat(b).topRows(rows);
           }
         }
       }

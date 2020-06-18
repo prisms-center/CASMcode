@@ -29,8 +29,8 @@ namespace test {
     Molecule Zr = Molecule::make_atom("Zr");
     Molecule Va = Molecule::make_vacancy();
 
-    struc.push_back(Site(Coordinate(Eigen::Vector3d::Zero(), struc.lattice(), FRAC), {Zr}));
-    struc.push_back(Site(Coordinate(Eigen::Vector3d(2. / 3., 1. / 3., 1. / 2.), struc.lattice(), FRAC), {Zr}));
+    struc.push_back(Site(Coordinate(Eigen::Vector3d::Zero(), struc.lattice(), FRAC), std::vector<Molecule> {Zr}));
+    struc.push_back(Site(Coordinate(Eigen::Vector3d(2. / 3., 1. / 3., 1. / 2.), struc.lattice(), FRAC), std::vector<Molecule> {Zr}));
     struc.push_back(Site(Coordinate(Eigen::Vector3d(1. / 3., 2. / 3., 1. / 4.), struc.lattice(), FRAC), std::vector<Molecule> {Va, O}));
     struc.push_back(Site(Coordinate(Eigen::Vector3d(1. / 3., 2. / 3., 3. / 4.), struc.lattice(), FRAC), std::vector<Molecule> {Va, O}));
 
@@ -52,7 +52,7 @@ namespace test {
     Molecule B = Molecule::make_atom("B");
     Molecule C = Molecule::make_atom("C");
 
-    struc.push_back(Site(Coordinate(Eigen::Vector3d::Zero(), struc.lattice(), CART), {A, B, C}));
+    struc.push_back(Site(Coordinate(Eigen::Vector3d::Zero(), struc.lattice(), CART), std::vector<Molecule> {A, B, C}));
 
     return struc;
 

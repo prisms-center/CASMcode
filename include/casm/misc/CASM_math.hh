@@ -335,6 +335,16 @@ namespace CASM {
 
   std::string irrational_to_tex_string(double val, int lim, int max_pow = 2);
 
+
+  // *******************************************************************************************
+  /*
+   * Returns string representation of an integer that has the same number of characters as its
+   * maximum allowed value. To fix the length of the resulting string, the character 'prepend_char'
+   * is prepended. When prepend_char is '0', the resulting strings have sequential numerical values
+   * when ordered alphabetically.
+   */
+  std::string to_sequential_string(Index i, Index max_i, char prepend_char = '0');
+
   // *******************************************************************************************
   //John G 010413
   int mod(int a, int b);

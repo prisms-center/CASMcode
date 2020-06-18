@@ -18,8 +18,7 @@ namespace CASM {
     xtal::SpeciesAttribute &apply(const xtal::SymOp &op, xtal::SpeciesAttribute &mutating_attribute) {
       Eigen::MatrixXd symop_matrix_representation =
         mutating_attribute.traits().symop_to_matrix(get_matrix(op), get_translation(op), get_time_reversal(op));
-      Eigen::Vector3d new_value = symop_matrix_representation * mutating_attribute.value();
-      mutating_attribute.set_value(new_value);
+      mutating_attribute.set_value(symop_matrix_representation * mutating_attribute.value());
       return mutating_attribute;
     }
 
