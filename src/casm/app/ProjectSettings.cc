@@ -26,7 +26,7 @@ namespace CASM {
     return true;
   }
 
-  void check_project_name(std::string project_name) {
+  void throw_if_project_name_is_not_valid(std::string project_name) {
     /// check if project_name is suitable:
     if(!is_valid_project_name(project_name)) {
       throw std::runtime_error(
@@ -43,7 +43,7 @@ namespace CASM {
     m_lin_alg_tol(1e-10),
     m_default_database_name("jsonDB") {
 
-    check_project_name(m_project_name);
+    throw_if_project_name_is_not_valid(m_project_name);
   }
 
   ProjectSettings::ProjectSettings(std::string project_name, fs::path root) :
@@ -53,7 +53,7 @@ namespace CASM {
     m_lin_alg_tol(1e-10),
     m_default_database_name("jsonDB") {
 
-    check_project_name(m_project_name);
+    throw_if_project_name_is_not_valid(m_project_name);
 
   }
 

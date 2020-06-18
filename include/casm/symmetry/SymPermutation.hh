@@ -62,10 +62,6 @@ namespace CASM {
       return &m_mat;
     }
 
-    jsonParser &to_json(jsonParser &json) const override;
-
-    void from_json(const jsonParser &json) override;
-
   protected:
     SymOpRepresentation *inverse_impl() const override {
       return new SymPermutation(m_permute.inverse());
@@ -88,9 +84,6 @@ namespace CASM {
     void _calc_mat() const;
 
   };
-
-  jsonParser &to_json(const SymPermutation &sym, jsonParser &json);
-  void from_json(SymPermutation &sym, const jsonParser &json);
 
   /** @{ */
 }

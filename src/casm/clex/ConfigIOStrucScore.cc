@@ -115,7 +115,7 @@ namespace CASM {
       for(Index i = 0; i < m_prop_names.size(); i++) {
         std::stringstream t_ss;
         t_ss << "    " << name() << '(' << m_prim_path.string() << ','
-             << m_prop_names[i] << ',' << m_strucmapper->strain_weight() << ')';
+             << m_prop_names[i] << ',' << m_strucmapper->lattice_weight() << ')';
         col.push_back(t_ss.str());
       }
       return col;
@@ -129,53 +129,39 @@ namespace CASM {
       t_ss << name() << '(' << m_prim_path.string();
       for(Index i = 0; i < m_prop_names.size(); i++)
         t_ss   << ',' << m_prop_names[i];
-      t_ss << ',' << m_strucmapper->strain_weight() << ')';
+      t_ss << ',' << m_strucmapper->lattice_weight() << ')';
       return t_ss.str();
     }
 
     //****************************************************************************************
     Eigen::VectorXd StrucScore::evaluate(const Configuration &_config)const {
-      std::vector<double> result_vec;
-
       SimpleStructure relaxed_struc;
-
-      auto lambda = [&](const std::vector<double> &result_vec) {
-        Eigen::VectorXd res = Eigen::VectorXd::Zero(result_vec.size());
-        for(Index i = 0; i < res.size(); ++i) {
-          res(i) = result_vec[i];
-        }
-        return res;
-      };
 
       from_json(relaxed_struc, jsonParser(_calc_properties_path(_config)), "relaxed");
 
       auto result = m_strucmapper->map_deformed_struc(relaxed_struc);
+      Eigen::VectorXd result_vec(m_prop_names.size());
       if(result.empty()) {
-        for(Index i = 0; i < m_prop_names.size(); i++) {
-          result_vec.push_back(1e9);
-        }
-
-        return lambda(result_vec);
+        result_vec.setConstant(1e9);
+        return result_vec;
       }
+
 
       MappingNode const &mapping(*result.begin());
 
       for(Index i = 0; i < m_prop_names.size(); i++) {
-        if(m_prop_names[i] == "basis_score")
-          result_vec.push_back(xtal::StrucMapping::basis_cost(mapping, relaxed_struc.n_mol()));
-        else if(m_prop_names[i] == "lattice_score")
-          result_vec.push_back(xtal::StrucMapping::strain_cost(relaxed_struc.lat_column_mat.determinant(), mapping, relaxed_struc.n_mol()));
+        if(m_prop_names[i] == "basis_score") {
+          result_vec[i] = mapping.atomic_node.cost;
+        }
+        else if(m_prop_names[i] == "lattice_score") {
+          result_vec[i] = mapping.lattice_node.cost;
+        }
         else if(m_prop_names[i] == "total_score") {
-          double sc = xtal::StrucMapping::strain_cost(relaxed_struc.lat_column_mat.determinant(), mapping, relaxed_struc.n_mol());
-
-          double bc = xtal::StrucMapping::basis_cost(mapping, relaxed_struc.n_mol());
-
-          double w = m_strucmapper->strain_weight();
-          result_vec.push_back(w * sc + (1.0 - w)*bc);
+          result_vec[i] = mapping.cost;
         }
       }
 
-      return lambda(result_vec);
+      return result_vec;
     }
 
   }

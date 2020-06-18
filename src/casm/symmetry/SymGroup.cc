@@ -1,5 +1,4 @@
 #include "casm/symmetry/SymGroup.hh"
-#include <boost/filesystem/fstream.hpp>
 #include "casm/external/Eigen/CASM_AddOns"
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/algorithm.hh"
@@ -9,16 +8,375 @@
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/SymTools.hh"
-#include "casm/global/enum/json_io.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
 #include "casm/symmetry/SymPermutation.hh"
 #include "casm/symmetry/SymInfo.hh"
 #include "casm/casm_io/Log.hh"
 
-#include "casm/casm_io/container/json_io.hh"
+#include "casm/casm_io/container/stream_io.hh"
 
 namespace CASM {
+
+  namespace Local {
+
+    //  count number of operations of each type
+    //  proper before improper for each order, in ascending order
+    //  [identity, inversion, 2-fold, mirror, 3-fold, improper 3-fold, etc.]
+    static std::vector<Index> _number_of_operation_types(SymGroup const &group) {
+      std::vector<Index> result(20, 0);
+      for(SymOp const &op : group) {
+        SymInfo info(op, group.lattice());
+        if(info.op_type == symmetry_type::identity_op) {
+          result[0]++;
+        }
+        else if(info.op_type == symmetry_type::inversion_op) {
+          result[1]++;
+        }
+        else {
+          Index bit = 0;
+          if(op.matrix().determinant() < 0)
+            bit = 1;
+          for(Index n = 2; n <= 20; ++n) {
+            if((round(std::abs(info.angle))*n) % 360 == 0) {
+              result[2 * (n - 1) + bit]++;
+              break;
+            }
+
+          }
+        }
+      }
+      return result;
+    }
+
+    // populates point group infor for centric point group (groups with inversion)
+    static std::map<std::string, std::string> _centric_point_group_info(std::vector<Index> const &op_types) {
+      bool is_error = false;
+      std::map<std::string, std::string> result;
+      if(op_types[4] == 4) { // 3-fold
+        result["crystal_system"] = "Cubic";
+        result["international_name"] = "m-3";
+        result["name"] = "Th";
+        result["latex_name"] = "T_h";
+        result["space_group_range"] = "200-206";
+      }
+      else if(op_types[4] == 8) { // 3-fold
+        result["crystal_system"] = "Cubic";
+        result["international_name"] = "m-3m";
+        result["name"] = "Oh";
+        result["latex_name"] = "O_h";
+        result["space_group_range"] = "221-230";
+      }
+      else if(op_types[10] == 2) { // 6-fold
+        result["crystal_system"] = "Hexagonal";
+        if(op_types[2] == 1) { // 2-fold
+          result["international_name"] = "6/m";
+          result["name"] = "C6h";
+          result["latex_name"] = "C_{6h}";
+          result["space_group_range"] = "175-176";
+        }
+        else if(op_types[2] == 7) { //2-fold
+          result["international_name"] = "6/mmm";
+          result["name"] = "D6h";
+          result["latex_name"] = "D_{6h}";
+          result["space_group_range"] = "191-194";
+        }
+        else {
+          is_error = true;
+        }
+      } // end hexagonal
+      else if(op_types[4] == 2) { //3-fold
+        result["crystal_system"] = "Rhombohedral";
+        if(op_types[2] == 0) { //2-fold
+          result["international_name"] = "-3";
+          result["name"] = "S6";
+          result["latex_name"] = "S_6";
+          result["space_group_range"] = "147-148";
+        }
+        else if(op_types[2] == 3) { //2-fold
+          result["international_name"] = "-3m";
+          result["name"] = "D3d";
+          result["latex_name"] = "D_{3d}";
+          result["space_group_range"] = "162-167";
+        }
+        else {
+          is_error = true;
+        }
+      } // end rhombohedral
+      else if(op_types[6] == 2) { //4-fold
+        result["crystal_system"] = "Tetragonal";
+        if(op_types[2] == 1) { // 2-fold
+          result["international_name"] = "4/m";
+          result["name"] = "C4h";
+          result["latex_name"] = "C_{4h}";
+          result["space_group_range"] = "83-88";
+        }
+        else if(op_types[2] == 5) { // 2-fold
+          result["international_name"] = "4/mmm";
+          result["name"] = "D4h";
+          result["latex_name"] = "D_{4h}";
+          result["space_group_range"] = "123-142";
+        }
+        else {
+          is_error = true;
+        }
+      } // end tetragonal
+      else if(op_types[2] == 3) {
+        result["crystal_system"] = "Orthorhomic";
+        result["international_name"] = "mmm";
+        result["name"] = "D2h";
+        result["latex_name"] = "D_{2h}";
+        result["space_group_range"] = "47-84";
+      } // end orthorhombic
+      else if(op_types[2] == 1) {
+        result["crystal_system"] = "Monoclinic";
+        result["international_name"] = "2/m";
+        result["name"] = "C2h";
+        result["latex_name"] = "C_{2h}";
+        result["space_group_range"] = "10-15";
+      } // end monoclinic
+      else {
+        Index tot_ops = 0;
+        for(Index m : op_types) {
+          tot_ops += m;
+        }
+
+        result["crystal_system"] = "Triclinic";
+
+        if(op_types[1] == 1 && tot_ops == 2) {
+          result["international_name"] = "-1";
+          result["name"] = "Ci";
+          result["latex_name"] = "C_i";
+          result["space_group_range"] = "2";
+        }
+        else {
+          is_error = true;
+        }
+      }
+
+      if(is_error || result["crystal_system"].empty()) {
+        throw std::runtime_error("Error finding centric point group type. Crystal system determined to be " + result["crystal_system"]);
+      }
+      return result;
+    }
+
+    std::map<std::string, std::string> _acentric_point_group_info(std::vector<Index> const &op_types) {
+      std::map<std::string, std::string> result;
+      bool is_error = false;
+      if(op_types[4] == 8) { // 3-fold
+        result["crystal_system"] = "Cubic";
+        if(op_types[6] == 0) { // 4-fold
+          result["international_name"] = "23";
+          result["name"] = "T (Chiral)";
+          result["latex_name"] = "T";
+          result["space_group_range"] = "195-199";
+        }
+        else if(op_types[6] == 6) { // 4-fold
+          result["international_name"] = "432";
+          result["name"] = "O (Chiral)";
+          result["latex_name"] = "O";
+          result["space_group_range"] = "207-214";
+        }
+        else if(op_types[7] == 6) { // improper 4-fold
+          result["international_name"] = "-43m";
+          result["name"] = "Td";
+          result["latex_name"] = "T_d";
+          result["space_group_range"] = "215-220";
+        }
+        else {
+          is_error = true;
+        }
+      } // end cubic;
+      else if(op_types[5] == 2) { //Improper 3-fold
+        result["crystal_system"] = "Hexagonal";
+        if(op_types[2] == 0) { //2-fold
+          result["international_name"] = "-6";
+          result["name"] = "C3h";
+          result["latex_name"] = "C_{3h}";
+          result["space_group_range"] = "174";
+        }
+        else if(op_types[2] == 3) { //2-fold
+          result["international_name"] = "-6m2";
+          result["name"] = "D3h";
+          result["latex_name"] = "D_{3h}";
+          result["space_group_range"] = "187-190";
+        }
+
+      } // end hexagonal 1
+      else if(op_types[10] == 2) { //6-fold
+        result["crystal_system"] = "Hexagonal";
+        if(op_types[2] == 7) { // 2-fold
+          result["international_name"] = "622";
+          result["name"] = "D6 (Chiral)";
+          result["latex_name"] = "D_{6h}";
+          result["space_group_range"] = "177-182";
+        }
+        else if(op_types[3] == 6) { // mirror
+          result["international_name"] = "6mm";
+          result["name"] = "C6v";
+          result["latex_name"] = "C_{6v}";
+          result["space_group_range"] = "183-186";
+        }
+        else if(op_types[3] == 0) { // mirror
+          result["international_name"] = "6";
+          result["name"] = "C6 (Chiral)";
+          result["latex_name"] = "C_6";
+          result["space_group_range"] = "168-173";
+        }
+        else {
+          is_error = true;
+        }
+      } // end hexagonal 2
+      else if(op_types[4] == 2) { // 3-fold
+        result["crystal_system"] = "Rhombohedral";
+        if(op_types[2] == 3) { // 2-fold
+          result["international_name"] = "32";
+          result["name"] = "D3 (Chiral)";
+          result["latex_name"] = "D_3";
+          result["space_group_range"] = "149-155";
+        }
+        else if(op_types[3] == 3) { // mirror
+          result["international_name"] = "3m";
+          result["name"] = "C3v";
+          result["latex_name"] = "C_{3v}";
+          result["space_group_range"] = "156-161";
+        }
+        else if((op_types[2] + op_types[3]) == 0) {
+          result["international_name"] = "3";
+          result["name"] = "C3";
+          result["latex_name"] = "C_{3}";
+          result["space_group_range"] = "143-146";
+        }
+        else {
+          is_error = true;
+        }
+      } // end rhombohedral
+      else if(op_types[6] == 2) { // 4-fold
+        result["crystal_system"] = "Tetragonal";
+        if(op_types[2] == 5) { // 2-fold
+          result["international_name"] = "422";
+          result["name"] = "D4 (Chiral)";
+          result["latex_name"] = "D_4";
+          result["space_group_range"] = "89-98";
+        }
+        else if(op_types[3] == 4) { //mirror
+          result["international_name"] = "4mm";
+          result["name"] = "C4v";
+          result["latex_name"] = "C_{4v}";
+          result["space_group_range"] = "99-110";
+        }
+        else if(op_types[2] == 1) { //two-fold
+          result["international_name"] = "4";
+          result["name"] = "C4 (Chiral)";
+          result["latex_name"] = "C_4";
+          result["space_group_range"] = "75-80";
+        }
+        else {
+          is_error = true;
+        }
+      }// end tetragonal 1
+      else if(op_types[7] == 2) { // improper 4-fold
+        result["crystal_system"] = "Tetragonal";
+        if(op_types[2] == 3) { // 2-fold
+          result["international_name"] = "-42m";
+          result["name"] = "D2d";
+          result["latex_name"] = "D_{2d}";
+          result["space_group_range"] = "111-122";
+        }
+        else if(op_types[2] == 1) { // 2-fold
+          result["international_name"] = "-4";
+          result["name"] = "S4";
+          result["latex_name"] = "S_4";
+          result["space_group_range"] = "81-82";
+        }
+        else {
+          is_error = true;
+        }
+      } // end tetragonal 2
+      else if((op_types[2] + op_types[3]) == 3) { // 2-fold and mirror
+        result["crystal_system"] = "Orthorhomic";
+        if(op_types[2] == 3) { // 2-fold
+          result["international_name"] = "222";
+          result["name"] = "D2 (Chiral)";
+          result["latex_name"] = "D_2";
+          result["space_group_range"] = "16-24";
+        }
+        else if(op_types[3] == 2) { // mirror
+          result["international_name"] = "mm2";
+          result["name"] = "C2v";
+          result["latex_name"] = "C_{2v}";
+          result["space_group_range"] = "25-46";
+        }
+        else {
+          is_error = true;
+        }
+      } // end orthorhombic
+      else if((op_types[2] + op_types[3]) == 1) { // 2-fold and mirror
+        result["crystal_system"] = "Monoclinic";
+        if(op_types[2] == 1) { // 2-fold
+          result["international_name"] = "2";
+          result["name"] = "C2 (Chiral)";
+          result["latex_name"] = "C_2";
+          result["space_group_range"] = "3-5";
+        }
+        else if(op_types[3] == 1) { // mirror
+          result["international_name"] = "m";
+          result["name"] = "Cs";
+          result["latex_name"] = "C_s";
+          result["space_group_range"] = "6-9";
+        }
+        else {
+          is_error = true;
+        }
+      } // end Acentric monoclinic
+      else {
+        Index tot_ops = 0;
+        for(Index m : op_types) {
+          tot_ops += m;
+        }
+
+        result["crystal_system"] = "Triclinic";
+
+        if(tot_ops == 1) {
+          result["international_name"] = "1";
+          result["name"] = "C1 (Chiral)";
+          result["latex_name"] = "C_1";
+          result["space_group_range"] = "1";
+        }
+        else {
+          is_error = true;
+        }
+      }
+
+      if(is_error || result["crystal_system"].empty()) {
+        throw std::runtime_error("Error finding acentric point group type. Crystal system determined to be " + result["crystal_system"]);
+      }
+
+      return result;
+    }
+
+    // Does not work for icosahedral groups
+    static std::map<std::string, std::string> _nonmagnetic_point_group_info(SymGroup const &g) {
+      SymGroup pg = g.copy_no_trans(false);
+      std::vector<Index> op_types = _number_of_operation_types(pg);
+      std::map<std::string, std::string> result;
+      // Calculate total number of rotation elements
+      Index nm = op_types[2] + 1;
+      for(Index k = 4; k < op_types.size(); k++) {
+        nm += op_types[k];
+      }
+      if(op_types[1]) {
+        result = _centric_point_group_info(op_types);
+        result["centricity"] = "Centric";
+      }
+      else {
+        result = _acentric_point_group_info(op_types);
+        result["centricity"] = "Acentric";
+      }
+      return result;
+    }
+  }
+
   //INITIALIZE STATIC MEMBER MasterSymGroup::GROUP_COUNT
   //THIS MUST OCCUR IN A .CC FILE; MAY CAUSE PROBLEMS IF WE
   //CHANGE COMPILING/LINKING STRATEGY
@@ -349,7 +707,7 @@ namespace CASM {
     }
 
     for(Index i = 0 ; i < new_rep->size() ; i++) {
-      //std::cout << "Rota Rep final mats " << i << "\n" << *(new_rep->MatrixXd(i)) << std::endl;
+      //std::cout << "Rota Rep final mats " << i << std::endl << *(new_rep->MatrixXd(i)) << std::endl;
     }
 
     return _add_representation(new_rep);
@@ -452,7 +810,7 @@ namespace CASM {
                 << "    (i.e., a well-defined point group could not be found with the current tolerance of " << _lat.tol() << ").\n"
                 << "    CASM will use the group closure of the symmetry operations that were found.  Please consider using the \n"
                 << "    CASM symmetrization tool on your input files.\n";
-      std::cout << "lat_column_mat:\n" << _lat.lat_column_mat() << "\n\n";
+      std::cerr << "lat_column_mat:\n" << _lat.lat_column_mat() << "\n\n";
 
       point_group.enforce_group(_lat.tol());
 
@@ -495,10 +853,7 @@ namespace CASM {
     conjugacy_classes.clear();
     class_names.clear();
     index2conjugacy_class.clear();
-    m_character_table.clear();
-    complex_irrep.clear();
     irrep_IDs.clear();
-    irrep_names.clear();
 
     m_subgroups.clear();
 
@@ -540,362 +895,45 @@ namespace CASM {
   }
 
   //*****************************************************************
-  // Determination of point group type
-  // By counting the number of unique type of rotation symmetry and
-  // total number of rotation symmetry elements, the point group type
-  // of a space group is determined.
-
-  //
-  // Donghee
-  //*****************************************************************
-  std::vector<Index> SymGroup::get_rotation_groups() const {
-    std::vector<Index> result(12, 0);
-    for(Index i = 0; i < size(); i++) {
-      SymInfo info(at(i), lattice());
-      if(info.op_type == symmetry_type::identity_op) {
-        result[0]++;
+  std::map<std::string, std::string> point_group_info(SymGroup const &g) {
+    SymGroup pg = g.copy_no_trans(false);
+    SymGroup nonmag;
+    bool grey = false;
+    for(SymOp const &op : pg) {
+      if(!op.time_reversal()) {
+        nonmag.push_back(op);
       }
-      else if(info.op_type == symmetry_type::inversion_op) {
-        result[1]++;
-      }
-      else {
-        Index bit = 0;
-        if(at(i).matrix().determinant() < 0)
-          bit = 1;
-        for(Index n = 2; n <= 6; ++n) {
-          if(almost_equal<double>(360. / n, info.angle)) {
-            result[2 * (n - 1) + bit]++;
-            break;
-          }
-
-        }
+      else if(!grey && op.matrix().isIdentity(TOL)) {
+        grey = true;
       }
     }
-    return result;
-  }
-  //*****************************************************************
-  std::map<std::string, std::string> SymGroup::point_group_info() const {
-    std::vector<Index> rgroups = get_rotation_groups();
-    std::map<std::string, std::string> result;
-    // Calculate total number of rotation elements
-    Index nm = rgroups[2] + 1;
-    for(Index k = 4; k < rgroups.size(); k++) {
-      nm += rgroups[k];
+    nonmag.set_lattice(g.lattice());
+    auto nonmag_info = Local::_nonmagnetic_point_group_info(nonmag);
+
+    //nonmagnetic group:
+    if(nonmag.size() == pg.size()) {
+      return nonmag_info;
     }
-    bool centric = true;
-    result["centricity"] = "Centric";
-    if(!rgroups[1]) {
-      centric = false;
-      result["centricity"] = "Acentric";
+
+    //grey group:
+    if(grey) { //(2 * nonmag.size()) == pg.size()) {
+      nonmag_info["space_group_range"] = "Magnetic group (not supported)";
+      nonmag_info["international_name"] += "1'";
+      nonmag_info["name"] += "'";
+      nonmag_info["latex_name"].insert(nonmag_info["latex_name"].find('_'), "'");
+      return nonmag_info;
     }
-    // naming point gorup
-    if((rgroups[4] + rgroups[5]) == 8) {
-      result["crystal_system"] = "Cubic";
-      switch(nm) {
-      case 12:
-        if(centric) {
-          result["international_name"] = "m-3";
-          result["name"] = "Th";
-          result["latex_name"] = "T_h";
-          result["space_group_range"] = "200-206";
-        }
-        else {
-          result["international_name"] = "23";
-          result["name"] = "T (Chiral)";
-          result["latex_name"] = "T";
-          result["space_group_range"] = "195-199";
-        }
-        break;
-      case 24:
-        if(centric) {
-          result["international_name"] = "m-3m";
-          result["name"] = "Oh";
-          result["latex_name"] = "O_h";
-          result["space_group_range"] = "221-230";
-        }
-        else {
-          if(rgroups[6] == 6) {
-            result["international_name"] = "432";
-            result["name"] = "O (Chiral)";
-            result["latex_name"] = "O";
-            result["space_group_range"] = "207-214";
-          }
-          else if(rgroups[7] == 6) {
-            result["international_name"] = "-43m";
-            result["name"] = "Td";
-            result["latex_name"] = "T_d";
-            result["space_group_range"] = "215-220";
-          }
-          else {
-            default_err_log() << "\n Error Cubic case 24 Acentric \n ";
-          }
-        }
-        break;
-      default:
-        default_err_log() << "\n Error Cubic \n";
-      }
-    } // for cubic;
-    else if((rgroups[10] + rgroups[11]) == 2) {
-      result["crystal_system"] = "Hexagonal";
-      switch(nm) {
-      case 6:
-        if(centric) {
-          result["international_name"] = "6/m";
-          result["name"] = "C6h";
-          result["latex_name"] = "C_{6h}";
-          result["space_group_range"] = "175-176";
-        }
-        else {
-          if(rgroups[10] == 2) {
-            result["international_name"] = "6";
-            result["name"] = "C6 (Chiral)";
-            result["latex_name"] = "C_6";
-            result["space_group_range"] = "168-173";
-          }
-          else if(rgroups[11] == 2) {
-            result["international_name"] = "-6";
-            result["name"] = "C3h";
-            result["latex_name"] = "C_{3h}";
-            result["space_group_range"] = "174";
-          }
-          else {
-            default_err_log() << "\n Error Hexagonal case 6 Acentric \n ";
-          }
-        }
-        break;
-      case 12:
-        if(centric) {
-          result["international_name"] = "6/mmm";
-          result["name"] = "D6h";
-          result["latex_name"] = "D_{6h}";
-          result["space_group_range"] = "191-194";
-        }
-        else {
-          if(rgroups[10] == 2) {
-            if(rgroups[3] == 7) {
-              result["international_name"] = "622";
-              result["name"] = "D6 (Chiral)";
-              result["latex_name"] = "D_{6h}";
-              result["space_group_range"] = "177-182";
-            }
-            else if(rgroups[4] == 6) {
-              result["international_name"] = "6mm";
-              result["name"] = "C6v";
-              result["latex_name"] = "C_{6v}";
-              result["space_group_range"] = "183-186";
-            }
-            else default_err_log() << "\n Error Hexagonal case 12 Ancentric #6 \n";
-          }
-          else if(rgroups[11] == 2) {
-            result["international_name"] = "-6m2";
-            result["name"] = "D3h";
-            result["latex_name"] = "D_{3h}";
-            result["space_group_range"] = "187-190";
-          }
-          else {
-            default_err_log() << "\n Error Hexagonal case 12 Acentric \n ";
-          }
-        }
-        break;
-      default:
-        default_err_log() << "\n Error Hexagonal \n";
-      }
-    } // for hexagonal
-    else if((rgroups[4] + rgroups[5]) == 2) {
-      result["crystal_system"] = "Trigonal";
-      switch(nm) {
-      case 3:
-        if(centric) {
-          result["international_name"] = "-3";
-          result["name"] = "S6";
-          result["latex_name"] = "S_6";
-          result["space_group_range"] = "147-148";
-        }
-        else {
-          result["international_name"] = "3";
-          result["name"] = "C3 (Chiral)";
-          result["latex_name"] = "C_3";
-          result["space_group_range"] = "143-146";
-        }
-        break;
-      case 6:
-        if(centric) {
-          result["international_name"] = "-3m";
-          result["name"] = "D3d";
-          result["latex_name"] = "D_{3d}";
-          result["space_group_range"] = "162-167";
-        }
-        else {
-          if(rgroups[2] == 3) {
-            result["international_name"] = "32";
-            result["name"] = "D3 (Chiral)";
-            result["latex_name"] = "D_3";
-            result["space_group_range"] = "149-155";
-          }
-          else if(rgroups[3] == 3) {
-            result["international_name"] = "3m";
-            result["name"] = "C3v";
-            result["latex_name"] = "C_{3v}";
-            result["space_group_range"] = "156-161";
-          }
-          else {
-            default_err_log() << "\n Error Trigonal case 6 Acentric \n ";
-          }
-        }
-        break;
-      default:
-        default_err_log() << "\n Error Trigonal \n";
-      }
-    } // for trigonal
-    else if((rgroups[6] + rgroups[7]) == 2) {
-      result["crystal_system"] = "Tetragonal";
-      switch(nm) {
-      case 4:
-        if(centric) {
-          result["international_name"] = "4/m";
-          result["name"] = "C4h";
-          result["latex_name"] = "C_{4h}";
-          result["space_group_range"] = "83-88";
-        }
-        else {
-          if(rgroups[6] == 2) {
-            result["international_name"] = "4";
-            result["name"] = "C4 (Chiral)";
-            result["latex_name"] = "C_4";
-            result["space_group_range"] = "75-80";
-          }
-          else if(rgroups[7] == 2) {
-            result["international_name"] = "-4";
-            result["name"] = "S4";
-            result["latex_name"] = "S_4";
-            result["space_group_range"] = "81-82";
-          }
-          else {
-            default_err_log() << "\n Error Tetragonal case 4 Acentric \n ";
-          }
-        }
 
-        break;
-      case 8:
-        if(centric) {
-          result["international_name"] = "4/mmm";
-          result["name"] = "D4h";
-          result["latex_name"] = "D_{4h}";
-          result["space_group_range"] = "123-142";
-        }
-        else {
-          if(rgroups[6] == 2) {
-            if(rgroups[3] == 5) {
-              result["international_name"] = "422";
-              result["name"] = "D4 (Chiral)";
-              result["latex_name"] = "D_4";
-              result["space_group_range"] = "89-98";
-            }
-            else if(rgroups[4] == 4) {
-              result["international_name"] = "4mm";
-              result["name"] = "C4v";
-              result["latex_name"] = "C_{4v}";
-              result["space_group_range"] = "99-110";
-            }
-            else default_err_log() << "\n Error Tetragonal case 8 Ancentric #4 \n";
-          }
-          else if(rgroups[7] == 2) {
-            result["international_name"] = "-42m";
-            result["name"] = "D2d";
-            result["latex_name"] = "D_{2d}";
-            result["space_group_range"] = "111-122";
-          }
-          else {
-            default_err_log() << "\n Error Tetragonal case 8 Acentric \n ";
-          }
-        }
-        break;
-      default:
-        default_err_log() << "\n Error Tetragonal \n";
-      }
-    } // for tetragonal
-    else if((rgroups[2] + rgroups[3]) == 3 || ((rgroups[2] + rgroups[3]) == 6  && nm == 4)) {
-      result["crystal_system"] = "Orthorhomic";
-      if(centric) {
-        result["international_name"] = "mmm";
-        result["name"] = "D2h";
-        result["latex_name"] = "D_{2h}";
-        result["space_group_range"] = "47-84";
-      }
-      else {
-        if(rgroups[3] == 3) {
-          result["international_name"] = "222";
-          result["name"] = "D2 (Chiral)";
-          result["latex_name"] = "D_2";
-          result["space_group_range"] = "16-24";
-        }
-        else if(rgroups[4] == 2) {
-          result["international_name"] = "mm2";
-          result["name"] = "C2v";
-          result["latex_name"] = "C_{2v}";
-          result["space_group_range"] = "25-46";
-        }
-        else {
-          default_err_log() << "\n Error Orthorhombic Acentric \n ";
-        }
-      }
-    } // for orthorhombic
+    auto tot_info = Local::_nonmagnetic_point_group_info(pg);
 
-    else if((rgroups[2] + rgroups[3]) == 1 || nm == 2) {
-      result["crystal_system"] = "Monoclinic";
-      if(centric) {
-        result["international_name"] = "2/m";
-        result["name"] = "C2h";
-        result["latex_name"] = "C_{2h}";
-        result["space_group_range"] = "10-15";
-      }
-      else {
-        if(rgroups[3] == 1) {
-          result["international_name"] = "2";
-          result["name"] = "C2 (Chiral)";
-          result["latex_name"] = "C_2";
-          result["space_group_range"] = "3-5";
-        }
-        else if(rgroups[4] == 1) {
-          result["international_name"] = "m";
-          result["name"] = "Cs";
-          result["latex_name"] = "C_s";
-          result["space_group_range"] = "6-9";
-        }
-        else {
-          default_err_log() << "\n Error Monoclinic Acentric \n ";
-        }
-      }
-    } // for Acentric monoclinic
-    else if(nm == 1) {
-      result["crystal_system"] = "Triclinic";
-      if(centric) {
-        result["international_name"] = "-1";
-        result["name"] = "Ci";
-        result["latex_name"] = "C_i";
-        result["space_group_range"] = "2";
-      }
-      else {
-        result["international_name"] = "1";
-        result["name"] = "C1 (Chiral)";
-        result["latex_name"] = "C_1";
-        result["space_group_range"] = "1";
-      }
-    }
-    else {
-      default_err_log() << "Error foind point group type \n";
-    }
-    return result;
-  }
+    //magnetic group:
+    tot_info["international_name"] = "Magnetic group (not supported)";
+    tot_info["space_group_range"] = "Magnetic group (not supported)";
+    tot_info["name"] += ("(" + nonmag_info["name"] + ")");
+    tot_info["latex_name"] += ("(" + nonmag_info["latex_name"] + ")");
 
-  //*******************************************************************************************
+    return tot_info;
 
-  void SymGroup::print_space_group_info(std::ostream &out) const {
-
-    auto result = point_group_info();
-    out << "  Crystal System : " << result["crystal_system"] << "\n";
-    out << "  Space Group # : " << result["space_group_range"] << "\n";
-    out << "  Point Group is " << result["centricity"] << " " << result["international_name"] << " ( " << result["name"] << " ) \n";
   }
 
   //*******************************************************************************************
@@ -936,354 +974,6 @@ namespace CASM {
     assert(m_lat_ptr && "Attempting to access Lattice of a SymGroup, but it has not been initialized!");
     return *m_lat_ptr;
   }
-
-  //***************************************************
-
-  void SymGroup::_generate_irrep_names() const { //AAB
-    irrep_names.resize(conjugacy_classes.size());
-
-    std::vector<int> repeats;
-
-    bool inversion = false;
-    bool sigma_h = false;
-    bool sigma_v = false;
-    bool C2p = false;
-
-    bool sym_wrt_paxis = true;
-    bool sym_wrt_v = true;
-    bool sym_wrt_C2p = true;
-    bool sym_wrt_h = true;
-    bool sym_wrt_inv = true;
-
-    bool cubic = false;
-
-    bool all_unique = false;
-
-    _generate_class_names();
-
-    if((name.find("O") != std::string::npos) || (name.find("T") != std::string::npos)) {
-      cubic = true;
-    }
-
-    for(Index j = 0; j < conjugacy_classes.size(); j++) {
-      if(class_names[j].find("i") != std::string::npos) {
-        inversion = true;
-      }
-      if(class_names[j].find("h") != std::string::npos) {
-        sigma_h = true;
-      }
-      if(class_names[j].find("v") != std::string::npos) {
-        sigma_v = true;
-      }
-      if(class_names[j].find("C2'") != std::string::npos) {
-        C2p = true;
-      }
-    }
-
-    //std::cout << "STEP 1: Name according to representation dimension...\n";
-    for(Index i = 0; i < irrep_names.size(); i++) {
-      sym_wrt_paxis = true;
-      if(m_character_table[i][0].real() == 1.0) {
-        // Check for symmetry wrt principal axis...
-        // This means finding unprimed proper rotations and checking their
-        // dimension one characters' signs. If they are all +1, the IrRep
-        // is symmetry wrt principal axis. If any of them are -1, then it is
-        // antisymmetric wrt principal axis...
-        // Symmetric => "A"
-        // Antisymmetric => "B"
-
-
-        // *** IF CUBIC, MUST ONLY CONSIDER THE C3 AXIS HERE!!
-        // *** THERE SHOULD BE NO "B"
-
-        for(Index j = 0; j < conjugacy_classes.size() && sym_wrt_paxis; j++) {
-          if(class_names[j].find("C") != std::string::npos) {
-            if(class_names[j].find("'") != std::string::npos) {
-              continue;
-            }
-            else if(m_character_table[i][j].real() < 0) {
-              sym_wrt_paxis = false;
-            }
-          }
-        }
-
-        if(sym_wrt_paxis == true) {
-          irrep_names[i] = "A";
-        }
-        else if(!cubic) {
-          irrep_names[i] = "B";
-        }
-        else {
-          irrep_names[i] = "A";
-        }
-
-      } //Closes loop over 1-d representations
-
-      else if(m_character_table[i][0].real() == 2.0) {
-        irrep_names[i] = "E";
-      }
-      else if(m_character_table[i][0].real() == 3.0) {
-        irrep_names[i] = "T";
-      }
-    }
-
-    // This checks if each representation has a unique name...
-    for(Index j = 0; j < irrep_names.size() && all_unique; j++) {
-      for(Index k = 0; k < irrep_names.size() && all_unique; k++) {
-        all_unique = true;
-        if((j != k) && (irrep_names[j].compare(irrep_names[k]) == 0)) {
-          //	    //std::cout << irrep_names[j] << " = " << irrep_names[k] << std::endl;
-          all_unique = false;
-        }
-      }
-    }
-    //std::cout << irrep_names << std::endl;
-    //std::cout << "Check if all of the current names are unique... " << all_unique << "\n";
-
-    if(!all_unique) {
-      repeats.clear();
-      for(Index j = 0; j < irrep_names.size(); j++) {
-        for(Index k = 0; k < irrep_names.size(); k++) {
-          if((j != k) && (irrep_names[j].compare(irrep_names[k]) == 0) && (m_character_table[j][0].real() == m_character_table[k][0].real())) {
-            int dim = int(m_character_table[k][0].real());
-            if(!contains(repeats, dim)) {
-              repeats.push_back(dim);
-            }
-          }
-        }
-      }
-    }
-
-    //    //std::cout << "Repeats in ..." << repeats << "\n";
-    //std::cout << "STEP 2: Name according to sigma_v or C2p symmetry...\n";
-    //Check for symmetry wrt vertical mirror plane or C2' axis...
-    //I don't know how to do this for non-1D representations =(
-
-
-    for(Index i = 0; i < irrep_names.size(); i++) {
-      int C2ind = 0;
-      if((sigma_v == true) && (!all_unique) && (contains(repeats, int(m_character_table[0][i].real()))) && (irrep_names[i] != "E") && (!cubic)) {
-        sym_wrt_v = true;
-        for(Index j = 0; j < conjugacy_classes.size() && sym_wrt_v; j++) {
-          if(class_names[j].find("v") != std::string::npos) {
-            if(class_names[j].find("'") != std::string::npos) {
-              continue;
-            }
-            else if(m_character_table[i][j].real() < 0) {
-              sym_wrt_v = false;
-            }
-          }
-        }
-        if(sym_wrt_v == true) {
-          irrep_names[i].append("1");
-        }
-        else {
-          irrep_names[i].append("2");
-        }
-      }
-
-      else if((sigma_v != true) && (C2p == true) && (!all_unique) && contains(repeats, int(m_character_table[0][i].real())) && (irrep_names[i] != "E") && (!cubic)) {
-        for(Index j = 0; j < conjugacy_classes.size() && sym_wrt_C2p; j++) {
-          if(class_names[j].find("C2") != std::string::npos) {
-            if((class_names[j].find("'") != std::string::npos) || (class_names[j].find("''") == std::string::npos)) {
-              continue;
-            }
-            else if(m_character_table[i][j].real() < 0) {
-              sym_wrt_C2p = false;
-            }
-          }
-        }
-        if(sym_wrt_C2p == true) {
-          irrep_names[i].append("1");
-        }
-        else {
-          irrep_names[i].append("2");
-        }
-      }
-
-      else if(((sigma_v == true) || (C2p == true)) && (!all_unique) && (!cubic)) { //This only deals with 2d stuff...
-        for(Index j = 0; j < conjugacy_classes.size(); j++) {
-          if((class_names[j].find("C2") != std::string::npos) && (class_names[j].find("'") == std::string::npos) && !cubic) {
-            C2ind = j;
-          }
-        }
-        if(m_character_table[i][C2ind].real() > 0) {
-          irrep_names[i].append("1");
-        }
-        else {
-          irrep_names[i].append("2");
-        }
-      }
-
-      else if(((sigma_v == true) || (C2p == true)) && (!all_unique) && (cubic)) {
-        for(Index j = 0; j < conjugacy_classes.size(); j++) {
-          if(((class_names[j].find("C2") != std::string::npos) && (class_names[j].find("'") != std::string::npos)) || (class_names[j].find("d") != std::string::npos)) {
-            C2ind = j;
-          }
-        }
-
-        if(m_character_table[i][C2ind].real() > 0) {
-          if(irrep_names[i] == "A") {
-            irrep_names[i].append("1");
-          }
-          else if(irrep_names[i] == "T") {
-            irrep_names[i].append("2");
-          }
-        }
-        else {
-          if(irrep_names[i] == "A") {
-            irrep_names[i].append("2");
-          }
-          else if(irrep_names[i] == "T") {
-            irrep_names[i].append("1");
-          }
-        }
-
-      }
-
-      else if((name == "D2h") && (irrep_names[i] == "B")) {
-        int c2z = 0, c2y = 0, c2x = 0;
-        for(Index j = 0; j < conjugacy_classes.size(); j++) {
-          if(class_names[j].find("(z)") != std::string::npos) {
-            c2z = j;
-          }
-          else if(class_names[j].find("(y)") != std::string::npos) {
-            c2y = j;
-          }
-          else if(class_names[j].find("(x)") != std::string::npos) {
-            c2x = j;
-          }
-        }
-
-        if(m_character_table[i][c2z].real() > 0) {
-          irrep_names[i].append("1");
-        }
-        else if(m_character_table[i][c2y].real() > 0) {
-          irrep_names[i].append("2");
-        }
-        else if(m_character_table[i][c2x].real() > 0) {
-          irrep_names[i].append("3");
-        }
-      }
-    }
-
-    // This checks if each representation has a unique name...
-    for(Index j = 0; j < irrep_names.size() && all_unique; j++) {
-      for(Index k = 0; k < irrep_names.size() && all_unique; k++) {
-        all_unique = true;
-        if((j != k) && (irrep_names[j].compare(irrep_names[k]) == 0)) {
-          //	    //std::cout << irrep_names[j] << " = " << irrep_names[k] << std::endl;
-          all_unique = false;
-        }
-      }
-    }
-    //    //std::cout << irrep_names << std::endl;
-    //    //std::cout << "Check if all of the current names are unique... " << all_unique << "\n";
-
-    if(!all_unique) {
-      repeats.clear();
-      for(Index j = 0; j < irrep_names.size(); j++) {
-        for(Index k = 0; k < irrep_names.size(); k++) {
-          if((j != k) && (irrep_names[j].compare(irrep_names[k]) == 0) && (m_character_table[j][0].real() == m_character_table[k][0].real())) {
-            int dim = int(m_character_table[k][0].real());
-            if(!contains(repeats, dim)) {
-              repeats.push_back(dim);
-            }
-          }
-        }
-      }
-    }
-    //    //std::cout << "Repeats in ..." << repeats << "\n";
-    //std::cout << "STEP 3: Name according to inversion symmetry...\n";
-    for(Index i = 0; i < irrep_names.size(); i++) {
-      if((inversion == true) && (!all_unique) && (contains(repeats, int(m_character_table[0][i].real())))) {
-        sym_wrt_inv = true;
-        for(Index j = 0; j < conjugacy_classes.size() && sym_wrt_inv; j++) {
-          if((class_names[j].find("i") != std::string::npos) && (m_character_table[i][j].real() < 0)) {
-            sym_wrt_inv = false;
-          }
-        }
-        if(sym_wrt_inv == true) {
-          irrep_names[i].append("g");
-        }
-        else {
-          irrep_names[i].append("u");
-        }
-      }
-    }
-
-    for(Index j = 0; j < irrep_names.size() && all_unique; j++) {
-      for(Index k = 0; k < irrep_names.size() && all_unique; k++) {
-        all_unique = true;
-        if((j != k) && (irrep_names[j].compare(irrep_names[k]) == 0)) {
-          //	    //std::cout << irrep_names[j] << " = " << irrep_names[k] << std::endl;
-          all_unique = false;
-        }
-      }
-    }
-    //    //std::cout << irrep_names << std::endl;
-    //std::cout << "Check if all of the current names are unique... " << all_unique << "\n";
-
-    if(!all_unique) {
-      repeats.clear();
-      for(Index j = 0; j < irrep_names.size(); j++) {
-        for(Index k = 0; k < irrep_names.size(); k++) {
-          if((j != k) && (irrep_names[j].compare(irrep_names[k]) == 0) && (m_character_table[j][0].real() == m_character_table[k][0].real())) {
-            int dim = int(m_character_table[k][0].real());
-            if(!contains(repeats, dim)) {
-              repeats.push_back(dim);
-            }
-          }
-        }
-      }
-    }
-
-    //    //std::cout << "Repeats in ..." << repeats << "\n";
-
-    //    //std::cout << "STEP 4: Name according to sigma_h symmetry...\n";
-    for(Index i = 0; i < irrep_names.size(); i++) {
-      if((sigma_h == true) && (!all_unique) && (contains(repeats, int(m_character_table[0][i].real())))) {
-        for(Index j = 0; j < conjugacy_classes.size() && sym_wrt_h; j++) {
-          if((class_names[j].find("h") != std::string::npos) && (m_character_table[i][j].real() < 0)) {
-            sym_wrt_h = false;
-          }
-        }
-
-        if(sym_wrt_h == true) {
-          irrep_names[i].append("'");
-        }
-        else {
-          irrep_names[i].append("''");
-        }
-      }
-    }//Close loop over representations
-
-    //    //std::cout << "At the very end, check if everything is unique...\n";
-
-    all_unique = true;
-    for(Index j = 0; j < irrep_names.size() && all_unique; j++) {
-      for(Index k = 0; k < irrep_names.size() && all_unique; k++) {
-        all_unique = true;
-        if((j != k) && (irrep_names[j].compare(irrep_names[k]) == 0)) {
-          std::cout << irrep_names[j] << " = " << irrep_names[k] << std::endl;
-          all_unique = false;
-        }
-      }
-    }
-
-    //    std::cout << "Check if all of the current names are unique... " << all_unique << "\n";
-
-    if(!all_unique) {
-      default_err_log() << "WARNING: Failed to name all irreps uniquely...  \n";
-    }
-    for(auto &irrep_name : irrep_names) {
-      std::cout << irrep_name << "   ";
-    }
-    std::cout << std::endl;
-    return;
-  }
-
-
 
   //*******************************************************************************************
   /** This will name your conjugacy classes according to some
@@ -1536,311 +1226,6 @@ namespace CASM {
   }
 
 
-  //*******************************************************************************************
-  void SymGroup::print_character_table(std::ostream &stream) {
-    _generate_class_names();
-    _generate_irrep_names();
-
-    stream.precision(3);
-
-    for(Index i = 0; i < m_character_table.size(); i++) {
-      for(Index j = 0; j < m_character_table.size(); j++) {
-        //This part cleans up the numbers in the table...
-        if(almost_zero(std::abs(m_character_table[i][j].real()) - 0.5)) {
-          if(m_character_table[i][j].real() > 0) {
-            m_character_table[i][j] = std::complex<double>(0.5, m_character_table[i][j].imag());
-          }
-          else {
-            m_character_table[i][j] = std::complex<double>(-0.5, m_character_table[i][j].imag());
-          }
-        }
-        if(almost_zero(std::abs(m_character_table[i][j].imag()) - 0.5)) {
-          if(m_character_table[i][j].imag() > 0) {
-            m_character_table[i][j] = std::complex<double>(m_character_table[i][j].real(), 0.5);
-          }
-          else {
-            m_character_table[i][j] = std::complex<double>(m_character_table[i][j].real(), -0.5);
-          }
-        }
-        if(almost_zero(std::abs(m_character_table[i][j].real()) - 0.866)) {
-          if(m_character_table[i][j].real() > 0) {
-            m_character_table[i][j] = std::complex<double>(0.866, m_character_table[i][j].imag());
-          }
-          else {
-            m_character_table[i][j] = std::complex<double>(-0.866, m_character_table[i][j].imag());
-          }
-        }
-        if(almost_zero(std::abs(m_character_table[i][j].imag()) - 0.866)) {
-          if(m_character_table[i][j].imag() > 0) {
-            m_character_table[i][j] = std::complex<double>(m_character_table[i][j].real(), 0.866);
-          }
-          else {
-            m_character_table[i][j] = std::complex<double>(m_character_table[i][j].real(), -0.866);
-          }
-        }
-        if(almost_zero(m_character_table[i][j].real())) {
-          m_character_table[i][j] = std::complex<double>(0, m_character_table[i][j].imag());
-        }
-        if(almost_zero(m_character_table[i][j].imag())) {
-          m_character_table[i][j] = std::complex<double>(m_character_table[i][j].real(), 0);
-        }
-      }
-    }
-
-    // This will check if there are any non-integer values in the table.
-    bool all_int = true;
-    for(Index i = 0; i < m_character_table.size(); i++) {
-      for(Index j = 0; j < m_character_table.size(); j++) {
-        if(!almost_zero(m_character_table[i][j].real() - floor(m_character_table[i][j].real()))) {
-          all_int = false;
-        }
-        if(!almost_zero(m_character_table[i][j].imag() - floor(m_character_table[i][j].imag()))) {
-          all_int = false;
-        }
-      }
-    }
-
-    //This loop is for printing integer-only tables.
-    if(all_int) {
-      stream << " ";
-      for(Index i = 0; i < m_character_table.size() + 1; i++) {
-        stream << "-------";
-      }
-      stream << "\n| Group: " << name << " (" << comment << ")";
-      int space = (7 * (m_character_table.size() + 1)) - (name.size() + comment.size() + 11);
-      for(int i = 0; i < space; i++) {
-        stream << " ";
-      }
-
-      stream << "|\n ";
-      for(Index i = 0; i < m_character_table.size() + 1; i++) {
-        stream << "-------";
-      }
-      stream << std::endl;
-
-      stream << "|       |";
-      for(Index i = 0; i < m_character_table.size(); i++) {
-        double whitespace = (6 - double(class_names[i].size())) / 2.0;
-        double leftspace = ceil(whitespace);
-        double rightspace = floor(whitespace);
-        for(int j = 0; j < int(leftspace); j++) {
-          stream << " ";
-        }
-        stream << class_names[i];
-        for(int j = 0; j < int(rightspace); j++) {
-          stream << " ";
-        }
-        stream << "|";
-
-      }
-      stream << std::endl;
-
-      stream << " ";
-      for(Index i = 0; i < m_character_table.size() + 1; i++) {
-        stream << "-------";
-      }
-      stream << std::endl;
-
-      for(Index i = 0; i < m_character_table.size(); i++) {
-        stream << "|";
-        double whitespace = (7 - double(irrep_names[i].size())) / 2.0;
-        double leftspace = ceil(whitespace);
-        double rightspace = floor(whitespace);
-        for(int j = 0; j < int(leftspace); j++) {
-          stream << " ";
-        }
-        stream << irrep_names[i];
-        for(int j = 0; j < int(rightspace); j++) {
-          stream << " ";
-        }
-        stream << "|";
-
-        for(Index j = 0; j < m_character_table.size(); j++) {
-          //This will make sure the positive and negative numbers align
-          if(m_character_table[i][j].real() > 0) {
-            stream << "   ";
-          }
-          else if(m_character_table[i][j].real() < 0) {
-            stream << "  ";
-          }
-          else {
-            if(m_character_table[i][j].imag() >= 0) {
-              stream << "   ";
-            }
-            else {
-              stream << "  ";
-            }
-          } //End alignment of negative numbers
-
-          if((m_character_table[i][j].imag() > 0) && (m_character_table[i][j].real() > 0)) {
-            if(m_character_table[i][j].imag() == 1) {
-              stream << int(m_character_table[i][j].real()) <<  "i" << "  |";
-            }
-            else {
-              stream << int(m_character_table[i][j].real()) << "+" << int(m_character_table[i][j].imag())  << "i" << "  |";
-            }
-          }
-          else if((m_character_table[i][j].imag() < 0) && (m_character_table[i][j].real() > 0)) {
-            if(m_character_table[i][j].imag() == -1) {
-              stream << int(m_character_table[i][j].real()) << "-"  << "i" << "  |";
-            }
-            else {
-              stream << int(m_character_table[i][j].real()) <<  int(m_character_table[i][j].imag())  << "i" << "  |";
-            }
-          }
-          else if(m_character_table[i][j].imag() == 0) {
-            stream << int(m_character_table[i][j].real()) << "  |";
-          }
-          else if(m_character_table[i][j].real() == 0) {
-            if(m_character_table[i][j].imag() == 1) {
-              stream  << "i" << "  |";
-            }
-            else if(m_character_table[i][j].imag() == -1) {
-              stream <<  "-"  << "i" << "  |";
-            }
-            else {
-              stream << int(m_character_table[i][j].imag()) << "i" << "  |";
-            }
-          }
-        } //Closes loop over j
-        stream << std::endl;
-      } //Closes loop over i
-
-      //Prints the line at the bottom of the table
-      stream << " ";
-      for(Index i = 0; i < m_character_table.size() + 1; i++) {
-        stream << "-------";
-      }
-      stream << std::endl;
-    }//Closes the if all_int loop
-
-    //If not everything is an integer, we use this loop instead...
-    else {
-      stream << " ";
-      for(Index i = 0; i < m_character_table.size() + 1; i++) {
-        stream << "----------------";
-      }
-
-      stream << "\n| Group: " << name << " (" << comment << ")";
-      int space = (16 * (m_character_table.size() + 1)) - (name.size() + comment.size() + 12);
-      for(int i = 0; i < space; i++) {
-        stream << " ";
-      }
-
-      stream << "|\n ";
-
-      for(Index i = 0; i < m_character_table.size() + 1; i++) {
-        stream << "----------------";
-      }
-      stream << std::endl;
-
-      stream << "|               |";
-      for(Index i = 0; i < m_character_table.size(); i++) {
-        double whitespace = (15 - double(class_names[i].size())) / 2.0;
-        double leftspace = ceil(whitespace);
-        double rightspace = floor(whitespace);
-        for(int j = 0; j < int(leftspace); j++) {
-          stream << " ";
-        }
-        stream << class_names[i];
-        for(int j = 0; j < int(rightspace); j++) {
-          stream << " ";
-        }
-        stream << "|";
-      }
-      stream << std::endl;
-      stream << " ";
-      for(Index i = 0; i < m_character_table.size() + 1; i++) {
-        stream << "----------------";
-      }
-      stream << std::endl;
-
-      for(Index i = 0; i < m_character_table.size(); i++) {
-        stream << "|";
-        double whitespace = (15 - double(irrep_names[i].size())) / 2.0;
-        double leftspace = ceil(whitespace);
-        double rightspace = floor(whitespace);
-        for(int j = 0; j < int(leftspace); j++) {
-          stream << " ";
-        }
-        stream << irrep_names[i];
-        for(int j = 0; j < int(rightspace); j++) {
-          stream << " ";
-        }
-        stream << "|";
-
-        for(Index j = 0; j < m_character_table.size(); j++) {
-          //This will make sure the positive and negative numbers align
-          if(m_character_table[i][j].real() > 0) {
-            stream << "   ";
-          }
-          else if(m_character_table[i][j].real() < 0) {
-            stream << "  ";
-          }
-          else {
-            if(m_character_table[i][j].imag() >= 0) {
-              stream << "   ";
-            }
-            else {
-              stream << "  ";
-            }
-          } //End alignment of negative numbers
-
-          if((m_character_table[i][j].imag() > 0) && (m_character_table[i][j].real() > 0)) { //Long
-            if(m_character_table[i][j].imag() == 1) {
-              stream << m_character_table[i][j].real() <<  "i" << "  |";
-            }
-            else {
-              stream << m_character_table[i][j].real() << "+" << m_character_table[i][j].imag()  << "i" << "  |";
-            }
-          }
-          else if((m_character_table[i][j].imag() < 0) && (m_character_table[i][j].real() > 0)) { //Long
-            if(m_character_table[i][j].imag() == -1) {
-              stream << m_character_table[i][j].real() << "-"  << "i" << "  |";
-            }
-            else {
-              stream << m_character_table[i][j].real() << m_character_table[i][j].imag()  << "i" << "  |";
-            }
-          }
-          else if(m_character_table[i][j].imag() == 0) { //Short
-            stream << int(m_character_table[i][j].real()) << "           |";
-          }
-          else if(m_character_table[i][j].real() == 0) { //Short
-            if(m_character_table[i][j].imag() == 1) {
-              stream  << "i" << "           |";
-            }
-            else if(m_character_table[i][j].imag() == -1) {
-              stream <<  "-"  << "i" << "           |";
-            }
-            else {
-              stream << m_character_table[i][j].imag() << "i" << "          |";
-            }
-          }
-          else if((m_character_table[i][j].imag() > 0) && (m_character_table[i][j].real() < 0)) { //Long
-            stream << m_character_table[i][j].real() << "+" << m_character_table[i][j].imag()  << "i" << "  |";
-          }
-          else { //Long
-            stream << m_character_table[i][j].real() << m_character_table[i][j].imag()  << "i" << "  |";
-          }
-
-        }//Closes the j loop
-
-        //stream << "\n|-";
-        //for(int x=0; x<m_character_table.size(); x++){
-        //  stream << "--------------|";
-        //}
-
-        stream << "\n";
-      } //Closes the i loop
-      stream << " ";
-      for(Index i = 0; i < m_character_table.size() + 1; i++) {
-        stream << "----------------";
-      }
-      stream << "\n";
-    }//Closes else loop (non-integers)
-
-    return;
-  }
 
   //*******************************************************************************************
 
@@ -1878,863 +1263,6 @@ namespace CASM {
     }
   }
 
-  //*******************************************************************************************
-
-  void SymGroup::_generate_character_table()const { //AAB
-    //std::cout << "Calculating character table of SymGroup " << this << '\n';
-    if(!size()) {
-      default_err_log() << "WARNING: This is an empty group. It has no character.\n";
-      name = "EMPTY";
-      return;
-    }
-
-    int sigma_h_ind = 0;
-    Index d1 = 0, d2 = 0, d3 = 0;
-    Index order1 = 0, order2 = 0;
-    bool mirror(false);
-    bool inversion(false);
-    SymGroup subgroup;
-    subgroup.m_lat_ptr = m_lat_ptr;
-
-    std::vector<SymInfo> info;
-    for(Index i = 0; i < size(); i++)
-      info.push_back(SymInfo(at(i), lattice()));
-
-    if(!size() || get_multi_table().size() != size() || !valid_index(get_multi_table()[0][0])) {
-      default_err_log() << "WARNING: This is not a group!!!\n";
-      name = "NG";
-      return;
-    }
-
-    _generate_conjugacy_classes();
-    //_generate_conjugacy_corr_table();
-    _generate_centralizers();
-
-    Index h = multi_table.size(); //This is the dimensionality of the group.
-    Index nc = conjugacy_classes.size(); //This is the number of conjugacy classes, which is also the number of irreducible representations.
-
-    m_character_table.resize(nc, std::vector<std::complex<double> >(nc, -7));
-    complex_irrep.resize(nc, false);
-    irrep_IDs.resize(nc);
-
-
-    /** We need to figure out the dimensionality of each irreducible representation.
-     *  We know that the total number of irreducible representations is the same as
-     *  the total number of conjugacy classes, which we are calling nc. Also, we know
-     *  that the sum of the squares of the dimensionalities of all of theirreducible
-     *  representations must be equal to the size of the group, h.
-     */
-
-    for(Index i = 0; i <= nc; i++) {
-      for(Index j = 0; j <= nc; j++) {
-        for(Index k = 0; k <= nc; k++) {
-          if(((1 * i + 4 * j + 9 * k) == h) && ((i + j + k) == nc) && (d1 >= d2) && (d1 >= d3)) {
-            d1 = i;
-            d2 = j;
-            d3 = k;
-          }
-        }
-      }
-    }
-
-    // Set characters related to identity
-    for(Index i = 0; i < m_character_table.size(); i++) {
-      m_character_table[0][i] = 1;
-      if(i < d1) {
-        m_character_table[i][0] = 1;
-      }
-      else if(i >= d1 && i < (d1 + d2)) {
-        m_character_table[i][0] = 2;
-      }
-      else {
-        m_character_table[i][0] = 3;
-      }
-    }
-
-    // count over all possible 1d representations
-    Counter<std::vector<int> > count(std::vector<int>(nc, -1), std::vector<int>(nc, 1), std::vector<int>(nc, 2));
-    int sum = 0;
-    order1 = 1;
-    std::complex<double> ortho = 0;
-    int telem = 0, elem1 = 0, elem2 = 0;
-    int try1 = 0, try2 = 0;
-
-    int try1_ind = 0, try2_ind = 0;
-    std::vector<bool> check(nc, false);
-
-
-    do {
-      sum = 0;
-      ortho = 0;
-      bool satisfy_multi_table = true;
-
-      if(count[0] == 1) {
-
-        for(Index i = 0; i < nc; i++) {
-          sum += count[i] * conjugacy_classes[i].size();
-          check[i] = true;
-        }
-
-        if(sum == 0) {
-          for(Index i = 0; i < nc && check[i]; i++) {
-            for(Index j = 0; j < nc && check[i]; j++) {
-              telem = (count[i] * count[j]);
-
-              for(Index x = 0; x < conjugacy_classes[i].size() && check[i]; x++) {
-                for(Index y = 0; y < conjugacy_classes[j].size() && check[i]; y++) {
-                  elem1 = conjugacy_classes[i][x];
-                  elem2 = conjugacy_classes[j][y];
-
-                  try1 = multi_table[elem1][elem2];
-                  try2 = multi_table[elem2][elem1];
-
-                  //try1_ind = conjugacy_corr_table[0][try1];
-                  //try2_ind = conjugacy_corr_table[0][try2];
-                  try1_ind = index2conjugacy_class[try1];
-                  try2_ind = index2conjugacy_class[try2];
-
-                  if((telem != count[try1_ind]) || (telem != count[try2_ind])) {
-                    check[i] = false;
-                    break;
-                  }
-                }
-              }
-            }
-          }
-
-          std::vector<std::complex<double> > ortharray;
-
-          for(Index i = 0; i < nc; i++) {
-            ortho = 0.0;
-            ortharray.resize(0);
-            for(Index j = 0; j < nc; j++) {
-              if((m_character_table[i][1].real() != -7) && (m_character_table[i][1].imag() != 0)) {
-                std::complex<double> temp = std::complex<double>(double(count[j] * conjugacy_classes[j].size()), 0.0);
-                ortho += (temp * m_character_table[i][j]);
-              }
-              ortharray.push_back(ortho);
-            }
-          }
-
-          ortho = 0;
-
-          for(Index i = 0; i < ortharray.size(); i++) {
-            if(!almost_zero(ortharray[i])) {
-              ortho = std::complex<double>(1, 1);
-            }
-          }
-
-          Index wtf = 0;
-          for(Index i = 0; i < nc; i++) {
-            wtf += check[i];
-          }
-
-          if(wtf == nc) {
-            satisfy_multi_table = true;
-          }
-          else {
-            satisfy_multi_table = false;
-          }
-
-          if((ortho == std::complex<double>(0.0, 0.0)) && (satisfy_multi_table == true)) {
-            for(Index i = 1; i < nc; i++) {
-              if(order1 < nc) {
-                m_character_table[order1][i] = count[i];
-              }
-            }
-            order1++;
-          }
-        }
-      }
-    }
-    while(++count);
-
-    if(order1 == nc) {
-      /** If you're in this block, you have finished your character table using only real
-       *  +/- 1 characters because all of your representations are dimension 1. Life is
-       *  good. Also, your group is Abelian.
-       *
-       *  The group you are dealing with is one of the following:
-       *  C1, C2, C2v, C1h (S1), C2h, S2 (Ci), D2, D2h.
-       */
-
-      /** This group is one of the following...
-       *  If nc = 1: C1
-       *  If nc = 2: C2, C1h, S2.
-       *  If nc = 4: C2v, C2h, D2
-       *  If nc = 8: D2h
-       */
-
-      if(nc == 1) {
-        name = "C1";
-        latex_name = "C_1";
-        comment = "#1";
-        return;
-      }
-      else if(nc == 8) {
-        name = "D2h";
-        latex_name = "D_{2h}";
-        comment = "#47-74";
-        return;
-      }
-
-      bool inv = false;
-      bool mir = false;
-
-      for(Index i = 0; i < size(); i++) {
-        if(info[i].op_type == symmetry_type::inversion_op) {
-          inv = true;
-        }
-        else if(info[i].op_type == symmetry_type::mirror_op || info[i].op_type == symmetry_type::glide_op) {
-          mir = true;
-        }
-      }
-
-      if(nc == 2) {
-        if(inv == true) {
-          name = "S2"; //This can also be called Ci
-          latex_name = "S_2";
-          comment = "#2";
-        }
-        else if(mir == true) {
-          name = "C1h"; //This can also be called S1 or Cs
-          latex_name = "C_{1h}";
-          comment = "#6-9";
-        }
-        else {
-          name = "C2";
-          latex_name = "C_2";
-          comment = "#3-5";
-        }
-        return;
-      }
-
-      else if(nc == 4) {
-        if(inv == true) {
-          name = "C2h";
-          latex_name = "C_{2h}";
-          comment = "#10-15";
-        }
-        else if(mir == true) {
-          name = "C2v";
-          latex_name = "C_{2v}";
-          comment = "#25-46";
-        }
-        else {
-          name = "D2";
-          latex_name = "D_2";
-          comment = "#16-24";
-        }
-        return;
-      }
-
-      //You're done. Probably don't need to check column ortho, but why not?
-      return;
-    }
-
-    if(!centralizer_table.size()) {
-      _generate_centralizers();
-    }
-
-    std::vector<std::complex<double> > centralizers(nc, 0);
-
-    // //std::cout << "----------------------------------------------------------------------------\n";
-    for(Index i = 0; i < conjugacy_classes.size(); i++) {
-      centralizers[i] = centralizer_table[i].size();
-      //   //std::cout << centralizer_table[i].size() << "\t";
-    }
-    //std::cout << std::endl;
-
-    //std::cout << "----------------------------------------------------------------------------\n";
-    //std::cout << "----------------------------------------------------------------------------\n";
-
-    //std::cout << order1 << std::endl;
-
-    if(order1 != nc) {
-      /** If you're in this loop, then you're not done yet because you either have
-       *  complex dimension 1 characters or higher dimension real characters still
-       *  to look for. In this case, we need to check our group for inversion and
-       *  mirror symmetries to determine if it can be broken up into subgroups in
-       *  a convenient way that will help us construct the rest of the character
-       *  table.
-       */
-
-      //We need to find sigma_h in our group so we can use it to hit stuff
-
-      for(Index i = 0; i < size(); i++) {
-        if(info[i].op_type == symmetry_type::inversion_op) {
-          inversion = true;
-        }
-        else if((info[i].op_type == symmetry_type::mirror_op) || (info[i].op_type == symmetry_type::glide_op)) {
-          //if(conjugacy_classes[conjugacy_corr_table[0][i]].size() == 1) {
-          if(conjugacy_classes[index2conjugacy_class[i]].size() == 1) {
-            sigma_h_ind = i;
-            mirror = true;
-
-          }
-        }
-      }
-    }
-
-    /** This part will handle groups that do not have special symmetries (sigma_h mirror
-     *  planes or inversion). We then need to know if the group is Abelian. We can check
-     *  this by looking at the number of conjugacy classes and comparing to the number of
-     *  dimension 1 representations we are supposed to find. So if d1 = nc, the group
-     *  must be Abelian. If this is not the case, the group must have higher dimension
-     *  representations, which will be dealt with separately.
-     */
-
-    if((inversion == false) && (mirror == false) && (d1 == conjugacy_classes.size())) {
-
-      /** Then the group is cyclic & Abelian. This means that we can proceed by determining
-       *  the smallest rotation angle in the group, which will give us omega because
-       *  omega is just 2*pi*i/3 for 120 degree rotations, 2*pi*i/4 for 90 degree rotations,
-       *  or 2*pi*i/6 for 60 degree rotations. We then "guess" powers of omega for our
-       *  one of the complex characters if our representation and determine the rest of the
-       *  characters in that representation by enforcing the cycle (which is equivalent to
-       *  enforcing the multiplication table).
-       *
-       *  The possibilities here are:
-       *  If nc = 3: C3
-       *  If nc = 4: C4
-       *  If nc = 6: C6
-       */
-
-      double angle = 360;
-
-      int generator = 0;
-      bool generator_found = false;
-
-      for(Index i = 0; i < size(); i++) {
-        if((info[i].angle < angle) && (info[i].angle > TOL)) {
-          angle = info[i].angle;
-          generator = i;
-          generator_found = true;
-        }
-      }
-      if(!generator_found) {
-        throw std::runtime_error("Error in _generate_character_table: generator not found");
-      }
-
-      /** We need to keep in mind that the angle returned by get_rotation_angle() is
-       *  real and is given in degrees. We need to convert it to complex radian form,
-       *  which we will do using Euler's formula: e^(ix) = cos(x) + i*sin(x).
-       */
-
-      angle = angle * (M_PI / 180);
-
-      std::complex<double> iangle(cos(angle), sin(angle));
-
-      std::vector<std::complex<double> > tchar;
-      std::vector<std::complex<double> > tcharconj;
-      tchar.resize(nc);
-      tcharconj.resize(nc);
-      tchar[0] = std::complex<double>(1, 0);
-      tchar[generator] = iangle;
-
-      Index cycle = 0;
-      Index ind2 = generator;
-
-      while(order1 < nc) {
-        std::complex<double> tangle = iangle;
-        do {
-          tangle *= iangle;
-          tchar[multi_table[ind2][generator]] = tangle;
-          ind2 = multi_table[ind2][generator];
-          cycle++;
-        }
-        while(cycle < nc);
-
-        /** For every complex representation in the character table, there is
-         *  also a complex conjugate representation, so once we have found a
-         *  full set of complex characters, we can conjugate them to get another
-         *  row in the table.
-         */
-
-        for(Index i = 0; i < tchar.size(); i++) {
-          tcharconj[i] = conj(tchar[i]);
-        }
-
-        for(Index i = 0; i < tchar.size(); i++) {
-          if(std::abs(tchar[i].real()) < TOL) {
-            tchar[i] = std::complex<double>(0, tchar[i].imag());
-            tcharconj[i] = std::complex<double>(0, tcharconj[i].imag());
-          }
-          if(std::abs(tchar[i].imag()) < TOL) {
-            tchar[i] = std::complex<double>(tchar[i].real(), 0);
-            tcharconj[i] = std::complex<double>(tcharconj[i].real(), 0);
-          }
-        }
-        m_character_table[order1] = tchar;
-        complex_irrep[order1] = true;
-        order1++;
-        m_character_table[order1] = tcharconj;
-        complex_irrep[order1] = true;
-        order1++;
-        iangle *= iangle;
-      }
-
-      // Should check for orthogonality here...
-
-      if(nc == 3) {
-        name = "C3";
-        latex_name = "C_3";
-        comment = "#143-146";
-      }
-      else if(nc == 4) {
-        bool inv = false;
-        for(Index g = 0; g < size() && !inv; g++) {
-          if(info[g].op_type == symmetry_type::rotoinversion_op) {
-            inv = true;
-          }
-        }
-
-        if(!inv) {
-          name = "C4";
-          latex_name = "C_4";
-          comment = "#75-80";
-        }
-        else {
-          name = "S4";
-          latex_name = "S_4";
-          comment = "81-82";
-        }
-      }
-      else if(nc == 6) {
-        name = "C6";
-        latex_name = "C_6";
-        comment = "#168-173";
-      }
-
-      return;
-    }
-
-    else if((mirror == true) || (inversion == true) /*&& (size()>3)*/) {
-      /** If we are in this loop, then our group has mirror or inversion symmetry,
-       *  which means that we can determine its character table by breaking it up
-       *  into subgroups and computing their character tables first. It turns out
-       *  that all groups containing i or sigma_h symmetry can be broken up into
-       *  the product of some other group and C1h or S2 group, for which the
-       *  character table is really simple.
-       *
-       *  We can find this subgroup by looking at the sign representation, or
-       *  equivalently, the determinants of our SymOp matrices. If we collect
-       *  all SymOps that have positive determinant matrices, we will have found
-       *  the large subgroup we are looking for.
-       */
-
-      for(Index i = 0; i < size(); i++) {
-        if(at(i).matrix().determinant() > 0) {
-          subgroup.push_back(at(i));
-        }
-      }
-
-      /** Yes, this part is going to be recursive and therefore scary. But don't
-       *  worry, we thought this through. Any subgroup that is created by only
-       *  including group elements with positive determinant matrices cannot
-       *  have either inversion or sigma_h symmetry. Thus, we can never end
-       *  up in this loop more than once...
-       */
-
-      subgroup._generate_character_table();
-      subgroup._generate_class_names();
-      //subgroup.print_character_table(std::cout);
-
-      /** This next part is a little tricky. We're effectively going to paste
-       *  our sub-character-table into our big character table four times. We
-       *  have to be careful because we need to make sure that the columns
-       *  or conjugacy classes that we are copying correspond correctly to
-       *  the columns we are copying them into. Luckily, we know which SymOps
-       *  the columns correspond do, we know a little bit about the order
-       *  that they appear in, and we can check the weird ones by just hiting
-       *  the normal ones with inversion or sigma_h. We're going to use the
-       *  inversion symmetry whenever it is possible. There is at least one
-       *  case where we are forced to use mirror symmetry, but this will
-       *  become obvious.
-       */
-
-      //std::cout << "Subgroup name is : " << subgroup.name << std::endl;
-
-      for(Index i = 0; i < subgroup.size(); i++) { //Loop over subgroup SymOps
-        for(Index j = 0; j < size(); j++) { //Loop over big group SymOps
-          //This loop is for the normal SymOps
-          if(almost_equal(subgroup[i].matrix(), at(j).matrix(), TOL)) {
-            //Index ind_i = subgroup.conjugacy_corr_table[0][i];
-            //Index ind_j = conjugacy_corr_table[0][j];
-            Index ind_i = subgroup.index2conjugacy_class[i];
-            Index ind_j = index2conjugacy_class[j];
-
-            for(Index k = 0; k < subgroup.m_character_table.size(); k++) { //rows
-              m_character_table[k][ind_j] = subgroup.m_character_table[k][ind_i];
-              m_character_table[subgroup.m_character_table.size() + k][ind_j] = subgroup.m_character_table[k][ind_i];
-            }
-          }
-          //This loop is for the inverted SymOps
-          if(almost_equal(subgroup[i].matrix()*back().matrix(), at(j).matrix(), TOL) && inversion) {
-            //Index ind_i = subgroup.conjugacy_corr_table[0][i];
-            //Index ind_j = conjugacy_corr_table[0][j];
-            Index ind_i = subgroup.index2conjugacy_class[i];
-            Index ind_j = index2conjugacy_class[j];
-            for(Index k = 0; k < subgroup.m_character_table.size(); k++) {
-              m_character_table[k][ind_j] = subgroup.m_character_table[k][ind_i];
-              m_character_table[subgroup.m_character_table.size() + k][ind_j] = -subgroup.m_character_table[k][ind_i];
-            }
-
-            if(nc == 12) {
-              if(h == 12) {
-                name = "C6h";
-                latex_name = "C_{6h}";
-                comment = "#175-176";
-              }
-              else if(h == 24) {
-                name = "D6h";
-                latex_name = "D_{6h}";
-                comment = "#191-194";
-              }
-            }
-            else if(nc == 10) {
-              if(h == 16) {
-                name = "D4h";
-                latex_name = "D_{4h}";
-                comment = "#123-142";
-              }
-              else if(h == 48) {
-                name = "Oh";
-                latex_name = "O_h";
-                comment = "#221-230";
-              }
-            }
-
-            else if(nc == 8) {
-              if(subgroup.name == "C4") {
-                name = "C4h";
-                latex_name = "C_{4h}";
-                comment = "#83-88";
-              }
-              else if(subgroup.name == "D2") {
-                name = "D2h";
-                latex_name = "D_{2h}";
-                comment = "#47-74";
-              }
-              else if(subgroup.name == "T") {
-                name = "Th";
-                latex_name = "T_h";
-                comment = "#200-206";
-              }
-            }
-            else if(nc == 6) {
-              if(subgroup.name == "D3") {
-                name = "D3d";
-                latex_name = "D_{3d}";
-                comment = "#162-167";
-              }
-              else if(subgroup.name == "C3") {
-                name = "S6";
-                latex_name = "S_6";
-                comment = "#147-148";
-              }
-            }
-          }
-
-          //This loop is for mirrored SymOps when there is no inversion
-          //This only happens in groups C3h and D3h
-
-          else if(almost_equal(subgroup[i].matrix()*at(sigma_h_ind).matrix(), at(j).matrix(), TOL) && mirror && !inversion) {
-            //Index ind_i = subgroup.conjugacy_corr_table[0][i];
-            //Index ind_j = conjugacy_corr_table[0][j];
-            Index ind_i = subgroup.index2conjugacy_class[i];
-            Index ind_j = index2conjugacy_class[j];
-            for(Index k = 0; k < subgroup.m_character_table.size(); k++) {
-              m_character_table[k][ind_j] = subgroup.m_character_table[k][ind_i];
-              m_character_table[subgroup.m_character_table.size() + k][ind_j] = -subgroup.m_character_table[k][ind_i];
-            }
-
-            if(h == 12) {
-              name = "D3h";
-              latex_name = "D_{3h}";
-              comment = "#187-190";
-            }
-            else if(h == 6) {
-              name = "C3h";
-              latex_name = "C_{3h}";
-              comment = "#174";
-            }
-          }
-        }
-      }
-
-      //You're done! Check orthogonality and centralizers just in case.
-      return;
-    }
-
-    else if((d3 == 0) && (d2 > 0)) {
-      std::vector<std::complex<double> > centrcheck;
-      centrcheck.resize(nc);
-
-      for(Index i = 0; i < d1; i++) {
-        for(Index j = 0; j < m_character_table.size(); j++) {
-          centrcheck[j] += (m_character_table[i][j] * m_character_table[i][j]);
-        }
-      }
-
-      if(d2 == 1) {
-        for(Index i = 1; i < nc; i++) {
-          if(abs(centrcheck[i] - centralizers[i]) < TOL) {
-            m_character_table[nc - 1][i] = std::complex<double>(0, 0);
-          }
-          else {
-            //This is a bit of a hack, but it turns out to always be true...
-            m_character_table[nc - 1][i] = -sqrt(abs(centrcheck[i] - centralizers[i]));
-          }
-        }
-
-        bool mir = false;
-        int mircount = 0;
-
-        for(Index i = 0; i < size(); i++) {
-          if(info[i].op_type == symmetry_type::mirror_op || info[i].op_type == symmetry_type::glide_op) {
-            mir = true;
-            mircount++;
-          }
-        }
-
-        if(nc == 3) {
-          if(mir == true) {
-            name = "C3v";
-            latex_name = "C_{3v}";
-            comment = "#156-161";
-          }
-          else {
-            name = "D3";
-            latex_name = "D_3";
-            comment = "#149-155";
-          }
-        }
-        else if(nc == 5) {
-          if(mircount == 0) {
-            name = "D4";
-            latex_name = "D_4";
-            comment = "#89-98";
-          }
-          else if(mircount == 2) {
-            name = "D2d";
-            latex_name = "D_{2d}";
-            comment = "#111-122";
-          }
-          else if(mircount == 4) {
-            name = "C4v";
-            latex_name = "C_{4v}";
-            comment = "#99-110";
-          }
-        }
-
-        //You're done! Check orthogonality just in case.
-        return;
-      }
-
-      else if((d2 == 2) && !subgroup.size()) {
-        std::vector<std::complex<double> > remainder;
-        int nr = 0;
-        remainder.resize(nc);
-        for(Index i = 1; i < nc; i++) {
-          if(abs(centrcheck[i] - centralizers[i]) < TOL) {
-            for(Index j = 0; j < d2; j++) {
-              m_character_table[(nc - j) - 1][i] = std::complex<double>(0, 0);
-              remainder[i] = std::complex<double>(0, 0);
-            }
-          }
-          else {
-            remainder[i] = sqrt(abs(centralizers[i] - centrcheck[i]) / 2);
-            nr++;
-          }
-        }
-
-        Counter<std::vector<int> > signcount(std::vector<int>(nr, -1), std::vector<int>(nr, 1), std::vector<int> (nr, 2));
-        std::vector<std::complex<double> > trow;
-        order2 = (nc - d2);
-        std::vector<std::vector<std::complex<double> >> tset;
-
-        do {
-          trow.resize(nc);
-          int j = 0;
-          for(Index i = 0; i < nc; i++) {
-            if(m_character_table[nc - 1][i].real() != -7) {
-              trow[i] = m_character_table[nc - 1][i];
-            }
-            if(m_character_table[order2][i].real() == -7) {
-              trow[i] = signcount[j] * remainder[i].real();
-              j++;
-            }
-          }
-
-          int sum = 0;
-
-          for(Index i = 0; i < nc; i++) {
-            sum += trow[i].real() * conjugacy_classes[i].size();
-          }
-          double orthcheck;
-          std::vector<double> ortharray;
-          if(sum == 0) {
-            ortharray.resize(0);
-            for(Index i = 0; i < d1; i++) {
-              orthcheck = 0.0;
-              for(Index j = 0; j < nc; j++) {
-                double temp = (trow[j].real()) * (conjugacy_classes[j].size());
-                orthcheck += (temp * m_character_table[i][j].real());
-              }
-              ortharray.push_back(orthcheck);
-            }
-
-            ortho = 0;
-
-            for(Index i = 0; i < ortharray.size(); i++) {
-              if(!almost_zero(ortharray[i])) {
-                ortho = std::complex<double>(1, 1);
-              }
-            }
-          }
-
-          if((sum == 0) && (ortho.real() == 0) && (ortho.imag() == 0)) {
-            tset.push_back(trow);
-          }
-
-        }
-        while(++signcount);
-
-        if(tset.size() == d2) {
-          for(Index i = 0; i < d2; i++) {
-            m_character_table[order2 + i] = tset[i];
-          }
-        }
-
-        bool mir = false;
-        for(Index i = 0; i < size(); i++) {
-          if(info[i].op_type == symmetry_type::mirror_op || info[i].op_type == symmetry_type::glide_op) {
-            mir = true;
-          }
-        }
-
-        if(mir == true) {
-          name = "C6v";
-          latex_name = "C_{6v}";
-          comment = "#183-186";
-        }
-        else {
-          name = "D6";
-          latex_name = "D_6";
-          comment = "#177-182";
-        }
-
-        //You're done. Check orthogonality of columns.
-        return;
-      }
-    }
-
-    else if(d3 != 0) {
-      /** At this point, we gave up on elegance entirely and decided to
-       *  tabulate the three remaining character tables that would be
-       *  stupidly impractical to attempt to calculate. So here they are.
-       *  Point groups: Td, T, O
-       */
-
-      if(nc == 4) {
-        name = "T";
-        latex_name = "T";
-        comment = "#195-199";
-        complex_irrep[1] = true;
-        complex_irrep[2] = true;
-        std::complex<double> omega = std::complex<double>(-0.5, 0.866);
-        for(Index j = 1; j < nc; j++) {
-          if(conjugacy_classes[j].size() == 3) {
-            m_character_table[1][j] = std::complex<double>(1, 0);
-            m_character_table[2][j] = std::complex<double>(1, 0);
-            m_character_table[3][j] = std::complex<double>(-1, 0);
-          }
-          else {
-            m_character_table[1][j] = omega;
-            m_character_table[2][j] = omega * omega;
-            m_character_table[3][j] = std::complex<double>(0, 0);
-            omega *= omega;
-          }
-        }
-      }
-
-      bool sigma_d = false;
-
-      for(Index i = 0; i < size(); i++) {
-        if((info[i].op_type == symmetry_type::mirror_op) || (info[i].op_type == symmetry_type::glide_op)) {
-          sigma_d = true;
-        }
-      }
-
-      if(sigma_d == true) {
-        name = "Td";
-        latex_name = "T_d";
-        comment = "#215-220";
-
-        for(Index j = 1; j < nc; j++) { //Loop over columns
-          if(conjugacy_classes[j].size() == 3) {
-            m_character_table[1][j] = std::complex<double>(1, 0);
-            m_character_table[2][j] = std::complex<double>(2, 0);
-            m_character_table[3][j] = std::complex<double>(-1, 0);
-            m_character_table[4][j] = std::complex<double>(-1, 0);
-          }
-          else if(conjugacy_classes[j].size() == 8) {
-            m_character_table[1][j] = std::complex<double>(1, 0);
-            m_character_table[2][j] = std::complex<double>(-1, 0);
-            m_character_table[3][j] = std::complex<double>(0, 0);
-            m_character_table[4][j] = std::complex<double>(0, 0);
-          }
-          else if((conjugacy_classes[j].size() == 6) && (info[conjugacy_classes[j][0]].angle > 10)) {
-            m_character_table[1][j] = std::complex<double>(-1, 0);
-            m_character_table[2][j] = std::complex<double>(0, 0);
-            m_character_table[3][j] = std::complex<double>(1, 0);
-            m_character_table[4][j] = std::complex<double>(-1, 0);
-          }
-          else {
-            m_character_table[1][j] = std::complex<double>(-1, 0);
-            m_character_table[2][j] = std::complex<double>(0, 0);
-            m_character_table[3][j] = std::complex<double>(-1, 0);
-            m_character_table[4][j] = std::complex<double>(1, 0);
-          }
-        }
-      }
-
-      else if((sigma_d == false) && (nc == 5)) {
-        name = "O";
-        latex_name = "O";
-        comment = "#207-214";
-        for(Index j = 1; j < nc; j++) { //Loop over columns
-          if(conjugacy_classes[j].size() == 3) {
-            m_character_table[1][j] = std::complex<double>(1, 0);
-            m_character_table[2][j] = std::complex<double>(2, 0);
-            m_character_table[3][j] = std::complex<double>(-1, 0);
-            m_character_table[4][j] = std::complex<double>(-1, 0);
-          }
-          else if(conjugacy_classes[j].size() == 8) {
-            m_character_table[1][j] = std::complex<double>(1, 0);
-            m_character_table[2][j] = std::complex<double>(-1, 0);
-            m_character_table[3][j] = std::complex<double>(0, 0);
-            m_character_table[4][j] = std::complex<double>(0, 0);
-          }
-          else if((conjugacy_classes[j].size() == 6) && (almost_equal(info[conjugacy_classes[j][0]].angle, 180.0))) {
-            m_character_table[1][j] = std::complex<double>(-1, 0);
-            m_character_table[2][j] = std::complex<double>(0, 0);
-            m_character_table[3][j] = std::complex<double>(-1, 0);
-            m_character_table[4][j] = std::complex<double>(1, 0);
-          }
-          else {
-            m_character_table[1][j] = std::complex<double>(-1, 0);
-            m_character_table[2][j] = std::complex<double>(0, 0);
-            m_character_table[3][j] = std::complex<double>(1, 0);
-            m_character_table[4][j] = std::complex<double>(-1, 0);
-          }
-        }
-      }
-    }
-
-    return;
-  }
 
   //*******************************************************************************************
   void SymGroup::_generate_elem_order_table() const {
@@ -2801,11 +1329,11 @@ namespace CASM {
 
       // use equiv_map to find the equivalent subgroups
       result.push_back({});
-      //std::cout << "tgroup.size(): " << tgroup.size() << "\n";
+      //std::cout << "tgroup.size(): " << tgroup.size() << std::endl;
       //std::cout << "tgroup : ";
       //for(i : tgroup)
       //std::cout << i << "  ";
-      //std::cout << "\n";
+      //std::cout << std::endl;
       for(auto const &coset : left_cosets(tgroup.begin(), tgroup.end())) {
         std::set<Index> tequiv;
         for(Index op : tgroup) {
@@ -2905,13 +1433,8 @@ namespace CASM {
       for(Index op : * (m_subgroups[i].begin())) {
         sgroup.push_back(at(op));
       }
-      sgroup._generate_character_table();
-      sg_names.push_back(sgroup.name);
-      //std::cout << sgroup.name << "-" << i << " has equivalencies:\n";
-      for(Index j = 0; j < m_subgroups[i].size(); j++) {
-        //std::cout << "  " << m_subgroups[i][j] << "\n";
-      }
-      //std::cout << "\n";
+
+      sg_names.push_back(sgroup.get_name());
     }
 
     std::vector< std::vector< Index > > sg_tree(m_subgroups.size(), std::vector<Index>());
@@ -2933,7 +1456,7 @@ namespace CASM {
           }
         }
       }
-      //std::cout << "\n";
+      //std::cout << std::endl;
     }
 
     /* // commented out for now because datatype of m_subgroups has changed
@@ -2967,9 +1490,6 @@ namespace CASM {
         unique_sgroups.back().push_back(at(op));
       }
       unique_sgroups.back().sort();
-      unique_sgroups.back()._generate_character_table();
-
-      //std::cout << "Added group " << unique_sgroups.back().name  << " having bit-string " << m_subgroups[i][0] << std::endl;
     }
 
     return unique_sgroups;
@@ -3018,7 +1538,7 @@ namespace CASM {
           //std::cout << " so " << k << " goes in class " << conjugacy_classes.size()-1;
           conjugacy_classes.back().push_back(k);
         }
-        //std::cout << "\n";
+        //std::cout << std::endl;
       }
       std::sort(conjugacy_classes.back().begin(), conjugacy_classes.back().end());
     }
@@ -3038,7 +1558,7 @@ namespace CASM {
   Index SymGroup::ind_inverse(Index i) const {
     if(get_alt_multi_table().size() != size() || !valid_index(i) || i >= size())
       return -1;
-    //std::cout << "Inside ind_inverse. 'i' is " << i << " and alt_multi_table size is " << alt_multi_table.size() << "\n";
+    //std::cout << "Inside ind_inverse. 'i' is " << i << " and alt_multi_table size is " << alt_multi_table.size() << std::endl;
     return alt_multi_table[i][0];
   }
 
@@ -3050,11 +1570,11 @@ namespace CASM {
        || !valid_index(j) || j >= size()) {
 
 
-      //default_err_log() << "WARNING: SymGroup::ind_prod() failed for " << i << ", " << j << "\n";// and multi_table\n" << get_multi_table() << "\n\n";
+      //default_err_log() << "WARNING: SymGroup::ind_prod() failed for " << i << ", " << j << std::endl;// and multi_table\n" << get_multi_table() << "\n\n";
       //assert(0);
       return -1;
     }
-    //std::cout << "Inside ind_prod. 'i' is " << i << " and j is " << j << " and multi_table size is " << multi_table.size() << "\n";
+    //std::cout << "Inside ind_prod. 'i' is " << i << " and j is " << j << " and multi_table size is " << multi_table.size() << std::endl;
     return multi_table[i][j];
   }
 
@@ -3161,32 +1681,20 @@ namespace CASM {
       _generate_conjugacy_classes();
     return conjugacy_classes;
   }
-  //*******************************************************************************************
-
-  const std::vector<bool > &SymGroup::get_complex_irrep_list() const {
-    if(!m_character_table.size())
-      _generate_character_table();
-    return complex_irrep;
-  }
-
-  //*******************************************************************************************
-
-  const std::vector<std::vector<std::complex<double> >> &SymGroup::character_table() const {
-    if(!m_character_table.size())
-      _generate_character_table();
-    return m_character_table;
-  }
 
   //*******************************************************************************************
 
   const std::string &SymGroup::get_name() const {
     if(!name.size()) {
-      _generate_character_table();
+      auto info = point_group_info(*this);
+      name = info["name"];
+      latex_name = info["latex_name"];
       if(!name.size()) {
 
         default_err_log() << "WARNING: In SymGroup::get_name(), unable to get symgroup type.\n";
         default_err_log() << "group size is " << size() << '\n';
         name = "unknown";
+        latex_name = "unknown";
       }
     }
 
@@ -3196,7 +1704,8 @@ namespace CASM {
   //*******************************************************************************************
 
   const std::string &SymGroup::get_latex_name() const {
-    character_table();
+    get_name();
+
     return latex_name;
   }
 
@@ -3233,9 +1742,9 @@ namespace CASM {
               for(Index n = 0; n < multi_table[m].size(); n++) {
                 default_err_log() << multi_table[m][n] << "   ";
               }
-              default_err_log() << "\n";
+              default_err_log() << std::endl;
             }
-            default_err_log() << "\n";
+            default_err_log() << std::endl;
             multi_table.resize(size(), std::vector<Index>(size(), -1));
             //multi_table.clear();
             return false;
@@ -3380,23 +1889,13 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  void SymGroup::write(std::string filename, COORD_TYPE mode) const {
-    std::ofstream outfile;
-    outfile.open(filename.c_str());
-    print(outfile, mode);
-    outfile.close();
-    return;
-  }
-
-  //*******************************************************************************************
-
   void SymGroup::print(std::ostream &out, COORD_TYPE mode) const {
     out << size() << " # " << xtal::COORD_MODE::NAME(mode) << " representation of group containing " << size() << " elements:\n\n";
     Eigen::Matrix3d c2f_mat(Eigen::Matrix3d::Identity());
     if(mode == FRAC)
       c2f_mat = lattice().inv_lat_column_mat();
     for(Index i = 0; i < size(); i++) {
-      out << i << "  " << description(at(i), lattice(), mode) << "\n";
+      out << i << "  " << description(at(i), lattice(), mode) << std::endl;
       at(i).print(out, c2f_mat);
       out << std::endl;
     }
@@ -3665,258 +2164,13 @@ namespace CASM {
 
   //*******************************************************************************************
 
-  std::vector<Index> SymGroup::get_irrep_decomposition() const {
-    std::vector<Index> tdec;
-    std::vector<double> repchar;
-
-    tdec.resize(conjugacy_classes.size());
-    repchar.resize(conjugacy_classes.size());
-
-    for(Index i = 0; i < conjugacy_classes.size(); i++) {
-      repchar[i] += at(conjugacy_classes[i][0]).matrix().trace();
+  MasterSymGroup make_master_sym_group(SymGroup const &_group, Lattice const &_lattice) {
+    MasterSymGroup result;
+    result.set_lattice(_lattice);
+    for(auto const &op : _group) {
+      result.push_back(op);
     }
-
-    //    //std::cout << "The reducible characters are:\n";
-
-    //    //std::cout << repchar << "\n\n";
-
-    for(Index i = 0; i < m_character_table.size(); i++) { // Loop over irreducible representations
-      std::complex<double> temp = std::complex<double>(0, 0);
-      for(Index j = 0; j < m_character_table.size(); j++) { // Loop over conjugacy classes
-        temp += (m_character_table[i][j] * std::complex<double>(conjugacy_classes[j].size(), 0) * std::complex<double>(repchar[j], 0));
-      }
-      //      //std::cout << temp << "\t";
-
-      tdec[i] = round(temp.real() / size());
-    }
-
-    //    //std::cout << "\n\nThe irreducible projection is:\n";
-    //std::cout << tdec << "\n\n";
-
-    return tdec;
-  }
-
-  //*******************************************************************************************
-
-  jsonParser &SymGroup::to_json(jsonParser &json) const {
-    json.put_obj();
-
-    json["symop"].put<std::vector<SymOp> >(*this);
-
-    for(int i = 0; i < json["symop"].size(); ++i) {
-      SymInfo info(at(i), lattice());
-      auto &j = json["symop"][i];
-      add_sym_info(info, j);
-    }
-
-    // PERIODICITY_TYPE group_periodicity;
-    json["group_periodicity"] = periodicity();
-
-    // mutable std::vector<std::vector<int> > multi_table;
-    json["multi_table"] = multi_table;
-
-    // mutable std::vector<std::vector<int> > alt_multi_table;
-    json["alt_multi_table"] = alt_multi_table;
-
-    // mutable std::vector<std::vector<int> > conjugacy_classes;
-    json["conjugacy_classes"] = conjugacy_classes;
-
-    // mutable std::vector<std::string> class_names;
-    json["class_names"] = class_names;
-
-    // mutable std::vector<int> index2conjugacy_class;
-    json["index2conjugacy_class"] = index2conjugacy_class;
-
-    // mutable std::vector<std::vector<std::complex<double> > > m_character_table;
-    json["character_table"] = m_character_table;
-    for(int i = 0; i < json["character_table"].size(); i++) {
-      json["character_table"][i].set_force_row();
-      for(int j = 0; j < json["character_table"][i].size(); j++) {
-        json["character_table"][i][j].set_force_row();
-        json["character_table"][i][j]["real"].set_remove_trailing_zeros();
-        json["character_table"][i][j]["imag"].set_remove_trailing_zeros();
-      }
-    }
-
-    // mutable std::vector<int> irrep_IDs;
-    json["irrep_IDs"] = irrep_IDs;
-
-    // mutable std::vector<bool> complex_irrep;
-    json["complex_irrep"] = complex_irrep;
-
-    // mutable std::vector<std::string> irrep_names;
-    json["irrep_names"] = irrep_names;
-
-    //json["unique_subgroups"] = unique_subgroups();
-    json["unique_subgroups"] = std::string("TODO: fix SymGroup::unique_subgroups()");
-
-    // mutable std::vector<std::vector<std::vector<int> > > m_subgroups;
-    json["m_subgroups"] = m_subgroups;
-
-    // mutable std::vector<std::vector<int> > centralizer_table;
-    json["centralizer_table"] = centralizer_table;
-
-    // mutable std::vector<std::vector<int> > elem_order_table;
-    json["elem_order_table"] = elem_order_table;
-
-    // mutable double max_error;
-    json["max_error"] = m_max_error;
-
-    for(auto const &info : point_group_info())
-      json[info.first] = info.second;
-
-    return json;
-  }
-
-  //*******************************************************************************************
-
-  void SymGroup::from_json(const jsonParser &json) {
-    try {
-
-      // class SymGroup : public std::vector<SymOp>
-      clear();
-
-      for(int i = 0; i < json["symop"].size(); i++) {
-        push_back(json["symop"][i].get<SymOp>());
-      }
-
-      // PERIODICITY_TYPE group_periodicity;
-      CASM::from_json(m_group_periodicity, json["group_periodicity"]);
-
-      // mutable std::vector<std::vector<int> > multi_table;
-      CASM::from_json(multi_table, json["multi_table"]);
-
-      // mutable std::vector<std::vector<int> > alt_multi_table;
-      CASM::from_json(alt_multi_table, json["alt_multi_table"]);
-
-      // mutable std::vector<std::vector<int> > conjugacy_classes;
-      CASM::from_json(conjugacy_classes, json["conjugacy_classes"]);
-
-      // mutable std::vector<std::string> class_names;
-      CASM::from_json(class_names, json["class_names"]);
-
-      // mutable std::vector<int> index2conjugacy_class;
-      CASM::from_json(index2conjugacy_class, json["index2conjugacy_class"]);
-
-      // mutable std::vector<std::vector<std::complex<double> > > m_character_table;
-      CASM::from_json(m_character_table, json["character_table"]);
-
-      // mutable std::vector<int> irrep_IDs;
-      CASM::from_json(irrep_IDs, json["irrep_IDs"]);
-
-      // mutable std::vector<bool> complex_irrep;
-      CASM::from_json(complex_irrep, json["complex_irrep"]);
-
-      // mutable std::vector<std::string> irrep_names;
-      CASM::from_json(irrep_names, json["irrep_names"]);
-
-      // mutable std::vector<std::vector<std::vector<int> > > m_subgroups;
-      CASM::from_json(m_subgroups, json["m_subgroups"]);
-
-      // mutable std::vector<std::vector<int> > centralizer_table;
-      CASM::from_json(centralizer_table, json["centralizer_table"]);
-
-      // mutable std::vector<std::vector<int> > elem_order_table;
-      CASM::from_json(elem_order_table, json["elem_order_table"]);
-
-      // mutable double max_error;
-      CASM::from_json(m_max_error, json["max_error"]);
-
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
-  }
-
-  //*******************************************************************************************
-
-  jsonParser &to_json(const SymGroup &sym, jsonParser &json) {
-    return sym.to_json(json);
-  }
-
-  void from_json(SymGroup &sym, const jsonParser &json) {
-    try {
-      sym.from_json(json);
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
-  }
-  //*******************************************************************************************
-
-  jsonParser &MasterSymGroup::to_json(jsonParser &json) const {
-
-    // class MasterSymGroup : public SymGroup
-    SymGroup::to_json(json);
-
-    // mutable std::vector<SymGroupRep *> m_rep_array;
-    json["m_rep_array"].put_array();
-    for(Index i = 0; i < m_rep_array.size(); i++) {
-      json["rep_array"].push_back(m_rep_array[i]);
-    }
-
-    // mutable int coord_rep_ID, reg_rep_ID;
-    json["coord_rep_ID"] = m_coord_rep_ID;
-    json["reg_rep_ID"] = m_reg_rep_ID;
-
-    // mutable SymGroup point_group_internal;
-    json["point_group"] = m_point_group;
-
-    return json;
-  }
-
-  //*******************************************************************************************
-
-  // Note: as a hack this expects at(0) to be present and have the right lattice!!!
-  //   it's just used to set the lattice for all the SymOp
-  void MasterSymGroup::from_json(const jsonParser &json) {
-    try {
-      clear();
-
-      // class MasterSymGroup : public SymGroup
-      SymGroup::from_json(json);
-
-      // mutable std::vector<SymGroupRep *> m_rep_array;
-      // destruct exisiting
-      for(Index i = 0; i < m_rep_array.size(); i++) {
-        delete m_rep_array[i];
-      }
-      m_rep_array.resize(json["rep_array"].size());
-      for(int i = 0; i < json["rep_array"].size(); i++) {
-        m_rep_array[i] = new SymGroupRep(*this);
-        m_rep_array[i]->from_json(json["rep_array"][i]);
-      }
-
-      // mutable int coord_rep_ID, reg_rep_ID;
-      CASM::from_json(m_coord_rep_ID, json["coord_rep_ID"]);
-      CASM::from_json(m_reg_rep_ID, json["reg_rep_ID"]);
-
-      // mutable SymGroup m_point_group;
-      m_point_group.clear();
-      m_point_group.from_json(json["point_group"]);
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
-  }
-
-  //*******************************************************************************************
-
-  jsonParser &to_json(const MasterSymGroup &sym, jsonParser &json) {
-    return sym.to_json(json);
-  }
-
-  void from_json(MasterSymGroup &sym, const jsonParser &json) {
-    try {
-      sym.from_json(json);
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
+    return result;
   }
 
   //**********************************************************
@@ -3933,8 +2187,8 @@ namespace CASM {
     //std::cout << "Operations:\n"
     //<< a.matrix() << "\n and \n"
     //<< b.matrix() << "\n are equal \n"
-    //<< "a-tau " << a.tau().transpose() << "\n"
-    //<< "b-tau " << b.tau().transpose() << "\n";
+    //<< "a-tau " << a.tau().transpose() << std::endl
+    //<< "b-tau " << b.tau().transpose() << std::endl;
     if(periodicity != PERIODIC)
       return almost_equal(a.tau(), b.tau(), _tol);
 

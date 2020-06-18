@@ -358,7 +358,7 @@ namespace CASM {
       std::vector<std::string> col = {
         "configname", "selected", "to_configname", "has_data", "has_complete_data",
         "score", "best_score", "is_best",
-        "lattice_deformation_cost", "basis_deformation_cost",
+        "lattice_deformation_cost", "atomic_deformation_cost",
         "relaxed_energy"
       };
 

@@ -33,12 +33,13 @@ namespace CASM {
     public:
 
       StrucMapCalculatorInterface(SimpleStructure _parent,
-                                  SymOpVector _point_group = {SymOp::identity()},
+                                  SymOpVector const &_factor_group = {SymOp::identity()},
                                   SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM,
                                   StrucMapping::AllowedSpecies allowed_species = {}) :
         m_parent(std::move(_parent)),
-        m_point_group(std::move(_point_group)),
         m_species_mode(_species_mode) {
+
+        this->_set_sym_info(_factor_group);
 
         if(allowed_species.empty()) {
           auto const &p_info(this->struc_info(parent()));
@@ -47,7 +48,7 @@ namespace CASM {
             allowed_species[i].push_back(p_info.names[i]);
           }
         }
-        set_allowed_species(allowed_species);
+        _set_allowed_species(allowed_species);
       }
 
       SimpleStructure::Info const &struc_info(SimpleStructure const &_struc) const {
@@ -62,55 +63,19 @@ namespace CASM {
         return m_parent;
       }
 
+      ///\brief Crystallographic tolerance, for now just return CASM::TOL
+      double xtal_tol() const {
+        return TOL;
+      }
+
+      ///\brief List of point group operations that map parent onto itself (neglecting internal translation)
       SymOpVector const &point_group() const {
         return m_point_group;
       }
 
-      void set_point_group(SymOpVector _point_group) {
-        m_point_group = std::move(_point_group);
-      }
-
-      template <typename ExternSymOpVector>
-      void set_point_group(ExternSymOpVector _point_group) {
-        return this->set_point_group(adapter::Adapter<SymOpVector, ExternSymOpVector>()(_point_group));
-      }
-
-      void set_allowed_species(StrucMapping::AllowedSpecies allowed_species) {
-        m_allowed_species = std::move(allowed_species);
-
-        //Analyze allowed_species:
-        for(Index i = 0; i < m_allowed_species.size(); ++i) {
-          for(std::string &sp : m_allowed_species[i]) {
-            if(sp == "Va" || sp == ("VA") || sp == "va") {
-              //Is vacancy
-              sp = "Va";
-              m_va_allowed.insert(i);
-            }
-            else if(m_allowed_species[i].size() > 1) {
-              //Not vacancy, but variable species
-              m_fixed_species[sp] = 0;
-            }
-            else {
-              //potentially fixed species
-              auto it = m_fixed_species.find(sp);
-              if(it == m_fixed_species.end())
-                m_fixed_species[sp] = 1;
-              else if((it->second) > 0)
-                ++(it->second);
-            }
-            if(!m_max_n_species.count(sp))
-              m_max_n_species[sp] = 0;
-            ++m_max_n_species[sp];
-          }
-        }
-
-        for(auto it = m_fixed_species.begin(); it != m_fixed_species.end();) {
-          auto curr = it;
-          ++it;
-          if((curr->second) == 0)
-            m_fixed_species.erase(curr);
-        }
-
+      ///\brief List of internal translations that map parent onto itself
+      std::vector<Eigen::Vector3d> const &internal_translations() const {
+        return m_internal_translations;
       }
 
       std::unordered_set<Index> const &va_allowed() const {
@@ -150,24 +115,82 @@ namespace CASM {
 
       /// \brief Make an exact copy of the calculator (including any initialized members)
       std::unique_ptr<StrucMapCalculatorInterface> quasi_clone(SimpleStructure _parent,
-                                                               SymOpVector _point_group = {SymOp::identity()},
+                                                               SymOpVector const &_factor_group = {SymOp::identity()},
                                                                SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM,
                                                                StrucMapping::AllowedSpecies _allowed_species = {}) const {
         return std::unique_ptr<StrucMapCalculatorInterface>(this->_quasi_clone(std::move(_parent),
-                                                                               std::move(_point_group),
+                                                                               _factor_group,
                                                                                _species_mode,
                                                                                std::move(_allowed_species)));
       }
 
       template <typename ExternSymOpVector>
       std::unique_ptr<StrucMapCalculatorInterface> quasi_clone(SimpleStructure _parent,
-                                                               ExternSymOpVector _point_group = {SymOp::identity()},
+                                                               ExternSymOpVector const &_factor_group = {SymOp::identity()},
                                                                SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM,
                                                                StrucMapping::AllowedSpecies _allowed_species = {}) const {
-        return this->quasi_clone(_parent, adapter::Adapter<SymOpVector, ExternSymOpVector>()(_point_group), _species_mode, _allowed_species);
+        return this->quasi_clone(_parent, adapter::Adapter<SymOpVector, ExternSymOpVector>()(_factor_group), _species_mode, _allowed_species);
       }
 
     protected:
+
+      void _set_allowed_species(StrucMapping::AllowedSpecies allowed_species) {
+        m_allowed_species = std::move(allowed_species);
+
+        //Analyze allowed_species:
+        for(Index i = 0; i < m_allowed_species.size(); ++i) {
+          for(std::string &sp : m_allowed_species[i]) {
+            if(sp == "Va" || sp == ("VA") || sp == "va") {
+              //Is vacancy
+              sp = "Va";
+              m_va_allowed.insert(i);
+            }
+            else if(m_allowed_species[i].size() > 1) {
+              //Not vacancy, but variable species
+              m_fixed_species[sp] = 0;
+            }
+            else {
+              //potentially fixed species
+              auto it = m_fixed_species.find(sp);
+              if(it == m_fixed_species.end())
+                m_fixed_species[sp] = 1;
+              else if((it->second) > 0)
+                ++(it->second);
+            }
+            if(!m_max_n_species.count(sp))
+              m_max_n_species[sp] = 0;
+            ++m_max_n_species[sp];
+          }
+        }
+
+        for(auto it = m_fixed_species.begin(); it != m_fixed_species.end();) {
+          auto curr = it;
+          ++it;
+          if((curr->second) == 0)
+            m_fixed_species.erase(curr);
+        }
+      }
+
+      ///\brief Sets point_group and internal_translations by breaking factor group into pure translations and rotations/rotoreflections
+      /// _factor_group should be sorted in order of decreasing character
+      void _set_sym_info(SymOpVector const &_factor_group) {
+        m_point_group.clear();
+        m_internal_translations.clear();
+
+        // Internal translations are any translation associated with identity
+        m_point_group.push_back(SymOp::identity());
+
+        for(SymOp const &op : _factor_group) {
+          if(get_matrix(op).isIdentity(TOL) && !get_time_reversal(op)) {
+            m_internal_translations.push_back(get_translation(op));
+          }
+          if(!almost_equal(get_matrix(op), get_matrix(m_point_group.back()), TOL)
+             || get_time_reversal(op) != get_time_reversal(m_point_group.back())) {
+            m_point_group.push_back(op);
+            m_point_group.back().translation.setZero();
+          }
+        }
+      }
 
       StrucMapping::AllowedSpecies const &_allowed_species() const {
         return m_allowed_species;
@@ -189,7 +212,11 @@ namespace CASM {
     private:
       SimpleStructure m_parent;
 
+      // Point group of parent crystal, must contain at least Identity
       SymOpVector m_point_group;
+
+      // internal translations that map parent crystal onto itself, must contain at least (0,0,0)
+      std::vector<Eigen::Vector3d> m_internal_translations;
 
       SimpleStructure::SpeciesMode m_species_mode;
 
@@ -207,7 +234,7 @@ namespace CASM {
 
       /// \brief Make an exact copy of the calculator (including any initialized members)
       virtual StrucMapCalculatorInterface *_quasi_clone(SimpleStructure _parent,
-                                                        SymOpVector _point_group = {SymOp::identity()},
+                                                        SymOpVector const &_factor_group = {SymOp::identity()},
                                                         SimpleStructure::SpeciesMode _species_mode = SimpleStructure::SpeciesMode::ATOM,
                                                         StrucMapping::AllowedSpecies _allowed_species = {}) const = 0;
 

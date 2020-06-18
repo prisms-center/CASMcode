@@ -18,8 +18,8 @@ namespace CASM {
     //TODO: Squash OccupantDoF and DiscreteDoF into a single DiscreteDoF class that does NOT depend on Molecule (i.e. DiscreteType)
     template <typename DiscreteType>
     struct Adapter<OccupantDoF<DiscreteType>, std::vector<DiscreteType>> {
-      OccupantDoF<DiscreteType> operator()(const std::vector<xtal::Molecule> &adaptable, int dof_id) {
-        OccupantDoF<DiscreteType> dof(DoFType::occupation().val_traits(), "s", adaptable);
+      OccupantDoF<DiscreteType> operator()(const std::vector<xtal::Molecule> &adaptable, SymGroupRepID symrep_ID, int dof_id) {
+        OccupantDoF<DiscreteType> dof(DoFType::occupation().val_traits(), "s", symrep_ID, adaptable);
         dof.set_ID(dof_id);
         return dof;
       }
@@ -30,8 +30,10 @@ namespace CASM {
     /// IDs of each component are set to values 0-n-1, and are then locked to avoid future changes to them.
     template<>
     struct Adapter<CASM::DoFSet, xtal::DoFSet> {
-      CASM::DoFSet operator()(const xtal::DoFSet &adaptable) {
-        CASM::DoFSet adapted_dofset(adaptable.traits());
+      CASM::DoFSet operator()(const xtal::DoFSet &adaptable, SymGroupRepID symrep_ID) {
+        CASM::DoFSet adapted_dofset(adaptable.traits(),
+                                    adaptable.component_names(),
+        {symrep_ID, adaptable.basis()});
         adapted_dofset.set_sequential_IDs();
         adapted_dofset.lock_IDs();
         return adapted_dofset;
@@ -44,8 +46,11 @@ namespace CASM {
     /// the index of the relevant Site within the Structure basis.
     template<>
     struct Adapter<CASM::DoFSet, xtal::SiteDoFSet> {
-      CASM::DoFSet operator()(const xtal::SiteDoFSet &adaptable, int dof_id) {
-        CASM::DoFSet adapted_dofset(adaptable.traits(), adaptable.excluded_occupants());
+      CASM::DoFSet operator()(const xtal::SiteDoFSet &adaptable, SymGroupRepID symrep_ID, int dof_id) {
+        CASM::DoFSet adapted_dofset(adaptable.traits(),
+                                    adaptable.component_names(),
+        {symrep_ID, adaptable.basis()},
+        adaptable.excluded_occupants());
         adapted_dofset.set_ID(dof_id);
         return adapted_dofset;
       }

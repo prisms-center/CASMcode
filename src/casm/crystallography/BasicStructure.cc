@@ -1,6 +1,5 @@
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Adapter.hh"
-#include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/crystallography/Site.hh"
@@ -261,9 +260,6 @@ namespace CASM {
       }
 
       return;
-
-      CASM::VaspIO::PrintPOSCAR print(make_simple_structure(*this));
-      print.print(std::cout);
 
     }
 

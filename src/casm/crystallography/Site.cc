@@ -396,7 +396,7 @@ namespace CASM {
       for(const Molecule &m : this->occupant_dof()) {
         stream << m.name() << "  ";
       }
-      std::cout << std::endl;
+      stream << std::endl;
 
       return;
     }

@@ -11,31 +11,10 @@ namespace CASM {
       m_lat(_lat) {}
 
     /// Checks if lat = other*U, with unimodular U
-    bool LatticeIsEquivalent::operator()(const Lattice &other) const {
+    bool LatticeIsEquivalent::operator()(const Lattice &other, double tol) const {
+      tol = tol < 0 ? m_lat.tol() : tol;
       m_U = other.lat_column_mat().inverse() * m_lat.lat_column_mat();
-      return is_unimodular(m_U, m_lat.tol());
-    }
-
-    /// Checks if lat = copy_apply(B,lat)*U, with unimodular U
-    bool LatticeIsEquivalent::operator()(const SymOp &B) const {
-      return (*this)(sym::copy_apply(B, m_lat));
-    }
-
-    /// Checks if copy_apply(A, lat) = copy_apply(B,lat)*U, with unimodular U
-    bool LatticeIsEquivalent::operator()(const SymOp &A, const SymOp &B) const {
-      LatticeIsEquivalent f {sym::copy_apply(A, m_lat)};
-      return f(sym::copy_apply(B, m_lat));
-    }
-
-    /// Checks if lat = apply(B,other)*U, with unimodular U
-    bool LatticeIsEquivalent::operator()(const SymOp &B, const Lattice &other) const {
-      return (*this)(sym::copy_apply(B, other));
-    }
-
-    /// Checks if copy_apply(A, lat) = apply(B,other)*U, with unimodular U
-    bool LatticeIsEquivalent::operator()(const SymOp &A, const SymOp &B, const Lattice &other) const {
-      LatticeIsEquivalent f {sym::copy_apply(A, m_lat)};
-      return (*this)(sym::copy_apply(B, other));
+      return is_unimodular(m_U, tol);
     }
 
     /// Returns U found for last check
@@ -109,8 +88,8 @@ namespace CASM {
       tMat = tMat * tMat.transpose();
 
       // The diagonal elements of tMat describe the square of the distance by which the transformed vectors 'miss' the original vectors
-      double tol2 = m_lat.tol() * m_lat.tol();
-      if(tMat(0, 0) < tol2 && tMat(1, 1) < tol2 && tMat(2, 2) < tol2) {
+
+      if(tMat(0, 0) < 2.*m_lat.tol() && tMat(1, 1) < 2.*m_lat.tol() && tMat(2, 2) < 2.*m_lat.tol()) {
         m_map_error = sqrt(tMat.diagonal().maxCoeff());
         return true;
       }

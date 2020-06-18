@@ -53,7 +53,7 @@ namespace CASM {
     /// For Configuration:
     /// - From ConfigMapperResult::relaxation_properties:
     ///   - 'lattice_deformation': double, shape=(1x1) , lattice mapping score
-    ///   - 'basis_deformation': double, shape=(1x1), basis mapping score
+    ///   - 'atomic_deformation': double, shape=(1x1), basis mapping score
     ///   - 'relaxation_deformation': shape=(3x3), also referred to as F:
     ///     cart_op*L_calc = F*L_ideal, L_calc being the lattice in the imported structure,
     ///     and L_ideal the lattice of the ideal mapped to Configuration, and

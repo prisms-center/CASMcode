@@ -161,11 +161,9 @@ namespace CASM {
       assert(neighbor.m_home && "Neighbor home lattice is null");
       Coordinate translation = (*this) - neighbor;
 
-      assert(translation.m_home && "Home lattice is null");
+      Eigen::Vector3d frac_lattice_translation = lround(translation.const_frac()).cast<double>();
 
-      Eigen::Vector3d frac_translation = lround(translation.const_frac()).cast<double>();
-
-      translation.frac() -= frac_translation;
+      translation.frac() -= frac_lattice_translation;
       return translation;
     }
 

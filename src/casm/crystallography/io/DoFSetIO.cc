@@ -6,7 +6,7 @@ namespace CASM {
   jsonParser &to_json(xtal::DoFSet const &_dof, jsonParser &json) {
     json["basis"] = _dof.basis();
     json["axis_names"] = _dof.component_names();
-    json["traits"] = _dof.traits().name();
+    //json["traits"] = _dof.traits().name();
     return json;
   }
 
@@ -16,29 +16,27 @@ namespace CASM {
     return json;
   }
 
-  template <>
-  xtal::DoFSet from_json<xtal::DoFSet>(const jsonParser &json) {
+
+  xtal::DoFSet jsonConstructor<xtal::DoFSet>::from_json(const jsonParser &json, AnisoValTraits const &traits) {
+
     Eigen::MatrixXd basis;
     json.get_if(basis, "basis");
 
     std::vector<std::string> component_names;
     json.get_if(component_names, "axis_names");
 
-    std::string traits_tag = json["traits"].get<std::string>();
-
     if(component_names.size()) {
-      return xtal::DoFSet(xtal::DoFSet::BasicTraits(traits_tag), component_names, basis);
+      return xtal::DoFSet(traits, component_names, basis);
     }
 
-    return xtal::DoFSet(xtal::DoFSet::BasicTraits(traits_tag));
+    return xtal::DoFSet(traits);
   }
 
-  template <>
-  xtal::SiteDoFSet from_json<xtal::SiteDoFSet>(const jsonParser &json) {
+  xtal::SiteDoFSet jsonConstructor<xtal::SiteDoFSet>::from_json(const jsonParser &json, AnisoValTraits const &traits) {
     std::unordered_set<std::string> excluded_occupants;
     json.get_if(excluded_occupants, "excluded_occupants");
 
-    return xtal::SiteDoFSet(from_json<xtal::DoFSet>(json), excluded_occupants);
+    return xtal::SiteDoFSet(json.get<xtal::DoFSet>(traits), excluded_occupants);
   }
 
 }

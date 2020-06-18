@@ -321,7 +321,7 @@ namespace CASM {
   Tensor<T> &Tensor<T>::dim_permute(const Array<Index> &iperm) {
     if(iperm.size() != Nrank) {
       // temporarily changed this to cout
-      std::cout << "WARNING: In Tensor<T>::dim_permute, permutation array is incompatible with tensor rank! Continuing without permuting indeces...\n";
+      throw std::runtime_error("Tensor<T>::dim_permute, permutation array is incompatible with tensor rank!");
       return *this;
     }
 
@@ -1173,10 +1173,6 @@ namespace CASM {
       stream >> dim[i];
     }
 
-#ifdef DEBUG
-    std::cout << "dim is " << dim << "\n";
-#endif //DEBUG
-
     stream.ignore(1000, '\n');
 
     coeffs.resize(num_elem, NAN);
@@ -1201,9 +1197,6 @@ namespace CASM {
       //Reading in coefficient
       if(((ch != char(60)) && ((ch >= '0') || (ch <= '9'))) || (ch == '-')) {
         stream >> tcoeff;
-#ifdef DEBUG
-        std::cout << "Coefficient is " << tcoeff << "\n";
-#endif //DEBUG
         eci(j) = tcoeff;
       }
 

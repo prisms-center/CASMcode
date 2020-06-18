@@ -6,19 +6,29 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/SymTools.hh"
+
+#include "casm/symmetry/json_io.hh"
+#include "casm/symmetry/SymRepTools.hh"
+
+#include "casm/enumerator/Enumerator.hh"
+#include "casm/enumerator/DoFSpace.hh"
+#include "casm/enumerator/io/json/DoFSpace.hh"
+
+#include "casm/clex/PrimClex.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/app/sym.hh"
 #include "casm/crystallography/io/VaspIO.hh"
 
 
 #include "casm/completer/Handlers.hh"
 #include "casm/symmetry/SymGroup.hh"
 
-namespace {
+namespace Local {
   using namespace CASM;
-  void print_factor_group_convergence(const Structure &struc, double small_tol, double large_tol, double increment, std::ostream &print_stream) {
+  static void _print_factor_group_convergence(const Structure &struc, double small_tol, double large_tol, double increment, std::ostream &print_stream) {
     std::vector<double> tols;
     std::vector<bool> is_group;
     std::vector<int> num_ops, num_enforced_ops;
@@ -39,7 +49,6 @@ namespace {
       is_group.push_back(factor_group.is_group(i));
       factor_group.enforce_group(i);
       num_enforced_ops.push_back(factor_group.size());
-      factor_group.character_table();
       name.push_back(factor_group.get_name());
     }
     lattice.set_tol(orig_tol);
@@ -50,138 +59,138 @@ namespace {
 
     return;
   }
+
+  static void _write_config_symmetry_files(ConfigEnumInput const &config, fs::path sym_dir) {
+    // Write lattice point group
+    {
+      SymGroup lattice_pg(SymGroup::lattice_point_group(config.config().ideal_lattice()));
+      fs::ofstream outfile;
+      jsonParser json;
+      outfile.open(sym_dir / "lattice_point_group.json");
+      write_symgroup(lattice_pg, json);
+      json.print(outfile);
+      outfile.close();
+    }
+
+    // Write factor group
+    {
+      fs::ofstream outfile;
+      jsonParser json;
+      outfile.open(sym_dir / "factor_group.json");
+      write_symgroup(make_sym_group(config.group().begin(),
+                                    config.group().end(),
+                                    config.config().ideal_lattice()), json);
+      json.print(outfile);
+      outfile.close();
+    }
+
+    // Write crystal point group
+    {
+      fs::ofstream outfile;
+      jsonParser json;
+      outfile.open(sym_dir / "crystal_point_group.json");
+      write_symgroup(make_point_group(config.group().begin(),
+                                      config.group().end(),
+                                      config.config().ideal_lattice()), json);
+      json.print(outfile);
+      outfile.close();
+    }
+  }
 }
 
 namespace CASM {
 
   namespace Completer {
-    SymOption::SymOption(): OptionHandlerBase("sym") {}
+    SymOption::SymOption(): EnumOptionBase("sym") {}
 
     void SymOption::initialize() {
+      bool required = false;
+
       add_help_suboption();
       add_coordtype_suboption();
-      add_configlist_suboption();
+      add_selection_suboption("NONE");
       add_confignames_suboption();
       add_scelnames_suboption();
       add_dofs_suboption();
+      add_settings_suboption(required);
+      add_input_suboption(required);
 
       m_desc.add_options()
       ("lattice-point-group", "Pretty print lattice point group")
       ("factor-group", "Pretty print factor group")
       ("crystal-point-group", "Pretty print crystal point group")
-      ("tol", po::value<double>(&m_tol)->default_value(1.0e-5), "tolerance to use with symmetrize in Angstroms default (1e-5)")
+      ("calc-wedge", "Perform calculation of irreducible wedge (may significantly slow down analysis)")
+      //("no-directions", "Skip calculation of high-symmetry direction and irreducible wedge (for faster evaluation)")
+      ("tol", po::value<double>(&m_tol)->default_value(1.0e-5), "Tolerance (in Angstr.) used for symmetrization (default 1e-5)")
       ("symmetrize", po::value<fs::path>(&m_poscar_path)->value_name(ArgHandler::path()), "symmetrize a POSCAR specified by path to a given tolerance");
 
       return;
     }
   }
+}
 
+namespace Local {
+  static bool _dof_analysis(CASM::Completer::SymOption const &opt) {
+    return opt.selection_path() != "NONE" || opt.config_strs().size() || opt.supercell_strs().size() || opt.dof_strs().size();
+  }
 
+  static bool _symmetrize(CASM::po::variables_map const &vm) {
+    return vm.count("symmetrize");
+  }
+
+}
+
+namespace CASM {
   // ///////////////////////////////////////
   // 'sym' function for casm
   //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int sym_command(const CommandArgs &args) {
-    //std::string name;
-    COORD_TYPE coordtype;
-    po::variables_map vm;
+  const std::string SymCommand::name = "sym";
 
-    /// Set command line options using boost program_options
-    Completer::SymOption sym_opt;
-    try {
-      po::store(po::parse_command_line(args.argc(), args.argv(), sym_opt.desc()), vm); // can throw
-
-      /** --help option
-      */
-      if(vm.count("help")) {
-        args.log() << "\n";
-        args.log() << sym_opt.desc() << std::endl;
-
-        return 0;
-      }
-
-      if(vm.count("desc")) {
-        args.log() << "\n";
-        args.log() << sym_opt.desc() << std::endl;
-        args.log() << "DESCRIPTION" << std::endl;
-        args.log() << "    Display symmetry group information.\n";
-
-        return 0;
-      }
+  SymCommand::SymCommand(const CommandArgs &_args, Completer::SymOption &_opt) :
+    APICommand<Completer::SymOption>(_args, _opt) {}
 
 
-
-      po::notify(vm); // throws on error, so do after help in case
-      // there are any problems
-    }
-    catch(po::error &e) {
-      args.err_log() << "ERROR: " << e.what() << std::endl << std::endl;
-      args.err_log() << sym_opt.desc() << std::endl;
-      return ERR_INVALID_ARG;
-    }
-    catch(std::exception &e) {
-      args.err_log() << "Unhandled Exception reached the top of main: "
-                     << e.what() << ", application will now exit" << std::endl;
-      return ERR_UNKNOWN;
-
-    }
-
-    coordtype = sym_opt.coordtype_enum();
-    COORD_MODE C(coordtype);
-
-    const fs::path &root = args.root;
-    if(root.empty()) {
-      args.err_log().error("No casm project found");
-      args.err_log() << std::endl;
+  int SymCommand::vm_count_check() const {
+    if(!Local::_symmetrize(vm()) && !in_project()) {
+      help();
+      err_log().error("No casm project found");
+      err_log() << std::endl;
       return ERR_NO_PROJ;
     }
 
-    ProjectSettings set = open_project_settings(root);
-    DirectoryStructure const &dir = set.dir();
-    Structure prim(read_prim(dir.prim(), set.crystallography_tol(), &(set.hamiltonian_modules())));
-
-    args.log() << "Generating lattice point group. " << std::endl << std::endl;
-    SymGroup prim_pg(SymGroup::lattice_point_group(prim.lattice()));
-    prim_pg.character_table();
-
-
-    args.log() << "  Lattice point group size: " << prim_pg.size() << std::endl;
-    args.log() << "  Lattice point group is: " << prim_pg.get_name() << std::endl << std::endl;
-
-    args.log() << "Generating factor group. " << std::endl << std::endl;
-
-    /* prim.generate_factor_group(); */
-    /* prim.set_site_internals(); */
-
-    args.log() << "  Factor group size: " << prim.factor_group().size() << std::endl;
-
-    args.log() << "  Crystal point group is: " << prim.point_group().get_name() << std::endl;
-
-
-    if(vm.count("lattice-point-group")) {
-      args.log() << "\n***************************\n" << std::endl;
-      args.log() << "Lattice point group:\n\n" << std::endl;
-      prim_pg.print(args.log(), coordtype);
+    if(vm().count("settings") + vm().count("input") == 2) {
+      help();
+      err_log() << "Error in 'casm sym'. The options --settings or --input may not both be chosen." << std::endl;
+      return ERR_INVALID_ARG;
     }
 
-    if(vm.count("factor-group")) {
-      args.log() << "\n***************************\n" << std::endl;
-      args.log() << "Factor group:\n\n" << std::endl;
-      prim.factor_group().print(args.log(), coordtype);
-    }
+    return 0;
+  }
 
-    if(vm.count("crystal-point-group")) {
-      args.log() << "\n***************************\n" << std::endl;
-      args.log() << "Crystal point group:\n\n" << std::endl;
-      prim.point_group().print(args.log(), coordtype);
-    }
+  int SymCommand::help() const {
+    log() << "\n";
+    log() << opt().desc() << std::endl;
 
-    if(vm.count("symmetrize")) {
-      fs::path poscar_path = sym_opt.m_poscar_path;
-      double tol = sym_opt.m_tol;
-      args.log() << "\n***************************\n" << std::endl;
-      args.log() << "Symmetrizing: " << poscar_path << std::endl;
-      args.log() << "with tolerance: " << tol << std::endl;
+    return 0;
+  }
+
+  int SymCommand::desc() const {
+    log() << "\n";
+    log() << opt().desc() << std::endl;
+    log() << "DESCRIPTION" << std::endl;
+    log() << "    Display symmetry group information.\n";
+    return 0;
+  }
+
+  int SymCommand::run() const {
+
+    if(Local::_symmetrize(vm())) {
+      fs::path poscar_path = opt().poscar_path();
+      double tol = opt().tol();
+      log() << "\n***************************\n" << std::endl;
+      log() << "Symmetrizing: " << poscar_path << std::endl;
+      log() << "with tolerance: " << tol << std::endl;
       Structure struc(poscar_path);
       struc = Structure(xtal::make_primitive(struc));
 
@@ -197,7 +206,7 @@ namespace CASM {
 
       tmp.factor_group();
       // b) find factor group with same tolerance
-      ::print_factor_group_convergence(tmp, tmp.structure().lattice().tol(), tol, (tol - tmp.structure().lattice().tol()) / 10.0, std::cout);
+      Local::_print_factor_group_convergence(tmp, tmp.structure().lattice().tol(), tol, (tol - tmp.structure().lattice().tol()) / 10.0, std::cout);
       // c) symmetrize the basis sites
       SymGroup g = tmp.factor_group();
       tmp = xtal::symmetrize(tmp, g);
@@ -216,20 +225,59 @@ namespace CASM {
       p_i.print(file_i);
       file_i.close();
       return 0;
-
     }
-    coordtype = sym_opt.coordtype_enum();
+
+    //std::string name;
+    COORD_TYPE coordtype;
+
+    coordtype = opt().coordtype_enum();
+    COORD_MODE C(coordtype);
+
+    Structure const &prim = primclex().prim();
+
+    SymGroup lattice_pg(SymGroup::lattice_point_group(prim.lattice()));
+
+    if(!Local::_dof_analysis(opt())) {
+      log() << "  Lattice point group size: " << lattice_pg.size() << std::endl;
+      log() << "  Lattice point group is: " << lattice_pg.get_name() << std::endl << std::endl;
+
+
+      log() << "  Factor group size: " << prim.factor_group().size() << std::endl;
+
+      log() << "  Crystal point group is: " << prim.point_group().get_name() << std::endl;
+
+
+      if(vm().count("lattice-point-group")) {
+        log() << "\n***************************\n" << std::endl;
+        log() << "Lattice point group:\n\n" << std::endl;
+        lattice_pg.print(log(), coordtype);
+      }
+
+      if(vm().count("factor-group")) {
+        log() << "\n***************************\n" << std::endl;
+        log() << "Factor group:\n\n" << std::endl;
+        prim.factor_group().print(log(), coordtype);
+      }
+
+      if(vm().count("crystal-point-group")) {
+        log() << "\n***************************\n" << std::endl;
+        log() << "Crystal point group:\n\n" << std::endl;
+        prim.point_group().print(log(), coordtype);
+      }
+    }
+
+    coordtype = opt().coordtype_enum();
 
 
     // Write symmetry info files
-    dir.new_symmetry_dir();
+    primclex().dir().new_symmetry_dir();
 
     // Write lattice point group
     {
       fs::ofstream outfile;
       jsonParser json;
-      outfile.open(dir.lattice_point_group());
-      write_symgroup(prim_pg, json);
+      outfile.open(primclex().dir().lattice_point_group());
+      write_symgroup(lattice_pg, json);
       json.print(outfile);
       outfile.close();
     }
@@ -238,7 +286,7 @@ namespace CASM {
     {
       fs::ofstream outfile;
       jsonParser json;
-      outfile.open(dir.factor_group());
+      outfile.open(primclex().dir().factor_group());
       write_symgroup(prim.factor_group(), json);
       json.print(outfile);
       outfile.close();
@@ -248,13 +296,63 @@ namespace CASM {
     {
       fs::ofstream outfile;
       jsonParser json;
-      outfile.open(dir.crystal_point_group());
+      outfile.open(primclex().dir().crystal_point_group());
       write_symgroup(prim.point_group(), json);
       json.print(outfile);
       outfile.close();
     }
 
-    args.log() << std::endl;
+    // Perform DoF Analysis for specified degrees of freedom (DoFs)
+    if(Local::_dof_analysis(opt())) {
+      jsonParser kwargs;
+      if(vm().count("settings")) {
+        kwargs = jsonParser {opt().settings_path()};
+      }
+      else if(vm().count("input")) {
+        kwargs = jsonParser::parse(opt().input_str());
+      }
+      else {
+        kwargs = jsonParser::parse(std::string("{\"supercells\" : {\"min\" : 0, \"max\" : 0}}"));
+      }
+
+      // Create supercells, configurations, and/or local environments
+      std::vector<ConfigEnumInput> configs = make_enumerator_input_configs(primclex(), kwargs, opt(), nullptr);
+
+      // For each enumeration envrionment, perform analysis and write files.
+      for(ConfigEnumInput const &config : configs) {
+        fs::path sym_dir = primclex().dir().symmetry_dir(config.name());
+        fs::create_directories(sym_dir);
+
+        Local::_write_config_symmetry_files(config, sym_dir);
+
+        std::vector<DoFKey> dofs = opt().dof_strs();
+        if(dofs.empty()) {
+          dofs = all_local_dof_types(primclex().prim());
+          for(DoFKey const &dof : global_dof_types(primclex().prim())) {
+            dofs.push_back(dof);
+          }
+        }
+        for(DoFKey const &dof : dofs) {
+          DoFSpace dspace(config, dof);
+          jsonParser report;
+          std::string filename = "dof_analysis_" + dof + ".json";
+          if(fs::is_regular_file(sym_dir / filename)) {
+            report.read(sym_dir / filename);
+          }
+
+          report = vector_space_sym_report(dspace,
+                                           vm().count("calc-wedge"));
+
+          to_json(dspace, report);
+
+          report.write(sym_dir / filename);
+
+        }
+
+      }
+
+    }
+    log() << std::endl;
 
     return 0;
 

@@ -797,37 +797,6 @@ namespace CASM {
     //*****************************************************************************************************//
 
     /**
-     * Options set for `casm sym`. Get your point groups here.
-     */
-
-    class SymOption : public OptionHandlerBase {
-
-    public:
-
-      using OptionHandlerBase::coordtype_enum;
-
-      using OptionHandlerBase::selection_path;
-
-      using OptionHandlerBase::config_strs;
-
-      using OptionHandlerBase::supercell_strs;
-
-      using OptionHandlerBase::dof_strs;
-
-
-      SymOption();
-      double m_tol;
-      fs::path m_poscar_path;
-
-    private:
-
-      void initialize() override;
-
-    };
-
-    //*****************************************************************************************************//
-
-    /**
      * Options set for `casm view`. See what your casm landscape looks like here.
      */
 
@@ -849,31 +818,21 @@ namespace CASM {
 
     };
 
-    /**
-     * Options set for `casm enum`. Enumerate configurations,supercells, diff_trans and diff_trans_configs here.
-     */
-
-    class EnumOption : public OptionHandlerBase {
+    class EnumOptionBase : public OptionHandlerBase {
 
     public:
 
-      EnumOption();
+      EnumOptionBase(std::string const &_name) :
+        OptionHandlerBase(_name), m_all_existing(false) {
+      }
 
       using OptionHandlerBase::settings_path;
       using OptionHandlerBase::input_str;
       using OptionHandlerBase::supercell_strs;
       using OptionHandlerBase::config_strs;
-      using OptionHandlerBase::dry_run;
-      using OptionHandlerBase::verbosity_str;
       using OptionHandlerBase::coordtype_enum;
 
-      const std::vector<std::string> &desc_vec() const {
-        return m_desc_vec;
-      }
-
-      std::string method() const {
-        return m_method;
-      }
+      virtual ~EnumOptionBase() {}
 
       int min_volume() const {
         return m_min_volume;
@@ -887,6 +846,75 @@ namespace CASM {
         return m_all_existing;
       }
 
+    protected:
+      int m_min_volume;
+      int m_max_volume;
+      bool m_all_existing;
+
+    private:
+      virtual void initialize() override {}
+
+    };
+
+    //*****************************************************************************************************//
+
+    /**
+     * Options set for `casm sym`. Get your point groups here.
+     */
+
+    class SymOption : public EnumOptionBase {
+
+    public:
+
+      using OptionHandlerBase::selection_path;
+
+      using OptionHandlerBase::dof_strs;
+
+
+      SymOption();
+
+      bool wedges() const {
+        return m_wedges;
+      }
+
+      double tol() const {
+        return m_tol;
+      }
+
+      fs::path poscar_path() const {
+        return m_poscar_path;
+      }
+    private:
+      bool m_wedges;
+      double m_tol;
+      fs::path m_poscar_path;
+
+      void initialize() override;
+
+    };
+
+
+    /**
+     * Options set for `casm enum`. Enumerate configurations,supercells, diff_trans and diff_trans_configs here.
+     */
+
+    class EnumOption : public EnumOptionBase {
+
+    public:
+
+      EnumOption();
+
+      using OptionHandlerBase::dry_run;
+      using OptionHandlerBase::verbosity_str;
+
+      const std::vector<std::string> &desc_vec() const {
+        return m_desc_vec;
+      }
+
+      std::string method() const {
+        return m_method;
+      }
+
       const std::vector<std::string> &filter_strs() const {
         return m_filter_strs;
       }
@@ -898,9 +926,6 @@ namespace CASM {
       std::vector<std::string> m_desc_vec;
 
       std::string m_method;
-      int m_min_volume;
-      int m_max_volume;
-      bool m_all_existing;
       std::vector<std::string> m_filter_strs;
 
     };

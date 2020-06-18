@@ -64,12 +64,12 @@ namespace CASM {
       return UnitCellCoord(bijk.sublattice(), this->m_bring_within_f(bijk.unitcell()));
     }
 
-    const UnitCellCoord &UnitCellCoordIndexConverter::operator[](Index ix) const {
+    const UnitCellCoord &UnitCellCoordIndexConverter::operator()(Index ix) const {
       _throw_if_incompatible_index(ix);
       return m_linear_index_to_bijk[ix];
     }
 
-    Index UnitCellCoordIndexConverter::operator[](const UnitCellCoord &bijk) const {
+    Index UnitCellCoordIndexConverter::operator()(const UnitCellCoord &bijk) const {
       //Make sure the UntiCellCoord is allowed
       this->_throw_if_incompatible_bijk(bijk);
 

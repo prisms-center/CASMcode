@@ -9,10 +9,17 @@ namespace CASM {
     class DoFSet;
   }
 
+  class AnisoValTraits;
+
   template <>
-  xtal::SiteDoFSet from_json<xtal::SiteDoFSet>(const jsonParser &json);
+  struct jsonConstructor<xtal::SiteDoFSet> {
+    static xtal::SiteDoFSet from_json(const jsonParser &json, AnisoValTraits const &traits);
+  };
+
   template <>
-  xtal::DoFSet from_json<xtal::DoFSet>(const jsonParser &json);
+  struct jsonConstructor<xtal::DoFSet> {
+    static xtal::DoFSet from_json(const jsonParser &json, AnisoValTraits const &traits);
+  };
 
   jsonParser &to_json(xtal::SiteDoFSet const &_dof, jsonParser &json);
   jsonParser &to_json(xtal::DoFSet const &_dof, jsonParser &json);
