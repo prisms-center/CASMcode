@@ -54,11 +54,10 @@ TEST(ConfigEnumTest, ConfigEnumAllOccupationsTest) {
 
     fs::create_directory(test_proj_dir);
 
-    j["prim"].write(test_proj_dir / "prim.json");
-
     // build a project
-    ProjectBuilder builder(test_proj_dir, j["title"].get<std::string>(), "formation_energy");
-    builder.build();
+    auto project_name = j["title"].get<std::string>();
+    auto project_settings = make_default_project_settings(prim, project_name, test_proj_dir);
+    build_project(project_settings, prim);
 
     // read primclex
     PrimClex primclex(test_proj_dir, null_log());

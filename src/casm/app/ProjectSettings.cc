@@ -1,288 +1,122 @@
 #include "casm/app/ProjectSettings.hh"
 
+#include <regex>
 #include <tuple>
-#include "casm/system/RuntimeLibrary.hh"
-#include "casm/casm_io/container/json_io.hh"
-#include "casm/app/AppIO.hh"
 #include "casm/app/EnumeratorHandler.hh"
-#include "casm/app/QueryHandler.hh"
 #include "casm/app/HamiltonianModules.hh"
-//#include "casm/basis_set/DoF.hh"
-#include "casm/crystallography/Structure.hh"
-#include "casm/clex/NeighborList.hh"
-#include "casm/misc/algorithm.hh"
+#include "casm/app/QueryHandler.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/SafeOfstream.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/database/DatabaseTypes.hh"
+#include "casm/system/RuntimeLibrary.hh"
+
+// template definitions
+#include "casm/app/EnumeratorHandler_impl.hh"
+#include "casm/app/QueryHandler_impl.hh"
+#include "casm/app/HamiltonianModules_impl.hh"
 
 namespace CASM {
 
-  /// \brief Default weight matrix for approximately spherical neighborhood in Cartesian coordinates
-  ///
-  /// Equivalent to:
-  /// \code
-  /// PrimNeighborList::make_weight_matrix(prim.lattice().lat_column_mat(), 10, tol());
-  /// \endcode
-  Eigen::Matrix3l _default_nlist_weight_matrix(const Structure &prim, double tol) {
-    return PrimNeighborList::make_weight_matrix(prim.lattice().lat_column_mat(), 10, tol);
-  }
-
-  /// \brief Default includes sublattices with >= 2 components
-  std::set<int> _default_nlist_sublat_indices(const Structure &prim) {
-    // for now, include sublattices with >= 2 components
-    std::set<int> sublat_indices;
-    for(int b = 0; b < prim.basis().size(); ++b) {
-      if(prim.basis()[b].occupant_dof().size() >= 2 || prim.basis()[b].dof_size() > 0) {
-        sublat_indices.insert(b);
-      }
+  bool is_valid_project_name(std::string project_name) {
+    /// check if project_name is suitable:
+    if(!std::regex_match(project_name, std::regex(R"([_a-zA-Z]\w*)"))) {
+      return false;
     }
-    return sublat_indices;
+    return true;
   }
 
-  namespace {
-    struct AddAliasesFromJSON {
-      AddAliasesFromJSON(ProjectSettings &_set, jsonParser &_json) :
-        set(_set), json(_json) {}
-
-      template<typename T>
-      void eval() {
-        if(json.contains(traits<T>::name)) {
-          auto &q = set.query_handler<T>();
-          auto res = json.find(traits<T>::name);
-          auto it = res->begin();
-          auto end = res->end();
-          for(; it != end; ++it) {
-            q.add_alias(it.name(), it->template get<std::string>());
-          }
-        }
-      }
-
-      ProjectSettings &set;
-      jsonParser &json;
-    };
-
-    struct AddAliasesToJSON {
-      AddAliasesToJSON(const ProjectSettings &_set, jsonParser &_json) : json(_json), set(_set) {}
-
-      template<typename T> void eval() {
-        json[traits<T>::name] = set.query_handler<T>().aliases();
-      }
-
-      jsonParser &json;
-      const ProjectSettings &set;
-    };
+  void throw_if_project_name_is_not_valid(std::string project_name) {
+    /// check if project_name is suitable:
+    if(!is_valid_project_name(project_name)) {
+      throw std::runtime_error(
+        std::string("  Invalid Project name: '") + project_name + "'\n"
+        "  Must be a valid C++ identifier: \n"
+        "  - only alphanumeric characters and underscores allowed\n"
+        "  - cannot start with a number");
+    }
   }
 
-  /// \brief Default constructor
-  ProjectSettings::ProjectSettings() :
+  ProjectSettings::ProjectSettings(std::string project_name) :
+    m_project_name(project_name),
     m_crystallography_tol(CASM::TOL),
-    m_lin_alg_tol(1e-10) {}
+    m_lin_alg_tol(1e-10),
+    m_default_database_name("jsonDB") {
 
-
-  /// \brief Construct CASM project settings for a new project
-  ///
-  /// \param root Path to new CASM project directory
-  /// \param name Name of new CASM project. Use a short title suitable for prepending to file names.
-  ///
-  ProjectSettings::ProjectSettings(fs::path root, std::string name, const Logging &logging) :
-    Logging(logging),
-    m_dir(root),
-    m_name(name),
-    m_db_name("jsonDB") {
-
-    if(fs::exists(m_dir.project_settings())) {
-      throw std::runtime_error(
-        std::string("Error in 'ProjectSettings(fs::path root, std::string name)'.\n") +
-        "  A CASM project already exists at this location: '" + root.string() + "'");
-    }
-
-    // check for a prim.json
-    if(!fs::is_regular_file(m_dir.prim())) {
-      throw std::runtime_error(
-        std::string("Error in 'ProjectSettings(fs::path root, std::string name)'.\n") +
-        "  No prim.json file found at: " + m_dir.prim().string());
-    }
-
-    // generate default nlist settings
-    Structure prim(read_prim(m_dir.prim(), TOL, &hamiltonian_modules()));
-    m_nlist_weight_matrix = _default_nlist_weight_matrix(prim, TOL);
-    m_nlist_sublat_indices = _default_nlist_sublat_indices(prim);
+    throw_if_project_name_is_not_valid(m_project_name);
   }
 
-  /// \brief Construct CASM project settings from existing project
-  ///
-  /// \param root Path to existing CASM project directory. Project settings will be read.
-  ///
-  ProjectSettings::ProjectSettings(fs::path root, const Logging &logging) :
-    Logging(logging),
-    m_dir(root),
-    m_db_name("jsonDB") {
+  ProjectSettings::ProjectSettings(std::string project_name, fs::path root) :
+    m_project_name(project_name),
+    m_dir(notstd::make_unique<DirectoryStructure>(root)),
+    m_crystallography_tol(CASM::TOL),
+    m_lin_alg_tol(1e-10),
+    m_default_database_name("jsonDB") {
 
-    if(fs::exists(m_dir.casm_dir())) {
-
-      try {
-
-        // read .casmroot current settings
-        fs::ifstream file(m_dir.project_settings());
-        jsonParser settings(file);
-
-        if(settings.contains("curr_properties")) { // deprecated after v0.2.X
-          from_json(m_properties, settings["curr_properties"]);
-        }
-        else { // v0.3+
-          from_json(m_properties, settings["properties"]);
-        }
-
-        if(settings.contains("cluster_expansions") && settings["cluster_expansions"].size()) {
-          from_json(m_clex, settings["cluster_expansions"]);
-
-          // if no 'default_clex', use 'formation_energy' if that exists, else use first in clex list
-          if(!settings.get_if(m_default_clex, "default_clex")) {
-            if(m_clex.find("formation_energy") != m_clex.end()) {
-              m_default_clex = "formation_energy";
-            }
-            else {
-              m_default_clex = m_clex.begin()->first;
-            }
-          }
-        }
-        else {
-          ClexDescription desc("formation_energy", "formation_energy", "default", "default", "default", "default");
-          m_clex[desc.name] = desc;
-          m_default_clex = desc.name;
-        }
-
-        auto _read_if = [&](std::pair<std::string, std::string> &opt, std::string name) {
-          if(settings.get_if(opt.first, name)) {
-            opt.second = "project_settings";
-          }
-        };
-
-        auto _read_path_if = [&](std::pair<fs::path, std::string> &opt, std::string name) {
-          if(settings.get_if(opt.first, name)) {
-            opt.second = "project_settings";
-          }
-        };
-
-        _read_if(m_cxx, "cxx");
-        _read_if(m_cxxflags, "cxxflags");
-        _read_if(m_soflags, "soflags");
-
-        fs::path tmp;
-        if(settings.get_if(tmp, "casm_prefix")) {
-          m_casm_includedir.first = tmp / "include";
-          m_casm_includedir.second = "project_settings";
-          m_casm_libdir.first = tmp / "lib";
-          m_casm_libdir.second = "project_settings";
-        }
-        if(settings.get_if(tmp, "boost_prefix")) {
-          m_boost_includedir.first = tmp / "include";
-          m_boost_includedir.second = "project_settings";
-          m_boost_libdir.first = tmp / "lib";
-          m_boost_libdir.second = "project_settings";
-        }
-
-        _read_path_if(m_casm_includedir, "casm_includedir");
-        _read_path_if(m_casm_libdir, "casm_libdir");
-        _read_path_if(m_boost_includedir, "boost_includedir");
-        _read_path_if(m_boost_libdir, "boost_libdir");
-
-        settings.get_if(m_depr_compile_options, "compile_options");
-        settings.get_if(m_depr_so_options, "so_options");
-
-
-        // other options
-        settings.get_if(m_view_command, "view_command");
-        settings.get_if(m_view_command_video, "view_command_video");
-        from_json(m_name, settings["name"]);
-
-        // precision options
-        settings.get_else(m_crystallography_tol, "tol", TOL); // deprecated 'tol'
-        settings.get_if(m_crystallography_tol, "crystallography_tol");
-
-        settings.get_else(m_lin_alg_tol, "lin_alg_tol", 1e-10);
-
-        // read nlist settings, or generate defaults
-        Structure prim;
-        bool and_commit = false;
-        if(!settings.contains("nlist_weight_matrix") || !settings.contains("nlist_sublat_indices")) {
-          _reset_clexulators();
-          prim = Structure(read_prim(m_dir.prim(), crystallography_tol(), &hamiltonian_modules()));
-          and_commit = true;
-        }
-
-        if(settings.contains("nlist_weight_matrix")) {
-          from_json(m_nlist_weight_matrix, settings["nlist_weight_matrix"]);
-        }
-        else {
-          m_nlist_weight_matrix = _default_nlist_weight_matrix(prim, crystallography_tol());
-        }
-
-        if(settings.contains("nlist_sublat_indices")) {
-          from_json(m_nlist_sublat_indices, settings["nlist_sublat_indices"]);
-          //if(m_nlist_sublat_indices.size() && (*m_nlist_sublat_indices.rbegin())>=prim.basis().size()){
-          //std::cout << "ABOUT TO BAIL: " <<  *m_nlist_sublat_indices.rbegin() << " vs " << prim.basis().size() << std::endl;
-          //throw std::runtime_error("JSON settings field \"nlist_sublat_indices\" is incompatible with prim.json. This may occur if prim.json is edited without re-initializing project.");
-          //}
-        }
-        else {
-          m_nlist_sublat_indices = _default_nlist_sublat_indices(prim);
-        }
-
-        // add aliases to dictionary
-        DB::for_each_type(AddAliasesFromJSON(*this, settings["query_alias"]));
-
-        if(and_commit) {
-          commit();
-        }
-
-      }
-      catch(std::exception &e) {
-        std::cerr << "Error in ProjectSettings::ProjectSettings(const fs::path root).\n" <<
-                  "  Error reading " << m_dir.project_settings() << std::endl;
-        throw e;
-      }
-    }
-    else if(!fs::exists(m_dir.casm_dir())) {
-      throw std::runtime_error(
-        std::string("Error in 'ProjectSettings(fs::path root, std::string name)'.\n") +
-        "  A CASM project does not exist at this location: '" + root.string() + "'");
-    }
+    throw_if_project_name_is_not_valid(m_project_name);
 
   }
 
   ProjectSettings::~ProjectSettings() {}
 
-  /// \brief Get project name
-  std::string ProjectSettings::name() const {
-    return m_name;
+  std::string ProjectSettings::project_name() const {
+    return m_project_name;
   }
 
-  /// \brief Access current properties
-  template<typename DataObject>
-  std::vector<std::string> &ProjectSettings::properties() {
-    std::string config_type_name = traits<DataObject>::name;
-    if(!DB::config_types().count(config_type_name)) {
-      std::stringstream msg;
-      msg << "Unrecognized config type: " << config_type_name;
-      throw std::runtime_error(msg.str());
+  bool ProjectSettings::has_dir() const {
+    return bool {m_dir};
+  }
+
+  DirectoryStructure const &ProjectSettings::dir() const {
+    if(!m_dir) {
+      throw std::runtime_error("Error accessing DirectoryStructure from ProjectSettings: Does not exist.");
     }
-    return m_properties[config_type_name];
+    return *m_dir;
+  }
+
+  bool ProjectSettings::set_root_dir(fs::path root) {
+    m_dir = notstd::make_cloneable<DirectoryStructure>(root);
+    return bool {m_dir};
+  }
+
+  fs::path ProjectSettings::root_dir() const {
+    return dir().root_dir();
   }
 
 
-  const std::map<std::string, ClexDescription> &ProjectSettings::cluster_expansions() const {
+  ProjectSettings::required_properties_map_type const &ProjectSettings::required_properties() const {
+    return m_required_properties;
+  }
+
+  void ProjectSettings::set_required_properties(required_properties_map_type const &_required_properties) {
+    m_required_properties = _required_properties;
+  }
+
+  std::vector<std::string> const &ProjectSettings::required_properties(std::string type_name, std::string calctype) const {
+    return m_required_properties.find(type_name)->second.find(calctype)->second;
+  }
+
+  void ProjectSettings::set_required_properties(
+    std::string type_name,
+    std::string calctype,
+    std::vector<std::string> const &_required_properties) {
+    m_required_properties[type_name][calctype] = _required_properties;
+  }
+
+
+  std::map<std::string, ClexDescription> const &ProjectSettings::cluster_expansions() const {
     return m_clex;
   }
 
-  bool ProjectSettings::has_clex(std::string name) const {
-    return m_clex.find(name) != m_clex.end();
+  bool ProjectSettings::has_clex(std::string clex_name) const {
+    return m_clex.find(clex_name) != m_clex.end();
   }
 
-  const ClexDescription &ProjectSettings::clex(std::string name) const {
-    return m_clex.find(name)->second;
+  ClexDescription const &ProjectSettings::clex(std::string clex_name) const {
+    return m_clex.find(clex_name)->second;
   }
 
-  bool ProjectSettings::new_clex(const ClexDescription &desc) {
+  bool ProjectSettings::insert_clex(const ClexDescription &desc) {
     if(m_clex.find(desc.name) != m_clex.end()) {
       return false;
     }
@@ -291,449 +125,289 @@ namespace CASM {
   }
 
   bool ProjectSettings::erase_clex(const ClexDescription &desc) {
-    if(cluster_expansions().size() == 1) {
-      return false;
+    if(m_default_clex_name == desc.name) {
+      m_default_clex_name.clear();
     }
-
-    if(m_default_clex == desc.name) {
-      for(auto it = m_clex.begin(); it != m_clex.end(); ++it) {
-        if(it->first != desc.name) {
-          m_default_clex = it->first;
-          break;
-        }
-      }
-    }
-
     return m_clex.erase(desc.name);
   }
 
-  const ClexDescription &ProjectSettings::default_clex() const {
-    return m_clex.find(m_default_clex)->second;
+  std::string ProjectSettings::default_clex_name() const {
+    return m_default_clex_name;
   }
 
-  bool ProjectSettings::set_default_clex(const std::string &clex_name) {
+  bool ProjectSettings::set_default_clex_name(const std::string &clex_name) {
     if(m_clex.find(clex_name) != m_clex.end()) {
-      m_default_clex = clex_name;
+      m_default_clex_name = clex_name;
       return true;
     }
     return false;
   }
 
-  /// \brief Will overwrite existing ClexDescription with same name
+  ClexDescription const &ProjectSettings::default_clex() const {
+    return m_clex.find(m_default_clex_name)->second;
+  }
+
   bool ProjectSettings::set_default_clex(const ClexDescription &desc) {
     m_clex[desc.name] = desc;
-    m_default_clex = desc.name;
+    m_default_clex_name = desc.name;
     return true;
   }
 
 
-  /// \brief Get neighbor list weight matrix
-  Eigen::Matrix3l ProjectSettings::nlist_weight_matrix() const {
-    return m_nlist_weight_matrix;
-  }
-
-  /// \brief Get set of sublattice indices to include in neighbor lists
-  const std::set<int> &ProjectSettings::nlist_sublat_indices() const {
-    return m_nlist_sublat_indices;
-  }
-
-  /// \brief Get c++ compiler
   std::pair<std::string, std::string> ProjectSettings::cxx() const {
     return m_cxx.first.empty() ? RuntimeLibrary::default_cxx() : m_cxx;
   }
 
-  /// \brief Get c++ compiler options
   std::pair<std::string, std::string> ProjectSettings::cxxflags() const {
     return m_cxxflags.first.empty() ? RuntimeLibrary::default_cxxflags() : m_cxxflags;
   }
 
-  /// \brief Get shared object options
   std::pair<std::string, std::string> ProjectSettings::soflags() const {
     return m_soflags.first.empty() ? RuntimeLibrary::default_soflags() : m_soflags;
   }
 
-  /// \brief Get casm includedir
   std::pair<fs::path, std::string> ProjectSettings::casm_includedir() const {
     return m_casm_includedir.first.empty() ? RuntimeLibrary::default_casm_includedir() : m_casm_includedir;
   }
 
-  /// \brief Get casm libdir
   std::pair<fs::path, std::string> ProjectSettings::casm_libdir() const {
     return m_casm_libdir.first.empty() ? RuntimeLibrary::default_casm_libdir() : m_casm_libdir;
   }
 
-  /// \brief Get boost includedir
   std::pair<fs::path, std::string> ProjectSettings::boost_includedir() const {
     return m_boost_includedir.first.empty() ? RuntimeLibrary::default_boost_includedir() : m_boost_includedir;
   }
 
-  /// \brief Get boost libdir
   std::pair<fs::path, std::string> ProjectSettings::boost_libdir() const {
     return m_boost_libdir.first.empty() ? RuntimeLibrary::default_boost_libdir() : m_boost_libdir;
   }
 
-  /// \brief Get current compilation options string
   std::string ProjectSettings::compile_options() const {
-    if(!m_depr_compile_options.empty()) {
-      return m_depr_compile_options;
-    }
-    else {
-      // else construct from pieces
-      return cxx().first + " " + cxxflags().first + " " +
-             include_path(casm_includedir().first) + " " +
-             include_path(boost_includedir().first);
-    }
+    // construct from pieces
+    return cxx().first + " " + cxxflags().first + " " +
+           include_path(casm_includedir().first) + " " +
+           include_path(boost_includedir().first);
   }
 
-  /// \brief Get current shared library options string
   std::string ProjectSettings::so_options() const {
-    // default to read deprecated 'so_options'
-    if(!m_depr_so_options.empty()) {
-      return m_depr_so_options;
-    }
-    else {
-      // else construct from pieces
-      return cxx().first + " " + soflags().first + " " +
-             link_path(boost_libdir().first) + " " +
-             link_path(casm_libdir().first);
-    }
+    // construct from pieces
+    return cxx().first + " " + soflags().first + " " +
+           link_path(boost_libdir().first) + " " +
+           link_path(casm_libdir().first);
   }
 
-  /// \brief Get current command used by 'casm view'
   std::string ProjectSettings::view_command() const {
     return m_view_command;
   }
 
-  /// \brief Get current command used by 'casm view'
   std::string ProjectSettings::view_command_video() const {
     return m_view_command_video;
   }
 
-  /// \brief Get current project crystallography tolerance
   double ProjectSettings::crystallography_tol() const {
     return m_crystallography_tol;
   }
 
-  /// \brief Get current project linear algebra tolerance
   double ProjectSettings::lin_alg_tol() const {
     return m_lin_alg_tol;
   }
 
 
-  // ** Enumerators **
-
   EnumeratorHandler &ProjectSettings::enumerator_handler() {
     if(!m_enumerator_handler) {
       m_enumerator_handler = notstd::make_cloneable<EnumeratorHandler>(*this);
     }
-    return *m_enumerator_handler;
+    return static_cast<EnumeratorHandler &>(*m_enumerator_handler);
   }
 
-  const EnumeratorHandler &ProjectSettings::enumerator_handler() const {
+  EnumeratorHandler const &ProjectSettings::enumerator_handler() const {
     return const_cast<ProjectSettings &>(*this).enumerator_handler();
   }
 
 
-  // ** Database **
-
-  void ProjectSettings::set_db_name(std::string _db_name) {
-    m_db_name = _db_name;
+  void ProjectSettings::set_default_database_name(std::string _default_database_name) {
+    m_default_database_name = _default_database_name;
   }
 
-  std::string ProjectSettings::db_name() const {
-    return m_db_name;
+  std::string ProjectSettings::default_database_name() const {
+    return m_default_database_name;
   }
 
-  // ** Queries **
+  ProjectSettings::query_alias_map_type const &ProjectSettings::query_alias() const {
+    return m_query_alias;
+  }
+
+  void ProjectSettings::set_query_alias(query_alias_map_type const &_query_alias) {
+    m_query_handler.clear();
+    m_query_alias = _query_alias;
+  }
+
+  void ProjectSettings::set_query_alias(std::string type_name, std::string alias_name, std::string alias_value) {
+    m_query_handler.erase(type_name);
+    m_query_alias[type_name][alias_name] = alias_value;
+  }
 
   template<typename DataObject>
   QueryHandler<DataObject> &ProjectSettings::query_handler() {
     auto res = m_query_handler.find(traits<DataObject>::name);
-    if(res == m_query_handler.end()) {
-      res = m_query_handler.insert(
-              std::make_pair(
-                traits<DataObject>::name,
-                notstd::cloneable_ptr<notstd::Cloneable>(new QueryHandler<DataObject>(*this))
-              )
-            ).first;
+    if(res != m_query_handler.end()) {
+      return static_cast<QueryHandler<DataObject>& >(*res->second);
     }
-    return static_cast<QueryHandler<DataObject>& >(*res->second);
+
+    res = m_query_handler.insert(
+            std::make_pair(
+              traits<DataObject>::name,
+              notstd::cloneable_ptr<notstd::Cloneable>(new QueryHandler<DataObject>(*this))
+            )
+          ).first;
+
+    QueryHandler<DataObject> &q = static_cast<QueryHandler<DataObject>& >(*res->second);
+
+    // if query aliases exist, add all for this type
+    auto type_it = m_query_alias.find(traits<DataObject>::name);
+    if(type_it != m_query_alias.end()) {
+      for(auto const &value : type_it->second) {
+        q.add_alias(value.first, value.second);
+      }
+    }
+    return q;
   }
 
   template<typename DataObject>
-  const QueryHandler<DataObject> &ProjectSettings::query_handler() const {
+  QueryHandler<DataObject> const &ProjectSettings::query_handler() const {
     return const_cast<ProjectSettings &>(*this).query_handler<DataObject>();
   }
 
-  // ** Hamiltonian Modules **
 
   HamiltonianModules &ProjectSettings::hamiltonian_modules() {
     if(!m_hamiltonian_modules) {
       m_hamiltonian_modules = notstd::make_cloneable<HamiltonianModules>(this);
     }
-    return *m_hamiltonian_modules;
+    return static_cast<HamiltonianModules &>(*m_hamiltonian_modules);
   }
 
   HamiltonianModules const &ProjectSettings::hamiltonian_modules()const {
     if(!m_hamiltonian_modules) {
       m_hamiltonian_modules = notstd::make_cloneable<HamiltonianModules>(this);
     }
-    return *m_hamiltonian_modules;
+    return static_cast<HamiltonianModules const &>(*m_hamiltonian_modules);
   }
 
-  // ** Clexulator names **
 
   std::string ProjectSettings::global_clexulator_name() const {
-    return name() + "_Clexulator";
+    return project_name() + "_Clexulator";
   }
 
 
-  // ** Add directories for additional project data **
-
-  /// \brief Create new project data directory
-  bool ProjectSettings::new_casm_dir() const {
-    return fs::create_directory(m_dir.casm_dir());
+  bool ProjectSettings::has_m_nlist_weight_matrix() const {
+    return bool {m_nlist_weight_matrix};
   }
 
-  /// \brief Create new symmetry directory
-  bool ProjectSettings::new_symmetry_dir() const {
-    return fs::create_directory(m_dir.symmetry_dir());
+  Eigen::Matrix3l ProjectSettings::nlist_weight_matrix() const {
+    return *m_nlist_weight_matrix;
   }
 
-  /// \brief Create new reports directory
-  bool ProjectSettings::new_reports_dir() const {
-    return fs::create_directory(m_dir.reports_dir());
-  }
-  /// \brief Add a basis set directory
-  bool ProjectSettings::new_bset_dir(std::string bset) const {
-    return fs::create_directories(m_dir.bset_dir(bset));
-  }
-
-  /// \brief Add a cluster expansion directory
-  bool ProjectSettings::new_clex_dir(std::string clex) const {
-    return fs::create_directories(m_dir.clex_dir(clex));
-  }
-
-
-  /// \brief Add calculation settings directory path
-  bool ProjectSettings::new_calc_settings_dir(std::string calctype) const {
-    return fs::create_directories(m_dir.calc_settings_dir(calctype));
-  }
-
-  /// \brief Add calculation settings directory path, for supercell specific settings
-  bool ProjectSettings::new_supercell_calc_settings_dir(std::string scelname, std::string calctype) const {
-    return fs::create_directories(m_dir.supercell_calc_settings_dir(scelname, calctype));
-  }
-
-  /// \brief Add calculation settings directory path, for configuration specific settings
-  bool ProjectSettings::new_configuration_calc_settings_dir(std::string configname, std::string calctype) const {
-    return fs::create_directories(m_dir.configuration_calc_settings_dir(configname, calctype));
-  }
-
-
-  /// \brief Add a ref directory
-  bool ProjectSettings::new_ref_dir(std::string calctype, std::string ref) const {
-    return fs::create_directories(m_dir.ref_dir(calctype, ref));
-  }
-
-  /// \brief Add an eci directory
-  bool ProjectSettings::new_eci_dir(std::string property, std::string calctype, std::string ref, std::string bset, std::string eci) const {
-    return fs::create_directories(m_dir.eci_dir(property, calctype, ref, bset, eci));
-  }
-
-
-  // ** Change current settings **
-
-  /// \brief const Access current properties
-  template<typename DataObject>
-  const std::vector<std::string> &ProjectSettings::properties() const {
-    return const_cast<ProjectSettings &>(*this).properties<DataObject>();
-  }
-
-
-  /// \brief Set neighbor list weight matrix (will delete existing Clexulator
-  /// source and compiled code)
   bool ProjectSettings::set_nlist_weight_matrix(Eigen::Matrix3l M) {
+    m_nlist_weight_matrix = notstd::clone(M);
+    return bool {m_nlist_weight_matrix};
+  }
 
-    // changing the neighbor list properties requires updating Clexulator source code
-    // for now we just remove existing source/compiled files
-    _reset_clexulators();
+  bool ProjectSettings::has_nlist_sublat_indices() const {
+    return bool {m_nlist_sublat_indices};
+  }
 
-    m_nlist_weight_matrix = M;
-    return true;
+  const std::set<int> &ProjectSettings::nlist_sublat_indices() const {
+    return *m_nlist_sublat_indices;
+  }
+
+  bool ProjectSettings::set_nlist_sublat_indices(std::set<int> value) {
+    m_nlist_sublat_indices = notstd::clone(value);
+    return bool {m_nlist_sublat_indices};
   }
 
 
-  /// \brief Set c++ compiler (empty string to use default)
   bool ProjectSettings::set_cxx(std::string opt) {
     m_cxx = std::make_pair(opt, "project_settings");
     return true;
   }
 
-  /// \brief Set c++ compiler options (empty string to use default)
   bool ProjectSettings::set_cxxflags(std::string opt)  {
     m_cxxflags = std::make_pair(opt, "project_settings");
     return true;
   }
 
-  /// \brief Set shared object options (empty string to use default)
   bool ProjectSettings::set_soflags(std::string opt)  {
     m_soflags = std::make_pair(opt, "project_settings");
     return true;
   }
 
-  /// \brief Set casm prefix (empty string to use default)
   bool ProjectSettings::set_casm_prefix(fs::path prefix)  {
     m_casm_includedir = std::make_pair(prefix / "include", "project_settings");
     m_casm_libdir = std::make_pair(prefix / "lib", "project_settings");
     return true;
   }
 
-  /// \brief Set casm includedir (empty string to use default)
   bool ProjectSettings::set_casm_includedir(fs::path dir)  {
     m_casm_includedir = std::make_pair(dir, "project_settings");
     return true;
   }
 
-  /// \brief Set casm libdir (empty string to use default)
   bool ProjectSettings::set_casm_libdir(fs::path dir)  {
     m_casm_libdir = std::make_pair(dir, "project_settings");
     return true;
   }
 
-  /// \brief Set boost prefix (empty string to use default)
   bool ProjectSettings::set_boost_prefix(fs::path prefix)  {
     m_boost_includedir = std::make_pair(prefix / "include", "project_settings");
     m_boost_libdir = std::make_pair(prefix / "lib", "project_settings");
     return true;
   }
 
-  /// \brief Set boost includedir (empty string to use default)
   bool ProjectSettings::set_boost_includedir(fs::path dir)  {
     m_boost_includedir = std::make_pair(dir, "project_settings");
     return true;
   }
 
-  /// \brief Set boost libdir (empty string to use default)
   bool ProjectSettings::set_boost_libdir(fs::path dir)  {
     m_boost_libdir = std::make_pair(dir, "project_settings");
     return true;
   }
 
-  /// \brief (deprecated) Set compile options to 'opt' (empty string to use default)
-  bool ProjectSettings::set_compile_options(std::string opt) {
-    m_depr_compile_options = opt;
-    return true;
-  }
 
-  /// \brief (deprecated) Set shared library options to 'opt' (empty string to use default)
-  bool ProjectSettings::set_so_options(std::string opt) {
-    m_depr_so_options = opt;
-    return true;
-  }
-
-
-  /// \brief Set command used by 'casm view'
   bool ProjectSettings::set_view_command(std::string opt) {
     m_view_command = opt;
     return true;
   }
 
-  /// \brief Set command used by 'casm view'
   bool ProjectSettings::set_view_command_video(std::string opt) {
     m_view_command_video = opt;
     return true;
   }
 
-  /// \brief Set crystallography tolerance
   bool ProjectSettings::set_crystallography_tol(double _tol) {
     m_crystallography_tol = _tol;
     return true;
   }
 
-  /// \brief Set linear algebra tolerance
   bool ProjectSettings::set_lin_alg_tol(double _tol) {
     m_lin_alg_tol = _tol;
     return true;
   }
 
-  /// \brief Save settings to file
-  void ProjectSettings::commit() const {
 
-    try {
-      SafeOfstream file;
-      file.open(m_dir.project_settings());
-      jsonParser json;
-      to_json(json).print(file.ofstream(), 2, 18);
-      file.close();
+  bool create_all_directories(ProjectSettings const &set) {
+    auto const &dir = set.dir();
+    auto const &cluster_expansions = set.cluster_expansions();
+
+    bool result {true};
+    result &= dir.new_casm_dir();
+    result &= dir.new_symmetry_dir();
+    result &= dir.new_reports_dir();
+    for(auto const &pair : cluster_expansions) {
+      ClexDescription const &desc = pair.second;
+      result &= new_dir(dir, desc);
     }
-    catch(...) {
-      std::cerr << "Uncaught exception in ProjectSettings::commit()" << std::endl;
-      /// re-throw exceptions
-      throw;
-    }
-
-  }
-
-  /// \brief Changing the neighbor list properties requires updating Clexulator
-  /// source code. This will remove existing source/compiled files
-  void ProjectSettings::_reset_clexulators() {
-    auto all_bset = m_dir.all_bset();
-    for(auto it = all_bset.begin(); it != all_bset.end(); ++it) {
-      fs::remove(m_dir.clexulator_src(name(), *it));
-      fs::remove(m_dir.clexulator_o(name(), *it));
-      fs::remove(m_dir.clexulator_so(name(), *it));
-    }
-  }
-
-  void ProjectSettings::_load_default_options() {
-    m_cxx = RuntimeLibrary::default_cxx();
-    m_cxxflags = RuntimeLibrary::default_cxxflags();
-    m_casm_includedir = RuntimeLibrary::default_casm_includedir();
-    m_casm_libdir = RuntimeLibrary::default_casm_libdir();
-    m_boost_includedir = RuntimeLibrary::default_boost_includedir();
-    m_boost_libdir = RuntimeLibrary::default_boost_libdir();
-    m_soflags = RuntimeLibrary::default_soflags();
-  }
-
-  jsonParser &ProjectSettings::to_json(jsonParser &json) const {
-
-    json = jsonParser::object();
-
-    json["name"] = name();
-    json["cluster_expansions"] = cluster_expansions();
-    json["properties"] = m_properties;
-    json["default_clex"] = m_default_clex;
-    json["nlist_weight_matrix"] = nlist_weight_matrix();
-    json["nlist_sublat_indices"] = nlist_sublat_indices();
-
-
-    auto _write_if = [&](std::string name, std::string val) {
-      if(!val.empty()) {
-        json[name] = val;
-      };
-    };
-
-    _write_if("cxx", m_cxx.first);
-    _write_if("cxxflags", m_cxxflags.first);
-    _write_if("soflags", m_soflags.first);
-    _write_if("casm_includedir", m_casm_includedir.first.string());
-    _write_if("casm_libdir", m_casm_libdir.first.string());
-    _write_if("boost_includedir", m_boost_includedir.first.string());
-    _write_if("boost_libdir", m_boost_libdir.first.string());
-    _write_if("compile_options", m_depr_compile_options);
-    _write_if("so_options", m_depr_so_options);
-
-    json["view_command"] = view_command();
-    json["view_command_video"] = view_command_video();
-    json["crystallography_tol"] = crystallography_tol();
-    json["crystallography_tol"].set_scientific();
-    json["lin_alg_tol"] = lin_alg_tol();
-    json["lin_alg_tol"].set_scientific();
-
-    DB::for_each_type(AddAliasesToJSON(*this, json["query_alias"]));
-
-    return json;
+    return result;
   }
 
   namespace {
@@ -746,67 +420,55 @@ namespace CASM {
     }
   }
 
-  void ProjectSettings::print_compiler_settings_summary(Log &log) const {
+  void print_compiler_settings_summary(ProjectSettings const &set, Log &log) {
     log.custom<Log::standard>("Compiler settings");
-    log << _wdefaultval("cxx", cxx())
-        << _wdefaultval("cxxflags", cxxflags())
-        << _wdefaultval("soflags", soflags())
-        << _wdefaultval("casm_includedir", casm_includedir())
-        << _wdefaultval("casm_libdir", casm_libdir())
-        << _wdefaultval("boost_includedir", boost_includedir())
-        << _wdefaultval("boost_libdir", boost_libdir()) << std::endl;
-
-    if(!m_depr_compile_options.empty()) {
-      log << "Note: using deprecated 'compile_options' value from .casm/project_settings.json \n"
-          "explicitly instead of individual compiler settings (cxx, cxxflags, casm_includedir,\n"
-          "boost_includedir).\n"
-          "Delete 'compile_options' from .casm/project_settings.json manually \n"
-          "to use begin using the individually set settings.\n";
-    }
-    log << "compile command: '" << compile_options() << "'\n\n";
-
-    if(!m_depr_so_options.empty()) {
-      log << "Note: using deprecated 'so_options' value from .casm/project_settings.json \n"
-          "explicitly instead of individual compiler settings (cxx, cxxflags, boost_libdir).\n"
-          "Delete 'so_options' from .casm/project_settings.json manually \n"
-          "to use begin using the individually set settings.\n";
-    }
-    log << "so command: '" << so_options() << "'\n\n";
+    log << _wdefaultval("cxx", set.cxx())
+        << _wdefaultval("cxxflags", set.cxxflags())
+        << _wdefaultval("soflags", set.soflags())
+        << _wdefaultval("casm_includedir", set.casm_includedir())
+        << _wdefaultval("casm_libdir", set.casm_libdir())
+        << _wdefaultval("boost_includedir", set.boost_includedir())
+        << _wdefaultval("boost_libdir", set.boost_libdir()) << std::endl;
+    log << "compile command: '" << set.compile_options() << "'\n\n";
+    log << "so command: '" << set.so_options() << "'\n\n";
   }
 
-  /// \brief Print summary of ProjectSettings, as for 'casm settings -l'
-  void ProjectSettings::print_summary(Log &log) const {
+  void print_summary(ProjectSettings const &set, Log &log) {
 
     log.custom<Log::standard>("Cluster expansions");
-    for(auto it = m_clex.begin(); it != m_clex.end(); ++it) {
+    auto const &clex = set.cluster_expansions();
+    auto const &default_clex_name = set.default_clex_name();
+    for(auto it = clex.begin(); it != clex.end(); ++it) {
 
       const ClexDescription &desc = it->second;
-      bool is_default = (desc.name == m_default_clex);
+      bool is_default = (desc.name == default_clex_name);
       int indent = 0;
       desc.print(log, is_default, indent);
     }
     log << std::endl;
 
-    const ClexDescription &default_desc = default_clex();
+    const ClexDescription &default_desc = set.default_clex();
 
-    std::vector<std::string> all = m_dir.all_bset();
+    // print basis sets
+    std::vector<std::string> all_bset = set.dir().all_bset();
     log.custom<Log::standard>("Basis sets");
-    for(int i = 0; i < all.size(); i++) {
-      log << all[i];
-      if(all[i] == default_desc.bset) {
+    for(int i = 0; i < all_bset.size(); i++) {
+      log << all_bset[i];
+      if(all_bset[i] == default_desc.bset) {
         log << "*";
       }
       log << "\n";
     }
     log << std::endl;
 
-    all = m_dir.all_calctype();
+    // print training data (calctype) & references
+    std::vector<std::string> all_calctype = set.dir().all_calctype();
     log.custom<Log::standard>("Training Data & References");
-    for(int i = 0; i < all.size(); i++) {
-      std::vector<std::string> all_ref = m_dir.all_ref(all[i]);
+    for(int i = 0; i < all_calctype.size(); i++) {
+      std::vector<std::string> all_ref = set.dir().all_ref(all_calctype[i]);
       for(int j = 0; j < all_ref.size(); j++) {
-        log << all[i] << " / " << all_ref[j];
-        if(all[i] == default_desc.calctype && all_ref[j] == default_desc.ref) {
+        log << all_calctype[i] << " / " << all_ref[j];
+        if(all_calctype[i] == default_desc.calctype && all_ref[j] == default_desc.ref) {
           log << "*";
         }
         log << "\n";
@@ -814,11 +476,12 @@ namespace CASM {
       log << std::endl;
     }
 
-    all = m_dir.all_eci(default_desc.property, default_desc.calctype, default_desc.ref, default_desc.bset);
+    // print training data (calctype) & references
+    std::vector<std::string> all_eci = set.dir().all_eci(default_desc.property, default_desc.calctype, default_desc.ref, default_desc.bset);
     log.custom<Log::standard>("ECI for current cluster expansion settings group");
-    for(int i = 0; i < all.size(); i++) {
-      log << all[i];
-      if(all[i] == default_desc.eci) {
+    for(int i = 0; i < all_eci.size(); i++) {
+      log << all_eci[i];
+      if(all_eci[i] == default_desc.eci) {
         log << "*";
       }
       log << "\n";
@@ -829,16 +492,210 @@ namespace CASM {
         "settings are not explicitly specified (i.e. the basis set to evaluate \n"
         "for 'casm query -k corr')\n\n";
 
-    print_compiler_settings_summary(log);
+    print_compiler_settings_summary(set, log);
 
     log.custom<Log::standard>("'casm view'");
-    log << "command: '" << view_command() << "'\n\n";
-    log << "video command: '" << view_command_video() << "'\n\n";
+    log << "command: '" << set.view_command() << "'\n\n";
+    log << "video command: '" << set.view_command_video() << "'\n\n";
 
   }
 
   jsonParser &to_json(const ProjectSettings &set, jsonParser &json) {
-    return set.to_json(json);
+    json = jsonParser::object();
+
+    json["name"] = set.project_name();
+    json["cluster_expansions"] = set.cluster_expansions();
+    json["required_properties"] = set.required_properties();
+    json["default_clex"] = set.default_clex_name();
+    json["nlist_weight_matrix"] = set.nlist_weight_matrix();
+    json["nlist_sublat_indices"] = set.nlist_sublat_indices();
+
+    // only write compiler & linker settings if stored in project settings, not if obtained from
+    // default values or environment variables
+
+    auto _write_str_if = [&](std::string name, std::pair<std::string, std::string> value_and_source) {
+      if(value_and_source.second == "project_settings") {
+        json[name] = value_and_source.first;
+      };
+    };
+
+    auto _write_path_if = [&](std::string name, std::pair<fs::path, std::string> value_and_source) {
+      if(value_and_source.second == "project_settings") {
+        json[name] = value_and_source.first.string();
+      };
+    };
+
+    _write_str_if("cxx", set.cxx());
+    _write_str_if("cxxflags", set.cxxflags());
+    _write_str_if("soflags", set.soflags());
+    _write_path_if("casm_includedir", set.casm_includedir());
+    _write_path_if("casm_libdir", set.casm_libdir());
+    _write_path_if("boost_includedir", set.boost_includedir());
+    _write_path_if("boost_libdir", set.boost_libdir());
+
+    json["view_command"] = set.view_command();
+    json["view_command_video"] = set.view_command_video();
+    json["crystallography_tol"] = set.crystallography_tol();
+    json["crystallography_tol"].set_scientific();
+    json["lin_alg_tol"] = set.lin_alg_tol();
+    json["lin_alg_tol"].set_scientific();
+    json["query_alias"] = set.query_alias();
+
+    return json;
+  }
+
+  ProjectSettings jsonConstructor<ProjectSettings>::from_json(jsonParser const &json) {
+    try {
+
+      ProjectSettings settings {json["name"].get<std::string>()};
+
+      // read required_properties map
+      if(json.contains("required_properties") && json["required_properties"].size()) {
+        auto it = json.find("required_properties");
+        ProjectSettings::required_properties_map_type tmp;
+        CASM::from_json(tmp, *it);
+        settings.set_required_properties(tmp);
+      }
+
+      // read cluster_expansions list and set default_clex
+      if(json.contains("cluster_expansions") && json["cluster_expansions"].size()) {
+        auto it = json.find("cluster_expansions");
+        auto clex_it = it->begin();
+        auto clex_end = it->end();
+        for(; clex_it != clex_end; ++clex_it) {
+          settings.insert_clex(clex_it->get<ClexDescription>());
+        }
+
+        if(json.contains("default_clex")) {
+          settings.set_default_clex_name(json["default_clex"].get<std::string>());
+        }
+        else {
+          if(settings.has_clex("formation_energy")) {
+            settings.set_default_clex_name("formation_energy");
+          }
+          else {
+            settings.set_default_clex_name(settings.cluster_expansions().begin()->first);
+          }
+        }
+      }
+      // if no cluster_expansions list, create with default_configuration_clex
+      else {
+        ClexDescription desc = default_configuration_clex();
+        settings.insert_clex(desc);
+        settings.set_default_clex_name(desc.name);
+      }
+
+      // read compiler & linker options
+
+      std::string tmp_str;
+      if(json.get_if(tmp_str, "cxx")) {
+        settings.set_cxx(tmp_str);
+      }
+      if(json.get_if(tmp_str, "cxxflags")) {
+        settings.set_cxxflags(tmp_str);
+      }
+      if(json.get_if(tmp_str, "soflags")) {
+        settings.set_soflags(tmp_str);
+      }
+
+      fs::path tmp_path;
+      if(json.get_if(tmp_path, "casm_prefix")) {
+        settings.set_casm_prefix(tmp_path); // deprecated
+      }
+      if(json.get_if(tmp_path, "boost_prefix")) {
+        settings.set_boost_prefix(tmp_path); // deprecated
+      }
+      if(json.get_if(tmp_path, "casm_includedir")) {
+        settings.set_casm_includedir(tmp_path);
+      }
+      if(json.get_if(tmp_path, "casm_libdir")) {
+        settings.set_casm_libdir(tmp_path);
+      }
+      if(json.get_if(tmp_path, "boost_includedir")) {
+        settings.set_boost_includedir(tmp_path);
+      }
+      if(json.get_if(tmp_path, "boost_libdir")) {
+        settings.set_boost_libdir(tmp_path);
+      }
+
+      // other options
+      if(json.get_if(tmp_str, "view_command")) {
+        settings.set_view_command(tmp_str);
+      }
+      if(json.get_if(tmp_str, "view_command_video")) {
+        settings.set_view_command_video(tmp_str);
+      }
+
+      // precision options -- always set
+      double tmp_double = TOL;
+      json.get_if(tmp_double, "crystallography_tol");
+      settings.set_crystallography_tol(tmp_double);
+
+      json.get_else(tmp_double, "lin_alg_tol", 1e-10);
+      settings.set_lin_alg_tol(tmp_double);
+
+      // read nlist json -- no longer generate defaults
+      if(json.contains("nlist_weight_matrix")) {
+        settings.set_nlist_weight_matrix(json["nlist_weight_matrix"].get<Eigen::Matrix3l>());
+      }
+      if(json.contains("nlist_sublat_indices")) {
+        settings.set_nlist_sublat_indices(json["nlist_sublat_indices"].get<std::set<int>>());
+      }
+
+      // read query aliases
+      if(json.contains("query_alias") && json["query_alias"].size()) {
+        auto it = json.find("query_alias");
+        ProjectSettings::query_alias_map_type tmp;
+        CASM::from_json(tmp, *it);
+        settings.set_query_alias(tmp);
+      }
+
+      return settings;
+
+    }
+    catch(std::exception &e) {
+      err_log() << "Error reading ProjectSettings from JSON." << std::endl;
+      throw e;
+    }
+  }
+
+  void write_project_settings(ProjectSettings const &set, fs::path project_settings_path) {
+    jsonParser json;
+    to_json(set, json);
+
+    SafeOfstream file;
+    file.open(project_settings_path);
+    json.print(file.ofstream(), 2, 18);
+    file.close();
+  }
+
+  ProjectSettings read_project_settings(fs::path project_settings_path) {
+    try {
+      fs::ifstream file {project_settings_path};
+      jsonParser json {file};
+      return jsonConstructor<ProjectSettings>::from_json(json);
+    }
+    catch(std::exception &e) {
+      err_log() << "Error reading ProjectSettings from: '" << project_settings_path
+                << "'" << std::endl;
+      throw e;
+    }
+  }
+
+  void commit(ProjectSettings const &set) {
+    write_project_settings(set, set.dir().project_settings());
+  }
+
+  ProjectSettings open_project_settings(fs::path path) {
+    fs::path checkroot = find_casmroot(path);
+    if(checkroot.empty()) {
+      throw std::runtime_error(std::string("Error in open_project_settings:") +
+                               " No CASM project includes path: '" + path.string() + "'");
+    }
+    DirectoryStructure dir {checkroot};
+    ProjectSettings result = read_project_settings(dir.project_settings());
+    result.set_root_dir(checkroot);
+    return result;
   }
 
 }
@@ -849,11 +706,6 @@ namespace CASM {
 template QueryHandler<type> &ProjectSettings::query_handler<type>(); \
 template const QueryHandler<type> &ProjectSettings::query_handler<type>() const;
 
-#define INST_ProjectSettings_config(r, data, type) \
-template std::vector<std::string> &ProjectSettings::properties<type>(); \
-template const std::vector<std::string> &ProjectSettings::properties<type>() const;
-
 namespace CASM {
   BOOST_PP_SEQ_FOR_EACH(INST_ProjectSettings_all, _, CASM_DB_TYPES)
-  BOOST_PP_SEQ_FOR_EACH(INST_ProjectSettings_config, _, CASM_DB_CONFIG_TYPES)
 }

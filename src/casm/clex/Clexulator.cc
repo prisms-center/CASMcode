@@ -39,8 +39,7 @@ namespace CASM {
                 (dirpath / name).string(),
                 compile_options,
                 so_options,
-                "compile time depends on how many basis functions are included",
-                logging);
+                "compile time depends on how many basis functions are included");
     }
     catch(std::exception &e) {
       logging.log() << "Clexulator construction failed: could not construct runtime library." << std::endl;

@@ -13,11 +13,11 @@ using namespace CASM;
 extern "C" {
 
   costream *casm_STDOUT() {
-    return reinterpret_cast<costream *>(&default_log());
+    return reinterpret_cast<costream *>(&cout_log());
   }
 
   costream *casm_STDERR() {
-    return reinterpret_cast<costream *>(&default_err_log());
+    return reinterpret_cast<costream *>(&cerr_log());
   }
 
 

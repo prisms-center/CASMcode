@@ -299,4 +299,7 @@ namespace CASM {
     return log;
   }
 
+  FixedLog::FixedLog(std::ostream &_ostream):
+    Log(_ostream) {}
+
 }

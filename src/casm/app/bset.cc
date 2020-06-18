@@ -132,9 +132,9 @@ namespace CASM {
 
       std::vector<fs::path> filepaths({dir.clust(bset),
                                        dir.basis(bset),
-                                       dir.clexulator_src(set.name(), bset),
-                                       dir.clexulator_o(set.name(), bset),
-                                       dir.clexulator_so(set.name(), bset)
+                                       dir.clexulator_src(set.project_name(), bset),
+                                       dir.clexulator_o(set.project_name(), bset),
+                                       dir.clexulator_so(set.project_name(), bset)
                                       });
 
       bool any_existing_files = false;
@@ -153,9 +153,7 @@ namespace CASM {
       if(any_existing_files) {
         if(vm.count("force")) {
           args.log() << "Using --force. Will overwrite existing files.\n" << std::endl;
-          fs::remove(dir.clexulator_src(set.name(), bset));
-          fs::remove(dir.clexulator_o(set.name(), bset));
-          fs::remove(dir.clexulator_so(set.name(), bset));
+          dir.delete_clexulator(set.project_name(), bset);
           if(args.primclex) {
             args.primclex->refresh(false, false, false, false, true);
           }
@@ -314,7 +312,7 @@ namespace CASM {
 
         // write source code
         fs::ofstream outfile;
-        outfile.open(dir.clexulator_src(set.name(), bset));
+        outfile.open(dir.clexulator_src(set.project_name(), bset));
 
         std::string parampack_type("DEFAULT");
         bspecs_json.get_if(parampack_type, "param_pack");
@@ -327,7 +325,7 @@ namespace CASM {
                                     primclex.crystallography_tol());
         outfile.close();
 
-        args.log().write(dir.clexulator_src(set.name(), bset).string());
+        args.log().write(dir.clexulator_src(set.project_name(), bset).string());
         args.log() << std::endl;
       }
       else {
@@ -345,7 +343,7 @@ namespace CASM {
 
         // write source code
         fs::ofstream outfile;
-        outfile.open(dir.clexulator_src(set.name(), bset));
+        outfile.open(dir.clexulator_src(set.project_name(), bset));
 
         std::string parampack_type("DEFAULT");
         bspecs_json.get_if(parampack_type, "param_pack");
@@ -358,7 +356,7 @@ namespace CASM {
                                     primclex.crystallography_tol());
         outfile.close();
 
-        args.log().write(dir.clexulator_src(set.name(), bset).string());
+        args.log().write(dir.clexulator_src(set.project_name(), bset).string());
         args.log() << std::endl;
       }
 
@@ -406,4 +404,3 @@ namespace CASM {
   };
 
 }
-

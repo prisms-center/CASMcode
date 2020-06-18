@@ -427,20 +427,49 @@ namespace CASM {
 
   Log &operator<<(Log &log, std::ostream & (*fptr)(std::ostream &));
 
+  /// A Log whose underlying ostream* cannot be reset
+  class FixedLog : public Log {
+  public:
+    explicit FixedLog(std::ostream &_ostream);
+    FixedLog(FixedLog const &) = delete;
+    FixedLog &operator=(FixedLog const &RHS) = delete;
+
+  private:
+    using Log::reset;
+
+  };
 
   inline Log &default_log() {
-    static Log log;
+    static Log log {std::cout};
     return log;
   }
 
   inline Log &default_err_log() {
-    static Log log(std::cerr);
+    static Log log {std::cerr};
+    return log;
+  }
+
+  inline Log &log() {
+    return CASM::default_log();
+  }
+
+  inline Log &err_log() {
+    return CASM::default_err_log();
+  }
+
+  inline Log &cout_log() {
+    static FixedLog log {std::cout};
+    return log;
+  }
+
+  inline Log &cerr_log() {
+    static FixedLog log {std::cerr};
     return log;
   }
 
   inline Log &null_log() {
-    static std::ostream nullout(nullptr);
-    static Log log(nullout);
+    static std::ostream nullout {nullptr};
+    static FixedLog log {nullout};
     return log;
   }
 

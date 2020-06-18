@@ -28,6 +28,10 @@ namespace CASM {
     void UpdateT<_ConfigType>::update(const DB::Selection<ConfigType> &selection, bool force) {
 
       Log &log(this->primclex().log());
+      auto const &project_settings = this->primclex().settings();
+      auto calctype = project_settings.default_clex().calctype;
+      auto required_properties = project_settings.required_properties(traits<ConfigType>::name, calctype);
+
       // vector of Mapping results
       std::vector<ConfigIO::Result> results;
       for(const auto &val : selection.data()) {
@@ -70,12 +74,12 @@ namespace CASM {
         auto config_it = db_config<ConfigType>().find(name);
         if(config_it == db_config<ConfigType>().end())
           m_structure_mapper.map(resolve_struc_path(pos, primclex()),
-                                 this->primclex().settings().template properties<ConfigType>(),
+                                 required_properties,
                                  nullptr,
                                  std::back_inserter(tvec));
         else
           m_structure_mapper.map(resolve_struc_path(pos, primclex()),
-                                 this->primclex().settings().template properties<ConfigType>(),
+                                 required_properties,
                                  notstd::make_unique<ConfigType>(*config_it),
                                  std::back_inserter(tvec));
         for(auto &res : tvec) {

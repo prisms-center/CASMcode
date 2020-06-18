@@ -131,10 +131,11 @@ namespace CASM {
   /// the configuration in the calctype specified (current calctype if none specified)
   template<typename ConfigType>
   bool is_calculated(const ConfigType &config, std::string calctype) {
+    auto const &settings = config.primclex().settings();
     if(calctype == "") {
-      calctype = config.primclex().settings().default_clex().calctype;
+      calctype = settings.default_clex().calctype;
     }
-    const auto &props = config.primclex().settings().template properties<ConfigType>();
+    const auto &props = settings.required_properties(traits<ConfigType>::name, calctype);
     return is_calculated(config.calc_properties(calctype), props);
   }
   template<typename ConfigType>

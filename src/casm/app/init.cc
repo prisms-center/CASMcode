@@ -7,6 +7,7 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/HamiltonianModules.hh"
 #include "casm/app/ProjectBuilder.hh"
+#include "casm/app/ProjectSettings.hh"
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/PrimClex.hh"
@@ -264,7 +265,7 @@ namespace CASM {
         try {
 
           //std::string orig_prim_title = prim.title;
-          if(prim.title().empty() || !ProjectBuilder::valid_title(prim.title())) {
+          if(prim.title().empty() || !is_valid_project_name(prim.title())) {
             args.log() << "Please enter a short title for this project.\n";
             args.log() << "  Use something suitable as a prefix for files specific to this project, such as 'ZrO' or 'TiAl'.\n\n";
 
@@ -275,8 +276,8 @@ namespace CASM {
             prim.set_title(ttitle);
           }
           args.log() << "Initializing CASM project '" << prim.title() << "'" << std::endl;
-          ProjectBuilder builder(prim, root, prim.title(), "formation_energy");
-          builder.build();
+          auto project_settings = make_default_project_settings(prim, prim.title(), root);
+          build_project(project_settings, Structure {prim});
         }
         catch(std::runtime_error &e) {
           args.err_log() << "ERROR: Could not build CASM project.\n";

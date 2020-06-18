@@ -10,15 +10,19 @@
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/clex/ConfigEnumAllOccupations_impl.hh"
+#include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/ScelEnum.hh"
-#include "casm/enumerator/Enumerator_impl.hh"
+#include "casm/enumerator/Enumerator.hh"
 #include "casm/app/QueryHandler.hh"
 #include "casm/app/enum.hh"
 #include "casm/database/Database.hh"
 #include "casm/kinetics/DiffusionTransformationEnum.hh"
 #include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"
 
+// template definitions
+#include "casm/app/QueryHandler_impl.hh"
+#include "casm/clex/ConfigEnumAllOccupations_impl.hh"
+#include "casm/enumerator/Enumerator_impl.hh"
 
 using namespace CASM;
 
@@ -108,4 +112,3 @@ TEST(Selection_Test, Test1) {
   }
   */
 }
-

@@ -18,6 +18,12 @@ namespace CASM {
       std::inserter(m_lib, m_lib.end()));
   }
 
+  EnumeratorHandler::~EnumeratorHandler() {
+    // order of deletion matters
+    m_enumerator->clear();
+    m_lib.clear();
+  }
+
   namespace {
     typedef std::insert_iterator<std::map<std::string, std::shared_ptr<RuntimeLibrary> > > runtimelib_it_type;
     typedef std::insert_iterator<EnumeratorMap> enum_it_type;

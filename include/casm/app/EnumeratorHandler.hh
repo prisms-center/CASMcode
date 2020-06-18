@@ -16,17 +16,11 @@ namespace CASM {
   class RuntimeLibrary;
   class ProjectSettings;
 
-  class EnumeratorHandler {
-
+  class EnumeratorHandler : public notstd::Cloneable {
+    CLONEABLE_NEEDS_DESTRUCTOR_DEF(EnumeratorHandler)
   public:
 
     EnumeratorHandler(const ProjectSettings &set);
-
-    ~EnumeratorHandler() {
-      // order of deletion matters
-      m_enumerator->clear();
-      m_lib.clear();
-    }
 
     EnumeratorMap &map() {
       return *m_enumerator;

@@ -139,17 +139,17 @@ namespace CASM {
     // \brief Returns path to the basis.json file
     fs::path basis(std::string bset) const;
 
-    /// \brief Returns path to directory containing global clexulator
+    /// \brief Returns path to directory containing clexulator files
     fs::path clexulator_dir(std::string bset) const;
 
-    /// \brief Returns path to global clexulator source file
-    fs::path clexulator_src(std::string project, std::string bset) const;
+    /// \brief Returns path to clexulator source file
+    fs::path clexulator_src(std::string project_name, std::string bset) const;
 
-    /// \brief Returns path to global clexulator o file
-    fs::path clexulator_o(std::string project, std::string bset) const;
+    /// \brief Returns path to clexulator o file
+    fs::path clexulator_o(std::string project_name, std::string bset) const;
 
-    /// \brief Returns path to global clexulator so file
-    fs::path clexulator_so(std::string project, std::string bset) const;
+    /// \brief Returns path to clexulator so file
+    fs::path clexulator_so(std::string project_name, std::string bset) const;
 
     /// \brief Returns path to eci.in, in bset directory
     fs::path eci_in(std::string bset) const;
@@ -240,6 +240,51 @@ namespace CASM {
 
     /// \brief Query aliases file (deprecated: now stored in project_settings.json)
     fs::path query_alias() const;
+
+
+    // ** Add directories for additional project data **
+
+    /// Create new project data directory
+    bool new_casm_dir() const;
+
+    /// Create new symmetry directory
+    bool new_symmetry_dir() const;
+
+    /// Create new reports directory
+    bool new_reports_dir() const;
+
+    /// Add a basis set directory
+    bool new_bset_dir(std::string bset) const;
+
+    /// Add a cluster expansion directory
+    bool new_clex_dir(std::string property) const;
+
+
+    /// Add calculation settings directory path
+    bool new_calc_settings_dir(std::string calctype) const;
+
+    /// Add calculation settings directory path, for supercell specific settings
+    bool new_supercell_calc_settings_dir(std::string scelname, std::string calctype) const;
+
+    /// Add calculation settings directory path, for configuration specific settings
+    bool new_configuration_calc_settings_dir(std::string configname, std::string calctype) const;
+
+
+    /// Add a ref directory
+    bool new_ref_dir(std::string calctype, std::string ref) const;
+
+
+    /// Add an eci directory
+    bool new_eci_dir(std::string property, std::string calctype, std::string ref, std::string bset, std::string eci) const;
+
+
+    // ** Delete Clexulators **
+
+    /// Delete Clexulator files
+    void delete_clexulator(std::string project_name, std::string bset) const;
+
+    /// Delete files for all Clexulators
+    void delete_all_clexulators(std::string project_name) const;
 
 
   private:

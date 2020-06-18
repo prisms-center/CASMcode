@@ -13,7 +13,7 @@ namespace CASM {
     /// - Uses PrimClex.settings().db_type() to determine default database type
     DatabaseHandler::DatabaseHandler(const PrimClex &_primclex) :
       m_primclex(&_primclex),
-      m_default_db_name(m_primclex->settings().db_name()) {
+      m_default_db_name(m_primclex->settings().default_database_name()) {
 
       jsonDB::insert(*this);
     }

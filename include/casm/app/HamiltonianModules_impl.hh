@@ -46,8 +46,7 @@ namespace CASM {
                            p_s.substr(0, p_size - 3),
                            set.compile_options() + " " + include_path(dir.dof_plugins()),
                            set.so_options() + " -lcasm ",
-                           msg,
-                           set);
+                           msg);
 
           auto make_dof = lib_ptr->template get_function<signature>(
             "make_" + f_s.substr(0, f_size - 3) + "_dof");
@@ -103,8 +102,7 @@ namespace CASM {
                            p_s.substr(0, p_size - 3),
                            set.compile_options() + " " + include_path(dir.symrep_builder_plugins()),
                            set.so_options() + " -lcasm ",
-                           msg,
-                           set);
+                           msg);
 
           auto make_traits = lib_ptr->template get_function<signature>(
             "make_" + f_s.substr(0, f_size - 3) + "_symrep_builder");

@@ -56,8 +56,11 @@ namespace CASM {
 
     // **** Constructors ****
 
-    /// Initial construction of a PrimClex, from a primitive Structure
-    explicit PrimClex(const Structure &_prim, const Logging &logging = Logging());
+    /// Initial construction of a PrimClex, from ProjectSettings and shared prim
+    explicit PrimClex(
+      ProjectSettings const &_project_settings,
+      std::shared_ptr<const PrimType> _shared_prim,
+      const Logging &logging = Logging());
 
     /// Construct PrimClex from existing CASM project directory
     ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
@@ -76,11 +79,15 @@ namespace CASM {
 
     // ** Directory path and settings accessors **
 
-    const DirectoryStructure &dir() const;
-
     ProjectSettings &settings();
 
     const ProjectSettings &settings() const;
+
+    /// Check if DirectoryStructure exists
+    bool has_dir() const;
+
+    /// Access DirectoryStructure object. Throw if not set.
+    const DirectoryStructure &dir() const;
 
     /// \brief Get the crystallography_tol
     double crystallography_tol() const;

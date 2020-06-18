@@ -294,8 +294,8 @@ Instructions for fitting ECI:                                          \n\n\
 
   int update_eci_format(fs::path root, const CommandArgs &args) {
 
-    DirectoryStructure dir(root);
-    ProjectSettings set(root);
+    ProjectSettings set = open_project_settings(root);
+    DirectoryStructure const &dir = set.dir();
 
     // convert eci.out to eci.json (if eci.json does not exist)
     for(auto property : dir.all_property()) {
@@ -503,7 +503,7 @@ Instructions for fitting ECI:                                          \n\n\
 
 
     args.log() << "1) Project initialized: TRUE\n\n";
-    args.log() << "- Project name: " << primclex.settings().name() << std::endl;
+    args.log() << "- Project name: " << primclex.settings().project_name() << std::endl;
     args.log() << "- Project location: " << primclex.dir().root_dir().string() << std::endl;
 
     // it'd be nice to just read this...
@@ -715,7 +715,7 @@ Instructions for fitting ECI:                                          \n\n\
 
     args.log() << "6) Generate basis functions: ";
 
-    if(!fs::exists(dir.clexulator_src(settings.name(), bset))) {
+    if(!fs::exists(dir.clexulator_src(settings.project_name(), bset))) {
       args.log() << "FALSE\n\n";
 
       if(vm.count("next")) {

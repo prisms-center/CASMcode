@@ -9,6 +9,7 @@
 #include "Proj.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/AppIO.hh"
 
@@ -88,20 +89,13 @@ namespace test {
   /// \brief Build a CASM project at 'proj_dir/title' using the prim
   void Proj::make() {
 
-    if(!fs::exists(dir / ".casm")) {
-      jsonParser json;
-      write_prim(prim, json, FRAC);
-      json["description"] = desc;
-
-      json.write(dir / "prim.json");
-
+    if(find_casmroot(dir) != dir) {
       // build a project
-      ProjectBuilder builder(dir, title, "formation_energy");
-      builder.build();
+      build_project(make_default_project_settings(prim, title, dir), Structure {prim});
     }
 
     // (re)load ProjectSettings
-    m_set = notstd::make_cloneable<ProjectSettings>(dir);
+    m_set = notstd::clone(open_project_settings(dir));
   }
 
   /// \brief Check some aspects of a SymGroup json
@@ -128,7 +122,7 @@ namespace test {
     m_set->set_casm_libdir(autotools::abs_libdir());
     m_set->set_casm_includedir(autotools::abs_includedir());
 
-    m_set->commit();
+    commit(*m_set);
 
     EXPECT_EQ(true, fs::exists(dir));
 

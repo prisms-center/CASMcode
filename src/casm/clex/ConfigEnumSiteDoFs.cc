@@ -1,3 +1,4 @@
+#include "casm/basis_set/DoFTraits.hh"
 #include "casm/clex/ConfigEnumSiteDoFs.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
@@ -510,4 +511,3 @@ namespace CASM {
 
 
 }
-

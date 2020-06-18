@@ -17,32 +17,31 @@ namespace CASM {
     std::string filename_base,
     std::string compile_options,
     std::string so_options,
-    std::string compile_msg,
-    const Logging &logging) {
+    std::string compile_msg) {
 
-    logging.log().compiling<Log::standard>(filename_base + ".cc");
-    logging.log().begin_lap();
-    logging.log() << compile_msg << std::endl;
+    log().compiling<Log::standard>(filename_base + ".cc");
+    log().begin_lap();
+    log() << compile_msg << std::endl;
     try {
       std::shared_ptr<RuntimeLibrary> result = std::make_shared<RuntimeLibrary>(
                                                  filename_base,
                                                  compile_options,
                                                  so_options);
-      logging.log() << "compile time: " << logging.log().lap_time() << " (s)\n" << std::endl;
+      log() << "compile time: " << log().lap_time() << " (s)\n" << std::endl;
       return result;
     }
     catch(runtime_lib_compile_error &e) {
-      e.print(logging.err_log());
-      print_runtime_lib_options_help(logging.log());
+      e.print(err_log());
+      print_runtime_lib_options_help(log());
       throw;
     }
     catch(runtime_lib_shared_error &e) {
-      e.print(logging.err_log());
-      print_runtime_lib_options_help(logging.log());
+      e.print(err_log());
+      print_runtime_lib_options_help(log());
       throw;
     }
     catch(std::exception &e) {
-      print_runtime_lib_options_help(logging.log());
+      print_runtime_lib_options_help(log());
       throw;
     }
   }

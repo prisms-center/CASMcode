@@ -14,12 +14,13 @@ using namespace CASM;
 
 TEST(PrimClexTest, Basics) {
 
-  Structure prim(test::FCC_ternary_prim());
+  auto shared_prim = std::make_shared<Structure const>(test::FCC_ternary_prim());
+  auto const &prim = shared_prim->structure();
   EXPECT_EQ(prim.basis().size(), 1);
 
-
-  // Construct from prim
-  PrimClex primclex(prim, null_log());
+  // Construct PrimClex from project settings & prim
+  auto project_settings = make_default_project_settings(prim, prim.title());
+  PrimClex primclex {project_settings, shared_prim, null_log()};
   EXPECT_EQ(primclex.prim().basis().size(), 1);
 
 }

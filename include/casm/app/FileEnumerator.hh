@@ -190,7 +190,7 @@ namespace CASM {
       result = _if_exists(result, m_dir.bspecs(bset));
       result = _if_exists(result, m_dir.clust(bset));
       result = _if_exists(result, m_dir.basis(bset));
-      result = _if_exists(result, m_dir.clexulator_src(m_set.name(), bset));
+      result = _if_exists(result, m_dir.clexulator_src(m_set.project_name(), bset));
     }
     return result;
   }

@@ -62,6 +62,27 @@ private:\
   }\
 public:\
 
+/// Include in a class/struct definition that inherits from Cloneable
+/// to make it also cloneable, but do not include destructor defintion
+#define CLONEABLE_NEEDS_DESTRUCTOR_DEF(T) \
+public: \
+  virtual ~T();\
+  \
+  std::unique_ptr<T> clone() const {\
+    return std::unique_ptr<T>(this->_clone());\
+  }\
+  std::unique_ptr<T> move() {\
+    return std::unique_ptr<T>(this->_move());\
+  }\
+private:\
+  virtual T *_clone() const override {\
+    return new T(*this);\
+  }\
+  virtual T *_move() override {\
+    return new T(std::move(*this));\
+  }\
+public:\
+
 
 /// \brief Non-std smart pointer classes and functions
 namespace notstd {

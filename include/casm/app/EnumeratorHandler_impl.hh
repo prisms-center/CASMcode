@@ -64,8 +64,7 @@ namespace CASM {
                            p_s.substr(0, p_size - 3),
                            set.compile_options() + " " + include_path(dir.enumerator_plugins()),
                            set.so_options() + " -lcasm ",
-                           msg,
-                           set);
+                           msg);
 
           auto make_interface = lib_ptr->get_function<EnumInterfaceBase* ()>(
                                   "make_" + f_s.substr(0, f_size - 3) + "_interface");

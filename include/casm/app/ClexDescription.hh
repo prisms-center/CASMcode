@@ -41,6 +41,13 @@ namespace CASM {
     std::string eci;
   };
 
+  /// Create default configuration ClexDescription
+  ///
+  /// Using:
+  /// - name,property="formation_energy"
+  /// - calctype,ref,bset,eci="default"
+  ClexDescription default_configuration_clex();
+
   /// \brief Compare using name strings: A.name < B.name
   bool operator<(const ClexDescription &A, const ClexDescription &B);
 
@@ -49,6 +56,13 @@ namespace CASM {
   void from_json(ClexDescription &desc, const jsonParser &json);
 
   bool clex_exists(const DirectoryStructure &dir, const ClexDescription &desc);
+
+  /// Add directories for a particular cluster expansion
+  ///
+  /// Create bset, calc_settings, ref, and eci directories for the cluster expansion `desc`.
+  ///
+  /// \returns bool, true if all directories exist afterwards
+  bool new_dir(const DirectoryStructure &dir, ClexDescription const &desc);
 
 }
 

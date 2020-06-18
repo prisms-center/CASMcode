@@ -270,7 +270,7 @@ namespace CASM {
 
 
     // Write symmetry info files
-    primclex().settings().new_symmetry_dir();
+    primclex().dir().new_symmetry_dir();
 
     // Write lattice point group
     {
