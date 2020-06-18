@@ -21,6 +21,7 @@ namespace CASM {
   class ScelEnum;
 
   namespace Completer {
+    class EnumOptionBase;
     class EnumOption;
   }
 
@@ -489,25 +490,25 @@ namespace CASM {
   /// \brief Standardizes parsing casm enum input options to make ScelEnum JSON input
   jsonParser make_enumerator_scel_enum_input(
     jsonParser kwargs,
-    const Completer::EnumOption &enum_opt);
+    const Completer::EnumOptionBase &enum_opt);
 
   /// \brief Standardizes parsing casm enum input options to make an ScelEnumProps
   ScelEnumProps make_enumerator_scel_enum_props(
     const PrimClex &primclex,
     const jsonParser &_kwargs,
-    const Completer::EnumOption &enum_opt);
+    const Completer::EnumOptionBase &enum_opt);
 
   /// \brief Standardizes parsing casm enum input options to make a SuperlatticeEnumerator
   std::unique_ptr<SuperlatticeEnumerator> make_enumerator_superlat_enum(
     const PrimClex &primclex,
     const jsonParser &_kwargs,
-    const Completer::EnumOption &enum_opt);
+    const Completer::EnumOptionBase &enum_opt);
 
   /// \brief Standardizes parsing casm enum input options to make an ScelEnum
   std::unique_ptr<ScelEnum> make_enumerator_scel_enum(
     const PrimClex &primclex,
     const jsonParser &_kwargs,
-    const Completer::EnumOption &enum_opt);
+    const Completer::EnumOptionBase &enum_opt);
 
   /// \brief Standardizes parsing casm enum filter expressions
   std::vector<std::string> make_enumerator_filter_expr(
@@ -632,7 +633,7 @@ namespace CASM {
   std::vector<ConfigEnumInput> make_enumerator_input_configs(
     PrimClex const &primclex,
     jsonParser const &_kwargs,
-    Completer::EnumOption const &enum_opt,
+    Completer::EnumOptionBase const &enum_opt,
     EnumeratorMap const *interface_map);
 
   /** @}*/

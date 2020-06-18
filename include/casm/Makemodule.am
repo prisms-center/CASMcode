@@ -371,6 +371,7 @@ casm_database_json_include_HEADERS = \
 
 casm_enumerator_includedir=$(includedir)/casm/enumerator
 casm_enumerator_include_HEADERS = \
+    include/casm/enumerator/DoFSpace.hh\
     include/casm/enumerator/EnumInputParser.hh\
     include/casm/enumerator/Enumerator.hh\
     include/casm/enumerator/Enumerator_impl.hh\
@@ -379,9 +380,9 @@ casm_enumerator_include_HEADERS = \
 
 #-------------------------------------------------------------------------------#
 
-casm_enumerator_io_includedir=$(includedir)/casm/enumerator/io
-casm_enumerator_io_include_HEADERS = \
-    include/casm/enumerator/io/json_io.hh
+casm_enumerator_io_json_includedir=$(includedir)/casm/enumerator/io/json
+casm_enumerator_io_json_include_HEADERS = \
+    include/casm/enumerator/io/json/DoFSpace.hh
 
 #-------------------------------------------------------------------------------#
 
@@ -1069,7 +1070,14 @@ casm_symmetry_include_HEADERS = \
     include/casm/symmetry/SymTools_impl.hh\
     include/casm/symmetry/VectorOrbits.hh\
     include/casm/symmetry/VectorSymCompare.hh\
-    include/casm/symmetry/VectorSymCompare_impl.hh
+    include/casm/symmetry/VectorSymCompare_impl.hh\
+    include/casm/symmetry/json_io.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_symmetry_io_json_includedir=$(includedir)/casm/symmetry/io/json
+casm_symmetry_io_json_include_HEADERS = \
+    include/casm/symmetry/io/json/SymRepTools.hh
 
 #-------------------------------------------------------------------------------#
 

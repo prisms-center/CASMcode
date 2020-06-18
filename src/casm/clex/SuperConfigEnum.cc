@@ -246,7 +246,7 @@ namespace CASM {
     // and same for all other site DoF
     m_index_map.resize(this->_unitcell_index_converter().total_sites());
     for(int i = 0; i < this->_unitcell_index_converter().total_sites(); ++i) {
-      UnitCell ref = _sub_supercell().transf_mat().cast<Index>() * this->_unitcell_index_converter()[i];
+      UnitCell ref = _sub_supercell().transf_mat().cast<Index>() * this->_unitcell_index_converter()(i);
       for(int j = 0; j < _sub_supercell().num_sites(); ++j) {
         UnitCellCoord uccord = _sub_supercell().uccoord(j) + ref;
         Index linear_index = _target_supercell().linear_index(uccord);

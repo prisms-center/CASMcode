@@ -13,9 +13,9 @@ namespace CASM {
     class BasicStructure;
     struct SymOp;
 
-    /// return basis index of site that matches test_site, if it is in basis
-    /// otherwise, returns the size of the basis
-    Index find_index(const std::vector<Site> &basis, const Site &test_site);
+    /// return basis index of site that is same type and within distance 'tol' (in Angstr) of test_site
+    /// If no such site exists in basis, return the size of the basis
+    Index find_index(const std::vector<Site> &basis, const Site &test_site, double tol);
 
     /// Returns true if the structure describes a crystal primitive cell
     /// i.e., no translation smaller than a lattice vector can map the structure onto itself

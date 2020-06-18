@@ -519,7 +519,7 @@ namespace CASM {
   double rms_force(const Configuration &_config);
 
   /// \brief Cost function that describes the degree to which basis sites have relaxed
-  double basis_deformation(const Configuration &_config);
+  double atomic_deformation(const Configuration &_config);
 
   /// \brief Cost function that describes the degree to which lattice has relaxed
   double lattice_deformation(const Configuration &_config);
@@ -568,7 +568,7 @@ namespace CASM {
 
   bool has_rms_force(const Configuration &_config);
 
-  bool has_basis_deformation(const Configuration &_config);
+  bool has_atomic_deformation(const Configuration &_config);
 
   bool has_lattice_deformation(const Configuration &_config);
 

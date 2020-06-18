@@ -10,6 +10,7 @@ namespace CASM {
   //--ConfigMapping::Settings------------------------------------------------
 
   jsonParser &to_json(ConfigMapping::Settings const &_set, jsonParser &_json) {
+
     _json["lattice_weight"] = _set.lattice_weight;
     _json["ideal"] = _set.ideal;
     _json["strict"] = _set.strict;
@@ -17,6 +18,7 @@ namespace CASM {
     _json["robust"] = _set.robust;
     _json["fix_volume"] = _set.fix_volume;
     _json["fix_lattice"] = _set.fix_lattice;
+    _json["k_best"] = _set.k_best;
     if(!_set.forced_lattices.empty())
       _json["forced_lattices"] = _set.forced_lattices;
     if(!_set.filter.empty())
@@ -52,6 +54,10 @@ namespace CASM {
 
     if(_json.contains("fix_lattice"))
       _set.fix_lattice = _json["fix_lattice"].get<bool>();
+
+    if(_json.contains("k_best")) {
+      _set.k_best = _json["k_best"].get<Index>();
+    }
 
     if(_json.contains("forced_lattices"))
       _set.forced_lattices = _json["forced_lattices"].get<std::vector<std::string> >();

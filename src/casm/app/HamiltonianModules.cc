@@ -14,15 +14,21 @@ namespace CASM {
       AnisoValTraits::coordinate(),
       AnisoValTraits::latvec(),
       AnisoValTraits::selective_dynamics(),
-      AnisoValTraits::magspin(),
-      AnisoValTraits::magmom(),
+      AnisoValTraits::Cmagspin(),
+      AnisoValTraits::Cunitmagspin(),
+      AnisoValTraits::NCmagspin(),
+      AnisoValTraits::NCunitmagspin(),
+      AnisoValTraits::SOmagspin(),
+      AnisoValTraits::SOunitmagspin(),
       AnisoValTraits::isometry(),
       AnisoValTraits::strain("B"),
       AnisoValTraits::strain("U"),
       AnisoValTraits::strain("EA"),
       AnisoValTraits::strain("GL"),
       AnisoValTraits::strain("H"),
-      AnisoValTraits::force());
+      AnisoValTraits::force(),
+      AnisoValTraits::d_orbital_occupation(),
+      AnisoValTraits::d_orbital_occupation_spin_polarized());
 
     return dict;
   }
@@ -35,7 +41,9 @@ namespace CASM {
       SymRepBuilder::Cartesian(),
       SymRepBuilder::TimeReversal(),
       SymRepBuilder::AngularMomentum(),
-      SymRepBuilder::Rank2Tensor());
+      SymRepBuilder::Rank2Tensor(),
+      SymRepBuilder::dOrbitalOccupation(),
+      SymRepBuilder::dOrbitalOccupationSpinPolarized());
     return dict;
   }
 

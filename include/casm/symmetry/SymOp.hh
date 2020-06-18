@@ -147,10 +147,6 @@ namespace CASM {
       return SymOp(matrix(), tau(), time_reversal(), map_error());
     }
 
-    jsonParser &to_json(jsonParser &json) const override;
-
-    void from_json(const jsonParser &json) override;
-
   private:
     ///Create new SymOp from Matrix3 and tau translation
     /// by default, assume no translation
@@ -217,12 +213,6 @@ namespace CASM {
   /// Accessor to allow conversion to xtal::SymOpType. Returns whether the symmetry operation is time reversal active.
   bool get_time_reversal(const SymOp &op);
 
-
-  jsonParser &to_json(const SymOp &sym, jsonParser &json);
-  void from_json(SymOp &sym, const jsonParser &json);
-
-  //std::istream& operator>> (std::istream &stream, SymOp &op){op.read(stream); return stream;};
-  //std::ostream& operator<< (std::ostream &stream, SymOp &op){op.print(stream); return stream;};
 
   /// \brief Print formatted SymOp matrix and tau
   void print_matrix_tau_col(Log &log, const SymOp &op, Index prec);

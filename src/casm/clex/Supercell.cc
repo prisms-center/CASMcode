@@ -82,7 +82,7 @@ namespace CASM {
   /// linear_index / volume();
   /// \endcode
   Index Supercell::sublat(Index linear_index) const {
-    return this->sym_info().unitcellcoord_index_converter()[linear_index].sublattice();
+    return this->sym_info().unitcellcoord_index_converter()(linear_index).sublattice();
   }
 
   /// \brief Given a Coordinate and tolerance, return linear index into Configuration
@@ -107,13 +107,13 @@ namespace CASM {
   /// Linear indices are grouped by sublattice, then ordered as determined by
   /// xtal::OrderedLatticePointGenerator.
   Index Supercell::linear_index(const UnitCellCoord &bijk) const {
-    return this->sym_info().unitcellcoord_index_converter()[bijk];
+    return this->sym_info().unitcellcoord_index_converter()(bijk);
   }
 
   /// \brief Return the coordinate corresponding to linear index in the supercell
   ///
   Coordinate Supercell::coord(Index linear_index) const {
-    UnitCellCoord linear_index_ucc = this->sym_info().unitcellcoord_index_converter()[linear_index];
+    UnitCellCoord linear_index_ucc = this->sym_info().unitcellcoord_index_converter()(linear_index);
     return linear_index_ucc.coordinate(this->prim());
   }
 
@@ -122,7 +122,7 @@ namespace CASM {
   /// Linear indices are grouped by sublattice, then ordered as determined by
   /// xtal::OrderedLatticePointGenerator.
   UnitCellCoord Supercell::uccoord(Index linear_index) const {
-    return this->sym_info().unitcellcoord_index_converter()[linear_index];
+    return this->sym_info().unitcellcoord_index_converter()(linear_index);
   }
 
   /// \brief returns Supercell-compatible configdof with zeroed DoF values and user-specified tolerance
@@ -371,7 +371,7 @@ namespace CASM {
     std::map<DoFKey, SymGroupRepID> global_dof_symrep_IDs;
     for(auto const &key : global_dof_types(_prim)) {
       /* global_dof_symrep_IDs.emplace(std::make_pair(key, _prim.structure().global_dof(key).symrep_ID())); */
-      global_dof_symrep_IDs.emplace(std::make_pair(key, _prim.global_dof_symrepID(key)));
+      global_dof_symrep_IDs.emplace(std::make_pair(key, _prim.global_dof_symrep_ID(key)));
     }
 
     std::map<DoFKey, std::vector<SymGroupRepID> > local_dof_symrep_IDs;
@@ -380,7 +380,7 @@ namespace CASM {
       for(Index b = 0; b < _prim.basis().size(); ++b) {
         if(_prim.basis()[b].has_dof(key))
           /* treps[b] = _prim.basis()[b].dof(key).symrep_ID(); */
-          treps[b] = _prim.site_dof_symrepIDs()[b];
+          treps[b] = _prim.site_dof_symrep_IDs()[b][key];
       }
       local_dof_symrep_IDs.emplace(std::make_pair(key, std::move(treps)));
     }

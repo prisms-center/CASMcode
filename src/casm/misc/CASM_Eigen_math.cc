@@ -3,32 +3,6 @@
 #include <iostream>
 
 namespace CASM {
-
-  Eigen::MatrixXd reduced_column_echelon(Eigen::Ref<const Eigen::MatrixXd> const &M, double _tol) {
-    Eigen::MatrixXd R(M);
-    Index col = 0;
-    for(Index row = 0; row < R.rows(); ++row) {
-      Index i = 0;
-      for(i = col; i < R.cols(); ++i) {
-        if(!almost_zero(R(row, i), _tol)) {
-          if(i != col)
-            R.col(i).swap(R.col(col));
-          break;
-        }
-      }
-      if(i == R.cols())
-        continue;
-      R.col(col) /= R(row, col);
-      for(i = 0; i < R.cols(); ++i) {
-        if(i != col)
-          R.col(i) -= R(row, i) * R.col(col);
-      }
-      ++col;
-    }
-    return R.leftCols(col);
-  }
-
-
   //Given a string and the size expected in the array. Converts it to an Eigen::VectorXd
   Eigen::VectorXd eigen_vector_from_string(const std::string &tstr, const int &size) {
     std::stringstream tstream;
@@ -50,43 +24,6 @@ namespace CASM {
     return tvec;
   }
 
-  //*******************************************************************************************
-  /**
-   *
-   */
-  //*******************************************************************************************
-
-  void poly_fit(Eigen::VectorXcd &xvec, Eigen::VectorXcd &yvec, Eigen::VectorXcd &coeffs, int degree) {
-
-    // Check that the dimensions are correct
-    if(xvec.rows() != yvec.rows()) {
-      std::cout << "******************************************\n"
-                << "ERROR in poly_fit: Dimensions of xvec and \n"
-                << "yvec do not match up! Cannot perform a \n"
-                << "polynomial fit.\n"
-                << "******************************************\n";
-      exit(1);
-    }
-
-    Eigen::MatrixXcd polymat = Eigen::MatrixXcd::Ones(xvec.rows(), degree + 1);
-
-    // Construct polymatrix
-    for(int d = degree; d > 0; d--) {
-
-      polymat.col(degree - d) = xvec;
-
-      for(int m = 0; m < d - 1; m++) {
-        polymat.col(degree - d) = polymat.col(degree - d).cwiseProduct(xvec);
-      }
-    }
-
-    // SVD least squares fit
-    Eigen::JacobiSVD<Eigen::MatrixXcd> svd_solver(polymat, Eigen::ComputeThinU | Eigen::ComputeThinV);
-    coeffs = svd_solver.solve(yvec);
-
-    return;
-
-  }
 
 
   namespace HungarianMethod_impl {
