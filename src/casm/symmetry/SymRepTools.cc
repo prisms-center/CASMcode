@@ -479,13 +479,13 @@ namespace CASM {
     // the orbit of the directions. this should also
     // reveal the invariant subgroups.
 
-    using _SymCompareType = DirectionSymCompare<Eigen::VectorXcd, EigenSymRepApply<Eigen::VectorXcd> >;
-    using VectorOrbit = GenericOrbit<_SymCompareType>;
+    using SymCompareType = DirectionSymCompare<Eigen::VectorXcd, EigenSymRepApply<Eigen::VectorXcd>>;
+    using VectorOrbit = Orbit<SymCompareType>;
     std::set<VectorOrbit> orbit_result;
     make_orbits(tdirs.begin(),
                 tdirs.end(),
                 head_group,
-                _SymCompareType(vec_compare_tol, _rep),
+                SymCompareType(vec_compare_tol, _rep),
                 std::inserter(orbit_result, orbit_result.begin()));
 
     multivector<Eigen::VectorXcd>::X<2> result;
