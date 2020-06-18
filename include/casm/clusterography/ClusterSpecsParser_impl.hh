@@ -26,7 +26,7 @@ namespace CASM {
       error.insert(msg.str());
       return false;
     }
-    return bool(require<RequiredType>(it, option));
+    return bool(require_at<RequiredType>(fs::path{it.name()} / option));
   }
 
   template<typename RequiredType>
@@ -34,7 +34,7 @@ namespace CASM {
     jsonParser::const_iterator it,
     std::string option) {
 
-    if(!require<RequiredType>(it, option) || !require_previous<RequiredType>(it, option)) {
+    if(!require_at<RequiredType>(fs::path {it.name()} / option) || !require_previous<RequiredType>(it, option)) {
       return false;
     }
 

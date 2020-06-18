@@ -8,19 +8,11 @@
 
 namespace CASM {
 
-  /// equivalent to require_at fs::path(it.name()) / option
-  template<typename RequiredType, typename...Args>
-  std::unique_ptr<RequiredType> KwargsParser::require(jsonParser::const_iterator it, std::string option, Args &&...args) {
-    return require_at<RequiredType>(fs::path(it.name()) / option, std::forward<Args>(args)...);
-  }
-
-  /// require option self_it->find(option) of type RequiredType
   template<typename RequiredType, typename...Args>
   std::unique_ptr<RequiredType> KwargsParser::require(std::string option, Args &&...args) {
     return require_at<RequiredType>(fs::path(option), std::forward<Args>(args)...);
   }
 
-  /// require option self_it->find(option) of type RequiredType
   template<typename RequiredType, typename...Args>
   std::unique_ptr<RequiredType> KwargsParser::require_at(fs::path option, Args &&...args) {
     auto it = self.find_at(option);
@@ -42,19 +34,11 @@ namespace CASM {
   }
 
 
-  /// equivalent to require_at fs::path(it.name()) / option
-  template<typename RequiredType, typename...Args>
-  void KwargsParser::require(RequiredType &value, jsonParser::const_iterator it, std::string option, Args &&...args) {
-    require_at<RequiredType>(value, fs::path(it.name()) / option, std::forward<Args>(args)...);
-  }
-
-  /// require option self_it->find(option) of type RequiredType
   template<typename RequiredType, typename...Args>
   void KwargsParser::require(RequiredType &value, std::string option, Args &&...args) {
     require_at<RequiredType>(value, fs::path(option), std::forward<Args>(args)...);
   }
 
-  /// require option self_it->find(option) of type RequiredType
   template<typename RequiredType, typename...Args>
   void KwargsParser::require_at(RequiredType &value, fs::path option, Args &&...args) {
     auto it = self.find_at(option);
@@ -77,19 +61,11 @@ namespace CASM {
   }
 
 
-  /// equivalent to optional_at fs::path(it.name()) / option
-  template<typename RequiredType, typename...Args>
-  std::unique_ptr<RequiredType> KwargsParser::optional(jsonParser::const_iterator it, std::string option, Args &&...args) {
-    return optional_at<RequiredType>(fs::path(it.name()) / option, std::forward<Args>(args)...);
-  }
-
-  /// check that if option self.find(option) exists it can constructed as type RequiredType
   template<typename RequiredType, typename...Args>
   std::unique_ptr<RequiredType> KwargsParser::optional(std::string option, Args &&...args) {
     return optional_at<RequiredType>(fs::path(option), std::forward<Args>(args)...);
   }
 
-  /// check that if self.find_at(option) exists, it can constructed as type RequiredType
   template<typename RequiredType, typename...Args>
   std::unique_ptr<RequiredType> KwargsParser::optional_at(fs::path option, Args &&...args) {
     jsonParser *ptr;
@@ -118,19 +94,11 @@ namespace CASM {
   }
 
 
-  /// equivalent to optional_at fs::path(it.name()) / option
-  template<typename RequiredType, typename...Args>
-  void KwargsParser::optional(RequiredType &value, jsonParser::const_iterator it, std::string option, Args &&...args) {
-    optional_at<RequiredType>(value, fs::path(it.name()) / option, std::forward<Args>(args)...);
-  }
-
-  /// check that if option self.find(option) exists it can constructed as type RequiredType
   template<typename RequiredType, typename...Args>
   void KwargsParser::optional(RequiredType &value, std::string option, Args &&...args) {
     optional_at<RequiredType>(value, fs::path(option), std::forward<Args>(args)...);
   }
 
-  /// check that if self.find_at(option) exists, it can constructed as type RequiredType
   template<typename RequiredType, typename...Args>
   void KwargsParser::optional_at(RequiredType &value, fs::path option, Args &&...args) {
     jsonParser *ptr;
@@ -160,13 +128,11 @@ namespace CASM {
   }
 
 
-  /// check that if option self.find(option) exists it can constructed as type RequiredType
   template<typename RequiredType, typename...Args>
   RequiredType KwargsParser::optional_else(std::string option, const RequiredType &_default, Args &&...args) {
     return optional_at_else<RequiredType>(fs::path(option), _default, std::forward<Args>(args)...);
   }
 
-  /// check that if self.find_at(option) exists, it can constructed as type RequiredType
   template<typename RequiredType, typename...Args>
   RequiredType KwargsParser::optional_at_else(fs::path option, const RequiredType &_default, Args &&...args) {
     jsonParser *ptr;
@@ -195,13 +161,11 @@ namespace CASM {
   }
 
 
-  /// check that if option self.find(option) exists it can constructed as type RequiredType
   template<typename RequiredType, typename...Args>
   void KwargsParser::optional_else(RequiredType &value, std::string option, const RequiredType &_default, Args &&...args) {
     optional_at_else<RequiredType>(value, fs::path(option), _default, std::forward<Args>(args)...);
   }
 
-  /// check that if self.find_at(option) exists, it can constructed as type RequiredType
   template<typename RequiredType, typename...Args>
   void KwargsParser::optional_at_else(RequiredType &value, fs::path option, const RequiredType &_default, Args &&...args) {
     jsonParser *ptr;
@@ -246,7 +210,6 @@ namespace CASM {
     parse(*this, std::forward<Args>(args)...);
   }
 
-  /// \brief Return true if all parsers in kwargs are valid
   template<typename T>
   bool InputParser<T>::valid() const {
     auto lambda = [](const PairType & pair) {
@@ -255,7 +218,6 @@ namespace CASM {
     return KwargsParser::valid() && std::all_of(kwargs.begin(), kwargs.end(), lambda);
   }
 
-  /// \brief Modifies this->input to include error and warning messages from all parsers in kwargs
   template<typename T>
   jsonParser &InputParser<T>::report() {
     KwargsParser::report();
@@ -323,7 +285,6 @@ namespace CASM {
     return res;
   }
 
-  /// \brief If exists(), make value from current json; else add error
   template<typename T>
   template<typename...Args>
   void InputParser<T>::make(Args &&...args) {
@@ -342,7 +303,6 @@ namespace CASM {
     }
   }
 
-  /// \brief If exists(), make value from current json; else no error
   template<typename T>
   template<typename...Args>
   void InputParser<T>::make_if(Args &&...args) {
@@ -351,7 +311,6 @@ namespace CASM {
     }
   }
 
-  /// \brief If exists(), make value from current json; else set value to default
   template<typename T>
   template<typename...Args>
   void InputParser<T>::make_else(std::unique_ptr<T> _default, Args &&...args) {
@@ -363,7 +322,6 @@ namespace CASM {
     }
   }
 
-  /// \brief If exists(), make value from current json; else make with default constructor
   template<typename T>
   template<typename...Args>
   void InputParser<T>::make_else_construct_default(Args &&...args) {
@@ -375,7 +333,6 @@ namespace CASM {
     }
   }
 
-  /// \brief Run a subparser for a required subobject
   template<typename T>
   template<typename RequiredType, typename...Args>
   void InputParser<T>::subparse(RequiredType &_value, std::string option, Args &&...args) {
@@ -388,7 +345,6 @@ namespace CASM {
     }
   }
 
-  /// \brief Run a subparser for an optional subobject, else leave as is
   template<typename T>
   template<typename RequiredType, typename...Args>
   void InputParser<T>::subparse_if(RequiredType &_value, std::string option, Args &&...args) {
@@ -397,7 +353,6 @@ namespace CASM {
     }
   }
 
-  /// \brief Run a subparser for an optional subobject, else use default value
   template<typename T>
   template<typename RequiredType, typename...Args>
   void InputParser<T>::subparse_else(RequiredType &_value, std::string option, const RequiredType &_default, Args &&...args)  {
@@ -409,7 +364,6 @@ namespace CASM {
     }
   }
 
-  /// \brief Parse self as a different type
   template<typename T>
   template<typename RequiredType, typename...Args>
   void InputParser<T>::parse_as(std::unique_ptr<RequiredType> &_value, Args &&...args) {
@@ -420,7 +374,6 @@ namespace CASM {
     _value = std::move(subparser->value);
   }
 
-  /// \brief Run a subparser for a derived type, ParseAsType, and store in base unique_ptr
   template<typename T>
   template<typename ParseAsType, typename...Args>
   void InputParser<T>::subparse_as(std::string option, Args &&...args) {
@@ -433,25 +386,21 @@ namespace CASM {
     }
   }
 
-  /// \brief Insert subparser
   template<typename T>
   void InputParser<T>::insert(fs::path path, const std::shared_ptr<KwargsParser> &subparser) {
     kwargs[path] = subparser;
   }
 
-  /// \brief Iterator over subparser
   template<typename T>
   InputParser<T>::map_type::const_iterator InputParser<T>::begin() const {
     return kwargs.begin();
   }
 
-  /// \brief Iterator over subparser
   template<typename T>
   InputParser<T>::map_type::const_iterator InputParser<T>::end() const {
     return kwargs.end();
   }
 
-  /// \brief Find subparser
   template<typename T>
   InputParser<T>::map_type::const_iterator InputParser<T>::find(fs::path path) const {
     return kwargs.find(path);
