@@ -270,6 +270,7 @@ libcasm_la_SOURCES = \
     include/casm/enumerator/InputEnumerator.hh\
     include/casm/enumerator/RandomAccessEnumerator.hh\
     include/casm/enumerator/io/json/DoFSpace.hh\
+    include/casm/enumerator/io/json_io.hh\
     include/casm/external/Eigen/Array\
     include/casm/external/Eigen/CASM_AddOns\
     include/casm/external/Eigen/CMakeLists.txt\
@@ -750,6 +751,9 @@ libcasm_la_SOURCES = \
     src/casm/basis_set/PolynomialFunction.cc\
     src/casm/basis_set/StrainDoFTraits.cc\
     src/casm/basis_set/Variable.cc\
+    src/casm/basis_set/io/io_traits.cc\
+    src/casm/basis_set/io/json/BasisFunctionSpecs_json_io.cc\
+    src/casm/basis_set/io/stream_io.cc\
     src/casm/casm_io/DataFormatter.cc\
     src/casm/casm_io/DataStream.cc\
     src/casm/casm_io/FileData.cc\
@@ -801,6 +805,7 @@ libcasm_la_SOURCES = \
     src/casm/clex/Supercell.cc\
     src/casm/clex/SupercellIO.cc\
     src/casm/clex/SupercellTraits.cc\
+    src/casm/clex/io/json/ClexBasisSpecs_json_io.cc\
     src/casm/clusterography/ClusterInvariants.cc\
     src/casm/clusterography/ClusterOrbits.cc\
     src/casm/clusterography/ClusterSpecs.cc\
@@ -871,6 +876,7 @@ libcasm_la_SOURCES = \
     src/casm/enumerator/EnumInputParser.cc\
     src/casm/enumerator/Enumerator.cc\
     src/casm/enumerator/io/json/DoFSpace.cc\
+    src/casm/enumerator/io/json_io.cc\
     src/casm/external/gzstream/gzstream.C\
     src/casm/external/qhull/libqhull_r/geom2_r.c\
     src/casm/external/qhull/libqhull_r/geom_r.c\
@@ -952,6 +958,7 @@ libcasm_la_SOURCES = \
     src/casm/symmetry/SymPermutation.cc\
     src/casm/symmetry/SymRepTools.cc\
     src/casm/symmetry/SymTools.cc\
+    src/casm/symmetry/VectorSymCompare.cc\
     src/casm/symmetry/io/json/SymRepTools.cc\
     src/casm/system/Popen.cc\
     src/casm/system/RuntimeLibrary.cc\
@@ -965,4 +972,4 @@ libcasm_la_LIBADD = \
 libcasm_la_LDFLAGS = \
     $(BOOST_LDFLAGS)\
     -avoid-version
-#src/casm/version/autoversion.lo: .FORCE
+src/casm/version/autoversion.lo: .FORCE

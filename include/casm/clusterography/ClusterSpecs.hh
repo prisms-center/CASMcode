@@ -451,10 +451,10 @@ namespace CASM {
   /// Accept all clusters
   ClusterFilterFunction all_clusters_filter();
 
-  /// Accept clusters with max pair distance less than specified value
+  /// Accept clusters with max pair distance less than max_length
   ClusterFilterFunction max_length_cluster_filter(double max_length);
 
-  /// Accept clusters with max pair distance (using closest images) less than specified value
+  /// Accept clusters with max pair distance (using closest images) less than max_length
   ClusterFilterFunction within_scel_max_length_cluster_filter(
     double max_length,
     Eigen::Matrix3l const &superlattice_matrix);
@@ -468,13 +468,13 @@ namespace CASM {
   /// Sites in the supercell defined by the superlattice_matrix
   CandidateSitesFunction scel_neighborhood(Eigen::Matrix3l const &superlattice_matrix);
 
-  /// Sites within max pair distance to any site in the origin unit cell {b, 0, 0, 0}
+  /// Sites within max_length distance to any site in the origin unit cell {b, 0, 0, 0}
   CandidateSitesFunction max_length_neighborhood(double max_length);
 
-  /// Sites within max pair distance to any site in the phenomenal cluster
+  /// Sites within cutoff_radius distance to any site in the phenomenal cluster
   CandidateSitesFunction cutoff_radius_neighborhood(IntegralCluster const &phenomenal, double cutoff_radius);
 
-  /// Sites within max pair distance (using closest images) to any site in the phenomenal cluster
+  /// Sites within cutoff_radius distance (using closest images) to any site in the phenomenal cluster
   CandidateSitesFunction within_scel_cutoff_radius_neighborhood(
     IntegralCluster const &phenomenal,
     double cutoff_radius,

@@ -380,6 +380,12 @@ casm_enumerator_include_HEADERS = \
 
 #-------------------------------------------------------------------------------#
 
+casm_enumerator_io_includedir=$(includedir)/casm/enumerator/io
+casm_enumerator_io_include_HEADERS = \
+    include/casm/enumerator/io/json_io.hh
+
+#-------------------------------------------------------------------------------#
+
 casm_enumerator_io_json_includedir=$(includedir)/casm/enumerator/io/json
 casm_enumerator_io_json_include_HEADERS = \
     include/casm/enumerator/io/json/DoFSpace.hh

@@ -87,7 +87,7 @@ namespace CASM {
     mutable notstd::cloneable_ptr<PrimNeighborList> nlist;
 
     typedef std::string BasisSetName;
-    mutable std::map<BasisSetName, jsonParser> basis_set_specs;
+    mutable std::map<BasisSetName, ClexBasisSpecs> basis_set_specs;
     mutable std::map<BasisSetName, ClexBasis> clex_basis;
     mutable std::map<BasisSetName, Clexulator> clexulator;
     mutable std::map<ClexDescription, ECIContainer> eci;
@@ -385,7 +385,11 @@ namespace CASM {
     return true;
   }
 
-  jsonParser const &PrimClex::basis_set_specs(std::string const &basis_set_name) const {
+  _invalid_basis_set_specs_error()
+
+
+
+  ClexBasisSpecs const &PrimClex::basis_set_specs(std::string const &basis_set_name) const {
     auto it = m_data->basis_set_specs.find(basis_set_name);
     if(it == m_data->basis_set_specs.end()) {
       if(!fs::exists(dir().bspecs(basis_set_name))) {
@@ -396,15 +400,14 @@ namespace CASM {
       }
 
       fs::path basis_set_specs_path = dir().bspecs(basis_set_name);
-      try {
-        jsonParser basis_set_specs {basis_set_specs_path};
-        it = m_data->basis_set_specs.emplace(basis_set_name, basis_set_specs).first;
-      }
-      catch(std::exception &e) {
-        err_log().error("reading bspecs.json");
-        err_log() << "file: " << basis_set_specs_path << "\n" << std::endl;
-        throw e;
-      }
+      jsonParser bspecs_json {basis_set_specs_path};
+      InputParser<ClexBasisSpecs> parser {basis_set_specs_path};
+      std::stringstream ss;
+      ss << "Error: Invalid file " << basis_set_specs_path;
+      report_and_throw_if_invalid(parser, err_log(), std::runtime_error {ss.str()});
+
+      it = m_data->basis_set_specs.emplace(basis_set_name, *parser.value).first;
+
     }
     return it->second;
   }

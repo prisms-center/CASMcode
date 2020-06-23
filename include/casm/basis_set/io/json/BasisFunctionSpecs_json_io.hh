@@ -19,7 +19,7 @@ namespace CASM {
 
   ENUM_JSON_IO_DECL(PARAM_PACK_TYPE)
 
-  /// \brief Parse BasisFunctionSpecs from JSON & validate
+  // see source file for JSON format documentation
   void parse(
     InputParser<BasisFunctionSpecs> &parser,
     Structure const &prim,

@@ -200,8 +200,8 @@ casm_unit_crystallography_SOURCES = \
     tests/unit/crystallography/Site_test.cpp\
     tests/unit/crystallography/Structure_test.cpp\
     tests/unit/crystallography/SuperlatticeEnumerator_test.cpp\
+    tests/unit/crystallography/SymRepBuilder_test.cpp\
     tests/unit/crystallography/SymType_test.cpp\
-	tests/unit/crystallography/SymRepBuilder_test.cpp\
     tests/unit/crystallography/UnitCellCoord_test.cpp\
     tests/unit/gtest_main_run_all.cpp
 casm_unit_crystallography_LDADD = \
@@ -369,7 +369,8 @@ casm_unit_symmetry_LDADD = \
 casm_unit_symmetry_CPPFLAGS = \
     $(AM_CPPFLAGS)\
     -I$(top_srcdir)/tests/unit/
-
+EXTRA_DIST += \
+    tests/unit/symmetry/ZrO_bspecs_0.json
 
 #-------------------------------------------------------------------------------#
 
