@@ -24,7 +24,7 @@ namespace CASM {
     /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
     std::vector<BasisSet> DisplacementDoFTraits::construct_site_bases(Structure const &_prim,
                                                                       std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
-                                                                      jsonParser const &_bspecs) const {
+                                                                      BasisFunctionSpecs const &_basis_function_specs) const {
       std::vector<BasisSet> result(_prim.basis().size());
 
       //std::cout << "Using " << func_type << " site basis functions." << std::endl << std::endl;

@@ -30,10 +30,10 @@ namespace CASM {
     ABSTRACT_CLONEABLE(DoFSpecs)
   public:
 
-    DoFKey key() const;
+    DoFKey name() const;
 
   private:
-    virtual DoFKey _key() const = 0;
+    virtual DoFKey _name() const = 0;
   };
 
   /// Specify how to construct basis functions
@@ -108,11 +108,11 @@ namespace CASM {
 
   template<typename DoFSpecsType>
   DoFSpecsType const &get(DoFKey const &key, BasisFunctionSpecs const &basis_function_specs) {
-    auto it = std::find(
+    auto it = std::find_if(
                 basis_function_specs.dof_specs.begin(),
                 basis_function_specs.dof_specs.end(),
     [&](std::unique_ptr<DoFSpecs> const & ptr) {
-      return ptr->key() == key;
+      return ptr->name() == key;
     });
     if(it == basis_function_specs.dof_specs.end()) {
       std::stringstream ss;

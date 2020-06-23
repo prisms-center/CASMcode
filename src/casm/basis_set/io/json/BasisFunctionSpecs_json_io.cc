@@ -1,5 +1,6 @@
 #include "casm/basis_set/io/json/BasisFunctionSpecs_json_io.hh"
 #include "casm/basis_set/BasisFunctionSpecs.hh"
+#include "casm/basis_set/DoFTraits.hh"
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/casm_io/json/InputParser.hh"
 #include "casm/crystallography/Structure.hh"
@@ -46,35 +47,33 @@ namespace CASM {
 
     // read generic JSON into a BasisFunctionSpecs object
     parser.value = std::unique_ptr<BasisFunctionSpecs>();
-    auto &bspecs = *parser.value;
-    parser.optional_else(bspecs.dof_keys, "dofs", all_dof_keys);
-    parser.optional_else(bspecs.max_poly_order, "max_poly_order", Index {-1});
-    parser.optional_else(bspecs.parampack_type, "parampack_type", PARAM_PACK_TYPE::DEFAULT);
+    auto &basis_function_specs = *parser.value;
+    parser.optional_else(basis_function_specs.dof_keys, "dofs", all_dof_keys);
+    parser.optional_else(basis_function_specs.max_poly_order, "max_poly_order", Index {-1});
+    parser.optional_else(basis_function_specs.parampack_type, "parampack_type", PARAM_PACK_TYPE::DEFAULT);
 
-    // TODO: implement this
-    // // parse & validate specialized DoFType specs from JSON here...
-    // for(const auto &key : all_dof_keys) {
-    //   dof_dict->lookup(key).parse_bspecs(parser, prim);
-    // }
+    // parse & validate specialized DoFType specs from JSON here...
+    for(const auto &key : all_dof_keys) {
+      dof_dict->lookup(key).parse_dof_specs(parser, prim);
+    }
   }
 
   jsonParser &to_json(
-    const BasisFunctionSpecs &bspecs,
+    const BasisFunctionSpecs &basis_function_specs,
     jsonParser &json,
     Structure const &prim,
     ParsingDictionary<DoFType::Traits> const *dof_dict) {
 
     json = jsonParser::object();
-    json["dofs"] = bspecs.dof_keys;
-    json["max_poly_order"] = bspecs.max_poly_order;
-    json["parampack_type"] = bspecs.parampack_type;
+    json["dofs"] = basis_function_specs.dof_keys;
+    json["max_poly_order"] = basis_function_specs.max_poly_order;
+    json["parampack_type"] = basis_function_specs.parampack_type;
 
-    // TODO: implement this
-    // // parse & validate specialized DoFType specs from JSON here...
-    // auto all_dof_keys = all_dof_types(prim);
-    // for(const auto &key : all_dof_keys) {
-    //   dof_dict->lookup(key).bspecs_to_json(bspecs, json, prim);
-    // }
+    // parse & validate specialized DoFType specs from JSON here...
+    auto all_dof_keys = all_dof_types(prim);
+    for(const auto &key : all_dof_keys) {
+      dof_dict->lookup(key).dof_specs_to_json(basis_function_specs, json, prim);
+    }
 
     return json;
   }

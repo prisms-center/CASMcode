@@ -373,6 +373,32 @@ namespace CASM {
     /// Run an InputParser on the JSON subobject at this->path / option, collecting errors and warnings
     ///
     /// Will:
+    /// - Subparser errors and warnings are stored using this->insert
+    ///
+    /// Equivalent to:
+    /// \code
+    /// auto subparser = std::make_shared<InputParser<RequiredType>>(
+    ///   this->input, this->relpath(option), true, std::forward<Args>(args)...);
+    /// this->insert(subparser->path, subparser);
+    /// return subparser;
+    /// \endcode
+    template<typename RequiredType, typename...Args>
+    std::shared_ptr<InputParser<RequiredType>> subparse(fs::path option, Args &&...args);
+
+    /// Subparse, if `this->path / option` exists
+    ///
+    /// If the JSON subobject does not exist, the result->value will be empty
+    template<typename RequiredType, typename...Args>
+    std::shared_ptr<InputParser<RequiredType>> subparse_if(fs::path option, Args &&...args);
+
+    /// Subparse, if `this->path / option` exists, the result->value will be copy-constructed with `_default`
+    template<typename RequiredType, typename...Args>
+    std::shared_ptr<InputParser<RequiredType>> subparse_else(fs::path option, const RequiredType &_default, Args &&...args);
+
+
+    /// Run an InputParser on the JSON subobject at this->path / option, collecting errors and warnings
+    ///
+    /// Will:
     /// - If the subparser constructs a value, it will be move-assigned to _value
     /// - Subparser errors and warnings are stored using this->insert
     ///

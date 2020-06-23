@@ -26,7 +26,7 @@ namespace CASM {
     ParsingDictionary<DoFType::Traits> const *dof_dict);
 
   jsonParser &to_json(
-    const BasisFunctionSpecs &bspecs,
+    const BasisFunctionSpecs &basis_function_specs,
     jsonParser &json,
     Structure const &prim,
     ParsingDictionary<DoFType::Traits> const *dof_dict);

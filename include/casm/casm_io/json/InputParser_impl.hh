@@ -207,7 +207,9 @@ namespace CASM {
   template<typename... Args>
   InputParser<T>::InputParser(jsonParser &_input, fs::path _path, bool _required, Args &&... args):
     KwargsParser(_input, _path, _required) {
-    parse(*this, std::forward<Args>(args)...);
+    if(this->exists()) {
+      parse(*this, std::forward<Args>(args)...);
+    }
   }
 
   template<typename T>
@@ -331,6 +333,35 @@ namespace CASM {
     else {
       this->make(std::forward<Args>(args)...);
     }
+  }
+
+  template<typename T>
+  template<typename RequiredType, typename...Args>
+  std::shared_ptr<InputParser<RequiredType>> InputParser<T>::subparse(fs::path option, Args &&...args) {
+
+    auto subparser = std::make_shared<InputParser<RequiredType>>(
+                       this->input, this->relpath(option), true, std::forward<Args>(args)...);
+    kwargs[subparser->path] = subparser;
+    return subparser;
+  }
+
+  template<typename T>
+  template<typename RequiredType, typename...Args>
+  std::shared_ptr<InputParser<RequiredType>> InputParser<T>::subparse_if(fs::path option, Args &&...args) {
+    auto subparser = std::shared_ptr<InputParser<RequiredType>>(
+                       this->input, this->relpath(option), false, std::forward<Args>(args)...);
+    kwargs[subparser->path] = subparser;
+    return subparser;
+  }
+
+  template<typename T>
+  template<typename RequiredType, typename...Args>
+  std::shared_ptr<InputParser<RequiredType>> InputParser<T>::subparse_else(fs::path option, const RequiredType &_default, Args &&...args)  {
+    auto subparser = subparse_if(option, std::forward<Args>(args)...);
+    if(!subparser.exists()) {
+      subparser.value = notstd::make_unique<RequiredType>(_default);
+    }
+    return subparser;
   }
 
   template<typename T>

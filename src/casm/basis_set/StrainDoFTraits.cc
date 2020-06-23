@@ -45,7 +45,7 @@ namespace CASM {
     /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
     std::vector<BasisSet> StrainDoFTraits::construct_site_bases(Structure const &_prim,
                                                                 std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
-                                                                jsonParser const &_bspecs) const {
+                                                                BasisFunctionSpecs const &_basis_function_specs) const {
 
 
       //std::cout << "Using " << func_type << " site basis functions." << std::endl << std::endl;
@@ -72,16 +72,6 @@ namespace CASM {
       _struc.atom_info.coords = F * _struc.atom_info.coords;
     }
 
-    jsonParser StrainDoFTraits::dof_to_json(ConfigDoF const &_dof, BasicStructure const &_reference) const {
-      Eigen::VectorXd unrolled_metric = _dof.global_dof(name()).standard_values();
-      StrainConverter c(m_metric);
-      Eigen::Matrix3d F = c.unrolled_strain_metric_to_F(unrolled_metric);
-
-      jsonParser json;
-      json["deformation"] = F;
-      to_json_array(unrolled_metric, json["value"]);
-      return json;
-    }
   }
 
   namespace DoFType {
