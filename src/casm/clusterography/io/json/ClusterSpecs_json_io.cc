@@ -1,5 +1,6 @@
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/casm_io/json/InputParser.hh"
+#include "casm/clusterography/io/json/ClusterOrbits_json_io.hh"
 #include "casm/clusterography/io/json/ClusterSpecs_json_io.hh"
 #include "casm/clusterography/io/json/IntegralCluster_json_io.hh"
 //#include "casm/symmetry/OrbitGeneration_impl.hh"
@@ -214,7 +215,7 @@ namespace CASM {
     if(generating_group) {
       cspecs.generating_group = std::move(generating_group);
     }
-    parser.subparse_if(cspecs.custom_generators, "orbit_specs", shared_prim);
+    parser.subparse_if(cspecs.custom_generators, "orbit_specs", *shared_prim);
     cspecs.site_filter = alloy_sites_filter; // TODO: update for all dof
   }
 
@@ -254,8 +255,11 @@ namespace CASM {
 
     using namespace ClusterSpecs_json_io_impl;
 
-    IntegralCluster phenomenal {*shared_prim};
-    parser.require(phenomenal, "phenomenal", shared_prim->lattice().tol());
+    auto phenomenal_subparser_ptr = parser.subparse<IntegralCluster>("phenomenal", *shared_prim);
+    if(!phenomenal_subparser_ptr->valid()) {
+      return;
+    }
+    IntegralCluster phenomenal = *phenomenal_subparser_ptr->value;
 
     auto local_group = parse_local_generating_group(
                          parser,
@@ -272,7 +276,7 @@ namespace CASM {
 
     cspecs.max_length = parse_orbit_branch_specs_attr(parser, "max_length");
     cspecs.cutoff_radius = parse_orbit_branch_specs_attr(parser, "cutoff_radius");
-    parser.subparse_if(cspecs.custom_generators, "orbit_specs", shared_prim);
+    parser.subparse_if(cspecs.custom_generators, "orbit_specs", *shared_prim);
     cspecs.site_filter = alloy_sites_filter; // TODO: update for all dof
   }
 
