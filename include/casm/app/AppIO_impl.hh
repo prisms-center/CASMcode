@@ -316,13 +316,29 @@ namespace CASM {
     const jsonParser &json,
     const Structure &prim,
     const SymGroup &generating_grp,
-    const SymCompareType &sym_compare,
-    double xtal_tol) {
+    const SymCompareType &sym_compare) {
 
     typedef Orbit<SymCompareType> orbit_type;
 
     for(const auto &j : json["orbits"]) {
-      *result++ = orbit_type(j["prototype"].get<IntegralCluster>(prim, xtal_tol), generating_grp, sym_compare);
+      *result++ = orbit_type(j["prototype"].get<IntegralCluster>(prim), generating_grp, sym_compare);
+    }
+    return result;
+  }
+
+  /// \brief Read JSON containing IntegralCluster prototypes, as Orbit<SymCompareType>
+  ///
+  /// - Uses 'prim' to generate IntegralCluster from prototypes read from the JSON
+  /// - Ignores "prim" and "bspecs" info in the JSON
+  ///
+  template<typename ClusterOutputIterator>
+  ClusterOutputIterator read_clust(
+    ClusterOutputIterator result,
+    const jsonParser &json,
+    const Structure &prim) {
+
+    for(const auto &j : json["orbits"]) {
+      *result++ = j["prototype"].get<IntegralCluster>(prim);
     }
     return result;
   }

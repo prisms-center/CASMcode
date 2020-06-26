@@ -373,8 +373,6 @@ namespace CASM {
 
   };
 
-
-
   /// \brief Print IntegralCluster orbits
   template<typename ClusterOrbitIterator, typename OrbitPrinter>
   void print_clust(
@@ -423,8 +421,14 @@ namespace CASM {
     const jsonParser &json,
     const Structure &prim,
     const SymGroup &generating_grp,
-    const SymCompareType &sym_compare,
-    double xtal_tol);
+    const SymCompareType &sym_compare);
+
+  /// \brief Read JSON containing IntegralCluster prototypes, as IntegralCluster
+  template<typename ClusterOutputIterator>
+  ClusterOutputIterator read_clust(
+    ClusterOutputIterator result,
+    const jsonParser &json,
+    const Structure &prim);
 
   /// \brief Write Orbit<SymCompareType> to JSON, including 'bspecs'
   template<typename ClusterOrbitIterator, typename Printer>

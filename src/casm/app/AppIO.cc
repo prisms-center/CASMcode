@@ -1067,8 +1067,7 @@ namespace CASM {
     const jsonParser &json,\
     const Structure &prim,\
     const SymGroup& generating_grp,\
-    const typename ORBIT::SymCompareType &sym_compare,\
-    double xtal_tol);
+    const typename ORBIT::SymCompareType &sym_compare);
 
 #define _VECTOR_IT(ORBIT) std::vector<ORBIT>::iterator
 #define _VECTOR_INSERTER(ORBIT) std::back_insert_iterator<std::vector<ORBIT> >
