@@ -47,6 +47,7 @@ libcasm_la_SOURCES = \
     include/casm/app/view.hh\
     include/casm/basis_set/Adapter.hh\
     include/casm/basis_set/BasisFunction.hh\
+    include/casm/basis_set/BasisFunctionSpecs.hh\
     include/casm/basis_set/BasisSet.hh\
     include/casm/basis_set/DisplacementDoFTraits.hh\
     include/casm/basis_set/DoF.hh\
@@ -61,6 +62,10 @@ libcasm_la_SOURCES = \
     include/casm/basis_set/PolynomialFunction.hh\
     include/casm/basis_set/StrainDoFTraits.hh\
     include/casm/basis_set/Variable.hh\
+    include/casm/basis_set/io/io_traits.hh\
+    include/casm/basis_set/io/json/BasisFunctionSpecs_json_io.hh\
+    include/casm/basis_set/io/json_io.hh\
+    include/casm/basis_set/io/stream_io.hh\
     include/casm/casm_io/FileData.hh\
     include/casm/casm_io/FormatFlag.hh\
     include/casm/casm_io/Help.hh\
@@ -82,12 +87,14 @@ libcasm_la_SOURCES = \
     include/casm/casm_io/json/InputParser_impl.hh\
     include/casm/casm_io/json/jsonFile.hh\
     include/casm/casm_io/json/jsonParser.hh\
+    include/casm/casm_io/string_io.hh\
     include/casm/clex/BasicClexParamPack.hh\
     include/casm/clex/Calculable.hh\
     include/casm/clex/ChemicalReference.hh\
     include/casm/clex/ChemicalReference_impl.hh\
     include/casm/clex/Clex.hh\
     include/casm/clex/ClexBasis.hh\
+    include/casm/clex/ClexBasisSpecs.hh\
     include/casm/clex/ClexBasisWriter.hh\
     include/casm/clex/ClexBasisWriter_impl.hh\
     include/casm/clex/ClexBasis_impl.hh\
@@ -150,7 +157,9 @@ libcasm_la_SOURCES = \
     include/casm/clex/Supercell_functions.hh\
     include/casm/clex/Supercell_impl.hh\
     include/casm/clex/io/json/ChemicalReference.hh\
+    include/casm/clex/io/json/ClexBasisSpecs_json_io.hh\
     include/casm/clex/io/json/ConfigMapping.hh\
+    include/casm/clex/io/json_io.hh\
     include/casm/clex/json_io.hh\
     include/casm/clusterography/ClusterDecl.hh\
     include/casm/clusterography/ClusterInvariants.hh\
@@ -765,7 +774,6 @@ libcasm_la_SOURCES = \
     src/casm/casm_io/json_io/clex.cc\
     src/casm/clex/Calculable.cc\
     src/casm/clex/ChemicalReference.cc\
-    src/casm/clex/Clex.cc\
     src/casm/clex/ClexBasis.cc\
     src/casm/clex/ClexBasisWriter.cc\
     src/casm/clex/Clexulator.cc\
@@ -806,6 +814,7 @@ libcasm_la_SOURCES = \
     src/casm/clex/SupercellIO.cc\
     src/casm/clex/SupercellTraits.cc\
     src/casm/clex/io/json/ClexBasisSpecs_json_io.cc\
+    src/casm/clex/io/json/ECIContainer_json_io.cc\
     src/casm/clusterography/ClusterInvariants.cc\
     src/casm/clusterography/ClusterOrbits.cc\
     src/casm/clusterography/ClusterSpecs.cc\

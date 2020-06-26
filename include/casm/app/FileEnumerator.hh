@@ -222,14 +222,12 @@ namespace CASM {
   /// \brief Enumerate eci files
   ///
   /// - eci.json
-  /// - eci.out (deprecated)
   template<typename OutputIterator>
   OutputIterator FileEnumerator::eci_files(OutputIterator result) {
 
     // eci
     if(!m_all_settings) {
       result = _if_exists(result, m_dir.eci(m_set.default_clex().property, m_set.default_clex().calctype, m_set.default_clex().ref, m_set.default_clex().bset, m_set.default_clex().eci));
-      result = _if_exists(result, m_dir.eci_out(m_set.default_clex().property, m_set.default_clex().calctype, m_set.default_clex().ref, m_set.default_clex().bset, m_set.default_clex().eci));
     }
     else {
 
@@ -241,7 +239,6 @@ namespace CASM {
               auto all_eci = m_dir.all_eci(clex, calctype, ref, bset);
               for(auto eci : all_eci) {
                 result = _if_exists(result, m_dir.eci(clex, calctype, ref, bset, eci));
-                result = _if_exists(result, m_dir.eci_out(clex, calctype, ref, bset, eci));
               }
             }
           }

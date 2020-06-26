@@ -17,19 +17,25 @@ namespace CASM {
 
     const ENSEMBLE Canonical::ensemble = ENSEMBLE::Canonical;
 
+    // note: the construction process needs refactoring
+    Clex make_clex(PrimClex const &primclex, CanonicalSettings const &settings) {
+      ClexDescription const &clex_desc = settings.formation_energy(primclex);
+      return Clex {primclex.clexulator(clex_desc.bset), primclex.eci(clex_desc)};
+    }
+
     /// \brief Constructs a Canonical object and prepares it for running based on MonteSettings
     ///
     /// - Does not set 'state': conditions or ConfigDoF
     Canonical::Canonical(const PrimClex &primclex, const CanonicalSettings &settings, Log &log):
       MonteCarlo(primclex, settings, log),
-      m_formation_energy_clex(primclex, settings.formation_energy(primclex)),
+      m_formation_energy_clex(make_clex(primclex, settings)),
       m_convert(_supercell()),
       m_cand(m_convert),
       m_all_correlations(settings.all_correlations()),
       m_occ_loc(m_convert, m_cand),
       m_event(primclex.composition_axes().components().size(), _clexulator().corr_size()) {
 
-      const auto &desc = m_formation_energy_clex.desc();
+      const auto &desc = settings.formation_energy(primclex);
 
       // set the SuperNeighborList...
       set_nlist();

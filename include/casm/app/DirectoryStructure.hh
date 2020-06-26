@@ -131,7 +131,7 @@ namespace CASM {
     fs::path bset_dir(std::string bset) const;
 
     /// \brief Return paths where bset generated data is stored (excludes bspecs.json)
-    std::vector<fs::path> bset_data(std::string project, std::string bset) const;
+    std::vector<fs::path> bset_data(std::string project_name, std::string bset) const;
 
     /// \brief Return basis function specs (bspecs.json) file path
     fs::path bspecs(std::string bset) const;
@@ -238,9 +238,6 @@ namespace CASM {
 
     // -- deprecated ------------------------------------
 
-    /// \brief Returns path to eci.out
-    fs::path eci_out(std::string property, std::string calctype, std::string ref, std::string bset, std::string eci) const;
-
     /// \brief Query aliases file (deprecated: now stored in project_settings.json)
     fs::path query_alias() const;
 
@@ -324,6 +321,10 @@ namespace CASM {
     std::string m_reports_dir;
 
   };
+
+  void throw_if_no_basis_set_specs(std::string basis_set_name, DirectoryStructure const &dir);
+
+  void throw_if_no_basis_set_data(std::string project_name, std::string basis_set_name, DirectoryStructure const &dir);
 
   /** @} */
 }

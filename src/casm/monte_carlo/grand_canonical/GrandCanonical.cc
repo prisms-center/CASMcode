@@ -22,17 +22,23 @@ namespace CASM {
 
     const Monte::ENSEMBLE GrandCanonical::ensemble = Monte::ENSEMBLE::GrandCanonical;
 
+    // note: the construction process needs refactoring
+    Clex make_clex(PrimClex const &primclex, GrandCanonicalSettings const &settings) {
+      ClexDescription const &clex_desc = settings.formation_energy(primclex);
+      return Clex {primclex.clexulator(clex_desc.bset), primclex.eci(clex_desc)};
+    }
+
     /// \brief Constructs a GrandCanonical object and prepares it for running based on MonteSettings
     ///
     /// - Does not set 'state': conditions or ConfigDoF
     GrandCanonical::GrandCanonical(const PrimClex &primclex, const GrandCanonicalSettings &settings, Log &log):
       MonteCarlo(primclex, settings, log),
       m_site_swaps(supercell()),
-      m_formation_energy_clex(primclex, settings.formation_energy(primclex)),
+      m_formation_energy_clex(make_clex(primclex, settings)),
       m_all_correlations(settings.all_correlations()),
       m_event(primclex.composition_axes().components().size(), _clexulator().corr_size()) {
 
-      const auto &desc = m_formation_energy_clex.desc();
+      const auto &desc = settings.formation_energy(primclex);
 
       // set the SuperNeighborList...
       set_nlist();

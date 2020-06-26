@@ -131,11 +131,11 @@ namespace CASM {
       }
 
       Clexulator &_clexulator() const {
-        return m_formation_energy_clex.clexulator();
+        return m_formation_energy_clex.clexulator;
       }
 
       const ECIContainer &_eci() const {
-        return m_formation_energy_clex.eci();
+        return m_formation_energy_clex.eci;
       }
 
       /// \brief Calculate delta correlations for an event
@@ -183,7 +183,7 @@ namespace CASM {
       GrandCanonicalConditions m_condition;
 
       /// Holds Clexulator and ECI references
-      Clex m_formation_energy_clex;
+      mutable Clex m_formation_energy_clex;
 
       /// If true, calculate all correlations; if false, calculate correlations with non-zero eci
       bool m_all_correlations;
@@ -215,7 +215,3 @@ namespace CASM {
 }
 
 #endif
-
-
-
-

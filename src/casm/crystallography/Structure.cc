@@ -391,10 +391,10 @@ namespace CASM {
 
   std::vector<DoFKey> all_dof_types(BasicStructure const &_struc) {
     std::vector<std::string> result;
-    for(auto const &dof :  global_dof_types(_struc))
-      result.push_back(dof.first);
-    for(auto const &dof : all_local_dof_types(_struc))
-      result.push_back(dof.first);
+    for(auto const &global_dof_name : global_dof_types(_struc))
+      result.push_back(global_dof_name);
+    for(auto const &local_dof_name : all_local_dof_types(_struc))
+      result.push_back(local_dof_name);
     return result;
   }
 
