@@ -19,11 +19,20 @@ namespace CASM {
   ///     dofs: array of string (optional, default= all prim dof keys)
   ///         An array of string of dof type names that should be used to construct basis functions.
   ///         The default value is all DoF types included in the prim.
-  ///     max_poly_order: int (optional, default=-1)
-  ///         Specify maximum polynomial order to construct for cluster basis functions. By default
-  ///         polynomials of order up to cluster size are created. If max_poly_order is greater than
-  ///         the cluster size, higher order polynomials up to that maximum value will also be
-  ///         included.
+  ///     global_max_poly_order: int (optional, default=-1)
+  ///         See `orbit_branch_max_poly_order` documentation.
+  ///     orbit_branch_max_poly_order: object (optional, default={})
+  ///         By default, for a given cluster orbit, polynomials of order up to the cluster size are
+  ///         created. Higher order polynomials can be requested either on a per-orbit-branch or
+  ///         global basis. The most specific level specified is used. Orbit branches are specified
+  ///         using the string value of the cluster size as a key.
+  ///
+  ///         Example:
+  ///             "orbit_branch_max_poly_order": {
+  ///                 "4": 7  // use maximum polynomial order == 7, for orbits of cluster size == 4
+  ///             },
+  ///             "global_max_poly_order": 3, // use max(3, cluster size), for all other orbits
+  ///
   ///     param_pack_type: string (optional, default="default")
   ///         Specifies the ParamPack type to use when writing the Clexulator. Options are "default"
   ///         or "diff", which enables fadbad automatic differentiating.
@@ -40,8 +49,10 @@ namespace CASM {
   ///                   by the first occupant listed for every sublattice in the prim structure.
   ///                 - An array specifying sublat compositions, for "composition" basis functions
   ///                   generated about an average composition speficified for each sublattice.
+  ///
   ///                   Example sublattice composition specification, for a prim structure with four
   ///                   sublattices and two allowed occupants ("A" and "B") on each sublattice:
+  ///
   ///                       [
   ///                         { // composition on sublattices 0 and 1, as listed in prim
   ///                           "sublat_indices": [0, 1],
@@ -62,17 +73,45 @@ namespace CASM {
     Structure const &prim,
     ParsingDictionary<DoFType::Traits> const *dof_dict) {
 
-    // get all_dof_keys, to use as default value for "dofs", and for parsing DoFSpecs
-    auto all_dof_keys = all_dof_types(prim);
-
     // read generic JSON into a BasisFunctionSpecs object
     parser.value = std::unique_ptr<BasisFunctionSpecs>();
     auto &basis_function_specs = *parser.value;
-    parser.optional_else(basis_function_specs.dof_keys, "dofs", all_dof_keys);
-    parser.optional_else(basis_function_specs.max_poly_order, "max_poly_order", Index {-1});
-    parser.optional_else(basis_function_specs.parampack_type, "parampack_type", PARAM_PACK_TYPE::DEFAULT);
 
-    // parse & validate specialized DoFType specs from JSON here...
+    // parse "dofs", using all dof types in prim as default value
+    auto all_dof_keys = all_dof_types(prim);
+    parser.optional_else(basis_function_specs.dof_keys, "dofs", all_dof_keys);
+
+    // parse "global_max_poly_order"
+    parser.optional_else(basis_function_specs.global_max_poly_order, "global_max_poly_order", Index {-1});
+
+    // parse "orbit_branch_max_poly_order"
+    if(parser.self.contains("orbit_branch_max_poly_order")) {
+      std::stringstream err_msg;
+      err_msg << "Error: could not read 'orbit_branch_max_poly_order': Expected an object with "
+              "pairs of \"<branch>\":<max_poly_order>, where <branch> is the number of sites in a cluster "
+              "(as a string), and <max_poly_order> is an integer.";
+
+      auto const &json = parser.self["orbit_branch_max_poly_order"];
+      try {
+        for(auto it = json.begin(); it != json.end(); ++it) {
+          Index branch = std::stoi(it.name());
+          Index max_poly_order = it->get<Index>();
+          parser.value->orbit_branch_max_poly_order[branch] = max_poly_order;
+        }
+      }
+      catch(std::exception &e) {
+        parser.error.insert(err_msg.str());
+      }
+    }
+
+    // parse "include_functions", "exclude_functions"
+    parser.optional(basis_function_specs.include_functions, "include_functions");
+    parser.optional(basis_function_specs.exclude_functions, "exclude_functions");
+
+    // parse "param_pack_type"
+    parser.optional_else(basis_function_specs.param_pack_type, "param_pack_type", PARAM_PACK_TYPE::DEFAULT);
+
+    // parse & validate "dof_specs" for each DoF type here...
     for(const auto &key : all_dof_keys) {
       dof_dict->lookup(key).parse_dof_specs(parser, prim);
     }
@@ -86,8 +125,17 @@ namespace CASM {
 
     json = jsonParser::object();
     json["dofs"] = basis_function_specs.dof_keys;
-    json["max_poly_order"] = basis_function_specs.max_poly_order;
-    json["parampack_type"] = basis_function_specs.parampack_type;
+    json["global_max_poly_order"] = basis_function_specs.global_max_poly_order;
+    for(auto const &pair : basis_function_specs.orbit_branch_max_poly_order) {
+      json["orbit_branch_max_poly_order"][std::to_string(pair.first)] = pair.second;
+    }
+    json["param_pack_type"] = basis_function_specs.param_pack_type;
+    if(basis_function_specs.include_functions.size()) {
+      json["include_functions"] = basis_function_specs.include_functions;
+    }
+    if(basis_function_specs.exclude_functions.size()) {
+      json["exclude_functions"] = basis_function_specs.exclude_functions;
+    }
 
     // parse & validate specialized DoFType specs from JSON here...
     auto all_dof_keys = all_dof_types(prim);

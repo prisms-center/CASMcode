@@ -3,7 +3,7 @@
 
 namespace CASM {
 
-  const std::string traits<PARAM_PACK_TYPE>::name = "parampack_type";
+  const std::string traits<PARAM_PACK_TYPE>::name = "param_pack_type";
 
   const std::multimap<PARAM_PACK_TYPE, std::vector<std::string> > traits<PARAM_PACK_TYPE>::strval = {
     {PARAM_PACK_TYPE::DEFAULT, {"DEFAULT", "Default", "default"} },

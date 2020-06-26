@@ -38,14 +38,24 @@ namespace CASM {
     class Traits;
     struct ParamAllocation;
 
-    Traits const &traits(std::string const &dof_key);
+    /// Parsing dictionary for obtaining the correct DoFType::Traits given a name
+    using TraitsDictionary = ParsingDictionary<Traits>;
 
+    /// Access the global dictionary of DoFType::Traits
+    ///
+    /// Note: This may eventually be managed by ProjectSettings
+    TraitsDictionary &traits_dict();
+
+    /// Insert new DoFType::Traits into the global dictionary
     void register_traits(Traits const &_traits);
 
-    //DoF_impl::OccupationDoFTraits occupation();
+    /// Lookup DoFType::Traits in the global dictionary
+    Traits const &traits(std::string const &dof_key);
+
+    /// Access DoF::BasicTraits for a given DoF type
+    DoF::BasicTraits const &basic_traits(std::string const &dof_key);
 
     /// \brief Collection of all the traits specific to a DoF type
-
     class Traits {
     public:
       static std::string class_desc() {
@@ -199,26 +209,6 @@ namespace CASM {
       const bool independent;
 
     };
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-    /// \brief  Parsing dictionary for obtaining the correct Traits given a name
-    using TraitsDictionary = ParsingDictionary<Traits>;
-
-    /// This will eventually be managed by ProjectSettings
-    //TraitsDictionary const &traits_dict();
-
-
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-    inline
-    DoF::BasicTraits const &basic_traits(std::string const &dof_key) {
-      return traits(dof_key).val_traits();
-    }
 
   }
 
