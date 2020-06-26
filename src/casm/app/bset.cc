@@ -4,9 +4,11 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/bset.hh"
+#include "casm/basis_set/DoFTraits.hh"
+#include "casm/clex/ClexBasisSpecs.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/clusterography/ClusterSpecs_impl.hh"
 #include "casm/completer/Handlers.hh"
 
 namespace CASM {
@@ -97,10 +99,8 @@ namespace CASM {
 
       check_force(basis_set_name, cmd);
 
-      jsonParser basis_set_specs;
-
       try {
-        write_clexulator(
+        write_basis_set_data(
           primclex.shared_prim(),
           primclex.settings(),
           basis_set_name,
@@ -116,69 +116,64 @@ namespace CASM {
       auto clexulator = primclex.clexulator(basis_set_name);
     }
 
-    template<typename OrbitVecType>
-    void print_bset(const BsetCommand &cmd, const OrbitVecType &orbits) {
-      const auto &vm = cmd.vm();
-      const auto &primclex = cmd.primclex();
-      auto clex_desc = get_clex_description(cmd);
-      auto &log = cmd.args().log();
+    /// This functor implements a template method so that clusters can be printed for any
+    /// orbit type, as determined at runtime from the JSON file parameters
+    template<typename PrinterType>
+    class OrbitPrinterAdapter {
+    public:
+      OrbitPrinterAdapter(Log &_log);
 
-      if(vm.count("orbits")) {
-        print_clust(orbits.begin(), orbits.end(), log, ProtoSitesPrinter());
-      }
-      if(vm.count("clusters")) {
-        print_clust(orbits.begin(), orbits.end(), log, FullSitesPrinter());
-      }
-      if(vm.count("functions")) {
-        const auto &shared_prim = primclex.shared_prim();
-        const auto &clex_basis = primclex.clex_basis(clex_desc.bset);
+      template<typename OrbitVecType>
+      void operator()(OrbitVecType const &orbits) const;
 
-        print_site_basis_funcs(shared_prim, clex_basis, log);
-        print_clust(
-          orbits.begin(),
-          orbits.end(),
-          log,
-          ProtoFuncsPrinter {clex_basis, shared_prim->shared_structure()});
-      }
-    }
+    private:
+      PrinterType m_printer;
+      Log &m_log;
+    };
+
+    /// This functor implements a template method so that basis functions can be printed for any
+    /// orbit type, as determined at runtime from the JSON file parameters
+    class BasisFunctionPrinter {
+    public:
+      BasisFunctionPrinter(
+        Log &_log,
+        std::shared_ptr<Structure const> _shared_prim,
+        BasisFunctionSpecs const &_basis_function_specs);
+
+      template<typename OrbitVecType>
+      void operator()(OrbitVecType const &orbits) const;
+
+    private:
+      std::shared_ptr<Structure const> m_shared_prim;
+      BasisFunctionSpecs m_basis_function_specs;
+      Log &m_log;
+    };
 
     /// Implements `casm bset --orbits --clusters --functions` (any combination is allowed)
     void print_bset(const BsetCommand &cmd) {
+      const auto &vm = cmd.vm();
+      auto &log = cmd.args().log();
+      std::string basis_set_name = get_clex_description(cmd).bset;
       const auto &primclex = cmd.primclex();
-      auto shared_prim = primclex.shared_prim();
-      auto xtal_tol = primclex.crystallography_tol();
-      auto basis_set_name = get_clex_description(cmd).bset;
 
-      if(!primclex.has_basis_set_specs(basis_set_name)) {
-        auto bspecs_path = primclex.dir().bspecs(basis_set_name);
-        throw std::runtime_error {"'bspecs.json' file not found at: " + bspecs_path.string()};
+      const auto &shared_prim = primclex.shared_prim();
+      auto const &basis_set_specs = primclex.basis_set_specs(basis_set_name);
+      auto const &basis_function_specs = basis_set_specs.basis_function_specs;
+      auto const &cluster_specs = *basis_set_specs.cluster_specs;
+
+      std::vector<IntegralCluster> prototypes;
+      jsonParser clust_json {primclex.dir().clust(basis_set_name)};
+      read_clust(std::back_inserter(prototypes), clust_json, *shared_prim);
+
+      if(vm.count("orbits")) {
+        for_all_orbits(cluster_specs, prototypes, OrbitPrinterAdapter<ProtoSitesPrinter> {log});
       }
-
-      // TODO: update this function with ClusterSpecs
-
-      auto basis_set_specs = primclex.basis_set_specs(basis_set_name);
-      CLUSTER_PERIODICITY_TYPE clex_periodicity_type = basis_set_specs.contains("local_bpsecs") ?
-                                                       CLUSTER_PERIODICITY_TYPE::LOCAL : CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC;
-
-      if(clex_periodicity_type == CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC) {
-        std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
-        PrimPeriodicSymCompare<IntegralCluster> sym_compare {shared_prim, xtal_tol};
-        primclex.orbits(
-          basis_set_name,
-          std::back_inserter(orbits),
-          sym_compare);
-
-        print_bset(cmd, orbits);
+      if(vm.count("clusters")) {
+        for_all_orbits(cluster_specs, prototypes, OrbitPrinterAdapter<FullSitesPrinter> {log});
       }
-      else {
-        std::vector<LocalIntegralClusterOrbit> orbits;
-        LocalSymCompare<IntegralCluster> sym_compare {shared_prim, xtal_tol};
-        primclex.orbits(
-          basis_set_name,
-          std::back_inserter(orbits),
-          sym_compare);
-
-        print_bset(cmd, orbits);
+      if(vm.count("functions")) {
+        BasisFunctionPrinter printer {log, shared_prim, basis_function_specs};
+        for_all_orbits(cluster_specs, prototypes, printer);
       }
     }
   }
@@ -270,4 +265,36 @@ namespace CASM {
     return 0;
   }
 
+
+  namespace bset_impl {
+
+    template<typename PrinterType>
+    OrbitPrinterAdapter<PrinterType>::OrbitPrinterAdapter(Log &_log): m_log(_log) {}
+
+    template<typename PrinterType>
+    template<typename OrbitVecType>
+    void OrbitPrinterAdapter<PrinterType>::operator()(OrbitVecType const &orbits) const {
+      print_clust(orbits.begin(), orbits.end(), m_log, m_printer);
+    }
+
+    BasisFunctionPrinter::BasisFunctionPrinter(
+      Log &_log,
+      std::shared_ptr<Structure const> _shared_prim,
+      BasisFunctionSpecs const &_basis_function_specs):
+      m_shared_prim(_shared_prim),
+      m_basis_function_specs(_basis_function_specs),
+      m_log(_log) {}
+
+    template<typename OrbitVecType>
+    void BasisFunctionPrinter::operator()(OrbitVecType const &orbits) const {
+
+      ParsingDictionary<DoFType::Traits> const *dof_dict = &DoFType::traits_dict();
+      ClexBasis clex_basis {m_shared_prim, m_basis_function_specs, dof_dict};
+      clex_basis.generate(orbits.begin(), orbits.end());
+
+      print_site_basis_funcs(m_shared_prim, clex_basis, m_log);
+      ProtoFuncsPrinter funcs_printer {clex_basis, m_shared_prim->shared_structure()};
+      print_clust(orbits.begin(), orbits.end(), m_log, funcs_printer);
+    }
+  }
 }
