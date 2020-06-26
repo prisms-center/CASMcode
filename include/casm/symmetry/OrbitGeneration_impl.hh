@@ -51,6 +51,22 @@ namespace CASM {
     return result;
   }
 
+  template<typename SymCompareType>
+  std::vector<Orbit<SymCompareType>> generate_orbits(
+                                    std::vector<typename SymCompareType::Element> const &generating_elements,
+                                    SymGroup const &generating_group,
+  SymCompareType const &sym_compare) {
+    typedef Orbit<SymCompareType> OrbitType;
+    OrbitGenerators<OrbitType> generators(generating_group, sym_compare);
+    for(auto const &el : generating_elements) {
+      generators.insert(el);
+    }
+    std::vector<Orbit<SymCompareType>> orbits;
+    orbits.reserve(generating_elements.size());
+    generators.make_orbits(std::back_inserter(orbits));
+    return orbits;
+  }
+
 
   // --- template<typename _OrbitType> class OrbitGeneratorCompare ---
 
