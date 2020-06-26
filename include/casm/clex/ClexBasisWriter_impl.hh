@@ -11,8 +11,11 @@
 #include "casm/app/AppIO.hh"
 #include "casm/crystallography/Structure.hh"
 
+#include "casm/basis_set/io/json/BasisFunctionSpecs_json_io.hh"
+
 //These are where ParamPackMixIns are defined -- only usage
 #include "casm/clex/ClexParamPack.hh"
+
 
 namespace CASM {
   //*******************************************************************************************
@@ -192,6 +195,10 @@ namespace CASM {
     jsonParser json_prim;
     write_prim(clex.prim(), json_prim, FRAC);
 
+    // TODO: should this be ClexBasisSpecs or BasisFunctionSpecs?
+    jsonParser basis_function_specs_json;
+    to_json(clex.basis_function_specs(), basis_function_specs_json, clex.prim(), clex.dof_dict());
+
     // PUT EVERYTHING TOGETHER
     stream
         << "#include <cstddef>\n"
@@ -206,7 +213,7 @@ namespace CASM {
         << "         ****** prim.json ******\n\n"
         << json_prim << "\n\n"
         << "        ****** bspecs.json ******\n\n"
-        << clex.bspecs() << "\n\n"
+        << basis_function_specs_json << "\n\n"
         << "**/\n\n\n"
 
 

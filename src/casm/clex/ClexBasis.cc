@@ -15,15 +15,11 @@ namespace CASM {
 
   template void ClexBasis::generate<std::vector<AperiodicIntegralClusterOrbit>::iterator>(
     std::vector<AperiodicIntegralClusterOrbit>::iterator,
-    std::vector<AperiodicIntegralClusterOrbit>::iterator,
-    jsonParser const &,
-    Index);
+    std::vector<AperiodicIntegralClusterOrbit>::iterator);
 
   template void ClexBasis::generate<std::vector<PrimPeriodicIntegralClusterOrbit>::iterator>(
     std::vector<PrimPeriodicIntegralClusterOrbit>::iterator,
-    std::vector<PrimPeriodicIntegralClusterOrbit>::iterator,
-    jsonParser const &,
-    Index);
+    std::vector<PrimPeriodicIntegralClusterOrbit>::iterator);
 
   template
   BasisSet ClexBasis::_construct_prototype_basis<AperiodicIntegralClusterOrbit>(
@@ -32,10 +28,14 @@ namespace CASM {
     std::vector<DoFKey> const &global_keys,
     Index max_poly_order) const;
 
-  ClexBasis::ClexBasis(PrimType_ptr _prim_ptr, jsonParser const &_bspecs) :
+  ClexBasis::ClexBasis(
+    PrimType_ptr _prim_ptr,
+    BasisFunctionSpecs const &_basis_function_specs,
+    ParsingDictionary<DoFType::Traits> const *_dof_dict) :
     m_prim_ptr(_prim_ptr),
-    m_basis_builder(std::unique_ptr<ClexBasisBuilder>(new InvariantPolyBasisBuilder("invariant_poly"))),
-    m_bspecs(_bspecs) {
+    m_basis_function_specs(_basis_function_specs),
+    m_dof_dict(_dof_dict),
+    m_basis_builder(std::unique_ptr<ClexBasisBuilder>(new InvariantPolyBasisBuilder("invariant_poly"))) {
 
     _populate_site_bases();
 
@@ -84,6 +84,19 @@ namespace CASM {
     return m_prim_ptr;
   }
 
+  BasisFunctionSpecs const &ClexBasis::basis_function_specs() const {
+    return m_basis_function_specs;
+  }
+
+  ParsingDictionary<DoFType::Traits> const *ClexBasis::dof_dict() const {
+    return m_dof_dict;
+  }
+
+  DoFType::Traits const &ClexBasis::lookup_dof_type_traits(std::string const &key) const {
+    // return DoFType::traits(key);
+    return this->dof_dict()->lookup(key);
+  }
+
   /// \brief Total number of basis sites in primitive cell
   Index ClexBasis::n_sublat() const {
     return prim().basis().size();
@@ -118,12 +131,10 @@ namespace CASM {
                                        nullstream);
 
     for(DoFKey const &dof_type : all_local_dof_types(prim())) {
-      //std::cout << "Local DoFType " << dof_type << "\n";
-      m_site_bases[dof_type] = DoFType::traits(dof_type).construct_site_bases(prim(), asym_unit, bspecs());
+      m_site_bases[dof_type] = lookup_dof_type_traits(dof_type).construct_site_bases(prim(), asym_unit, basis_function_specs());
     }
     for(DoFKey const &dof_type : global_dof_types(prim())) {
-      //std::cout << "Global DoFType " << dof_type << "\n";
-      std::vector<BasisSet> tbasis = DoFType::traits(dof_type).construct_site_bases(prim(), asym_unit, bspecs());
+      std::vector<BasisSet> tbasis = lookup_dof_type_traits(dof_type).construct_site_bases(prim(), asym_unit, basis_function_specs());
       if(tbasis.empty()) {
         throw std::runtime_error("In ClexBasis::_populate_site_bases(), unable to lookup global DoF type " + dof_type);
       }

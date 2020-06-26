@@ -2,12 +2,14 @@
 #define CLEXBASIS_HH
 
 #include <string>
+#include "casm/basis_set/BasisFunctionSpecs.hh"
 #include "casm/basis_set/BasisSet.hh"
 #include "casm/crystallography/DoFDecl.hh"
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/clex/OrbitFunctionTraits.hh"
 #include "casm/clusterography/ClusterDecl.hh"
 #include "casm/global/enum.hh"
+#include "casm/misc/ParsingDictionary.hh"
 
 namespace CASM {
   namespace xtal {
@@ -19,7 +21,9 @@ namespace CASM {
   using xtal::BasicStructure;
   using xtal::UnitCell;
 
-
+  namespace DoFType {
+    class Traits;
+  }
   class PrimNeighborList;
   class ClexBasisBuilder;
 
@@ -32,12 +36,29 @@ namespace CASM {
     typedef Structure PrimType;
     typedef std::shared_ptr<const Structure> PrimType_ptr;
 
-    /// \brief Initialize from Structure, in order to get Site DoF and global DoF info
-    ClexBasis(PrimType_ptr _prim_ptr, jsonParser const &_bspecs);
+    /// Constructor
+    ///
+    /// \param _prim_ptr Shared pointer to prim Structure
+    /// \param _basis_function_specs Parameters specifying how to construct basis functions. See
+    ///        BasisFunctionSpecs for documentation of options.
+    ///
+    /// The constructor constructs site bases, so that they are ready to be used when the
+    /// `generate` method is called with a range of cluster orbits to generate cluster expasion
+    /// basis functions.
+    ClexBasis(
+      PrimType_ptr _prim_ptr,
+      BasisFunctionSpecs const &_basis_function_specs,
+      ParsingDictionary<DoFType::Traits> const *_dof_dict);
 
     PrimType const &prim() const;
 
     PrimType_ptr shared_prim() const;
+
+    BasisFunctionSpecs const &basis_function_specs() const;
+
+    ParsingDictionary<DoFType::Traits> const *dof_dict() const;
+
+    DoFType::Traits const &lookup_dof_type_traits(std::string const &key) const;
 
     /// \brief Total number of basis sites in primitive cell
     Index n_sublat() const;
@@ -79,10 +100,6 @@ namespace CASM {
       return m_bset_tree.cbegin();
     }
 
-    jsonParser const &bspecs() const {
-      return m_bspecs;
-    }
-
     /// \brief Const access to dictionary of all site BasisSets
     std::map<DoFKey, std::vector<BasisSet> > const &site_bases()const {
       return m_site_bases;
@@ -94,11 +111,11 @@ namespace CASM {
     }
 
     /// \brief generate clust_basis for all equivalent clusters in @param _orbitree
+    ///
+    /// \param _begin, _end A range of cluster orbits for which to generate cluster basis functions
     template<typename OrbitIterType>
     void generate(OrbitIterType _begin,
-                  OrbitIterType _end,
-                  jsonParser const &_bspecs,
-                  Index max_poly_order = -1);
+                  OrbitIterType _end);
 
   private:
     template<typename OrbitType>
@@ -111,6 +128,10 @@ namespace CASM {
     void _populate_site_bases();
 
     PrimType_ptr m_prim_ptr;
+
+    BasisFunctionSpecs m_basis_function_specs;
+
+    ParsingDictionary<DoFType::Traits> const *m_dof_dict;
 
     /// \brief pointer to class that constructs cluster functions
     notstd::cloneable_ptr<ClexBasisBuilder> m_basis_builder;
@@ -127,8 +148,6 @@ namespace CASM {
 
     /// \brief Dictionary of all global BasisSets, initialized
     std::map<DoFKey, std::vector<BasisSet> > m_global_bases;
-
-    jsonParser m_bspecs;
 
   };
 

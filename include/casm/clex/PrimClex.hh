@@ -14,12 +14,12 @@ namespace CASM {
   class CompositionConverter;
   class ChemicalReference;
   class PrimNeighborList;
+  struct ClexBasisSpecs;
+  class ClusterSpecs;
   class ClexBasis;
   class Clexulator;
   class ECIContainer;
   class Structure;
-  class jsonParser; // TODO: temporary for basis_set_specs
-
 
   namespace DB {
     template<typename T> class ValDatabase;
@@ -161,26 +161,14 @@ namespace CASM {
     const DB::DatabaseHandler &const_db_handler() const;
 
 
-    // ** Basis set specs, neighbor lists, Clexulators ** ------------------
+    // ** Basis set specs, clexulators, eci ** ------------------
 
     bool has_basis_set_specs(std::string const &basis_set_name) const;
-    jsonParser const &basis_set_specs(std::string const &basis_set_name) const;
-
-    bool has_orbits(std::string const &basis_set_name) const;
-    template<typename OrbitOutputIterator, typename SymCompareType>
-    OrbitOutputIterator orbits(std::string const &basis_set_name,
-                               OrbitOutputIterator result,
-                               SymCompareType const &sym_compare) const;
-
-    bool has_clex_basis(std::string const &basis_set_name) const;
-    const ClexBasis &clex_basis(std::string const &basis_set_name) const;
-
-    bool has_clexulator(std::string const &basis_set_name) const;
+    ClexBasisSpecs const &basis_set_specs(std::string const &basis_set_name) const;
     Clexulator clexulator(std::string const &basis_set_name) const;
 
     bool has_eci(const ClexDescription &key) const;
-    const ECIContainer &eci(const ClexDescription &key) const;
-
+    ECIContainer const &eci(const ClexDescription &key) const;
 
   private:
 
@@ -195,19 +183,26 @@ namespace CASM {
 
   };
 
-  /// Generate Clexulator source code (overwrite any existing files)
-  void write_clexulator(
-    std::shared_ptr<Structure const> shared_prim,
-    ProjectSettings const &settings,
-    std::string const &basis_set_name,
-    jsonParser const &basis_set_specs,
-    PrimNeighborList &prim_neighbor_list);
 
-  /// Construct a Clexulator (that has already been written)
-  Clexulator read_clexulator(
-    ProjectSettings const &settings,
-    std::string const &basis_set_name,
-    PrimNeighborList &prim_neighbor_list);
+  /// Write clust.json, basis.json, and clexulator source code, by constructing orbits and ClexBasis
+  ///
+  /// Notes:
+  /// - Overwrites any existing files
+  /// - Uses DoFType::traits_dict() for DoFTraits
+  void write_basis_set_data(std::shared_ptr<Structure const> shared_prim,
+                            ProjectSettings const &settings,
+                            std::string const &basis_set_name,
+                            ClexBasisSpecs const &basis_set_specs,
+                            PrimNeighborList &prim_neighbor_list);
+
+  /// Make Clexulator from existing source code
+  ///
+  /// Notes:
+  /// - Use `write_basis_set_data` to write Clexulator source code prior to calling this function.
+  /// - This function will compile the Clexulator source code if that has not yet been done.
+  Clexulator make_clexulator(ProjectSettings const &settings,
+                             std::string const &basis_set_name,
+                             PrimNeighborList &prim_neighbor_list);
 
 }
 #endif

@@ -8,15 +8,15 @@
 
 namespace CASM {
 
-  ClexBasisWriter::ClexBasisWriter(Structure const &_prim, std::string const &param_pack_type) {
-    if(param_pack_type == "DEFAULT") {
+  ClexBasisWriter::ClexBasisWriter(Structure const &_prim, PARAM_PACK_TYPE const &param_pack_type) {
+    if(param_pack_type == PARAM_PACK_TYPE::DEFAULT) {
       _initialize(_prim, ParamPackMixIn::basic_mix_in());
     }
-    else if(param_pack_type == "DIFF") {
+    else if(param_pack_type == PARAM_PACK_TYPE::DIFF) {
       _initialize(_prim, ParamPackMixIn::diff_mix_in());
     }
     else {
-      throw std::runtime_error("\"param_pack\" must be either \"DEFAULT\" or \"DIFF\"");
+      throw std::runtime_error("Error in ClexBasisWriter: Invalid param_pack_type");
     }
   }
 

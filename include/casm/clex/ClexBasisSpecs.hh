@@ -13,13 +13,18 @@ namespace CASM {
 
     ClexBasisSpecs(
       BasisFunctionSpecs const &_basis_function_specs,
-      std::unique_ptr<ClusterSpecs> _cluster_specs):
+      notstd::cloneable_ptr<ClusterSpecs> _cluster_specs):
       basis_function_specs(_basis_function_specs),
-      cluster_specs(std::move(_cluster_specs)) {}
+      cluster_specs(std::move(_cluster_specs)) {
+      if(!cluster_specs) {
+        throw libcasm_runtime_error("Error constructing ClexBasisSpecs: Empty \"cluster_specs\".");
+      }
+    }
 
     BasisFunctionSpecs basis_function_specs;
 
     notstd::cloneable_ptr<ClusterSpecs> cluster_specs;
+
   };
 
 }

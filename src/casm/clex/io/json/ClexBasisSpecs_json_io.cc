@@ -33,10 +33,8 @@ namespace CASM {
     Structure const &prim,
     ParsingDictionary<DoFType::Traits> const *dof_dict) {
 
-    to_json(bspecs.basis_function_specs, json["basis_function_specs"], prim, dof_dict);
-    if(bspecs.cluster_specs) {
-      to_json(*bspecs.cluster_specs, json["cluster_specs"]);
-    }
+    to_json(basis_set_specs.basis_function_specs, json["basis_function_specs"], prim, dof_dict);
+    to_json(*basis_set_specs.cluster_specs, json["cluster_specs"]);
     return json;
   }
 }
