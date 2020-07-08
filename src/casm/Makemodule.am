@@ -159,6 +159,7 @@ libcasm_la_SOURCES = \
     include/casm/clex/io/json/ChemicalReference.hh\
     include/casm/clex/io/json/ClexBasisSpecs_json_io.hh\
     include/casm/clex/io/json/ConfigMapping.hh\
+    include/casm/clex/io/json/ECIContainer_json_io.hh\
     include/casm/clex/io/json_io.hh\
     include/casm/clex/json_io.hh\
     include/casm/clusterography/ClusterDecl.hh\

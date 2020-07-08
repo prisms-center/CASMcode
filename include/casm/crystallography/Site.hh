@@ -32,6 +32,9 @@ namespace CASM {
       /// \brief Construct site with initial position, allowed molecules (occupants), and local degrees of freedom
       Site(const Coordinate &init_pos, const std::vector<Molecule> &site_occ, const std::map<std::string, SiteDoFSet> &site_dof);
 
+      /// \brief Construct site with initial position, allowed molecules (occupants), and local degrees of freedom
+      Site(const Coordinate &init_pos, const std::vector<Molecule> &site_occ, const std::vector<SiteDoFSet> &site_dof);
+
       ~Site();
 
       //TODO: Decide where this should actually go

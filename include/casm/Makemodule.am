@@ -223,7 +223,8 @@ casm_clex_io_json_includedir=$(includedir)/casm/clex/io/json
 casm_clex_io_json_include_HEADERS = \
     include/casm/clex/io/json/ChemicalReference.hh\
     include/casm/clex/io/json/ClexBasisSpecs_json_io.hh\
-    include/casm/clex/io/json/ConfigMapping.hh
+    include/casm/clex/io/json/ConfigMapping.hh\
+    include/casm/clex/io/json/ECIContainer_json_io.hh
 
 #-------------------------------------------------------------------------------#
 

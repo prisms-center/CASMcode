@@ -40,35 +40,41 @@ namespace test {
     static jsonParser bspecs() {
 
       std::string str = R"({
-"basis_functions" : {
-"site_basis_functions" : "occupation"
+"basis_function_specs" : {
+  "dof_specs": {
+    "occupation": {
+      "site_basis_functions" : "occupation"
+    }
+  }
 },
-"orbit_branch_specs" : {
-"2" : {"max_length" : 4.01},
-"3" : {"max_length" : 3.01}
-},
-"orbit_specs" : [
-{
-"coordinate_mode" : "Direct",
-"prototype" : [
-[ 0.000000000000, 0.000000000000, 0.000000000000 ],
-[ 1.000000000000, 0.000000000000, 0.000000000000 ],
-[ 2.000000000000, 0.000000000000, 0.000000000000 ],
-[ 3.000000000000, 0.000000000000, 0.000000000000 ]
-],
-"include_subclusters" : true
-},
-{
-"coordinate_mode" : "Direct",
-"prototype" : [
-[ 0.000000000000, 0.000000000000, 0.000000000000 ],
-[ 0.000000000000, 1.000000000000, 0.000000000000 ],
-[ 0.000000000000, 0.000000000000, 1.000000000000 ],
-[ 1.000000000000, 1.000000000000, 1.000000000000 ]
-],
-"include_subclusters" : true
+"cluster_specs": {
+  "orbit_branch_specs" : {
+    "2" : {"max_length" : 4.01},
+    "3" : {"max_length" : 3.01}
+  },
+  "orbit_specs" : [
+    {
+      "coordinate_mode" : "Direct",
+      "prototype" : [
+        [ 0.000000000000, 0.000000000000, 0.000000000000 ],
+        [ 1.000000000000, 0.000000000000, 0.000000000000 ],
+        [ 2.000000000000, 0.000000000000, 0.000000000000 ],
+        [ 3.000000000000, 0.000000000000, 0.000000000000 ]
+      ],
+      "include_subclusters" : true
+    },
+    {
+      "coordinate_mode" : "Direct",
+      "prototype" : [
+        [ 0.000000000000, 0.000000000000, 0.000000000000 ],
+        [ 0.000000000000, 1.000000000000, 0.000000000000 ],
+        [ 0.000000000000, 0.000000000000, 1.000000000000 ],
+        [ 1.000000000000, 1.000000000000, 1.000000000000 ]
+      ],
+      "include_subclusters" : true
+    }
+  ]
 }
-]
 })";
 
       return jsonParser::parse(str);

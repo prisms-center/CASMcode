@@ -35,24 +35,30 @@ namespace test {
     jsonParser bspecs() const {
 
       std::string str = R"({
-"basis_functions" : {
-"site_basis_functions" : "occupation"
+"basis_function_specs" : {
+  "dof_specs": {
+    "occupation": {
+      "site_basis_functions" : "occupation"
+    }
+  }
 },
-"orbit_branch_specs" : {
-"2" : {"max_length" : 9.0},
-"3" : {"max_length" : 7.0},
-"4" : {"max_length" : 6.0}
-},
-"orbit_specs" : [
-{
-"coordinate_mode" : "Integral",
-"prototype" : [
-[ 2, 0, 0, 0 ],
-[ 2, 3, 0, 0 ]
-],
-"include_subclusters" : false
+"cluster_specs": {
+  "orbit_branch_specs" : {
+    "2" : {"max_length" : 9.0},
+    "3" : {"max_length" : 7.0},
+    "4" : {"max_length" : 6.0}
+  },
+  "orbit_specs" : [
+    {
+      "coordinate_mode" : "Integral",
+      "prototype" : [
+        [ 2, 0, 0, 0 ],
+        [ 2, 3, 0, 0 ]
+      ],
+      "include_subclusters" : false
+    }
+  ]
 }
-]
 })";
 
       return jsonParser::parse(str);

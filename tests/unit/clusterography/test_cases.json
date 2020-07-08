@@ -59,13 +59,19 @@
       "title" : "ZrO"
     },
     "bspecs": {
-      "basis_functions" : {
-        "site_basis_functions" : "occupation"
+      "basis_function_specs" : {
+        "dof_specs": {
+          "occupation": {
+            "site_basis_functions" : "occupation"
+          }
+        }
       },
-      "orbit_branch_specs" : {
-        "2" : {"max_length" : 8.0},
-        "3" : {"max_length" : 7.0},
-        "4" : {"max_length" : 5.0}
+      "cluster_specs": {
+        "orbit_branch_specs" : {
+          "2" : {"max_length" : 8.0},
+          "3" : {"max_length" : 7.0},
+          "4" : {"max_length" : 5.0}
+        }
       }
     },
     "quiet" : false,
@@ -115,36 +121,42 @@
       "title" : "FCC_ternary"
     },
     "bspecs" : {
-      "basis_functions" : {
-        "site_basis_functions" : "occupation"
-      },
-      "orbit_branch_specs" : {
-        "2" : {
-          "max_length" : 4.010000000000
+      "basis_function_specs" : {
+        "dof_specs": {
+          "occupation": {
+            "site_basis_functions" : "occupation"
+          }
         }
       },
-      "orbit_specs" : [
-        {
-          "coordinate_mode" : "Direct",
-          "include_subclusters" : true,
-          "prototype" : [
-            [ 0.000000000000, 0.000000000000, 0.000000000000 ],
-            [ 1.000000000000, 0.000000000000, 0.000000000000 ],
-            [ 2.000000000000, 0.000000000000, 0.000000000000 ],
-            [ 3.000000000000, 0.000000000000, 0.000000000000 ]
-          ]
+      "cluster_specs": {
+        "orbit_branch_specs" : {
+          "2" : {
+            "max_length" : 4.010000000000
+          }
         },
-        {
-          "coordinate_mode" : "Direct",
-          "include_subclusters" : true,
-          "prototype" : [
-            [ 0.000000000000, 0.000000000000, 0.000000000000 ],
-            [ 0.000000000000, 1.000000000000, 0.000000000000 ],
-            [ 0.000000000000, 0.000000000000, 1.000000000000 ],
-            [ 1.000000000000, 1.000000000000, 1.000000000000 ]
-          ]
-        }
-      ]
+        "orbit_specs" : [
+          {
+            "coordinate_mode" : "Direct",
+            "include_subclusters" : true,
+            "prototype" : [
+              [ 0.000000000000, 0.000000000000, 0.000000000000 ],
+              [ 1.000000000000, 0.000000000000, 0.000000000000 ],
+              [ 2.000000000000, 0.000000000000, 0.000000000000 ],
+              [ 3.000000000000, 0.000000000000, 0.000000000000 ]
+            ]
+          },
+          {
+            "coordinate_mode" : "Direct",
+            "include_subclusters" : true,
+            "prototype" : [
+              [ 0.000000000000, 0.000000000000, 0.000000000000 ],
+              [ 0.000000000000, 1.000000000000, 0.000000000000 ],
+              [ 0.000000000000, 0.000000000000, 1.000000000000 ],
+              [ 1.000000000000, 1.000000000000, 1.000000000000 ]
+            ]
+          }
+        ]
+      }
     },
     "first_prim_periodic_orbit" : {
       "equiv" : [

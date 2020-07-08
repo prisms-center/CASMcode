@@ -3,6 +3,7 @@
 
 #include "casm/crystallography/AnisoValTraits.hh"
 #include "casm/external/Eigen/Core"
+#include <map>
 #include <unordered_set>
 #include <vector>
 
@@ -117,6 +118,14 @@ namespace CASM {
       std::unordered_set<std::string> m_excluded_occs;
     };
 
+    template<typename DoFSetType>
+    std::map<std::string, DoFSetType> make_dofset_map(std::vector<DoFSetType> const &dofset_vec) {
+      std::map<std::string, DoFSetType> dofset_map;
+      for(auto const &dofset : dofset_vec) {
+        dofset_map.emplace(dofset.type_name(), dofset);
+      }
+      return dofset_map;
+    }
 
     /**
      * Comparator class for checking equivalence of two DoFSet values.

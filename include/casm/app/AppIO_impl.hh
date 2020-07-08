@@ -264,11 +264,17 @@ namespace CASM {
         out << out.indent_str() << "** Branch " << branch << " ** " << std::endl;
       }
       printer.increase_indent(out);
+      double min_length = 0.0;
+      double max_length = 0.0;
+      if(it->invariants().displacement().size()) {
+        min_length = it->invariants().displacement().front();
+        max_length = it->invariants().displacement().back();
+      }
       out << out.indent_str() << "** " << orbit_index << " of " << Norbits << " Orbits **"
           << "  Points: " << it->prototype().size()
           << "  Mult: " << it->size()
-          << "  MinLength: " << it->invariants().displacement().front()
-          << "  MaxLength: " << it->invariants().displacement().back() << std::endl;
+          << "  MinLength: " << min_length
+          << "  MaxLength: " << max_length << std::endl;
       printer.increase_indent(out);
       printer(*it, out, orbit_index, Norbits);
       out << std::endl;

@@ -259,6 +259,44 @@ casm_unit_database_CPPFLAGS = \
 #-------------------------------------------------------------------------------#
 
 TESTS += \
+    casm_unit_examples
+check_PROGRAMS += \
+    casm_unit_examples
+casm_unit_examples_SOURCES = \
+    tests/unit/examples/000_crystallography_lattice_test.cpp\
+    tests/unit/examples/001_crystallography_lattice_symmetry_test.cpp\
+    tests/unit/examples/002_crystallography_superlattice_test.cpp\
+    tests/unit/examples/003_crystallography_coordinate_test.cpp\
+    tests/unit/examples/004_crystallography_site_test.cpp\
+    tests/unit/examples/005_crystallography_basicstructure_test.cpp\
+    tests/unit/examples/006_crystallography_structure_test.cpp\
+    tests/unit/examples/007_crystallography_unitcellcoord_test.cpp\
+    tests/unit/examples/100_symmetry_test.cpp\
+    tests/unit/examples/200_enumeration_test.cpp\
+    tests/unit/examples/300_clusterography_IntegralCluster_test.cpp\
+    tests/unit/examples/301_clusterography_cluster_orbits_test.cpp\
+    tests/unit/examples/302_clusterography_cluster_specs_test.cpp\
+    tests/unit/examples/303_clusterography_cluster_orbits_io_test.cpp\
+    tests/unit/examples/304_clusterography_cluster_specs_io_test.cpp\
+    tests/unit/examples/400_clex_test.cpp\
+    tests/unit/examples/500_monte_test.cpp\
+    tests/unit/gtest_main_run_all.cpp
+casm_unit_examples_LDADD = \
+    $(BOOST_CHRONO_LIB)\
+    $(BOOST_FILESYSTEM_LIB)\
+    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    $(BOOST_REGEX_LIB)\
+    $(BOOST_SYSTEM_LIB)\
+    libcasm.la\
+    libcasmtesting.la
+casm_unit_examples_CPPFLAGS = \
+    $(AM_CPPFLAGS)\
+    -I$(top_srcdir)/tests/unit/
+
+
+#-------------------------------------------------------------------------------#
+
+TESTS += \
     casm_unit_kinetics
 check_PROGRAMS += \
     casm_unit_kinetics

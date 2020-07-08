@@ -31,8 +31,14 @@ namespace CASM {
   jsonParser &to_json(const IntegralCluster &clust, jsonParser &json) {
     json.put_obj();
     ClusterInvariants invariants {clust};
-    json["min_length"] = invariants.displacement().front();
-    json["max_length"] = invariants.displacement().back();
+    if(invariants.displacement().size()) {
+      json["min_length"] = invariants.displacement().front();
+      json["max_length"] = invariants.displacement().back();
+    }
+    else {
+      json["min_length"] = 0.0;
+      json["max_length"] = 0.0;
+    }
     json["sites"].put_array(clust.begin(), clust.end());
     return json;
   }

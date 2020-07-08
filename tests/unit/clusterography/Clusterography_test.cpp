@@ -8,6 +8,10 @@
 #include "casm/clusterography/IntegralCluster.hh"
 
 /// What is being used to test it:
+#include "casm/basis_set/DoFTraits.hh"
+#include "casm/casm_io/json/InputParser_impl.hh"
+#include "casm/clex/ClexBasisSpecs.hh"
+#include "casm/clex/io/json/ClexBasisSpecs_json_io.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/io/UnitCellCoordIO.hh"
@@ -30,6 +34,14 @@ jsonParser expected_first_prim_periodic_orbit(const OrbitType &orbit) {
   return json;
 }
 
+double _min_length(std::vector<double> const &displacement) {
+  return displacement.size() ? displacement.front() : 0.0;
+}
+
+double _max_length(std::vector<double> const &displacement) {
+  return displacement.size() ? displacement.back() : 0.0;
+}
+
 template<typename OrbitIterator>
 jsonParser expected_asym_unit(OrbitIterator begin, OrbitIterator end) {
   jsonParser json = jsonParser::object();
@@ -38,8 +50,8 @@ jsonParser expected_asym_unit(OrbitIterator begin, OrbitIterator end) {
   for(auto it = begin; it != end; ++it) {
     const auto &proto = it->prototype();
     auto &j = (*j_it++)["prototype"];
-    j["min_length"] = it->invariants().displacement().front();
-    j["max_length"] = it->invariants().displacement().back();
+    j["min_length"] = _min_length(it->invariants().displacement());
+    j["max_length"] = _max_length(it->invariants().displacement());
     j["sites"].put_array(proto.begin(), proto.end());
   }
   return json;
@@ -77,8 +89,8 @@ TEST(BasicStructureSiteTest, ClusterographyTest) {
     EXPECT_TRUE(j.contains("bspecs")) << "test case 'bspecs' is required";
 
     // generate prim
-    auto prim_ptr = std::make_shared<Structure>(read_prim(j["prim"], TOL));
-    const auto &prim = *prim_ptr;
+    auto shared_prim = std::make_shared<Structure>(read_prim(j["prim"], TOL));
+    const auto &prim = *shared_prim;
     double crystallography_tol = TOL;
 
     // generate a one site orbit, prim periodic
@@ -90,7 +102,7 @@ TEST(BasicStructureSiteTest, ClusterographyTest) {
       PrimPeriodicOrbit<IntegralCluster> orbit(
         clust,
         prim.factor_group(),
-        PrimPeriodicSymCompare<IntegralCluster>(prim_ptr, crystallography_tol));
+        PrimPeriodicSymCompare<IntegralCluster>(shared_prim, crystallography_tol));
       EXPECT_TRUE(orbit.prototype().size() == 1) << "orbit generated";
 
       check("first_prim_periodic_orbit", j, expected_first_prim_periodic_orbit(orbit), test_cases_path, quiet);
@@ -100,7 +112,7 @@ TEST(BasicStructureSiteTest, ClusterographyTest) {
     {
       std::vector<PrimPeriodicOrbit<IntegralCluster>> asym_unit;
       make_prim_periodic_asymmetric_unit(
-        prim_ptr,
+        shared_prim,
         alloy_sites_filter,
         crystallography_tol,
         std::back_inserter(asym_unit),
@@ -113,9 +125,23 @@ TEST(BasicStructureSiteTest, ClusterographyTest) {
     // generate cluster orbits
     {
       std::vector<PrimPeriodicOrbit<IntegralCluster>> orbits;
-      // TODO: update with ClusterSpecs
+      ParsingDictionary<DoFType::Traits> const *dof_dict = &DoFType::traits_dict();
+      InputParser<ClexBasisSpecs> parser {j["bspecs"], shared_prim, dof_dict};
+
+      EXPECT_TRUE(parser.valid());
+
+      std::stringstream ss;
+      ss << "Error: Invalid bspecs JSON";
+      report_and_throw_if_invalid(parser, log, std::runtime_error {ss.str()});
+
+      ClusterSpecs const &cluster_specs = *(parser.value->cluster_specs);
+
+      EXPECT_EQ(cluster_specs.periodicity_type(), CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC);
+
+      orbits = cluster_specs.make_periodic_orbits(log);
+
       // make_prim_periodic_orbits(
-      //   prim_ptr,
+      //   shared_prim,
       //   j["bspecs"],
       //   alloy_sites_filter,
       //   crystallography_tol,
