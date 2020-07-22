@@ -57,7 +57,6 @@ namespace CASM {
     /// Convert a fractional symmetry operation representation to Cartesian
     /* Eigen::Matrix3d symmetry_matrix_to_cart(const Lattice &lat, const Eigen::Matrix3i &cart_matrix); */
 
-    // TODO: Removed from header because I'm pretty sure it doesn't work at all as expected
     /// \brief Return a copy of the given lattice, which obeys the symmetry of the given group \param enforced_group
     Lattice symmetrize(const Lattice &lat, const std::vector<SymOp> &enforced_group); 
 
