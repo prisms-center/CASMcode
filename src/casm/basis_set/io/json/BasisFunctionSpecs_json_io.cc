@@ -74,7 +74,7 @@ namespace CASM {
     ParsingDictionary<DoFType::Traits> const *dof_dict) {
 
     // read generic JSON into a BasisFunctionSpecs object
-    parser.value = std::unique_ptr<BasisFunctionSpecs>();
+    parser.value = notstd::make_unique<BasisFunctionSpecs>();
     auto &basis_function_specs = *parser.value;
 
     // parse "dofs", using all dof types in prim as default value
@@ -86,13 +86,16 @@ namespace CASM {
 
     // parse "orbit_branch_max_poly_order"
     if(parser.self.contains("orbit_branch_max_poly_order")) {
+
       std::stringstream err_msg;
       err_msg << "Error: could not read 'orbit_branch_max_poly_order': Expected an object with "
               "pairs of \"<branch>\":<max_poly_order>, where <branch> is the number of sites in a cluster "
               "(as a string), and <max_poly_order> is an integer.";
 
       auto const &json = parser.self["orbit_branch_max_poly_order"];
+
       try {
+
         for(auto it = json.begin(); it != json.end(); ++it) {
           Index branch = std::stoi(it.name());
           Index max_poly_order = it->get<Index>();
@@ -100,6 +103,7 @@ namespace CASM {
         }
       }
       catch(std::exception &e) {
+
         parser.error.insert(err_msg.str());
       }
     }
@@ -115,6 +119,7 @@ namespace CASM {
     for(const auto &key : all_dof_keys) {
       dof_dict->lookup(key).parse_dof_specs(parser, prim);
     }
+
   }
 
   jsonParser &to_json(

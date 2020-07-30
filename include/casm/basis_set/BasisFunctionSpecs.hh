@@ -130,6 +130,10 @@ namespace CASM {
 
 namespace CASM {
 
+  inline DoFKey DoFSpecs::name() const {
+    return this->_name();
+  }
+
   inline BasisFunctionSpecs::BasisFunctionSpecs(
     std::vector<DoFKey> _dof_keys,
     std::vector<notstd::cloneable_ptr<DoFSpecs>> _dof_specs,

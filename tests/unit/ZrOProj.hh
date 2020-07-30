@@ -37,27 +37,30 @@ namespace test {
       std::string str = R"({
 "basis_function_specs" : {
   "dof_specs": {
-    "occupation": {
+    "occ": {
       "site_basis_functions" : "occupation"
     }
   }
 },
 "cluster_specs": {
-  "orbit_branch_specs" : {
-    "2" : {"max_length" : 9.0},
-    "3" : {"max_length" : 7.0},
-    "4" : {"max_length" : 6.0}
-  },
-  "orbit_specs" : [
-    {
-      "coordinate_mode" : "Integral",
-      "prototype" : [
-        [ 2, 0, 0, 0 ],
-        [ 2, 3, 0, 0 ]
-      ],
-      "include_subclusters" : false
-    }
-  ]
+  "method": "periodic_max_length",
+  "params": {
+    "orbit_branch_specs" : {
+      "2" : {"max_length" : 9.0},
+      "3" : {"max_length" : 7.0},
+      "4" : {"max_length" : 6.0}
+    },
+    "orbit_specs" : [
+      {
+        "coordinate_mode" : "Integral",
+        "prototype" : [
+          [ 2, 0, 0, 0 ],
+          [ 2, 3, 0, 0 ]
+        ],
+        "include_subclusters" : false
+      }
+    ]
+  }
 }
 })";
 

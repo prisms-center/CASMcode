@@ -126,7 +126,7 @@ namespace CASM {
       BasisSet strain_vars;
       Array<ContinuousDoF> tvars;
       for(Index i = 1; i <= 6; i++) {
-        tvars.push_back(ContinuousDoF("E", i, -1e+15, 1e+15));
+        tvars.push_back(ContinuousDoF(traits, "E", i, -1e+15, 1e+15));
         tvars.back().lock_ID();
       }
       strain_vars.set_variable_basis(tvars, sconvert.symrep_ID());

@@ -798,6 +798,13 @@ namespace CASM {
   }
 
   //*******************************************************************************************
+  SymGroup::~SymGroup() {
+    clear();
+    return;
+  }
+
+
+  //*******************************************************************************************
   SymGroup SymGroup::lattice_point_group(Lattice const &_lat) {
 
     xtal::SymOpVector lattice_point_group_operations = xtal::make_point_group(_lat);

@@ -17,14 +17,17 @@ namespace CASM {
     if(cluster_specs.periodicity_type() == CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC) {
       auto orbits = cluster_specs.make_periodic_orbits(generating_elements);
       f(orbits);
+      return;
     }
     else if(cluster_specs.periodicity_type() == CLUSTER_PERIODICITY_TYPE::LOCAL) {
       auto orbits = cluster_specs.make_local_orbits(generating_elements);
       f(orbits);
+      return;
     }
     else if(cluster_specs.periodicity_type() == CLUSTER_PERIODICITY_TYPE::WITHIN_SCEL) {
       auto orbits = cluster_specs.make_within_scel_orbits(generating_elements);
       f(orbits);
+      return;
     }
 
     throw libcasm_runtime_error("Error: unsupported orbit type");
@@ -35,14 +38,17 @@ namespace CASM {
     if(cluster_specs.periodicity_type() == CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC) {
       auto orbits = cluster_specs.make_periodic_orbits(status);
       f(orbits);
+      return;
     }
     else if(cluster_specs.periodicity_type() == CLUSTER_PERIODICITY_TYPE::LOCAL) {
       auto orbits = cluster_specs.make_local_orbits(status);
       f(orbits);
+      return;
     }
     else if(cluster_specs.periodicity_type() == CLUSTER_PERIODICITY_TYPE::WITHIN_SCEL) {
       auto orbits = cluster_specs.make_within_scel_orbits(status);
       f(orbits);
+      return;
     }
 
     throw libcasm_runtime_error("Error: unsupported orbit type");

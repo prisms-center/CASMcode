@@ -6,7 +6,7 @@
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/ChemicalReference.hh"
 #include "casm/clex/NeighborList.hh"
-#include "casm/clex/ClexBasis.hh"
+#include "casm/clex/ClexBasis_impl.hh"
 #include "casm/clex/ClexBasisSpecs.hh"
 #include "casm/clex/ClexBasisWriter_impl.hh"
 #include "casm/clex/ECIContainer.hh"
@@ -397,6 +397,7 @@ namespace CASM {
       fs::path basis_set_specs_path = dir().bspecs(basis_set_name);
       jsonParser bspecs_json {basis_set_specs_path};
       ParsingDictionary<DoFType::Traits> const *dof_dict = &DoFType::traits_dict();
+
       InputParser<ClexBasisSpecs> parser {bspecs_json, shared_prim(), dof_dict};
       std::stringstream ss;
       ss << "Error: Invalid file " << basis_set_specs_path;

@@ -469,7 +469,7 @@ namespace CASM {
   }
 
   CLUSTER_PERIODICITY_TYPE GenericWithinScelClusterSpecs::_periodicity_type() const {
-    return CLUSTER_PERIODICITY_TYPE::LOCAL;
+    return CLUSTER_PERIODICITY_TYPE::WITHIN_SCEL;
   }
 
   ClusterSpecs::WithinScelOrbitVec GenericWithinScelClusterSpecs::_make_within_scel_orbits(

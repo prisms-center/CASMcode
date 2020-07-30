@@ -166,10 +166,10 @@ namespace CASM {
       /// Example JSON format for BasisFunctionSpecs with OccupationDoFSpecs:
       /// \code
       /// "basis_function_specs": {
-      ///   "dofs": ["occupation", ...],
+      ///   "dofs": ["occ", ...],
       ///   ...
       ///   "dof_specs": {
-      ///     "occupation": <OccupationDoFSpecs JSON>,
+      ///     "occ": <OccupationDoFSpecs JSON>,
       ///     ...
       ///   }
       /// }

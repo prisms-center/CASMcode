@@ -31,9 +31,7 @@ namespace CASM {
     }
 
     for(std::string const &name : components)
-      m_components.push_back(ContinuousDoF(traits(), name,
-                                           -1, // ID
-                                           -std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()));
+      m_components.push_back(ContinuousDoF {traits(), name, -1});
   }
 
   //********************************************************************

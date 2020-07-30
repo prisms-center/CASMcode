@@ -15,6 +15,8 @@
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
 
+#include "casm/casm_io/container/json_io.hh"  // TODO: remove
+
 namespace CASM {
 
   namespace DoF_impl {
@@ -24,11 +26,11 @@ namespace CASM {
     }
 
     std::vector<double> chebychev_sublat_prob_vec(Index occupant_dof_size) {
-      return std::vector<double> { double(occupant_dof_size), 1. / double(occupant_dof_size)};
+      return std::vector<double> (occupant_dof_size, 1. / double(occupant_dof_size));
     }
 
     std::vector<double> occupation_sublat_prob_vec(Index occupant_dof_size) {
-      std::vector<double> tprob { double(occupant_dof_size), 0.};
+      std::vector<double> tprob(occupant_dof_size, 0.);
       tprob[0] = 1.;
       return tprob;
     }
@@ -39,22 +41,15 @@ namespace CASM {
       const std::vector<std::string> &allowed_occupants) {
       for(const auto &sublat_comp : occ_specs.sublat_composition) {
         if(sublat_comp.indices.find(sublat_index) != sublat_comp.indices.end()) {
-          std::map<std::string, int> count;
+
+          std::vector<double> tprob(allowed_occupants.size(), 0.);
+          double tsum {0};
           for(Index ns = 0; ns < allowed_occupants.size(); ns++) {
             auto it = sublat_comp.values.find(allowed_occupants[ns]);
             if(it == sublat_comp.values.end()) {
               throw std::runtime_error("BasisFunctionSpecs error: basis site " + std::to_string(sublat_index) + " must have a composition specified for species " + allowed_occupants[ns] + "\n");
             }
-            if(count.find(it->first) == count.end()) {
-              count[it->first] = 0;
-            }
-            count[it->first] += 1;
-          }
-          std::vector<double> tprob { double(allowed_occupants.size()), 0.};
-          double tsum {0};
-          for(Index ns = 0; ns < allowed_occupants.size(); ns++) {
-            auto it = sublat_comp.values.find(allowed_occupants[ns]);
-            tprob[ns] = it->second / double(count[it->first]);
+            tprob[ns] = it->second;
             tsum += tprob[ns];
           }
           for(Index j = 0; j < tprob.size(); j++) {
@@ -80,6 +75,7 @@ namespace CASM {
 
         void check_sublat_molecule_names(
           Index b,
+          DoF_impl::SublatComp const &sublat_comp,
           const std::set<std::string> &allowed_molecule_names);
         void check_molecule_names();
         void check_sublat_indices();
@@ -89,13 +85,13 @@ namespace CASM {
         OccupationDoFSpecs const &_occ_specs,
         Structure const &prim):
         occ_specs(_occ_specs) {
+
         //check_dof_keys();
         if(occ_specs.site_basis_function_type == SITE_BASIS_FUNCTION_TYPE::COMPOSITION) {
 
           /// get allowed_molecule_names and convert to vector of set
           auto tmp {CASM::xtal::allowed_molecule_names(prim)};
           allowed_molecule_names.clear();
-          allowed_molecule_names.resize(tmp.size());
           for(const auto &vec : tmp) {
             allowed_molecule_names.push_back(std::set<std::string> {vec.begin(), vec.end()});
           }
@@ -107,15 +103,16 @@ namespace CASM {
 
       void OccupationDoFSpecsValidator::check_sublat_molecule_names(
         Index b,
+        DoF_impl::SublatComp const &sublat_comp,
         std::set<std::string> const &allowed_molecule_names) {
         for(const auto &name : allowed_molecule_names) {
-          if(occ_specs.sublat_composition[b].values.find(name) == occ_specs.sublat_composition[b].values.end()) {
+          if(sublat_comp.values.find(name) == sublat_comp.values.end()) {
             error.insert("No composition is given for '" + name + " on sublattice " + std::to_string(b) + ". Allowed molecules are: " + to_string(allowed_molecule_names) + ".");
           }
         }
         auto begin = allowed_molecule_names.begin();
         auto end = allowed_molecule_names.end();
-        for(const auto &pair : occ_specs.sublat_composition[b].values) {
+        for(const auto &pair : sublat_comp.values) {
           if(std::find(begin, end, pair.first) == end) {
             error.insert(to_string(pair.first) + " is not allowed on sublattice " + std::to_string(b) + ". Allowed molecules are: " + to_string(allowed_molecule_names) + ".");
           }
@@ -128,7 +125,7 @@ namespace CASM {
             if(b >= allowed_molecule_names.size()) {
               error.insert("Sublattice index " + std::to_string(b) + " is out of range.");
             }
-            check_sublat_molecule_names(b, allowed_molecule_names[b]);
+            check_sublat_molecule_names(b, sublat_comp, allowed_molecule_names[b]);
           }
         }
       }
@@ -146,8 +143,10 @@ namespace CASM {
             found.insert(b);
           }
         }
-        if(found.size() != allowed_molecule_names.size()) {
-          error.insert("Sublattice indices are missing.");
+        for(Index b = 0; b < allowed_molecule_names.size(); ++b) {
+          if(!found.count(b) && allowed_molecule_names[b].size() > 1) {
+            error.insert("Missing sublattice index " + std::to_string(b) + ".");
+          }
         }
       }
 
@@ -198,6 +197,19 @@ namespace CASM {
 
       // construct reference occupation probabilities
       std::vector<double> tprob = _make_occ_probs(site, sublattice_index, occ_specs);
+
+      if(tprob.size() != allowed_occs.size()) {
+        std::stringstream ss;
+        ss << "Error in OccupationDoFTraits::construct_site_bases: occ_probs error.";
+        ss << "  sublattice_index=" << sublattice_index << "  ";
+        ss << "  occ_probs=[";
+        for(Index i = 0; i < tprob.size(); ++i) {
+          if(i != 0) ss << ",";
+          ss << tprob[i];
+        }
+        ss << "]";
+        throw std::runtime_error(ss.str());
+      }
 
       // construct site invariant group
       auto eq_map_range = orbit.equivalence_map(0);
@@ -267,7 +279,6 @@ namespace CASM {
         std::map<Index, std::set<Index> > sublat_nhood;
         for(auto const &ucc : nbor.second) {
           sublat_nhood[ucc.sublattice()].insert(_nlist.neighbor_index(ucc));
-          //std::cout << "ucc : " << ucc << "; n: " << _nlist.neighbor_index(ucc)  << "\n";
         }
 
         for(auto const &sublat : sublat_nhood) {
@@ -605,15 +616,16 @@ namespace CASM {
         parser.error.insert("Error: Required 'site_basis_functions' not found.");
       }
       else {
-        parser.value = std::unique_ptr<DoF_impl::OccupationDoFSpecs>();
-        DoF_impl::OccupationDoFSpecs &occ_specs = *parser.value;
         if(it->is_string()) {
-          it->get<DoF_impl::SITE_BASIS_FUNCTION_TYPE>(occ_specs.site_basis_function_type);
+          DoF_impl::SITE_BASIS_FUNCTION_TYPE site_basis_function_type;
+          it->get<DoF_impl::SITE_BASIS_FUNCTION_TYPE>(site_basis_function_type);
+          parser.value = notstd::make_unique<DoF_impl::OccupationDoFSpecs>(site_basis_function_type);
         }
         else if(it->is_array()) {
           try {
-            occ_specs.site_basis_function_type = DoF_impl::SITE_BASIS_FUNCTION_TYPE::COMPOSITION;
-            parse_OccupationDoFSpecs_impl::from_json(occ_specs.sublat_composition, *it);
+            std::vector< DoF_impl::SublatComp> sublat_composition;
+            parse_OccupationDoFSpecs_impl::from_json(sublat_composition, *it);
+            parser.value = notstd::make_unique<DoF_impl::OccupationDoFSpecs>(sublat_composition);
           }
           catch(std::exception &e) {
             parser.error.insert("Error: 'site_basis_functions' is an array, but failed to read sublattice compositions.");
@@ -646,6 +658,7 @@ namespace CASM {
 
     // validate the sublat compositions w.r.t. the prim
     parser.insert(DoF_impl::validate(*parser.value, prim));
+
   }
 
   void to_json(DoF_impl::OccupationDoFSpecs const &occupation_dof_specs, jsonParser &json) {

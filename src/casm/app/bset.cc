@@ -5,6 +5,7 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/bset.hh"
 #include "casm/basis_set/DoFTraits.hh"
+#include "casm/clex/ClexBasis_impl.hh"
 #include "casm/clex/ClexBasisSpecs.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/PrimClex.hh"
@@ -89,7 +90,9 @@ namespace CASM {
 
     /// Implements `casm bset --update`
     void update_bset(const BsetCommand &cmd) {
+
       const auto &primclex = cmd.primclex();
+
       auto basis_set_name = get_clex_description(cmd).bset;
 
       if(!primclex.has_basis_set_specs(basis_set_name)) {
@@ -100,6 +103,8 @@ namespace CASM {
       check_force(basis_set_name, cmd);
 
       try {
+        ClexBasisSpecs const &bspecs = primclex.basis_set_specs(basis_set_name);
+
         write_basis_set_data(
           primclex.shared_prim(),
           primclex.settings(),
@@ -108,7 +113,6 @@ namespace CASM {
           primclex.nlist());
       }
       catch(std::exception &e) {
-        err_log() << e.what() << std::endl;
         throw CASM::runtime_error {e.what(), ERR_INVALID_INPUT_FILE};
       }
 

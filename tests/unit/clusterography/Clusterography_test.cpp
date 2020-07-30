@@ -10,8 +10,8 @@
 /// What is being used to test it:
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
-#include "casm/clex/ClexBasisSpecs.hh"
-#include "casm/clex/io/json/ClexBasisSpecs_json_io.hh"
+#include "casm/clusterography/ClusterSpecs_impl.hh"
+#include "casm/clusterography/io/json/ClusterSpecs_json_io.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/io/UnitCellCoordIO.hh"
@@ -73,7 +73,7 @@ TEST(BasicStructureSiteTest, ClusterographyTest) {
   fs::path test_cases_path(autotools::abs_srcdir() + "/tests/unit/clusterography/test_cases.json");
   jsonParser tests(test_cases_path);
 
-  Log &log = null_log();
+  Log &log = CASM::log();
 
   for(auto test_it = tests.begin(); test_it != tests.end(); ++test_it) {
 
@@ -84,9 +84,9 @@ TEST(BasicStructureSiteTest, ClusterographyTest) {
     bool quiet = false;
     j.get_else(quiet, "quiet", false);
 
-    EXPECT_TRUE(j.contains("title")) << "test case 'title' is required";
-    EXPECT_TRUE(j.contains("prim")) << "test case 'prim' is required";
-    EXPECT_TRUE(j.contains("bspecs")) << "test case 'bspecs' is required";
+    EXPECT_TRUE(j.contains("title")) << "test case data 'title' is required";
+    EXPECT_TRUE(j.contains("prim")) << "test case data 'prim' is required";
+    EXPECT_TRUE(j.contains("cluster_specs")) << "test case data 'cluster_specs' is required";
 
     // generate prim
     auto shared_prim = std::make_shared<Structure>(read_prim(j["prim"], TOL));
@@ -125,16 +125,14 @@ TEST(BasicStructureSiteTest, ClusterographyTest) {
     // generate cluster orbits
     {
       std::vector<PrimPeriodicOrbit<IntegralCluster>> orbits;
-      ParsingDictionary<DoFType::Traits> const *dof_dict = &DoFType::traits_dict();
-      InputParser<ClexBasisSpecs> parser {j["bspecs"], shared_prim, dof_dict};
-
-      EXPECT_TRUE(parser.valid());
+      //ParsingDictionary<DoFType::Traits> const *dof_dict = &DoFType::traits_dict();
+      InputParser<ClusterSpecs> parser {j["cluster_specs"], shared_prim};
 
       std::stringstream ss;
-      ss << "Error: Invalid bspecs JSON";
+      ss << "Error: Invalid cluster_specs JSON";
       report_and_throw_if_invalid(parser, log, std::runtime_error {ss.str()});
 
-      ClusterSpecs const &cluster_specs = *(parser.value->cluster_specs);
+      ClusterSpecs const &cluster_specs = *(parser.value);
 
       EXPECT_EQ(cluster_specs.periodicity_type(), CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC);
 

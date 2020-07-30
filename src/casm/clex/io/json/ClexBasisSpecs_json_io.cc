@@ -19,7 +19,9 @@ namespace CASM {
     ParsingDictionary<DoFType::Traits> const *dof_dict) {
 
     auto bfuncs_subparser = parser.subparse<BasisFunctionSpecs>("basis_function_specs", *shared_prim, dof_dict);
+
     auto cspecs_subparser = parser.subparse<ClusterSpecs>("cluster_specs", shared_prim);
+
     if(parser.valid()) {
       parser.value = notstd::make_unique<ClexBasisSpecs>(
                        *bfuncs_subparser->value,

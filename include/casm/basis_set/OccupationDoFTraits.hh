@@ -88,6 +88,13 @@ namespace CASM {
 
     std::vector<double> occupation_sublat_prob_vec(Index occupant_dof_size);
 
+    /// Get the sublattice probability vector for composition based functions
+    ///
+    /// Note:
+    /// - The values in the probability vector are ordered according to allowed_occupants
+    /// - Will throw if missing sublattice (w/ >1 occupant) or missing occupant composition value
+    /// - Before calling this, for complete checking of occ_specs, validate with:
+    ///    `validate(OccupationDoFSpecs const &occ_specs, const Structure &prim)`
     std::vector<double> composition_sublat_prob_vec(
       const OccupationDoFSpecs &occ_specs,
       Index sublat_index,
@@ -98,7 +105,8 @@ namespace CASM {
     /// Validates OccupationDoFSpecs for:
     /// - valid sublattice indices: in range [0, prim.basis.size()), no duplicates, no missing
     /// - check that molecule names are allowed on sublattices
-    /// - check that all sublattices have composition
+    /// - check that allowed molecule on a sublattice has a composition value (may be 0)
+    /// - check that all sublattices (w/ >1 occupant) have composition
     Validator validate(OccupationDoFSpecs const &occ_specs, const Structure &prim);
 
 

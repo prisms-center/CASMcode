@@ -11,9 +11,8 @@
       "  'prim': JSON object                                                  ",
       "    'prim.json' like JSON object describing primitive structure        ",
       "                                                                       ",
-      "  'bspecs': JSON object                                                ",
-      "     'bspecs.json' like JSON object giving basis specifications for    ",
-      "     generating clusters and cluster functions                         ",
+      "  'cluster_specs': JSON object                                         ",
+      "     JSON object giving cluster generation specifications              ",
       "                                                                       ",
       "  'quiet': boolean (optional, default=false)                           ",
       "     If true, do not print calculated results for tests that don't     ",
@@ -58,15 +57,9 @@
       ],
       "title" : "ZrO"
     },
-    "bspecs": {
-      "basis_function_specs" : {
-        "dof_specs": {
-          "occupation": {
-            "site_basis_functions" : "occupation"
-          }
-        }
-      },
-      "cluster_specs": {
+    "cluster_specs": {
+      "method": "periodic_max_length",
+      "params": {
         "orbit_branch_specs" : {
           "2" : {"max_length" : 8.0},
           "3" : {"max_length" : 7.0},
@@ -120,15 +113,9 @@
       ],
       "title" : "FCC_ternary"
     },
-    "bspecs" : {
-      "basis_function_specs" : {
-        "dof_specs": {
-          "occupation": {
-            "site_basis_functions" : "occupation"
-          }
-        }
-      },
-      "cluster_specs": {
+    "cluster_specs": {
+      "method": "periodic_max_length",
+      "params": {
         "orbit_branch_specs" : {
           "2" : {
             "max_length" : 4.010000000000

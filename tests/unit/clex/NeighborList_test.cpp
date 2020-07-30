@@ -5,14 +5,20 @@
 
 /// What is being used to test it:
 
+#include "include/casm/basis_set/DoFTraits.hh"
+#include "casm/clex/ClexBasisSpecs.hh"
+#include "casm/clex/io/json/ClexBasisSpecs_json_io.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/clusterography/ClusterSpecs.hh"
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Structure.hh"
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
 #include "ZrOProj.hh"
+#include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/clusterography/ClusterSpecs_impl.hh"
 #include "casm/clusterography/IntegralCluster_impl.hh"
 
 using namespace CASM;
@@ -135,8 +141,7 @@ TEST(NeighborListTest, Proj) {
 
   PrimClex primclex(proj.dir, null_log());
   primclex.settings().set_crystallography_tol(TOL);
-  double tol = primclex.crystallography_tol();
-  Structure const &prim = primclex.prim();
+  auto shared_prim = primclex.shared_prim();
   ProjectSettings const &set = primclex.settings();
 
   // initialize nlist
@@ -147,16 +152,14 @@ TEST(NeighborListTest, Proj) {
   );
 
   // generate orbitree
-  jsonParser bspecs_json(proj.bspecs());
-  std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
-  double crystallography_tol = TOL;
-  // TODO: update with ClusterSpecs
-  // make_prim_periodic_orbits(primclex.shared_prim(),
-  //                           bspecs_json,
-  //                           alloy_sites_filter,
-  //                           crystallography_tol,
-  //                           std::back_inserter(orbits),
-  //                           null_log());
+  jsonParser bspecs_json {proj.bspecs()};
+  ParsingDictionary<DoFType::Traits> const *dof_dict = &DoFType::traits_dict();
+  InputParser<ClexBasisSpecs> parser {bspecs_json, shared_prim, dof_dict};
+
+  std::runtime_error error_if_invalid {"Failed to parse FCCTernary bspecs"};
+  report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
+
+  auto orbits = parser.value->cluster_specs->make_periodic_orbits(CASM::log());
 
   // expand the nlist to contain 'tree'
   std::set<UnitCellCoord> nbors;
