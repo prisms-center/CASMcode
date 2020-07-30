@@ -90,10 +90,10 @@ namespace CASM {
     virtual ~KwargsParser() {}
 
     /// Formatted print warning messages
-    virtual void print_warnings(Log &log, std::string header = "Warnings") const;
+    void print_warnings(Log &log, std::string header = "Warnings") const;
 
     /// Formatted print error messages
-    virtual void print_errors(Log &log, std::string header = "Errors") const;
+    void print_errors(Log &log, std::string header = "Errors") const;
 
 
     /// Require self.find(option) of type RequiredType, returning result in unique_ptr
@@ -232,6 +232,12 @@ namespace CASM {
     /// `this->name() + ".WARNING"`
     virtual jsonParser &report();
 
+    /// Return warning messages from this (and, for InputParser, all subparsers)
+    virtual std::map<fs::path, std::set<std::string>> all_warnings() const;
+
+    /// Return error messages from this (and, for InputParser, all subparsers)
+    virtual std::map<fs::path, std::set<std::string>> all_errors() const;
+
     /// Return a reference to the parent JSON object of this->self
     ///
     /// If self==input, returns self.
@@ -322,17 +328,11 @@ namespace CASM {
     /// Modifies input JSON document to include error and warning messages from this and all subparsers
     jsonParser &report() override;
 
-    /// Formatted print warning messages from this and all subparsers
-    void print_warnings(Log &log, std::string header = "Warnings") const override;
-
-    /// Formatted print error messages from this and all subparsers
-    void print_errors(Log &log, std::string header = "Errors") const override;
-
     /// Return warning messages from this and all subparsers
-    std::set<std::string> all_warnings() const;
+    std::map<fs::path, std::set<std::string>> all_warnings() const override;
 
     /// Return error messages from this and all subparsers
-    std::set<std::string> all_errors() const;
+    std::map<fs::path, std::set<std::string>> all_errors() const override;
 
     /// If exists(), make this->value from JSON; else add error
     ///

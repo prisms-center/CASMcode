@@ -230,61 +230,35 @@ namespace CASM {
   }
 
   template<typename T>
-  void InputParser<T>::print_warnings(Log &log, std::string header) const {
-    auto lambda = [&](const PairType & pair) {
-      for(const auto &msg : pair.second->warning) {
-        log << msg << std::endl;
-      }
-    };
-
-    bool top = false;
-    if(!header.empty()) {
-      log.custom(header);
-      header = "";
-      top = true;
+  std::map<fs::path, std::set<std::string>> InputParser<T>::all_warnings() const {
+    std::map<fs::path, std::set<std::string>> result;
+    if(this->warning.size()) {
+      result[this->path] = this->warning;
     }
-    KwargsParser::print_warnings(log, header);
-    std::for_each(kwargs.begin(), kwargs.end(), lambda);
-    if(top) log << std::endl;
-  }
-
-  template<typename T>
-  void InputParser<T>::print_errors(Log &log, std::string header) const {
-    auto lambda = [&](const PairType & pair) {
-      for(const auto &msg : pair.second->error) {
-        log << msg << std::endl;
-      }
-    };
-
-    bool top = false;
-    if(!header.empty()) {
-      log.custom(header);
-      header = "";
-      top = true;
-    }
-    KwargsParser::print_errors(log, header);
-    std::for_each(kwargs.begin(), kwargs.end(), lambda);
-    if(top) log << std::endl;
-  }
-
-  template<typename T>
-  std::set<std::string> InputParser<T>::all_warnings() const {
-    std::set<std::string> res = this->warning;
     for(const auto &val : kwargs) {
       const auto &parser = *val.second;
-      res.insert(parser.warning.begin(), parser.warning.end());
+      auto all_subparser_warnings = parser.all_warnings();
+      if(all_subparser_warnings.size()) {
+        result.insert(all_subparser_warnings.begin(), all_subparser_warnings.end());
+      }
     }
-    return res;
+    return result;
   }
 
   template<typename T>
-  std::set<std::string> InputParser<T>::all_errors() const {
-    std::set<std::string> res = this->error;
+  std::map<fs::path, std::set<std::string>> InputParser<T>::all_errors() const {
+    std::map<fs::path, std::set<std::string>> result;
+    if(this->error.size()) {
+      result[this->path] = this->error;
+    }
     for(const auto &val : kwargs) {
       const auto &parser = *val.second;
-      res.insert(parser.error.begin(), parser.error.end());
+      auto all_subparser_errors = parser.all_errors();
+      if(all_subparser_errors.size()) {
+        result.insert(all_subparser_errors.begin(), all_subparser_errors.end());
+      }
     }
-    return res;
+    return result;
   }
 
   template<typename T>

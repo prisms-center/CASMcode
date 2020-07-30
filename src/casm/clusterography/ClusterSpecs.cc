@@ -75,18 +75,20 @@ namespace CASM {
   const std::string PeriodicMaxLengthClusterSpecs::method_name = "periodic_max_length";
 
   PeriodicMaxLengthClusterSpecs::PeriodicMaxLengthClusterSpecs(
-    std::shared_ptr<Structure const> _shared_prim):
-    PeriodicMaxLengthClusterSpecs(_shared_prim, notstd::clone(_shared_prim->factor_group())) {}
-
-  PeriodicMaxLengthClusterSpecs::PeriodicMaxLengthClusterSpecs(
     std::shared_ptr<Structure const> _shared_prim,
-    std::unique_ptr<SymGroup> _generating_group):
+    std::unique_ptr<SymGroup> _generating_group,
+    SiteFilterFunction const &_site_filter,
+    std::vector<double> const &_max_length,
+    std::vector<IntegralClusterOrbitGenerator> const &_custom_generators):
     shared_prim(_shared_prim),
     generating_group(std::move(_generating_group)),
     sym_compare(
       notstd::make_unique<PrimPeriodicSymCompare<IntegralCluster>>(
         shared_prim,
-        shared_prim->lattice().tol())) {
+        shared_prim->lattice().tol())),
+    site_filter(_site_filter),
+    max_length(_max_length),
+    custom_generators(_custom_generators) {
   }
 
   std::string PeriodicMaxLengthClusterSpecs::_name() const {
@@ -152,13 +154,21 @@ namespace CASM {
   LocalMaxLengthClusterSpecs::LocalMaxLengthClusterSpecs(
     std::shared_ptr<Structure const> _shared_prim,
     std::unique_ptr<SymGroup> _generating_group,
-    IntegralCluster const &_phenomenal):
+    IntegralCluster const &_phenomenal,
+    SiteFilterFunction const &_site_filter,
+    std::vector<double> const &_max_length,
+    std::vector<double> const &_cutoff_radius,
+    std::vector<IntegralClusterOrbitGenerator> const &_custom_generators):
     shared_prim(_shared_prim),
     generating_group(std::move(_generating_group)),
     sym_compare(
       notstd::make_unique<LocalSymCompare<IntegralCluster>>(
         shared_prim, shared_prim->lattice().tol())),
-    phenomenal(_phenomenal) {
+    phenomenal(_phenomenal),
+    site_filter(_site_filter),
+    max_length(_max_length),
+    cutoff_radius(_cutoff_radius),
+    custom_generators(_custom_generators) {
   }
 
   std::string LocalMaxLengthClusterSpecs::_name() const {
@@ -222,6 +232,10 @@ namespace CASM {
     std::shared_ptr<Structure const> _shared_prim,
     Eigen::Matrix3l const &_superlattice_matrix,
     std::unique_ptr<SymGroup> _generating_group,
+    SiteFilterFunction const &_site_filter,
+    std::vector<double> const &_max_length,
+    std::vector<double> const &_cutoff_radius,
+    std::vector<IntegralClusterOrbitGenerator> const &_custom_generators,
     notstd::cloneable_ptr<IntegralCluster> _phenomenal):
     shared_prim(_shared_prim),
     superlattice_matrix(_superlattice_matrix),
@@ -231,7 +245,11 @@ namespace CASM {
         shared_prim,
         superlattice_matrix,
         shared_prim->lattice().tol())),
-    phenomenal(std::move(_phenomenal)) {
+    phenomenal(std::move(_phenomenal)),
+    site_filter(_site_filter),
+    max_length(_max_length),
+    cutoff_radius(_cutoff_radius),
+    custom_generators(_custom_generators) {
   }
 
   std::string WithinScelMaxLengthClusterSpecs::_name() const {

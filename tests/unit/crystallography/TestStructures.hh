@@ -5,16 +5,14 @@
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/Molecule.hh"
 
-using namespace CASM;
+// using namespace CASM;
 
 namespace test {
-  using xtal::BasicStructure;
-  using xtal::Site;
-  using xtal::Lattice;
-  using xtal::Molecule;
-  using xtal::Coordinate;
 
-  inline BasicStructure ZrO_prim() {
+  inline CASM::xtal::BasicStructure ZrO_prim() {
+
+    using namespace CASM;
+    using namespace CASM::xtal;
 
     // lattice vectors as rows
     Eigen::Matrix3d lat;
@@ -37,7 +35,10 @@ namespace test {
     return struc;
   }
 
-  inline BasicStructure FCC_ternary_prim() {
+  inline CASM::xtal::BasicStructure FCC_ternary_prim() {
+
+    using namespace CASM;
+    using namespace CASM::xtal;
 
     // lattice vectors as cols
     Eigen::Matrix3d lat;

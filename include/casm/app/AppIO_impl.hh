@@ -13,6 +13,7 @@
 #include "casm/symmetry/SymTools.hh"
 #include "casm/symmetry/InvariantSubgroup_impl.hh"
 
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 #include "casm/clusterography/io/json/IntegralCluster_json_io.hh"
@@ -43,9 +44,10 @@ namespace CASM {
     out << out.indent_str() << "Equivalence map: " << std::endl;
     this->increase_indent(out);
     int j = 0;
+    SymInfoOptions topt = this->opt.sym_info_opt;
     for(const auto &op : orbit.equivalence_map()[equiv_index]) {
       out << out.indent_str() << j << ": (" << op.index() << ") "
-          << brief_description(op, orbit.prototype().prim().lattice(), this->opt.coord_type)
+          << brief_description(op, orbit.prototype().prim().lattice(), topt)
           << std::endl;
       ++j;
     }
@@ -53,16 +55,35 @@ namespace CASM {
   }
 
   template<typename OrbitType>
+  void PrinterBase::print_equivalence_map(const OrbitType &orbit, Index equiv_index, jsonParser &json) const {
+    SymInfoOptions topt = this->opt.sym_info_opt;
+
+    std::vector<Index> master_group_indices;
+    for(const auto &op : orbit.equivalence_map()[equiv_index]) {
+      master_group_indices.push_back(op.index());
+    }
+    json["equivalence_map"] = master_group_indices;
+
+    std::vector<std::string> desc;
+    for(const auto &op : orbit.equivalence_map()[equiv_index]) {
+      desc.push_back(brief_description(op, orbit.prototype().prim().lattice(), topt));
+    }
+    json["equivalence_map_descriptions"] = desc;
+    json["equivalence_map_descriptions"].set_force_column();
+  }
+
+  template<typename OrbitType>
   void PrinterBase::print_equivalence_map(const OrbitType &orbit, Log &out) const {
     out << out.indent_str() << "Orbit equivalence map: " << std::endl;
     this->increase_indent(out);
+    SymInfoOptions topt = this->opt.sym_info_opt;
     for(int i = 0; i < orbit.size(); ++i) {
       out << out.indent_str() << "Element: " << i << std::endl;
       this->increase_indent(out);
       int j = 0;
       for(const auto &op : orbit.equivalence_map()[i]) {
         out << out.indent_str() << j << ": (" << op.index() << ") "
-            << brief_description(op, orbit.prototype().prim().lattice(), this->opt.coord_type)
+            << brief_description(op, orbit.prototype().prim().lattice(), topt)
             << std::endl;
         ++j;
       }
@@ -81,6 +102,25 @@ namespace CASM {
     this->decrease_indent(out);
   }
 
+  template<typename OrbitType, typename Element>
+  void PrinterBase::print_invariant_group(const OrbitType &orbit, const Element &element, jsonParser &json) const {
+    SymInfoOptions topt = this->opt.sym_info_opt;
+    SymGroup invariant_group = make_invariant_subgroup(element, orbit.generating_group(), orbit.sym_compare());
+
+    std::vector<Index> master_group_indices;
+    for(const auto &op : invariant_group) {
+      master_group_indices.push_back(op.index());
+    }
+    json["invariant_group"] = master_group_indices;
+
+    std::vector<std::string> desc;
+    for(const auto &op : invariant_group) {
+      desc.push_back(brief_description(op, orbit.prototype().prim().lattice(), topt));
+    }
+    json["invariant_group_descriptions"] = desc;
+    json["invariant_group_descriptions"].set_force_column();
+  }
+
   // --- OrbitPrinter templates ---
 
 
@@ -96,7 +136,7 @@ namespace CASM {
     if(this->opt.print_coordinates) {
       print_coordinates(*this, orbit.prototype(), out);
     }
-    if(this->opt.print_invariant_grp) {
+    if(this->opt.print_invariant_group) {
       this->print_invariant_group(orbit, orbit.prototype(), out);
     }
     this->decrease_indent(out);
@@ -110,8 +150,12 @@ namespace CASM {
   template<typename OrbitType>
   jsonParser &OrbitPrinter<_Element, ORBIT_PRINT_MODE::PROTO>::to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) const {
     json.put_obj();
-    json["prototype"] = orbit.prototype();
     json["linear_orbit_index"] = orbit_index;
+    json["prototype"] = orbit.prototype();
+    if(this->opt.print_invariant_group) {
+      this->print_invariant_group(orbit, orbit.prototype(), json["prototype"]);
+    }
+
     return json;
   }
 
@@ -127,7 +171,7 @@ namespace CASM {
       if(this->opt.print_coordinates) {
         print_coordinates(*this, orbit[equiv_index], out);
       }
-      if(this->opt.print_invariant_grp) {
+      if(this->opt.print_invariant_group) {
         this->print_invariant_group(orbit, orbit[equiv_index], out);
       }
       if(this->opt.print_equivalence_map) {
@@ -144,9 +188,20 @@ namespace CASM {
   template<typename OrbitType>
   jsonParser &OrbitPrinter<_Element, ORBIT_PRINT_MODE::FULL>::to_json(const OrbitType &orbit, jsonParser &json, Index orbit_index, Index Norbits) const {
     json.put_obj();
-    json["prototype"] = orbit.prototype();
-    json["elements"].put_array(orbit.begin(), orbit.end());
     json["linear_orbit_index"] = orbit_index;
+    json["prototype"] = orbit.prototype();
+    if(this->opt.print_invariant_group) {
+      this->print_invariant_group(orbit, orbit.prototype(), json["prototype"]);
+    }
+    json["elements"].put_array(orbit.begin(), orbit.end());
+    for(Index equiv_index = 0; equiv_index != orbit.size(); ++equiv_index) {
+      if(this->opt.print_invariant_group) {
+        this->print_invariant_group(orbit, orbit[equiv_index], json["elements"][equiv_index]);
+      }
+      if(this->opt.print_equivalence_map) {
+        this->print_equivalence_map(orbit, equiv_index, json["elements"][equiv_index]);
+      }
+    }
     return json;
   }
 
@@ -349,7 +404,7 @@ namespace CASM {
     return result;
   }
 
-  /// \brief Write Orbit<SymCompareType> to JSON, including 'bspecs'
+  /// \brief Write Orbit<SymCompareType> to JSON
   ///
   /// Format:
   /// \code
@@ -377,6 +432,30 @@ namespace CASM {
       printer.to_json(*it, json["orbits"][orbit_index], orbit_index, Norbits);
     }
     write_prim(begin->prototype().prim(), json["prim"], FRAC);
+    return json;
+  }
+
+  /// \brief Write Orbit<SymCompareType> to JSON, including 'bspecs'
+  template<typename ClusterOrbitIterator>
+  jsonParser &write_clust(
+    ClusterOrbitIterator begin,
+    ClusterOrbitIterator end,
+    jsonParser &json,
+    const OrbitPrinterOptions &opt) {
+
+    //typedef typename ClusterOrbitIterator::container_type container_type;
+    //typedef typename container_type::value_type orbit_type;
+    typedef typename std::iterator_traits<ClusterOrbitIterator>::value_type orbit_type;
+    typedef typename orbit_type::Element Element;
+
+    if(opt.orbit_print_mode == ORBIT_PRINT_MODE::PROTO) {
+      OrbitPrinter<Element, ORBIT_PRINT_MODE::PROTO> orbit_printer(opt);
+      write_clust(begin, end, json, orbit_printer);
+    }
+    else if(opt.orbit_print_mode == ORBIT_PRINT_MODE::FULL) {
+      OrbitPrinter<Element, ORBIT_PRINT_MODE::FULL> orbit_printer(opt);
+      write_clust(begin, end, json, orbit_printer);
+    }
     return json;
   }
 

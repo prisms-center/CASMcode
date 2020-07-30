@@ -229,7 +229,7 @@ namespace CASM {
     SymInfoOptions sym_info_opt;
     bool print_coordinates = true;
     bool print_equivalence_map = false;
-    bool print_invariant_grp = false;
+    bool print_invariant_group = false;
   };
 
   jsonParser &to_json(const OrbitPrinterOptions &opt, jsonParser &json);
@@ -263,10 +263,16 @@ namespace CASM {
     void print_equivalence_map(const OrbitType &orbit, Index equiv_index, Log &out) const;
 
     template<typename OrbitType>
+    void print_equivalence_map(const OrbitType &orbit, Index equiv_index, jsonParser &json) const;
+
+    template<typename OrbitType>
     void print_equivalence_map(const OrbitType &orbit, Log &out) const;
 
     template<typename OrbitType, typename Element>
     void print_invariant_group(const OrbitType &orbit, const Element &element, Log &out) const;
+
+    template<typename OrbitType, typename Element>
+    void print_invariant_group(const OrbitType &orbit, const Element &element, jsonParser &json) const;
 
   };
 
@@ -430,13 +436,21 @@ namespace CASM {
     const jsonParser &json,
     const Structure &prim);
 
-  /// \brief Write Orbit<SymCompareType> to JSON, including 'bspecs'
+  /// \brief Write Orbit<SymCompareType> to JSON
   template<typename ClusterOrbitIterator, typename Printer>
   jsonParser &write_clust(
     ClusterOrbitIterator begin,
     ClusterOrbitIterator end,
     jsonParser &json,
     Printer printer);
+
+  /// \brief Write Orbit<SymCompareType> to JSON
+  template<typename ClusterOrbitIterator>
+  jsonParser &write_clust(
+    ClusterOrbitIterator begin,
+    ClusterOrbitIterator end,
+    jsonParser &json,
+    const OrbitPrinterOptions &opt = OrbitPrinterOptions());
 
   /// \brief Write Orbit<SymCompareType> to JSON, including 'bspecs'
   template<typename ClusterOrbitIterator, typename Printer>

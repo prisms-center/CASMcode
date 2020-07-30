@@ -198,7 +198,7 @@ namespace CASM {
   /// Writes json to stream
   void jsonParser::print(std::ostream &stream, unsigned int indent, unsigned int prec) const {
     json_spirit::write_stream((json_spirit::mValue &) *this, stream, indent, prec,
-                              json_spirit::pretty_print | json_spirit::single_line_arrays);
+                              json_spirit::pretty_print | json_spirit::raw_utf8 | json_spirit::single_line_arrays);
   };
 
   /// Write json to file
@@ -353,7 +353,25 @@ namespace CASM {
     const jsonParser *curr = this;
     for(auto it = path.begin(); it != path.end(); ++it) {
       if(curr->is_array()) {
-        int index = std::stoi(it->string());
+        int index;
+        try {
+          index = std::stoi(it->string());
+        }
+        catch(std::exception &e) {
+          fs::path curr_path;
+          for(auto tmp_it = path.begin(); tmp_it != path.end(); ++tmp_it) {
+            curr_path /= tmp_it->string();
+            if(tmp_it == it) {
+              break;
+            }
+          }
+
+          std::stringstream msg;
+          msg << "Error in jsonParser::at: stoi error when attempting to access array element. "
+              << "path: '" << path << "' "
+              << "curr_path: '" << curr_path << "'";
+          throw std::invalid_argument(msg.str());
+        }
         if(curr->size() > index) {
           curr = &((*curr)[index]);
         }

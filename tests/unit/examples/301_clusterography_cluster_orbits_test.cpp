@@ -64,14 +64,13 @@
 template<typename OrbitType>
 void expect_for_any_orbit(
   OrbitType const &orbit,
-  std::shared_ptr<Structure const> const &shared_prim,
+  std::shared_ptr<CASM::Structure const> const &shared_prim,
   std::string test_case) {
 
   auto const &sym_compare = orbit.sym_compare();
 
   // the orbit size is the orbit's element vector size
-  EXPECT_EQ(orbit.size(), orbit.elements().size()) <<
-                                                   test_case + ": orbit size error";
+  EXPECT_EQ(orbit.size(), orbit.elements().size()) << test_case + ": orbit size error";
 
   // the prototype is "prepared"
   EXPECT_TRUE(sym_compare.equal(sym_compare.prepare(orbit.prototype()), orbit.prototype())) <<
@@ -141,13 +140,13 @@ TEST(ExampleClusterographyClusterOrbits, OrbitConstructorTernaryFCC) {
   {
     // Construct a pair cluster of two [A, B, C] sites, the nearest neighbors
     //   There are 6 equivalent clusters of this type
-    IntegralCluster cluster {*shared_prim};
+    CASM::IntegralCluster cluster {*shared_prim};
     cluster.elements().emplace_back(0, 0, 0, 0);
     cluster.elements().emplace_back(0, 1, 0, 0);
 
     // Construct an orbit using PrimPeriodicSymCompare and the prim factor group
-    typedef PrimPeriodicSymCompare<IntegralCluster> sym_compare_type;
-    typedef Orbit<sym_compare_type> orbit_type;
+    typedef CASM::PrimPeriodicSymCompare<CASM::IntegralCluster> sym_compare_type;
+    typedef CASM::Orbit<sym_compare_type> orbit_type;
     orbit_type orbit {cluster, shared_prim->factor_group(), sym_compare_type {shared_prim, xtal_tol}};
 
     // --- The following are true for this example ---
@@ -162,13 +161,13 @@ TEST(ExampleClusterographyClusterOrbits, OrbitConstructorTernaryFCC) {
   {
     // Construct a pair cluster of two [A, B, C] sites, the conventional cubic cell edges
     //   There are 3 equivalent clusters or this type, corresponding to x, y, z axes
-    IntegralCluster cluster {*shared_prim};
+    CASM::IntegralCluster cluster {*shared_prim};
     cluster.elements().emplace_back(0, 0, 0, 0);
     cluster.elements().emplace_back(0, 1, 1, -1);
 
     // Construct an orbit using PrimPeriodicSymCompare and the prim factor group
-    typedef PrimPeriodicSymCompare<IntegralCluster> sym_compare_type;
-    typedef Orbit<sym_compare_type> orbit_type;
+    typedef CASM::PrimPeriodicSymCompare<CASM::IntegralCluster> sym_compare_type;
+    typedef CASM::Orbit<sym_compare_type> orbit_type;
     orbit_type orbit {cluster, shared_prim->factor_group(), sym_compare_type {shared_prim, xtal_tol}};
 
     // --- The following are true for this example ---
@@ -204,13 +203,13 @@ TEST(ExampleClusterographyClusterOrbits, OrbitConstructorZrO) {
   {
     // Construct a pair cluster of two [Va, O] sites, the closest neighbors along the c-axis
     //   There are 2 equivalent clusters of this type
-    IntegralCluster cluster {*shared_prim};
+    CASM::IntegralCluster cluster {*shared_prim};
     cluster.elements().emplace_back(2, 0, 0, 0);
     cluster.elements().emplace_back(3, 0, 0, 0);
 
     // Construct an orbit using PrimPeriodicSymCompare and the prim factor group
-    typedef PrimPeriodicSymCompare<IntegralCluster> sym_compare_type;
-    typedef Orbit<sym_compare_type> orbit_type;
+    typedef CASM::PrimPeriodicSymCompare<CASM::IntegralCluster> sym_compare_type;
+    typedef CASM::Orbit<sym_compare_type> orbit_type;
     orbit_type orbit {cluster, shared_prim->factor_group(), sym_compare_type {shared_prim, xtal_tol}};
 
     // --- The following are true for this example ---
@@ -225,21 +224,21 @@ TEST(ExampleClusterographyClusterOrbits, OrbitConstructorZrO) {
   {
     // Construct a pair cluster of two [Va, O] sites, the closest neighbors along the a-axis
     //   There are 6 equivalent clusters of this type, 3 each involving basis site 2 and basis site 3
-    IntegralCluster cluster {*shared_prim};
+    CASM::IntegralCluster cluster {*shared_prim};
     cluster.elements().emplace_back(2, 0, 0, 0);
     cluster.elements().emplace_back(2, 1, 0, 0);
 
     // Construct an orbit using PrimPeriodicSymCompare and the prim factor group
-    typedef PrimPeriodicSymCompare<IntegralCluster> sym_compare_type;
-    typedef Orbit<sym_compare_type> orbit_type;
+    typedef CASM::PrimPeriodicSymCompare<CASM::IntegralCluster> sym_compare_type;
+    typedef CASM::Orbit<sym_compare_type> orbit_type;
     orbit_type orbit {cluster, shared_prim->factor_group(), sym_compare_type {shared_prim, xtal_tol}};
 
     // --- The following are true for this example ---
     EXPECT_EQ(shared_prim->factor_group().size(), 24);
     EXPECT_EQ(orbit.size(), 6);
 
-    Index basis_site_2_count = 0;
-    Index basis_site_3_count = 0;
+    int basis_site_2_count = 0;
+    int basis_site_3_count = 0;
     for(auto const &cluster : orbit.elements()) {
       EXPECT_EQ(cluster[0].sublattice(), cluster[1].sublattice());
       if(cluster[0].sublattice() == 2) {
@@ -269,8 +268,8 @@ TEST(ExampleClusterographyClusterOrbits, OrbitGenerators) {
   // Tolerance value to use
   double xtal_tol = shared_prim->lattice().tol();
 
-  typedef PrimPeriodicSymCompare<IntegralCluster> sym_compare_type;
-  typedef Orbit<sym_compare_type> orbit_type;
+  typedef CASM::PrimPeriodicSymCompare<CASM::IntegralCluster> sym_compare_type;
+  typedef CASM::Orbit<sym_compare_type> orbit_type;
 
   // Construct a sym_compare functor
   sym_compare_type sym_compare {shared_prim, xtal_tol};
@@ -281,7 +280,7 @@ TEST(ExampleClusterographyClusterOrbits, OrbitGenerators) {
   // Generate orbits for all single site clusters in the prim unit cell:
 
   // First, insert all single site clusters into generators, which will keep unique clusters
-  IntegralCluster test_cluster {*shared_prim};
+  CASM::IntegralCluster test_cluster {*shared_prim};
   for(int b = 0; b < shared_prim->basis().size(); ++b) {
     test_cluster.elements().clear();
     test_cluster.elements().emplace_back(b, 0, 0, 0);
@@ -326,7 +325,7 @@ TEST(ExampleClusterographyClusterOrbits, AsymmetricUnitOrbits) {
 
   // Container that will hold resulting orbits
   //   (PrimPeriodicIntegralClusterOrbit is a typedef for Orbit<PrimPeriodicSymCompare<IntegralCluster>>)
-  std::vector<PrimPeriodicIntegralClusterOrbit> asymmetric_unit_orbits;
+  std::vector<CASM::PrimPeriodicIntegralClusterOrbit> asymmetric_unit_orbits;
 
   // A function with signature `bool (xtal::Site)` which returns True for sites that should be
   //   included in the generated orbits, and False for sites that will be excluded. Options:
@@ -339,7 +338,7 @@ TEST(ExampleClusterographyClusterOrbits, AsymmetricUnitOrbits) {
   //       to include sites with >1 allowed occupant DoF.
   //
   // In the examples below this will be varied.
-  SiteFilterFunction site_filter;
+  CASM::SiteFilterFunction site_filter;
 
   // Orbit generation can be slow depending on the generating criteria, so orbit generating functions
   //   in CASM typically take a `status` argument of type `std::ostream&` where status info can be
@@ -350,7 +349,7 @@ TEST(ExampleClusterographyClusterOrbits, AsymmetricUnitOrbits) {
   {
     // Include all sites:
     // - Expect two orbits: [Zr] sites and [Va,O] sites
-    site_filter = all_sites_filter;
+    site_filter = CASM::all_sites_filter;
 
     asymmetric_unit_orbits.clear();
     auto inserter = std::back_inserter(asymmetric_unit_orbits);
@@ -361,7 +360,7 @@ TEST(ExampleClusterographyClusterOrbits, AsymmetricUnitOrbits) {
   {
     // Include alloying sites:
     // - Expect one orbit: [Va,O] sites
-    site_filter = alloy_sites_filter;
+    site_filter = CASM::alloy_sites_filter;
 
     asymmetric_unit_orbits.clear();
     auto inserter = std::back_inserter(asymmetric_unit_orbits);
@@ -372,7 +371,7 @@ TEST(ExampleClusterographyClusterOrbits, AsymmetricUnitOrbits) {
   {
     // Include "occ" sites:
     // - Expect one orbit: [Va,O] sites
-    site_filter = dof_sites_filter({"occ"});
+    site_filter = CASM::dof_sites_filter({"occ"});
 
     asymmetric_unit_orbits.clear();
     auto inserter = std::back_inserter(asymmetric_unit_orbits);

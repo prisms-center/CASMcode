@@ -103,13 +103,13 @@ namespace CASM {
 
     static std::string const method_name; /*periodic_max_length*/
 
-    /// Constructor, using Structure::factor_group for the generating_group
-    PeriodicMaxLengthClusterSpecs(std::shared_ptr<Structure const> _shared_prim);
-
-    /// Constructor, using specified generating_group
+    /// Constructor
     PeriodicMaxLengthClusterSpecs(
       std::shared_ptr<Structure const> _shared_prim,
-      std::unique_ptr<SymGroup> _generating_group);
+      std::unique_ptr<SymGroup> _generating_group,
+      SiteFilterFunction const &_site_filter,
+      std::vector<double> const &_max_length,
+      std::vector<IntegralClusterOrbitGenerator> const &_custom_generators = {});
 
     /// ** These get set by constructor **
 
@@ -124,14 +124,14 @@ namespace CASM {
 
     /// ** These get set individually **
 
-    /// Specifies filter for truncating orbits, by orbit branch. The value max_length[b], is the
-    /// max site-to-site distance for clusters to be included in branch b. The b==0 value is
-    /// ignored.
-    std::vector<double> max_length;
-
     /// A filter which excludes sites that are part of the unit cell neighborhood from being
     /// included in orbits. If `site_filter(site)==true`, then the site is included, else excluded.
     SiteFilterFunction site_filter;
+
+    /// Specifies filter for truncating orbits, by orbit branch. The value max_length[b], is the
+    /// max site-to-site distance for clusters to be included in branch b. The b==0 and b==1 values
+    /// are ignored.
+    std::vector<double> max_length;
 
     /// Specifies particular clusters that should be used to generate orbits.
     std::vector<IntegralClusterOrbitGenerator> custom_generators;
@@ -156,7 +156,11 @@ namespace CASM {
     LocalMaxLengthClusterSpecs(
       std::shared_ptr<Structure const> _shared_prim,
       std::unique_ptr<SymGroup> _generating_group,
-      IntegralCluster const &phenomenal);
+      IntegralCluster const &phenomenal,
+      SiteFilterFunction const &_site_filter,
+      std::vector<double> const &_max_length,
+      std::vector<double> const &_cutoff_radius,
+      std::vector<IntegralClusterOrbitGenerator> const &_custom_generators = {});
 
     /// ** These get set by constructor **
 
@@ -175,6 +179,10 @@ namespace CASM {
 
     /// ** These get set individually **
 
+    /// A filter which excludes sites that are part of the local neighborhood from being included in
+    /// orbits. If `site_filter(site)==true`, then the site is included, else excluded.
+    SiteFilterFunction site_filter;
+
     /// Specifies filter for truncating orbits, by orbit branch. The value max_length[b], is the
     /// max site-to-site distance for clusters to be included in branch b. The b==0 value is
     /// ignored.
@@ -186,10 +194,6 @@ namespace CASM {
     /// consideration for that site to be included in clusters for branch b. The b==0 value
     /// is ignored.
     std::vector<double> cutoff_radius;
-
-    /// A filter which excludes sites that are part of the local neighborhood from being included in
-    /// orbits. If `site_filter(site)==true`, then the site is included, else excluded.
-    SiteFilterFunction site_filter;
 
     /// Specifies particular clusters that should be used to generate orbits.
     std::vector<IntegralClusterOrbitGenerator> custom_generators;
@@ -220,6 +224,10 @@ namespace CASM {
       std::shared_ptr<Structure const> _shared_prim,
       Eigen::Matrix3l const &_superlattice_matrix,
       std::unique_ptr<SymGroup> _generating_group,
+      SiteFilterFunction const &_site_filter,
+      std::vector<double> const &_max_length,
+      std::vector<double> const &_cutoff_radius,
+      std::vector<IntegralClusterOrbitGenerator> const &_custom_generators = {},
       notstd::cloneable_ptr<IntegralCluster> _phenomenal = notstd::cloneable_ptr<IntegralCluster>());
 
     /// ** These get set by constructor **
@@ -242,6 +250,10 @@ namespace CASM {
 
     /// ** These get set individually **
 
+    /// A filter which excludes sites that are part of the local neighborhood from being included in
+    /// orbits. If `site_filter(site)==true`, then the site is included, else excluded.
+    SiteFilterFunction site_filter;
+
     /// Specifies filter for truncating orbits, by orbit branch. The value max_length[b], is the
     /// max site-to-site distance for clusters to be included in branch b. The b==0 value is
     /// ignored.
@@ -253,10 +265,6 @@ namespace CASM {
     /// consideration for that site to be included in clusters for branch b. The b==0 value
     /// is ignored.
     std::vector<double> cutoff_radius;
-
-    /// A filter which excludes sites that are part of the local neighborhood from being included in
-    /// orbits. If `site_filter(site)==true`, then the site is included, else excluded.
-    SiteFilterFunction site_filter;
 
     /// Specifies particular clusters that should be used to generate orbits.
     std::vector<IntegralClusterOrbitGenerator> custom_generators;

@@ -39,7 +39,6 @@ namespace CASM {
   ///
   /// - Also accepts "prototype" in place of "sites"
   void parse(InputParser<std::vector<IntegralClusterOrbitGenerator>> &parser, Structure const &prim) {
-
     const jsonParser &json = parser.self;
 
     if(!json.is_array()) {
@@ -55,13 +54,13 @@ namespace CASM {
       for(auto it = json.begin(); it != json.end(); ++it) {
 
         // read orbit generating cluster from JSON
-        auto relpath = parser.path / std::to_string(i);
+        fs::path relpath = std::to_string(i);
         auto subparser = parser.subparse<IntegralCluster>(relpath, prim);
 
         if(subparser->valid()) {
           // check if subclusters should be included (yes by default)
           bool include_subclusters;
-          parser.optional_else(include_subclusters, "include_subclusters", true);
+          parser.optional_at_else(include_subclusters, relpath / "include_subclusters", true);
 
           custom_generators.emplace_back(*(subparser->value), include_subclusters);
         }

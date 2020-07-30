@@ -206,17 +206,30 @@ namespace CASM {
     InputParser<PeriodicMaxLengthClusterSpecs> &parser,
     const std::shared_ptr<const Structure> &shared_prim,
     const SymGroup &super_group) {
-    parser.value = notstd::make_unique<PeriodicMaxLengthClusterSpecs>(shared_prim);
     auto &cspecs = *parser.value;
 
     using namespace ClusterSpecs_json_io_impl;
-    cspecs.max_length = parse_orbit_branch_specs_attr(parser, "max_length");
-    auto generating_group = parse_generating_group(parser, shared_prim, super_group);
-    if(generating_group) {
-      cspecs.generating_group = std::move(generating_group);
+
+    // parse generating group
+    auto generating_group_ptr = parse_generating_group(parser, shared_prim, super_group);
+    if(!generating_group_ptr) {
+      generating_group_ptr = notstd::clone(shared_prim->factor_group());
     }
-    parser.subparse_if(cspecs.custom_generators, "orbit_specs", *shared_prim);
-    cspecs.site_filter = alloy_sites_filter; // TODO: update for all dof
+
+    // parse max length
+    auto max_length = parse_orbit_branch_specs_attr(parser, "max_length");
+
+    // parse custom generators ("orbit_specs")
+    std::vector<IntegralClusterOrbitGenerator> custom_generators;
+    parser.subparse_if(custom_generators, "orbit_specs", *shared_prim);
+
+    parser.value = notstd::make_unique<PeriodicMaxLengthClusterSpecs>(
+                     shared_prim,
+                     std::move(generating_group_ptr),
+                     dof_sites_filter(),
+                     max_length,
+                     custom_generators);
+
   }
 
   /// Parse LocalMaxLengthClusterSpecs from JSON
@@ -255,29 +268,32 @@ namespace CASM {
 
     using namespace ClusterSpecs_json_io_impl;
 
+    // parse phenomenal
     auto phenomenal_subparser_ptr = parser.subparse<IntegralCluster>("phenomenal", *shared_prim);
     if(!phenomenal_subparser_ptr->valid()) {
       return;
     }
     IntegralCluster phenomenal = *phenomenal_subparser_ptr->value;
 
-    auto local_group = parse_local_generating_group(
-                         parser,
-                         shared_prim,
-                         phenomenal,
-                         super_group);
+    // parse generating group
+    auto local_group = parse_local_generating_group(parser, shared_prim, phenomenal, super_group);
+
+    // parse max_length and cutoff_radius
+    auto max_length = parse_orbit_branch_specs_attr(parser, "max_length");
+    auto cutoff_radius = parse_orbit_branch_specs_attr(parser, "cutoff_radius");
+
+    // parse custom generators ("orbit_specs")
+    std::vector<IntegralClusterOrbitGenerator> custom_generators;
+    parser.subparse_if(custom_generators, "orbit_specs", *shared_prim);
 
     parser.value = notstd::make_unique<LocalMaxLengthClusterSpecs>(
                      shared_prim,
                      std::move(local_group),
-                     phenomenal);
-
-    auto &cspecs = *parser.value;
-
-    cspecs.max_length = parse_orbit_branch_specs_attr(parser, "max_length");
-    cspecs.cutoff_radius = parse_orbit_branch_specs_attr(parser, "cutoff_radius");
-    parser.subparse_if(cspecs.custom_generators, "orbit_specs", *shared_prim);
-    cspecs.site_filter = alloy_sites_filter; // TODO: update for all dof
+                     phenomenal,
+                     dof_sites_filter(),
+                     max_length,
+                     cutoff_radius,
+                     custom_generators);
   }
 
 
