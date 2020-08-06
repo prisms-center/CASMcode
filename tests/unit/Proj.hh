@@ -86,10 +86,6 @@ namespace test {
 
   };
 
-  /// \brief Create a new project directory, appending ".(#)" to ensure
-  /// it is a new project
-  fs::path proj_dir(fs::path init);
-
   /// \brief Check some aspects of a SymGroup json, including the expected
   ///        number of conjugacy classes and operations
   void check_symgroup(const jsonParser &json, int N_op, int N_class);

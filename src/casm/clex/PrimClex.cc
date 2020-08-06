@@ -557,7 +557,7 @@ namespace CASM {
   Clexulator make_clexulator(ProjectSettings const &settings,
                              std::string const &basis_set_name,
                              PrimNeighborList &prim_neighbor_list) {
-    throw_if_no_basis_set_data(settings.project_name(), basis_set_name, settings.dir());
+    throw_if_no_clexulator_src(settings.project_name(), basis_set_name, settings.dir());
     return Clexulator {
       settings.project_name() + "_Clexulator",
       settings.dir().clexulator_dir(basis_set_name),

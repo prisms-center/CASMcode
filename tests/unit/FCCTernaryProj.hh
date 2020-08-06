@@ -7,6 +7,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 
+#include "Common.hh"
 #include "Proj.hh"
 #include "casm/global/definitions.hh"
 #include "casm/crystallography/BasicStructure.hh"
@@ -154,11 +155,8 @@ namespace test {
       m_p.popen(cd_and() + autotools::abs_ccasm_path() + " bset -u");
       EXPECT_EQ(m_p.exit_code(), 0) << m_p.gets();
 
-      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Write:.*clust\.json)")), true) << m_p.gets();
-      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Write:.*basis\.json)")), true) << m_p.gets();
-      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Write:.*)" + title + R"(_Clexulator\.cc)")), true) << m_p.gets();
-
       EXPECT_EQ(true, fs::exists(m_dirs.clust(m_set->default_clex().bset))) << m_p.gets();
+      EXPECT_EQ(true, fs::exists(m_dirs.basis(m_set->default_clex().bset))) << m_p.gets();
       EXPECT_EQ(true, fs::exists(m_dirs.clexulator_src(m_set->project_name(), m_set->default_clex().bset))) << m_p.gets();
 
       std::string str;

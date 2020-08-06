@@ -571,15 +571,14 @@ namespace CASM {
     }
   }
 
-  void throw_if_no_basis_set_data(std::string project_name, std::string basis_set_name, DirectoryStructure const &dir) {
+  void throw_if_no_clexulator_src(std::string project_name, std::string basis_set_name, DirectoryStructure const &dir) {
     throw_if_no_basis_set_specs(basis_set_name, dir);
-    for(auto const &file_path : dir.bset_data(project_name, basis_set_name)) {
-      if(!fs::exists(file_path)) {
-        std::stringstream ss;
-        ss << "Error accessing bset." << basis_set_name << ": " << file_path
-           << " does not exist. The basis set should be regenerated.";
-        throw std::runtime_error(ss.str());
-      }
+    fs::path clexulator_src_path = dir.clexulator_src(project_name, basis_set_name);
+    if(!fs::exists(clexulator_src_path)) {
+      std::stringstream ss;
+      ss << "Error accessing bset." << basis_set_name << ": " << clexulator_src_path
+         << " does not exist. The basis set should be regenerated.";
+      throw std::runtime_error(ss.str());
     }
   }
 

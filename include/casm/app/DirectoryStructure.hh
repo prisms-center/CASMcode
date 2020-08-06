@@ -324,7 +324,7 @@ namespace CASM {
 
   void throw_if_no_basis_set_specs(std::string basis_set_name, DirectoryStructure const &dir);
 
-  void throw_if_no_basis_set_data(std::string project_name, std::string basis_set_name, DirectoryStructure const &dir);
+  void throw_if_no_clexulator_src(std::string project_name, std::string basis_set_name, DirectoryStructure const &dir);
 
   /** @} */
 }

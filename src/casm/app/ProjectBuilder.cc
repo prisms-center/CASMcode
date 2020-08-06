@@ -31,8 +31,8 @@ namespace CASM {
     DirectoryStructure const &dir = set.dir();
 
     // Create project directories -------------
-    log().indent() << "Creating CASM project directory tree at: " << dir.root_dir() << ": ";
-    log() << create_all_directories(set) << std::endl;
+    log().indent() << "Creating CASM project directory tree at: " << dir.root_dir() << std::endl;
+    create_all_directories(set);
 
     // Write project_settings.json file -------
     commit(set);
