@@ -136,7 +136,7 @@ namespace CASM {
       {EnumCommand::name, run_api_command<EnumCommand>},
       {"super", super_command},
       {SelectCommand::name, run_api_command<SelectCommand>},
-      {"bset", bset_command},
+      {"bset", run_api_command<BsetCommand>},
       {"run", run_command},
       {RmCommand::name, run_api_command<RmCommand>},
       {QueryCommand::name, run_api_command<QueryCommand>},

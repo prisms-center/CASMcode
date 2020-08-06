@@ -24,6 +24,7 @@ libcasm_la_SOURCES = \
     include/casm/app/casm_functions.hh\
     include/casm/app/composition.hh\
     include/casm/app/enum.hh\
+    include/casm/app/errors.hh\
     include/casm/app/files.hh\
     include/casm/app/format.hh\
     include/casm/app/import.hh\
@@ -774,8 +775,8 @@ libcasm_la_SOURCES = \
     src/casm/casm_io/DataStream.cc\
     src/casm/casm_io/FileData.cc\
     src/casm/casm_io/FormatFlag.cc\
-    src/casm/casm_io/InputParser.cc\
     src/casm/casm_io/Log.cc\
+    src/casm/casm_io/json/InputParser.cc\
     src/casm/casm_io/jsonParser.cc\
     src/casm/casm_io/json_io/SpeciesSetParser.cc\
     src/casm/casm_io/json_io/clex.cc\
@@ -827,6 +828,7 @@ libcasm_la_SOURCES = \
     src/casm/clusterography/IntegralCluster.cc\
     src/casm/completer/Complete.cc\
     src/casm/completer/Handlers.cc\
+    src/casm/completer/help.cc\
     src/casm/container/Permutation.cc\
     src/casm/container/io/PermutationIO.cc\
     src/casm/crystallography/AnisoValTraits.cc\

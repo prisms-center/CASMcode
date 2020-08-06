@@ -138,7 +138,7 @@ namespace CASM {
   ///   }
   /// }
   /// \endcode
-  struct PrimPeriodicClustersByMaxLength : InputParser {
+  struct PrimPeriodicClustersByMaxLength : InputParser<std::nullptr_t> {
 
     typedef PrimPeriodicOrbit<IntegralCluster> OrbitType;
 
@@ -278,7 +278,7 @@ namespace CASM {
   };
 
   template<typename PhenomenalType>
-  struct CustomLocalClustersByMaxLength : InputParser {
+  struct CustomLocalClustersByMaxLength : InputParser<std::nullptr_t> {
 
     struct CustomSpecs {
       std::shared_ptr<ClusterEquivalenceParser<PhenomenalType>> phenom;
@@ -365,7 +365,7 @@ namespace CASM {
   /// \endcode
   ///
   template<typename PhenomenalType>
-  struct LocalClustersByMaxLength : InputParser {
+  struct LocalClustersByMaxLength : InputParser<std::nullptr_t> {
 
     std::shared_ptr<LocalOrbitBranchSpecsParser> standard;
     typedef CustomLocalClustersByMaxLength<PhenomenalType> CustomParserType;

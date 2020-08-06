@@ -1,24 +1,15 @@
-#include <cstring>
-
 #include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
-#include "casm/app/casm_functions.hh"
-#include "casm/app/AppIO.hh"
-#include "casm/app/ProjectSettings.hh"
+#include "casm/app/AppIO_impl.hh"
+#include "casm/app/ClexDescription.hh"
 #include "casm/app/DirectoryStructure.hh"
-#include "casm/casm_io/container/json_io.hh"
-#include "casm/symmetry/SymGroup.hh"
-#include "casm/clusterography/ClusterOrbits_impl.hh"
-#include "casm/clusterography/IntegralCluster_impl.hh"
-#include "casm/clusterography/ClusterSymCompare_impl.hh"
-#include "casm/clex/PrimClex.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/app/bset.hh"
 #include "casm/clex/Clexulator.hh"
-#include "casm/clex/ClexBasis.hh"
-#include "casm/clex/ClexBasisWriter.hh"
-#include "casm/clex/NeighborList.hh"
-#include "casm/crystallography/Structure.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/clusterography/ClusterSymCompare_impl.hh"
+#include "casm/clusterography/IntegralCluster_impl.hh"
 #include "casm/completer/Handlers.hh"
-#include "casm/database/DiffTransOrbitDatabase.hh"
 
 namespace CASM {
 
@@ -40,367 +31,273 @@ namespace CASM {
     }
   }
 
-  // ///////////////////////////////////////
-  // 'clusters' function for casm
-  //    (add an 'if-else' statement in casm.cpp to call this)
 
-  int bset_command(const CommandArgs &args) {
+  namespace bset_impl {
 
-    po::variables_map vm;
+    // might be useful for other casm commands...
+    template<typename CommandType>
+    ClexDescription get_clex_description(const CommandType &cmd) {
+      const auto &vm = cmd.vm();
+      const auto &primclex = cmd.primclex();
 
-    /// Set command line options using boost program_options
-    Completer::BsetOption bset_opt;
-
-    try {
-      po::store(po::parse_command_line(args.argc(), args.argv(), bset_opt.desc()), vm); // can throw
-      bool call_help = false;
-
-      /** --help option
-       */
-      if(vm.count("help") || call_help) {
-        args.log() << "\n";
-        args.log() << bset_opt.desc() << std::endl;
-
-        return 0;
-      }
-
-      if(vm.count("desc")) {
-        args.log() << "\n";
-        args.log() << bset_opt.desc() << std::endl;
-        args.log() << "DESCRIPTION" << std::endl;
-        args.log() << "    Generate and inspect cluster basis functions. A bspecs.json file should be available at\n"
-                   << "        $ROOT/basis_set/$current_bset/bspecs.json\n"
-                   << "    Run 'casm format --bspecs' for an example file.\n\n" ;
-
-        return 0;
-      }
-
-      po::notify(vm); // throws on error, so do after help in case
-      // there are any problems
-    }
-    catch(po::error &e) {
-      args.err_log() << bset_opt.desc() << std::endl;
-      args.err_log() << "\nERROR: " << e.what() << std::endl << std::endl;
-      return ERR_INVALID_ARG;
-    }
-    catch(std::exception &e) {
-      args.err_log() << bset_opt.desc() << std::endl;
-      args.err_log() << "\nERROR: "  << e.what() << std::endl;
-      return ERR_UNKNOWN;
-
-    }
-
-    const fs::path &root = args.root;
-    if(root.empty()) {
-      args.err_log().error("No casm project found");
-      args.err_log() << std::endl;
-      return ERR_NO_PROJ;
-    }
-
-    // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
-    // Then whichever exists, store reference in 'primclex'
-    std::unique_ptr<PrimClex> uniq_primclex;
-    PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
-    const DirectoryStructure &dir = primclex.dir();
-    const ProjectSettings &set = primclex.settings();
-    std::string bset;
-    ClexDescription clex_desc;
-
-    if(!vm.count("clex")) {
-      clex_desc = set.default_clex();
-    }
-    else {
-      auto it = set.cluster_expansions().find(vm["clex"].as<std::string>());
-      if(it == set.cluster_expansions().end()) {
-        args.err_log().error("Invalid --clex value");
-        args.err_log() << vm["clex"].as<std::string>() << " not found.";
-        return ERR_INVALID_ARG;
-      }
-      clex_desc = it->second;
-    }
-    bset = clex_desc.bset;
-
-    if(vm.count("update")) {
-
-      // initialize project info
-      if(!fs::is_regular_file(dir.bspecs(bset))) {
-        args.err_log().error("'bspecs.json' file not found");
-        args.err_log() << "expected basis set specifications file at: " << dir.bspecs(bset) << "\n" << std::endl;
-        return ERR_MISSING_INPUT_FILE;
-      }
-
-
-      std::vector<fs::path> filepaths({dir.clust(bset),
-                                       dir.basis(bset),
-                                       dir.clexulator_src(set.project_name(), bset),
-                                       dir.clexulator_o(set.project_name(), bset),
-                                       dir.clexulator_so(set.project_name(), bset)
-                                      });
-
-      bool any_existing_files = false;
-      std::for_each(filepaths.cbegin(),
-                    filepaths.cend(),
-      [&](const fs::path & p) {
-        if(fs::exists(p)) {
-          if(!any_existing_files) {
-            args.log().custom("Found existing files");
-            any_existing_files = true;
-          }
-          args.log() << "found: " << p << "\n";
-        }
-      });
-
-      if(any_existing_files) {
-        if(vm.count("force")) {
-          args.log() << "Using --force. Will overwrite existing files.\n" << std::endl;
-          dir.delete_clexulator(set.project_name(), bset);
-          if(args.primclex) {
-            args.primclex->refresh(false, false, false, false, true);
-          }
-        }
-        else {
-          args.log() << "Exiting due to existing files.  Use --force to force overwrite.\n" << std::endl;
-          return ERR_EXISTING_FILE;
-        }
-      }
-
-      jsonParser bspecs_json;
-      jsonParser local_bspecs_json;
-      std::unique_ptr<ClexBasis> clex_basis_ptr;
-
-      std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
-      std::vector<LocalIntegralClusterOrbit> local_orbits;
-
-      try {
-        bspecs_json = jsonParser::parse(dir.bspecs(bset));
-
-        if(bspecs_json.contains("local_bspecs")) {
-          local_bspecs_json = bspecs_json["local_bspecs"];
-          //this is a local basis set
-          //get hop from bspecs
-          args.log().construct("Orbitree");
-          args.log() << std::endl;
-          std::string orbitname = bspecs_json["diff_trans"].get<std::string>();
-          PrimPeriodicDiffTransOrbit dtorbit = *primclex.db<PrimPeriodicDiffTransOrbit>().find(orbitname);
-
-          const SymGroup &prim_grp = primclex.prim().factor_group();
-
-          PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> dt_sym_compare(primclex.shared_prim(), primclex.crystallography_tol());
-          SymGroup generating_grp {
-            make_invariant_subgroup(dtorbit.prototype(), prim_grp, dt_sym_compare)};
-
-          std::vector<DoFKey> _dofs;
-          if(local_bspecs_json.contains("basis_functions")) {
-            local_bspecs_json["basis_functions"].get_if(_dofs, "dofs");
-          }
-
-          auto dof_sites_filter = [&_dofs](Site const & _site) ->bool{
-            if(_dofs.empty() && (_site.dof_size() != 0 || _site.occupant_dof().size() > 1))
-              return true;
-            for(DoFKey const &_dof : _dofs) {
-              if(_site.has_dof(_dof))
-                return true;
-              else if(_dof == "occ" && _site.occupant_dof().size() > 1) {
-                return true;
-              }
-            }
-            return false;
-          };
-          make_local_orbits(
-            dtorbit.prototype(),
-            generating_grp,
-            LocalSymCompare<IntegralCluster>(primclex.shared_prim(), primclex.crystallography_tol()),
-            local_bspecs_json,
-            dof_sites_filter,
-            primclex.crystallography_tol(),
-            std::back_inserter(local_orbits),
-            args.log());
-
-          clex_basis_ptr.reset(new ClexBasis(primclex.shared_prim(), local_bspecs_json));
-          clex_basis_ptr->generate(local_orbits.begin(), local_orbits.end(), local_bspecs_json);
-
-        }
-        else {
-          args.log().construct("Orbitree");
-          args.log() << std::endl;
-          std::vector<DoFKey> _dofs;
-
-          if(bspecs_json.contains("basis_functions")) {
-            bspecs_json["basis_functions"].get_if(_dofs, "dofs");
-          }
-
-          auto dof_sites_filter = [&_dofs](Site const & _site) ->bool{
-            if(_dofs.empty() && (_site.dof_size() != 0 || _site.occupant_dof().size() > 1))
-              return true;
-
-            for(DoFKey const &_dof : _dofs) {
-              if(_site.has_dof(_dof))
-                return true;
-              else if(_dof == "occ" && _site.occupant_dof().size() > 1) {
-                return true;
-              }
-            }
-            return false;
-          };
-
-          make_prim_periodic_orbits(
-            primclex.shared_prim(),
-            bspecs_json,
-            dof_sites_filter,
-            set.crystallography_tol(),
-            std::back_inserter(orbits),
-            args.log());
-
-          clex_basis_ptr.reset(new ClexBasis(primclex.shared_prim(), bspecs_json));
-          clex_basis_ptr->generate(orbits.begin(), orbits.end(), bspecs_json);
-        }
-
-      }
-      catch(std::exception &e) {
-        args.err_log() << e.what() << std::endl;
-        return ERR_INVALID_INPUT_FILE;
-      }
-
-      // -- write clust.json ----------------
-      {
-        jsonParser clust_json;
-        if(bspecs_json.contains("local_bspecs")) {
-          write_clust(local_orbits.begin(), local_orbits.end(), clust_json, ProtoSitesPrinter(), local_bspecs_json);
-        }
-        else {
-          write_clust(orbits.begin(), orbits.end(), clust_json, ProtoSitesPrinter(), bspecs_json);
-        }
-        clust_json.write(dir.clust(bset));
-
-        args.log().write(dir.clust(bset).string());
-        args.log() << std::endl;
-      }
-
-      // -- write basis.json ----------------
-      {
-        jsonParser basis_json;
-        if(bspecs_json.contains("local_bspecs")) {
-          //throw std::runtime_error("No pretty printing of local cluster functions");
-          // clex_basis should be replaced with local_clex_basisl
-          write_site_basis_funcs(primclex.shared_prim(), *clex_basis_ptr, basis_json);
-          write_clust(local_orbits.begin(), local_orbits.end(), basis_json, ProtoFuncsPrinter(*clex_basis_ptr, primclex.shared_prim()->shared_structure()), local_bspecs_json);
-        }
-        else {
-          write_site_basis_funcs(primclex.shared_prim(), *clex_basis_ptr, basis_json);
-          write_clust(orbits.begin(), orbits.end(), basis_json, ProtoFuncsPrinter(*clex_basis_ptr, primclex.shared_prim()->shared_structure()), bspecs_json);
-        }
-        basis_json.write(dir.basis(bset));
-
-        args.log().write(dir.basis(bset).string());
-        args.log() << std::endl;
-      }
-
-
-      // -- write global Clexulator
-      if(bspecs_json.contains("local_bspecs")) {
-        // get the neighbor list
-        PrimNeighborList nlist(
-          set.nlist_weight_matrix(),
-          set.nlist_sublat_indices().begin(),
-          set.nlist_sublat_indices().end()
-        );
-
-        // expand the nlist to contain sites in all orbits
-        std::set<UnitCellCoord> nbors;
-        local_neighborhood(local_orbits.begin(), local_orbits.end(), std::inserter(nbors, nbors.begin()));
-        nlist.expand(nbors.begin(), nbors.end());
-
-        // write source code
-        fs::ofstream outfile;
-        outfile.open(dir.clexulator_src(set.project_name(), bset));
-
-        std::string parampack_type("DEFAULT");
-        bspecs_json.get_if(parampack_type, "param_pack");
-        ClexBasisWriter clexwriter(primclex.prim(), parampack_type);
-        clexwriter.print_clexulator(set.global_clexulator_name(),
-                                    *clex_basis_ptr,
-                                    local_orbits,
-                                    nlist,
-                                    outfile,
-                                    primclex.crystallography_tol());
-        outfile.close();
-
-        args.log().write(dir.clexulator_src(set.project_name(), bset).string());
-        args.log() << std::endl;
+      if(!vm.count("clex")) {
+        return primclex.settings().default_clex();
       }
       else {
-        // get the neighbor list
-        PrimNeighborList nlist(
-          set.nlist_weight_matrix(),
-          set.nlist_sublat_indices().begin(),
-          set.nlist_sublat_indices().end()
-        );
-
-        // expand the nlist to contain sites in all orbits
-        std::set<UnitCellCoord> nbors;
-        prim_periodic_neighborhood(orbits.begin(), orbits.end(), std::inserter(nbors, nbors.begin()));
-        nlist.expand(nbors.begin(), nbors.end());
-
-        // write source code
-        fs::ofstream outfile;
-        outfile.open(dir.clexulator_src(set.project_name(), bset));
-
-        std::string parampack_type("DEFAULT");
-        bspecs_json.get_if(parampack_type, "param_pack");
-        ClexBasisWriter clexwriter(primclex.prim(), parampack_type);
-        clexwriter.print_clexulator(set.global_clexulator_name(),
-                                    *clex_basis_ptr,
-                                    orbits,
-                                    nlist,
-                                    outfile,
-                                    primclex.crystallography_tol());
-        outfile.close();
-
-        args.log().write(dir.clexulator_src(set.project_name(), bset).string());
-        args.log() << std::endl;
+        const auto &set = primclex.settings();
+        auto it = set.cluster_expansions().find(vm["clex"].template as<std::string>());
+        if(it == set.cluster_expansions().end()) {
+          throw std::runtime_error {"Invalid --clex value: " + vm["clex"].template as<std::string>()};
+        }
+        return it->second;
       }
-
-      // compile clexulator
-      primclex.clexulator(set.default_clex());
     }
-    else if(vm.count("orbits") || vm.count("clusters") || vm.count("functions")) {
 
-      if(!fs::exists(dir.clust(bset))) {
-        args.err_log().error("No 'clust.json' file found");
-        args.err_log() << "Make sure to update your basis set with 'casm bset -u'.\n" << std::endl;
-        return ERR_MISSING_DEPENDS;
+    /// Check for generated bset files, print messages when found
+    bool any_existing_files(const std::string &bset, const BsetCommand &cmd) {
+      const DirectoryStructure &dir = cmd.primclex().dir();
+      const ProjectSettings &set = cmd.primclex().settings();
+      auto &log = cmd.args().log();
+
+      bool _any_existing_files = false;
+      for(const auto &p : dir.bset_data(set.project_name(), bset)) {
+        if(fs::exists(p)) {
+          if(!_any_existing_files) {
+            log.custom("Found existing files");
+            _any_existing_files = true;
+          }
+          log << "found: " << p << "\n";
+        }
+      }
+      return _any_existing_files;
+    }
+
+    void check_force(const std::string &bset, const BsetCommand &cmd) {
+      const auto &vm = cmd.vm();
+      auto &log = cmd.args().log();
+
+      /// check for existing fiels
+      if(any_existing_files(bset, cmd)) {
+        if(vm.count("force")) {
+          log << "Using --force. Will overwrite existing files.\n" << std::endl;
+        }
+        else {
+          throw CASM::runtime_error {"Exiting due to existing files.  Use --force to force overwrite.", ERR_EXISTING_FILE};
+        }
+      }
+    }
+
+    /// Implements `casm bset --update`
+    void update_bset(const BsetCommand &cmd) {
+      const auto &primclex = cmd.primclex();
+      auto basis_set_name = get_clex_description(cmd).bset;
+
+      if(!primclex.has_basis_set_specs(basis_set_name)) {
+        auto bspecs_path = primclex.dir().bspecs(basis_set_name);
+        throw CASM::runtime_error {"'bspecs.json' file not found at: " + bspecs_path.string(), ERR_MISSING_INPUT_FILE};
       }
 
-      typedef PrimPeriodicIntegralClusterOrbit orbit_type;
-      typedef PrimPeriodicSymCompare<IntegralCluster> symcompare_type;
+      check_force(basis_set_name, cmd);
 
-      std::vector<orbit_type> orbits;
-      primclex.orbits(
-        clex_desc,
-        std::back_inserter(orbits),
-        orbit_type::SymCompareType(primclex.shared_prim(), set.crystallography_tol()));
+      jsonParser basis_set_specs;
+
+      try {
+        write_clexulator(
+          primclex.shared_prim(),
+          primclex.settings(),
+          basis_set_name,
+          primclex.basis_set_specs(basis_set_name),
+          primclex.nlist());
+      }
+      catch(std::exception &e) {
+        err_log() << e.what() << std::endl;
+        throw CASM::runtime_error {e.what(), ERR_INVALID_INPUT_FILE};
+      }
+
+      // force compilation
+      auto clexulator = primclex.clexulator(basis_set_name);
+    }
+
+    template<typename OrbitVecType>
+    void print_bset(const BsetCommand &cmd, const OrbitVecType &orbits) {
+      const auto &vm = cmd.vm();
+      const auto &primclex = cmd.primclex();
+      auto clex_desc = get_clex_description(cmd);
+      auto &log = cmd.args().log();
 
       if(vm.count("orbits")) {
-        print_clust(orbits.begin(), orbits.end(), args.log(), ProtoSitesPrinter());
+        print_clust(orbits.begin(), orbits.end(), log, ProtoSitesPrinter());
       }
       if(vm.count("clusters")) {
-        print_clust(orbits.begin(), orbits.end(), args.log(), FullSitesPrinter());
+        print_clust(orbits.begin(), orbits.end(), log, FullSitesPrinter());
       }
       if(vm.count("functions")) {
-        print_site_basis_funcs(primclex.shared_prim(), primclex.clex_basis(clex_desc), args.log());
+        const auto &shared_prim = primclex.shared_prim();
+        const auto &clex_basis = primclex.clex_basis(clex_desc.bset);
+
+        print_site_basis_funcs(shared_prim, clex_basis, log);
         print_clust(
           orbits.begin(),
           orbits.end(),
-          args.log(),
-          ProtoFuncsPrinter(primclex.clex_basis(clex_desc), primclex.shared_prim()->shared_structure()));
+          log,
+          ProtoFuncsPrinter {clex_basis, shared_prim->shared_structure()});
       }
     }
+
+    /// Implements `casm bset --orbits --clusters --functions` (any combination is allowed)
+    void print_bset(const BsetCommand &cmd) {
+      const auto &primclex = cmd.primclex();
+      auto shared_prim = primclex.shared_prim();
+      auto xtal_tol = primclex.crystallography_tol();
+      auto basis_set_name = get_clex_description(cmd).bset;
+
+      if(!primclex.has_basis_set_specs(basis_set_name)) {
+        auto bspecs_path = primclex.dir().bspecs(basis_set_name);
+        throw std::runtime_error {"'bspecs.json' file not found at: " + bspecs_path.string()};
+      }
+
+      // TODO: update this function with ClusterSpecs
+
+      auto basis_set_specs = primclex.basis_set_specs(basis_set_name);
+      PERIODICITY_TYPE clex_periodicity_type = basis_set_specs.contains("local_bpsecs") ?
+                                               PERIODICITY_TYPE::LOCAL : PERIODICITY_TYPE::PERIODIC;
+
+      if(clex_periodicity_type == PERIODICITY_TYPE::PERIODIC) {
+        std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
+        PrimPeriodicSymCompare<IntegralCluster> sym_compare {shared_prim, xtal_tol};
+        primclex.orbits(
+          basis_set_name,
+          std::back_inserter(orbits),
+          sym_compare);
+
+        print_bset(cmd, orbits);
+      }
+      else {
+        std::vector<LocalIntegralClusterOrbit> orbits;
+        LocalSymCompare<IntegralCluster> sym_compare {shared_prim, xtal_tol};
+        primclex.orbits(
+          basis_set_name,
+          std::back_inserter(orbits),
+          sym_compare);
+
+        print_bset(cmd, orbits);
+      }
+    }
+
+    /// TODO: Move this
+    //
+    // jsonParser &local_diff_trans_cspecs_to_json(
+    //   std::string phenomenal_name,
+    //   const PrimClex &primclex,
+    //   jsonParser &json) {
+    //
+    //   const auto &shared_prim = primclex.shared_prim();
+    //
+    //   const auto &const_db = primclex.db<PrimPeriodicDiffTransOrbit>();
+    //   auto dtorbit_it = const_db.find(phenomenal_name);
+    //   if(dtorbit_it == const_db.end()) {
+    //     throw std::runtime_error("Error: diff_trans '" + phenomenal_name + "' does not exist.");
+    //   }
+    //   auto prototype = dtorbit_it->prototype();
+    //
+    //   typedef PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> DTSymCompareType;
+    //   DTSymCompareType dt_sym_compare {shared_prim, shared_prim->lattice().tol()};
+    //
+    //   SymGroup generating_group = make_invariant_subgroup(
+    //                                 prototype, shared_prim->factor_group(), dt_sym_compare);
+    //
+    //   to_json(generating_group, json["generating_group"]);
+    //   to_json(prototype.cluster(), json["phenomenal"]);
+    //   return json;
+    // }
+
+  }
+
+
+  const std::string BsetCommand::name = "bset";
+
+  BsetCommand::BsetCommand(const CommandArgs &_args, Completer::BsetOption &_opt) :
+    APICommand<Completer::BsetOption>(_args, _opt) {}
+
+  BsetCommand::~BsetCommand() {}
+
+  int BsetCommand::vm_count_check() const {
+    if(!in_project()) {
+      err_log().error("No casm project found");
+      err_log() << std::endl;
+      return ERR_NO_PROJ;
+    }
+
+    if(vm().count("update")) {
+      return 0;
+    }
+    else if(vm().count("orbits") || vm().count("clusters") || vm().count("functions")) {
+      return 0;
+    }
     else {
-      args.err_log().error("Unknown error");
-      args.err_log() << bset_opt.desc() << "\n" << std::endl;
+      err_log() << "Error in 'casm bset'. Choose --update or one or more of --orbits, --clusters, ----functions." << std::endl;
+      return ERR_INVALID_ARG;
     }
 
     return 0;
-  };
+  }
+
+  int BsetCommand::help() const {
+    log() << opt().desc() << std::endl;
+    return 0;
+  }
+
+  int BsetCommand::desc() const {
+
+    log() << "\n";
+    log() << opt().desc() << std::endl;
+
+    log().indent() << "DESCRIPTION\n" << std::endl;
+    log().increase_indent();
+    log().indent() << "Generate and inspect cluster basis functions. A bspecs.json file should be available at\n";
+
+    log().increase_indent();
+    log().indent() << "$ROOT/basis_set/$current_bset/bspecs.json\n";
+    log().decrease_indent();
+
+    log().indent() << std::endl;
+    log().indent() << "For a description of the bspecs.json file use one of:" << std::endl;
+    log().increase_indent();
+    log() << "'casm format --bpsecs'" << std::endl;
+    log() << "'casm format --local_bpsecs'" << std::endl;
+    log().decrease_indent();
+
+    log().decrease_indent();
+    log() << std::endl;
+
+    return 0;
+  }
+
+  int BsetCommand::run() const {
+    const auto &vm = this->vm();
+
+    try {
+      if(vm.count("update")) {
+        bset_impl::update_bset(*this);
+      }
+      else if(vm.count("orbits") || vm.count("clusters") || vm.count("functions")) {
+        bset_impl::print_bset(*this);
+      }
+      else {
+        err_log() << "Error in 'casm bset'. Choose --update or one or more of --orbits, --clusters, ----functions." << std::endl;
+        return ERR_INVALID_ARG;
+      }
+    }
+    catch(CASM::runtime_error &e) {
+      err_log() << e.what() << std::endl;
+      return e.code();
+    }
+    catch(std::exception &e) {
+      err_log() << e.what() << std::endl;
+      return ERR_UNKNOWN;
+    }
+
+    return 0;
+  }
 
 }

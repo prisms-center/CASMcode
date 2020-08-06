@@ -14,6 +14,11 @@ namespace CASM {
     log.verbatim(text, indent_first_line);
   }
 
+  const int Log::none;
+  const int Log::quiet;
+  const int Log::standard;
+  const int Log::verbose;
+  const int Log::debug;
 
   Log::Log(std::ostream &_ostream, int _verbosity, bool _show_clock, int _indent_space) :
     m_verbosity(_verbosity),

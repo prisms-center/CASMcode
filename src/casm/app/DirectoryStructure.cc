@@ -235,6 +235,17 @@ namespace CASM {
     return m_root / m_bset_dir / _bset(bset);
   }
 
+  /// \brief Return paths where bset generated data is stored (excludes bspecs.json)
+  std::vector<fs::path> DirectoryStructure::bset_data(std::string project, std::string bset) const {
+    return {
+      clust(bset),
+      basis(bset),
+      clexulator_src(project, bset),
+      clexulator_o(project, bset),
+      clexulator_so(project, bset)
+    };
+  }
+
   /// \brief Return basis function specs (bspecs.json) file path
   fs::path DirectoryStructure::bspecs(std::string bset) const {
     return bset_dir(bset) / "bspecs.json";
@@ -464,6 +475,14 @@ namespace CASM {
     return fs::create_directories(eci_dir(property, calctype, ref, bset, eci));
   }
 
+
+  void DirectoryStructure::delete_bset_data(std::string project_name, std::string bset) const {
+    fs::remove(clust(bset));
+    fs::remove(basis(bset));
+    fs::remove(clexulator_src(project_name, bset));
+    fs::remove(clexulator_o(project_name, bset));
+    fs::remove(clexulator_so(project_name, bset));
+  }
 
   void DirectoryStructure::delete_clexulator(std::string project_name, std::string bset) const {
     fs::remove(clexulator_src(project_name, bset));

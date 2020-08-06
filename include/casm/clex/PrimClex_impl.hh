@@ -12,10 +12,10 @@ namespace CASM {
 
   template <typename OrbitOutputIterator, typename SymCompareType>
   OrbitOutputIterator
-  PrimClex::orbits(const ClexDescription &key, OrbitOutputIterator result, const SymCompareType &sym_compare) const {
+  PrimClex::orbits(std::string const &basis_set_name, OrbitOutputIterator result, SymCompareType const &sym_compare) const {
 
-    return read_clust(result, jsonParser(dir().clust(key.bset)), prim(), prim().factor_group(), sym_compare,
-                      settings().crystallography_tol());
+    return read_clust(result, jsonParser {dir().clust(basis_set_name)}, prim(), prim().factor_group(),
+                      sym_compare, settings().crystallography_tol());
   }
 
 } // namespace CASM

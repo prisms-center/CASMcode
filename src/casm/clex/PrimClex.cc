@@ -8,16 +8,20 @@
 #include "casm/clex/ChemicalReference.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/clex/ClexBasis.hh"
+#include "casm/clex/ClexBasisWriter_impl.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/clusterography/ClusterSymCompare_impl.hh"
+#include "casm/clusterography/IntegralCluster_impl.hh"
 #include "casm/database/DatabaseHandler_impl.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
 
-#include "casm/app/AppIO.hh"
+#include "casm/app/AppIO_impl.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ClexDescription.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/EnumeratorHandler_impl.hh"
+#include "casm/app/HamiltonianModules_impl.hh"
 #include "casm/app/QueryHandler_impl.hh"
 #include <memory>
 
@@ -38,11 +42,11 @@ namespace CASM {
   struct PrimClex::PrimClexData {
 
     typedef PrimClex::PrimType PrimType;
-    typedef std::shared_ptr<const PrimType> PrimType_ptr;
+    typedef std::shared_ptr<PrimType const> PrimType_ptr;
 
     PrimClexData(
       ProjectSettings const &_project_settings,
-      std::shared_ptr<const PrimType> _shared_prim) :
+      std::shared_ptr<PrimType const> _shared_prim) :
       settings(_project_settings),
       prim_ptr(_shared_prim) {
       //Guarantee presence of symmetry info;
@@ -81,8 +85,10 @@ namespace CASM {
     /// - mutable for lazy construction
     mutable notstd::cloneable_ptr<PrimNeighborList> nlist;
 
-    mutable std::map<ClexDescription, ClexBasis> clex_basis;
-    mutable std::map<ClexDescription, Clexulator> clexulator;
+    typedef std::string BasisSetName;
+    mutable std::map<BasisSetName, jsonParser> basis_set_specs;
+    mutable std::map<BasisSetName, ClexBasis> clex_basis;
+    mutable std::map<BasisSetName, Clexulator> clexulator;
     mutable std::map<ClexDescription, ECIContainer> eci;
 
   };
@@ -92,7 +98,7 @@ namespace CASM {
   /// Initial construction of a PrimClex, from a primitive Structure
   PrimClex::PrimClex(
     ProjectSettings const &_project_settings,
-    std::shared_ptr<const PrimType> _shared_prim,
+    std::shared_ptr<PrimType const> _shared_prim,
     const Logging &logging) :
     Logging(logging),
     m_data(new PrimClexData(_project_settings, _shared_prim)) {
@@ -174,6 +180,7 @@ namespace CASM {
       catch(std::exception &e) {
         err_log().error("reading project_settings.json");
         err_log() << "file: " << dir().project_settings() << "\n" << std::endl;
+        throw e;
       }
     }
 
@@ -196,6 +203,7 @@ namespace CASM {
       catch(std::exception &e) {
         err_log().error("reading composition_axes.json");
         err_log() << "file: " << comp_axes << "\n" << std::endl;
+        throw e;
       }
     }
 
@@ -214,6 +222,7 @@ namespace CASM {
       catch(std::exception &e) {
         err_log().error("reading chemical_reference.json");
         err_log() << "file: " << chem_ref_path << "\n" << std::endl;
+        throw e;
       }
     }
 
@@ -293,7 +302,7 @@ namespace CASM {
     return *(m_data->prim_ptr);
   }
 
-  std::shared_ptr<const PrimClex::PrimType> &PrimClex::shared_prim() const {
+  std::shared_ptr<PrimClex::PrimType const> &PrimClex::shared_prim() const {
     return this->m_data->prim_ptr;
   }
 
@@ -365,18 +374,52 @@ namespace CASM {
     return *m_data->db_handler;
   }
 
-  bool PrimClex::has_orbits(const ClexDescription &key) const {
-    if(!fs::exists(dir().clust(key.bset))) {
+  bool PrimClex::has_basis_set_specs(std::string const &basis_set_name) const {
+    auto it = m_data->basis_set_specs.find(basis_set_name);
+    if(it == m_data->basis_set_specs.end()) {
+      if(!fs::exists(dir().bspecs(basis_set_name))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  jsonParser const &PrimClex::basis_set_specs(std::string const &basis_set_name) const {
+    auto it = m_data->basis_set_specs.find(basis_set_name);
+    if(it == m_data->basis_set_specs.end()) {
+      if(!fs::exists(dir().bspecs(basis_set_name))) {
+        std::stringstream ss;
+        ss << "Error in PrimClex::basis_set_specs: basis set named '" << basis_set_name
+           << "' does not exist.";
+        throw std::runtime_error(ss.str());
+      }
+
+      fs::path basis_set_specs_path = dir().bspecs(basis_set_name);
+      try {
+        jsonParser basis_set_specs {basis_set_specs_path};
+        it = m_data->basis_set_specs.emplace(basis_set_name, basis_set_specs).first;
+      }
+      catch(std::exception &e) {
+        err_log().error("reading bspecs.json");
+        err_log() << "file: " << basis_set_specs_path << "\n" << std::endl;
+        throw e;
+      }
+    }
+    return it->second;
+  }
+
+  bool PrimClex::has_orbits(std::string const &basis_set_name) const {
+    if(!fs::exists(dir().clust(basis_set_name))) {
       return false;
     }
     return true;
   }
 
   /// const Access to global orbitree
-  bool PrimClex::has_clex_basis(const ClexDescription &key) const {
-    auto it = m_data->clex_basis.find(key);
+  bool PrimClex::has_clex_basis(std::string const &basis_set_name) const {
+    auto it = m_data->clex_basis.find(basis_set_name);
     if(it == m_data->clex_basis.end()) {
-      if(!fs::exists(dir().clust(key.bset))) {
+      if(!fs::exists(dir().clust(basis_set_name))) {
         return false;
       }
     }
@@ -385,15 +428,14 @@ namespace CASM {
   };
 
   /// \brief Get iterators over the range of orbits
-  const ClexBasis &PrimClex::clex_basis(const ClexDescription &key) const {
+  const ClexBasis &PrimClex::clex_basis(std::string const &basis_set_name) const {
 
-    auto it = m_data->clex_basis.find(key);
+    auto it = m_data->clex_basis.find(basis_set_name);
     if(it == m_data->clex_basis.end()) {
 
-      jsonParser bspecs_json;
-      bspecs_json.read(dir().bspecs(key.bset));
-
-      it = m_data->clex_basis.insert(std::make_pair(key, ClexBasis(this->shared_prim(), bspecs_json))).first;
+      jsonParser basis_set_specs {dir().bspecs(basis_set_name)};
+      it = m_data->clex_basis.emplace(
+             basis_set_name, ClexBasis {this->shared_prim(), basis_set_specs}).first;
 
       std::vector<PrimPeriodicOrbit<IntegralCluster>> orbits;
 
@@ -401,7 +443,7 @@ namespace CASM {
 
       read_clust(
         std::back_inserter(orbits),
-        jsonParser(dir().clust(key.bset)),
+        jsonParser(dir().clust(basis_set_name)),
         prim(),
         prim().factor_group(),
         symcompare_type(this->shared_prim(), crystallography_tol()),
@@ -409,7 +451,7 @@ namespace CASM {
       );
 
       ClexBasis &clex_basis = it->second;
-      clex_basis.generate(orbits.begin(), orbits.end(), bspecs_json);
+      clex_basis.generate(orbits.begin(), orbits.end(), basis_set_specs);
 
     }
 
@@ -417,34 +459,29 @@ namespace CASM {
 
   }
 
-  bool PrimClex::has_clexulator(const ClexDescription &key) const {
-    auto it = m_data->clexulator.find(key);
+  bool PrimClex::has_clexulator(std::string const &basis_set_name) const {
+    auto it = m_data->clexulator.find(basis_set_name);
     if(it == m_data->clexulator.end()) {
-      if(!fs::exists(dir().clexulator_src(settings().project_name(), key.bset))) {
+      if(!fs::exists(dir().clexulator_src(settings().project_name(), basis_set_name))) {
         return false;
       }
     }
     return true;
   }
 
-  Clexulator PrimClex::clexulator(const ClexDescription &key) const {
+  Clexulator PrimClex::clexulator(std::string const &basis_set_name) const {
 
-    auto it = m_data->clexulator.find(key);
+    auto it = m_data->clexulator.find(basis_set_name);
     if(it == m_data->clexulator.end()) {
 
-      if(!fs::exists(dir().clexulator_src(settings().project_name(), key.bset))) {
+      if(!fs::exists(dir().clexulator_src(settings().project_name(), basis_set_name))) {
         throw std::runtime_error(
-          std::string("Error loading clexulator ") + key.bset + ". No basis functions exist.");
+          std::string("Error loading clexulator ") + basis_set_name + ". No basis functions exist.");
       }
 
       try {
-        it = m_data->clexulator.insert(
-               std::make_pair(key, Clexulator(settings().project_name() + "_Clexulator",
-                                              dir().clexulator_dir(key.bset),
-                                              nlist(),
-                                              log(),
-                                              settings().compile_options(),
-                                              settings().so_options()))).first;
+        Clexulator clexulator = read_clexulator(settings(), basis_set_name, nlist());
+        it = m_data->clexulator.emplace(basis_set_name, clexulator).first;
       }
       catch(std::exception &e) {
         // TODO: not sure why this fails...
@@ -454,7 +491,7 @@ namespace CASM {
         std::cout << "Error constructing Clexulator. Current settings: \n" << std::endl;
         Log tlog(std::cout);
         print_compiler_settings_summary(settings(), tlog);
-        throw;
+        throw e;
       }
     }
     return it->second;
@@ -484,13 +521,151 @@ namespace CASM {
     }
     return it->second;
   }
+
+  void _throw_if_no_bset(std::string const &basis_set_name, DirectoryStructure const &dir) {
+    if(dir.root_dir().empty()) {
+      throw std::runtime_error("Error accessing bset." + basis_set_name +
+                               ": No root directory set for project.");
+    }
+    auto basis_set_specs_path = dir.bspecs(basis_set_name);
+    if(!fs::exists(basis_set_specs_path)) {
+      throw std::runtime_error("Error accessing bset." + basis_set_name +
+                               ": Does not exist." + "  Checked for bspecs at: " + basis_set_specs_path.string());
+    }
+  }
+
+  template<typename OrbitVecType>
+  void _write_clexulator(
+    std::shared_ptr<Structure const> shared_prim,
+    ProjectSettings const &settings,
+    std::string const &basis_set_name,
+    jsonParser const &basis_set_specs,
+    PrimNeighborList &prim_neighbor_list,
+    OrbitVecType const &orbits,
+    ClexBasis const &clex_basis) {
+
+    const auto &dir = settings.dir();
+    double xtal_tol = settings.crystallography_tol();
+    Log &log = CASM::log();
+
+    // write clust
+    jsonParser clust_json;
+    write_clust(orbits.begin(), orbits.end(), clust_json, ProtoSitesPrinter(), basis_set_specs);
+    clust_json.write(dir.clust(basis_set_name));
+    log.write(dir.clust(basis_set_name).string());
+    log << std::endl;
+
+    // write basis
+    jsonParser basis_json;
+    write_site_basis_funcs(shared_prim, clex_basis, basis_json);
+    write_clust(
+      orbits.begin(),
+      orbits.end(),
+      basis_json,
+      ProtoFuncsPrinter {clex_basis, shared_prim->shared_structure()},
+      basis_set_specs);
+    basis_json.write(dir.basis(basis_set_name));
+    log.write(dir.basis(basis_set_name).string());
+    log << std::endl;
+
+    // write source code
+    fs::ofstream outfile;
+    outfile.open(dir.clexulator_src(settings.project_name(), basis_set_name));
+    std::string parampack_type {"DEFAULT"};
+    basis_set_specs.get_if(parampack_type, "param_pack");
+    ClexBasisWriter clexwriter {*shared_prim, parampack_type};
+    clexwriter.print_clexulator(
+      settings.global_clexulator_name(), clex_basis, orbits, prim_neighbor_list, outfile, xtal_tol);
+    outfile.close();
+    log.write(dir.clexulator_src(settings.project_name(), basis_set_name).string());
+    log << std::endl;
+  }
+
+  void write_clexulator(
+    std::shared_ptr<Structure const> shared_prim,
+    ProjectSettings const &settings,
+    std::string const &basis_set_name,
+    jsonParser const &basis_set_specs,
+    PrimNeighborList &prim_neighbor_list) {
+
+    auto const &dir = settings.dir();
+    _throw_if_no_bset(basis_set_name, dir);
+    dir.delete_bset_data(settings.project_name(), basis_set_name);
+
+    // TODO: update this function with ClusterSpecs
+
+    PERIODICITY_TYPE clex_periodicity_type = basis_set_specs.contains("local_bpsecs") ?
+                                             PERIODICITY_TYPE::LOCAL : PERIODICITY_TYPE::PERIODIC;
+
+    if(clex_periodicity_type == PERIODICITY_TYPE::PERIODIC) {
+      std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
+
+      log().construct("Orbitree");
+      log() << std::endl;
+
+      std::vector<DoFKey> _dofs;
+      if(basis_set_specs.contains("basis_functions")) {
+        basis_set_specs["basis_functions"].get_if(_dofs, "dofs");
+      }
+
+      auto dof_sites_filter = [&_dofs](Site const & _site) ->bool{
+        if(_dofs.empty() && (_site.dof_size() != 0 || _site.occupant_dof().size() > 1))
+          return true;
+
+        for(DoFKey const &_dof : _dofs) {
+          if(_site.has_dof(_dof))
+            return true;
+          else if(_dof == "occ" && _site.occupant_dof().size() > 1) {
+            return true;
+          }
+        }
+        return false;
+      };
+
+      // construct cluster orbits
+      make_prim_periodic_orbits(shared_prim, basis_set_specs, dof_sites_filter,
+                                settings.crystallography_tol(), std::back_inserter(orbits), log());
+
+      // expand the nlist to contain sites in all orbits
+      std::set<UnitCellCoord> nbors;
+      prim_periodic_neighborhood(orbits.begin(), orbits.end(), std::inserter(nbors, nbors.begin()));
+      prim_neighbor_list.expand(nbors.begin(), nbors.end());
+
+      // construct basis functions
+      ClexBasis clex_basis {shared_prim, basis_set_specs};
+      clex_basis.generate(orbits.begin(), orbits.end(), basis_set_specs);
+
+      // write basis set data files and Clexulator source code
+      _write_clexulator(shared_prim, settings, basis_set_name, basis_set_specs, prim_neighbor_list,
+                        orbits, clex_basis);
+
+    }
+    else {
+      // TODO: update
+      throw std::runtime_error("Error in `casm bset`: local orbits are not implemented.");
+    }
+  }
+
+  Clexulator read_clexulator(
+    ProjectSettings const &settings,
+    std::string const &basis_set_name,
+    PrimNeighborList &prim_neighbor_list) {
+    return Clexulator {
+      settings.project_name() + "_Clexulator",
+      settings.dir().clexulator_dir(basis_set_name),
+      prim_neighbor_list,
+      log(),
+      settings.compile_options(),
+      settings.so_options()};
+  }
+
 }
 
 #define INST_PrimClex_orbits_vec(OrbitType, SymCompareType) \
   template std::back_insert_iterator<std::vector<OrbitType>> PrimClex::orbits( \
-    const ClexDescription &, \
+    std::string const &, \
     std::back_insert_iterator<std::vector<OrbitType>>, \
-    const SymCompareType&) const;
+    SymCompareType const &) const;
 
 namespace CASM {
   INST_PrimClex_orbits_vec(PrimPeriodicOrbit<IntegralCluster>, PrimPeriodicSymCompare<IntegralCluster>);

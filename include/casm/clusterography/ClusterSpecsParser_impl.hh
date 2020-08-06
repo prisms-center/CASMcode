@@ -26,7 +26,7 @@ namespace CASM {
       error.insert(msg.str());
       return false;
     }
-    return bool(require<RequiredType>(it, option));
+    return bool(require_at<RequiredType>(fs::path{it.name()} / option));
   }
 
   template<typename RequiredType>
@@ -34,7 +34,7 @@ namespace CASM {
     jsonParser::const_iterator it,
     std::string option) {
 
-    if(!require<RequiredType>(it, option) || !require_previous<RequiredType>(it, option)) {
+    if(!require_at<RequiredType>(fs::path {it.name()} / option) || !require_previous<RequiredType>(it, option)) {
       return false;
     }
 
@@ -237,7 +237,7 @@ namespace CASM {
     jsonParser &_input,
     fs::path _path,
     bool _required):
-    InputParser(_input, _path, _required) {
+    InputParser<std::nullptr_t>(_input, _path, _required) {
 
     if(exists()) {
       if(!self.is_array()) {
@@ -253,17 +253,18 @@ namespace CASM {
         fs::path p_phenom = p_base / "phenomenal";
         data.back().phenom = std::make_shared<ClusterEquivalenceParser<PhenomenalType>>(
                                _scel, input, relpath(p_phenom), true);
-        this->kwargs[p_phenom] = data.back().phenom;
+        this->insert(data.back().phenom->path, data.back().phenom);
 
         fs::path p_branch_specs = p_base / "orbit_branch_specs";
         data.back().orbit_branch_specs = std::make_shared<LocalOrbitBranchSpecsParser>(
                                            input, relpath(p_branch_specs), false);
-        this->kwargs[p_branch_specs] = data.back().orbit_branch_specs;
+        this->insert(data.back().orbit_branch_specs->path, data.back().orbit_branch_specs);
 
         fs::path p_orbit_specs = p_base / "orbit_specs";
         data.back().orbit_specs = std::make_shared<LocalOrbitSpecsParser>(
                                     _scel.primclex(), input, relpath(p_orbit_specs), false);
-        this->kwargs[p_orbit_specs] = data.back().orbit_specs;
+        this->insert(data.back().orbit_specs->path, data.back().orbit_specs);
+
       }
     }
   }
@@ -296,18 +297,18 @@ namespace CASM {
     jsonParser &_input,
     fs::path _path,
     bool _required):
-    InputParser(_input, _path, _required) {
+    InputParser<std::nullptr_t>(_input, _path, _required) {
 
     // Add parsers for standard clusters
     fs::path p = fs::path("standard") / "orbit_branch_specs";
     standard = std::make_shared<LocalOrbitBranchSpecsParser>(input, relpath(p), false);
-    this->kwargs[p] = standard;
+    this->insert(standard->path, standard);
 
     // Add parsers for custom clusters
     p = fs::path("custom");
     custom = std::make_shared<CustomLocalClustersByMaxLength<PhenomenalType>>(
                _scel, input, relpath(p), false);
-    this->kwargs[p] = custom;
+    this->insert(custom->path, custom);
     if(!(standard->exists() || custom->exists()))
       error.insert("Error: Either 'standard' : {'orbit_branch_specs' : {<...>}} must exists or 'custom' : {<...>}.");
   }

@@ -130,6 +130,9 @@ namespace CASM {
     /// \brief Return path to directory contain basis set info
     fs::path bset_dir(std::string bset) const;
 
+    /// \brief Return paths where bset generated data is stored (excludes bspecs.json)
+    std::vector<fs::path> bset_data(std::string project, std::string bset) const;
+
     /// \brief Return basis function specs (bspecs.json) file path
     fs::path bspecs(std::string bset) const;
 
@@ -279,6 +282,9 @@ namespace CASM {
 
 
     // ** Delete Clexulators **
+
+    /// Delete Basis set generated files
+    void delete_bset_data(std::string project_name, std::string bset) const;
 
     /// Delete Clexulator files
     void delete_clexulator(std::string project_name, std::string bset) const;
