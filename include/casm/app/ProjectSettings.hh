@@ -44,7 +44,7 @@ namespace CASM {
   bool is_valid_project_name(std::string project_name);
 
   /// Throw if project name is invalid
-  void check_project_name(std::string project_name);
+  void throw_if_project_name_is_not_valid(std::string project_name);
 
   /// CASM project settings
   ///

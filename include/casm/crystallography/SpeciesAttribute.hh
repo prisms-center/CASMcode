@@ -38,6 +38,7 @@ namespace CASM {
         m_traits(_traits),
         m_value(_value) {
 
+
       }
 
       SpeciesAttribute(AnisoValTraits const &_traits) :

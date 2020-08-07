@@ -17,7 +17,7 @@ namespace CASM {
     struct SymOpCompare_f {
       explicit SymOpCompare_f(double tolerance) : m_tolerance(tolerance) {
       }
-      bool operator()(const SymOp &lhs, const SymOp& rhs) const;
+      bool operator()(const SymOp &lhs, const SymOp &rhs) const;
 
     private:
       double m_tolerance;
@@ -35,7 +35,7 @@ namespace CASM {
       explicit SymOpPeriodicCompare_f(const Lattice &periodicity_lattice, double tolerance)
         : m_periodicity_lattice(periodicity_lattice), m_tolerance(tolerance) {
       }
-      bool operator()(const SymOp &lhs, const SymOp& rhs) const;
+      bool operator()(const SymOp &lhs, const SymOp &rhs) const;
 
     private:
       const Lattice m_periodicity_lattice;
@@ -53,7 +53,7 @@ namespace CASM {
       explicit SymOpMatrixCompare_f(double tolerance)
         : m_tolerance(tolerance) {
       }
-      bool operator()(const SymOp &lhs, const SymOp& rhs) const;
+      bool operator()(const SymOp &lhs, const SymOp &rhs) const;
 
     private:
       double m_tolerance;

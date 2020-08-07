@@ -299,23 +299,23 @@ namespace CASM {
     Eigen::IOFormat tformat(4, 0, 8, " ", "\n", "    ", "", "", "");
     if(sym_axes) {
       log << "Option \"sym_axes\" selected. Preparing to construct symmetry-adapted axes. This may take several minutes...\n\n";
-      std::pair<Eigen::MatrixXd, std::vector<Index>> normcoords = collective_dof_normal_coords_and_irrep_dims(config.sites().begin(),
-                                                                  config.sites().end(),
-                                                                  config.supercell().sym_info(),
-                                                                  _dof,
-                                                                  config.group(),
-                                                                  _axes);
-      axes = normcoords.first.transpose();
+      auto irreps = irrep_decomposition(config.sites().begin(),
+                                        config.sites().end(),
+                                        config.supercell().sym_info(),
+                                        _dof,
+                                        config.group(),
+                                        _axes);
+      axes = full_trans_mat(irreps).transpose();
       log << "ConfigEnumSiteDoFs summary for DoF '" << _dof << "':\n";
 
       //std::cout << "Axes:\n" << axes.transpose().format(tformat) << "\n";
       log << "Enumeration will be performed using symmetry-adapted normal coordinates as axes.\n"
-          << "Normal coordinates partition DoF space into " << normcoords.second.size() << " subspaces.\n"
+          << "Normal coordinates partition DoF space into " << irreps.size() << " subspaces.\n"
           << "Normal coordinates are:\n";
       Index l = 0;
-      for(Index d = 0; d < normcoords.second.size(); ++d) {
+      for(Index d = 0; d < irreps.size(); ++d) {
         log << "Axes for irreducible representation " << (d + 1) << "\n  --------------\n";
-        Index dim = normcoords.second[d];
+        Index dim = irreps[d].irrep_dim();
         for(Index i = 0; i < dim; ++i, ++l) {
           log <<  axes.col(l).transpose().format(tformat) << "\n";
         }

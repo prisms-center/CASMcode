@@ -216,8 +216,6 @@ namespace CASM {
 
     void calc_invariant_functions(const SymGroup &head_sym_group);
 
-    bool is_normal_basis_for(const SymGroup &head_sym_group);
-
     BasisSet calc_normal_basis(const SymGroup &head_sym_group, Eigen::MatrixXd &trans_mat)const;
 
     BasisSet transform_copy(const Eigen::MatrixXd &trans_mat) const;

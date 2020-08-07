@@ -2,7 +2,6 @@
 
 #include "casm/container/Permutation.hh"
 #include "casm/container/io/PermutationIO.hh"
-#include "casm/casm_io/container/json_io.hh"
 
 namespace CASM {
 
@@ -29,60 +28,4 @@ namespace CASM {
       m_mat(i, m_permute[i]) = 1;
     return;
   }
-
-  //*******************************************************************************************
-
-  jsonParser &SymPermutation::to_json(jsonParser &json) const {
-    json.put_obj();
-
-    // Members not included:
-    //
-    // From SymOpRepresentation:
-    //   MasterSymGroup const *head_group;
-
-    json["SymOpRep_type"] = "SymPermutation";
-
-    json["op_index"] = index();
-    json["rep_ID"] = rep_ID();
-
-    json["m_permute"] = m_permute;
-    if(m_has_mat)
-      json["m_mat"] = m_mat;
-    return json;
-  }
-
-  //*******************************************************************************************
-
-  void SymPermutation::from_json(const jsonParser &json) {
-    try {
-      CASM::from_json(m_op_index, json["op_index"]);
-      CASM::from_json(m_rep_ID, json["rep_ID"]);
-
-      CASM::from_json(m_permute, json["m_permute"]);
-      CASM::from_json(m_mat, json["m_mat"]);
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
-  }
-
-  //*******************************************************************************************
-
-  jsonParser &to_json(const SymPermutation &sym, jsonParser &json) {
-    return sym.to_json(json);
-  }
-
-  //*******************************************************************************************
-
-  void from_json(SymPermutation &sym, const jsonParser &json) {
-    try {
-      sym.from_json(json);
-    }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
-    }
-  }
-
 }

@@ -62,7 +62,7 @@ TEST(ConfigIOTest, DatumFormatters) {
   check(formation_energy());
   check(formation_energy_per_species());
   check(rms_force());
-  check(basis_deformation());
+  check(atomic_deformation());
   check(lattice_deformation());
   check(volume_relaxation());
 

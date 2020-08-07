@@ -546,11 +546,11 @@ namespace CASM {
                                             has_rms_force);
     }
 
-    GenericConfigFormatter<double> basis_deformation() {
-      return GenericConfigFormatter<double>("basis_deformation",
+    GenericConfigFormatter<double> atomic_deformation() {
+      return GenericConfigFormatter<double>("atomic_deformation",
                                             "Cost function that describes the degree to which basis sites have relaxed",
-                                            CASM::basis_deformation,
-                                            has_basis_deformation);
+                                            CASM::atomic_deformation,
+                                            has_atomic_deformation);
     }
 
     GenericConfigFormatter<double> lattice_deformation() {
@@ -658,7 +658,7 @@ namespace CASM {
       formation_energy(),
       formation_energy_per_species(),
       rms_force(),
-      basis_deformation(),
+      atomic_deformation(),
       lattice_deformation(),
       volume_relaxation(),
       relaxed_magmom(),

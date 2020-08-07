@@ -53,20 +53,12 @@ namespace CASM {
     if(top) log << std::endl;
   }
 
-  /// add warning if unrecognized settings are found in self
   bool KwargsParser::warn_unnecessary(const std::set<std::string> &expected) {
-    return warn_unnecessary(self, fs::path(), expected);
-  }
-
-  /// add warning if unrecognized settings are found in obj located at path
-  bool KwargsParser::warn_unnecessary(const jsonParser &obj, fs::path path, const std::set<std::string> &expected) {
-    jsonParser json;
     bool all_necessary = true;
-    for(auto opt_it = obj.begin(); opt_it != obj.end(); ++opt_it) {
+    for(auto opt_it = self.begin(); opt_it != self.end(); ++opt_it) {
       if(expected.find(opt_it.name()) == expected.end()) {
-        std::string _path = path.empty() ? opt_it.name() : (path / opt_it.name()).string();
         warning.insert(
-          std::string("Warning: ") + "Ignoring setting '" + _path + "' (it is unrecognized or unncessary).");
+          std::string("Warning: ") + "Ignoring setting '" + opt_it.name() + "' (it is unrecognized or unncessary).");
         all_necessary = false;
       }
     }
@@ -115,13 +107,6 @@ namespace CASM {
     return path.empty() || input.find_at(path) != input.end();
   }
 
-  /// Parse Log "verbosity" level from JSON
-  /// \code
-  /// {
-  ///    "verbosity": <int or string, default=10, range=[0,100], "none" = 0, "quiet"=5,
-  ///                  "standard"=10, "verbose"=20, "debug"=100>
-  /// }
-  /// \endcode
   int parse_verbosity(KwargsParser &parser, int default_verbosity) {
     auto it = parser.self.find("verbosity");
     if(it != parser.self.end()) {

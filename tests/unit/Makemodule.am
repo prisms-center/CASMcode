@@ -186,6 +186,7 @@ TESTS += \
 check_PROGRAMS += \
     casm_unit_crystallography
 casm_unit_crystallography_SOURCES = \
+    tests/unit/crystallography/AnisoValTraits_test.cpp\
     tests/unit/crystallography/BasicStructure_test.cpp\
     tests/unit/crystallography/Coordinate_test.cpp\
     tests/unit/crystallography/FactorGroupConsistency_test.cpp\
@@ -200,6 +201,7 @@ casm_unit_crystallography_SOURCES = \
     tests/unit/crystallography/Structure_test.cpp\
     tests/unit/crystallography/SuperlatticeEnumerator_test.cpp\
     tests/unit/crystallography/SymType_test.cpp\
+	tests/unit/crystallography/SymRepBuilder_test.cpp\
     tests/unit/crystallography/UnitCellCoord_test.cpp\
     tests/unit/gtest_main_run_all.cpp
 casm_unit_crystallography_LDADD = \
