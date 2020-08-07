@@ -44,7 +44,6 @@ namespace CASM {
     }
 
   private:
-    std::string m_what;
     int m_code;
   };
 
