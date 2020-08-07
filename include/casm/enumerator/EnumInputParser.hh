@@ -11,7 +11,60 @@
 
 namespace CASM {
 
-  class SymInfoOptionsParser : public InputParser {
+  // --- Optional, check CLI and JSON options ---
+
+  template<typename OptHandlerType>
+  int parse_verbosity(KwargsParser &parser, const OptHandlerType &opt) {
+    std::string verbosity_str = opt.vm().count("verbosity") ?
+                                opt.verbosity_str() :
+                                parser.optional_else<std::string>("verbosity", "standard");
+    auto val = Log::verbosity_level(verbosity_str);
+    if(val.first) {
+      return val.second;
+    }
+    else {
+      parser.error.insert(Log::invalid_verbosity_msg(verbosity_str));
+      return Log::standard;
+    }
+    return 0;
+  }
+
+  template<typename OptHandlerType>
+  bool parse_dry_run(KwargsParser &parser, const OptHandlerType &opt) {
+    return opt.vm().count("dry-run") ?
+           true :
+           parser.optional_else<bool>("dry_run", false);
+  }
+
+  template<typename OptHandlerType>
+  COORD_TYPE parse_coord_type(KwargsParser &parser, const OptHandlerType &opt) {
+    return opt.vm().count("coord") ?
+           opt.coordtype_enum() :
+           parser.optional_else<COORD_TYPE>(traits<COORD_TYPE>::name, COORD_TYPE::FRAC);
+  }
+
+  template<typename OptHandlerType>
+  ORBIT_PRINT_MODE parse_orbit_print_mode(KwargsParser &parser, const OptHandlerType &opt) {
+    return parser.optional_else<ORBIT_PRINT_MODE>(traits<ORBIT_PRINT_MODE>::name, ORBIT_PRINT_MODE::PROTO);
+  }
+
+  template<typename OptHandlerType>
+  std::vector<std::string> parse_filter_expr(KwargsParser &parser, const OptHandlerType &opt) {
+    if(opt.vm().count("filter")) {
+      return opt.filter_strs();
+    }
+    else {
+      auto ptr = parser.optional<std::string>("filter");
+      if(ptr) {
+        return std::vector<std::string>({*ptr});
+      }
+      else {
+        return std::vector<std::string>();
+      }
+    }
+  }
+
+  class SymInfoOptionsParser : public InputParser<std::nullptr_t> {
   public:
     static std::string brief_help();
 
@@ -26,7 +79,7 @@ namespace CASM {
       const CompleterOptionType &_opt,
       fs::path _path,
       bool _required) :
-      InputParser(_input, _path, _required)  {
+      InputParser<std::nullptr_t>(_input, _path, _required)  {
       _opt.desc();
 
       if(exists()) {
@@ -39,7 +92,7 @@ namespace CASM {
         m_sym_info_opt = SymInfoOptions();
       }
       m_sym_info_opt.tol = _primclex.crystallography_tol();
-      m_sym_info_opt.coord_type = parse_coord_type(_opt);
+      m_sym_info_opt.coord_type = parse_coord_type(*this, _opt);
       m_sym_info_opt.prec = optional_else<int>("prec", 7);
 
     }
@@ -54,7 +107,7 @@ namespace CASM {
 
   };
 
-  class OrbitPrinterOptionsParser : public InputParser {
+  class OrbitPrinterOptionsParser : public InputParser<std::nullptr_t> {
   public:
 
     static std::string print_coordinates_help();
@@ -74,7 +127,7 @@ namespace CASM {
       const CompleterOptionType &_opt,
       fs::path _path,
       bool _required) :
-      InputParser(_input, _path, _required)  {
+      InputParser<std::nullptr_t>(_input, _path, _required)  {
       _opt.desc();
 
       if(exists()) {
@@ -86,11 +139,15 @@ namespace CASM {
       else {
         m_orbit_printer_opt = OrbitPrinterOptions();
       }
-      m_orbit_printer_opt.coord_type = parse_coord_type(_opt);
+      m_orbit_printer_opt.coord_type = parse_coord_type(*this, _opt);
       m_orbit_printer_opt.prec = optional_else<int>("prec", 7);
 
-      this->kwargs["sym_info_opt"] = m_sym_info_opt_parser =
-                                       std::make_shared<SymInfoOptionsParser>(_primclex, input, _opt, relpath("sym_info_opt"), false);
+      // this->kwargs["sym_info_opt"] = m_sym_info_opt_parser =
+      //                                  std::make_shared<SymInfoOptionsParser>(_primclex, input, _opt, relpath("sym_info_opt"), false);
+
+      m_sym_info_opt_parser = std::make_shared<SymInfoOptionsParser>(_primclex, input, _opt, relpath("sym_info_opt"), false);
+      this->insert(m_sym_info_opt_parser->path, m_sym_info_opt_parser);
+
       m_orbit_printer_opt.sym_info_opt = m_sym_info_opt_parser->sym_info_opt();
 
     }
@@ -105,7 +162,7 @@ namespace CASM {
     std::shared_ptr<SymInfoOptionsParser> m_sym_info_opt_parser;
   };
 
-  class EnumInputParser : public InputParser, public HasPrimClex<CRTPBase<EnumInputParser>> {
+  class EnumInputParser : public InputParser<std::nullptr_t>, public HasPrimClex<CRTPBase<EnumInputParser>> {
 
   public:
 

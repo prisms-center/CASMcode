@@ -120,7 +120,7 @@ namespace CASM {
           continue;
         }
         if(branch > 1) {
-          require<double>(it, "max_length");
+          require_at<double>(fs::path {it.name()} / "max_length");
           warn_unnecessary(it, {"max_length"});
         }
         if(branch > 2) {
@@ -166,10 +166,9 @@ namespace CASM {
       // for each custom orbit
       for(Index i = 0; i < self.size(); ++i) {
         const jsonParser &val = self[i];
-        warn_unnecessary(
-          val,
-          path / boost::lexical_cast<std::string>(i),
-        {"coordinate_mode", "prototype", "sites", "include_subclusters"});
+        KwargsParser tmp {input, path / boost::lexical_cast<std::string>(i), true};
+        tmp.warn_unnecessary({"coordinate_mode", "prototype", "sites", "include_subclusters"});
+        this->insert(tmp);
 
         // read orbit generating cluster from specs
         typename OrbitType::Element input_cluster(primclex.prim());
@@ -228,15 +227,16 @@ namespace CASM {
     InputParser(_input, _path, _required) {
 
     if(exists()) {
-      this->kwargs["orbit_branch_specs"] =
-        std::make_shared<PrimPeriodicOrbitBranchSpecsParser>(
-          input, relpath("orbit_branch_specs"), false);
-      this->kwargs["orbit_specs"] =
-        std::make_shared<PrimPeriodicOrbitSpecsParser>(
-          _primclex, _generating_grp, _sym_compare, input, relpath("orbit_specs"), false);
+      auto orbit_branch_specs_subparser = std::make_shared<PrimPeriodicOrbitBranchSpecsParser>(
+                                            input, relpath("orbit_branch_specs"), false);
+      this->insert(orbit_branch_specs_subparser->path, orbit_branch_specs_subparser);
+
+      auto orbit_specs_subparser = std::make_shared<PrimPeriodicOrbitSpecsParser>(
+                                     _primclex, _generating_grp, _sym_compare, input, relpath("orbit_specs"), false);
+      this->insert(orbit_specs_subparser->path, orbit_specs_subparser);
 
       // require one of {"orbit_branch_specs", "orbit_specs"}
-      if(!this->kwargs["orbit_branch_specs"]->exists() && !this->kwargs["orbit_specs"]->exists()) {
+      if(!orbit_branch_specs_subparser->exists() && !orbit_specs_subparser->exists()) {
         error.insert(std::string("Error: ") + "One of \"orbit_branch_specs\" or \"orbit_specs\" is required.");
       }
 
@@ -258,11 +258,11 @@ namespace CASM {
   }
 
   const PrimPeriodicOrbitBranchSpecsParser &PrimPeriodicClustersByMaxLength::orbit_branch_specs() const {
-    return static_cast<const PrimPeriodicOrbitBranchSpecsParser &>(*this->kwargs.find("orbit_branch_specs")->second);
+    return static_cast<const PrimPeriodicOrbitBranchSpecsParser &>(*this->find(relpath("orbit_branch_specs"))->second);
   }
 
   const PrimPeriodicOrbitSpecsParser &PrimPeriodicClustersByMaxLength::orbit_specs() const {
-    return static_cast<const PrimPeriodicOrbitSpecsParser &>(*this->kwargs.find("orbit_specs")->second);
+    return static_cast<const PrimPeriodicOrbitSpecsParser &>(*this->find(relpath("orbit_specs"))->second);
   }
 
 
@@ -291,8 +291,8 @@ namespace CASM {
         if(max_length_including_phenomenal()) {
           // branch 1+ requires cutoff_radius & max_length
           if(branch > 0) {
-            require<double>(it, "max_length");
-            require<double>(it, "cutoff_radius");
+            require_at<double>(fs::path {it.name()} / "max_length");
+            require_at<double>(fs::path {it.name()} / "cutoff_radius");
             warn_unnecessary(it, {"max_length", "cutoff_radius"});
           }
           if(branch > 1) {
@@ -303,18 +303,18 @@ namespace CASM {
         else {
           // branch 1+ requires cutoff_radius, 2+ requires max_length
           if(branch == 1) {
-            require<double>(it, "cutoff_radius");
+            require_at<double>(fs::path {it.name()} / "cutoff_radius");
             warn_unnecessary(it, {"cutoff_radius"});
           }
           else if(branch == 2) {
-            require<double>(it, "max_length");
-            require<double>(it, "cutoff_radius");
+            require_at<double>(fs::path {it.name()} / "max_length");
+            require_at<double>(fs::path {it.name()} / "cutoff_radius");
             require_nonincreasing<double>(it, "cutoff_radius");
             warn_unnecessary(it, {"max_length", "cutoff_radius"});
           }
           else if(branch > 2) {
-            require<double>(it, "max_length");
-            require<double>(it, "cutoff_radius");
+            require_at<double>(fs::path {it.name()} / "max_length");
+            require_at<double>(fs::path {it.name()} / "cutoff_radius");
             require_nonincreasing<double>(it, "max_length");
             require_nonincreasing<double>(it, "cutoff_radius");
             warn_unnecessary(it, {"max_length", "cutoff_radius"});
@@ -375,7 +375,9 @@ namespace CASM {
       std::set<std::string> opt {"coordinate_mode", "prototype", "sites", "include_subclusters"};
       for(Index i = 0; i < self.size(); ++i) {
         const jsonParser &val = self[i];
-        warn_unnecessary(val, path / boost::lexical_cast<std::string>(i), opt);
+        KwargsParser tmp {input, path / boost::lexical_cast<std::string>(i), true};
+        tmp.warn_unnecessary(opt);
+        this->insert(tmp);
 
         // read orbit generating cluster from specs
         IntegralCluster input_cluster(primclex.prim());

@@ -1,3 +1,4 @@
+#include "casm/completer/help.hh"
 #include "casm/enumerator/EnumInputParser.hh"
 
 namespace CASM {
@@ -15,8 +16,8 @@ namespace CASM {
   }
 
   std::string SymInfoOptionsParser::standard_help() {
-    return InputParser::coordinate_mode_help()
-           + InputParser::prec_help("printing coordinates of symmetry operations", 7)
+    return coordinate_mode_help()
+           + prec_help("printing coordinates of symmetry operations", 7)
            + print_matrix_tau_help();
   }
 
@@ -54,10 +55,10 @@ namespace CASM {
   }
 
   std::string OrbitPrinterOptionsParser::standard_help() {
-    return InputParser::indent_space_help()
-           + InputParser::prec_help("printing coordinates of orbit elements", 7)
-           + InputParser::coordinate_mode_help()
-           + InputParser::orbit_print_mode_help()
+    return indent_space_help()
+           + prec_help("printing coordinates of orbit elements", 7)
+           + coordinate_mode_help()
+           + orbit_print_mode_help()
            + SymInfoOptionsParser::brief_help()
            + print_coordinates_help()
            + print_equivalence_map_help()
@@ -77,9 +78,9 @@ namespace CASM {
 
 
   std::string EnumInputParser::standard_help() {
-    return InputParser::dry_run_help()
-           + InputParser::verbosity_help()
-           + InputParser::coordinate_mode_help();
+    return dry_run_help()
+           + verbosity_help()
+           + coordinate_mode_help();
   }
 
 
@@ -89,7 +90,7 @@ namespace CASM {
     const Completer::EnumOption &_enum_opt,
     fs::path _path,
     bool _required) :
-    InputParser(_input, _path, _required),
+    InputParser<std::nullptr_t>(_input, _path, _required),
     m_primclex(_primclex),
     m_enum_opt(_enum_opt),
     m_dry_run(false),
@@ -100,10 +101,10 @@ namespace CASM {
 
     if(exists()) {
 
-      m_dry_run = parse_dry_run(m_enum_opt);
-      m_coord_type = parse_coord_type(m_enum_opt);
-      m_verbosity = parse_verbosity(m_enum_opt);
-      m_filter_expr = parse_filter_expr(m_enum_opt);
+      m_dry_run = parse_dry_run(*this, m_enum_opt);
+      m_coord_type = parse_coord_type(*this, m_enum_opt);
+      m_verbosity = parse_verbosity(*this, m_enum_opt);
+      m_filter_expr = parse_filter_expr(*this, m_enum_opt);
       // warn_unnecessary should be done in derived
     }
   }

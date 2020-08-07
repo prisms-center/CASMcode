@@ -45,19 +45,22 @@ namespace CASM {
 
       // check "cspecs"
       PrimPeriodicSymCompare<IntegralCluster>  sym_compare(_primclex.shared_prim(), _primclex.crystallography_tol());
-      this->kwargs["cspecs"] = m_cspecs_parser =
-                                 std::make_shared<PrimPeriodicClustersByMaxLength>(
-                                   _primclex, _primclex.prim().factor_group(), sym_compare, input, relpath("cspecs"), true);
+      m_cspecs_parser = std::make_shared<PrimPeriodicClustersByMaxLength>(
+                          _primclex, _primclex.prim().factor_group(), sym_compare, input, relpath("cspecs"), true);
+      this->insert(m_cspecs_parser->path, m_cspecs_parser);
 
       // check "require" and "exclude"
-      this->kwargs["require"] = m_require = std::make_shared<SpeciesSetParser>(
-                                              _primclex, ALLOWED_SPECIES_TYPES::ALL, "require", input, relpath("require"), false);
+      m_require = std::make_shared<SpeciesSetParser>(
+                    _primclex, ALLOWED_SPECIES_TYPES::ALL, "require", input, relpath("require"), false);
+      this->insert(m_require->path, m_require);
 
-      this->kwargs["exclude"] = m_exclude = std::make_shared<SpeciesSetParser>(
-                                              _primclex, ALLOWED_SPECIES_TYPES::ALL, "exclude", input, relpath("exclude"), false);
+      m_exclude = std::make_shared<SpeciesSetParser>(
+                    _primclex, ALLOWED_SPECIES_TYPES::ALL, "exclude", input, relpath("exclude"), false);
+      this->insert(m_exclude->path, m_exclude);
 
-      this->kwargs["orbit_printer_opt"] = m_orbit_printer_opt_parser = std::make_shared<OrbitPrinterOptionsParser>(
-                                                                         _primclex, input, _enum_opt, relpath("orbit_printer_opt"), false);
+      m_orbit_printer_opt_parser = std::make_shared<OrbitPrinterOptionsParser>(
+                                     _primclex, input, _enum_opt, relpath("orbit_printer_opt"), false);
+      this->insert(m_orbit_printer_opt_parser->path, m_orbit_printer_opt_parser);
 
       std::cout << "DiffTransEnumParser:" << std::endl;
       std::cout << "coord_type(): " << to_string(coord_type()) << std::endl;
