@@ -178,7 +178,7 @@ namespace CASM {
       Eigen::Vector3i millers(Eigen::Vector3d plane_normal) const;
 
       /// Generates a lattice with vectors a and b parallel to the plane described by the miller indeces
-      Lattice lattice_in_plane(Eigen::Vector3i millers, int max_vol = 20) const; // John G 121030
+      Lattice lattice_in_plane(Eigen::Vector3i millers, int max_vol = 0) const; // John G 121030
 
       double tol() const {
         return m_tol;

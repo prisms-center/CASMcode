@@ -59,12 +59,29 @@ namespace CASM {
     ///  - "H"  : Hencky
     static AnisoValTraits strain(std::string const &_metric);
 
-    ///\brief Named constructor for site magnetic spin AnisoValTraits
-    static AnisoValTraits magspin();
+    ///\brief Anisovaltraits named constructor for magnetic spin with spin-orbit coupling
+    static AnisoValTraits SOmagspin();
 
-    ///\brief Named constructor for magnetic moment AnisoValTraits
-    /// Same as AnisoValTraits::magspin(), but requires unit length
-    static AnisoValTraits magmom();
+    ///\brief Anisovaltraits named constructor for magnetic spin with spin-orbit coupling (unit length)
+    static AnisoValTraits SOunitmagspin();
+
+    ///\brief Anisovaltraits named constructor for non-collinear magnetic spin WITHOUT spin-orbit coupling
+    static AnisoValTraits NCmagspin();
+
+    ///\brief Anisovaltraits named constructor for non-collinear magnetic spin WITHOUT spin-orbit coupling (unit length)
+    static AnisoValTraits NCunitmagspin();
+
+    ///\brief Anisovaltraits named constructor for collinear magnetic spin
+    static AnisoValTraits Cmagspin();
+
+    ///\brief Anisovaltraits named constructor for collinear magnetic spin (unit length)
+    static AnisoValTraits Cunitmagspin();
+
+    ///\brief Named constructor for d-orbital occupation AnisoValTraits
+    static AnisoValTraits d_orbital_occupation();
+
+    ///\brief Named constructor for spin-polarized d-orbital occupation AnisoValTraits
+    static AnisoValTraits d_orbital_occupation_spin_polarized();
 
     /// \brief Given a string, returns string with all characters before the final @delim character deleted
     /// For example, if a trajector has properties with  key1="step1_force", key2="step2_force", etc, then
@@ -90,6 +107,7 @@ namespace CASM {
                    std::set<std::string> const &_incompatible = {},
                    std::set<std::string> const &_must_apply_before = {},
                    std::set<std::string> const &_must_apply_after = {},
+                   std::vector<std::string> const &_variable_descriptions = {},
                    bool _default = false);
 
     /// \brief Returns previously explicitly initialized AnisoValTraits with name AnisoValTraits::name_suffix(_name)
@@ -180,6 +198,11 @@ namespace CASM {
       return m_standard_var_names;
     }
 
+    /// \brief returns expanded description of each standard_var_name
+    std::vector<std::string> const &variable_descriptions() const {
+      return m_variable_descriptions;
+    }
+
     std::set<std::string> const &incompatible() const {
       return m_incompatible;
     }
@@ -209,6 +232,7 @@ namespace CASM {
     std::string m_name;
     bool m_default;
     std::vector<std::string> m_standard_var_names;
+    std::vector<std::string> m_variable_descriptions;
     unsigned char m_opt;
     notstd::cloneable_ptr<const SymRepBuilderInterface> m_symrep_builder;
     std::set<std::string> m_incompatible;

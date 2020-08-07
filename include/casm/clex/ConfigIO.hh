@@ -482,7 +482,7 @@ namespace CASM {
 
     ConfigIO::GenericConfigFormatter<double> rms_force();
 
-    ConfigIO::GenericConfigFormatter<double> basis_deformation();
+    ConfigIO::GenericConfigFormatter<double> atomic_deformation();
 
     ConfigIO::GenericConfigFormatter<double> lattice_deformation();
 

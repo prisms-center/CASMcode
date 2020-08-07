@@ -90,8 +90,6 @@ namespace CASM {
                                                                     jsonParser const &_bspecs) const {
 
       std::vector<BasisSet> result(_prim.basis().size());
-      std::cout << "OccupationDoFTraits::construct_site_bases()\n";
-      //std::cout << "Using " << func_type << " site basis functions." << std::endl << std::endl;
 
       for(Index i = 0; i < _asym_unit.size(); i++) {
         Site const &_site = _asym_unit[i].prototype()[0].sublattice_site(_prim);
@@ -142,7 +140,7 @@ namespace CASM {
         }
 
 
-        result[b_ind].construct_orthonormal_discrete_functions(adapter::Adapter<OccupantDoF<xtal::Molecule>, std::vector<xtal::Molecule>>()(_site.occupant_dof(), b_ind),
+        result[b_ind].construct_orthonormal_discrete_functions(adapter::Adapter<OccupantDoF<xtal::Molecule>, std::vector<xtal::Molecule>>()(_site.occupant_dof(), _prim.occupant_symrep_IDs()[b_ind], b_ind),
                                                                tprob,
                                                                _asym_unit[i].prototype()[0].sublattice(),
                                                                SymGroup(_asym_unit[i].equivalence_map(0).first,

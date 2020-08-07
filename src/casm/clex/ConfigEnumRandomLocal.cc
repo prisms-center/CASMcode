@@ -141,7 +141,6 @@ namespace CASM {
     bool primitive_only = true;
     _kwargs.get_if(primitive_only, "primitive_only");
 
-    std::cout << "#INPUTCONFIGS: " << in_configs.size() << "\n";
     auto lambda = [&](const ConfigEnumInput & _input) {
       return notstd::make_unique<ConfigEnumRandomLocal>(_input, dof_key, n_config, mag, normal, mtrand);
     };

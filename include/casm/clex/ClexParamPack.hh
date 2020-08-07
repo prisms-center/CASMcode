@@ -256,7 +256,6 @@ namespace CASM {
         std::stringstream ss;
         for(it = keys().begin(); it != keys().end(); ++it)
           ss << "  "  << it->first << "\n";
-        std::cout << "No parameters corresponding to name " << _name + ". Options are:\n" << ss.str() << "\n";
         throw std::runtime_error("In ClexParamPack::key(), ClexParamPack does not contain parameters corresponding to name " + _name + ". Options are:\n" + ss.str());
       }
       return it->second;

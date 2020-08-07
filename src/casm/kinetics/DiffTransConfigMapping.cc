@@ -79,7 +79,7 @@ namespace CASM {
       MappingNode from_node = *from_set.begin();
       MappingNode to_node = *to_set.begin();
 
-      auto scel_ptr = std::make_shared<Supercell>(&(mapper.primclex()), from_node.lat_node.parent.superlattice());
+      auto scel_ptr = std::make_shared<Supercell>(&(mapper.primclex()), from_node.lattice_node.parent.superlattice());
       std::vector<UnitCellCoord> from_uccoords;
       std::vector<UnitCellCoord> to_uccoords;
 
@@ -89,7 +89,7 @@ namespace CASM {
       Coordinate first_site = Coordinate(result.structures[0].basis()[0].const_frac(), scel_ptr->lattice(), FRAC);
 
       Coordinate t_shift =
-        sym::copy_apply(xtal::SymOp::point_operation(from_node.lat_node.isometry), first_site)
+        sym::copy_apply(xtal::SymOp::point_operation(from_node.lattice_node.isometry), first_site)
         - Coordinate(scel_ptr->uccoord(find_index(from_node.atom_permutation, 0)).coordinate(this->primclex().prim()));
       t_shift.set_lattice(primclex().prim().lattice(), CART);
 
@@ -103,8 +103,8 @@ namespace CASM {
       //from.print_xyz(std::cout,true);
       //std::cout << "unconditioned to struc" << std::endl;
       //to.print_xyz(std::cout,true);
-      _precondition_from_and_to(from_node.lat_node.isometry,
-                                from_node.lat_node.stretch,
+      _precondition_from_and_to(from_node.lattice_node.isometry,
+                                from_node.lattice_node.stretch,
                                 t_shift.const_cart(),
                                 from,
                                 to);

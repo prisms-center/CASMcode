@@ -113,9 +113,6 @@ namespace CASM {
     /// using the master_group's multiplication table
     Index ind_prod(const SymOpRepresentation &RHS)const;
 
-    virtual jsonParser &to_json(jsonParser &json) const = 0;
-    virtual void from_json(const jsonParser &json) = 0;
-
   protected:
     /// Protected constructor to allow internal construction of masterless symops
     SymOpRepresentation(MasterSymGroup const *_master_group_ptr, SymGroupRepID _rep_ID, Index _op_index) :
@@ -151,10 +148,6 @@ namespace CASM {
       return A.index() < B.index();
     }
   };
-
-  jsonParser &to_json(const SymOpRepresentation *rep, jsonParser &json);
-  /// This allocates a new object to 'rep'.
-  void from_json(SymOpRepresentation *rep, const jsonParser &json);
 
   /** @}*/
 

@@ -27,7 +27,7 @@ namespace CASM {
         if(!_prim.basis()[b].has_dof(name()))
           continue;
         BasisSet tresult;
-        CASM::DoFSet adapted_dofset = adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(_prim.basis()[b].dof(name()), b);
+        CASM::DoFSet adapted_dofset = adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(_prim.basis()[b].dof(name()), _prim.site_dof_symrep_IDs()[b].at(name()), b);
         tresult.set_variable_basis(adapted_dofset);
         Array<BasisSet const *> tsubs(1, &tresult);
         result[b].construct_harmonic_polynomials(tsubs, 2, 1, false);
@@ -43,8 +43,8 @@ namespace CASM {
 
   namespace DoFType {
 
-    DoF_impl::MagSpinDoFTraits magspin() {
-      return DoF_impl::MagSpinDoFTraits();
+    DoF_impl::MagSpinDoFTraits magspin(std::string const &flavor_name) {
+      return DoF_impl::MagSpinDoFTraits(flavor_name);
     }
   }
 

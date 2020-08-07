@@ -53,7 +53,7 @@ namespace CASM {
         return std::vector<BasisSet>();
 
       std::vector<BasisSet> result(1);
-      result[0].set_variable_basis(adapter::Adapter<CASM::DoFSet, xtal::DoFSet>()(_prim.structure().global_dof(name())));
+      result[0].set_variable_basis(adapter::Adapter<CASM::DoFSet, xtal::DoFSet>()(_prim.structure().global_dof(name()), _prim.global_dof_symrep_ID(name())));
 
       return result;
     }

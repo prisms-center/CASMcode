@@ -217,7 +217,7 @@ namespace CASM {
 
         try {
           /* _dof_map.emplace(std::make_pair(it.name(), it->get<xtal::DoFSet>(_modules.aniso_val_dict().lookup(it.name())))); */
-          _dof_map.emplace(std::make_pair(it.name(), it->get<xtal::SiteDoFSet>()));
+          _dof_map.emplace(std::make_pair(it.name(), it->get<xtal::SiteDoFSet>(_modules.aniso_val_dict().lookup(it.name()))));
           /* _dof_map.emplace(std::make_pair(it.name(), from_json<xtal::SiteDoFSet>(*it))); */
         }
         catch(std::exception &e) {
@@ -327,7 +327,7 @@ namespace CASM {
             try {
               //TODO: Am I messing something up here? Why was it constructed so weird before?
               /* _dof_map.emplace(std::make_pair(it.name(), it->get<xtal::DoFSet>(_modules->aniso_val_dict().lookup(it.name())))); */
-              _dof_map.emplace(std::make_pair(it.name(), it->get<xtal::DoFSet>()));
+              _dof_map.emplace(std::make_pair(it.name(), it->get<xtal::DoFSet>(_modules->aniso_val_dict().lookup(it.name()))));
             }
             catch(std::exception &e) {
               throw std::runtime_error("Error parsing global field \"dofs\" from JSON. Failure for DoF type " + it.name() + ": " + e.what());
@@ -417,6 +417,7 @@ namespace CASM {
     for(auto const &_dof : prim.global_dofs()) {
       json["dofs"][_dof.first] = _dof.second;
     }
+
     auto mol_names = allowed_molecule_unique_names(prim);
     jsonParser &bjson = (json["basis"].put_array());
     for(int i = 0; i < prim.basis().size(); i++) {
@@ -462,49 +463,72 @@ namespace CASM {
 
     const SymOp &op = grp[i];
 
-    to_json(op.matrix(), j["matrix"]["CART"]);
-    to_json(grp.lattice().inv_lat_column_mat()*op.matrix()*grp.lattice().lat_column_mat(), j["matrix"]["FRAC"]);
+    to_json(op.matrix(), j["CART"]["matrix"]);
+    to_json_array(op.tau(), j["CART"]["tau"]);
+    to_json(op.time_reversal(), j["CART"]["time_reversal"]);
 
-    to_json_array(op.tau(), j["tau"]["CART"]);
-    to_json_array(grp.lattice().inv_lat_column_mat()*op.tau(), j["tau"]["FRAC"]);
+    to_json(grp.lattice().inv_lat_column_mat()*op.matrix()*grp.lattice().lat_column_mat(), j["FRAC"]["matrix"]);
+    to_json_array(grp.lattice().inv_lat_column_mat()*op.tau(), j["FRAC"]["tau"]);
+    to_json(op.time_reversal(), j["FRAC"]["time_reversal"]);
 
-    to_json(grp.class_of_op(i), j["conjugacy_class"]);
-    to_json(grp.ind_inverse(i), j["inverse"]);
 
-    add_sym_info(grp.info(i), j);
+    to_json(grp.class_of_op(i) + 1, j["info"]["conjugacy_class"]);
+    to_json(grp.ind_inverse(i) + 1, j["info"]["inverse_operation"]);
+
+    add_sym_info(grp.info(i), j["info"]);
   }
 
   void write_symgroup(const SymGroup &grp, jsonParser &json) {
     json = jsonParser::object();
-
-    json["symop"] = jsonParser::array(grp.size());
-    for(int i = 0; i < grp.size(); i++) {
-      write_symop(grp, i, json["symop"][i]);
-    }
-
-    json["name"] = grp.get_name();
-    json["latex_name"] = grp.get_latex_name();
-    json["periodicity"] = grp.periodicity();
-    if(grp.periodicity() == PERIODIC) {
-      json["possible_space_groups"] = grp.possible_space_groups();
-    }
-    json["conjugacy_class"] = grp.get_conjugacy_classes();
-    json["inverse"] = jsonParser::array(grp.size());
-    for(int i = 0; i < grp.size(); i++) {
-      json["inverse"][i] = grp.ind_inverse(i);
-    }
-    json["multiplication_table"] = grp.get_multi_table();
-    bool has_time_reversal = false;
-    for(SymOp const &op : grp) {
-      if(op.time_reversal()) {
-        has_time_reversal = true;
-        break;
+    {
+      jsonParser &json_ops = json["group_operations"];
+      for(int i = 0; i < grp.size(); i++) {
+        std::string op_name = "op_" + to_sequential_string(i + 1, grp.size());
+        write_symop(grp, i, json_ops[op_name]);
       }
     }
-    if(!has_time_reversal) {
-      // For now, only print character table for nonmagnetic groups (character table routine does not work for magnetic groups)
-      json["character_table"] = grp.character_table();
+    {
+      jsonParser &json_info = json["group_classification"];
+      json_info["name"] = grp.get_name();
+      json_info["latex_name"] = grp.get_latex_name();
+      json_info["periodicity"] = grp.periodicity();
+      if(grp.periodicity() == PERIODIC)
+        json_info["possible_space_groups"] = grp.possible_space_groups();
     }
+
+    {
+      jsonParser &json_struc = json["group_structure"];
+      auto const &classes = grp.get_conjugacy_classes();
+
+      for(Index c = 0; c < classes.size(); ++c) {
+        std::string class_name = "class_" + to_sequential_string(c + 1, classes.size());
+        jsonParser &json_class = json_struc["conjugacy_classes"][class_name];
+
+
+        SymInfo info = grp.info(classes[c][0]);
+        json_class["operation_type"] = info.op_type;
+        if(info.op_type == symmetry_type::rotation_op ||
+           info.op_type == symmetry_type::screw_op ||
+           info.op_type == symmetry_type::rotoinversion_op) {
+          json_class["rotation_angle"] = info.angle;
+        }
+        json_class["operations"].put_array();
+        for(Index o : classes[c]) {
+          json_class["operations"].push_back(o + 1);
+        }
+      }
+      auto multi_table = grp.get_multi_table();
+      for(auto &v : multi_table) {
+        for(auto &i : v) {
+          ++i;
+        }
+      }
+      json_struc["multiplication_table"] = multi_table;
+    }
+
+    // Character table excluded for now. Will revisit after SymGroup is refactored
+    //json["character_table"] = grp.character_table();
+
   }
 
 

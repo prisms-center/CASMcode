@@ -37,7 +37,7 @@ namespace CASM {
     /// \brief Construct indices of the subgroup for which this->is_equivalent(copy_apply(op, *this))
     template <typename OutputIt>
     OutputIt invariant_subgroup_indices(const Lattice &lat, const std::vector<SymOp> &super_group, OutputIt result) {
-      LatticeIsEquivalent is_equiv(lat);
+      IsPointGroupOp is_equiv(lat);
 
       Index ix = 0;
       for(auto it = super_group.begin(); it != super_group.end(); ++it) {
@@ -57,9 +57,8 @@ namespace CASM {
     /// Convert a fractional symmetry operation representation to Cartesian
     /* Eigen::Matrix3d symmetry_matrix_to_cart(const Lattice &lat, const Eigen::Matrix3i &cart_matrix); */
 
-    // TODO: Removed from header because I'm pretty sure it doesn't work at all as expected
     /// \brief Return a copy of the given lattice, which obeys the symmetry of the given group \param enforced_group
-    /* Lattice symmetrize(const Lattice &lat, const std::vector<SymOp> &enforced_group); */
+    Lattice symmetrize(const Lattice &lat, const std::vector<SymOp> &enforced_group);
 
     // TODO
     // Why does this routine take a tolerance, if the lattice itself has a tolerance?
