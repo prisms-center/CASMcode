@@ -1,3 +1,4 @@
+
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from builtins import *
 
@@ -40,7 +41,6 @@ class Incar(object):
     """
     The INCAR class contains:
         tags: a dict of all INCAR settings
-
     All input tags and associated values are stored as key-value pairs in the dicionary called 'tags'.
    """
     def __init__(self,filename, species=None, poscar=None, sort=True):
@@ -197,15 +197,9 @@ class Incar(object):
                 pass
             else:
                 if tag.lower() in VASP_TAG_SITEF_LIST + VASP_TAG_SPECF_LIST:
-                    rem_cs = ['\[', '\]', '\,', '\'', '\"']
-                    for rt in rem_cs:
-                        self.tags[tag] = re.sub(rt, "", str(self.tags[tag]))
-                    incar_write.write('{} = {}\n'.format(tag.upper(), self.tags[tag]))
+                    incar_write.write('{} = {}\n'.format(tag.upper(),remove_chars(self.tags[tag], "[\[\],']")))
                 elif tag.lower() in VASP_TAG_SPECI_LIST:
-                    rem_cs = ['\[', '\]', '\,', '\'', '\"']
-                    for rt in rem_cs:
-                        self.tags[tag] = re.sub(rt, "", str(self.tags[tag]))
-                    incar_write.write('{} = {}\n'.format(tag.upper(), self.tags[tag]))
+                    incar_write.write('{} = {}\n'.format(tag.upper(),remove_chars(self.tags[tag], "[\[\],']")))
                 elif tag.lower() in VASP_TAG_BOOL_LIST:
                     if self.tags[tag] == True:
                         incar_write.write('{} = .TRUE.\n'.format(tag.upper()))
@@ -214,4 +208,3 @@ class Incar(object):
                 else:
                     incar_write.write('{} = {}\n'.format(tag.upper(),self.tags[tag]))
         incar_write.close()
-
