@@ -3,8 +3,6 @@
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/ConfigEnumRandomOccupations.hh"
 #include "casm/clex/SuperConfigEnum.hh"
-#include "casm/kinetics/DiffusionTransformationEnum.hh"
-#include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"
 
 namespace CASM {
 

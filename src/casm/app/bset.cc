@@ -7,8 +7,6 @@
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
-#include "casm/clusterography/ClusterSymCompare_impl.hh"
-#include "casm/clusterography/IntegralCluster_impl.hh"
 #include "casm/completer/Handlers.hh"
 
 namespace CASM {
@@ -183,34 +181,6 @@ namespace CASM {
         print_bset(cmd, orbits);
       }
     }
-
-    /// TODO: Move this
-    //
-    // jsonParser &local_diff_trans_cspecs_to_json(
-    //   std::string phenomenal_name,
-    //   const PrimClex &primclex,
-    //   jsonParser &json) {
-    //
-    //   const auto &shared_prim = primclex.shared_prim();
-    //
-    //   const auto &const_db = primclex.db<PrimPeriodicDiffTransOrbit>();
-    //   auto dtorbit_it = const_db.find(phenomenal_name);
-    //   if(dtorbit_it == const_db.end()) {
-    //     throw std::runtime_error("Error: diff_trans '" + phenomenal_name + "' does not exist.");
-    //   }
-    //   auto prototype = dtorbit_it->prototype();
-    //
-    //   typedef PrimPeriodicSymCompare<Kinetics::DiffusionTransformation> DTSymCompareType;
-    //   DTSymCompareType dt_sym_compare {shared_prim, shared_prim->lattice().tol()};
-    //
-    //   SymGroup generating_group = make_invariant_subgroup(
-    //                                 prototype, shared_prim->factor_group(), dt_sym_compare);
-    //
-    //   to_json(generating_group, json["generating_group"]);
-    //   to_json(prototype.cluster(), json["phenomenal"]);
-    //   return json;
-    // }
-
   }
 
 

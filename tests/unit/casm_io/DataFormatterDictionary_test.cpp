@@ -23,8 +23,6 @@
 
 // #include "casm/enumerator/Enumerator_impl.hh"
 // #include "casm/app/enum.hh"
-// #include "casm/kinetics/DiffusionTransformationEnum.hh"
-// #include "casm/kinetics/DiffTransConfigEnumOccPerturbations.hh"
 
 
 using namespace CASM;
@@ -157,60 +155,6 @@ using namespace CASM;
 //     auto &dict = qh.dict();
 //
 //     std::vector<std::string> all_col = {"name", "selected", "comp"};
-//     auto formatter = dict.parse(all_col);
-//
-//     std::stringstream ss;
-//     ss << formatter(selection.all().begin(), selection.all().end()) << std::endl;
-//     ASSERT_EQ(true, true);
-//   }
-//   // -- DiffusionTransformation --
-//
-//   {
-//     std::string srcdir = autotools::abs_srcdir();
-//     jsonFile diff_trans_json {srcdir + "/tests/unit/kinetics/FCCTernary_diff_trans_0.json"};
-//     ASSERT_EQ(true, true);
-//     Kinetics::DiffusionTransformationEnum::run(primclex, diff_trans_json, enum_opt, nullptr);
-//     ASSERT_EQ(true, true);
-//
-//     ASSERT_EQ(primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().size(), 28);
-//     primclex.generic_db<Kinetics::PrimPeriodicDiffTransOrbit>().commit();
-//     DB::Selection<Kinetics::PrimPeriodicDiffTransOrbit> selection(primclex, "ALL");
-//
-//     auto &qh = primclex.settings().query_handler<Kinetics::PrimPeriodicDiffTransOrbit>();
-//     qh.set_selected(selection);
-//     auto &dict = qh.dict();
-//
-//     std::vector<std::string> all_col = {"name", "selected"};
-//     auto formatter = dict.parse(all_col);
-//
-//     std::stringstream ss;
-//     ss << formatter(selection.all().begin(), selection.all().end()) << std::endl;
-//     ASSERT_EQ(true, true);
-//   }
-//
-//   // -- DiffTransConfiguration --
-//
-//   // standard cubic FCC unit cell
-//   Supercell standard_fcc_unit {&primclex, Lattice(c + b - a, a - b + c, a + b - c)};
-//   Supercell background_fcc_unit {&primclex, Lattice(3 * (c + b - a), 3 * (a - b + c), 3 * (a + b - c))};
-//
-//   {
-//     std::string srcdir = autotools::abs_srcdir();
-//     jsonFile diff_perturb_json {srcdir + "/tests/unit/kinetics/FCCTernary_diff_perturb_0.json"};
-//     //TODO: This is broken.
-//     Kinetics::DiffTransConfigEnumOccPerturbations::run(primclex, diff_perturb_json, enum_opt, nullptr);
-//
-//     // Not checked for accuracy yet... Would need a simpler test case
-//     ASSERT_EQ(primclex.generic_db<Kinetics::DiffTransConfiguration>().size(), 1856);
-//
-//     primclex.generic_db<Kinetics::DiffTransConfiguration>().commit();
-//     DB::Selection<Kinetics::DiffTransConfiguration> selection(primclex, "ALL");
-//
-//     auto &qh = primclex.settings().query_handler<Kinetics::DiffTransConfiguration>();
-//     qh.set_selected(selection);
-//     auto &dict = qh.dict();
-//
-//     std::vector<std::string> all_col = {"name", "selected"};
 //     auto formatter = dict.parse(all_col);
 //
 //     std::stringstream ss;

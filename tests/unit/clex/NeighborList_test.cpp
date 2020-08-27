@@ -150,12 +150,13 @@ TEST(NeighborListTest, Proj) {
   jsonParser bspecs_json(proj.bspecs());
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   double crystallography_tol = TOL;
-  make_prim_periodic_orbits(primclex.shared_prim(),
-                            bspecs_json,
-                            alloy_sites_filter,
-                            crystallography_tol,
-                            std::back_inserter(orbits),
-                            null_log());
+  // TODO: update with ClusterSpecs
+  // make_prim_periodic_orbits(primclex.shared_prim(),
+  //                           bspecs_json,
+  //                           alloy_sites_filter,
+  //                           crystallography_tol,
+  //                           std::back_inserter(orbits),
+  //                           null_log());
 
   // expand the nlist to contain 'tree'
   std::set<UnitCellCoord> nbors;

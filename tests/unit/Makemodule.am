@@ -24,7 +24,6 @@ libcasmtesting_la_SOURCES = \
     tests/unit/Proj.hh\
     tests/unit/TestConfiguration.cc\
     tests/unit/TestConfiguration.hh\
-    tests/unit/TestDiffTransConfigOccPerturbations.hh\
     tests/unit/TestOrbits.cc\
     tests/unit/TestOrbits.hh\
     tests/unit/TestSupercell.cc\
@@ -141,7 +140,6 @@ TESTS += \
 check_PROGRAMS += \
     casm_unit_clusterography
 casm_unit_clusterography_SOURCES = \
-    tests/unit/clusterography/ClusterSpecsParser_test.cpp\
     tests/unit/clusterography/Clusterography_test.cpp\
     tests/unit/gtest_main_run_all.cpp
 casm_unit_clusterography_LDADD = \
@@ -242,8 +240,6 @@ casm_unit_database_SOURCES = \
     tests/unit/database/ScelDatabase_test.cpp\
     tests/unit/database/Selection_test.cpp\
     tests/unit/database/jsonConfigDatabase_test.cpp\
-    tests/unit/database/jsonDiffTransConfigDatabase_test.cpp\
-    tests/unit/database/jsonDiffTransOrbitDatabase_test.cpp\
     tests/unit/database/jsonPropertiesDatabase_test.cpp\
     tests/unit/database/jsonScelDatabase_test.cpp\
     tests/unit/gtest_main_run_all.cpp
@@ -267,12 +263,7 @@ TESTS += \
 check_PROGRAMS += \
     casm_unit_kinetics
 casm_unit_kinetics_SOURCES = \
-    tests/unit/gtest_main_run_all.cpp\
-    tests/unit/kinetics/DiffTransConfigEnumOccPerturbations_test.cpp\
-    tests/unit/kinetics/DiffTransConfigInterpolation_test.cpp\
-    tests/unit/kinetics/DiffTransConfiguration_test.cpp\
-    tests/unit/kinetics/DiffusionTransformation_test.cpp\
-    tests/unit/kinetics/LocalClusterExpansion_test.cpp
+    tests/unit/gtest_main_run_all.cpp
 casm_unit_kinetics_LDADD = \
     $(BOOST_CHRONO_LIB)\
     $(BOOST_FILESYSTEM_LIB)\
@@ -284,17 +275,7 @@ casm_unit_kinetics_LDADD = \
 casm_unit_kinetics_CPPFLAGS = \
     $(AM_CPPFLAGS)\
     -I$(top_srcdir)/tests/unit/
-EXTRA_DIST += \
-    tests/unit/kinetics/FCCTernary_bspecs_0.json\
-    tests/unit/kinetics/FCCTernary_diff_perturb_0.json\
-    tests/unit/kinetics/FCCTernary_diff_trans_0.json\
-    tests/unit/kinetics/FCCTernary_diff_trans_err_0.json\
-    tests/unit/kinetics/ZrO_bspecs_0.json\
-    tests/unit/kinetics/ZrO_diff_perturb_0.json\
-    tests/unit/kinetics/ZrO_diff_trans_0.json\
-    tests/unit/kinetics/ZrO_local_bspecs_0.json\
-    tests/unit/kinetics/ZrO_local_bspecs_1.json\
-    tests/unit/kinetics/l12_local_bspecs_0.json
+
 
 #-------------------------------------------------------------------------------#
 
@@ -376,7 +357,6 @@ casm_unit_symmetry_SOURCES = \
     tests/unit/gtest_main_run_all.cpp\
     tests/unit/symmetry/InvariantSubgroup_test.cpp\
     tests/unit/symmetry/Orbit_test.cpp\
-    tests/unit/symmetry/SubOrbits_test.cpp\
     tests/unit/symmetry/SymBasisPermute_test.cpp
 casm_unit_symmetry_LDADD = \
     $(BOOST_CHRONO_LIB)\

@@ -1,9 +1,0 @@
-{
-  "basis_functions" : {
-    "site_basis_functions" : "occupation"
-  },
-  "orbit_branch_specs" : {
-    "1" : {"cutoff_radius": 12.0},
-    "2" : {"max_length" : 3.0, "cutoff_radius": 3.0}
-  }
-}

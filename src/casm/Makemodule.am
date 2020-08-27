@@ -154,21 +154,29 @@ libcasm_la_SOURCES = \
     include/casm/clex/json_io.hh\
     include/casm/clusterography/ClusterDecl.hh\
     include/casm/clusterography/ClusterInvariants.hh\
-    include/casm/clusterography/ClusterInvariants_impl.hh\
     include/casm/clusterography/ClusterOrbits.hh\
     include/casm/clusterography/ClusterOrbits_impl.hh\
-    include/casm/clusterography/ClusterSpecsParser.hh\
-    include/casm/clusterography/ClusterSpecsParser_impl.hh\
+    include/casm/clusterography/ClusterSpecs.hh\
+    include/casm/clusterography/ClusterSpecs_impl.hh\
     include/casm/clusterography/ClusterSymCompare.hh\
+    include/casm/clusterography/ClusterSymCompareDecl.hh\
     include/casm/clusterography/ClusterSymCompare_impl.hh\
-    include/casm/clusterography/CoordCluster.hh\
-    include/casm/clusterography/CoordClusterTraits.hh\
     include/casm/clusterography/GenericCluster.hh\
     include/casm/clusterography/IntegralCluster.hh\
+    include/casm/clusterography/IntegralClusterSymCompareTraits.hh\
+    include/casm/clusterography/IntegralClusterSymCompareTraits_impl.hh\
     include/casm/clusterography/IntegralCluster_impl.hh\
     include/casm/clusterography/SubClusterGenerator.hh\
+    include/casm/clusterography/io/json/ClusterOrbits_json_io.hh\
+    include/casm/clusterography/io/json/ClusterSpecs_json_io.hh\
+    include/casm/clusterography/io/json/IntegralCluster_json_io.hh\
+    include/casm/clusterography/io/json_io.hh\
+    include/casm/clusterography/io/stream/ClusterInvariants_stream_io.hh\
+    include/casm/clusterography/io/stream/IntegralCluster_stream_io.hh\
+    include/casm/clusterography/io/stream_io.hh\
     include/casm/completer/Complete.hh\
     include/casm/completer/Handlers.hh\
+    include/casm/completer/help.hh\
     include/casm/container/Array.hh\
     include/casm/container/BaseCounter.hh\
     include/casm/container/ContainerTraits.hh\
@@ -239,10 +247,6 @@ libcasm_la_SOURCES = \
     include/casm/database/DatabaseTypesTraits.hh\
     include/casm/database/DatabaseTypes_impl.hh\
     include/casm/database/Database_impl.hh\
-    include/casm/database/DiffTransConfigDatabase.hh\
-    include/casm/database/DiffTransConfigImport.hh\
-    include/casm/database/DiffTransDatabase.hh\
-    include/casm/database/DiffTransOrbitDatabase.hh\
     include/casm/database/Import.hh\
     include/casm/database/Import_impl.hh\
     include/casm/database/Named.hh\
@@ -608,34 +612,8 @@ libcasm_la_SOURCES = \
     include/casm/global/enum/io_traits.hh\
     include/casm/global/enum/json_io.hh\
     include/casm/global/enum/stream_io.hh\
+    include/casm/global/errors.hh\
     include/casm/hull/Hull.hh\
-    include/casm/kinetics/DiffTransConfigEnumOccPerturbations.hh\
-    include/casm/kinetics/DiffTransConfigInterpolation.hh\
-    include/casm/kinetics/DiffTransConfigIsEqual.hh\
-    include/casm/kinetics/DiffTransConfigMapping.hh\
-    include/casm/kinetics/DiffTransConfiguration.hh\
-    include/casm/kinetics/DiffTransConfigurationIO.hh\
-    include/casm/kinetics/DiffTransConfigurationTraits.hh\
-    include/casm/kinetics/DiffTransConfiguration_impl.hh\
-    include/casm/kinetics/DiffusionTransformation.hh\
-    include/casm/kinetics/DiffusionTransformationEnum.hh\
-    include/casm/kinetics/DiffusionTransformationEnum_impl.hh\
-    include/casm/kinetics/DiffusionTransformationTraits.hh\
-    include/casm/kinetics/DiffusionTransformation_impl.hh\
-    include/casm/kinetics/DoFTransformation.hh\
-    include/casm/kinetics/DoFTransformation_impl.hh\
-    include/casm/kinetics/EnumDiffTransConfigEndpoints.hh\
-    include/casm/kinetics/KineticsDecl.hh\
-    include/casm/kinetics/KineticsOrbits.hh\
-    include/casm/kinetics/KineticsOrbits_impl.hh\
-    include/casm/kinetics/OccPerturbation.hh\
-    include/casm/kinetics/OccPerturbation_impl.hh\
-    include/casm/kinetics/OccupationTransformation.hh\
-    include/casm/kinetics/OccupationTransformationTraits.hh\
-    include/casm/kinetics/PrimPeriodicDiffTransOrbitIO.hh\
-    include/casm/kinetics/PrimPeriodicDiffTransOrbitTraits.hh\
-    include/casm/kinetics/RemovePrimPeriodicDiffTransOrbit.hh\
-    include/casm/kinetics/SubOrbitGenerators.hh\
     include/casm/misc/CASM_Array_math.hh\
     include/casm/misc/CASM_Eigen_math.hh\
     include/casm/misc/CASM_TMP.hh\
@@ -647,6 +625,7 @@ libcasm_la_SOURCES = \
     include/casm/misc/PCA.hh\
     include/casm/misc/ParsingDictionary.hh\
     include/casm/misc/TypeInfo.hh\
+    include/casm/misc/Validator.hh\
     include/casm/misc/algorithm.hh\
     include/casm/misc/cloneable_ptr.hh\
     include/casm/misc/type_traits.hh\
@@ -822,10 +801,16 @@ libcasm_la_SOURCES = \
     src/casm/clex/Supercell.cc\
     src/casm/clex/SupercellIO.cc\
     src/casm/clex/SupercellTraits.cc\
+    src/casm/clusterography/ClusterInvariants.cc\
     src/casm/clusterography/ClusterOrbits.cc\
-    src/casm/clusterography/ClusterSpecsParser.cc\
-    src/casm/clusterography/ClusterSymCompareSpecializations.cc\
+    src/casm/clusterography/ClusterSpecs.cc\
     src/casm/clusterography/IntegralCluster.cc\
+    src/casm/clusterography/IntegralClusterSymCompareTraits.cc\
+    src/casm/clusterography/io/json/ClusterOrbits_json_io.cc\
+    src/casm/clusterography/io/json/ClusterSpecs_json_io.cc\
+    src/casm/clusterography/io/json/IntegralCluster_json_io.cc\
+    src/casm/clusterography/io/stream/ClusterInvariants_stream_io.cc\
+    src/casm/clusterography/io/stream/IntegralCluster_stream_io.cc\
     src/casm/completer/Complete.cc\
     src/casm/completer/Handlers.cc\
     src/casm/completer/help.cc\
@@ -874,9 +859,6 @@ libcasm_la_SOURCES = \
     src/casm/database/Database.cc\
     src/casm/database/DatabaseHandler.cc\
     src/casm/database/DatabaseTypes.cc\
-    src/casm/database/DiffTransConfigDatabase.cc\
-    src/casm/database/DiffTransConfigImport.cc\
-    src/casm/database/DiffTransOrbitDatabase.cc\
     src/casm/database/Import.cc\
     src/casm/database/PropertiesDatabase.cc\
     src/casm/database/Remove.cc\
@@ -929,25 +911,6 @@ libcasm_la_SOURCES = \
     src/casm/global/enum/json_io.cc\
     src/casm/global/enum/stream_io.cc\
     src/casm/hull/Hull.cc\
-    src/casm/kinetics/DiffTransConfigEnumOccPerturbations.cc\
-    src/casm/kinetics/DiffTransConfigInterpolation.cc\
-    src/casm/kinetics/DiffTransConfigIsEqual.cc\
-    src/casm/kinetics/DiffTransConfigMapping.cc\
-    src/casm/kinetics/DiffTransConfiguration.cc\
-    src/casm/kinetics/DiffTransConfigurationIO.cc\
-    src/casm/kinetics/DiffTransConfigurationTraits.cc\
-    src/casm/kinetics/DiffusionTransformation.cc\
-    src/casm/kinetics/DiffusionTransformationEnum.cc\
-    src/casm/kinetics/DiffusionTransformationTraits.cc\
-    src/casm/kinetics/DoFTransformation.cc\
-    src/casm/kinetics/EnumDiffTransConfigEndpoints.cc\
-    src/casm/kinetics/KineticsOrbits.cc\
-    src/casm/kinetics/OccPerturbation.cc\
-    src/casm/kinetics/OccupationTransformation.cc\
-    src/casm/kinetics/OccupationTransformationTraits.cc\
-    src/casm/kinetics/PrimPeriodicDiffTransOrbitIO.cc\
-    src/casm/kinetics/PrimPeriodicDiffTransOrbitTraits.cc\
-    src/casm/kinetics/RemovePrimPeriodicDiffTransOrbit.cc\
     src/casm/misc/CASM_Array_math.cc\
     src/casm/misc/CASM_Eigen_math.cc\
     src/casm/misc/CASM_math.cc\

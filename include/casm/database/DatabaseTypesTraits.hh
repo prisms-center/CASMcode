@@ -3,7 +3,5 @@
 
 #include "casm/clex/SupercellTraits.hh"
 #include "casm/clex/ConfigurationTraits.hh"
-#include "casm/kinetics/DiffusionTransformationTraits.hh"
-#include "casm/kinetics/DiffTransConfigurationTraits.hh"
 
 #endif

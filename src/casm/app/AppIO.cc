@@ -14,7 +14,6 @@
 #include "casm/crystallography/io/DoFSetIO.hh"
 #include "casm/global/enum/json_io.hh"
 #include "casm/global/enum/stream_io.hh"
-#include "casm/kinetics/DiffusionTransformation.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 #include "casm/symmetry/SymInfo.hh"
 #include <fstream>
@@ -1091,8 +1090,4 @@ namespace CASM {
   ORBIT_SET_INST(WithinScelIntegralClusterOrbit)
 
 
-#define DIFFTRANS_VECTOR_INST(ORBIT) \
-  PRINT_CLUST_INST(_VECTOR_IT(ORBIT), _VECTOR_INSERTER(ORBIT), PrototypePrinter<Kinetics::DiffusionTransformation>)
-
-  DIFFTRANS_VECTOR_INST(PrimPeriodicDiffTransOrbit)
 }
