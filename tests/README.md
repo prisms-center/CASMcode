@@ -79,18 +79,14 @@ $ bash build_test.sh
 Run particular test cases
 -------------------------
 
-- To customize the options given to the test programs, for instance to run only particular test suites or test cases, set the ``CASM_TEST_FLAGS`` environment variable.
-- For more options see [selecting tests](https://github.com/google/googletest/blob/master/googletest/docs/primer.md)
-
-
-From ``CASMcode`` directory:
+To customize the options given to the test programs, for instance to run only particular test suites or test cases, run the test program separately after it has been built. For example, to run only the Lattice tests:
 
 ```
-$ export CASM_TESTS="casm_test_crystallography "
-$ export CASM_TEST_FLAGS="--gtest_filter=CoordinateTest.* --gtest_color=yes "
-$
-$ bash build_test.sh
+./casm_unit_crystallography --gtest_filter=LatticeTest.*
 ```
+
+For more options see [selecting tests](https://github.com/google/googletest/blob/master/googletest/docs/primer.md)
+
 
 Clean test output
 -----------------
