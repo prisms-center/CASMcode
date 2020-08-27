@@ -66,6 +66,9 @@ namespace CASM {
 
 
     void jsonDB::insert(DatabaseHandler &db_handler) {
+      if(!db_handler.primclex().has_dir()) {
+        throw std::runtime_error("Error constructing jsonDB: CASM project has no root directory.");
+      }
       DB::for_each_type(InsertImpl(db_handler));
       DB::for_each_config_type(InsertPropsImpl(db_handler));
     }

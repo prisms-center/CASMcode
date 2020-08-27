@@ -78,6 +78,7 @@ TESTS += \
 check_PROGRAMS += \
     casm_unit_basis_set
 casm_unit_basis_set_SOURCES = \
+    tests/unit/basis_set/BasisFunctionSpecs_test.cpp\
     tests/unit/basis_set/OccupationDoFTraits_test.cpp\
     tests/unit/gtest_main_run_all.cpp
 casm_unit_basis_set_LDADD = \
@@ -153,6 +154,7 @@ casm_unit_clex_CPPFLAGS = \
 EXTRA_DIST += \
     tests/unit/clex/ConfigEnumAllOccupations_test_cases.json\
     tests/unit/clex/ConfigEnumEquivalents_test_cases.json\
+    tests/unit/clex/TestClexBasisSpecs.hh\
     tests/unit/clex/test_Clexulator.cc
 
 #-------------------------------------------------------------------------------#
@@ -294,7 +296,7 @@ casm_unit_examples_SOURCES = \
     tests/unit/examples/006_crystallography_structure_test.cpp\
     tests/unit/examples/007_crystallography_unitcellcoord_test.cpp\
     tests/unit/examples/100_symmetry_test.cpp\
-    tests/unit/examples/200_enumeration_test.cpp\
+    tests/unit/examples/200_enumeration_ScelEnum_test.cpp\
     tests/unit/examples/300_clusterography_IntegralCluster_test.cpp\
     tests/unit/examples/301_clusterography_cluster_orbits_test.cpp\
     tests/unit/examples/302_clusterography_cluster_specs_test.cpp\
