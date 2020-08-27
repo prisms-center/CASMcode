@@ -3,6 +3,7 @@
 
 #include <boost/iterator/iterator_facade.hpp>
 #include "casm/container/Counter.hh"
+#include "casm/misc/cloneable_ptr.hh"
 
 namespace CASM {
 

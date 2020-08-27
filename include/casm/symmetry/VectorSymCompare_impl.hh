@@ -40,6 +40,12 @@ namespace CASM {
     return m_tol;
   }
 
+  /// \brief Make orbit invariants from one element in the orbit
+  template<typename Base>
+  typename EigenSymCompare<Base>::InvariantsType
+  EigenSymCompare<Base>::make_invariants_impl(const Element &obj) const {
+    return InvariantsType {obj};
+  }
 
   /// \brief Orders 'prepared' elements in the same orbit
   ///
@@ -50,11 +56,9 @@ namespace CASM {
   /// - First compares by number of sites in cluster
   /// - Then compare all displacements, from longest to shortest
   template<typename Base>
-  bool EigenSymCompare<Base>::invariants_compare_impl(const Element &A, const Element &B) const {
-    if(A.cols() == B.cols()) {
-      return CASM::compare(A.norm(), B.norm(), tol());
-    }
-    return A.cols() < B.cols();
+  bool EigenSymCompare<Base>::invariants_compare_impl(
+    InvariantsType const &A_invariants, InvariantsType const &B_invariants) const {
+    return CASM::compare(A_invariants, B_invariants, tol());
   }
 
   /// \brief Compares 'prepared' elements
@@ -70,6 +74,17 @@ namespace CASM {
     return result;
   }
 
+  /// \brief Spatial prepare does not apply -- element is returned unchanged
+  template<typename Base>
+  typename EigenSymCompare<Base>::Element EigenSymCompare<Base>::spatial_prepare_impl(Element obj) const {
+    return obj;
+  }
+
+  /// \brief Spatial prepare does not apply -- always identity
+  template<typename Base>
+  SymOp const &EigenSymCompare<Base>::spatial_transform_impl() const {
+    return m_spatial_transform;
+  }
 
   /// \brief Returns transformation that takes 'obj' to its prepared (canonical) form
   ///

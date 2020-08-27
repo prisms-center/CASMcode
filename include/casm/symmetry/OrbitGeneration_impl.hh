@@ -60,7 +60,9 @@ namespace CASM {
 
   template<typename _OrbitType>
   bool OrbitGeneratorCompare<_OrbitType>::operator()(const Element &A, const Element &B) const {
-    return sym_compare.inter_orbit_compare(A, B);
+    auto A_invariants = sym_compare.make_invariants(A);
+    auto B_invariants = sym_compare.make_invariants(B);
+    return sym_compare.inter_orbit_compare(A, A_invariants, B, B_invariants);
   }
 
 

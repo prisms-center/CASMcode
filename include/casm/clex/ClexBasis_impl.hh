@@ -4,12 +4,15 @@
 #include "casm/clex/ClexBasis.hh"
 
 #include "casm/basis_set/DoFTraits.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/clex/OrbitFunctionTraits.hh"
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/container/algorithm.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/symmetry/SymGroup.hh"
+#include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymRepTools.hh"
 
 

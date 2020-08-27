@@ -17,11 +17,11 @@ namespace CASM {
   using xtal::UnitCellCoord;
 
   class BasisSet;
-  class SymGroup;
   class ClexBasis;
+  class IntegralCluster;
   class PrimNeighborList;
   class Structure;
-
+  class SymGroup;
 
   class ClexBasisBuilder {
   public:

@@ -3,6 +3,7 @@
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/basis_set/BasisSet.hh"
 #include "casm/basis_set/Adapter.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/crystallography/Adapter.hh"
 #include "casm/crystallography/SymType.hh"
 #include "casm/crystallography/Structure.hh"

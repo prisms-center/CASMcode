@@ -8,6 +8,48 @@ namespace CASM {
   template<typename Base>
   class VectorSymCompare;
 
+  class VectorInvariants {
+  public:
+    VectorInvariants(Eigen::VectorXd const &vector);
+
+    double cols() const;
+    double norm() const;
+
+  private:
+    double m_cols;
+    double m_norm;
+  };
+
+  /// \brief Check if VectorInvariants are equal
+  bool almost_equal(VectorInvariants const &A_invariants, VectorInvariants const &B_invariants, double tol);
+
+  /// \brief Compare ClusterInvariants
+  bool compare(VectorInvariants const &A_invariants, VectorInvariants const &B_invariants, double tol);
+
+  template<typename Element, typename SymApply>
+  class DirectionSymCompare;
+
+  /// \brief Traits class for DirectionSymCompare
+  template<typename _Element, typename _SymApply>
+  struct traits<DirectionSymCompare<_Element, _SymApply>> {
+    typedef _Element Element;
+    typedef _SymApply SymApply;
+    typedef DirectionSymCompare<_Element, _SymApply> MostDerived;
+    typedef VectorInvariants InvariantsType;
+  };
+
+  template<typename Element, typename SymApply>
+  class SubspaceSymCompare;
+
+  /// \brief Traits class for SubspaceSymCompare
+  template<typename _Element, typename _SymApply>
+  struct traits<SubspaceSymCompare<_Element, _SymApply>> {
+    typedef _Element Element;
+    typedef _SymApply SymApply;
+    typedef SubspaceSymCompare<_Element, _SymApply> MostDerived;
+    typedef VectorInvariants InvariantsType;
+  };
+
   /// \brief Traits class for VectorSymCompare
   ///
   template<typename Base>
@@ -51,6 +93,7 @@ namespace CASM {
     using MostDerived = typename Base::MostDerived;
     using Element = typename traits<MostDerived>::Element;
     using SymApply = typename traits<MostDerived>::SymApply;
+    using typename Base::InvariantsType;
     using Base::derived;
 
     /// \brief Return tolerance
@@ -69,8 +112,13 @@ namespace CASM {
       m_tol(tol),
       m_apply(std::forward<Args>(args)...) {}
 
+
+    /// \brief Make orbit invariants from one element in the orbit
+    InvariantsType make_invariants_impl(Element const &obj) const;
+
     /// \brief Orders 'prepared' elements in the same orbit
-    bool invariants_compare_impl(const Element &A, const Element &B) const;
+    bool invariants_compare_impl(
+      InvariantsType const &A_invariants, InvariantsType const &B_invariants) const;
 
     /// \brief Compares 'prepared' elements
     bool compare_impl(const Element &A, const Element &B) const;
@@ -83,12 +131,21 @@ namespace CASM {
       return m_apply(op, obj);
     }
 
+    /// \brief Spatial prepare does not apply -- element is returned unchanged
+    Element spatial_prepare_impl(Element obj) const;
+
+    /// \brief Spatial prepare does not apply -- transform is always identity
+    SymOp const &spatial_transform_impl() const;
+
   private:
 
     double m_tol;
 
     SymApply m_apply;
 
+    /// Not applicable to VectorSymCompare -- always identity
+    /// - Default SymOp constructor initializes to identity
+    SymOp m_spatial_transform;
   };
 
   template<typename Element>

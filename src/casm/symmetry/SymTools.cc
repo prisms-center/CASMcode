@@ -53,8 +53,6 @@ namespace CASM {
       return mutating_ucc;
     }
 
-    //TODO: ClusterSymCompare strikes again. We should eventually remove these calls that accept a primitive structure in favor
-    //of the ones that take the minimun amount of necessary data (i.e. lattice and SymGroupRepID)
     template<>
     xtal::UnitCellCoord copy_apply<CASM::SymOp, xtal::UnitCellCoord, Structure>(const CASM::SymOp &op, xtal::UnitCellCoord copied_ucc, const Structure &prim) {
       sym::apply(op, copied_ucc, prim.lattice(), prim.basis_permutation_symrep_ID());

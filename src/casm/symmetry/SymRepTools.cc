@@ -13,6 +13,8 @@
 #include "casm/misc/algorithm.hh"
 #include "casm/container/Counter.hh"
 
+#include "casm/casm_io/Log.hh" // TODO: replace error log with exceptions
+
 namespace CASM {
   namespace Local {
 
@@ -477,8 +479,8 @@ namespace CASM {
     // the orbit of the directions. this should also
     // reveal the invariant subgroups.
 
-    using _SymCompareType = DirectionSymCompare<Eigen::VectorXcd, EigenSymRepApply<Eigen::VectorXcd> >;
-    using VectorOrbit = GenericOrbit<_SymCompareType>;
+    using SymCompareType = DirectionSymCompare<Eigen::VectorXcd, EigenSymRepApply<Eigen::VectorXcd>>;
+    using VectorOrbit = Orbit<SymCompareType>;
     std::set<VectorOrbit> orbit_result;
     make_orbits(tdirs.begin(),
                 tdirs.end(),

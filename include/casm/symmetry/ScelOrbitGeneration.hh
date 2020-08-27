@@ -1,7 +1,10 @@
 #ifndef CASM_ScelOrbitGeneration
 #define CASM_ScelOrbitGeneration
 
-#include "casm/symmetry/SymCompare.hh"
+// TODO: this does not belong in casm/symmetry
+
+#include "casm/clusterography/ClusterSymCompareDecl.hh"
+#include "casm/symmetry/OrbitDecl.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 
 namespace CASM {

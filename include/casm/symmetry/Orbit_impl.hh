@@ -3,19 +3,15 @@
 
 #include <set>
 #include <boost/iterator/transform_iterator.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
+#include "casm/crystallography/Lattice.hh"
+#include "casm/global/errors.hh"
+#include "casm/misc/algorithm.hh"
 #include "casm/symmetry/Orbit.hh"
 #include "casm/symmetry/SymGroup.hh"
-#include "casm/misc/algorithm.hh"
-#include "casm/kinetics/PrimPeriodicDiffTransOrbitTraits.hh"    //TODO: These sorts of headers do not belong here
-#include "casm/casm_io/json/jsonParser.hh"
-#include "casm/casm_io/container/json_io.hh"
-#include "casm/crystallography/Lattice.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/database/Named.hh"
-#include "casm/database/Database.hh"
-#include "casm/app/DirectoryStructure.hh"
+
+// #include "casm/casm_io/Log.hh"
+// #include "casm/casm_io/json/jsonParser.hh"
+// #include "casm/casm_io/container/json_io.hh"
 
 namespace CASM {
 
@@ -42,9 +38,9 @@ namespace CASM {
           }
         }
         catch(const std::exception &e) {
-          default_err_log() << "Error in GenericOrbit constructor: \n"
-                            << "  Failed constructing EqMapRow." << std::endl;
-          throw e;
+          // default_err_log() << "Error in Orbit constructor: \n"
+          //                   << "  Failed constructing EqMapRow." << std::endl;
+          throw libcasm_runtime_error("Error in Orbit constructor: Failed constructing EqMapRow.");
         }
       };
 
@@ -68,9 +64,10 @@ namespace CASM {
           }
         }
         catch(const std::exception &e) {
-          default_err_log() << "Error in GenericOrbit constructor: \n"
-                            << "  Failed constructing RelEqMap." << std::endl;
-          throw e;
+          // default_err_log() << "Error in Orbit constructor: \n"
+          //                   << "  Failed constructing RelEqMap." << std::endl;
+          // throw e;
+          throw libcasm_runtime_error("Error in Orbit constructor: Failed constructing RelEqMap.");
         }
       }
 
@@ -95,11 +92,13 @@ namespace CASM {
   /// \param sym_compare Binary functor that implements symmetry properties
   ///
   template<typename _SymCompareType>
-  GenericOrbit<_SymCompareType>::GenericOrbit(Element generating_element,
-                                              const SymGroup &generating_group,
-                                              const SymCompareType &sym_compare) :
+  Orbit<_SymCompareType>::Orbit(
+    Element generating_element,
+    const SymGroup &generating_group,
+    const SymCompareType &sym_compare) :
     m_generating_group(generating_group),
-    m_sym_compare(sym_compare) {
+    m_sym_compare(sym_compare),
+    m_invariants(sym_compare.make_invariants(generating_element)) {
 
     // element(i) compares equivalent to prototype().copy_apply(equivalence_map[i][j]) for all j
 
@@ -131,9 +130,10 @@ namespace CASM {
       }
     }
     catch(const std::exception &e) {
-      default_err_log() << "Error in GenericOrbit constructor: \n"
-                        << "  Failed generating unique equivalents." << std::endl;
-      throw e;
+      // default_err_log() << "Error in Orbit constructor: \n"
+      //                   << "  Failed generating unique equivalents." << std::endl;
+      // throw e;
+      throw libcasm_runtime_error("Error in Orbit constructor: Failed generating unique equivalents.");
     }
 
     // generate equivalence_map w/ tmp ordering
@@ -153,18 +153,19 @@ namespace CASM {
       // sanity check that equivalence_map is rectangular
       for(Index j = 1; j < tmp_equivalence_map.size(); ++j) {
         if(tmp_equivalence_map[0].size() != tmp_equivalence_map[j].size()) {
-          jsonParser json;
-          default_err_log() << "SymGroup, Symmetry application, or SymCompareType error: "
-                            "initial equivalence map is not rectangular: \n"
-                            << to_json(tmp_equivalence_map, json) << std::endl;
-          throw std::runtime_error("Error in GenericOrbit constructor: equivalence map is not rectangular");
+          // jsonParser json;
+          // default_err_log() << "SymGroup, Symmetry application, or SymCompareType error: "
+          //                   "initial equivalence map is not rectangular: \n"
+          //                   << to_json(tmp_equivalence_map, json) << std::endl;
+          throw libcasm_runtime_error("Error in Orbit constructor: equivalence map is not rectangular");
         }
       }
     }
     catch(const std::exception &e) {
-      default_err_log() << "Error in GenericOrbit constructor: \n"
-                        << "  Failed generating initial equivalence map." << std::endl;
-      throw e;
+      // default_err_log() << "Error in Orbit constructor: \n"
+      //                   << "  Failed generating initial equivalence map." << std::endl;
+      throw libcasm_runtime_error(std::string("Error in Orbit constructor: ")
+                                  + "Failed generating initial equivalence map: " + e.what());
     }
 
     /// find the best equivalence map out of all possible
@@ -184,9 +185,10 @@ namespace CASM {
       }
     }
     catch(const std::exception &e) {
-      default_err_log() << "Error in GenericOrbit constructor: \n"
-                        << "  Failed generating sorted equivalence map." << std::endl;
-      throw e;
+      // default_err_log() << "Error in Orbit constructor: \n"
+      //                   << "  Failed generating sorted equivalence map." << std::endl;
+      // throw e;
+      throw libcasm_runtime_error("Error in Orbit constructor: Failed generating sorted equivalence map.");
     }
 
     /// copy results
@@ -218,19 +220,20 @@ namespace CASM {
       }
     }
     catch(const std::exception &e) {
-      default_err_log() << "Error in GenericOrbit constructor: \n"
-                        << "  Failed copying sorted elements and equivalence map." << std::endl;
-      throw e;
+      // default_err_log() << "Error in Orbit constructor: \n"
+      //                   << "  Failed copying sorted elements and equivalence map." << std::endl;
+      // throw e;
+      throw libcasm_runtime_error("Error in Orbit constructor: Failed copying sorted elements and equivalence map.");
     }
 
     if(m_equivalence_map[0][0].index() != 0) {
-      throw std::runtime_error("Error in GenericOrbit constructor: First equivalence map element is not identity.");
+      throw libcasm_runtime_error("Error in Orbit constructor: First equivalence map element is not identity.");
     }
   }
 
   /// \brief Apply symmetry to Orbit
   template<typename _SymCompareType>
-  GenericOrbit<_SymCompareType> &GenericOrbit<_SymCompareType>::apply_sym(const SymOp &op) {
+  Orbit<_SymCompareType> &Orbit<_SymCompareType>::apply_sym(const SymOp &op) {
 
     // transform elements
     for(auto it = m_element.begin(); it != m_element.end(); ++it) {
@@ -250,10 +253,16 @@ namespace CASM {
     return *this;
   }
 
+  /// \brief Compare orbits, using SymCompareType::inter_orbit_compare
   template<typename _SymCompareType>
-  void GenericOrbit<_SymCompareType>::_construct_canonization_rep() const {
+  bool Orbit<_SymCompareType>::operator<(const Orbit &B) const {
+    return m_sym_compare.inter_orbit_compare(prototype(), invariants(), B.prototype(), B.invariants());
+  }
+
+  template<typename _SymCompareType>
+  void Orbit<_SymCompareType>::_construct_canonization_rep() const {
     if(equivalence_map().size() == 0)
-      throw std::runtime_error("In GenericOrbit::_construct_canonization_rep(), equivalence_map is uninitialized or empty! Cannot continue.");
+      throw libcasm_runtime_error("In Orbit::_construct_canonization_rep(), equivalence_map is uninitialized or empty! Cannot continue.");
 
     if(size() == 0) {
       m_canonization_rep_ID = SymGroupRepID::identity(0);
@@ -290,13 +299,15 @@ namespace CASM {
   OrbitIterator find_orbit(OrbitIterator begin, OrbitIterator end, Element e) {
 
     typedef typename std::iterator_traits<OrbitIterator>::value_type orbit_type;
+    typedef typename orbit_type::InvariantsType InvariantsType;
     const auto &sym_compare = begin->sym_compare();
+    auto e_invariants = sym_compare.make_invariants(e);
 
     // first find range of possible orbit by checking invariants
-    auto compare = [&](const Element & A, const Element & B) {
+    auto compare = [&](const InvariantsType & A, const InvariantsType & B) {
       return sym_compare.invariants_compare(A, B);
     };
-    auto _range = std::equal_range(prototype_iterator(begin), prototype_iterator(end), e, compare);
+    auto _range = std::equal_range(invariants_iterator(begin), invariants_iterator(end), e_invariants, compare);
 
     // find if any of the orbits in range [_range.first, _range.second) contain equivalent
     auto contains = [&](const orbit_type & orbit) {
@@ -308,65 +319,6 @@ namespace CASM {
     }
     return res;
   }
-
-  /// \brief Construct an Orbit from a generating_element Element, using provided symmetry group
-  ///
-  /// \param generating_element One element in the orbit
-  /// \param generating_group SymGroup applied to generating_element to generate
-  ///        equivalents in the orbit
-  /// \param sym_compare Implements element comparisons
-  /// \param _primclex PrimClex pointer. May be nullptr if only the GenericOrbit
-  ///        interface is needed, but this is probably the less likely use case
-  ///        so it must be explicitly given.
-  template<typename _SymCompareType>
-  DatabaseTypeOrbit<_SymCompareType>::DatabaseTypeOrbit(Element generating_element,
-                                                        const SymGroup &generating_group,
-                                                        const SymCompareType &sym_compare,
-                                                        const PrimClex *_primclex) :
-    GenericOrbit<_SymCompareType>(generating_element, generating_group, sym_compare),
-    m_primclex(_primclex) {}
-
-  template<typename _SymCompareType>
-  const PrimClex &DatabaseTypeOrbit<_SymCompareType>::primclex() const {
-    if(!m_primclex) {
-      throw std::runtime_error("DatabaseTypeOrbit primclex pointer was not set");
-    }
-    return *m_primclex;
-  }
-
-  template<typename _SymCompareType>
-  std::string DatabaseTypeOrbit<_SymCompareType>::generate_name_impl() const {
-    return OrbitTraits<_SymCompareType>::generate_name_impl(*this);
-  }
-
-  template<typename _SymCompareType>
-  void DatabaseTypeOrbit<_SymCompareType>::set_primclex(const PrimClex *_primclex) {
-    m_primclex = _primclex;
-  }
-
-
-  template<typename _SymCompareType>
-  void write_pos(DatabaseTypeOrbit<_SymCompareType> const &_el) {
-    const auto &dir = _el.primclex().dir();
-    try {
-      fs::create_directories(dir.configuration_dir(_el.name()));
-    }
-    catch(const fs::filesystem_error &ex) {
-      std::cerr << "Error in DatabaseTypeOrbit::write_pos(): could not create_directories" << std::endl;
-      std::cerr << ex.what() << std::endl;
-    }
-
-    fs::ofstream file(dir.POS(_el.name()));
-    file << pos_string(_el);
-  }
-
-  template<typename _SymCompareType>
-  std::string pos_string(DatabaseTypeOrbit<_SymCompareType> const &_el) {
-    std::stringstream ss;
-    OrbitTraits<_SymCompareType>::write_pos(_el, ss);
-    return ss.str();
-  }
-
 
 }
 

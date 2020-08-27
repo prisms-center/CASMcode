@@ -3,10 +3,8 @@
 
 #include <vector>
 
+#include "casm/container/Permutation.hh"
 #include "casm/container/algorithm.hh"
-#include "casm/clusterography/ClusterDecl.hh"
-#include "casm/symmetry/SymCompare.hh"
-#include "casm/symmetry/PermuteIterator.hh"
 #include "casm/misc/Comparisons.hh"
 
 namespace CASM {
@@ -29,92 +27,96 @@ namespace CASM {
 
   /// \brief A CRTP base class for a cluster of anything
   ///
-  /// - Needs a traits<MostDerived>::Element type
-  /// - Needs a traits<MostDerived>::InvariantsType type
-  /// - Requires implementations:
-  ///   - bool operator<(Element A, Element B);
-  ///   - std::vector<Element>& MostDerived::elements_impl();
-  ///   - const std::vector<Element>& MostDerived::elements_impl() const;
-  /// - Optional implementations:
-  ///   - MostDerived& MostDerived::sort_impl();
-  ///   - bool MostDerived::is_sorted_impl() const;
-  /// - _Base must inherit from CRTP_Base<MostDerived>
+  /// GenericCluster provides a standard interface for clusters of various type. In particular, it
+  /// is commonly necessary to iterate over elements in the cluster, access elements in the cluster,
+  /// sort/permute elements in the cluster into a canonical representation, and compare clusters.
+  ///
+  /// To implement this, there must be a traits class for the particular derived type of cluster
+  /// with the following members:
+  /// - typename traits<MostDerived>::Element
+  ///
+  /// The derived cluster type must implement public methods:
+  /// - std::vector<Element>& MostDerived::elements();
+  /// - const std::vector<Element>& MostDerived::elements() const;
+  ///
+  /// Optionally, the derived cluster type may specialize protected methods:
+  /// - MostDerived& sort_impl();
+  /// - bool is_sorted_impl() const;
+  /// - Permutation sort_permutation_impl() const;
+  /// - bool compare_impl(MostDerived const &B) const;
+  ///
+  /// To implement the CRTP pattern:
+  /// - _Base must inherit from CRTPBase<MostDerived>
   ///
   /// \ingroup Clusterography
   ///
-  template<typename _Base>
-  class GenericCluster : public SymComparable<Comparisons<_Base>> {
+  template<typename Base>
+  class GenericCluster : public Comparisons<Base> {
 
   public:
 
-    typedef SymComparable<Comparisons<_Base>> Base;
     typedef typename Base::MostDerived MostDerived;
     using Base::derived;
 
     typedef typename traits<MostDerived>::Element Element;
-    typedef typename traits<MostDerived>::InvariantsType InvariantsType;
-    typedef typename traits<MostDerived>::size_type size_type;
+    typedef Index size_type;
 
     typedef typename std::vector<Element>::value_type value_type;
     typedef typename std::vector<Element>::iterator iterator;
     typedef typename std::vector<Element>::const_iterator const_iterator;
 
-    /// \brief Iterator to first UnitCellCoord in the cluster
+    /// \brief Iterator to first element in the cluster
     iterator begin() {
-      this->reset_invariants();
       return derived().elements().begin();
     }
 
-    /// \brief Iterator to first UnitCellCoord in the cluster
+    /// \brief Iterator to first element in the cluster
     const_iterator begin() const {
       return derived().elements().begin();
     }
 
-    /// \brief Iterator to the past-the-last UnitCellCoord in the cluster
+    /// \brief Iterator to the past-the-last element in the cluster
     iterator end() {
-      this->reset_invariants();
       return derived().elements().end();
     }
 
-    /// \brief Iterator to the past-the-last UnitCellCoord in the cluster
+    /// \brief Iterator to the past-the-last element in the cluster
     const_iterator end() const {
       return derived().elements().end();
     }
 
-    /// \brief Iterator to first UnitCellCoord in the cluster
+    /// \brief Iterator to first element in the cluster
     const_iterator cbegin() const {
       return derived().elements().cbegin();
     }
 
-    /// \brief Iterator to the past-the-last UnitCellCoord in the cluster
+    /// \brief Iterator to the past-the-last element in the cluster
     const_iterator cend() const {
       return derived().elements().cend();
     }
 
-    /// \brief Number of UnitCellCoords in the cluster
+    /// \brief Number of elements in the cluster
     size_type size() const {
       return derived().elements().size();
     }
 
-    /// \brief Access a UnitCellCoord in the cluster by index
+    /// \brief Access an element in the cluster by index
     value_type &operator[](size_type index) {
-      this->reset_invariants();
       return derived().element(index);
     }
 
-    /// \brief Access a UnitCellCoord in the cluster by index
-    const value_type &operator[](size_type index) const {
+    /// \brief Access an element in the cluster by index
+    value_type const &operator[](size_type index) const {
       return derived().element(index);
     }
 
-    /// \brief Access a UnitCellCoord in the cluster by index
+    /// \brief Access an element in the cluster by index
     value_type &element(size_type index) {
-      this->reset_invariants();
       return derived().elements()[index];
     }
 
     /// \brief Access a UnitCellCoord in the cluster by index
-    const value_type &element(size_type index) const {
+    value_type const &element(size_type index) const {
       return derived().elements()[index];
     }
 
@@ -135,11 +137,8 @@ namespace CASM {
       return derived().sort_permutation_impl();
     }
 
-    bool operator<(const GenericCluster &B) const {
-      if(size() != B.size()) {
-        return size() < B.size();
-      }
-      return lexicographical_compare(begin(), end(), B.begin(), B.end());
+    bool operator<(MostDerived const &B) const {
+      return derived().compare_impl(B);
     }
 
   protected:
@@ -167,6 +166,13 @@ namespace CASM {
       });
 
       return Permutation(std::move(ind));
+    }
+
+    bool compare_impl(MostDerived const &B) const {
+      if(size() != B.size()) {
+        return size() < B.size();
+      }
+      return lexicographical_compare(begin(), end(), B.begin(), B.end());
     }
 
   };

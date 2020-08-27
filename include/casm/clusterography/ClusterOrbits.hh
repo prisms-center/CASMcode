@@ -6,38 +6,45 @@
 #include <utility>
 #include <iostream>
 
-#include "casm/crystallography/UnitCellCoord.hh"
-#include "casm/clusterography/ClusterDecl.hh"
-#include "casm/kinetics/DiffusionTransformationTraits.hh"
-#include "casm/symmetry/SymGroup.hh"
+#include "casm/clusterography/IntegralCluster.hh"
+#include "casm/clusterography/ClusterSymCompare.hh"
+#include "casm/clusterography/IntegralClusterSymCompareTraits.hh"
+
 
 namespace CASM {
+
   namespace xtal {
     class Site;
+    class UnitCellCoord;
   }
-  using xtal::Site;
-  using xtal::UnitCellCoord;
-
-  class Supercell;
-  class Structure;
-
   template<typename OrbitType> struct OrbitGenerators;
+  class Structure;
+  class SymGroup;
 
-  /** \defgroup IntegralCluster
+  /** \defgroup ClusterOrbits
 
-      \brief Functions and classes related to IntegralCluster
+      \brief Functions and classes for IntegralCluster orbits of any type
       \ingroup Clusterography
-      \ingroup CoordCluster
+      \ingroup IntegralCluster
+
+      "ClusterOrbits" (as opposed to IntegralClusterOrbits) has no dependency on casm/clusterography/ClusterSymCompare.
   */
 
+  typedef std::function<bool (xtal::Site)> SiteFilterFunction;
+  typedef std::function<bool (IntegralCluster)> ClusterFilterFunction;
+  typedef std::function<std::vector<xtal::UnitCellCoord> (Structure const &, SiteFilterFunction)> CandidateSitesFunction;
+
+  struct IntegralClusterOrbitGenerator {
+
+    IntegralClusterOrbitGenerator(
+      const IntegralCluster &_prototype,
+      bool _include_subclusters = true);
+
+    IntegralCluster prototype;
+    bool include_subclusters;
+  };
+
   /* -- OrbitBranchSpecs Declarations ------------------------------------- */
-
-  /// \brief Generate clusters using all Site
-  bool all_sites_filter(const Site &site);
-
-  /// \brief Generate clusters using Site with site_occupant.size() > 1
-  bool alloy_sites_filter(const Site &site);
-
 
   /// \brief Store data used to generate an orbit branch of IntegralCluster
   ///
@@ -48,7 +55,7 @@ namespace CASM {
 
   public:
 
-    typedef std::vector<UnitCellCoord> Container;
+    typedef std::vector<xtal::UnitCellCoord> Container;
     typedef Container::const_iterator const_iterator;
     typedef _OrbitType OrbitType;
     typedef typename OrbitType::Element ClusterType;
@@ -119,29 +126,62 @@ namespace CASM {
   };
 
   /// \brief Output the neighborhood of UnitCellCoord within max_radius of any sites in unit cell
-  template<typename CoordType, typename OutputIterator>
+  template<typename OutputIterator>
   OutputIterator neighborhood(
-    const Structure &unit,
+    Structure const &unit,
     double max_radius,
-    std::function<bool (CoordType)> site_filter,
+    SiteFilterFunction site_filter,
     OutputIterator result,
     double xtal_tol);
 
-  /// \brief Output the neighborhood of DiffusionTransformation within max_radius of any sites in the transformation
-  template<typename CoordType, typename OutputIterator>
+  /// \brief Output the neighborhood of sites within cutoff_radius of any sites in the phenomenal
+  template<typename OutputIterator>
   OutputIterator neighborhood(
-    const Kinetics::DiffusionTransformation &diff_trans,
-    double max_radius,
-    std::function<bool (CoordType)> site_filter,
+    IntegralCluster const &phenomenal,
+    double cutoff_radius,
+    SiteFilterFunction site_filter,
     OutputIterator result,
     double xtal_tol);
 
-  template<typename OrbitType>
-  bool has_local_neighborhood_overlap(std::vector<OrbitType> &local_orbits, const Supercell &scel);
+  /// \brief Iterate over all sites in an orbit and insert a UnitCellCoord
+  template<typename OrbitType, typename OutputIterator>
+  OutputIterator local_orbit_neighborhood(
+    const OrbitType &orbit,
+    OutputIterator result);
 
-  template<typename OrbitType>
-  std::vector<Supercell> viable_supercells(std::vector<OrbitType> &local_orbits, std::vector<Supercell>);
+  /// \brief Iterate over all sites in all orbits and insert a UnitCellCoord
+  template<typename ClusterOrbitIterator, typename OutputIterator>
+  OutputIterator local_neighborhood(ClusterOrbitIterator begin, ClusterOrbitIterator end, OutputIterator result);
 
+  /// \brief Check if periodic images of sites in an orbit are overlapping in supercells defined by the given superlattice transformation matrix
+  template<typename OrbitType>
+  bool has_local_neighborhood_overlap(
+    std::vector<OrbitType> &local_orbits,
+    const Eigen::Matrix3i &transf_mat);
+
+  /// \brief Return superlattice transf. matrices for which has_local_neighborhood_overlap is false
+  template<typename OrbitType>
+  std::vector<Eigen::Matrix3i> viable_supercells(
+    std::vector<OrbitType> &local_orbits,
+    const std::vector<Eigen::Matrix3i> &transf_mat);
+
+
+  /* -- Custom clusters --- */
+
+  /// \brief Given a cluster, generate all subcluster generators
+  template<typename OrbitType>
+  OrbitGenerators<OrbitType> &insert_subcluster_generators(
+    typename OrbitType::Element cluster,
+    OrbitGenerators<OrbitType> &generators);
+
+
+  /* -- Orbit access/usage function declarations ------------------------------------- */
+
+  /// \brief Returns the first range containing orbits of the requested orbit branch in the given range of Orbit
+  template<typename OrbitIterator>
+  std::pair<OrbitIterator, OrbitIterator> orbit_branch(OrbitIterator begin,
+                                                       OrbitIterator end,
+                                                       Index size);
 
 
   /* -- Cluster Orbit generating function declarations ------------------------------------- */
@@ -162,94 +202,140 @@ namespace CASM {
     OrbitOutputIterator result,
     std::ostream &status);
 
-  /// \brief Generate Orbit<IntegralCluster> using OrbitBranchSpecs
+  /// \brief Generate orbits of IntegralCluster using OrbitBranchSpecs
   template<typename OrbitBranchSpecsIterator, typename OrbitOutputIterator>
   OrbitOutputIterator make_orbits(
     OrbitBranchSpecsIterator begin,
     OrbitBranchSpecsIterator end,
-    const std::vector<IntegralCluster> &custom_generators,
+    const std::vector<IntegralClusterOrbitGenerator> &custom_generators,
     OrbitOutputIterator result,
     std::ostream &status);
 
-  /* -- Custom clusters --- */
 
-  /// \brief Given a cluster, generate all subcluster generators
-  template<typename OrbitType>
-  OrbitGenerators<OrbitType> &insert_subcluster_generators(
-    typename OrbitType::Element cluster,
-    OrbitGenerators<OrbitType> &generators,
-    std::ostream &status);
+  /* -- SymCompareType-Specific IntegralCluster Orbit functions --- */
 
-  /* -- Generate prim periodic orbits --------------------------------------- */
-
-  /// \brief Generate the asymmetric unit, including all sites
+  /// \brief Generate the prim periodic asymmetric unit
+  ///
+  /// \param prim A PrimType
+  /// \param site_filter A filter function that returns true for Site that
+  ///        should be considered for the neighborhood (i.e. to check the number
+  ///        of components)
+  /// \param xtal_tol Crystallography tolerance
+  /// \param result An output iterator for orbits of IntegralCluster
+  /// \param status Stream for status messages
+  ///
+  /// - Uses prim.factor_group as the generating group
+  /// - Uses PrimPeriodicSymCompare<IntegralCluster>(xtal_tol) for cluster equivalence
+  /// - Figures out candidate_sites from max_length and site_filter input to
+  ///   create OrbitBranchSpecs and calls make_orbits
+  ///
+  /// \relates IntegralCluster
+  ///
   template<typename OrbitOutputIterator>
   OrbitOutputIterator make_prim_periodic_asymmetric_unit(
-    std::shared_ptr<const Structure> prim_ptr,
-    const std::function<bool (Site)> &site_filter,
+    std::shared_ptr<Structure const> prim_ptr,
+    SiteFilterFunction const &site_filter,
     double xtal_tol,
     OrbitOutputIterator result,
     std::ostream &status);
 
   /// \brief Generate Orbit<IntegralCluster> by specifying max cluster length for each branch
+  ///
+  /// \param prim Primitive structure
+  /// \param max_length vector of max_length of pairs of cluster sites. Expects
+  ///        that max_length[b] is the max_length for orbit branch b. The values
+  ///        for the null cluster and point clusters are ignored.
+  /// \param custom_generators A vector of custom orbit generating clusters
+  /// \param site_filter A filter function that returns true for Site that
+  ///        should be considered for the neighborhood (i.e. to check the number
+  ///        of components)
+  /// \param xtal_tol Crystallography tolerance
+  /// \param result An output iterator for Orbit
+  /// \param status Stream for status messages
+  ///
+  /// - Uses prim.factor_group as the generating group
+  /// - Uses PrimPeriodicSymCompare<IntegralCluster>(xtal_tol) for cluster equivalence
+  /// - Figures out candidate_sites from max_length and site_filter input to
+  ///   create OrbitBranchSpecs and calls make_orbits
+  ///
+  /// \relates IntegralCluster
   template<typename OrbitOutputIterator>
   OrbitOutputIterator make_prim_periodic_orbits(
-    std::shared_ptr<const Structure> prim_ptr,
-    const std::vector<double> &max_length,
-    const std::vector<IntegralCluster> &custom_generators,
-    const std::function<bool (Site)> &site_filter,
+    std::shared_ptr<Structure const> prim_ptr,
+    std::vector<double> const &max_length,
+    std::vector<IntegralClusterOrbitGenerator> const &custom_generators,
+    SiteFilterFunction const &site_filter,
     double xtal_tol,
     OrbitOutputIterator result,
     std::ostream &status);
 
-  /// \brief Generate Orbit<IntegralCluster> from bspecs.json-type JSON input file
-  template<typename OrbitOutputIterator>
-  OrbitOutputIterator make_prim_periodic_orbits(
-    std::shared_ptr<const Structure> prim_ptr,
-    const jsonParser &bspecs,
-    const std::function<bool (Site)> &site_filter,
-    double xtal_tol,
-    OrbitOutputIterator result,
-    std::ostream &status);
+  /// \brief Iterate over all sites in an orbit and insert a UnitCellCoord
+  ///
+  /// \param orbit an Orbit<IntegralCluster>
+  /// \param result an OutputIterator for UnitCellCoord
+  ///
+  /// \result the resulting OutputIterator
+  ///
+  /// This simply outputs all UnitCellCoord for clusters that include the origin
+  /// UnitCell, without any standard order. It uses all clusters that touch origin
+  /// unitcell, including translationally equivalent clusters.
+  ///
+  /// \ingroup IntegralCluster
+  ///
+  template<typename OutputIterator>
+  OutputIterator prim_periodic_orbit_neighborhood(
+    const PrimPeriodicOrbit<IntegralCluster> &orbit,
+    OutputIterator result);
 
-  /* -- Generate local orbits --------------------------------------- */
+  /// \brief Iterate over all sites in all orbits and insert a UnitCellCoord
+  ///
+  /// \param begin,end Range of PrimPeriodicOrbit<IntegralCluster>
+  /// \param result an OutputIterator for UnitCellCoord
+  ///
+  /// This simply outputs all UnitCellCoord for clusters that include the origin
+  /// UnitCell, without any standard order. It uses all clusters that touch origin
+  /// unitcell, including translationally equivalent clusters.
+  ///
+  /// \ingroup IntegralCluster
+  ///
+  template<typename ClusterOrbitIterator, typename OutputIterator>
+  OutputIterator prim_periodic_neighborhood(ClusterOrbitIterator begin, ClusterOrbitIterator end, OutputIterator result);
 
-  /// \brief Generate Orbit<IntegralCluster> around a DiffusionTransformation
-  /// by specifying max cluster length for each branch and cut off radius for local environment
-  template<typename OrbitOutputIterator, typename SymCompareType>
-  OrbitOutputIterator make_local_orbits(
-    const Kinetics::DiffusionTransformation &diff_trans,
-    const SymGroup &generating_group,
-    const SymCompareType &sym_compare,
-    const std::vector<double> &cutoff_radius,
-    const std::vector<double> &max_length,
-    const std::vector<IntegralCluster> &custom_generators,
-    const std::function<bool (Site)> &site_filter,
-    double xtal_tol,
-    OrbitOutputIterator result,
-    std::ostream &status);
-
-  /// \brief Generate Orbit<IntegralCluster> around a DiffusionTransformation from
-  /// bspecs.json-type JSON input file
-  template<typename OrbitOutputIterator, typename SymCompareType>
-  OrbitOutputIterator make_local_orbits(
-    const Kinetics::DiffusionTransformation &diff_trans,
-    const SymGroup &generating_group,
-    const SymCompareType &sym_compare,
-    const jsonParser &bspecs,
-    const std::function<bool (Site)> &site_filter,
-    double xtal_tol,
-    OrbitOutputIterator result,
-    std::ostream &status);
+  /// \brief Iterate over all sites in an orbit and insert a UnitCellCoord
+  ///
+  /// \param orbit an PrimPeriodicOrbit<IntegralCluster>
+  /// \param result an OutputIterator for UnitCellCoord
+  ///
+  /// \result the resulting OutputIterator
+  ///
+  /// This simply outputs all UnitCellCoord for clusters that include the origin
+  /// UnitCell, without any standard order. It uses all clusters that touch origin
+  /// unitcell, including translationally equivalent clusters. Respects translational
+  /// properties of local orbits, so can be used when translational type is unknown.
+  ///
+  ///
+  /// \ingroup IntegralCluster
+  ///
+  template<typename OutputIterator, typename OrbitType>
+  OutputIterator flower_neighborhood(
+    OrbitType const &orbit,
+    OutputIterator result);
 
 
-  /* -- Orbit access/usage function declarations ------------------------------------- */
-
-  /// \brief Returns the first range containing orbits of the requested orbit branch in the given range of Orbit
-  template<typename OrbitIterator>
-  std::pair<OrbitIterator, OrbitIterator> orbit_branch(OrbitIterator begin,
-                                                       OrbitIterator end,
-                                                       Index size);
+  /// \brief Iterate over all sites in all orbits and insert a UnitCellCoord
+  ///
+  /// \param begin,end Range of PrimPeriodicOrbit<IntegralCluster>
+  /// \param result an OutputIterator for UnitCellCoord
+  ///
+  /// This simply outputs all UnitCellCoord for clusters that include the origin
+  /// UnitCell, without any standard order. It uses all clusters that touch origin
+  /// unitcell, including translationally equivalent clusters. Respects translational
+  /// properties of local orbits, so can be used when translational type is unknown.
+  ///
+  /// \ingroup IntegralCluster
+  ///
+  template<typename ClusterOrbitIterator, typename OutputIterator>
+  OutputIterator flower_neighborhood(ClusterOrbitIterator begin, ClusterOrbitIterator end, OutputIterator result);
 
 }
 

@@ -11,6 +11,7 @@
 #include "casm/clex/ClexBasisWriter_impl.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/clusterography/ClusterSpecs_impl.hh"
 #include "casm/clusterography/ClusterSymCompare_impl.hh"
 #include "casm/clusterography/IntegralCluster_impl.hh"
 #include "casm/database/DatabaseHandler_impl.hh"
@@ -594,10 +595,10 @@ namespace CASM {
 
     // TODO: update this function with ClusterSpecs
 
-    PERIODICITY_TYPE clex_periodicity_type = basis_set_specs.contains("local_bpsecs") ?
-                                             PERIODICITY_TYPE::LOCAL : PERIODICITY_TYPE::PERIODIC;
+    CLUSTER_PERIODICITY_TYPE clex_periodicity_type = basis_set_specs.contains("local_bpsecs") ?
+                                                     CLUSTER_PERIODICITY_TYPE::LOCAL : CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC;
 
-    if(clex_periodicity_type == PERIODICITY_TYPE::PERIODIC) {
+    if(clex_periodicity_type == CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC) {
       std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
 
       log().construct("Orbitree");
@@ -608,23 +609,23 @@ namespace CASM {
         basis_set_specs["basis_functions"].get_if(_dofs, "dofs");
       }
 
-      auto dof_sites_filter = [&_dofs](Site const & _site) ->bool{
-        if(_dofs.empty() && (_site.dof_size() != 0 || _site.occupant_dof().size() > 1))
-          return true;
+      // auto dof_sites_filter = [&_dofs](Site const & _site) ->bool{
+      //   if(_dofs.empty() && (_site.dof_size() != 0 || _site.occupant_dof().size() > 1))
+      //     return true;
+      //
+      //   for(DoFKey const &_dof : _dofs) {
+      //     if(_site.has_dof(_dof))
+      //       return true;
+      //     else if(_dof == "occ" && _site.occupant_dof().size() > 1) {
+      //       return true;
+      //     }
+      //   }
+      //   return false;
+      // };
 
-        for(DoFKey const &_dof : _dofs) {
-          if(_site.has_dof(_dof))
-            return true;
-          else if(_dof == "occ" && _site.occupant_dof().size() > 1) {
-            return true;
-          }
-        }
-        return false;
-      };
-
-      // construct cluster orbits
-      make_prim_periodic_orbits(shared_prim, basis_set_specs, dof_sites_filter,
-                                settings.crystallography_tol(), std::back_inserter(orbits), log());
+      // construct cluster orbits  TODO: update with ClusterSpecs
+      // make_prim_periodic_orbits(shared_prim, basis_set_specs, dof_sites_filter,
+      //                           settings.crystallography_tol(), std::back_inserter(orbits), log());
 
       // expand the nlist to contain sites in all orbits
       std::set<UnitCellCoord> nbors;
