@@ -26,6 +26,9 @@ namespace CASM {
     ///\brief Named constructor for uninitialized AnisoValTraits
     static AnisoValTraits null();
 
+    ///\brief Named constructor for discrete site occupation AnisoValTraits
+    static AnisoValTraits occ();
+
     ///\brief Named constructor for total energy AnisoValTraits
     static AnisoValTraits energy();
 

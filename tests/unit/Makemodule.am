@@ -297,6 +297,8 @@ casm_unit_examples_SOURCES = \
     tests/unit/examples/007_crystallography_unitcellcoord_test.cpp\
     tests/unit/examples/100_symmetry_test.cpp\
     tests/unit/examples/200_enumeration_ScelEnum_test.cpp\
+    tests/unit/examples/201_enumeration_ConfigEnumAllOccupations_test.cpp\
+    tests/unit/examples/202_enumeration_ConfigEnumStrain_test.cpp\
     tests/unit/examples/300_clusterography_IntegralCluster_test.cpp\
     tests/unit/examples/301_clusterography_cluster_orbits_test.cpp\
     tests/unit/examples/302_clusterography_cluster_specs_test.cpp\

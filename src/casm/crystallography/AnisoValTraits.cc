@@ -29,6 +29,7 @@ namespace CASM {
     }
 
     static int initialize() {
+      AnisoValTraits::occ();
       AnisoValTraits::disp();
       AnisoValTraits::energy();
       AnisoValTraits::cost();
@@ -104,6 +105,10 @@ namespace CASM {
                           {},
                           {},
                           {});
+  }
+
+  AnisoValTraits AnisoValTraits::occ() {
+    return AnisoValTraits("occ", {}, LOCAL);
   }
 
   AnisoValTraits AnisoValTraits::energy() {

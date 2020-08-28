@@ -58,6 +58,32 @@ namespace test {
     return struc;
 
   }
+
+  inline CASM::xtal::BasicStructure SimpleCubicGLstrain() {
+
+    using namespace CASM;
+    using namespace CASM::xtal;
+
+    // lattice vectors as cols
+    Eigen::Matrix3d lat;
+    lat << 1.0, 0.0, 0.0,
+        0.0, 1.0, 0.0,
+        0.0, 0.0, 1.0;
+
+    BasicStructure struc {Lattice{lat}};
+    struc.set_title("SimpleCubicGLstrain");
+
+    Molecule A = Molecule::make_atom("A");
+
+    struc.push_back(Site(Coordinate(Eigen::Vector3d::Zero(), struc.lattice(), CART), std::vector<Molecule> {A}));
+
+    // Add global DoF
+    // GLstrain: Green-Lagrange strain
+    struc.set_global_dofs({ AnisoValTraits::strain("GL") });
+
+    return struc;
+
+  }
 }
 
 #endif

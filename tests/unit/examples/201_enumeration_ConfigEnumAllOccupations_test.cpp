@@ -4,6 +4,8 @@
 
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/ProjectSettings.hh"
+#include "casm/database/ScelDatabase.hh"
+#include "casm/clex/ConfigEnumAllOccupations_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/crystallography/Structure.hh"
@@ -42,7 +44,7 @@ protected:
     std::string dirs {"abc"};
     Eigen::Matrix3i generating_matrix {Eigen::Matrix3i::Identity()};
     CASM::xtal::ScelEnumProps enumeration_params {begin_volume, end_volume, dirs, generating_matrix};
-
+    bool existing_only = false;
     CASM::ScelEnumByProps enumerator {primclex, enumeration_params, existing_only};
 
     // Currently, when CASM::ScelEnumByProps enumerates a Supercell it is automatically added
@@ -60,7 +62,7 @@ TEST_F(ExampleEnumerationZrOConfigEnumAllOccupations, Example1) {
   for(auto const &scel : primclex.db<Supercell>()) {
     CASM::ConfigEnumInput input {scel};
     CASM::ConfigEnumAllOccupations enumerator {input};
-    configurations.push_back(enumerator.begin(), enumerator.end());
+    std::copy(enumerator.begin(), enumerator.end(), std::back_inserter(configurations));
   }
   EXPECT_EQ(configurations.size(), 336);
 }
