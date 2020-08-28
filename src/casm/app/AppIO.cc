@@ -212,7 +212,7 @@ namespace CASM {
       auto it = json["dofs"].begin(), end_it = json["dofs"].end();
       for(; it != end_it; ++it) {
         if(_dof_map.count(it.name()))
-          throw std::runtime_error("Error parsing global field \"dofs\" from JSON. DoF type " + it.name() + " cannot be repeated.");
+          throw std::runtime_error("Error parsing local field \"dofs\" from JSON. DoF type " + it.name() + " cannot be repeated.");
 
         try {
           /* _dof_map.emplace(std::make_pair(it.name(), it->get<xtal::DoFSet>(_modules.aniso_val_dict().lookup(it.name())))); */
@@ -220,7 +220,7 @@ namespace CASM {
           /* _dof_map.emplace(std::make_pair(it.name(), from_json<xtal::SiteDoFSet>(*it))); */
         }
         catch(std::exception &e) {
-          throw std::runtime_error("Error parsing global field \"dofs\" from JSON. Failure for DoF type " + it.name() + ": " + e.what());
+          throw std::runtime_error("Error parsing local field \"dofs\" from JSON. Failure for DoF type " + it.name() + ": " + e.what());
         }
 
       }
@@ -297,58 +297,80 @@ namespace CASM {
     if(_modules == nullptr)
       _modules = &default_module;
 
+    // read lattice
+    Eigen::Matrix3d latvec_transpose;
+
     try {
-
-      // read lattice
-      Eigen::Matrix3d latvec_transpose;
-
       from_json(latvec_transpose, json["lattice_vectors"]);
+    }
+    catch(std::exception &e) {
+      std::cout << e.what() << std::endl;
+      throw std::runtime_error("Error parsing global field \"lattice_vectors\" from prim JSON.");
+    }
 
-      Lattice lat(latvec_transpose.transpose(), xtal_tol);
+    Lattice lat(latvec_transpose.transpose(), xtal_tol);
 
-      // create prim using lat
-      BasicStructure prim(lat);
+    // create prim using lat
+    BasicStructure prim(lat);
 
-      // read title
+    // read title
+    try {
       prim.set_title(json["title"].get<std::string>());
+    }
+    catch(std::exception &e) {
+      std::cout << e.what() << std::endl;
+      throw std::runtime_error("Error parsing global field \"title\" from prim JSON.");
+    }
 
-      Eigen::Vector3d vec;
+    Eigen::Vector3d vec;
 
-      // Global DoFs
-      {
-        std::map<std::string, xtal::DoFSet> _dof_map;
-        if(json.contains("dofs")) {
-          auto it = json["dofs"].begin(), end_it = json["dofs"].end();
-          for(; it != end_it; ++it) {
-            if(_dof_map.count(it.name()))
-              throw std::runtime_error("Error parsing global field \"dofs\" from JSON. DoF type " + it.name() + " cannot be repeated.");
+    // Global DoFs
+    try {
+      std::map<std::string, xtal::DoFSet> _dof_map;
+      if(json.contains("dofs")) {
+        auto it = json["dofs"].begin(), end_it = json["dofs"].end();
+        for(; it != end_it; ++it) {
+          if(_dof_map.count(it.name()))
+            throw std::runtime_error("Error parsing global field \"dofs\" from prim JSON. DoF type " + it.name() + " cannot be repeated.");
 
-            try {
-              //TODO: Am I messing something up here? Why was it constructed so weird before?
-              /* _dof_map.emplace(std::make_pair(it.name(), it->get<xtal::DoFSet>(_modules->aniso_val_dict().lookup(it.name())))); */
-              _dof_map.emplace(std::make_pair(it.name(), it->get<xtal::DoFSet>(_modules->aniso_val_dict().lookup(it.name()))));
-            }
-            catch(std::exception &e) {
-              throw std::runtime_error("Error parsing global field \"dofs\" from JSON. Failure for DoF type " + it.name() + ": " + e.what());
-            }
-
+          try {
+            //TODO: Am I messing something up here? Why was it constructed so weird before?
+            /* _dof_map.emplace(std::make_pair(it.name(), it->get<xtal::DoFSet>(_modules->aniso_val_dict().lookup(it.name())))); */
+            _dof_map.emplace(std::make_pair(it.name(), it->get<xtal::DoFSet>(_modules->aniso_val_dict().lookup(it.name()))));
           }
-          prim.set_global_dofs(_dof_map);
+          catch(std::exception &e) {
+            std::cout << e.what() << std::endl;
+            throw std::runtime_error("Error parsing global field \"dofs\" from prim JSON. Failure for DoF type " + it.name() + ": " + e.what());
+          }
+
         }
+        prim.set_global_dofs(_dof_map);
       }
+    }
+    catch(std::exception &e) {
+      std::cout << e.what() << std::endl;
+      throw std::runtime_error("Error parsing global field \"dofs\" from prim JSON.");
+    }
 
-      // read basis coordinate mode
-      COORD_TYPE mode;
+    // read basis coordinate mode
+    COORD_TYPE mode;
+    try {
       from_json(mode, json["coordinate_mode"]);
+    }
+    catch(std::exception &e) {
+      std::cout << e.what() << std::endl;
+      throw std::runtime_error("Error parsing global field \"coordinate_mode\" from prim JSON.");
+    }
 
-      // Molecules
-      std::map<std::string, Molecule> mol_map;
-      Eigen::Matrix3d f2c;
-      if(mode == FRAC)
-        f2c = lat.lat_column_mat();
-      else
-        f2c.setIdentity();
+    // Molecules
+    std::map<std::string, Molecule> mol_map;
+    Eigen::Matrix3d f2c;
+    if(mode == FRAC)
+      f2c = lat.lat_column_mat();
+    else
+      f2c.setIdentity();
 
+    try {
       if(json.contains("species")) {
         auto it = json["species"].begin();
         auto it_end = json["species"].end();
@@ -360,19 +382,22 @@ namespace CASM {
           from_json(mol_it->second, *it, f2c, *_modules);
         }
       }
+    }
+    catch(std::exception &e) {
+      std::cout << e.what() << std::endl;
+      throw std::runtime_error("Error parsing global field \"species\" from prim JSON.");
+    }
 
-
+    try {
       // read basis sites
       for(jsonParser const &bjson : json["basis"])
         prim.push_back(bjson.get<Site>(prim.lattice(), mode, mol_map, *_modules));
-
-      return prim;
     }
-    catch(...) {
-      /// re-throw exceptions
-      throw;
+    catch(std::exception &e) {
+      std::cout << e.what() << std::endl;
+      throw std::runtime_error("Error parsing global field \"basis\" from prim JSON.");
     }
-
+    return prim;
   }
 
   /// \brief Write prim.json to file
