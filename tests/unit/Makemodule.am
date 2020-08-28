@@ -321,27 +321,6 @@ casm_unit_examples_CPPFLAGS = \
 #-------------------------------------------------------------------------------#
 
 TESTS += \
-    casm_unit_kinetics
-check_PROGRAMS += \
-    casm_unit_kinetics
-casm_unit_kinetics_SOURCES = \
-    tests/unit/gtest_main_run_all.cpp
-casm_unit_kinetics_LDADD = \
-    $(BOOST_CHRONO_LIB)\
-    $(BOOST_FILESYSTEM_LIB)\
-    $(BOOST_PROGRAM_OPTIONS_LIB)\
-    $(BOOST_REGEX_LIB)\
-    $(BOOST_SYSTEM_LIB)\
-    libcasm.la\
-    libcasmtesting.la
-casm_unit_kinetics_CPPFLAGS = \
-    $(AM_CPPFLAGS)\
-    -I$(top_srcdir)/tests/unit/
-
-
-#-------------------------------------------------------------------------------#
-
-TESTS += \
     casm_unit_mapping
 check_PROGRAMS += \
     casm_unit_mapping
