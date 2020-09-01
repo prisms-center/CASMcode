@@ -245,9 +245,17 @@ namespace CASM {
       throw std::runtime_error("Cannot enumerate strains for project in which strain has not been specified as a degree of freedom.");
     strain_dof_key = tdof_types[istrain];
     if(!sym_axes){
-        SymRepTools::IrrepWedge irrep_wedge(SymRepTools::IrrepInfo::make_dummy(_axes), _axes);
-        irrep_wedge.mult = std::vector<Index>{1,1,1,1,1,1};
-        wedges.push_back(SymRepTools::SubWedge({irrep_wedge}));
+
+        //Written by Sesha----------------------------
+        //Issue: The irrep present in the wedges created by JCT's code don't have mult populated in the IrrepWedge
+        //object. To fix this a static function was written. Look for make_dummy_irrep_wedge in SymRepTools.hh
+        //for more info.
+        //JCT's code:---------------------------------
+        //wedges.push_back(SymRepTools::SubWedge({SymRepTools::IrrepWedge(SymRepTools::IrrepInfo::make_dummy(_axes), _axes)}));
+        //--------------------------------------------
+        //Fix:
+        wedges.push_back(SymRepTools::SubWedge({SymRepTools::IrrepWedge::make_dummy_irrep_wedge(_axes)}));
+        //-----------------------------------------------
     }
     else
       /* wedges = SymRepTools::symrep_subwedges(pg, _primclex.prim().structure().global_dof(strain_dof_key).symrep_ID()); */
