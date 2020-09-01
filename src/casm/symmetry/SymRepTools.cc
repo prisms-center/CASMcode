@@ -302,8 +302,6 @@ namespace CASM {
       //expects the directions to be in the original vector space. This part seems to be missing here.
       //Fix:-------------------------------------
       result.directions.clear();
-      result.directions.resize(0);
-      result.directions.reserve(irrep.directions.size());
       for (const auto& direction_orbit : irrep.directions){
           std::vector<Eigen::VectorXd> new_orbit;
           new_orbit.reserve(direction_orbit.size());
