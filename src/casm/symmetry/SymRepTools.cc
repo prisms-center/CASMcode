@@ -303,8 +303,10 @@ namespace CASM {
       //Fix:-------------------------------------
       result.directions.clear();
       result.directions.resize(0);
+      result.directions.reserve(irrep.directions.size());
       for (const auto& direction_orbit : irrep.directions){
           std::vector<Eigen::VectorXd> new_orbit;
+          new_orbit.reserve(direction_orbit.size());
           for (const auto& directions: direction_orbit){
               new_orbit.push_back(subspace*directions);
           }
@@ -755,7 +757,7 @@ namespace CASM {
     //std::vector<SymRepTools::IrrepInfo> irreps = irrep_decomposition(sub_rep, head_group, symmetrizer_func, allow_complex);
     //--------------------------------------------------
     //There might be a better way to fix this but this appears to be the least intrusive one.
-    //Sesha's fix:--------------------------------------
+    //Fix:--------------------------------------
     auto subspace_symmetrizer = [&](const Eigen::Ref<const Eigen::MatrixXcd>& _subspace){
         return irrep_symmetrizer(sub_rep, head_group, _subspace, TOL);
     };

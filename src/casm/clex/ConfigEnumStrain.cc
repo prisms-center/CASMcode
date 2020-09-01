@@ -352,10 +352,24 @@ namespace CASM {
     m_counter.reset();
 
     //Increment past any invalid values, including those that are outside specified ellipsoid (if trim_corners==true)
-    while(m_counter.valid() && (trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat().transpose()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat()*m_counter()) > 1.0 + TOL)) {
+    
+    //Written by Sesha-----------------------
+    //Issue: If you print out trans_mat you observe that it is a row vector matrix. From the definition of 
+    //trans_mat it converts a vector from the transformed space to initial vector space. The transformation
+    //matrix should always be in col vector form, hence all the trans_mat from here are transposed 
+    //TODO: The m_shape_factor in the case of 5d subspace would be 5x5 matrix, that seems to be an issue with the
+    //matrix multiplication below. Should it be always 6x6?
+    //JCT's code:---------------------------
+//    while(m_counter.valid() && (trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat().transpose()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat()*m_counter()) > 1.0 + TOL)) {
+//      ++m_counter;
+//    }
+    //---------------------------------------
+    //Fix: 
+    while(m_counter.valid() && (trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat().transpose()*m_counter()) > 1.0 + TOL)) {
       ++m_counter;
     }
-
+    //End of fix  --------------------
+    
     reset_properties(m_current);
     this->_initialize(&m_current);
 
@@ -368,10 +382,23 @@ namespace CASM {
   // Implements _increment
   void ConfigEnumStrain::increment() {
     //Increment past any invalid values, including those that are outside specified ellipsoid (if trim_corners==true)
-    while(++m_counter && (m_trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat().transpose()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat()*m_counter()) > 1.0 + TOL)) {
+    //Written by Sesha-----------------------
+    //Issue: If you print out trans_mat you observe that it is a row vector matrix. From the definition of 
+    //trans_mat it converts a vector from the transformed space to initial vector space. The transformation
+    //matrix should always be in col vector form, hence all the trans_mat from here are transposed 
+    //TODO: The m_shape_factor in the case of 5d subspace would be 5x5 matrix, that seems to be an issue with the
+    //matrix multiplication below. Should it be always 6x6?
+    //JCT's code:---------------------------
+    //while(++m_counter && (m_trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat().transpose()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat()*m_counter()) > 1.0 + TOL)) {
+
+    //}
+    //----------------------------------------
+    //Fix:
+    while(++m_counter && (m_trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat().transpose()*m_counter()) > 1.0 + TOL)) {
 
     }
-
+    //End of fix--------------------------------
+    
     // move to next part of wedge if necessary
     if(!m_counter.valid() && m_equiv_ind + 1 < m_wedges.size()) {
       m_counter.reset();
@@ -379,16 +406,39 @@ namespace CASM {
 
       //Increment past any invalid values, including those that are outside specified ellipsoid (if trim_corners==true)
       // this time it's for the new wedge
+    
+    //Written by Sesha-----------------------
+    //Issue: If you print out trans_mat you observe that it is a row vector matrix. From the definition of 
+    //trans_mat it converts a vector from the transformed space to initial vector space. The transformation
+    //matrix should always be in col vector form, hence all the trans_mat from here are transposed 
+    //TODO: The m_shape_factor in the case of 5d subspace would be 5x5 matrix, that seems to be an issue with the
+    //matrix multiplication below. Should it be always 6x6?
+    //JCT's code:---------------------------
+    //  while(m_counter &&
+    //        (m_trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat().transpose()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat()*m_counter()) > 1.0 + TOL)) {
+    //    ++m_counter;
+    //----------------------------------------
+    //Fix:
       while(m_counter &&
-            (m_trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat().transpose()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat()*m_counter()) > 1.0 + TOL)) {
+            (m_trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat().transpose()*m_counter()) > 1.0 + TOL)) {
         ++m_counter;
       }
     }
-
+    //End of fix---------------------------------------------------------------
+    
     if(m_counter.valid()) {
 
-      m_current.configdof().set_global_dof(m_strain_key, m_wedges[m_equiv_ind].trans_mat() * m_counter());
-
+    //Written by Sesha-----------------------
+    //Issue: If you print out trans_mat you observe that it is a row vector matrix. From the definition of 
+    //trans_mat it converts a vector from the transformed space to initial vector space. The transformation
+    //matrix should always be in col vector form, hence all the trans_mat from here are transposed 
+    //JCT's code:---------------------------
+    //m_current.configdof().set_global_dof(m_strain_key, m_wedges[m_equiv_ind].trans_mat() * m_counter());
+    //----------------------------------------
+    //Fix:
+      m_current.configdof().set_global_dof(m_strain_key, m_wedges[m_equiv_ind].trans_mat().transpose() * m_counter());
+    //End of fix------------------------------
+    
       _increment_step();
     }
     else {
