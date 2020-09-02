@@ -59,7 +59,7 @@ namespace CASM {
       /// irreps are identical if they have the same character vectors
       Index index;
 
-      /// vector_dim() x irrep_dim() matrix that transforms a vector from the initial
+      /// irrep_dim() x vector_dim() matrix that transforms a vector from the initial
       /// vector space into a vector in the irreducible vector space
       Eigen::MatrixXcd trans_mat;
 
