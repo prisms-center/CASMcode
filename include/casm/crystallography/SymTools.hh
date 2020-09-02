@@ -58,7 +58,7 @@ namespace CASM {
     /* Eigen::Matrix3d symmetry_matrix_to_cart(const Lattice &lat, const Eigen::Matrix3i &cart_matrix); */
 
     /// \brief Return a copy of the given lattice, which obeys the symmetry of the given group \param enforced_group
-    Lattice symmetrize(const Lattice &lat, const std::vector<SymOp> &enforced_group); 
+    Lattice symmetrize(const Lattice &lat, const std::vector<SymOp> &enforced_group);
 
     // TODO
     // Why does this routine take a tolerance, if the lattice itself has a tolerance?
