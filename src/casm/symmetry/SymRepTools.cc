@@ -295,12 +295,6 @@ namespace CASM {
       SymRepTools::IrrepInfo result(irrep);
       result.trans_mat = irrep.trans_mat * subspace.adjoint().template cast<std::complex<double> >();
 
-
-      //Written by Sesha------------------------
-      //Issue: If you print out the directions of each IrrepInfo object after irrep_decomposition, you can 
-      //observe that the directions are actually printed out in the subspace's vector space but the code 
-      //expects the directions to be in the original vector space. This part seems to be missing here.
-      //Fix:-------------------------------------
       result.directions.clear();
       for (const auto& direction_orbit : irrep.directions){
           std::vector<Eigen::VectorXd> new_orbit;
@@ -310,8 +304,6 @@ namespace CASM {
           }
           result.directions.push_back(new_orbit);
       }
-      //End of fix----------------------------------
-
       return result;
     }
 
@@ -744,18 +736,6 @@ namespace CASM {
 
     SymGroupRep sub_rep = coord_transformed_copy(_rep, subspace.transpose());
 
-    //Written by Sesha ---------------------------------
-    //Issue: This commented out part is written by JCT. If you observe carefully you are trying to do irrep
-    //decomposition for the subspace given by passing sub_rep which is subspace representation. But the 
-    //symmetrizer_func is constructed with the full space instead of the subspace. This creates an issue
-    //while doing irrep_decomposition. This is resolved by writing a small lambda which constructs
-    //symmetrizer_func with the subspace instead of the full space
-    //--------------------------------------------------
-    //JCT's code:
-    //std::vector<SymRepTools::IrrepInfo> irreps = irrep_decomposition(sub_rep, head_group, symmetrizer_func, allow_complex);
-    //--------------------------------------------------
-    //There might be a better way to fix this but this appears to be the least intrusive one.
-    //Fix:--------------------------------------
     auto subspace_symmetrizer = [&](const Eigen::Ref<const Eigen::MatrixXcd>& _subspace){
         return irrep_symmetrizer(sub_rep, head_group, _subspace, TOL);
     };
@@ -1154,7 +1134,7 @@ namespace CASM {
       }
       if(i < result.cols())
         result.conservativeResize(Eigen::NoChange, i);
-      return result.transpose();
+      return result;
     }
 
     //*******************************************************************************************
