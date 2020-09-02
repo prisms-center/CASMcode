@@ -346,6 +346,7 @@ namespace CASM {
     }
 
     reset_properties(m_current);
+    m_current.configdof().set_global_dof(m_strain_key, m_wedges[m_equiv_ind].trans_mat() * m_counter());
     this->_initialize(&m_current);
 
     if(!m_counter.valid()) {
@@ -389,4 +390,3 @@ namespace CASM {
   }
 
 }
-
