@@ -10,9 +10,37 @@
 #include "casm/clex/ScelEnum.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/Superlattice.hh"
+#include "casm/enumerator/DoFSpace.hh"
+#include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/symmetry/SymRepTools.hh"
+#include "casm/symmetry/io/json/SymRepTools.hh"
 
 #include "crystallography/TestStructures.hh" // for test::ZrO_prim
+
+namespace enumeration_test_impl {
+
+  // Helper functions to make the examples easier to read
+
+  SymGroupRep const &global_dof_symrep(Structure const &prim, DoFKey global_dof_key) {
+    return prim.factor_group().representation(prim.global_dof_symrep_ID(global_dof_key));
+  }
+
+  SymGroupRep const &global_dof_symrep(ConfigEnumInput const &config_input, DoFKey global_dof_key) {
+    return global_dof_symrep(config_input.supercell().prim(), global_dof_key);
+  }
+
+  SymGroup make_point_group(ConfigEnumInput const &config_input) {
+    return make_point_group(
+             config_input.group(),
+             config_input.supercell().sym_info().supercell_lattice());
+  }
+
+  // check if there is a solution X, for:  B = A * X
+  bool is_equivalent_column_space(Eigen::MatrixXcd const &A, Eigen::MatrixXcd const &B, double tol) {
+    Eigen::MatrixXcd X = A.fullPivHouseholderQr().solve(B);
+    return (A * X).isApprox(B, tol);
+  }
+}
 
 // This test fixture class constructs a CASM project for enumeration examples
 //
@@ -33,6 +61,10 @@ protected:
   CASM::ProjectSettings project_settings;
   CASM::PrimClex primclex;
 
+  // values to check
+  std::vector<Eigen::MatrixXcd> expected_irrep_subspace;
+  double tol;
+
   ExampleEnumerationSimpleCubicConfigEnumStrain():
     title("ExampleEnumerationSimpleCubicConfigEnumStrain"),
     shared_prim(std::make_shared<CASM::Structure const>(test::SimpleCubicGLstrain())),
@@ -52,66 +84,444 @@ protected:
     //  to the supercell database available at `primclex.db<Supercell>()`.
     int count = std::distance(enumerator.begin(), enumerator.end());
     EXPECT_EQ(count, 1);
+
+    // CASM::Supercell {&primclex, Eigen::Matrix3i::Identity()}.insert();
+    // EXPECT_EQ(primclex.db<Supercell>().size(), 1);
+
+    // Expected symmetry adapted GLstrain axes for a simple cubic structure
+    Eigen::MatrixXcd Q {6, 6};
+
+    // "q1"
+    Q.col(0) << 0.577350269190, 0.577350269190, 0.577350269190, 0.000000000000, 0.000000000000, 0.000000000000;
+    expected_irrep_subspace.push_back(Q.block(0, 0, 6, 1));
+
+    // "q2, q3"
+    Q.col(1) << -0.408248290464, -0.408248290464, 0.816496580928, 0.000000000000, 0.000000000000, 0.000000000000;
+    Q.col(2) << 0.707106781187, -0.707106781187, -0.000000000000, 0.000000000000, 0.000000000000, 0.000000000000;
+    expected_irrep_subspace.push_back(Q.block(0, 1, 6, 2));
+
+    // "q4, q5, q6"
+    Q.col(3) << 0.000000000000, 0.000000000000, 0.000000000000, 0.000000000000, 0.000000000000, 1.000000000000;
+    Q.col(4) <<  0.000000000000, 0.000000000000, 0.000000000000, -1.000000000000, 0.000000000000, 0.000000000000;
+    Q.col(5) << 0.000000000000, 0.000000000000, 0.000000000000, 0.000000000000, 1.000000000000, 0.000000000000;
+    expected_irrep_subspace.push_back(Q.block(0, 3, 6, 3));
+
+    tol = 1e-10;
+
+  }
+
+  // Check that the IrrepInfo trans_mat value matches expectations:
+  void check_irrep(SymRepTools::IrrepInfo const &irrep) {
+
+    using namespace enumeration_test_impl; // for is_equivalent_column_space
+
+    // The SymRepTools::IrrepInfo::trans_mat is a matrix that multiplies a vector in the original
+    //   reference space and transforms it into irreducible representation vector space:
+    //
+    //      v_irrep_space = irrep.trans_mat * v_reference_space
+    //
+    // The reference space has dimensions (vector_dim  x vector_dim)
+    // An irreducible representation vector space has dimensions (vector_dim  x irrep_dim)
+    // The IrrepInfo::trans_mat has dimensions (irrep_dim x vector_dim)
+    //
+    // For this example, GLstrain has vector_dim=6, and the irrep_dim depends on the particular
+    //   irreducible representation. The irreducible representations are named with two indices:
+    //
+    //      irrep name: irrep_<index>_<index>  // TODO: explain mult/indices
+    //
+    //   irrep_1_1: irrep_dim=1, irrep_axes=["q1"]
+    //     q1 = 0.577350269190, 0.577350269190, 0.577350269190, 0.000000000000, 0.000000000000, 0.000000000000
+    //   irrep_2_1: irrep_dim=1, irrep_axes=["q2", "q3"]
+    //     q2 = -0.408248290464, -0.408248290464, 0.816496580928, 0.000000000000, 0.000000000000, 0.000000000000
+    //     q3 = 0.707106781187, -0.707106781187, -0.000000000000, 0.000000000000, 0.000000000000, 0.000000000000
+    //   irrep_2_1: irrep_dim=1, irrep_axes=["q4", "q5", "q6"]
+    //     q4 = 0.000000000000, 0.000000000000, 0.000000000000, 0.000000000000, 0.000000000000, 1.000000000000
+    //     q5 = 0.000000000000, 0.000000000000, 0.000000000000, -1.000000000000, 0.000000000000, 0.000000000000
+    //     q6 = 0.000000000000, 0.000000000000, 0.000000000000, 0.000000000000, 1.000000000000, 0.000000000000
+
+    EXPECT_EQ(irrep.trans_mat.rows(), irrep.irrep_dim());
+    EXPECT_EQ(irrep.trans_mat.cols(), irrep.vector_dim());
+
+    // The simple cubic GLstrain irreps are all distinct by irrep_dim,
+    //   so use those to identify and then check the subspaces
+    if(irrep.irrep_dim() == 1) {  // irrep_1_1: ["q1"]
+      EXPECT_EQ(irrep.complex, false);
+      EXPECT_EQ(irrep.pseudo_irrep, false);
+      EXPECT_EQ(irrep.index, 0);
+      EXPECT_EQ(is_equivalent_column_space(irrep.trans_mat.transpose(), expected_irrep_subspace[0], tol), true);
+      // TODO: IrrepInfo::directions, not currently checked
+      // TODO: IrrepInfo::characters, not currently checked
+    }
+    else if(irrep.irrep_dim() == 2) { // irrep_2_1: ["q2", "q3"]
+      EXPECT_EQ(irrep.complex, false);
+      EXPECT_EQ(irrep.pseudo_irrep, false);
+      EXPECT_EQ(irrep.index, 0);
+      EXPECT_EQ(is_equivalent_column_space(irrep.trans_mat.transpose(), expected_irrep_subspace[1], tol), true);
+      // TODO: IrrepInfo::directions, not currently checked
+      // TODO: IrrepInfo::characters, not currently checked
+    }
+    else if(irrep.irrep_dim() == 3) { // irrep_3_1: ["q4", "q5", "q6"]
+      EXPECT_EQ(irrep.complex, false);
+      EXPECT_EQ(irrep.pseudo_irrep, false);
+      EXPECT_EQ(irrep.index, 0);
+      EXPECT_EQ(is_equivalent_column_space(irrep.trans_mat.transpose(), expected_irrep_subspace[2], tol), true);
+      // TODO: IrrepInfo::directions, not currently checked
+      // TODO: IrrepInfo::characters, not currently checked
+    }
+    else {
+      EXPECT_EQ(true, false) << " for SimpleCubic GLstrain space, no irrep should have irrep_dim > 3";
+    }
   }
 
 };
 
-namespace enumeration_test_impl {
-
-  SymGroupRep const &global_dof_symrep(Structure const &prim, DoFKey global_dof_key) {
-    return prim.factor_group().representation(prim.global_dof_symrep_ID(global_dof_key));
-  }
-
-  SymGroupRep const &global_dof_symrep(ConfigEnumInput const &config_input, DoFKey global_dof_key) {
-    return global_dof_symrep(config_input.supercell().prim(), global_dof_key);
-  }
-
-  SymGroup make_point_group(ConfigEnumInput const &config_input) {
-    return make_point_group(
-             config_input.group(),
-             config_input.supercell().sym_info().supercell_lattice());
-  }
-}
-
-TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, Example1) {
+TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, VectorSpaceSymReport) {
 
   using namespace enumeration_test_impl; // for global_dof_symrep, make_point_group
 
-  std::vector<CASM::Configuration> configurations;
-  for(auto const &scel : primclex.db<Supercell>()) {
+  // Construct the VectorSpaceSymReport for the SimpleCubic GLstrain space.
+  //
+  // The VectorSpaceSymReport provides symmetry information about a particular crystal
+  //   "degree of freedom space" under particular symmetry constraints.
+  // The total crystal degree of freedom space corresponding to a particular prim structure is the
+  //   combination of the global continuous DoFs, local discrete DoF, and local continuous DoFs.
+  // Essential symmetry information (irreducible representations) can be obtained for various
+  //   subspaces of the total crystal degree of freedom space and subgroups of the prim structure's
+  //   factor group.
+  // The degree of freedom subspaces are primarily specified by a combination of DoF type (e.g.,
+  //   "disp", "GLstrain", "occ") and, for local DoF, which sites to include.
+  // The symmetry of a degree of freedom subspace can not be higher than that of the prim factor
+  //   group, but it may have lower symmetry. It may have lower translational symmetry corresponding
+  //   to a particular supercell lattice periodicity. It may have lower symmetry corresponding to
+  //   order/disorder of local degrees of freedom within a supercell. Thus, this symmetry constraint
+  //   may be specified by using the factor group of a particular Configuration.
+  //
+  //
+  // The DoFSpace class is used to specify a particular degree of freedom space and the symmetry
+  //   constraints on it:
+  //
+  //   DoFSpace have:
+  //   - dof_key (DoFKey): A string indicating which DoF type (e.g., "disp", "Hstrain", "occ")
+  //   - config_region (ConfigEnumInput): Specifies both the symmetry group for the DoFSpace (from
+  //     "config_region.group()") and, for local DoF, which DoF to include (DoF on sites listed
+  //     "config_region.sites()"). The symmetry group "config_region.group()" is the factor group
+  //     of the ConfigEnumInput's configuration, excluding any operation that causes permutation
+  //     between those sites included in "config_region.sites()" and those sites excluded from
+  //     "config_region.sites()".
+  //   - dof_subspace (Eigen::MatrixXd): Allows specifying a subspace of the space determined from
+  //     config_region and dof_key. Examples:
+  //
+  //       For dof_key=="disp", and config_region.sites().size()==4:
+  //         The default DoF space has dimension 12 corresponding to (x,y,z) for each of the 4 sites.
+  //         Then, dof_subspace is a matrix with 12 rows and 12 or fewer columns.
+  //
+  //       For dof_key=="occ", and config_region.sites().size()==4, with the particular sites selected
+  //       having allowed occupations ["A", "B"], ["A", "B", "C"], ["A, B"], and ["A", "B", "C"] :
+  //         The default DoF space has dimension 10 = 2 + 3 + 2 + 3.
+  //         Then, dof_subspace is a matrix with 10 rows and 10 or fewer columns.
+  //
+  //       For dof_key=="GLstrain":
+  //         The default DoF space has dimension 6 for the six independent GLstrain components.
+  //         Then, dof_subspace is a matrix with 6 rows and 6 or fewer columns.
+  //
+  //     By default, dof_subspace is the full DoF space (identity matrix with dimensions matching
+  //     the full space for the particular combination of config_region and dof_key).
+  //
+  Supercell const &supercell = *primclex.db<Supercell>().begin();
+  ConfigEnumInput config_input {supercell};
+  DoFKey dof_key = "GLstrain";
+  DoFSpace dof_space {config_input, dof_key};
+  bool calc_wedges = true;
+  VectorSpaceSymReport sym_report = vector_space_sym_report(dof_space, calc_wedges);
 
-    // Inputs needed for CASM::ConfigEnumStrain enumerator
-    CASM::ConfigEnumInput config_input {scel};
-    std::vector<SymRepTools::SubWedge> wedges;
-    Eigen::VectorXd min_value;
-    Eigen::VectorXd max_value;
-    Eigen::VectorXd increment_value;
-    bool auto_range = false;
-    bool trim_corners = true;
-    DoFKey strain_key = "GLstrain";
+  // Uncomment to print dof_space:
+  // jsonParser dof_space_json;
+  // to_json(dof_space, dof_space_json);
+  // std::cout << "DoFSpace:\n" << dof_space_json << std::endl;
 
-    // Make wedges
-    std::cout << "make wedges" << std::endl;
-    SymGroup point_group = make_point_group(config_input);
-    SymGroupRep const &strain_symrep = global_dof_symrep(config_input, strain_key);
-    wedges = SymRepTools::symrep_subwedges(strain_symrep, point_group);
+  // Uncomment to print sym_report:
+  // jsonParser sym_report_json;
+  // to_json(sym_report, sym_report_json);
+  // std::cout << "VectorSpaceSymReport:\n" << sym_report_json << std::endl;
 
-    // Make counter parameters
-    std::cout << "make counter parameters" << std::endl;
-    // For this case, use the full space, so subspace rank == symrep dimensionality
-    int dim = strain_symrep.dim();
-    Index rank = dim;
-    min_value = Eigen::VectorXd::Constant(rank, 0.0);
-    max_value = Eigen::VectorXd::Constant(rank, 1.01);
-    increment_value = Eigen::VectorXd::Constant(rank, 0.5);
+  // Expect three irreducible representations
+  EXPECT_EQ(sym_report.irreps.size(), 3);
 
-    std::cout << "make ConfigEnumStrain enumerator" << std::endl;
-    CASM::ConfigEnumStrain enumerator {config_input, wedges, min_value, max_value, increment_value,
-                                       strain_key, auto_range, trim_corners};
-
-    std::cout << "begin enumeration" << std::endl;
-    std::copy(enumerator.begin(), enumerator.end(), std::back_inserter(configurations));
-    std::cout << "enumeration complete" << std::endl;
+  // Check the calculated irreducible representations
+  for(SymRepTools::IrrepInfo const &irrep : sym_report.irreps) {
+    this->check_irrep(irrep);
   }
-  EXPECT_EQ(configurations.size(), pow(3, 6));
+
+}
+
+TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, FullSpaceIrreps) {
+
+  // Example constructing the full GLstrain space's irreducible representations directly
+
+  using namespace enumeration_test_impl; // for global_dof_symrep, make_point_group
+
+  // Use full prim structure symmetry, specified by using the volume 1 supercell
+  Supercell const &supercell = *primclex.db<Supercell>().begin();
+  CASM::ConfigEnumInput config_input {supercell};
+  DoFKey dof_key = "GLstrain";
+
+  std::vector<CASM::Configuration> configurations;
+  SymGroup point_group = make_point_group(config_input);
+  SymGroupRep const &strain_symrep = global_dof_symrep(config_input, dof_key);
+
+  // Construct irreducible representations
+  bool allow_complex = true;
+  std::vector<SymRepTools::IrrepInfo> irreps = irrep_decomposition(
+                                                 strain_symrep, point_group, allow_complex);
+
+  // Expect three irreducible representations
+  EXPECT_EQ(irreps.size(), 3);
+
+  // Check the calculated irreducible representations
+  for(SymRepTools::IrrepInfo const &irrep : irreps) {
+    this->check_irrep(irrep);
+  }
+}
+
+// For enumerating strains within the full GLstrain space, one way to proceed is to find
+//   symmetrically unique "wedges": portions of space that fall between high symmetry directions.
+//   Note wedges that represent an infinite volume of space. For example, in strain space a wedge
+//   begins at the origin, representing zero strain, and comprises the region of space between high
+//   symmetry strain directions at any magnitude.
+//
+// The SymRepTools::IrrepWedge class represents a wedge in an irreducible vector space
+//
+// The SymRepTools::SubWedge class represents a vector of SymRepTools::IrrepWedge, one from each
+//   irreducible subspace of the full degree of freedom space under consideration. Together,
+//   the IrrepWedge comprising a Subwedge span the full space. It may take multiple, distinct
+//   Subwedge to fill the full space.
+//
+// The VectorSpaceSymReport::irreducible_wedge is a vector of SubWedge whose orbits fill the full
+//   space
+//
+// Enumeration of degree of freedom values in the full DoF space can be performed by enumerating, in
+//   turn, values in each SubWedge comprising the irreducible wedge for the full space. The standard
+//   approach in CASM to enumerate degree of freedom values in a SubWedge is to construct a grid of
+//   points aligned with the subwedge axes. Especially for subwedges whose axes form acute angles,
+//   this grid may include many unwanted points with large magnitudes. So CASM also provides a
+//   "trim_corners" option which excludes any points lying outside the ellipsoid that passes through
+//   the maximum enumerated value lying on each wedge axis.
+//
+
+TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, MakeFullSpaceIrrepWedges) {
+
+  // This example demonstrates constructing the unique SymRepTools::IrrepWedge for the full GLstrain
+  //   space
+
+  using namespace enumeration_test_impl; // for global_dof_symrep, make_point_group
+
+  // Use full prim structure symmetry, specified by using the volume 1 supercell
+  Supercell const &supercell = *primclex.db<Supercell>().begin();
+  CASM::ConfigEnumInput config_input {supercell};
+  DoFKey dof_key = "GLstrain";
+
+  SymGroup point_group = make_point_group(config_input);
+  SymGroupRep const &strain_symrep = global_dof_symrep(config_input, dof_key);
+
+  // Make the unique IrrepWedge in full GLstrain space
+  int dim = strain_symrep.dim();
+  Eigen::MatrixXd subspace = Eigen::MatrixXd::Identity(dim, dim);
+  std::vector<SymRepTools::IrrepWedge> irrep_wedges = SymRepTools::irrep_wedges(
+                                                        strain_symrep, point_group, subspace);
+
+  // TODO: checks that demonstrate what the IrrepWedge are and that they are what they should be
+  EXPECT_EQ(irrep_wedges.size(), 3);
+
+}
+
+
+TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, MakeFullSpaceSubWedges) {
+
+  // This example demonstrates constructing the unique SymRepTools::SubWedge for the full GLstrain
+  //   space
+
+  using namespace enumeration_test_impl; // for global_dof_symrep, make_point_group
+
+  // Use full prim structure symmetry, specified by using the volume 1 supercell
+  Supercell const &supercell = *primclex.db<Supercell>().begin();
+  CASM::ConfigEnumInput config_input {supercell};
+  DoFKey dof_key = "GLstrain";
+
+  SymGroup point_group = make_point_group(config_input);
+  SymGroupRep const &strain_symrep = global_dof_symrep(config_input, dof_key);
+
+  // Make the unique SubWedge in full GLstrain space
+  std::vector<SymRepTools::SubWedge> subwedges = SymRepTools::symrep_subwedges(strain_symrep, point_group);
+
+  // TODO: checks that demonstrate what the SubWedge are and that they are what they should be
+  EXPECT_EQ(subwedges.size(), 6);
+
+}
+
+TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, FullSpaceWedgesEnum) {
+
+  using namespace enumeration_test_impl; // for global_dof_symrep, make_point_group
+
+  // This example demonstrates constructing SymRepTools::SubWedge for the full GLstrain space and
+  //   using them to enumerate strain configurations
+
+  // Use full prim structure symmetry, specified by using the volume 1 supercell
+  Supercell const &supercell = *primclex.db<Supercell>().begin();
+  CASM::ConfigEnumInput config_input {supercell};
+  DoFKey dof_key = "GLstrain";
+
+  SymGroup point_group = make_point_group(config_input);
+  SymGroupRep const &strain_symrep = global_dof_symrep(config_input, dof_key);
+
+  // Make wedges in GLstrain space
+  std::vector<SymRepTools::SubWedge> subwedges = SymRepTools::symrep_subwedges(strain_symrep, point_group);
+
+  // ** Enumerate degree of freedom values by sampling in each SubWedge **
+
+  // SubWedge dimension == full GLstrain space dimension (6)
+  int dim = strain_symrep.dim();
+
+  // Specify a grid with three points along each SubWedge axis, with minimum value of 0.0
+  //   and increment value of 0.5.
+  double _min = 0.0;
+  double _incr = 0.5;
+  int n_increment = 3;
+  Eigen::VectorXd min_value = Eigen::VectorXd::Constant(dim, _min);
+  Eigen::VectorXd max_value = Eigen::VectorXd::Constant(dim, (n_increment - 1) * _incr + _incr / 10.);
+  Eigen::VectorXd increment_value = Eigen::VectorXd::Constant(dim, _incr);
+
+  // Construct the CASM::ConfigEnumStrain enumerator
+  bool auto_range = false;  // explanation TODO
+  bool trim_corners = false; // explanation TODO
+  CASM::ConfigEnumStrain enumerator {config_input, subwedges, min_value, max_value, increment_value,
+                                     dof_key, auto_range, trim_corners};
+
+  std::vector<CASM::Configuration> configurations;
+  std::copy(enumerator.begin(), enumerator.end(), std::back_inserter(configurations));
+
+  // Check the number of configurations:
+  // - Each subwedge has a grid with n_increment points along each dimension, so the total number
+  //   of enumerated configurations is pow(n_increment, dim) * subwedges.size()
+  EXPECT_EQ(configurations.size(), pow(n_increment, dim)*subwedges.size());
+
+}
+
+TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, SubSpaceIrreps) {
+
+  // Example demonstrating generating irreducible representations for the irreducible subspaces
+  //   containing particular directions
+
+  using namespace enumeration_test_impl; // for global_dof_symrep, make_point_group
+
+  // Use full prim structure symmetry, specified by using the volume 1 supercell
+  Supercell const &supercell = *primclex.db<Supercell>().begin();
+  CASM::ConfigEnumInput config_input {supercell};
+  DoFKey dof_key = "GLstrain";
+
+  SymGroup point_group = make_point_group(config_input);
+  SymGroupRep const &strain_symrep = global_dof_symrep(config_input, dof_key);
+
+  // Example 1:
+  // The irreps for subspace that includes a single direction will always have a single irrep
+  for(int i = 0; i < expected_irrep_subspace.size(); ++i) {
+
+    // Construct subspace consisting of a single direction in an irreducible subspace
+    Eigen::MatrixXd subspace {6, 1};
+    subspace.col(0) = expected_irrep_subspace[i].col(0).real();
+
+    // Construct irreducible representations spanning the subspace.
+    bool allow_complex = true;
+    std::vector<SymRepTools::IrrepInfo> irreps = irrep_decomposition(
+                                                   strain_symrep, point_group, subspace, allow_complex);
+
+    EXPECT_EQ(irreps.size(), 1);
+    this->check_irrep(irreps[0]);
+  }
+
+  // Example 2:
+  // The irreps for a subspace that spans two irreducible subspaces will produce two irreps
+  for(int i = 0; i < expected_irrep_subspace.size(); ++i) {
+    for(int j = 0; j < i; ++j) {
+
+      // Construct subspace consisting of one direction from each of two irreducible subspaces
+      Eigen::MatrixXd subspace {6, 2};
+      subspace.col(0) = expected_irrep_subspace[i].col(0).real();
+      subspace.col(1) = expected_irrep_subspace[j].col(0).real();
+
+      // Construct irreducible representations spanning the subspace.
+      bool allow_complex = true;
+      std::vector<SymRepTools::IrrepInfo> irreps = irrep_decomposition(
+                                                     strain_symrep, point_group, subspace, allow_complex);
+
+      EXPECT_EQ(irreps.size(), 2);
+
+      // TODO: check it contains the expected two irreps
+      for(auto const &irrep : irreps) {
+        this->check_irrep(irrep);
+      }
+    }
+  }
+
+}
+
+TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, SubSpaceWedgesEnum) {
+
+  // Example enumerating GLstrain in a particular irreducible subspace
+
+  using namespace enumeration_test_impl; // for global_dof_symrep, make_point_group
+
+  // Use full prim structure symmetry, specified by using the volume 1 supercell
+  Supercell const &supercell = *primclex.db<Supercell>().begin();
+  CASM::ConfigEnumInput config_input {supercell};
+  DoFKey dof_key = "GLstrain";
+  SymGroup point_group = make_point_group(config_input);
+  SymGroupRep const &strain_symrep = global_dof_symrep(config_input, dof_key);
+
+  for(int i = 0; i < expected_irrep_subspace.size(); ++i) {
+    int irrep_dim = expected_irrep_subspace[i].cols();
+
+    // Construct subspace consisting of a single direction in an irreducible subspace
+    Eigen::MatrixXd subspace {6, 1};
+    subspace.col(0) = expected_irrep_subspace[i].col(0).real();
+
+    // Make wedges in that subspace
+    std::vector<SymRepTools::SubWedge> subwedges = SymRepTools::symrep_subwedges(
+                                                     strain_symrep, point_group, subspace);
+
+    std::cout << i << " subwedges[0].trans_mat:\n" << subwedges[0].trans_mat() << std::endl;
+
+    // Check single SubWedge generated
+    EXPECT_EQ(subwedges.size(), 1);
+
+    // Check for single IrrepWedge
+    EXPECT_EQ(subwedges[0].irrep_wedges().size(), 1);
+
+    // Enumerate by sampling a portion of the subwedges:
+    // - Using min=0.2, max=1.21, increment=0.5 results in a sampling grid with three points along
+    //   each irreducible subspace dimension
+    Eigen::VectorXd min_value = Eigen::VectorXd::Constant(irrep_dim, 0.2);
+    Eigen::VectorXd max_value = Eigen::VectorXd::Constant(irrep_dim, 1.21);
+    Eigen::VectorXd increment_value = Eigen::VectorXd::Constant(irrep_dim, 0.5);
+
+    // Construct the CASM::ConfigEnumStrain enumerator
+    bool auto_range = false;  // explanation TODO
+    bool trim_corners = false; // explanation TODO
+    CASM::ConfigEnumStrain enumerator {config_input, subwedges, min_value, max_value, increment_value,
+                                       dof_key, auto_range, trim_corners};
+
+
+    // Enumerate strained configurations
+    std::vector<CASM::Configuration> configurations;
+    std::copy(enumerator.begin(), enumerator.end(), std::back_inserter(configurations));
+
+    // Check number of configurations
+    EXPECT_EQ(configurations.size(), pow(3, irrep_dim)*subwedges.size());
+
+    // Check first value matches initial grid point
+    Configuration initial_config = configurations[0];
+    auto const &GLstrain = initial_config.configdof().global_dof(dof_key).values();
+    auto expected_GLstrain = subwedges[0].trans_mat() * min_value;
+    EXPECT_EQ(almost_equal(GLstrain, expected_GLstrain, tol), true);
+
+  }
 }
