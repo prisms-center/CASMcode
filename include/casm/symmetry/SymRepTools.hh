@@ -91,6 +91,12 @@ namespace CASM {
 
       /// Symmetric multiplicity of each column of 'axes'
       std::vector<Index> mult;
+
+      /// Makes a dummy irrep wedge from the axes provided with mult vector size as the number of columns of axes
+      /// and the each element of the mult vector being 1.
+      /// This implies each of the directions in the columns of axes are unique and have no orbits (This is what 
+      /// we want when doing square grid enumeration with no symmetry)
+      static IrrepWedge make_dummy_irrep_wedge(const Eigen::MatrixXd& axes);
     };
 
     ///\brief SubWedge is a vector of IrrepWedge, one from each irreducible subspace
