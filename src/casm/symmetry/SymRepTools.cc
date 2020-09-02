@@ -302,7 +302,7 @@ namespace CASM {
           for (const auto& directions: direction_orbit){
               new_orbit.push_back(subspace*directions);
           }
-          result.directions.push_back(new_orbit);
+          result.directions.push_back(std::move(new_orbit));
       }
       return result;
     }
@@ -741,7 +741,6 @@ namespace CASM {
     };
 
     std::vector<SymRepTools::IrrepInfo> irreps = irrep_decomposition(sub_rep, head_group, subspace_symmetrizer, allow_complex);
-    // End of fix-------------------------------
 
     std::vector<SymRepTools::IrrepInfo> result;
     result.reserve(irreps.size());
