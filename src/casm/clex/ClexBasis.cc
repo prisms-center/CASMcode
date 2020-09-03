@@ -30,10 +30,10 @@ namespace CASM {
 
   ClexBasis::ClexBasis(
     PrimType_ptr _prim_ptr,
-    BasisFunctionSpecs const &_basis_function_specs,
+    ClexBasisSpecs const &_basis_set_specs,
     ParsingDictionary<DoFType::Traits> const *_dof_dict) :
     m_prim_ptr(_prim_ptr),
-    m_basis_function_specs(_basis_function_specs),
+    m_basis_set_specs(_basis_set_specs),
     m_dof_dict(_dof_dict),
     m_basis_builder(std::unique_ptr<ClexBasisBuilder>(new InvariantPolyBasisBuilder("invariant_poly"))) {
 
@@ -84,8 +84,8 @@ namespace CASM {
     return m_prim_ptr;
   }
 
-  BasisFunctionSpecs const &ClexBasis::basis_function_specs() const {
-    return m_basis_function_specs;
+  ClexBasisSpecs const &ClexBasis::basis_set_specs() const {
+    return m_basis_set_specs;
   }
 
   ParsingDictionary<DoFType::Traits> const *ClexBasis::dof_dict() const {
@@ -131,10 +131,10 @@ namespace CASM {
                                        nullstream);
 
     for(DoFKey const &dof_type : all_local_dof_types(prim())) {
-      m_site_bases[dof_type] = lookup_dof_type_traits(dof_type).construct_site_bases(prim(), asym_unit, basis_function_specs());
+      m_site_bases[dof_type] = lookup_dof_type_traits(dof_type).construct_site_bases(prim(), asym_unit, basis_set_specs().basis_function_specs);
     }
     for(DoFKey const &dof_type : global_dof_types(prim())) {
-      std::vector<BasisSet> tbasis = lookup_dof_type_traits(dof_type).construct_site_bases(prim(), asym_unit, basis_function_specs());
+      std::vector<BasisSet> tbasis = lookup_dof_type_traits(dof_type).construct_site_bases(prim(), asym_unit, basis_set_specs().basis_function_specs);
       if(tbasis.empty()) {
         throw std::runtime_error("In ClexBasis::_populate_site_bases(), unable to lookup global DoF type " + dof_type);
       }

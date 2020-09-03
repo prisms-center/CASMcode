@@ -32,7 +32,7 @@ namespace CASM {
   void ClexBasis::generate(OrbitIteratorType _orbit_begin,
                            OrbitIteratorType _orbit_end) {
 
-    std::vector<DoFKey> dof_keys = basis_function_specs().dof_keys;
+    std::vector<DoFKey> dof_keys = basis_set_specs().basis_function_specs.dof_keys;
     std::vector<DoFKey> global_keys;
     std::vector<DoFKey> local_keys;
 
@@ -66,7 +66,7 @@ namespace CASM {
     auto bset_it = m_bset_tree.begin();
     for(; _orbit_begin != _orbit_end; ++_orbit_begin, ++bset_it) {
       auto const &orbit = *_orbit_begin;
-      Index max_poly_order = _orbit_max_poly_order(orbit, basis_function_specs());
+      Index max_poly_order = _orbit_max_poly_order(orbit, basis_set_specs().basis_function_specs);
       bset_it->reserve(orbit.size());
       bset_it->push_back(_construct_prototype_basis(orbit, local_keys, global_keys, max_poly_order));
       for(Index j = 1; j < orbit.size(); j++)

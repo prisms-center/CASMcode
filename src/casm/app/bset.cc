@@ -103,8 +103,6 @@ namespace CASM {
       check_force(basis_set_name, cmd);
 
       try {
-        ClexBasisSpecs const &bspecs = primclex.basis_set_specs(basis_set_name);
-
         write_basis_set_data(
           primclex.shared_prim(),
           primclex.settings(),
@@ -142,27 +140,26 @@ namespace CASM {
       BasisFunctionPrinter(
         Log &_log,
         std::shared_ptr<Structure const> _shared_prim,
-        BasisFunctionSpecs const &_basis_function_specs);
+        ClexBasisSpecs const &_basis_set_specs);
 
       template<typename OrbitVecType>
       void operator()(OrbitVecType const &orbits) const;
 
     private:
       std::shared_ptr<Structure const> m_shared_prim;
-      BasisFunctionSpecs m_basis_function_specs;
+      ClexBasisSpecs m_basis_set_specs;
       Log &m_log;
     };
 
     /// Implements `casm bset --orbits --clusters --functions` (any combination is allowed)
     void print_bset(const BsetCommand &cmd) {
-      const auto &vm = cmd.vm();
+      auto const &vm = cmd.vm();
       auto &log = cmd.args().log();
       std::string basis_set_name = get_clex_description(cmd).bset;
-      const auto &primclex = cmd.primclex();
+      auto const &primclex = cmd.primclex();
 
-      const auto &shared_prim = primclex.shared_prim();
+      auto const &shared_prim = primclex.shared_prim();
       auto const &basis_set_specs = primclex.basis_set_specs(basis_set_name);
-      auto const &basis_function_specs = basis_set_specs.basis_function_specs;
       auto const &cluster_specs = *basis_set_specs.cluster_specs;
 
       std::vector<IntegralCluster> prototypes;
@@ -176,7 +173,7 @@ namespace CASM {
         for_all_orbits(cluster_specs, prototypes, OrbitPrinterAdapter<FullSitesPrinter> {log});
       }
       if(vm.count("functions")) {
-        BasisFunctionPrinter printer {log, shared_prim, basis_function_specs};
+        BasisFunctionPrinter printer {log, shared_prim, basis_set_specs};
         for_all_orbits(cluster_specs, prototypes, printer);
       }
     }
@@ -284,16 +281,16 @@ namespace CASM {
     BasisFunctionPrinter::BasisFunctionPrinter(
       Log &_log,
       std::shared_ptr<Structure const> _shared_prim,
-      BasisFunctionSpecs const &_basis_function_specs):
+      ClexBasisSpecs const &_basis_set_specs):
       m_shared_prim(_shared_prim),
-      m_basis_function_specs(_basis_function_specs),
+      m_basis_set_specs(_basis_set_specs),
       m_log(_log) {}
 
     template<typename OrbitVecType>
     void BasisFunctionPrinter::operator()(OrbitVecType const &orbits) const {
 
       ParsingDictionary<DoFType::Traits> const *dof_dict = &DoFType::traits_dict();
-      ClexBasis clex_basis {m_shared_prim, m_basis_function_specs, dof_dict};
+      ClexBasis clex_basis {m_shared_prim, m_basis_set_specs, dof_dict};
       clex_basis.generate(orbits.begin(), orbits.end());
 
       print_site_basis_funcs(m_shared_prim, clex_basis, m_log);

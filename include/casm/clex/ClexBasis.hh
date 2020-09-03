@@ -2,10 +2,10 @@
 #define CLEXBASIS_HH
 
 #include <string>
-#include "casm/basis_set/BasisFunctionSpecs.hh"
 #include "casm/basis_set/BasisSet.hh"
 #include "casm/crystallography/DoFDecl.hh"
 #include "casm/casm_io/json/jsonParser.hh"
+#include "casm/clex/ClexBasisSpecs.hh"
 #include "casm/clex/OrbitFunctionTraits.hh"
 #include "casm/clusterography/ClusterDecl.hh"
 #include "casm/global/enum.hh"
@@ -47,14 +47,14 @@ namespace CASM {
     /// basis functions.
     ClexBasis(
       PrimType_ptr _prim_ptr,
-      BasisFunctionSpecs const &_basis_function_specs,
+      ClexBasisSpecs const &_basis_set_specs,
       ParsingDictionary<DoFType::Traits> const *_dof_dict);
 
     PrimType const &prim() const;
 
     PrimType_ptr shared_prim() const;
 
-    BasisFunctionSpecs const &basis_function_specs() const;
+    ClexBasisSpecs const &basis_set_specs() const;
 
     ParsingDictionary<DoFType::Traits> const *dof_dict() const;
 
@@ -129,7 +129,7 @@ namespace CASM {
 
     PrimType_ptr m_prim_ptr;
 
-    BasisFunctionSpecs m_basis_function_specs;
+    ClexBasisSpecs m_basis_set_specs;
 
     ParsingDictionary<DoFType::Traits> const *m_dof_dict;
 

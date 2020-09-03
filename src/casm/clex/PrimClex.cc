@@ -495,10 +495,9 @@ namespace CASM {
       const auto &dir = settings.dir();
       ParsingDictionary<DoFType::Traits> const *dof_dict = &DoFType::traits_dict();
       double xtal_tol = settings.crystallography_tol();
-      auto const &basis_function_specs = basis_set_specs.basis_function_specs;
 
       // generate ClexBasis
-      ClexBasis clex_basis {shared_prim, basis_function_specs, dof_dict};
+      ClexBasis clex_basis {shared_prim, basis_set_specs, dof_dict};
       clex_basis.generate(orbits.begin(), orbits.end());
 
       // delete any existing data
