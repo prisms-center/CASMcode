@@ -14,7 +14,7 @@ namespace CASM {
 
   /// Pair of Clexulator and ECIContainer
   struct Clex {
-    mutable Clexulator clexulator;
+    Clexulator clexulator;
     ECIContainer eci;
 
     Clex(Clexulator const &_clexulator, ECIContainer const &_eci) :

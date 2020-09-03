@@ -130,7 +130,7 @@ namespace CASM {
         return *m_comp_n;
       }
 
-      Clexulator &_clexulator() const {
+      Clexulator const &_clexulator() const {
         return m_formation_energy_clex.clexulator;
       }
 
@@ -183,7 +183,7 @@ namespace CASM {
       GrandCanonicalConditions m_condition;
 
       /// Holds Clexulator and ECI references
-      mutable Clex m_formation_energy_clex;
+      Clex m_formation_energy_clex;
 
       /// If true, calculate all correlations; if false, calculate correlations with non-zero eci
       bool m_all_correlations;

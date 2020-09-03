@@ -128,7 +128,7 @@ namespace CASM {
         return *m_comp_n;
       }
 
-      Clexulator &_clexulator() const {
+      Clexulator const &_clexulator() const {
         return m_formation_energy_clex.clexulator;
       }
 
@@ -181,7 +181,7 @@ namespace CASM {
 
 
       /// Holds Clexulator and ECI references
-      mutable Clex m_formation_energy_clex;
+      Clex m_formation_energy_clex;
 
       ///Convert sublat/asym_unit and species/occ index
       Conversions m_convert;
