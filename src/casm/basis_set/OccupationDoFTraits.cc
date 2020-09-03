@@ -589,10 +589,11 @@ namespace CASM {
     void from_json(std::vector<DoF_impl::SublatComp> &sublat_composition, const jsonParser &json) {
       sublat_composition.clear();
       for(auto it = json.begin(); it != json.end(); ++it) {
-        DoF_impl::SublatComp tmp;
-        it->find("sublat_indices")->get(tmp.indices);
-        it->find("composition")->get(tmp.values);
-        sublat_composition.push_back(tmp);
+        std::set<Index> sublat_indices;
+        it->find("sublat_indices")->get(sublat_indices);
+        std::map<std::string, double> sublat_values;
+        it->find("composition")->get(sublat_values);
+        sublat_composition.emplace_back(sublat_indices, sublat_values);
       }
     }
 

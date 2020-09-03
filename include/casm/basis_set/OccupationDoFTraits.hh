@@ -25,11 +25,12 @@ namespace CASM {
     /// SublatComp sublat_comp { {0, 1}, {{"A", 0.5}, {"B", 0.5}} };
     /// \endcode
     struct SublatComp {
-      SublatComp() {}
+
       SublatComp(
         std::initializer_list<Index> _indices,
         std::initializer_list<std::pair<std::string, double>> _values):
         indices(_indices), values(_values.begin(), _values.end()) {}
+
       SublatComp(
         std::set<Index> _indices,
         std::map<std::string, double> _values):
