@@ -57,6 +57,11 @@ namespace CASM {
 
     Site::Site(const Coordinate &init_pos, const std::vector<Molecule> &site_occ) : Site(init_pos, site_occ, std::map<std::string, SiteDoFSet>()) {}
 
+    /// \brief Construct site with initial position, allowed molecules (occupants), and local degrees of freedom
+    Site::Site(const Coordinate &init_pos, const std::vector<Molecule> &site_occ, const std::vector<SiteDoFSet> &dofset_vec) :
+      Site(init_pos, site_occ, make_dofset_map(dofset_vec)) {}
+
+
     Site::~Site() {}
 
     //****************************************************

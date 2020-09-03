@@ -773,9 +773,15 @@ namespace CASM {
 
     Index N = allowed_occs.size();
     if(allowed_occs.size() != occ_probs.size()) {
-      std::cerr << "CRITICAL ERROR: In BasiSet::construct_orthonormal_discrete_functions(), occ_probs and allowed_occs are incompatible!\nExiting...\n";
-      assert(0);
-      exit(1);
+      std::stringstream ss;
+      ss << "Error in BasiSet::construct_orthonormal_discrete_functions(): occ_probs ([";
+      for(Index i = 0; i < occ_probs.size(); ++i) {
+        if(i != 0) ss << ",";
+        ss << occ_probs[i];
+      }
+      ss << "]) and allowed_occs (size=" + std::to_string(allowed_occs.size()) + ") are incompatible"
+         " on sublattice " + std::to_string(basis_ind) + ".";
+      throw std::runtime_error(ss.str());
     }
 
     double prob_sum(0.);
@@ -1367,4 +1373,3 @@ namespace CASM {
   }
 
 }
-

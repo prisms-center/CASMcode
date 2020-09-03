@@ -21,8 +21,10 @@ namespace CASM {
   using xtal::SimpleStructure;
   using xtal::UnitCellCoord;
 
+  template<typename T> class InputParser;
   class jsonParser;
   class PrimNeighborList;
+  struct BasisFunctionSpecs;
   class BasisSet;
   class Structure;
 
@@ -36,14 +38,24 @@ namespace CASM {
     class Traits;
     struct ParamAllocation;
 
-    Traits const &traits(std::string const &dof_key);
+    /// Parsing dictionary for obtaining the correct DoFType::Traits given a name
+    using TraitsDictionary = ParsingDictionary<Traits>;
 
+    /// Access the global dictionary of DoFType::Traits
+    ///
+    /// Note: This may eventually be managed by ProjectSettings
+    TraitsDictionary &traits_dict();
+
+    /// Insert new DoFType::Traits into the global dictionary
     void register_traits(Traits const &_traits);
 
-    //DoF_impl::OccupationDoFTraits occupation();
+    /// Lookup DoFType::Traits in the global dictionary
+    Traits const &traits(std::string const &dof_key);
+
+    /// Access DoF::BasicTraits for a given DoF type
+    DoF::BasicTraits const &basic_traits(std::string const &dof_key);
 
     /// \brief Collection of all the traits specific to a DoF type
-
     class Traits {
     public:
       static std::string class_desc() {
@@ -82,7 +94,7 @@ namespace CASM {
       /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
       virtual std::vector<BasisSet> construct_site_bases(Structure const &_prim,
                                                          std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
-                                                         jsonParser const &_bspecs) const = 0;
+                                                         BasisFunctionSpecs const &_basis_function_specs) const = 0;
 
 
       /// \brief Populate @param _in from JSON
@@ -145,6 +157,30 @@ namespace CASM {
                                                                       std::vector<BasisSet> const &site_bases,
                                                                       std::string const &indent) const;
 
+      /// Parse DoF-specific basis function specs & validate. Default does nothing.
+      ///
+      /// This function may be overridden in any DoFType::Traits-derived class
+      /// (i.e. OccupationDoFTraits) to read in parameters for the corresponding DoFSpecs-derived
+      /// data structure (i.e. OccupationDoFSpecs). Expect that parser.value is already constructed.
+      ///
+      /// Example JSON format for BasisFunctionSpecs with OccupationDoFSpecs:
+      /// \code
+      /// "basis_function_specs": {
+      ///   "dofs": ["occ", ...],
+      ///   ...
+      ///   "dof_specs": {
+      ///     "occ": <OccupationDoFSpecs JSON>,
+      ///     ...
+      ///   }
+      /// }
+      /// \endcode
+      ///
+      virtual void parse_dof_specs(InputParser<BasisFunctionSpecs> &parser, Structure const &prim) const {}
+
+      /// Output DoF-specific basis function specs to json. Default does nothing.
+      virtual void dof_specs_to_json(BasisFunctionSpecs const &basis_function_specs, jsonParser &json, Structure const &prim) const {}
+
+
       /// \brief non-virtual method to obtain copy through Traits pointer
       std::unique_ptr<Traits> clone() const {
         return std::unique_ptr<Traits>(_clone());
@@ -173,26 +209,6 @@ namespace CASM {
       const bool independent;
 
     };
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-    /// \brief  Parsing dictionary for obtaining the correct Traits given a name
-    using TraitsDictionary = ParsingDictionary<Traits>;
-
-    /// This will eventually be managed by ProjectSettings
-    //TraitsDictionary const &traits_dict();
-
-
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-    inline
-    DoF::BasicTraits const &basic_traits(std::string const &dof_key) {
-      return traits(dof_key).val_traits();
-    }
 
   }
 

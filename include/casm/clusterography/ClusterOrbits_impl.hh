@@ -370,10 +370,11 @@ namespace CASM {
 
       // contains a pair of iterators over candidate UnitCellCoord
       auto candidate_sites = specs.candidate_sites();
-      Index orig_size = generators.elements.size();
 
       // for each orbit generator of size n
       for(auto orbit_generator_it = begin; orbit_generator_it != end; ++orbit_generator_it) {
+
+        Index orig_size = generators.elements.size();
 
         // print status messages
         status << clean << '\r'
@@ -381,7 +382,7 @@ namespace CASM {
                << ":  Expanding orbit " << std::distance(begin, orbit_generator_it)
                << " / " << std::distance(begin, end)
                << "  of branch " << orbit_generator_it->size()
-               << ".  New orbits: " << generators.elements.size() - orig_size << std::flush;
+               << "." << std::flush;
 
         // by looping over each site in the grid,
         for(auto site_it = candidate_sites.first; site_it != candidate_sites.second; ++site_it) {
@@ -404,10 +405,10 @@ namespace CASM {
           // try inserting test (only uniques will be kept)
           generators.insert(test);
         }
-      }
 
-      // print status messages
-      status << clean << '\r';
+        status << "  New orbits: " << generators.elements.size() - orig_size << std::endl;
+
+      }
 
       return generators;
     }
@@ -503,6 +504,7 @@ namespace CASM {
       }
     };
     // -- construct null cluster orbit
+    status << "  Adding null orbit branch." << std::flush;
 
     auto specs_it = begin;
     if(specs_it != end) {
@@ -512,6 +514,8 @@ namespace CASM {
       ++specs_it;
       insert_branch(all_generators, generators.back());
     }
+    status << "  New orbits: 1" << std::endl;
+
     // -- construct additional branches
     // print status messages
     std::string clean(100, ' ');
@@ -519,11 +523,6 @@ namespace CASM {
     // generate orbit branches 1+ using the previously generated branch:
     auto prev_gen = generators.begin();
     while(specs_it != end) {
-
-      // print status message
-      status << clean << '\r' << "Calculating orbit branch "
-             << std::distance(begin, specs_it) << "\r" << std::flush;
-
 
       generators.emplace_back(specs_it->generating_group(), specs_it->sym_compare());
       _insert_next_orbitbranch_generators(
@@ -540,15 +539,24 @@ namespace CASM {
     // -- add custom orbit generators
 
     for(int i = 0; i < custom_generators.size(); ++i) {
-      status << clean << '\r' << "Adding custom orbit "
-             << i << "/"
-             << custom_generators.size() << "\r" << std::flush;
+      status << "  Adding custom orbit " << i << "/"
+             << custom_generators.size() << "." << std::flush;
+      if(custom_generators[i].include_subclusters) {
+        status << " Include subclusters." << std::flush;
+      }
+
+      Index orig_size = all_generators.elements.size();
 
       all_generators.insert(custom_generators[i].prototype);
       if(custom_generators[i].include_subclusters) {
         insert_subcluster_generators(custom_generators[i].prototype, all_generators);
       }
+
+      status << "  New orbits: " << all_generators.elements.size() - orig_size << std::endl;
+
     }
+
+    status << std::endl;
 
     // make orbits
     return all_generators.make_orbits(result);

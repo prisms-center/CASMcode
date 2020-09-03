@@ -42,9 +42,9 @@ namespace CASM {
       "    Print the symmetry operations that map the prototype to each orbit element.\n\n";
   }
 
-  std::string OrbitPrinterOptionsParser::print_invariant_grp_help() {
+  std::string OrbitPrinterOptionsParser::print_invariant_group_help() {
     return
-      "  print_invariant_grp: bool (optional, default=false)\n"
+      "  print_invariant_group: bool (optional, default=false)\n"
       "    Print the symmetry operations that leave each orbit element invariant.\n\n";
   }
 
@@ -62,7 +62,7 @@ namespace CASM {
            + SymInfoOptionsParser::brief_help()
            + print_coordinates_help()
            + print_equivalence_map_help()
-           + print_invariant_grp_help();
+           + print_invariant_group_help();
   }
 
   const OrbitPrinterOptions &OrbitPrinterOptionsParser::orbit_printer_opt() const {
@@ -72,7 +72,7 @@ namespace CASM {
   std::set<std::string> OrbitPrinterOptionsParser::expected() {
     return std::set<std::string>({"indent_space", "prec", traits<COORD_TYPE>::name,
                                   traits<ORBIT_PRINT_MODE>::name, "print_coordinates", "print_equivalence_map",
-                                  "print_invariant_grp", "sym_info_opt"
+                                  "print_invariant_group", "sym_info_opt"
                                  });
   }
 

@@ -14,9 +14,7 @@ namespace CASM {
   jsonParser &to_json(const IntegralClusterOrbitGenerator &orbit_generator, jsonParser &json);
 
   /// Parse custom orbit specs from JSON
-  void parse(
-    InputParser<std::vector<IntegralClusterOrbitGenerator>> &parser,
-    const std::shared_ptr<const Structure> &shared_prim);
+  void parse(InputParser<std::vector<IntegralClusterOrbitGenerator>> &parser, Structure const &prim);
 
 }
 

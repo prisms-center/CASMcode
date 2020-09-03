@@ -20,7 +20,7 @@ namespace CASM {
       /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its site
       std::vector<BasisSet> construct_site_bases(Structure const &_prim,
                                                  std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
-                                                 jsonParser const &_bspecs) const override;
+                                                 BasisFunctionSpecs const &_basis_function_specs) const override;
 
       /// \brief Serialize strain DoF values from ConfigDoF
       jsonParser dof_to_json(ConfigDoF const &_dof, BasicStructure const &_reference) const override;

@@ -146,6 +146,8 @@ namespace CASM {
 
   std::vector<DoFKey> global_dof_types(xtal::BasicStructure const &_struc);
 
+  std::vector<DoFKey> all_dof_types(xtal::BasicStructure const &_struc);
+
   std::map<DoFKey, Index> local_dof_dims(xtal::BasicStructure const &_struc);
 
   std::map<DoFKey, Index> global_dof_dims(xtal::BasicStructure const &_struc);

@@ -1093,12 +1093,12 @@ namespace CASM {
   }
 
   /// \brief Returns correlations using 'clexulator'.
-  Eigen::VectorXd correlations(const Configuration &config, Clexulator &clexulator) {
+  Eigen::VectorXd correlations(const Configuration &config, Clexulator const &clexulator) {
     return correlations(config.configdof(), config.supercell(), clexulator);
   }
 
   /// \brief Returns gradient correlations using 'clexulator', with respect to DoF 'dof_type'
-  Eigen::MatrixXd gradcorrelations(const Configuration &config, Clexulator &clexulator, DoFKey &key) {
+  Eigen::MatrixXd gradcorrelations(const Configuration &config, Clexulator const &clexulator, DoFKey &key) {
     return gradcorrelations(config.configdof(), config.supercell(), clexulator, key);
   }
 
@@ -1529,7 +1529,7 @@ namespace CASM {
   }
 
   /// \brief Returns correlations using 'clexulator'. Supercell needs a correctly populated neighbor list.
-  Eigen::VectorXd correlations(const ConfigDoF &configdof, const Supercell &scel, Clexulator &clexulator) {
+  Eigen::VectorXd correlations(const ConfigDoF &configdof, const Supercell &scel, Clexulator const &clexulator) {
 
     //Size of the supercell will be used for normalizing correlations to a per primitive cell value
     int scel_vol = scel.volume();
@@ -1559,7 +1559,7 @@ namespace CASM {
   }
 
   /// \brief Returns gradient correlations using 'clexulator', with respect to DoF 'dof_type'
-  Eigen::MatrixXd gradcorrelations(const ConfigDoF &configdof, const Supercell &scel, Clexulator &clexulator, DoFKey &key) {
+  Eigen::MatrixXd gradcorrelations(const ConfigDoF &configdof, const Supercell &scel, Clexulator const &clexulator, DoFKey &key) {
     ClexParamKey paramkey;
     ClexParamKey corr_key(clexulator.param_pack().key("corr"));
     ClexParamKey dof_key;
@@ -1576,8 +1576,11 @@ namespace CASM {
     em_corr = clexulator.param_pack().eval_mode(corr_key);
     em_dof = clexulator.param_pack().eval_mode(dof_key);
 
-    clexulator.param_pack().set_eval_mode(corr_key, "DIFF");
-    clexulator.param_pack().set_eval_mode(dof_key, "DIFF");
+    // this const_cast is not great...
+    // but it seems like the only place passing const Clexulator is a problem and it is not
+    // actually changing clexulator before/after this function
+    const_cast<Clexulator &>(clexulator).param_pack().set_eval_mode(corr_key, "DIFF");
+    const_cast<Clexulator &>(clexulator).param_pack().set_eval_mode(dof_key, "DIFF");
 
     Eigen::MatrixXd gcorr;
     Index scel_vol = scel.volume();
@@ -1625,8 +1628,8 @@ namespace CASM {
         }
       }
     }
-    clexulator.param_pack().set_eval_mode(corr_key, em_corr);
-    clexulator.param_pack().set_eval_mode(dof_key, em_dof);
+    const_cast<Clexulator &>(clexulator).param_pack().set_eval_mode(corr_key, em_corr);
+    const_cast<Clexulator &>(clexulator).param_pack().set_eval_mode(dof_key, em_dof);
 
 
     return gcorr;

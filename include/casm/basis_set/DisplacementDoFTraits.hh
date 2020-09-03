@@ -17,7 +17,7 @@ namespace CASM {
 
       std::vector<BasisSet> construct_site_bases(Structure const &_prim,
                                                  std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > &_asym_unit,
-                                                 jsonParser const &_bspecs) const override;
+                                                 BasisFunctionSpecs const &_basis_function_specs) const override;
     protected:
       DoFType::Traits *_clone() const override;
     };

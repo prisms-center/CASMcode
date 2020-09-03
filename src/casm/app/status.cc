@@ -292,58 +292,6 @@ Instructions for fitting ECI:                                          \n\n\
 - See 'casm monte --format' and 'casm monte -h' for help.              \n\n";
   }
 
-  int update_eci_format(fs::path root, const CommandArgs &args) {
-
-    ProjectSettings set = open_project_settings(root);
-    DirectoryStructure const &dir = set.dir();
-
-    // convert eci.out to eci.json (if eci.json does not exist)
-    for(auto property : dir.all_property()) {
-      for(auto bset : dir.all_bset()) {
-        for(auto calctype : dir.all_calctype()) {
-          for(auto ref : dir.all_ref(calctype)) {
-            for(auto eci : dir.all_eci(property, calctype, ref, bset)) {
-
-              auto eci_path = dir.eci(property, calctype, ref, bset, eci);
-              auto eci_out = dir.eci_out(property, calctype, ref, bset, eci);
-              fs::path basis_json_path = dir.basis(bset);
-
-              if(!fs::exists(eci_path) && fs::exists(eci_out) && fs::exists(basis_json_path)) {
-                // create an eci.json from eci.out and basis.json
-
-                args.log() << "Converting: \n  " << eci_out << "\nto:\n  " << eci_path << std::endl;
-
-                auto eci = read_eci_out(eci_out);
-
-                fs::path basis_json_path = dir.basis(bset);
-                // read basis.json
-                jsonParser basis_json = jsonParser::parse(basis_json_path);
-
-                // set eci
-                for(int i = 0; i < eci.index().size(); ++i) {
-                  auto index = eci.index()[i];
-                  auto value = eci.value()[i];
-                  basis_json["cluster_functions"][index]["eci"] = value;
-                }
-
-                //write eci.json
-                basis_json.write(eci_path);
-                args.err_log() << "DONE" << std::endl << std::endl;
-
-              }
-            }
-          }
-        }
-      }
-    }
-
-    return 0;
-  }
-
-  int update_format(fs::path root, const CommandArgs &args) {
-    return update_eci_format(root, args);
-  }
-
   namespace Completer {
     StatusOption::StatusOption(): OptionHandlerBase("status") {}
 

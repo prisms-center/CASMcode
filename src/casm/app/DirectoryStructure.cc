@@ -236,13 +236,13 @@ namespace CASM {
   }
 
   /// \brief Return paths where bset generated data is stored (excludes bspecs.json)
-  std::vector<fs::path> DirectoryStructure::bset_data(std::string project, std::string bset) const {
+  std::vector<fs::path> DirectoryStructure::bset_data(std::string project_name, std::string bset) const {
     return {
       clust(bset),
       basis(bset),
-      clexulator_src(project, bset),
-      clexulator_o(project, bset),
-      clexulator_so(project, bset)
+      clexulator_src(project_name, bset),
+      clexulator_o(project_name, bset),
+      clexulator_so(project_name, bset)
     };
   }
 
@@ -417,11 +417,6 @@ namespace CASM {
 
   // -- deprecated ------------------------------------
 
-  /// \brief Returns path to eci.out
-  fs::path DirectoryStructure::eci_out(std::string property, std::string calctype, std::string ref, std::string bset, std::string eci) const {
-    return eci_dir(property, calctype, ref, bset, eci) / "eci.out";
-  }
-
   /// \brief Query aliases file
   fs::path DirectoryStructure::query_alias() const {
     return m_root / m_casm_dir / "query_alias.json";
@@ -557,6 +552,34 @@ namespace CASM {
     std::sort(all.begin(), all.end());
 
     return all;
+  }
+
+  void throw_if_no_root_dir(DirectoryStructure const &dir) {
+    if(dir.root_dir().empty()) {
+      throw std::runtime_error("Error accessing project: No root directory set.");
+    }
+  }
+
+  void throw_if_no_basis_set_specs(std::string basis_set_name, DirectoryStructure const &dir) {
+    throw_if_no_root_dir(dir);
+    auto basis_set_specs_path = dir.bspecs(basis_set_name);
+    if(!fs::exists(basis_set_specs_path)) {
+      std::stringstream ss;
+      ss << "Error accessing bset." << basis_set_name << ": Does not exist.  "
+         "Checked for bspecs at: " << basis_set_specs_path.string();
+      throw std::runtime_error(ss.str());
+    }
+  }
+
+  void throw_if_no_clexulator_src(std::string project_name, std::string basis_set_name, DirectoryStructure const &dir) {
+    throw_if_no_basis_set_specs(basis_set_name, dir);
+    fs::path clexulator_src_path = dir.clexulator_src(project_name, basis_set_name);
+    if(!fs::exists(clexulator_src_path)) {
+      std::stringstream ss;
+      ss << "Error accessing bset." << basis_set_name << ": " << clexulator_src_path
+         << " does not exist. The basis set should be regenerated.";
+      throw std::runtime_error(ss.str());
+    }
   }
 
 }

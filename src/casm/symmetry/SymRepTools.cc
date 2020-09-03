@@ -495,7 +495,7 @@ namespace CASM {
     make_orbits(tdirs.begin(),
                 tdirs.end(),
                 head_group,
-                _SymCompareType(vec_compare_tol, _rep),
+                SymCompareType(vec_compare_tol, _rep),
                 std::inserter(orbit_result, orbit_result.begin()));
 
     multivector<Eigen::VectorXcd>::X<2> result;

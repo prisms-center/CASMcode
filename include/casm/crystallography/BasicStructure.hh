@@ -108,6 +108,11 @@ namespace CASM {
         m_global_dof_map = new_dof_map;
       }
 
+      /// Manually set the global DoFs
+      void set_global_dofs(std::vector <DoFSet> const &new_dof_vec) {
+        m_global_dof_map = make_dofset_map(new_dof_vec);
+      }
+
       /// Manually set the basis sites
       void set_basis(std::vector<Site> const &_basis, COORD_TYPE mode = CART);
 

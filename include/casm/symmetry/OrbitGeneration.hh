@@ -10,6 +10,7 @@ namespace CASM {
 
   class PrimClex;
   class SymGroup;
+  template<typename SymCompareType> class Orbit;
 
   /** \defgroup OrbitGeneration
 
@@ -71,6 +72,13 @@ namespace CASM {
     OrbitGeneratorSet<OrbitType> elements;
 
   };
+
+  /// Construct orbits from a vector of generating elements
+  template<typename SymCompareType>
+  std::vector<Orbit<SymCompareType>> generate_orbits(
+                                    std::vector<typename SymCompareType::Element> const &generating_elements,
+                                    SymGroup const &generating_group,
+                                    SymCompareType const &sym_compare);
 
   /// \brief Compare concept functor for canonical generating elements
   ///

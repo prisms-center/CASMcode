@@ -59,6 +59,9 @@ namespace CASM {
              IterType end,
              PERIODICITY_TYPE init_type = PERIODIC);
 
+    virtual ~SymGroup();
+
+
     virtual void push_back(const SymOp &new_op);
     virtual void clear();
     virtual void clear_tables();

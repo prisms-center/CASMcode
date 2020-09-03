@@ -35,24 +35,33 @@ namespace test {
     jsonParser bspecs() const {
 
       std::string str = R"({
-"basis_functions" : {
-"site_basis_functions" : "occupation"
+"basis_function_specs" : {
+  "dof_specs": {
+    "occ": {
+      "site_basis_functions" : "occupation"
+    }
+  }
 },
-"orbit_branch_specs" : {
-"2" : {"max_length" : 9.0},
-"3" : {"max_length" : 7.0},
-"4" : {"max_length" : 6.0}
-},
-"orbit_specs" : [
-{
-"coordinate_mode" : "Integral",
-"prototype" : [
-[ 2, 0, 0, 0 ],
-[ 2, 3, 0, 0 ]
-],
-"include_subclusters" : false
+"cluster_specs": {
+  "method": "periodic_max_length",
+  "params": {
+    "orbit_branch_specs" : {
+      "2" : {"max_length" : 9.0},
+      "3" : {"max_length" : 7.0},
+      "4" : {"max_length" : 6.0}
+    },
+    "orbit_specs" : [
+      {
+        "coordinate_mode" : "Integral",
+        "prototype" : [
+          [ 2, 0, 0, 0 ],
+          [ 2, 3, 0, 0 ]
+        ],
+        "include_subclusters" : false
+      }
+    ]
+  }
 }
-]
 })";
 
       return jsonParser::parse(str);
@@ -79,11 +88,8 @@ namespace test {
       m_p.popen(cd_and() + autotools::abs_ccasm_path() + " bset -u");
       EXPECT_EQ(m_p.exit_code(), 0) << m_p.gets();
 
-      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Write:.*clust\.json)")), true) << m_p.gets();
-      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Write:.*basis\.json)")), true) << m_p.gets();
-      EXPECT_EQ(boost::regex_search(m_p.gets(), m_match, boost::regex(R"(Write:.*)" + title + R"(_Clexulator\.cc)")), true) << m_p.gets();
-
       EXPECT_EQ(true, fs::exists(m_dirs.clust(m_set->default_clex().bset))) << m_p.gets();
+      EXPECT_EQ(true, fs::exists(m_dirs.basis(m_set->default_clex().bset))) << m_p.gets();
       EXPECT_EQ(true, fs::exists(m_dirs.clexulator_src(m_set->project_name(), m_set->default_clex().bset))) << m_p.gets();
 
       std::string str;

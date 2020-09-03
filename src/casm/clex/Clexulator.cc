@@ -31,7 +31,7 @@ namespace CASM {
                          PrimNeighborList &nlist,
                          const Logging &logging,
                          std::string compile_options,
-                         std::string so_options) {
+                         std::string so_options): m_name(name) {
 
     // Construct the RuntimeLibrary that will store the loaded clexulator library
     try {

@@ -34,8 +34,14 @@ namespace CASM {
       header = "";
       top = true;
     }
-    for(const auto &msg : warning) {
-      log << msg << std::endl;
+    for(const auto &pair : this->all_warnings()) {
+      log << std::endl;
+      log.custom(pair.first.string());
+      log.increase_indent();
+      for(const auto &msg : pair.second) {
+        log.indent() << msg << std::endl;
+      }
+      log.decrease_indent();
     }
     if(top) log << std::endl;
   }
@@ -47,8 +53,14 @@ namespace CASM {
       header = "";
       top = true;
     }
-    for(const auto &msg : error) {
-      log << msg << std::endl;
+    for(const auto &pair : this->all_errors()) {
+      log << std::endl;
+      log.custom(pair.first.string());
+      log.increase_indent();
+      for(const auto &msg : pair.second) {
+        log.indent() << msg << std::endl;
+      }
+      log.decrease_indent();
     }
     if(top) log << std::endl;
   }
@@ -79,6 +91,26 @@ namespace CASM {
       parent()[name() + ".ERROR"].set_force_column();
     }
     return input;
+  }
+
+  std::map<fs::path, std::set<std::string>> KwargsParser::all_warnings() const {
+    std::map<fs::path, std::set<std::string>> result;
+    if(warning.size()) {
+      for(auto const &warning_msg : warning) {
+        result[path].insert(warning_msg);
+      }
+    }
+    return result;
+  }
+
+  std::map<fs::path, std::set<std::string>> KwargsParser::all_errors() const {
+    std::map<fs::path, std::set<std::string>> result;
+    if(error.size()) {
+      for(auto const &error_msg : error) {
+        result[path].insert(error_msg);
+      }
+    }
+    return result;
   }
 
   jsonParser &KwargsParser::parent() {

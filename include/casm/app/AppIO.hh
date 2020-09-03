@@ -229,7 +229,7 @@ namespace CASM {
     SymInfoOptions sym_info_opt;
     bool print_coordinates = true;
     bool print_equivalence_map = false;
-    bool print_invariant_grp = false;
+    bool print_invariant_group = false;
   };
 
   jsonParser &to_json(const OrbitPrinterOptions &opt, jsonParser &json);
@@ -263,10 +263,16 @@ namespace CASM {
     void print_equivalence_map(const OrbitType &orbit, Index equiv_index, Log &out) const;
 
     template<typename OrbitType>
+    void print_equivalence_map(const OrbitType &orbit, Index equiv_index, jsonParser &json) const;
+
+    template<typename OrbitType>
     void print_equivalence_map(const OrbitType &orbit, Log &out) const;
 
     template<typename OrbitType, typename Element>
     void print_invariant_group(const OrbitType &orbit, const Element &element, Log &out) const;
+
+    template<typename OrbitType, typename Element>
+    void print_invariant_group(const OrbitType &orbit, const Element &element, jsonParser &json) const;
 
   };
 
@@ -373,8 +379,6 @@ namespace CASM {
 
   };
 
-
-
   /// \brief Print IntegralCluster orbits
   template<typename ClusterOrbitIterator, typename OrbitPrinter>
   void print_clust(
@@ -423,16 +427,30 @@ namespace CASM {
     const jsonParser &json,
     const Structure &prim,
     const SymGroup &generating_grp,
-    const SymCompareType &sym_compare,
-    double xtal_tol);
+    const SymCompareType &sym_compare);
 
-  /// \brief Write Orbit<SymCompareType> to JSON, including 'bspecs'
+  /// \brief Read JSON containing IntegralCluster prototypes, as IntegralCluster
+  template<typename ClusterOutputIterator>
+  ClusterOutputIterator read_clust(
+    ClusterOutputIterator result,
+    const jsonParser &json,
+    const Structure &prim);
+
+  /// \brief Write Orbit<SymCompareType> to JSON
   template<typename ClusterOrbitIterator, typename Printer>
   jsonParser &write_clust(
     ClusterOrbitIterator begin,
     ClusterOrbitIterator end,
     jsonParser &json,
     Printer printer);
+
+  /// \brief Write Orbit<SymCompareType> to JSON
+  template<typename ClusterOrbitIterator>
+  jsonParser &write_clust(
+    ClusterOrbitIterator begin,
+    ClusterOrbitIterator end,
+    jsonParser &json,
+    const OrbitPrinterOptions &opt = OrbitPrinterOptions());
 
   /// \brief Write Orbit<SymCompareType> to JSON, including 'bspecs'
   template<typename ClusterOrbitIterator, typename Printer>

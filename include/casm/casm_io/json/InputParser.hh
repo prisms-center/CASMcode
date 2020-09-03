@@ -90,10 +90,10 @@ namespace CASM {
     virtual ~KwargsParser() {}
 
     /// Formatted print warning messages
-    virtual void print_warnings(Log &log, std::string header = "Warnings") const;
+    void print_warnings(Log &log, std::string header = "Warnings") const;
 
     /// Formatted print error messages
-    virtual void print_errors(Log &log, std::string header = "Errors") const;
+    void print_errors(Log &log, std::string header = "Errors") const;
 
 
     /// Require self.find(option) of type RequiredType, returning result in unique_ptr
@@ -232,6 +232,12 @@ namespace CASM {
     /// `this->name() + ".WARNING"`
     virtual jsonParser &report();
 
+    /// Return warning messages from this (and, for InputParser, all subparsers)
+    virtual std::map<fs::path, std::set<std::string>> all_warnings() const;
+
+    /// Return error messages from this (and, for InputParser, all subparsers)
+    virtual std::map<fs::path, std::set<std::string>> all_errors() const;
+
     /// Return a reference to the parent JSON object of this->self
     ///
     /// If self==input, returns self.
@@ -322,17 +328,11 @@ namespace CASM {
     /// Modifies input JSON document to include error and warning messages from this and all subparsers
     jsonParser &report() override;
 
-    /// Formatted print warning messages from this and all subparsers
-    void print_warnings(Log &log, std::string header = "Warnings") const override;
-
-    /// Formatted print error messages from this and all subparsers
-    void print_errors(Log &log, std::string header = "Errors") const override;
-
     /// Return warning messages from this and all subparsers
-    std::set<std::string> all_warnings() const;
+    std::map<fs::path, std::set<std::string>> all_warnings() const override;
 
     /// Return error messages from this and all subparsers
-    std::set<std::string> all_errors() const;
+    std::map<fs::path, std::set<std::string>> all_errors() const override;
 
     /// If exists(), make this->value from JSON; else add error
     ///
@@ -369,6 +369,32 @@ namespace CASM {
     /// - Otherwise, equivalent to `this->make(std::forward<Args>(args)...)`
     template<typename...Args>
     void make_else_construct_default(Args &&...args);
+
+    /// Run an InputParser on the JSON subobject at this->path / option, collecting errors and warnings
+    ///
+    /// Will:
+    /// - Subparser errors and warnings are stored using this->insert
+    ///
+    /// Equivalent to:
+    /// \code
+    /// auto subparser = std::make_shared<InputParser<RequiredType>>(
+    ///   this->input, this->relpath(option), true, std::forward<Args>(args)...);
+    /// this->insert(subparser->path, subparser);
+    /// return subparser;
+    /// \endcode
+    template<typename RequiredType, typename...Args>
+    std::shared_ptr<InputParser<RequiredType>> subparse(fs::path option, Args &&...args);
+
+    /// Subparse, if `this->path / option` exists
+    ///
+    /// If the JSON subobject does not exist, the result->value will be empty
+    template<typename RequiredType, typename...Args>
+    std::shared_ptr<InputParser<RequiredType>> subparse_if(fs::path option, Args &&...args);
+
+    /// Subparse, if `this->path / option` exists, the result->value will be copy-constructed with `_default`
+    template<typename RequiredType, typename...Args>
+    std::shared_ptr<InputParser<RequiredType>> subparse_else(fs::path option, const RequiredType &_default, Args &&...args);
+
 
     /// Run an InputParser on the JSON subobject at this->path / option, collecting errors and warnings
     ///

@@ -2,7 +2,7 @@
 
 namespace CASM {
 
-  VectorInvariants::VectorInvariants(Eigen::VectorXd const &vector):
+  VectorInvariants::VectorInvariants(Eigen::VectorXcd const &vector):
     m_cols(vector.cols()), m_norm(vector.norm()) {}
 
   double VectorInvariants::cols() const {

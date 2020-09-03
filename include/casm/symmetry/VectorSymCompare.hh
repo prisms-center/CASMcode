@@ -10,7 +10,7 @@ namespace CASM {
 
   class VectorInvariants {
   public:
-    VectorInvariants(Eigen::VectorXd const &vector);
+    VectorInvariants(Eigen::VectorXcd const &vector);
 
     double cols() const;
     double norm() const;

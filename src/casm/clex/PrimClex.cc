@@ -1,13 +1,13 @@
 #include "casm/clex/PrimClex_impl.hh"
 
-#include "casm/casm_io/SafeOfstream.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/ChemicalReference.hh"
 #include "casm/clex/NeighborList.hh"
-#include "casm/clex/ClexBasis.hh"
+#include "casm/clex/ClexBasis_impl.hh"
+#include "casm/clex/ClexBasisSpecs.hh"
 #include "casm/clex/ClexBasisWriter_impl.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
@@ -24,6 +24,12 @@
 #include "casm/app/EnumeratorHandler_impl.hh"
 #include "casm/app/HamiltonianModules_impl.hh"
 #include "casm/app/QueryHandler_impl.hh"
+
+#include "casm/casm_io/json/InputParser_impl.hh"
+#include "casm/casm_io/SafeOfstream.hh"
+#include "casm/clex/io/json/ClexBasisSpecs_json_io.hh"
+#include "casm/clex/io/json/ECIContainer_json_io.hh"
+
 #include <memory>
 
 namespace CASM {
@@ -87,7 +93,7 @@ namespace CASM {
     mutable notstd::cloneable_ptr<PrimNeighborList> nlist;
 
     typedef std::string BasisSetName;
-    mutable std::map<BasisSetName, jsonParser> basis_set_specs;
+    mutable std::map<BasisSetName, ClexBasisSpecs> basis_set_specs;
     mutable std::map<BasisSetName, ClexBasis> clex_basis;
     mutable std::map<BasisSetName, Clexulator> clexulator;
     mutable std::map<ClexDescription, ECIContainer> eci;
@@ -378,96 +384,29 @@ namespace CASM {
   bool PrimClex::has_basis_set_specs(std::string const &basis_set_name) const {
     auto it = m_data->basis_set_specs.find(basis_set_name);
     if(it == m_data->basis_set_specs.end()) {
-      if(!fs::exists(dir().bspecs(basis_set_name))) {
-        return false;
-      }
+      return fs::exists(dir().bspecs(basis_set_name));
     }
     return true;
   }
 
-  jsonParser const &PrimClex::basis_set_specs(std::string const &basis_set_name) const {
+  ClexBasisSpecs const &PrimClex::basis_set_specs(std::string const &basis_set_name) const {
     auto it = m_data->basis_set_specs.find(basis_set_name);
     if(it == m_data->basis_set_specs.end()) {
-      if(!fs::exists(dir().bspecs(basis_set_name))) {
-        std::stringstream ss;
-        ss << "Error in PrimClex::basis_set_specs: basis set named '" << basis_set_name
-           << "' does not exist.";
-        throw std::runtime_error(ss.str());
-      }
+      throw_if_no_basis_set_specs(basis_set_name, dir());
 
       fs::path basis_set_specs_path = dir().bspecs(basis_set_name);
-      try {
-        jsonParser basis_set_specs {basis_set_specs_path};
-        it = m_data->basis_set_specs.emplace(basis_set_name, basis_set_specs).first;
-      }
-      catch(std::exception &e) {
-        err_log().error("reading bspecs.json");
-        err_log() << "file: " << basis_set_specs_path << "\n" << std::endl;
-        throw e;
-      }
+      jsonParser bspecs_json {basis_set_specs_path};
+      ParsingDictionary<DoFType::Traits> const *dof_dict = &DoFType::traits_dict();
+
+      InputParser<ClexBasisSpecs> parser {bspecs_json, shared_prim(), dof_dict};
+      std::stringstream ss;
+      ss << "Error: Invalid file " << basis_set_specs_path;
+      report_and_throw_if_invalid(parser, err_log(), std::runtime_error {ss.str()});
+
+      it = m_data->basis_set_specs.emplace(basis_set_name, *parser.value).first;
+
     }
     return it->second;
-  }
-
-  bool PrimClex::has_orbits(std::string const &basis_set_name) const {
-    if(!fs::exists(dir().clust(basis_set_name))) {
-      return false;
-    }
-    return true;
-  }
-
-  /// const Access to global orbitree
-  bool PrimClex::has_clex_basis(std::string const &basis_set_name) const {
-    auto it = m_data->clex_basis.find(basis_set_name);
-    if(it == m_data->clex_basis.end()) {
-      if(!fs::exists(dir().clust(basis_set_name))) {
-        return false;
-      }
-    }
-    return true;
-
-  };
-
-  /// \brief Get iterators over the range of orbits
-  const ClexBasis &PrimClex::clex_basis(std::string const &basis_set_name) const {
-
-    auto it = m_data->clex_basis.find(basis_set_name);
-    if(it == m_data->clex_basis.end()) {
-
-      jsonParser basis_set_specs {dir().bspecs(basis_set_name)};
-      it = m_data->clex_basis.emplace(
-             basis_set_name, ClexBasis {this->shared_prim(), basis_set_specs}).first;
-
-      std::vector<PrimPeriodicOrbit<IntegralCluster>> orbits;
-
-      typedef PrimPeriodicSymCompare<IntegralCluster> symcompare_type;
-
-      read_clust(
-        std::back_inserter(orbits),
-        jsonParser(dir().clust(basis_set_name)),
-        prim(),
-        prim().factor_group(),
-        symcompare_type(this->shared_prim(), crystallography_tol()),
-        crystallography_tol()
-      );
-
-      ClexBasis &clex_basis = it->second;
-      clex_basis.generate(orbits.begin(), orbits.end(), basis_set_specs);
-
-    }
-
-    return it->second;
-
-  }
-
-  bool PrimClex::has_clexulator(std::string const &basis_set_name) const {
-    auto it = m_data->clexulator.find(basis_set_name);
-    if(it == m_data->clexulator.end()) {
-      if(!fs::exists(dir().clexulator_src(settings().project_name(), basis_set_name))) {
-        return false;
-      }
-    }
-    return true;
   }
 
   Clexulator PrimClex::clexulator(std::string const &basis_set_name) const {
@@ -476,30 +415,31 @@ namespace CASM {
     if(it == m_data->clexulator.end()) {
 
       if(!fs::exists(dir().clexulator_src(settings().project_name(), basis_set_name))) {
-        throw std::runtime_error(
-          std::string("Error loading clexulator ") + basis_set_name + ". No basis functions exist.");
+        std::stringstream ss;
+        ss << "Error loading clexulator " << basis_set_name << ". No basis functions exist.";
+        throw std::runtime_error(ss.str());
       }
 
       try {
-        Clexulator clexulator = read_clexulator(settings(), basis_set_name, nlist());
+        Clexulator clexulator = make_clexulator(settings(), basis_set_name, nlist());
         it = m_data->clexulator.emplace(basis_set_name, clexulator).first;
       }
       catch(std::exception &e) {
-        // TODO: not sure why this fails...
-        // log() << "Error constructing Clexulator. Current settings: \n" << std::endl;
-        // settings().print_compiler_settings_summary(log());
+        // TODO: if this fails...
+        log() << "Error constructing Clexulator. Current settings: \n" << std::endl;
+        print_compiler_settings_summary(settings(), log());
 
-        std::cout << "Error constructing Clexulator. Current settings: \n" << std::endl;
-        Log tlog(std::cout);
-        print_compiler_settings_summary(settings(), tlog);
-        throw e;
+        // TODO: then, try this
+        // std::cout << "Error constructing Clexulator. Current settings: \n" << std::endl;
+        // Log tlog(std::cout);
+        // print_compiler_settings_summary(settings(), tlog);
+        // throw e;
       }
     }
     return it->second;
   }
 
   bool PrimClex::has_eci(const ClexDescription &key) const {
-
     auto it = m_data->eci.find(key);
     if(it == m_data->eci.end()) {
       return fs::exists(dir().eci(key.property, key.calctype, key.ref, key.bset, key.eci));
@@ -513,144 +453,110 @@ namespace CASM {
     if(it == m_data->eci.end()) {
       fs::path eci_path = dir().eci(key.property, key.calctype, key.ref, key.bset, key.eci);
       if(!fs::exists(eci_path)) {
-        throw std::runtime_error(
-          std::string("Error loading ECI. eci.json does not exist.\n")
-          + "  Expected at: " + eci_path.string());
+        std::stringstream ss;
+        ss << "Error loading ECI. eci.json does not exist.\n  Expected at: " << eci_path.string();
+        throw std::runtime_error(ss.str());
       }
 
-      it = m_data->eci.insert(std::make_pair(key, read_eci(eci_path))).first;
+      jsonParser eci_json {eci_path};
+      InputParser<ECIContainer> parser {eci_json};
+      std::stringstream ss;
+      ss << "Error loading ECI: Invalid file " << eci_path;
+      report_and_throw_if_invalid(parser, err_log(), std::runtime_error {ss.str()});
+
+      it = m_data->eci.emplace(key, *parser.value).first;
     }
     return it->second;
   }
 
-  void _throw_if_no_bset(std::string const &basis_set_name, DirectoryStructure const &dir) {
-    if(dir.root_dir().empty()) {
-      throw std::runtime_error("Error accessing bset." + basis_set_name +
-                               ": No root directory set for project.");
-    }
-    auto basis_set_specs_path = dir.bspecs(basis_set_name);
-    if(!fs::exists(basis_set_specs_path)) {
-      throw std::runtime_error("Error accessing bset." + basis_set_name +
-                               ": Does not exist." + "  Checked for bspecs at: " + basis_set_specs_path.string());
-    }
-  }
 
-  template<typename OrbitVecType>
-  void _write_clexulator(
-    std::shared_ptr<Structure const> shared_prim,
-    ProjectSettings const &settings,
-    std::string const &basis_set_name,
-    jsonParser const &basis_set_specs,
-    PrimNeighborList &prim_neighbor_list,
-    OrbitVecType const &orbits,
-    ClexBasis const &clex_basis) {
+  /// Write clust.json, basis.json, and clexulator source code, given orbits
+  struct WriteBasisSetDataImpl {
+    WriteBasisSetDataImpl(std::shared_ptr<Structure const> _shared_prim,
+                          ProjectSettings const &_settings,
+                          std::string const &_basis_set_name,
+                          ClexBasisSpecs const &_basis_set_specs,
+                          PrimNeighborList &_prim_neighbor_list):
+      shared_prim(_shared_prim),
+      settings(_settings),
+      basis_set_name(_basis_set_name),
+      basis_set_specs(_basis_set_specs),
+      prim_neighbor_list(_prim_neighbor_list) {}
 
-    const auto &dir = settings.dir();
-    double xtal_tol = settings.crystallography_tol();
+    std::shared_ptr<Structure const> shared_prim;
+    ProjectSettings const &settings;
+    std::string const &basis_set_name;
+    ClexBasisSpecs const &basis_set_specs;
+    PrimNeighborList &prim_neighbor_list;
+
+    template<typename OrbitVecType>
+    void operator()(OrbitVecType const &orbits) const {
+
+      const auto &dir = settings.dir();
+      ParsingDictionary<DoFType::Traits> const *dof_dict = &DoFType::traits_dict();
+      double xtal_tol = settings.crystallography_tol();
+
+      // generate ClexBasis
+      ClexBasis clex_basis {shared_prim, basis_set_specs, dof_dict};
+      clex_basis.generate(orbits.begin(), orbits.end());
+
+      // delete any existing data
+      throw_if_no_basis_set_specs(basis_set_name, dir);
+      dir.delete_bset_data(settings.project_name(), basis_set_name);
+
+      jsonParser basis_set_specs_json;
+      to_json(basis_set_specs, basis_set_specs_json, *shared_prim, dof_dict);
+
+      // write clust
+      fs::path clust_json_path = dir.clust(basis_set_name);
+      jsonParser clust_json;
+      ProtoSitesPrinter sites_printer {};
+      write_clust(orbits.begin(), orbits.end(), clust_json, sites_printer, basis_set_specs_json);
+      clust_json.write(clust_json_path);
+
+      // write basis
+      fs::path basis_json_path = dir.basis(basis_set_name);
+      jsonParser basis_json;
+      write_site_basis_funcs(shared_prim, clex_basis, basis_json);
+      ProtoFuncsPrinter funcs_printer {clex_basis, shared_prim->shared_structure()};
+      write_clust(orbits.begin(), orbits.end(), basis_json, funcs_printer, basis_set_specs_json);
+      basis_json.write(basis_json_path);
+
+      // write source code
+      fs::path clexulator_src_path = dir.clexulator_src(settings.project_name(), basis_set_name);
+      std::string clexulator_name = settings.global_clexulator_name();
+      auto param_pack_type = basis_set_specs.basis_function_specs.param_pack_type;
+      fs::ofstream outfile;
+      outfile.open(clexulator_src_path);
+      ClexBasisWriter clexwriter {*shared_prim, param_pack_type};
+      clexwriter.print_clexulator(clexulator_name, clex_basis, orbits, prim_neighbor_list, outfile, xtal_tol);
+      outfile.close();
+    }
+  };
+
+  /// Write clexulator, clust.json, basis.json by constructing orbits and ClexBasis
+  void write_basis_set_data(std::shared_ptr<Structure const> shared_prim,
+                            ProjectSettings const &settings,
+                            std::string const &basis_set_name,
+                            ClexBasisSpecs const &basis_set_specs,
+                            PrimNeighborList &prim_neighbor_list) {
+
+    auto const &cluster_specs = *basis_set_specs.cluster_specs;
     Log &log = CASM::log();
 
-    // write clust
-    jsonParser clust_json;
-    write_clust(orbits.begin(), orbits.end(), clust_json, ProtoSitesPrinter(), basis_set_specs);
-    clust_json.write(dir.clust(basis_set_name));
-    log.write(dir.clust(basis_set_name).string());
-    log << std::endl;
-
-    // write basis
-    jsonParser basis_json;
-    write_site_basis_funcs(shared_prim, clex_basis, basis_json);
-    write_clust(
-      orbits.begin(),
-      orbits.end(),
-      basis_json,
-      ProtoFuncsPrinter {clex_basis, shared_prim->shared_structure()},
-      basis_set_specs);
-    basis_json.write(dir.basis(basis_set_name));
-    log.write(dir.basis(basis_set_name).string());
-    log << std::endl;
-
-    // write source code
-    fs::ofstream outfile;
-    outfile.open(dir.clexulator_src(settings.project_name(), basis_set_name));
-    std::string parampack_type {"DEFAULT"};
-    basis_set_specs.get_if(parampack_type, "param_pack");
-    ClexBasisWriter clexwriter {*shared_prim, parampack_type};
-    clexwriter.print_clexulator(
-      settings.global_clexulator_name(), clex_basis, orbits, prim_neighbor_list, outfile, xtal_tol);
-    outfile.close();
-    log.write(dir.clexulator_src(settings.project_name(), basis_set_name).string());
-    log << std::endl;
+    WriteBasisSetDataImpl writer {shared_prim, settings, basis_set_name, basis_set_specs, prim_neighbor_list};
+    for_all_orbits(cluster_specs, log, writer);
   }
 
-  void write_clexulator(
-    std::shared_ptr<Structure const> shared_prim,
-    ProjectSettings const &settings,
-    std::string const &basis_set_name,
-    jsonParser const &basis_set_specs,
-    PrimNeighborList &prim_neighbor_list) {
-
-    auto const &dir = settings.dir();
-    _throw_if_no_bset(basis_set_name, dir);
-    dir.delete_bset_data(settings.project_name(), basis_set_name);
-
-    // TODO: update this function with ClusterSpecs
-
-    CLUSTER_PERIODICITY_TYPE clex_periodicity_type = basis_set_specs.contains("local_bpsecs") ?
-                                                     CLUSTER_PERIODICITY_TYPE::LOCAL : CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC;
-
-    if(clex_periodicity_type == CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC) {
-      std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
-
-      log().construct("Orbitree");
-      log() << std::endl;
-
-      std::vector<DoFKey> _dofs;
-      if(basis_set_specs.contains("basis_functions")) {
-        basis_set_specs["basis_functions"].get_if(_dofs, "dofs");
-      }
-
-      // auto dof_sites_filter = [&_dofs](Site const & _site) ->bool{
-      //   if(_dofs.empty() && (_site.dof_size() != 0 || _site.occupant_dof().size() > 1))
-      //     return true;
-      //
-      //   for(DoFKey const &_dof : _dofs) {
-      //     if(_site.has_dof(_dof))
-      //       return true;
-      //     else if(_dof == "occ" && _site.occupant_dof().size() > 1) {
-      //       return true;
-      //     }
-      //   }
-      //   return false;
-      // };
-
-      // construct cluster orbits  TODO: update with ClusterSpecs
-      // make_prim_periodic_orbits(shared_prim, basis_set_specs, dof_sites_filter,
-      //                           settings.crystallography_tol(), std::back_inserter(orbits), log());
-
-      // expand the nlist to contain sites in all orbits
-      std::set<UnitCellCoord> nbors;
-      prim_periodic_neighborhood(orbits.begin(), orbits.end(), std::inserter(nbors, nbors.begin()));
-      prim_neighbor_list.expand(nbors.begin(), nbors.end());
-
-      // construct basis functions
-      ClexBasis clex_basis {shared_prim, basis_set_specs};
-      clex_basis.generate(orbits.begin(), orbits.end(), basis_set_specs);
-
-      // write basis set data files and Clexulator source code
-      _write_clexulator(shared_prim, settings, basis_set_name, basis_set_specs, prim_neighbor_list,
-                        orbits, clex_basis);
-
-    }
-    else {
-      // TODO: update
-      throw std::runtime_error("Error in `casm bset`: local orbits are not implemented.");
-    }
-  }
-
-  Clexulator read_clexulator(
-    ProjectSettings const &settings,
-    std::string const &basis_set_name,
-    PrimNeighborList &prim_neighbor_list) {
+  /// Make Clexulator from existing source code
+  ///
+  /// Notes:
+  /// - Use `write_basis_set_data` to write Clexulator source code prior to calling this function.
+  /// - This function will compile the Clexulator source code if that has not yet been done.
+  Clexulator make_clexulator(ProjectSettings const &settings,
+                             std::string const &basis_set_name,
+                             PrimNeighborList &prim_neighbor_list) {
+    throw_if_no_clexulator_src(settings.project_name(), basis_set_name, settings.dir());
     return Clexulator {
       settings.project_name() + "_Clexulator",
       settings.dir().clexulator_dir(basis_set_name),
@@ -660,16 +566,6 @@ namespace CASM {
       settings.so_options()};
   }
 
-}
-
-#define INST_PrimClex_orbits_vec(OrbitType, SymCompareType) \
-  template std::back_insert_iterator<std::vector<OrbitType>> PrimClex::orbits( \
-    std::string const &, \
-    std::back_insert_iterator<std::vector<OrbitType>>, \
-    SymCompareType const &) const;
-
-namespace CASM {
-  INST_PrimClex_orbits_vec(PrimPeriodicOrbit<IntegralCluster>, PrimPeriodicSymCompare<IntegralCluster>);
 }
 
 #include "casm/database/DatabaseTypes.hh"

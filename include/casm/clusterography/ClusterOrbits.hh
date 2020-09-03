@@ -30,8 +30,14 @@ namespace CASM {
       "ClusterOrbits" (as opposed to IntegralClusterOrbits) has no dependency on casm/clusterography/ClusterSymCompare.
   */
 
+  /// A SiteFilterFunction returns true if a Site should be included and false if it should be excluded
   typedef std::function<bool (xtal::Site)> SiteFilterFunction;
+
+  /// A ClusterFilterFunction returns true if an IntegralCluster should be included and false if it
+  /// should be excluded
   typedef std::function<bool (IntegralCluster)> ClusterFilterFunction;
+
+  /// A CandidateSitesFunction generates a vector of UnitCellCoord from a Structure and SiteFilterFuntion
   typedef std::function<std::vector<xtal::UnitCellCoord> (Structure const &, SiteFilterFunction)> CandidateSitesFunction;
 
   struct IntegralClusterOrbitGenerator {

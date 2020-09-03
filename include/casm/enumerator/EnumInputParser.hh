@@ -114,7 +114,7 @@ namespace CASM {
 
     static std::string print_equivalence_map_help();
 
-    static std::string print_invariant_grp_help();
+    static std::string print_invariant_group_help();
 
     static std::string brief_help();
 

@@ -60,6 +60,7 @@ casm_basis_set_includedir=$(includedir)/casm/basis_set
 casm_basis_set_include_HEADERS = \
     include/casm/basis_set/Adapter.hh\
     include/casm/basis_set/BasisFunction.hh\
+    include/casm/basis_set/BasisFunctionSpecs.hh\
     include/casm/basis_set/BasisSet.hh\
     include/casm/basis_set/DisplacementDoFTraits.hh\
     include/casm/basis_set/DoF.hh\
@@ -77,13 +78,28 @@ casm_basis_set_include_HEADERS = \
 
 #-------------------------------------------------------------------------------#
 
+casm_basis_set_io_includedir=$(includedir)/casm/basis_set/io
+casm_basis_set_io_include_HEADERS = \
+    include/casm/basis_set/io/io_traits.hh\
+    include/casm/basis_set/io/json_io.hh\
+    include/casm/basis_set/io/stream_io.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_basis_set_io_json_includedir=$(includedir)/casm/basis_set/io/json
+casm_basis_set_io_json_include_HEADERS = \
+    include/casm/basis_set/io/json/BasisFunctionSpecs_json_io.hh
+
+#-------------------------------------------------------------------------------#
+
 casm_casm_io_includedir=$(includedir)/casm/casm_io
 casm_casm_io_include_HEADERS = \
     include/casm/casm_io/FileData.hh\
     include/casm/casm_io/FormatFlag.hh\
     include/casm/casm_io/Help.hh\
     include/casm/casm_io/Log.hh\
-    include/casm/casm_io/SafeOfstream.hh
+    include/casm/casm_io/SafeOfstream.hh\
+    include/casm/casm_io/string_io.hh
 
 #-------------------------------------------------------------------------------#
 
@@ -131,6 +147,7 @@ casm_clex_include_HEADERS = \
     include/casm/clex/ChemicalReference_impl.hh\
     include/casm/clex/Clex.hh\
     include/casm/clex/ClexBasis.hh\
+    include/casm/clex/ClexBasisSpecs.hh\
     include/casm/clex/ClexBasisWriter.hh\
     include/casm/clex/ClexBasisWriter_impl.hh\
     include/casm/clex/ClexBasis_impl.hh\
@@ -196,10 +213,18 @@ casm_clex_include_HEADERS = \
 
 #-------------------------------------------------------------------------------#
 
+casm_clex_io_includedir=$(includedir)/casm/clex/io
+casm_clex_io_include_HEADERS = \
+    include/casm/clex/io/json_io.hh
+
+#-------------------------------------------------------------------------------#
+
 casm_clex_io_json_includedir=$(includedir)/casm/clex/io/json
 casm_clex_io_json_include_HEADERS = \
     include/casm/clex/io/json/ChemicalReference.hh\
-    include/casm/clex/io/json/ConfigMapping.hh
+    include/casm/clex/io/json/ClexBasisSpecs_json_io.hh\
+    include/casm/clex/io/json/ConfigMapping.hh\
+    include/casm/clex/io/json/ECIContainer_json_io.hh
 
 #-------------------------------------------------------------------------------#
 
@@ -377,6 +402,12 @@ casm_enumerator_include_HEADERS = \
     include/casm/enumerator/Enumerator_impl.hh\
     include/casm/enumerator/InputEnumerator.hh\
     include/casm/enumerator/RandomAccessEnumerator.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_enumerator_io_includedir=$(includedir)/casm/enumerator/io
+casm_enumerator_io_include_HEADERS = \
+    include/casm/enumerator/io/json_io.hh
 
 #-------------------------------------------------------------------------------#
 

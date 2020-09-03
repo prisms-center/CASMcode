@@ -17,63 +17,57 @@ namespace CASM {
     return this->_periodicity_type();
   }
 
-  void ClusterSpecs::make_periodic_orbits(
-    PeriodicOrbitVec &orbits,
+  ClusterSpecs::PeriodicOrbitVec ClusterSpecs::make_periodic_orbits(
     IntegralClusterVec const &generating_elements) const {
-    return this->_make_periodic_orbits(orbits, generating_elements);
+    return this->_make_periodic_orbits(generating_elements);
   }
 
-  void ClusterSpecs::make_periodic_orbits(PeriodicOrbitVec &orbits, std::ostream &status) const {
-    return this->_make_periodic_orbits(orbits, status);
+  ClusterSpecs::PeriodicOrbitVec ClusterSpecs::make_periodic_orbits(std::ostream &status) const {
+    return this->_make_periodic_orbits(status);
   }
 
-  void ClusterSpecs::make_local_orbits(
-    LocalOrbitVec &orbits,
+  ClusterSpecs::LocalOrbitVec ClusterSpecs::make_local_orbits(
     IntegralClusterVec const &generating_elements) const {
-    return this->_make_local_orbits(orbits, generating_elements);
+    return this->_make_local_orbits(generating_elements);
   }
 
-  void ClusterSpecs::make_local_orbits(LocalOrbitVec &orbits, std::ostream &status) const {
-    return this->_make_local_orbits(orbits, status);
+  ClusterSpecs::LocalOrbitVec ClusterSpecs::make_local_orbits(std::ostream &status) const {
+    return this->_make_local_orbits(status);
   }
 
-  void ClusterSpecs::make_within_scel_orbits(
-    WithinScelOrbitVec &orbits,
+  ClusterSpecs::WithinScelOrbitVec ClusterSpecs::make_within_scel_orbits(
     IntegralClusterVec const &generating_elements) const {
-    return this->_make_within_scel_orbits(orbits, generating_elements);
+    return this->_make_within_scel_orbits(generating_elements);
   }
 
-  void ClusterSpecs::make_within_scel_orbits(WithinScelOrbitVec &orbits, std::ostream &status) const {
-    return this->_make_within_scel_orbits(orbits, status);
+  ClusterSpecs::WithinScelOrbitVec ClusterSpecs::make_within_scel_orbits(std::ostream &status) const {
+    return this->_make_within_scel_orbits(status);
   }
 
-  void ClusterSpecs::_make_periodic_orbits(
-    PeriodicOrbitVec &orbits,
+  ClusterSpecs::PeriodicOrbitVec ClusterSpecs::_make_periodic_orbits(
     IntegralClusterVec const &generating_elements) const {
     throw std::runtime_error("Error: make_periodic_orbits from generating elements not implemented for '" + name() + "'");
   }
 
-  void ClusterSpecs::_make_periodic_orbits(PeriodicOrbitVec &orbits, std::ostream &status) const {
+  ClusterSpecs::PeriodicOrbitVec ClusterSpecs::_make_periodic_orbits(std::ostream &status) const {
     throw std::runtime_error("Error: make_periodic_orbits not implemented for '" + name() + "'");
   }
 
-  void ClusterSpecs::_make_local_orbits(
-    LocalOrbitVec &orbits,
+  ClusterSpecs::LocalOrbitVec ClusterSpecs::_make_local_orbits(
     IntegralClusterVec const &generating_elements) const  {
     throw std::runtime_error("Error: make_local_orbits from generating elements not implemented for '" + name() + "'");
   }
 
-  void ClusterSpecs::_make_local_orbits(LocalOrbitVec &orbits, std::ostream &status) const {
+  ClusterSpecs::LocalOrbitVec ClusterSpecs::_make_local_orbits(std::ostream &status) const {
     throw std::runtime_error("Error: make_local_orbits not implemented for '" + name() + "'");
   }
 
-  void ClusterSpecs::_make_within_scel_orbits(
-    WithinScelOrbitVec &orbits,
+  ClusterSpecs::WithinScelOrbitVec ClusterSpecs::_make_within_scel_orbits(
     IntegralClusterVec const &generating_elements) const  {
     throw std::runtime_error("Error: _make_within_scel_orbits from generating elements not implemented for '" + name() + "'");
   }
 
-  void ClusterSpecs::_make_within_scel_orbits(WithinScelOrbitVec &orbits, std::ostream &status) const {
+  ClusterSpecs::WithinScelOrbitVec ClusterSpecs::_make_within_scel_orbits(std::ostream &status) const {
     throw std::runtime_error("Error: make_within_scel_orbits not implemented for '" + name() + "'");
   }
 
@@ -81,18 +75,20 @@ namespace CASM {
   const std::string PeriodicMaxLengthClusterSpecs::method_name = "periodic_max_length";
 
   PeriodicMaxLengthClusterSpecs::PeriodicMaxLengthClusterSpecs(
-    std::shared_ptr<Structure const> _shared_prim):
-    PeriodicMaxLengthClusterSpecs(_shared_prim, notstd::clone(_shared_prim->factor_group())) {}
-
-  PeriodicMaxLengthClusterSpecs::PeriodicMaxLengthClusterSpecs(
     std::shared_ptr<Structure const> _shared_prim,
-    std::unique_ptr<SymGroup> _generating_group):
+    std::unique_ptr<SymGroup> _generating_group,
+    SiteFilterFunction const &_site_filter,
+    std::vector<double> const &_max_length,
+    std::vector<IntegralClusterOrbitGenerator> const &_custom_generators):
     shared_prim(_shared_prim),
     generating_group(std::move(_generating_group)),
     sym_compare(
       notstd::make_unique<PrimPeriodicSymCompare<IntegralCluster>>(
         shared_prim,
-        shared_prim->lattice().tol())) {
+        shared_prim->lattice().tol())),
+    site_filter(_site_filter),
+    max_length(_max_length),
+    custom_generators(_custom_generators) {
   }
 
   std::string PeriodicMaxLengthClusterSpecs::_name() const {
@@ -103,21 +99,12 @@ namespace CASM {
     return CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC;
   };
 
-  void PeriodicMaxLengthClusterSpecs::_make_periodic_orbits(
-    PeriodicOrbitVec &orbits,
+  ClusterSpecs::PeriodicOrbitVec PeriodicMaxLengthClusterSpecs::_make_periodic_orbits(
     IntegralClusterVec const &generating_elements) const {
-
-    typedef PrimPeriodicOrbit<IntegralCluster> orbit_type;
-    OrbitGenerators<orbit_type> generators(*generating_group, *sym_compare);
-    for(auto const &el : generating_elements) {
-      generators.insert(el);
-    }
-    orbits.clear();
-    generators.make_orbits(std::back_inserter(orbits));
+    return generate_orbits(generating_elements, *generating_group, *sym_compare);
   }
 
-  void PeriodicMaxLengthClusterSpecs::_make_periodic_orbits(
-    PeriodicOrbitVec &orbits,
+  ClusterSpecs::PeriodicOrbitVec PeriodicMaxLengthClusterSpecs::_make_periodic_orbits(
     std::ostream &status) const {
 
     typedef PrimPeriodicOrbit<IntegralCluster> orbit_type;
@@ -156,8 +143,9 @@ namespace CASM {
     }
 
     // now generate orbits
-    orbits.clear();
+    PeriodicOrbitVec orbits;
     make_orbits(specs.begin(), specs.end(), custom_generators, std::back_inserter(orbits), status);
+    return orbits;
   }
 
 
@@ -166,13 +154,21 @@ namespace CASM {
   LocalMaxLengthClusterSpecs::LocalMaxLengthClusterSpecs(
     std::shared_ptr<Structure const> _shared_prim,
     std::unique_ptr<SymGroup> _generating_group,
-    IntegralCluster const &_phenomenal):
+    IntegralCluster const &_phenomenal,
+    SiteFilterFunction const &_site_filter,
+    std::vector<double> const &_max_length,
+    std::vector<double> const &_cutoff_radius,
+    std::vector<IntegralClusterOrbitGenerator> const &_custom_generators):
     shared_prim(_shared_prim),
     generating_group(std::move(_generating_group)),
     sym_compare(
       notstd::make_unique<LocalSymCompare<IntegralCluster>>(
         shared_prim, shared_prim->lattice().tol())),
-    phenomenal(_phenomenal) {
+    phenomenal(_phenomenal),
+    site_filter(_site_filter),
+    max_length(_max_length),
+    cutoff_radius(_cutoff_radius),
+    custom_generators(_custom_generators) {
   }
 
   std::string LocalMaxLengthClusterSpecs::_name() const {
@@ -183,21 +179,12 @@ namespace CASM {
     return CLUSTER_PERIODICITY_TYPE::LOCAL;
   };
 
-  void LocalMaxLengthClusterSpecs::_make_local_orbits(
-    LocalOrbitVec &orbits,
+  ClusterSpecs::LocalOrbitVec LocalMaxLengthClusterSpecs::_make_local_orbits(
     IntegralClusterVec const &generating_elements) const {
-
-    typedef LocalOrbit<IntegralCluster> orbit_type;
-    OrbitGenerators<orbit_type> generators(*generating_group, *sym_compare);
-    for(auto const &el : generating_elements) {
-      generators.insert(el);
-    }
-    orbits.clear();
-    generators.make_orbits(std::back_inserter(orbits));
+    return generate_orbits(generating_elements, *generating_group, *sym_compare);
   }
 
-  void LocalMaxLengthClusterSpecs::_make_local_orbits(
-    LocalOrbitVec &orbits,
+  ClusterSpecs::LocalOrbitVec LocalMaxLengthClusterSpecs::_make_local_orbits(
     std::ostream &status) const {
 
     typedef LocalOrbit<IntegralCluster> orbit_type;
@@ -233,8 +220,9 @@ namespace CASM {
     }
 
     // now generate orbits
-    orbits.clear();
+    LocalOrbitVec orbits;
     make_orbits(specs.begin(), specs.end(), custom_generators, std::back_inserter(orbits), status);
+    return orbits;
   }
 
 
@@ -244,6 +232,10 @@ namespace CASM {
     std::shared_ptr<Structure const> _shared_prim,
     Eigen::Matrix3l const &_superlattice_matrix,
     std::unique_ptr<SymGroup> _generating_group,
+    SiteFilterFunction const &_site_filter,
+    std::vector<double> const &_max_length,
+    std::vector<double> const &_cutoff_radius,
+    std::vector<IntegralClusterOrbitGenerator> const &_custom_generators,
     notstd::cloneable_ptr<IntegralCluster> _phenomenal):
     shared_prim(_shared_prim),
     superlattice_matrix(_superlattice_matrix),
@@ -253,7 +245,11 @@ namespace CASM {
         shared_prim,
         superlattice_matrix,
         shared_prim->lattice().tol())),
-    phenomenal(std::move(_phenomenal)) {
+    phenomenal(std::move(_phenomenal)),
+    site_filter(_site_filter),
+    max_length(_max_length),
+    cutoff_radius(_cutoff_radius),
+    custom_generators(_custom_generators) {
   }
 
   std::string WithinScelMaxLengthClusterSpecs::_name() const {
@@ -264,21 +260,12 @@ namespace CASM {
     return CLUSTER_PERIODICITY_TYPE::WITHIN_SCEL;
   };
 
-  void WithinScelMaxLengthClusterSpecs::_make_within_scel_orbits(
-    WithinScelOrbitVec &orbits,
+  ClusterSpecs::WithinScelOrbitVec WithinScelMaxLengthClusterSpecs::_make_within_scel_orbits(
     IntegralClusterVec const &generating_elements) const {
-
-    typedef WithinScelOrbit<IntegralCluster> orbit_type;
-    OrbitGenerators<orbit_type> generators(*generating_group, *sym_compare);
-    for(auto const &el : generating_elements) {
-      generators.insert(el);
-    }
-    orbits.clear();
-    generators.make_orbits(std::back_inserter(orbits));
+    return generate_orbits(generating_elements, *generating_group, *sym_compare);
   }
 
-  void WithinScelMaxLengthClusterSpecs::_make_within_scel_orbits(
-    WithinScelOrbitVec &orbits,
+  ClusterSpecs::WithinScelOrbitVec WithinScelMaxLengthClusterSpecs::_make_within_scel_orbits(
     std::ostream &status) const {
 
     typedef WithinScelOrbit<IntegralCluster> orbit_type;
@@ -330,8 +317,9 @@ namespace CASM {
     }
 
     // now generate orbits
-    orbits.clear();
+    WithinScelOrbitVec orbits;
     make_orbits(specs.begin(), specs.end(), custom_generators, std::back_inserter(orbits), status);
+    return orbits;
   }
 
 
@@ -361,21 +349,12 @@ namespace CASM {
     return CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC;
   }
 
-  void GenericPeriodicClusterSpecs::_make_periodic_orbits(
-    PeriodicOrbitVec &orbits,
+  ClusterSpecs::PeriodicOrbitVec GenericPeriodicClusterSpecs::_make_periodic_orbits(
     IntegralClusterVec const &generating_elements) const {
-
-    typedef PrimPeriodicOrbit<IntegralCluster> OrbitType;
-    OrbitGenerators<OrbitType> generators(*generating_group, *sym_compare);
-    for(auto const &el : generating_elements) {
-      generators.insert(el);
-    }
-    orbits.clear();
-    generators.make_orbits(std::back_inserter(orbits));
+    return generate_orbits(generating_elements, *generating_group, *sym_compare);
   }
 
-  void GenericPeriodicClusterSpecs::_make_periodic_orbits(
-    PeriodicOrbitVec &orbits,
+  ClusterSpecs::PeriodicOrbitVec GenericPeriodicClusterSpecs::_make_periodic_orbits(
     std::ostream &status) const {
 
     if(cluster_filter.size() != candidate_sites.size()) {
@@ -399,8 +378,9 @@ namespace CASM {
     }
 
     // now generate orbits
-    orbits.clear();
+    PeriodicOrbitVec orbits;
     make_orbits(specs.begin(), specs.end(), custom_generators, std::back_inserter(orbits), status);
+    return orbits;
   }
 
 
@@ -431,21 +411,12 @@ namespace CASM {
     return CLUSTER_PERIODICITY_TYPE::LOCAL;
   }
 
-  void GenericLocalClusterSpecs::_make_local_orbits(
-    LocalOrbitVec &orbits,
+  ClusterSpecs::LocalOrbitVec GenericLocalClusterSpecs::_make_local_orbits(
     IntegralClusterVec const &generating_elements) const {
-
-    typedef LocalOrbit<IntegralCluster> OrbitType;
-    OrbitGenerators<OrbitType> generators(*generating_group, *sym_compare);
-    for(auto const &el : generating_elements) {
-      generators.insert(el);
-    }
-    orbits.clear();
-    generators.make_orbits(std::back_inserter(orbits));
+    return generate_orbits(generating_elements, *generating_group, *sym_compare);
   }
 
-  void GenericLocalClusterSpecs::_make_local_orbits(
-    LocalOrbitVec &orbits,
+  ClusterSpecs::LocalOrbitVec GenericLocalClusterSpecs::_make_local_orbits(
     std::ostream &status) const {
 
     if(cluster_filter.size() != candidate_sites.size()) {
@@ -469,8 +440,9 @@ namespace CASM {
     }
 
     // now generate orbits
-    orbits.clear();
+    LocalOrbitVec orbits;
     make_orbits(specs.begin(), specs.end(), custom_generators, std::back_inserter(orbits), status);
+    return orbits;
   }
 
 
@@ -497,24 +469,15 @@ namespace CASM {
   }
 
   CLUSTER_PERIODICITY_TYPE GenericWithinScelClusterSpecs::_periodicity_type() const {
-    return CLUSTER_PERIODICITY_TYPE::LOCAL;
+    return CLUSTER_PERIODICITY_TYPE::WITHIN_SCEL;
   }
 
-  void GenericWithinScelClusterSpecs::_make_within_scel_orbits(
-    WithinScelOrbitVec &orbits,
+  ClusterSpecs::WithinScelOrbitVec GenericWithinScelClusterSpecs::_make_within_scel_orbits(
     IntegralClusterVec const &generating_elements) const {
-
-    typedef WithinScelOrbit<IntegralCluster> OrbitType;
-    OrbitGenerators<OrbitType> generators(*generating_group, *sym_compare);
-    for(auto const &el : generating_elements) {
-      generators.insert(el);
-    }
-    orbits.clear();
-    generators.make_orbits(std::back_inserter(orbits));
+    return generate_orbits(generating_elements, *generating_group, *sym_compare);
   }
 
-  void GenericWithinScelClusterSpecs::_make_within_scel_orbits(
-    WithinScelOrbitVec &orbits,
+  ClusterSpecs::WithinScelOrbitVec GenericWithinScelClusterSpecs::_make_within_scel_orbits(
     std::ostream &status) const {
 
     if(cluster_filter.size() != candidate_sites.size()) {
@@ -538,8 +501,9 @@ namespace CASM {
     }
 
     // now generate orbits
-    orbits.clear();
+    WithinScelOrbitVec orbits;
     make_orbits(specs.begin(), specs.end(), custom_generators, std::back_inserter(orbits), status);
+    return orbits;
   }
 
 
@@ -746,12 +710,12 @@ namespace CASM {
     return ClusterSpecs_impl::AllClusters{};
   }
 
-  /// Accept clusters with max pair distance less than specified value
+  /// Accept clusters with max pair distance less than max_length
   ClusterFilterFunction max_length_cluster_filter(double max_length) {
     return ClusterSpecs_impl::MaxLengthClusterFilter{max_length};
   }
 
-  /// Accept clusters with max pair distance (using closest images) less than specified value
+  /// Accept clusters with max pair distance (using closest images) less than max_length
   ClusterFilterFunction within_scel_max_length_cluster_filter(
     double max_length,
     Eigen::Matrix3l const &superlattice_matrix) {
@@ -773,17 +737,17 @@ namespace CASM {
     return ClusterSpecs_impl::ScelNeighborhood{superlattice_matrix};
   }
 
-  /// Sites within max pair distance to any site in the origin unit cell {b, 0, 0, 0}
+  /// Sites within max_length distance to any site in the origin unit cell {b, 0, 0, 0}
   CandidateSitesFunction max_length_neighborhood(double max_length) {
     return ClusterSpecs_impl::MaxLengthNeighborhood{max_length};
   }
 
-  /// Sites within max pair distance to any site in the phenomenal cluster
+  /// Sites within cutoff_radius distance to any site in the phenomenal cluster
   CandidateSitesFunction cutoff_radius_neighborhood(IntegralCluster const &phenomenal, double cutoff_radius) {
     return ClusterSpecs_impl::CutoffRadiusNeighborhood {phenomenal, cutoff_radius};
   }
 
-  /// Sites within max pair distance (using closest images) to any site in the phenomenal cluster
+  /// Sites within cutoff_radius distance (using closest images) to any site in the phenomenal cluster
   CandidateSitesFunction within_scel_cutoff_radius_neighborhood(
     IntegralCluster const &phenomenal,
     double cutoff_radius,

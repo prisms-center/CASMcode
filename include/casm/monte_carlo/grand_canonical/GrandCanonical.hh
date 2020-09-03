@@ -130,12 +130,12 @@ namespace CASM {
         return *m_comp_n;
       }
 
-      Clexulator &_clexulator() const {
-        return m_formation_energy_clex.clexulator();
+      Clexulator const &_clexulator() const {
+        return m_formation_energy_clex.clexulator;
       }
 
       const ECIContainer &_eci() const {
-        return m_formation_energy_clex.eci();
+        return m_formation_energy_clex.eci;
       }
 
       /// \brief Calculate delta correlations for an event
@@ -215,7 +215,3 @@ namespace CASM {
 }
 
 #endif
-
-
-
-

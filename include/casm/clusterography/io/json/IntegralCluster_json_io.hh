@@ -12,30 +12,20 @@ namespace CASM {
   class jsonParser;
 
   /// \brief Write IntegralCluster to JSON object
-  jsonParser &to_json(const IntegralCluster &clust, jsonParser &json);
+  jsonParser &to_json(IntegralCluster const &clust, jsonParser &json);
 
   /// \brief Read from JSON
-  void from_json(IntegralCluster &clust, const jsonParser &json, double xtal_tol);
+  void from_json(IntegralCluster &clust, jsonParser const &json);
 
   template<>
   struct jsonConstructor<IntegralCluster> {
 
     /// \brief Construct from JSON
-    static IntegralCluster from_json(const jsonParser &json, const Structure &prim, double xtal_tol);
+    static IntegralCluster from_json(jsonParser const &json, Structure const &prim);
   };
 
   /// \brief Parse IntegralCluster from JSON
-  void parse(
-    InputParser<IntegralCluster> &parser,
-    const std::shared_ptr<const Structure> &shared_prim);
-
-  /// Write custom orbit specs to JSON
-  jsonParser &to_json(const IntegralClusterOrbitGenerator &orbit_generator, jsonParser &json);
-
-  /// Parse custom orbit specs from JSON
-  void parse(
-    InputParser<std::vector<IntegralClusterOrbitGenerator>> &parser,
-    const std::shared_ptr<const Structure> &shared_prim);
+  void parse(InputParser<IntegralCluster> &parser, Structure const &prim);
 
 }
 

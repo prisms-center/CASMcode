@@ -389,6 +389,15 @@ namespace CASM {
     return result;
   }
 
+  std::vector<DoFKey> all_dof_types(BasicStructure const &_struc) {
+    std::vector<std::string> result;
+    for(auto const &global_dof_name : global_dof_types(_struc))
+      result.push_back(global_dof_name);
+    for(auto const &local_dof_name : all_local_dof_types(_struc))
+      result.push_back(local_dof_name);
+    return result;
+  }
+
   std::map<DoFKey, Index> local_dof_dims(BasicStructure const &_struc) {
     std::map<DoFKey, Index> result;
     for(DoFKey const &type : continuous_local_dof_types(_struc))
@@ -438,5 +447,3 @@ namespace CASM {
     return result;
   }
 }
-
-

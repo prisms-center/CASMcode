@@ -17,19 +17,22 @@
 
 
 namespace CASM {
+
+  /// allow basis_function_specs to specify max_poly_order by branch, orbit, etc.
+  template<typename OrbitType>
+  Index _orbit_max_poly_order(OrbitType const &orbit, BasisFunctionSpecs const &basis_function_specs) {
+    auto it = basis_function_specs.orbit_branch_max_poly_order.find(orbit.size());
+    if(it != basis_function_specs.orbit_branch_max_poly_order.end()) {
+      return it->second;
+    }
+    return basis_function_specs.global_max_poly_order;
+  }
+
   template<typename OrbitIteratorType>
   void ClexBasis::generate(OrbitIteratorType _orbit_begin,
-                           OrbitIteratorType _orbit_end,
-                           jsonParser const &_bspecs,
-                           Index _max_poly_order /*= -1*/) {
-    std::vector<DoFKey> dof_keys;
-    if(_bspecs.contains("basis_functions")) {
-      if(!valid_index(_max_poly_order))
-        _bspecs["basis_functions"].get_if(_max_poly_order, "max_poly_order");
+                           OrbitIteratorType _orbit_end) {
 
-      _bspecs.get_if(dof_keys, "dofs");
-    }
-
+    std::vector<DoFKey> dof_keys = basis_set_specs().basis_function_specs.dof_keys;
     std::vector<DoFKey> global_keys;
     std::vector<DoFKey> local_keys;
 
@@ -52,7 +55,9 @@ namespace CASM {
         }
         else {
           assert(0);
-          throw std::runtime_error(std::string("Attempting to build Clex basis set, but missing degree of freedom \"") + key + "\n");
+          std::stringstream ss;
+          ss << "Attempting to build Clex basis set, but missing degree of freedom '" << key << "'\n";
+          throw std::runtime_error(ss.str());
         }
       }
     }
@@ -60,16 +65,12 @@ namespace CASM {
 
     auto bset_it = m_bset_tree.begin();
     for(; _orbit_begin != _orbit_end; ++_orbit_begin, ++bset_it) {
-      bset_it->reserve(_orbit_begin->size());
-
-      bset_it->push_back(_construct_prototype_basis(*_orbit_begin,
-                                                    local_keys,
-                                                    global_keys,
-                                                    _max_poly_order));//-1/* polynomial_order */));
-
-      for(Index j = 1; j < _orbit_begin->size(); j++)
-        bset_it->push_back((*(_orbit_begin->equivalence_map(j).first)) * (*bset_it)[0]);
-
+      auto const &orbit = *_orbit_begin;
+      Index max_poly_order = _orbit_max_poly_order(orbit, basis_set_specs().basis_function_specs);
+      bset_it->reserve(orbit.size());
+      bset_it->push_back(_construct_prototype_basis(orbit, local_keys, global_keys, max_poly_order));
+      for(Index j = 1; j < orbit.size(); j++)
+        bset_it->push_back((*(orbit.equivalence_map(j).first)) * (*bset_it)[0]);
     }
   }
 

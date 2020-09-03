@@ -431,19 +431,13 @@ namespace CASM {
 
     ContinuousDoF(BasicTraits const &_traits,
                   std::string const &_var_name,
-                  Index _ID,
-                  double _min,
-                  double _max) :
+                  Index _ID) :
       Base(_traits, _var_name, _ID),
-      min_val(_min),
-      max_val(_max),
       current_val(NAN),
-      current_min(min_val),
-      current_max(max_val),
       m_remote_ptr(nullptr) {}
 
     ContinuousDoF(BasicTraits const &_traits)
-      : ContinuousDoF(_traits, "", -1, NAN, NAN) {}
+      : ContinuousDoF(_traits, "", -1) {}
 
     double value() const {
       return current_val;
@@ -484,8 +478,7 @@ namespace CASM {
     }
 
   private:
-    double min_val, max_val, current_val;
-    double current_min, current_max;
+    double current_val;
 
     /// Allows DoF to point to a remote value for faster/easier evaluation
     mutable double const *m_remote_ptr;

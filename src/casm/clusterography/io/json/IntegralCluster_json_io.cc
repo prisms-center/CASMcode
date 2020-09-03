@@ -4,12 +4,14 @@
 #include "casm/casm_io/Log.hh"
 #include "casm/clusterography/io/json/IntegralCluster_json_io.hh"
 #include "casm/clusterography/ClusterInvariants.hh"
+#include "casm/clusterography/ClusterOrbits.hh"
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/crystallography/io/UnitCellCoordIO.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/global/enum/json_io.hh"
 
 #include "casm/casm_io/json/InputParser_impl.hh"
+#include "casm/clusterography/ClusterOrbits_impl.hh"
 
 namespace CASM {
 
@@ -29,8 +31,14 @@ namespace CASM {
   jsonParser &to_json(const IntegralCluster &clust, jsonParser &json) {
     json.put_obj();
     ClusterInvariants invariants {clust};
-    json["min_length"] = invariants.displacement().front();
-    json["max_length"] = invariants.displacement().back();
+    if(invariants.displacement().size()) {
+      json["min_length"] = invariants.displacement().front();
+      json["max_length"] = invariants.displacement().back();
+    }
+    else {
+      json["min_length"] = 0.0;
+      json["max_length"] = 0.0;
+    }
     json["sites"].put_array(clust.begin(), clust.end());
     return json;
   }
@@ -51,52 +59,19 @@ namespace CASM {
   /// \endcode
   ///
   /// - Also accepts "prototype" in place of "sites"
-  void from_json(IntegralCluster &clust, const jsonParser &json, double xtal_tol) {
-
-    std::string name;
-    if(json.contains("sites")) {
-      name = "sites";
-    }
-    else if(json.contains("prototype")) {
-      name = "prototype";
-    }
-    else {
-      Log &err_log = default_err_log();
-      err_log.error("Reading IntegralCluster from JSON");
-      err_log << "Expected 'sites' or 'prototype' containing a list of cluster site coordinates\n";
-      err_log << "Input:\n" << json << "\n" << std::endl;
-
-      throw std::runtime_error("Error reading IntegralCluster from JSON");
-    }
-
-
-    CASM::COORD_TYPE coord_type = INTEGRAL;
-    json.get_if(coord_type, "coordinate_mode");
-
-    if(coord_type == INTEGRAL) {
-      from_json(clust.elements(), json[name]);
-    }
-    else {
-      clust.elements().clear();
-      for(auto it = json[name].begin(); it != json[name].end(); ++it) {
-        Eigen::Vector3d vcoord;
-        from_json(vcoord, *it);
-
-        xtal::Coordinate tcoord(vcoord, clust.prim().lattice(), coord_type);
-
-        clust.elements().emplace_back(xtal::UnitCellCoord::from_coordinate(clust.prim(), tcoord, xtal_tol));
-      }
-    }
-    return;
+  void from_json(IntegralCluster &clust, const jsonParser &json) {
+    clust = jsonConstructor<IntegralCluster>::from_json(json, clust.prim());
   }
 
   IntegralCluster jsonConstructor<IntegralCluster>::from_json(
     const jsonParser &json,
-    Structure const &prim,
-    double xtal_tol) {
-    IntegralCluster clust(prim);
-    CASM::from_json(clust, json, xtal_tol);
-    return clust;
+    Structure const &prim) {
+    jsonParser tmp {json};  // TODO: this shouldn't be necessary
+    InputParser<IntegralCluster> parser {tmp, prim};
+    std::stringstream ss;
+    ss << "Error: Invalid cluster JSON object";
+    report_and_throw_if_invalid(parser, err_log(), std::runtime_error {ss.str()});
+    return *parser.value;
   }
 
   /// \brief Parse IntegralCluster from JSON
@@ -113,9 +88,7 @@ namespace CASM {
   /// \endcode
   ///
   /// - Also accepts "prototype" in place of "sites"
-  void parse(
-    InputParser<IntegralCluster> &parser,
-    const std::shared_ptr<Structure const> &shared_prim) {
+  void parse(InputParser<IntegralCluster> &parser, Structure const &prim) {
 
     std::string name;
     const jsonParser &json = parser.self;
@@ -130,11 +103,11 @@ namespace CASM {
       return;
     }
 
-    double xtal_tol = shared_prim->lattice().tol();
+    double xtal_tol = prim.lattice().tol();
     CASM::COORD_TYPE coord_type;
     parser.optional_else(coord_type, "coordinate_mode", INTEGRAL);
 
-    parser.value = notstd::make_unique<IntegralCluster>(*shared_prim);
+    parser.value = notstd::make_unique<IntegralCluster>(prim);
     auto &clust = *parser.value;
 
     if(coord_type == INTEGRAL) {
@@ -146,9 +119,9 @@ namespace CASM {
 
       try {
         for(const auto &coord : coord_vec) {
-          xtal::Coordinate tcoord {coord, shared_prim->lattice(), coord_type};
+          xtal::Coordinate tcoord {coord, prim.lattice(), coord_type};
           clust.elements().emplace_back(
-            xtal::UnitCellCoord::from_coordinate(*shared_prim, tcoord, xtal_tol));
+            xtal::UnitCellCoord::from_coordinate(prim, tcoord, xtal_tol));
         }
       }
       catch(std::exception &e) {

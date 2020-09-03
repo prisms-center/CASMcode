@@ -65,11 +65,5 @@ namespace CASM {
   /// \brief Evaluate property given an ECIContainer and pointer to beginning of range of correlation
   double operator*(const ECIContainer &_eci, double const *_corr_begin);
 
-  /// \brief Read eci.out file from specified path (deprecated)
-  ECIContainer read_eci_out(const fs::path &filepath);
-
-  /// \brief Read eci.json file from specified path
-  ECIContainer read_eci(const fs::path &filepath);
-
 }
 #endif

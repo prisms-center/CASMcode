@@ -207,7 +207,9 @@ namespace CASM {
   template<typename... Args>
   InputParser<T>::InputParser(jsonParser &_input, fs::path _path, bool _required, Args &&... args):
     KwargsParser(_input, _path, _required) {
-    parse(*this, std::forward<Args>(args)...);
+    if(this->exists()) {
+      parse(*this, std::forward<Args>(args)...);
+    }
   }
 
   template<typename T>
@@ -228,61 +230,35 @@ namespace CASM {
   }
 
   template<typename T>
-  void InputParser<T>::print_warnings(Log &log, std::string header) const {
-    auto lambda = [&](const PairType & pair) {
-      for(const auto &msg : pair.second->warning) {
-        log << msg << std::endl;
-      }
-    };
-
-    bool top = false;
-    if(!header.empty()) {
-      log.custom(header);
-      header = "";
-      top = true;
+  std::map<fs::path, std::set<std::string>> InputParser<T>::all_warnings() const {
+    std::map<fs::path, std::set<std::string>> result;
+    if(this->warning.size()) {
+      result[this->path] = this->warning;
     }
-    KwargsParser::print_warnings(log, header);
-    std::for_each(kwargs.begin(), kwargs.end(), lambda);
-    if(top) log << std::endl;
-  }
-
-  template<typename T>
-  void InputParser<T>::print_errors(Log &log, std::string header) const {
-    auto lambda = [&](const PairType & pair) {
-      for(const auto &msg : pair.second->error) {
-        log << msg << std::endl;
-      }
-    };
-
-    bool top = false;
-    if(!header.empty()) {
-      log.custom(header);
-      header = "";
-      top = true;
-    }
-    KwargsParser::print_errors(log, header);
-    std::for_each(kwargs.begin(), kwargs.end(), lambda);
-    if(top) log << std::endl;
-  }
-
-  template<typename T>
-  std::set<std::string> InputParser<T>::all_warnings() const {
-    std::set<std::string> res = this->warning;
     for(const auto &val : kwargs) {
       const auto &parser = *val.second;
-      res.insert(parser.warning.begin(), parser.warning.end());
+      auto all_subparser_warnings = parser.all_warnings();
+      if(all_subparser_warnings.size()) {
+        result.insert(all_subparser_warnings.begin(), all_subparser_warnings.end());
+      }
     }
-    return res;
+    return result;
   }
 
   template<typename T>
-  std::set<std::string> InputParser<T>::all_errors() const {
-    std::set<std::string> res = this->error;
+  std::map<fs::path, std::set<std::string>> InputParser<T>::all_errors() const {
+    std::map<fs::path, std::set<std::string>> result;
+    if(this->error.size()) {
+      result[this->path] = this->error;
+    }
     for(const auto &val : kwargs) {
       const auto &parser = *val.second;
-      res.insert(parser.error.begin(), parser.error.end());
+      auto all_subparser_errors = parser.all_errors();
+      if(all_subparser_errors.size()) {
+        result.insert(all_subparser_errors.begin(), all_subparser_errors.end());
+      }
     }
-    return res;
+    return result;
   }
 
   template<typename T>
@@ -331,6 +307,35 @@ namespace CASM {
     else {
       this->make(std::forward<Args>(args)...);
     }
+  }
+
+  template<typename T>
+  template<typename RequiredType, typename...Args>
+  std::shared_ptr<InputParser<RequiredType>> InputParser<T>::subparse(fs::path option, Args &&...args) {
+
+    auto subparser = std::make_shared<InputParser<RequiredType>>(
+                       this->input, this->relpath(option), true, std::forward<Args>(args)...);
+    kwargs[subparser->path] = subparser;
+    return subparser;
+  }
+
+  template<typename T>
+  template<typename RequiredType, typename...Args>
+  std::shared_ptr<InputParser<RequiredType>> InputParser<T>::subparse_if(fs::path option, Args &&...args) {
+    auto subparser = std::shared_ptr<InputParser<RequiredType>>(
+                       this->input, this->relpath(option), false, std::forward<Args>(args)...);
+    kwargs[subparser->path] = subparser;
+    return subparser;
+  }
+
+  template<typename T>
+  template<typename RequiredType, typename...Args>
+  std::shared_ptr<InputParser<RequiredType>> InputParser<T>::subparse_else(fs::path option, const RequiredType &_default, Args &&...args)  {
+    auto subparser = subparse_if(option, std::forward<Args>(args)...);
+    if(!subparser.exists()) {
+      subparser.value = notstd::make_unique<RequiredType>(_default);
+    }
+    return subparser;
   }
 
   template<typename T>

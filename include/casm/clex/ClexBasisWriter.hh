@@ -1,8 +1,10 @@
 #ifndef CASM_ClexBasisWriter
 #define CASM_ClexBasisWriter
 
-#include "casm/global/definitions.hh"
+#include "casm/basis_set/BasisFunctionSpecs.hh"
 #include "casm/clex/ClexBasis.hh"
+#include "casm/global/definitions.hh"
+
 namespace CASM {
 
   class ClexBasis;
@@ -16,7 +18,7 @@ namespace CASM {
   public:
 
     /// \brief Construct ClexBasisWriter, collecting requisite DoF info from '_prim'
-    ClexBasisWriter(Structure const &_prim, std::string const &parampack_type);
+    ClexBasisWriter(Structure const &_prim, PARAM_PACK_TYPE const &param_pack_type);
 
     /// \brief Construct ClexBasisWriter, collecting requisite DoF info from '_prim'
     ClexBasisWriter(Structure const &_prim, ParamPackMixIn const &parampack_mix_in);

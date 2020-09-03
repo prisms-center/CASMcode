@@ -789,7 +789,7 @@ namespace CASM {
     json[traits<ORBIT_PRINT_MODE>::name] = opt.orbit_print_mode;
     json["print_coordinates"] = opt.print_coordinates;
     json["print_equivalence_map"] = opt.print_equivalence_map;
-    json["print_invariant_grp"] = opt.print_invariant_grp;
+    json["print_invariant_group"] = opt.print_invariant_group;
     json["sym_info_opt"] = opt.sym_info_opt;
     return json;
   }
@@ -803,7 +803,7 @@ namespace CASM {
     json.get_if(opt.orbit_print_mode, traits<ORBIT_PRINT_MODE>::name);
     json.get_if(opt.print_coordinates, "print_coordinates");
     json.get_if(opt.print_equivalence_map, "print_equivalence_map");
-    json.get_if(opt.print_invariant_grp, "print_invariant_grp");
+    json.get_if(opt.print_invariant_group, "print_invariant_group");
     json.get_if(opt.sym_info_opt, "sym_info_opt");
   }
 
@@ -1067,8 +1067,7 @@ namespace CASM {
     const jsonParser &json,\
     const Structure &prim,\
     const SymGroup& generating_grp,\
-    const typename ORBIT::SymCompareType &sym_compare,\
-    double xtal_tol);
+    const typename ORBIT::SymCompareType &sym_compare);
 
 #define _VECTOR_IT(ORBIT) std::vector<ORBIT>::iterator
 #define _VECTOR_INSERTER(ORBIT) std::back_insert_iterator<std::vector<ORBIT> >

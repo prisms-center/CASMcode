@@ -51,8 +51,8 @@ namespace CASM {
 
     /// \brief Construct an Orbit from a generating_element Element, using provided symmetry group
     Orbit(Element generating_element,
-          const SymGroup &generating_group,
-          const SymCompareType &sym_compare);
+          SymGroup const &generating_group,
+          SymCompareType const &sym_compare);
 
 
     const_iterator begin() const {

@@ -42,22 +42,23 @@ namespace CASM {
   }
 
   namespace DoFType {
-    namespace Local {
-      static TraitsDictionary &_traits_dict() {
-        static TraitsDictionary static_dict = make_parsing_dictionary<Traits>();
-        return static_dict;
 
-      }
+    TraitsDictionary &traits_dict() {
+      static TraitsDictionary static_dict = make_parsing_dictionary<Traits>();
+      return static_dict;
     }
 
     void register_traits(Traits const &_traits) {
-      Local::_traits_dict().insert(_traits);
+      traits_dict().insert(_traits);
     }
 
     Traits const &traits(std::string const &dof_key) {
-      return Local::_traits_dict().lookup(dof_key);
+      return traits_dict().lookup(dof_key);
     }
 
+    DoF::BasicTraits const &basic_traits(std::string const &dof_key) {
+      return traits(dof_key).val_traits();
+    }
 
     /// \brief Retrieve the standard values for a DoF from dictionary of properties from a SimpleStructure or MappedProperties object
     ///  Returns matrix with standard values, and names of properties that were used to construct the matrix
