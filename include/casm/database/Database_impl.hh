@@ -103,6 +103,9 @@ namespace CASM {
 
     template<typename ValueType>
     void ValDatabase<ValueType>::read_aliases() {
+      if(!primclex().has_dir()) {
+        return;
+      }
       fs::path p = primclex().dir().template aliases<ValueType>();
       if(fs::exists(p)) {
         jsonParser json(p);
@@ -115,6 +118,9 @@ namespace CASM {
 
     template<typename ValueType>
     void ValDatabase<ValueType>::write_aliases() {
+      if(!primclex().has_dir()) {
+        throw std::runtime_error("Error in write_aliases: CASM project has no root directory.");
+      }
       fs::path p = primclex().dir().template aliases<ValueType>();
       fs::create_directories(p.parent_path());
 

@@ -20,6 +20,7 @@
 #include "casm/basis_set/DoF.hh"
 #include "casm/database/Named_impl.hh"
 #include "casm/database/ScelDatabase.hh"
+#include "casm/global/errors.hh"
 
 
 namespace CASM {
@@ -37,32 +38,59 @@ namespace CASM {
 
   //Copy constructor is needed for proper initialization of supercell sym info
   Supercell::Supercell(const Supercell &RHS) :
-    m_primclex(&RHS.primclex()),
+    m_primclex(RHS.m_primclex),
+    m_shared_prim(RHS.m_shared_prim),
     m_sym_info(make_supercell_sym_info(prim(), RHS.lattice())),
     //m_nlist(RHS.m_nlist),
     m_nlist_size_at_construction(-1) {
 
   }
 
+  Supercell::Supercell(std::shared_ptr<Structure const> const &_shared_prim, const Eigen::Ref<const Eigen::Matrix3i> &transf_mat_init) :
+    m_primclex(nullptr),
+    m_shared_prim(_shared_prim),
+    m_sym_info(make_supercell_sym_info(prim(), Lattice(prim().lattice().lat_column_mat() * transf_mat_init.cast<double>(), crystallography_tol()))),
+    m_nlist_size_at_construction(-1) {
+
+  }
+
+  Supercell::Supercell(std::shared_ptr<Structure const> const &_shared_prim, const Lattice &superlattice) :
+    m_primclex(nullptr),
+    m_shared_prim(_shared_prim),
+    m_sym_info(make_supercell_sym_info(prim(), superlattice)),
+    m_nlist_size_at_construction(-1) {
+
+    auto res = xtal::is_superlattice(superlattice, prim().lattice(), crystallography_tol());
+    if(!res.first) {
+      err_log() << "Error in Supercell(PrimClex *_prim, const Lattice &superlattice)" << std::endl
+                << "  Bad supercell, the transformation matrix is not integer." << std::endl;
+      err_log() << "superlattice: \n" << superlattice.lat_column_mat() << std::endl;
+      err_log() << "prim lattice: \n" << prim().lattice().lat_column_mat() << std::endl;
+      err_log() << "transformation matrix: \n" << res.second << std::endl;
+      throw std::invalid_argument("Error constructing Supercell: the transformation matrix is not integer");
+    }
+  }
+
   Supercell::Supercell(const PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &transf_mat_init) :
     m_primclex(_prim),
-    m_sym_info(make_supercell_sym_info(prim(), Lattice(prim().lattice().lat_column_mat() * transf_mat_init.cast<double>(), _prim->crystallography_tol()))),
+    m_shared_prim(_prim->shared_prim()),
+    m_sym_info(make_supercell_sym_info(prim(), Lattice(prim().lattice().lat_column_mat() * transf_mat_init.cast<double>(), crystallography_tol()))),
     m_nlist_size_at_construction(-1) {
 
   }
 
   Supercell::Supercell(const PrimClex *_prim, const Lattice &superlattice) :
     m_primclex(_prim),
+    m_shared_prim(_prim->shared_prim()),
     m_sym_info(make_supercell_sym_info(prim(), superlattice)),
     m_nlist_size_at_construction(-1) {
 
-    auto res = xtal::is_superlattice(superlattice, prim().lattice(), primclex().settings().crystallography_tol());
+    auto res = xtal::is_superlattice(superlattice, prim().lattice(), crystallography_tol());
     if(!res.first) {
       _prim->err_log() << "Error in Supercell(PrimClex *_prim, const Lattice &superlattice)" << std::endl
                        << "  Bad supercell, the transformation matrix is not integer." << std::endl;
       _prim->err_log() << "superlattice: \n" << superlattice.lat_column_mat() << std::endl;
       _prim->err_log() << "prim lattice: \n" << prim().lattice().lat_column_mat() << std::endl;
-      _prim->err_log() << "lin_alg_tol: " << primclex().settings().lin_alg_tol() << std::endl;
       _prim->err_log() << "transformation matrix: \n" << res.second << std::endl;
       throw std::invalid_argument("Error constructing Supercell: the transformation matrix is not integer");
     }
@@ -70,7 +98,22 @@ namespace CASM {
 
   Supercell::~Supercell() {}
 
+  const Structure &Supercell::prim() const {
+    return *shared_prim();
+  }
+
+  std::shared_ptr<Structure const> const &Supercell::shared_prim() const {
+    return m_shared_prim;
+  }
+
+  double Supercell::crystallography_tol() const {
+    return prim().lattice().tol();
+  }
+
   const PrimClex &Supercell::primclex() const {
+    if(!m_primclex) {
+      throw CASM::libcasm_runtime_error("Error in Supercell::primclex(): does not exist");
+    }
     return *m_primclex;
   }
 
@@ -99,7 +142,7 @@ namespace CASM {
   Index Supercell::linear_index(const Coordinate &coord, double tol) const {
     Coordinate tcoord(coord);
     tcoord.within();
-    return linear_index(UnitCellCoord::from_coordinate(this->primclex().prim(), coord, tol));
+    return linear_index(UnitCellCoord::from_coordinate(prim(), coord, tol));
   }
 
   /// \brief Return the linear index corresponding to integral coordinates
@@ -163,8 +206,6 @@ namespace CASM {
 
   Eigen::Matrix3l Supercell::transf_mat() const {
     return this->sym_info().transformation_matrix_to_super();
-    /* return iround(this->sym_info().transformation_matrix()); */
-    //return CASM::transf_mat(primclex().prim().lattice(), lattice(), primclex().crystallography_tol());
   }
 
   const Lattice &Supercell::lattice() const {
@@ -201,10 +242,10 @@ namespace CASM {
   }
 
   bool Supercell::operator<(const Supercell &B) const {
-    if(&primclex() != &B.primclex()) {
+    if(shared_prim() != B.shared_prim()) {
       throw std::runtime_error(
         "Error using Supercell::operator<(const Supercell& B): "
-        "Only Supercell with the same PrimClex may be compared this way.");
+        "Only Supercell with shared prim may be compared this way.");
     }
     if(volume() != B.volume()) {
       return volume() < B.volume();
@@ -228,10 +269,10 @@ namespace CASM {
     if(this == &B) {
       return true;
     }
-    if(&primclex() != &B.primclex()) {
+    if(shared_prim() != B.shared_prim()) {
       throw std::runtime_error(
         "Error using Supercell::operator==(const Supercell& B): "
-        "Only Supercell with the same PrimClex may be compared this way.");
+        "Only Supercell with shared prim may be compared this way.");
     }
     return transf_mat() == B.transf_mat();
   }

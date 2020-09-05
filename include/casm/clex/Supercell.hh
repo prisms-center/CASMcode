@@ -50,11 +50,10 @@ namespace CASM {
   /// \brief Represents a supercell of the primitive parent crystal structure
   ///
   class Supercell : public
-    HasPrimClex <
     DB::Named <
     Comparisons <
     SupercellCanonicalForm <
-    CRTPBase<Supercell >>> >> {
+    CRTPBase<Supercell >>> > {
 
   public:
 
@@ -63,6 +62,10 @@ namespace CASM {
     // **** Constructors ****
 
     Supercell(const Supercell &RHS);
+
+    Supercell(std::shared_ptr<Structure const> const &_shared_prim, const Lattice &superlattice);
+    Supercell(std::shared_ptr<Structure const> const &_shared_prim, const Eigen::Ref<const Eigen::Matrix3i> &superlattice_matrix);
+
     Supercell(const PrimClex *_prim, const Lattice &superlattice);
     Supercell(const PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &superlattice_matrix);
 
@@ -93,6 +96,12 @@ namespace CASM {
     ConfigDoF zero_configdof(double tol) const;
 
     // **** Accessors ****
+
+    const Structure &prim() const;
+
+    std::shared_ptr<Structure const> const &shared_prim() const;
+
+    double crystallography_tol() const;
 
     const PrimClex &primclex() const;
 
@@ -135,7 +144,10 @@ namespace CASM {
 
     std::string generate_name_impl() const;
 
+    // May be nullptr, in which case, some features will throw
     const PrimClex *m_primclex;
+
+    std::shared_ptr<Structure const> m_shared_prim;
 
     SupercellSymInfo m_sym_info;
 

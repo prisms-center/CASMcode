@@ -21,11 +21,14 @@ TEST(ExampleCrystallographyBasicStructure, BasicStructureConstructor) {
   //
   //   BasicStructure has:
   //   - a Lattice
-  //   - a basis (std::vector<Site>)
-  //   - global DoF (std::map<DoFKey, xtal::DoFSet>)
+  //   - global continuous DoF (std::map<DoFKey, xtal::DoFSet>)
+  //   - a basis (std::vector<Site>). Each Site may have:
+  //     - local discrete DoF ("occupant_dof", std::vector<Molecule>)
+  //     - local continuous DoF ("dof", std::map<DoFKey, xtal::SiteDoFSet>)
   //
   //   The global DoF are represented by xtal::DoFSet, which is nearly equivalent to
-  //     xtal::SiteDoFSet (xtal::DoFset does not have a list of excluded site occupants).
+  //     xtal::SiteDoFSet (xtal::DoFset does not have a list of site occupants for which the DoF
+  //     does not apply).
 
   // First, construct a Lattice
   Vector3d a {1.0, 0.0, 0.0};

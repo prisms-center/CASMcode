@@ -17,6 +17,118 @@
 
 #include "crystallography/TestStructures.hh" // for test::ZrO_prim
 
+// This introduces how to use CASM to sample the space of global continuous degree of freedom (DoF),
+//   using strain as an example.
+
+// A brief review of how CASM represents an infinite crystal and its allowed perturbations (the DoF
+// space):
+//
+//   Each type of continuous DoF has:
+//   - AnisoValTraits, which provides the DoF type name, a standard coordinate system (the "standard
+//     basis"), and specifies how values transform under application of symmetry. Examples of the
+//     "standard basis" specified by AnisoValTraits include:
+//     - "disp" -> (dx, dy, dz) -> displacement components relative to fixed laboratory frame
+//     - "strain" -> (e_xx, e_yy, e_zz, sqrt(2)*e_yz, sqrt(2)*e_xz, sqrt(2)*e_xy) -> tensor elements
+//
+//   A BasicStructure represents an infinite crystal and its allowed perturbations by specifying one
+//   unit cell. BasicStructure has:
+//   - a Lattice
+//   - global continuous DoF (std::map<DoFKey, xtal::DoFSet>)
+//   - a basis (std::vector<Site>). Each Site may have:
+//     - local discrete DoF ("occupant_dof", std::vector<Molecule>)
+//     - local continuous DoF ("dof", std::map<DoFKey, xtal::SiteDoFSet>)
+//
+//   Note: DoFKey is a typedef for std::string, matching AnisoValTraits::name() for a particular
+//         type of DoF.
+//
+//   Each xtal::DoFSet or xtal::SiteDoFSet has a "DoF basis" specifying a basis which is a linear
+//   combination of the standard basis defined by AnisoValTraits. The DoF basis may be a subspace
+//   of the standard basis. This allows specifying that for a particular crystal only a subset of
+//   strain perturbations are allowed, or for particular sites only particular displacements are
+//   allowed. These subspaces are taken into account when determining the symmetry group of the
+//   BasicStructure.
+//
+//   A Structure is an object that holds a (shared, const) BasicStructure and its symmetry
+//   information. A Structure has:
+//   - a BasicStructure (std::shared_ptr<const xtal::BasicStructure>), representing the reference
+//     infinite crystal and the DoF space
+//   - the basic structure's factor group (MasterSymGroup), which stores the symmetry operations
+//     that leave the infinite crystal lattice, basis, and the DoF space invariant, excluding
+//     operations that differ only by translational symmetry
+//   - keys (SymGroupRepID) used to access symmetry group representations (SymGroupRep) that are
+//     stored in the MasterSymGroup object (accessed by MasterSymGroup::representation). The
+//     SymGroupRep encode how symmetry operations in the factor group do the following:
+//     - permute sublattices ("basis_permutation_symrep_ID", SymGroupRepID)
+//     - permute discrete site occupation values on each sublattice ("occupant_symrep",
+//       std::vector<SymGroupRepID>)
+//     - transform global continuous DoF values ("global_dof_symrep_ID", SymGroupRepID)
+//     - transform local continuous DoF values on each sublattice ("site_dof_symrep_IDs",
+//       std::vector<std::map<DoFKey, SymGroupRepID>>)
+//
+//   Note: In CASM, a Structure is often referred to as the "primitive crystal structure" or "prim".
+//
+//   A Configuration represents a particular periodic perturbation of the infinite crystal within
+//     the space of allowed perturbations defined by the BasicStructure. Configuration has:
+//   - a ConfigDoF, representing the values of DoF (local discrete and local continuous)
+//     within the supercell (i.e. the perturbation within the periodically tiled unit), plus the
+//     values of the global DoF.
+//   - a Supercell, representing the translational periodicity of the perturbation
+//
+//     ConfigDoF has:
+//     - the values of the discrete site DoF within the supercell ("occupation", Eigen::VectorXi)
+//
+//       Example: Occupation values, accessed via `Eigen::VectorXi const &ConfigDoF::occupation()`,
+//       with integer value corresponding to which Molecule in the the a Site::occupant_dof vector
+//       is occupying a particular site:
+//
+//           [<- sublattice 0 "occ" values -> | <- sublattice 1 "occ" values -> | ... ]
+//
+//     - the values of the continuous site DoF within the supercell ("local_dofs",
+//       std::map<DoFKey, LocalDoFContainerType>).
+//
+//       Example: Displacement values, with DoF basis equal to the standard basis (dx, dy, dz),
+//       accessed via `Eigen::MatrixXd const &ConfigDoF::local_dofs("disp").values()`:
+//
+//           [<- sublattice 0 dx values -> | <- sublattice 1 dx values -> | ... ]
+//           [<- sublattice 0 dy values -> | <- sublattice 1 dy values -> | ... ]
+//           [<- sublattice 0 dz values -> | <- sublattice 1 dz values -> | ... ]
+//
+//     - the values of the continuous global DoF ("global_dofs",
+//       std::map<DoFKey, GlobalDoFContainerType>).
+//
+//       Example: GLstrain values, with DoF basis equal to the standard basis, accessed via
+//       `Eigen::VectorXd const &ConfigDoF::global_dofs("GLstrain").values()`:
+//
+//           [e_xx, e_yy, e_zz, sqrt(2)*e_yz, sqrt(2)*e_xz, sqrt(2)*e_xy]
+//
+//   A Supercell provides access to:
+//   - SupercellSymInfo, which provides symmetry representations which transform site indices,
+//     and values of global and site DoF given the invariance of the supercell lattice vectors.
+//   - a SuperNeighborList, which specifies, for each unit cell in the supercell, the indices of the
+//     translationally equivalent neighboring sites in a local region surronding the reference cell.
+//     This provides fast access of neighboring site DoF values when evaluating cluster expansion
+//     basis functions for all Configuration with the same Supercell.
+//
+//     SupercellSymInfo has:
+//     - a xtal::Superlattice,
+//     - the supercell factor group (SymGroup), the subgroup of the prim factor group that
+//       leaves the super lattice vectors invariant.
+//     - the translation permutations ("translation_permutations", std::vector<Permutation>), which
+//       describe the unique ways primitive structure lattice vector translations permute DoF values
+//       in a ConfigDoF associated with the Supercell. The number of translation permutations is
+//       equal the to volume of the supercell w.r.t. the primitive structure unit cell.
+//     - keys (SymGroupRepID) used to access symmetry group representations (SymGroupRep) that
+//       encode how discrete DoF values and local and global continuous DoF values transform due
+//       to supercell factor group operations.
+//     - converters between UnitCellCood site indices and the corresponding linear index into the
+//       ConfigDoF occupation value vector, or column index in the continuous site DoF value matrix
+//
+// Enumerators in CASM are classes that provide iterators which when incremented iteratively
+//   constuct new objects, typically Supercell or Configuration. When used via the casm command line
+//   program subcommand `casm enum`, the constructed objects are added to a database for future use.
+//   When used in C++ code, the constructed objects can be stored in the database but do not need to
+//   be.
+
 namespace enumeration_test_impl {
 
   // Helper functions to make the examples easier to read
@@ -40,6 +152,49 @@ namespace enumeration_test_impl {
     Eigen::MatrixXcd X = A.fullPivHouseholderQr().solve(B);
     return (A * X).isApprox(B, tol);
   }
+
+  // Demonstrates conversion between DoF values w.r.t. "standard" coordinate system, the
+  //   DoFSet coordinate system, and other coordinate systems.
+  //
+  // The "standard" coordinate systems are defined in the AnisoValTraits of a particular DoF type
+  //   and provide a common definition across projects and for persistant data storage.
+  //
+  //     Examples of the "standard coordinate systems" specified by AnisoValTraits:
+  //     - "disp" -> (dx, dy, dz) -> displacement components relative to fixed laboratory frame
+  //     - "strain" -> (e_xx, e_yy, e_zz, sqrt(2)*e_yz, sqrt(2)*e_xz, sqrt(2)*e_xy) -> tensor elements
+  //
+  // Within the context of a particular primitive Structure, each continuous DoFSet defines a set of
+  //   named basis vectors, which are denoted relative to the DoF type's "standard axes", and
+  //   allow the user to specify the DoFSet components, name them, and restrict DoF values to
+  //       a particular subspace
+  //
+  // The Configuration stores all DoF values in the ConfigDoF object
+  // For some Configuration object, `config`:
+  // - Get global continuous DoF values with:
+  //   - `Eigen::VectorXd values = config.configdof().global_dof(global_dof_key).values();
+  //   - Return type is
+  // - Get local continuous DoF values with: config.configdof().global_dof(global_dof_key).values()
+  class GlobalDoFValues {
+    GlobalDoFValues(DoFKey const &global_dof_key, Eigen::MatrixXd const &axes):
+      m_global_dof_key(global_dof_key),
+      m_to_reference_coordinates(axes),
+      m_to_transformed_coordinates(Eigen::FullPivHouseholderQR<Eigen::MatrixXd> {
+      axes
+    } .inverse()) {}
+
+    Eigen::VectorXd reference_dof_value(Configuration const &config) const {
+      return config.configdof().global_dof(m_global_dof_key).values();
+    }
+
+    Eigen::VectorXd transformed_dof_value(Configuration const &config) const {
+      return m_to_transformed_coordinates * reference_dof_value(config);
+    }
+
+    DoFKey m_global_dof_key;
+    Eigen::MatrixXd m_to_reference_coordinates;
+    Eigen::MatrixXd m_to_transformed_coordinates;
+  };
+
 }
 
 // This test fixture class constructs a CASM project for enumeration examples
@@ -231,7 +386,7 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, VectorSpaceSymReport) {
   ConfigEnumInput config_input {supercell};
   DoFKey dof_key = "GLstrain";
   DoFSpace dof_space {config_input, dof_key};
-  bool calc_wedges = true;
+  bool calc_wedges = true;  // explanation TODO
   VectorSpaceSymReport sym_report = vector_space_sym_report(dof_space, calc_wedges);
 
   // Uncomment to print dof_space:
@@ -387,7 +542,7 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, FullSpaceWedgesEnum) {
   double _incr = 0.5;
   int n_increment = 3;
   Eigen::VectorXd min_value = Eigen::VectorXd::Constant(dim, _min);
-  Eigen::VectorXd max_value = Eigen::VectorXd::Constant(dim, (n_increment - 1) * _incr + _incr / 10.);
+  Eigen::VectorXd max_value = Eigen::VectorXd::Constant(dim, _min + (n_increment - 1) * _incr + _incr / 10.);
   Eigen::VectorXd increment_value = Eigen::VectorXd::Constant(dim, _incr);
 
   // Construct the CASM::ConfigEnumStrain enumerator
@@ -422,7 +577,7 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, SubSpaceIrreps) {
   SymGroupRep const &strain_symrep = global_dof_symrep(config_input, dof_key);
 
   // Example 1:
-  // The irreps for subspace that includes a single direction will always have a single irrep
+  // A subspace that includes a single direction will always have a single irrep
   for(int i = 0; i < expected_irrep_subspace.size(); ++i) {
 
     // Construct subspace consisting of a single direction in an irreducible subspace
@@ -439,7 +594,7 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, SubSpaceIrreps) {
   }
 
   // Example 2:
-  // The irreps for a subspace that spans two irreducible subspaces will produce two irreps
+  // A subspace that spans two irreducible subspaces will produce two irreps
   for(int i = 0; i < expected_irrep_subspace.size(); ++i) {
     for(int j = 0; j < i; ++j) {
 
@@ -466,7 +621,7 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, SubSpaceIrreps) {
 
 TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, SubSpaceWedgesEnum) {
 
-  // Example enumerating GLstrain in a particular irreducible subspace
+  // Example enumerating GLstrain in each of the known irreducible subspaces
 
   using namespace enumeration_test_impl; // for global_dof_symrep, make_point_group
 
@@ -476,25 +631,25 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, SubSpaceWedgesEnum) {
   DoFKey dof_key = "GLstrain";
   SymGroup point_group = make_point_group(config_input);
   SymGroupRep const &strain_symrep = global_dof_symrep(config_input, dof_key);
+  int dim = strain_symrep.dim();
 
+  // Loop over the known irreducible subspaces
   for(int i = 0; i < expected_irrep_subspace.size(); ++i) {
     int irrep_dim = expected_irrep_subspace[i].cols();
 
-    // Construct subspace consisting of a single direction in an irreducible subspace
-    Eigen::MatrixXd subspace {6, 1};
+    // Construct subspace consisting of a single direction from the irreducible subspace
+    Eigen::MatrixXd subspace {dim, 1};
     subspace.col(0) = expected_irrep_subspace[i].col(0).real();
 
-    // Make wedges in that subspace
+    // Make SubWedges in the irreducible subspace
     std::vector<SymRepTools::SubWedge> subwedges = SymRepTools::symrep_subwedges(
                                                      strain_symrep, point_group, subspace);
 
-    std::cout << i << " subwedges[0].trans_mat:\n" << subwedges[0].trans_mat() << std::endl;
-
-    // Check single SubWedge generated
+    // Check single SubWedge generated from single IrrepWedge
     EXPECT_EQ(subwedges.size(), 1);
-
-    // Check for single IrrepWedge
     EXPECT_EQ(subwedges[0].irrep_wedges().size(), 1);
+    EXPECT_EQ(subwedges[0].trans_mat().rows(), dim);
+    EXPECT_EQ(subwedges[0].trans_mat().cols(), irrep_dim);
 
     // Enumerate by sampling a portion of the subwedges:
     // - Using min=0.2, max=1.21, increment=0.5 results in a sampling grid with three points along
@@ -525,3 +680,65 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, SubSpaceWedgesEnum) {
 
   }
 }
+
+TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, FullSpaceDirectGridStrainEnum) {
+
+  // It is also possible to use ConfigEnumStrain to directly sample GLstrain on any user-specified
+  //   grid. This is done by creating a "dummy subwedge" which specifies the axes of the sampling
+  //   grid irrespective of any symmetry considerations. This example demonstrates how to do this.
+
+  using namespace enumeration_test_impl; // for global_dof_symrep
+
+  // Enumerate GLstrain applied to the default volume 1 supercell
+  Supercell const &supercell = *primclex.db<Supercell>().begin();
+  CASM::ConfigEnumInput config_input {supercell};
+  DoFKey dof_key = "GLstrain";
+
+  // To sample strains in the entire GLstrain space, we want the "dummy subwedge" to span the entire
+  //   6-dimensional GLstrain space. For any global DoF we can get the dimensionality of its space
+  //   from the SymGroupRep.
+  SymGroupRep const &strain_symrep = global_dof_symrep(config_input, dof_key);
+  int dim = strain_symrep.dim();
+
+  // To sample GLstrain on a grid spanning the entire GLstrain space, the sampled_space_rank is the
+  //   full dimensionality of the GLstrain space.
+  int sampled_space_rank = dim;
+
+  // In this example, use the reference GLstrain space axes for the sampling grid axes. To rotate
+  //   the sampling grid, change "axes" so that sampling grid axes are column vectors:
+  //
+  //     GLstrain_value = axes * sampling_grid_value
+  //
+  Eigen::MatrixXd axes = Eigen::MatrixXd::Identity(dim, sampled_space_rank);
+
+  // We'll "trick" the enumerator by creating a "dummy subwedge" which defines the axes of the space
+  //   we want to sample.
+  std::vector<SymRepTools::SubWedge> subwedges;
+  subwedges.push_back(SymRepTools::SubWedge({SymRepTools::IrrepWedge::make_dummy_irrep_wedge(axes)}));
+
+  EXPECT_EQ(almost_equal(subwedges[0].trans_mat(), axes, tol), true);
+  EXPECT_EQ(subwedges.size(), 1);
+
+  // Specify a grid with three points along each SubWedge axis, with minimum value of -0.5
+  //   and increment value of 0.5.
+  double _min = -0.5;
+  double _incr = 0.5;
+  int n_increment = 3;
+  Eigen::VectorXd min_value = Eigen::VectorXd::Constant(sampled_space_rank, _min);
+  Eigen::VectorXd max_value = Eigen::VectorXd::Constant(sampled_space_rank, _min + (n_increment - 1) * _incr + _incr / 10.);
+  Eigen::VectorXd increment_value = Eigen::VectorXd::Constant(sampled_space_rank, _incr);
+
+  // Construct the CASM::ConfigEnumStrain enumerator
+  bool auto_range = false;  // explanation TODO
+  bool trim_corners = false; // explanation TODO
+  CASM::ConfigEnumStrain enumerator {config_input, subwedges, min_value, max_value, increment_value,
+                                     dof_key, auto_range, trim_corners};
+
+  std::vector<CASM::Configuration> configurations;
+  std::copy(enumerator.begin(), enumerator.end(), std::back_inserter(configurations));
+
+  // Check the number of configurations:
+  // - Each subwedge has a grid with n_increment points along each dimension, so the total number
+  //   of enumerated configurations is pow(n_increment, dim) * subwedges.size()
+  EXPECT_EQ(configurations.size(), pow(n_increment, sampled_space_rank)*subwedges.size());
+};
