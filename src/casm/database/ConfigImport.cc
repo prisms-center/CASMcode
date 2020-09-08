@@ -25,33 +25,64 @@ namespace CASM {
 
   namespace Local {
 
-    static MappedProperties _make_mapped_properties(MappingNode const &_node, ConfigMapperResult::Individual const &_map) {
+    /// Construct MappedProperties from a SimpleStructure solution of the configuration mapping algorithm
+    ///
+    /// \param simple_structure A SimpleStructure solution of the mapping algorithm. This represents
+    ///        what the configuration mapping algorithm considered to be the best way to map the
+    ///        calculated SimpleStructure to the particular Configuration under consideration.
+    /// \param dof_managed_properties A list of the SimpleStructure properties, both site and global,
+    ///        that correspond to BasicStructure degrees of freedom and thus should not be included
+    ///        in MappedProperties
+    /// \param lattice_deformation_cost The lattice mapping score. Expected from xtal::LatticeNode::cost.
+    /// \param atomic_deformation_cost The basis mapping score. Expected from xtal::AssignmentNode::cost.
+    /// \param total_cost Total mapping score. Expected from xtal::MappingNode::cost. Depending on
+    ///        mapping method options may not be a linear combination of lattice_deformation_cost
+    ///        and atomic_deformation_cost.
+    ///
+    /// Note:
+    /// - Property names in "simple_structure" and "dof_managed_properties" must follow CASM property
+    ///   naming conventions as documented for AnisoValTraits.
+    MappedProperties make_mapped_properties(
+      SimpleStructure const &simple_structure,
+      std::set<std::string> const &dof_managed_properties,
+      double lattice_deformation_cost,
+      double atomic_deformation_cost,
+      double total_cost) {
       MappedProperties result;
 
-      for(auto const &prop : _map.resolved_struc.properties) {
-        if(!_map.dof_managed_properties.count(prop.first)) {
+      for(auto const &prop : simple_structure.properties) {
+        if(!dof_managed_properties.count(prop.first)) {
           result.global[prop.first] = prop.second;
           // If "*strain" is a property, rather than a DoF, we will also store the lattice
           if(prop.first.find("strain") != std::string::npos) {
-            result.global["latvec"] = _map.resolved_struc.lat_column_mat;
+            result.global["latvec"] = simple_structure.lat_column_mat;
           }
         }
       }
 
-      for(auto const &prop : _map.resolved_struc.mol_info.properties) {
-        if(!_map.dof_managed_properties.count(prop.first)) {
+      for(auto const &prop : simple_structure.mol_info.properties) {
+        if(!dof_managed_properties.count(prop.first)) {
           result.site[prop.first] = prop.second;
           // If "disp" is a property, rather than a DoF, we will also store the coordinates
           if(prop.first == "disp") {
-            result.site["coordinate"] = _map.resolved_struc.mol_info.coords;
+            result.site["coordinate"] = simple_structure.mol_info.coords;
           }
         }
       }
 
-      result.scalar("lattice_deformation_cost") = _node.lattice_node.cost;
-      result.scalar("atomic_deformation_cost") = _node.atomic_node.cost;
-      result.scalar("total_cost") = _node.cost;
+      result.scalar("lattice_deformation_cost") = lattice_deformation_cost;
+      result.scalar("atomic_deformation_cost") = atomic_deformation_cost;
+      result.scalar("total_cost") = total_cost;
       return result;
+    }
+
+    static MappedProperties _make_mapped_properties(MappingNode const &_node, ConfigMapperResult::Individual const &_map) {
+      return make_mapped_properties(
+               _map.resolved_struc,
+               _map.dof_managed_properties,
+               _node.lattice_node.cost,
+               _node.atomic_node.cost,
+               _node.cost);
     }
   }
 
@@ -181,7 +212,7 @@ namespace CASM {
       SimpleStructure sstruc;
       if(p.extension() == ".json" || p.extension() == ".JSON") {
         jsonParser json(p);
-        from_json(sstruc, json, "relaxed");
+        from_json(sstruc, json);
       }
       else {
         fs::ifstream struc_stream(p);

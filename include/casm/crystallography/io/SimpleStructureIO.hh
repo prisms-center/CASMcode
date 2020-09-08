@@ -9,15 +9,15 @@ namespace CASM {
   namespace xtal {
     class SimpleStructure;
   }
-  /// \brief Output to JSON, excluding any molecular or atomic species contained in 'excluded_species'
-  jsonParser &to_json(xtal::SimpleStructure const &_struc,
-                      jsonParser &json_supplement,
+  /// Output SimpleStructure to JSON
+  jsonParser &to_json(xtal::SimpleStructure const &simple_structure,
+                      jsonParser &json,
                       std::set<std::string> const &excluded_species = {"Va", "VA", "va"},
-                      std::string prefix = "",
-                      COORD_TYPE mode = CART);
+                      COORD_TYPE coordinate_mode = CART);
 
-  /// \brief Read from JSON
-  void from_json(xtal::SimpleStructure &_struc, const jsonParser &json, std::string prefix = "");
+  /// Read SimpleStructure from JSON
+  void from_json(xtal::SimpleStructure &simple_structure,
+                 const jsonParser &json);
 
 }
 
