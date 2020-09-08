@@ -30,6 +30,7 @@ namespace CASM {
   class Clexulator;
   class ConfigDoF;
   class Configuration;
+  class PrimNeighborList;
   class SuperNeighborList;
   class Structure;
 
@@ -119,7 +120,22 @@ namespace CASM {
     /// \brief The super lattice
     const Lattice &lattice() const;
 
+    /// Set the PrimNeighborList directly
+    ///
+    /// Note:
+    /// - If this Supercell was constructed with a PrimClex const *, PrimNeighborList is already set
+    void set_prim_nlist(std::shared_ptr<PrimNeighborList> const &shared_prim_nlist);
+
     /// \brief Returns the SuperNeighborList
+    ///
+    /// Requires that the prim_nlist has been set by one of:
+    /// - constructing Supercell with a PrimClex const *
+    /// - setting the PrimNeighborList directly with `set_prim_nlist`
+    ///
+    /// At each access, the underlying PrimNeighborList will be checked and if it has been expanded
+    /// then the SuperNeighborList will be extended also. References obtained from this function
+    /// will be out of date if the underlying PrimNeighborList has been expanded, so it is prudent
+    /// to only access the SuperNeighborList for immediate use.
     const SuperNeighborList &nlist() const;
 
     // Factor group of this supercell
@@ -150,6 +166,9 @@ namespace CASM {
     std::shared_ptr<Structure const> m_shared_prim;
 
     SupercellSymInfo m_sym_info;
+
+    /// shared PrimNeighborList
+    std::shared_ptr<PrimNeighborList> m_prim_nlist;
 
     /// SuperNeighborList, mutable for lazy construction
     mutable notstd::cloneable_ptr<SuperNeighborList> m_nlist;

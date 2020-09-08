@@ -204,27 +204,27 @@ namespace CASM {
     return std::unique_ptr<PrimNeighborList>(new PrimNeighborList(*this));
   }
 
-
   /// \brief Constructor
   ///
-  /// \param superlattice The superlattice this neighbor list pertains to, coupled with its primitive tiling unit
-  /// \param prim_nlist_begin, prim_nlist_end Iterators over range [begin, end) of UnitCell that are
-  ///        the neighbors of the origin UnitCell
-  /// \param sublat_begin, sublat_end  Iterators over range [begin, end) of basis sites that should be
-  ///        included as UnitCellCoord neighbors
+  /// \param transformation_matrix_to_super The transformation matrix, T, from primitive lattice
+  ///        vectors to supercell lattice vectors: `supercell_lat_column_mat = T * prim_lat_column_mat`.
+  /// \param prim_nlist A reference to a PrimNeighborList defining the neighborhood for the origin
+  ///        unit cell. It is only used in the constructor, any changes to the PrimNeighborList
+  ///        will not be reflected in this SuperNeighborList.
   ///
   /// - The canonical order of UnitCellCoord is obtained by lexicographically sorting [r, i, j, k, b],
   ///   where r = (i,j,k).transpose() * W * (i,j,k).
   /// - The canonical order of UnitCell is obtained by lexicographically sorting [r, i, j, k]
   /// - The sublattice iterators enable restricting the neighbor list to only sites that have degrees of freedom
   ///
-  SuperNeighborList::SuperNeighborList(const xtal::Superlattice &superlattice,
-                                       const PrimNeighborList &prim_nlist) :
-    m_prim_grid_size(superlattice.size()),
-    m_site(superlattice.size()),
-    m_unitcell(superlattice.size()) {
+  SuperNeighborList::SuperNeighborList(Eigen::Matrix3l const &transformation_matrix_to_super,
+                                       const PrimNeighborList &prim_nlist) {
 
-    xtal::UnitCellIndexConverter ijk_index_converter(superlattice.transformation_matrix_to_super());
+    xtal::UnitCellIndexConverter ijk_index_converter {transformation_matrix_to_super};
+    m_prim_grid_size = ijk_index_converter.total_sites();
+    m_site.resize(m_prim_grid_size);
+    m_unitcell.resize(m_prim_grid_size);
+
 
     // use the PrimNeighborList to generate the UnitCell and Site indices for
     //   the neighbors of each UnitCell in the supercell
@@ -254,6 +254,22 @@ namespace CASM {
       }
     }
   }
+
+  /// \brief Constructor
+  ///
+  /// \param superlattice The superlattice this neighbor list pertains to, coupled with its primitive tiling unit
+  /// \param prim_nlist A reference to a PrimNeighborList defining the neighborhood for the origin
+  ///        unit cell. It is only used in the constructor, any changes to the PrimNeighborList
+  ///        will not be reflected in this SuperNeighborList.
+  ///
+  /// - The canonical order of UnitCellCoord is obtained by lexicographically sorting [r, i, j, k, b],
+  ///   where r = (i,j,k).transpose() * W * (i,j,k).
+  /// - The canonical order of UnitCell is obtained by lexicographically sorting [r, i, j, k]
+  /// - The sublattice iterators enable restricting the neighbor list to only sites that have degrees of freedom
+  ///
+  SuperNeighborList::SuperNeighborList(const xtal::Superlattice &superlattice,
+                                       const PrimNeighborList &prim_nlist):
+    SuperNeighborList(superlattice.transformation_matrix_to_super(), prim_nlist) {}
 
   /// \brief const Access the list of sites neighboring a particular unitcell
   const std::vector<SuperNeighborList::size_type> &SuperNeighborList::sites(size_type unitcell_index) const {

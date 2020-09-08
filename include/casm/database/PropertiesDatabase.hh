@@ -164,17 +164,37 @@ namespace CASM {
     };
 
 
-    /// \brief Database containing all MappedProperties that have been loaded into project
-    /// Each MappedProperties is assumed to correspond to a file on disk that has been processed
-    /// to construct the MappedProperties object. This file defines the 'origin' field of the MappedProperties,
-    /// which is either a configname (in which case the file is for the current calctype in that configs training
-    /// directory) or a path to an imported file. Each MappedProperties object gets associated with a record in
-    /// the database of enumerated objects (i.e., Configurations), which populates the 'to' field in MappedProperties
-    /// Records in PropertiesDatabase can be located via the 'origin' key (which is one-to-one) or the 'to' key (which is one-to-many)
-    /// The one-to-many mapping of the 'to' key is is maintained by the database and can be returned as a set of all
-    /// 'origin' keys that map to the requested 'to' key. This set is sorted using a "ScoreMappedProperties" object.
-    /// The PropertieisDatabase records a default ScoreMappedProperties object, as well as a list of 'bespoke' ScoreMappedProperties,
-    /// which are assigned to individual 'to' keys on an as-needed basis
+    /// Database containing MappedProperties of Configuration
+    ///
+    /// In brief, MappedProperties holds:
+    /// - "global" and "site" Configuration properties
+    /// - "origin" (std::string), a string describing where the properties came from. Typically,
+    ///   the path to a `properties.calc.json` type file where SimpleStructure properties were read
+    ///   from. All MappedProperties in the PropertiesDatabase have unique "origin".
+    /// - "to" (std::string), the name of the Configuration the properties are associated with (the
+    ///   Configuration the final calculated structure "mapped to"). More than one MappedProperties
+    ///   in the PropertiesDatabase may have the same "to" Configuration name.
+    ///
+    /// Note:
+    /// - See the MappedProperties documentation for complete MappedProperties description.
+    /// - One PropertiesDatabase instance stores properties for one calculation type ("calctype")
+    ///
+    /// The PropertiesDatabase contains:
+    /// - A one-to-one lookup of "origin" -> MappedProperties
+    /// - A one-to-many lookup of the "to" key (a Configuration name) -> MappedProperties:
+    ///   - An iterator to the single preferred properties for a given Configuration are returned by
+    ///     the "find_via_to" method. Self-mapped properties are always preferred, followed by
+    ///     a scoring process that may be customized.
+    ///   - The set of all "origin" that mapped to the "to" Configuration are returned by the
+    ///     "all_origins" method.
+    ///
+    /// When there are multiple MappedProperties with different "origin" and the same "to"
+    /// Configuration (i.e. multiple unstable ideal Configuration that relax to the same stable
+    /// Configuragion), a "ScoreMappedProperties" object is used to sort the set. The
+    /// PropertiesDatabase records a default ScoreMappedProperties object, as well as a list of
+    /// 'bespoke' ScoreMappedProperties, which may be assigned to individual 'to' keys on an
+    /// as-needed basis.
+    ///
     class PropertiesDatabase : public DatabaseBase {
     public:
 

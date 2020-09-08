@@ -22,7 +22,7 @@ namespace CASM {
 
   /// \brief The PrimNeighborList gives the coordinates of UnitCell that are neighbors of the origin UnitCell
   ///
-  /// - The PrimNeighborList is constructed with a weighting matrix, M, that defines the shape of neighborhood
+  /// - The PrimNeighborList is constructed with a weighting matrix, W, that defines the shape of neighborhood
   /// - The canonical order of neighboring UnitCell is obtained by lexicographically sorting [r, i, j, k],
   ///   where r = (i,j,k).transpose() * W * (i,j,k).
   /// - The canonical order of UnitCellCoord is obtained by lexicographically sorting [r, i, j, k, b],
@@ -145,13 +145,17 @@ namespace CASM {
     SublatIndices m_sublat_indices;
   };
 
-  /// \brief The SuperNeighborList gives the linear indices of neighboring sites and unitcells in a particular Supercell
+  /// SuperNeighborList, linear indices of neighboring sites and unit cells
   ///
-  /// - The SuperNeighborList is constructed from a Superlattice and PrimNeighborList
-  /// - The linear index of the neighboring unit cell is determined for all unit cells in
-  ///   a supercell
-  /// - The linear index of sites in each neighboring unit cell is determined
-  ///   for all unit cells in a supercell
+  /// The SuperNeighborList takes the ordering of unit cells neighboring the origin unit cell from
+  /// the PrimNeighborList and uses it to construct lists of linear indices of neighboring unit
+  /// cells and neighboring sites for each unit cell in a particular supercell.
+  ///
+  /// Neighbor list index naming conventions:
+  /// - "unitcell_index", a linear index given to all unit cell "within" a supercell. Convert
+  ///   between unitcell_index and xtal::UnitCell with xtal::UnitCellIndexConverter.
+  /// - "site_index", a linear index given to all sites "within" a supercell. Convert between
+  ///   site_index and xtal::UnitCellCoord with xtal::UnitCellCoordIndexConverter.
   ///
   class SuperNeighborList {
 
@@ -159,15 +163,19 @@ namespace CASM {
 
     typedef Index size_type;
 
-    /// \brief Constructor
+    /// Constructor
+    SuperNeighborList(Eigen::Matrix3l const &transformation_matrix_to_super,
+                      PrimNeighborList const &prim_nlist);
+
+    /// Constructor
     SuperNeighborList(const xtal::Superlattice &prim_grid, const PrimNeighborList &prim_nlist);
 
-    /// \brief get unit cell index from site index
+    /// Get unitcell_index from site_index
     size_type unitcell_index(size_type site_index) const {
       return site_index % m_prim_grid_size;
     }
 
-    /// \brief get sublat index from site index
+    /// Get sublattice index from site_index
     size_type sublat_index(size_type site_index) const {
       return site_index / m_prim_grid_size;
     }

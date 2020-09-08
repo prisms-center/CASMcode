@@ -123,6 +123,9 @@ namespace CASM {
     /// const Access to number of basis atoms
     Index n_basis() const;
 
+    /// Access to the primitive neighbor list as a shared resource
+    std::shared_ptr<PrimNeighborList> &shared_nlist() const;
+
     ///Access to the primitive neighbor list
     PrimNeighborList &nlist() const;
 

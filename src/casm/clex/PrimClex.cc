@@ -90,7 +90,7 @@ namespace CASM {
 
     /// Stores the neighboring UnitCell and which sublattices to include in neighbor lists
     /// - mutable for lazy construction
-    mutable notstd::cloneable_ptr<PrimNeighborList> nlist;
+    mutable std::shared_ptr<PrimNeighborList> nlist;
 
     typedef std::string BasisSetName;
     mutable std::map<BasisSetName, ClexBasisSpecs> basis_set_specs;
@@ -314,20 +314,23 @@ namespace CASM {
     return prim().basis().size();
   }
 
-  PrimNeighborList &PrimClex::nlist() const {
-
+  std::shared_ptr<PrimNeighborList> &PrimClex::shared_nlist() const {
     // lazy neighbor list generation
     if(!m_data->nlist) {
 
       // construct nlist
-      m_data->nlist = notstd::make_cloneable<PrimNeighborList>(
+      m_data->nlist = std::make_shared<PrimNeighborList>(
                         settings().nlist_weight_matrix(),
                         settings().nlist_sublat_indices().begin(),
                         settings().nlist_sublat_indices().end()
                       );
     }
 
-    return *m_data->nlist;
+    return m_data->nlist;
+  }
+
+  PrimNeighborList &PrimClex::nlist() const {
+    return *shared_nlist();
   }
 
   /// returns true if vacancy are an allowed species

@@ -41,7 +41,7 @@ namespace CASM {
     m_primclex(RHS.m_primclex),
     m_shared_prim(RHS.m_shared_prim),
     m_sym_info(make_supercell_sym_info(prim(), RHS.lattice())),
-    //m_nlist(RHS.m_nlist),
+    m_prim_nlist(RHS.m_prim_nlist),
     m_nlist_size_at_construction(-1) {
 
   }
@@ -75,6 +75,7 @@ namespace CASM {
     m_primclex(_prim),
     m_shared_prim(_prim->shared_prim()),
     m_sym_info(make_supercell_sym_info(prim(), Lattice(prim().lattice().lat_column_mat() * transf_mat_init.cast<double>(), crystallography_tol()))),
+    m_prim_nlist(_prim->shared_nlist()),
     m_nlist_size_at_construction(-1) {
 
   }
@@ -83,6 +84,7 @@ namespace CASM {
     m_primclex(_prim),
     m_shared_prim(_prim->shared_prim()),
     m_sym_info(make_supercell_sym_info(prim(), superlattice)),
+    m_prim_nlist(_prim->shared_nlist()),
     m_nlist_size_at_construction(-1) {
 
     auto res = xtal::is_superlattice(superlattice, prim().lattice(), crystallography_tol());
@@ -216,17 +218,16 @@ namespace CASM {
   const SuperNeighborList &Supercell::nlist() const {
 
     // if any additions to the prim nlist, must update the super nlist
-    if(primclex().nlist().size() != m_nlist_size_at_construction) {
+    if(m_prim_nlist->size() != m_nlist_size_at_construction) {
       m_nlist.unique().reset();
     }
 
     // lazy construction of neighbor list
     if(!m_nlist) {
-      m_nlist_size_at_construction = primclex().nlist().size();
+      m_nlist_size_at_construction = m_prim_nlist->size();
       m_nlist = notstd::make_cloneable<SuperNeighborList>(
                   this->sym_info().superlattice(),
-                  primclex().nlist()
-                );
+                  *m_prim_nlist);
     }
     return *m_nlist;
   }

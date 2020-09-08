@@ -47,15 +47,19 @@ namespace CASM {
 
   typedef ConfigCanonicalForm<HasSupercell<Comparisons<Calculable<CRTPBase<Configuration>>>>> ConfigurationBase;
 
-  /// \brief A Configuration represents the values of all degrees of freedom in a Supercell
+  /// Configuration, a periodic perturbation of the infinite crystal within the DoF space of the prim
   ///
-  /// DFT calculated properties:
-  /// - "relaxed_energy" -> double
-  /// - "relaxation_deformation" -> matrix double
-  /// - "relaxation_displacement" -> matrix double
-  /// - "rms_force" -> double
-  /// - "volume_relaxation" -> double
-  /// - "lattice_deformation" -> double
+  /// A Configuration represents a particular periodic perturbation of the infinite crystal within
+  ///   the space of allowed perturbations defined by the BasicStructure. Configuration has:
+  /// - a Supercell, representing the translational periodicity of the perturbation
+  /// - a ConfigDoF, representing the values of DoF (local discrete and local continuous) "within"
+  //    the supercell (i.e. the translationally unique perturbation), plus the values of the
+  ///   global DoF.
+  /// - calculated properties (std::map<std::string, MappedProperties>), the values of properties
+  ///   (i.e. energy, relaxation displacements, relaxation strain, etc.) that are dependent on the
+  ///   values of the DoF. Properties are stored in a map with key "calctype" to allow for different
+  ///   values of the properties depending on the calculation method.
+  ///
   class Configuration : public ConfigurationBase {
 
   public:
@@ -63,47 +67,126 @@ namespace CASM {
 
     //Configuration() {};
 
+    /// Construct a default Configuration, with a shared Supercell
+    ///
+    /// Note:
+    /// - This is one of the preferred constructors for new code. It can be used when the Supercell
+    ///   is not stored in a Database<Supercell>. In the future, it will be used in that context
+    ///   also.
+    /// - This Configuration does own its own Supercell, so the lifetime of the Supercell is
+    ///   guaranteed to exceed the lifetime of this Configuration
+    explicit Configuration(std::shared_ptr<Supercell> const &_supercell_ptr);
+
+    /// Construct a default Configuration, with a shared Supercell
+    ///
+    /// Note:
+    /// - This is one of the preferred constructors for new code. It can be used when the Supercell
+    ///   is not stored in a Database<Supercell>. In the future, it will be used in that context
+    ///   also.
+    /// - This Configuration does own its own Supercell, so the lifetime of the Supercell is
+    ///   guaranteed to exceed the lifetime of this Configuration
+    explicit Configuration(std::shared_ptr<Supercell> const &_supercell_ptr,
+                           ConfigDoF const &_dof);
+
+    /// Build a Configuration sized to _supercell with all fields initialized and set to zero
+    static Configuration zeros(const std::shared_ptr<Supercell> &_supercell_ptr);
+
+    /// Build a Configuration sized to _supercell with all fields initialized and set to zero
+    static Configuration zeros(const std::shared_ptr<Supercell> &_supercell_ptr, double _tol);
+
+
+    // *** The following constructors should be avoided in new code, if possible ***
+    //
+    //     They are currently still required in enumerators and similar code when
+    //     the Configuration uses a Supercell from a Database<Supercell> and/or
+    //     Configuration "source" information is required and cannot be stored
+    //     another way. In the future:
+    //     - Configuration will make exclusive use of std::shared_ptr<Supercell>
+    //     - The "source" information will be stored outside of Configuration
+    //     - The jsonConstructor<Configuration>::from_json method will be used to
+    //       construct Configuration from JSON
+
+    /// Construct a default Configuration, with a pointer to a Supercell and
+    ///
+    /// Note:
+    /// - Whenever possible, this constructor should not be used in new code .
+    /// - This constructor keeps a pointer to _supercell, whose lifetime must exceed the lifetime
+    ///   of this Configuration
+    /// - In the future, "source" information will be stored outside of Configuration.
+    explicit Configuration(Supercell const &_supercell,
+                           jsonParser const &source = jsonParser());
+
     /// Construct a default Configuration
-    explicit Configuration(const Supercell &_supercell,
-                           const jsonParser &source = jsonParser());
-
-
-    /// Construct a default Configuration that owns its Supercell
-    explicit Configuration(const std::shared_ptr<Supercell> &_supercell,
-                           const jsonParser &source = jsonParser());
-
-    /// Construct a default Configuration
+    ///
+    /// Note:
+    /// - Whenever possible, this constructor should not be used in new code .
+    /// - This constructor keeps a pointer to _supercell, whose lifetime must exceed the lifetime
+    ///   of this Configuration
+    /// - In the future, "source" information will be stored outside of Configuration.
     explicit Configuration(const Supercell &_supercell,
                            const jsonParser &source,
                            const ConfigDoF &_dof);
 
     /// Construct a default Configuration that owns its Supercell
+    ///
+    /// Note:
+    /// - Whenever possible, this constructor should not be used in new code .
+    /// - This Configuration does own its own Supercell, so the lifetime of the Supercell is
+    ///   guaranteed to exceed the lifetime of this Configuration
+    /// - In the future, "source" information will be stored outside of Configuration.
+    explicit Configuration(const std::shared_ptr<Supercell> &_supercell,
+                           const jsonParser &source);
+
+    /// Construct a default Configuration that owns its Supercell
+    ///
+    /// Note:
+    /// - Whenever possible, this constructor should not be used in new code .
+    /// - This Configuration does own its own Supercell, so the lifetime of the Supercell is
+    ///   guaranteed to exceed the lifetime of this Configuration
+    /// - In the future, "source" information will be stored outside of Configuration.
     explicit Configuration(const std::shared_ptr<Supercell> &_supercell,
                            const jsonParser &source,
                            const ConfigDoF &_dof);
 
 
     /// Construct a Configuration from JSON data
+    ///
+    /// Note:
+    /// - Whenever possible, this constructor should not be used in new code .
+    /// - This constructor keeps a pointer to _supercell, whose lifetime must exceed the lifetime
+    ///   of this Configuration
+    /// - This constructor sets the "id" of this Configuration.
+    /// - In the future, a Configuration will not be constructed directly from JSON in favor of
+    ///   using the "from_json" method.
     Configuration(const Supercell &_supercell,
                   const std::string &_id,
                   const jsonParser &_data);
 
     /// Construct a Configuration from JSON data
+    ///
+    /// Note:
+    /// - Whenever possible, this constructor should not be used in new code .
+    /// - This constructor uses "_configname" to lookup the correct Supercell from the
+    ///   Database<Supercell> and uses that to construct this Configuration.
+    ///  - This constructor also uses the "_configname" to set the "id" of this Configuration.
+    /// - In the future, a Configuration will not be constructed directly from JSON in favor of
+    ///   using the "from_json" method.
     Configuration(const PrimClex &_primclex,
                   const std::string &_configname,
                   const jsonParser &_data);
 
     /// Build a Configuration sized to _scel with all fields initialized and set to zero
+    ///
+    /// Note:
+    /// - Whenever possible, this constructor should not be used in new code .
     static Configuration zeros(Supercell const &_scel);
 
     /// Build a Configuration sized to _scel with all fields initialized and set to zero
+    ///
+    /// Note:
+    /// - Whenever possible, this constructor should not be used in new code .
     static Configuration zeros(Supercell const &_scel, double _tol);
 
-    /// Build a Configuration sized to _scel with all fields initialized and set to zero
-    static Configuration zeros(const std::shared_ptr<Supercell> &_supercell);
-
-    /// Build a Configuration sized to _scel with all fields initialized and set to zero
-    static Configuration zeros(const std::shared_ptr<Supercell> &_supercell, double _tol);
 
     // ******** Supercell **********************
 

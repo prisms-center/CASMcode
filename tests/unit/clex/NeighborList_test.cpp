@@ -93,7 +93,7 @@ TEST(NeighborListTest, SuperNeighborListBasics) {
   0, 0, 2;
   Lattice super_lat = make_superlattice(prim.lattice(), T);
   xtal::Superlattice slat(prim.lattice(), super_lat);
-  SuperNeighborList super_nlist(slat, nlist);
+  SuperNeighborList super_nlist(T, nlist);
 
   // size
   for(int i = 0; i < slat.size(); ++i) {
