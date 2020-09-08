@@ -14,7 +14,63 @@
 
 namespace CASM {
 
-  ///\brief Class for specifying essential traits of anisotropic values (e.g., degrees of freedom, calculated properties, and discretized species attributes)
+  /// Class for specifying essential traits of (possibly) anisotropic crystal properties
+  ///
+  /// CASM needs to know how to use crystal properties in several places:
+  /// - Site and global properties in xtal::SimpleStructure
+  /// - Degrees of freedoms in xtal::BasicStructure through xtal::DoFSet and xtal::SiteDoFSet
+  /// - Molecule properties in xtal::SpeciesAttribute
+  /// - Calculated properties in MappedProperties
+  ///
+  /// Examples of various property types, and their name strings, include:
+  /// - occupation ("occ"): which atom or molecule occupies a particular crystal site
+  /// - displacement ("disp"): displacement of crystal sites from an ideal location
+  /// - strain ("Ustrain", "GLstrain", etc.): how lattice vectors are transformed from the ideal
+  ///   lattice vectors, under various metrics ("Ustrain": stretch tensor, "GLstrain":
+  ///   Green-Lagrange strain metric, etc.)
+  /// - energy ("energy"): the crystal energy, relative to user chosen reference states
+  /// - force ("force"): forces on atoms present without/with allowing atomic and lattice relaxation
+  ///
+  /// The AnisoValTraits class contains all the necessary information for CASM to deal with
+  /// different types of properties. For each property type there must exist one AnisoValTraits
+  /// object which controls how CASM treats the property, including:
+  /// - the property name
+  /// - whether the property is a local (site) property or global property
+  /// - whether the property is continuous or discrete
+  /// - the dimension of the property value vector
+  /// - the standard basis for the property value (what each component means)
+  /// - how symmetry operations transform the property value
+  /// - etc.
+  ///
+  /// Note: Traits for all properties are defined using AnisoValTraits, even isotropic properties.
+  ///
+  /// The AnisoValTraits class contains two constructors. One allows defining a new property type
+  /// which gets placed in a single static container. The other, with just a "name" argument,
+  /// returns a copy of the already existing AnisoValTraits object for the property type with the
+  /// given name.
+  ///
+  ///
+  /// CASM property naming convention
+  /// -------------------------------
+  ///
+  /// A particular instance of a property, such as in BasicStructure or SimpleStructure, is
+  /// labeled with a property name string. Property name strings must end with the property type
+  /// name (i.e. "occ", "disp", "Ustrain", "energy", etc.) and may also include a modifier
+  /// describing the particular property (i.e. "formation" in "formation_energy"). If a modifier
+  /// exists, it must be separated from the property type by an underscore character ('_'). The name
+  /// of a custom property type may not include an underscore.
+  ///
+  /// Thus, whenever a particular property name is encountered, the property type name can be
+  /// determined and used to lookup the corresponding AnisoValTraits object.
+  ///
+  /// Examples:
+  /// - property name: "energy" -> property type (AnisoValTraits) name: "energy"
+  /// - property name: "relaxed_energy" -> property type (AnisoValTraits) name: "energy"
+  /// - property name: "formation_energy" -> property type (AnisoValTraits) name: "energy"
+  /// - property name: "relaxedenergy" -> Error (because there is no underscore)
+  /// - property name: "Ustrain" -> property type (AnisoValTraits) name: "Ustrain"
+  /// - property name: "strain" ->  Error (because there no strain type prefix)
+  ///
   class AnisoValTraits {
   public:
     static const unsigned char LOCAL = 0;
