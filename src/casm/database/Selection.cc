@@ -155,8 +155,12 @@ namespace CASM {
         DB::SELECTION_TYPE sel = selection_path.empty() ? DB::SELECTION_TYPE::MASTER : *_match.begin();
 
         if(sel == DB::SELECTION_TYPE::MASTER) {
-          fs::path master_selection_path = primclex().dir().template master_selection<ObjType>();
-          if(fs::exists(master_selection_path)) {
+
+          fs::path master_selection_path;
+          if(primclex().has_dir()) {
+            master_selection_path = primclex().dir().template master_selection<ObjType>();
+          }
+          if(!master_selection_path.empty() && fs::exists(master_selection_path)) {
             fs::ifstream select_file(master_selection_path);
             read(select_file);
             select_file.close();
