@@ -31,7 +31,7 @@ TEST(ScelEnumTest, Test1) {
 
   // -- Test ScelEnumByProps --------------------
   {
-    ScelEnumProps enum_props(1, 10);
+    xtal::ScelEnumProps enum_props(1, 10);
     ScelEnumByProps e(primclex, enum_props);
 
     EXPECT_EQ(e.name(), "ScelEnumByProps");

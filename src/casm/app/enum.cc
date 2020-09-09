@@ -5,6 +5,7 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/EnumeratorHandler.hh"
+#include "casm/app/enum/EnumInterface.hh"
 #include "casm/enumerator/Enumerator.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/completer/Handlers.hh"

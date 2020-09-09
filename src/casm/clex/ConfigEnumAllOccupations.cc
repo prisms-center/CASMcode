@@ -6,7 +6,7 @@
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/completer/Handlers.hh"
-#include "casm/enumerator/Enumerator_impl.hh"
+#include "casm/app/enum/EnumInterface_impl.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_ConfigEnumAllOccupations_interface() {

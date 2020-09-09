@@ -1,30 +1,32 @@
 #include <boost/filesystem/fstream.hpp>
 #include <ostream>
+
+#include "casm/app/AppIO.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/app/casm_functions.hh"
+#include "casm/app/sym.hh"
+#include "casm/app/enum/EnumInterface.hh"
+
 #include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/crystallography/CoordinateSystems.hh"
 #include "casm/crystallography/Lattice.hh"
-#include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SymTools.hh"
+#include "casm/crystallography/io/VaspIO.hh"
 
-#include "casm/symmetry/json_io.hh"
-#include "casm/symmetry/SymRepTools.hh"
-
-#include "casm/enumerator/Enumerator.hh"
+#include "casm/enumerator/ConfigEnumInput.hh"
 #include "casm/enumerator/DoFSpace.hh"
 #include "casm/enumerator/io/json/DoFSpace.hh"
 
-#include "casm/clex/PrimClex.hh"
-#include "casm/app/ProjectSettings.hh"
-#include "casm/app/DirectoryStructure.hh"
-#include "casm/app/AppIO.hh"
-#include "casm/app/casm_functions.hh"
-#include "casm/app/sym.hh"
-#include "casm/crystallography/io/VaspIO.hh"
-
-
 #include "casm/completer/Handlers.hh"
+
+#include "casm/clex/PrimClex.hh"
+
 #include "casm/symmetry/SymGroup.hh"
+#include "casm/symmetry/SymRepTools.hh"
+#include "casm/symmetry/json_io.hh"
 
 namespace Local {
   using namespace CASM;

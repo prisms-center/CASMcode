@@ -4,14 +4,14 @@
 #include "casm/clex/ConfigEnumRandomOccupations.hh"
 
 /// What is being used to test it:
-
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
-#include "casm/external/MersenneTwister/MersenneTwister.h"
 #include "casm/app/enum.hh"
 #include "casm/clex/ScelEnum.hh"
-#include "casm/database/Database.hh"
 #include "casm/completer/Handlers.hh"
+#include "casm/database/Database.hh"
+#include "casm/enumerator/ConfigEnumInput.hh"
+#include "casm/external/MersenneTwister/MersenneTwister.h"
 
 using namespace CASM;
 

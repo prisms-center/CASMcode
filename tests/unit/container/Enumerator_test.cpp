@@ -27,7 +27,7 @@ TEST(EnumeratorTest, Test1) {
 
   // -- test an input enumerator --------------------
   {
-    ScelEnumProps enum_props(1, 5);
+    xtal::ScelEnumProps enum_props(1, 5);
     ScelEnumByProps e(primclex, enum_props);
 
     EXPECT_EQ(e.name(), "ScelEnumByProps");

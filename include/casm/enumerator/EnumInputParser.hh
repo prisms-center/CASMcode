@@ -5,7 +5,7 @@
 #include "casm/app/AppIO_impl.hh"
 #include "casm/clex/HasPrimClex.hh"
 #include "casm/completer/Handlers.hh"
-#include "casm/enumerator/Enumerator_impl.hh"
+#include "casm/app/enum/EnumInterface_impl.hh"
 #include "casm/global/enum/stream_io.hh"
 #include "casm/misc/CRTPBase.hh"
 

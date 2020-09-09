@@ -49,6 +49,19 @@ casm_app_include_HEADERS = \
 
 #-------------------------------------------------------------------------------#
 
+casm_app_enum_includedir=$(includedir)/casm/app/enum
+casm_app_enum_include_HEADERS = \
+    include/casm/app/enum/EnumInterface.hh\
+    include/casm/app/enum/EnumInterface_impl.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_app_enum_io_includedir=$(includedir)/casm/app/enum/io
+casm_app_enum_io_include_HEADERS = \
+    include/casm/app/enum/io/json_io.hh
+
+#-------------------------------------------------------------------------------#
+
 casm_app_io_json_includedir=$(includedir)/casm/app/io/json
 casm_app_io_json_include_HEADERS = \
     include/casm/app/io/json/SpeciesSetParser.hh\
@@ -396,18 +409,12 @@ casm_database_json_include_HEADERS = \
 
 casm_enumerator_includedir=$(includedir)/casm/enumerator
 casm_enumerator_include_HEADERS = \
+    include/casm/enumerator/ConfigEnumInput.hh\
     include/casm/enumerator/DoFSpace.hh\
     include/casm/enumerator/EnumInputParser.hh\
     include/casm/enumerator/Enumerator.hh\
-    include/casm/enumerator/Enumerator_impl.hh\
     include/casm/enumerator/InputEnumerator.hh\
     include/casm/enumerator/RandomAccessEnumerator.hh
-
-#-------------------------------------------------------------------------------#
-
-casm_enumerator_io_includedir=$(includedir)/casm/enumerator/io
-casm_enumerator_io_include_HEADERS = \
-    include/casm/enumerator/io/json_io.hh
 
 #-------------------------------------------------------------------------------#
 

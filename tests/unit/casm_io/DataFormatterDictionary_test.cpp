@@ -21,7 +21,7 @@
 // #include "casm/app/QueryHandler.hh"
 // #include "casm/app/ProjectSettings.hh"
 
-// #include "casm/enumerator/Enumerator_impl.hh"
+// #include "casm/app/enum/EnumInterface_impl.hh"
 // #include "casm/app/enum.hh"
 
 

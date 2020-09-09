@@ -13,6 +13,7 @@
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/database/ScelDatabase.hh"
 #include "casm/casm_io/container/stream_io.hh"
+#include "casm/enumerator/ConfigEnumInput.hh"
 
 using namespace CASM;
 

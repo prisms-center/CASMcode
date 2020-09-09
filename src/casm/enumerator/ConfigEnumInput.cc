@@ -1,3 +1,4 @@
+#include "casm/clex/Supercell.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
 
 namespace CASM {

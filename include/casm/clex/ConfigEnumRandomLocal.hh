@@ -1,10 +1,11 @@
 #ifndef CASM_ConfigEnumRandomLocal
 #define CASM_ConfigEnumRandomLocal
 
-#include "casm/container/Counter.hh"
-#include "casm/external/MersenneTwister/MersenneTwister.h"
-#include "casm/enumerator/InputEnumerator.hh"
+#include "casm/app/enum/EnumInterface.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/container/Counter.hh"
+#include "casm/enumerator/InputEnumerator.hh"
+#include "casm/external/MersenneTwister/MersenneTwister.h"
 #include "casm/misc/cloneable_ptr.hh"
 
 extern "C" {

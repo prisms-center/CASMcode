@@ -1,5 +1,5 @@
 #include "casm/clex/ConfigEnumRandomOccupations.hh"
-#include "casm/enumerator/Enumerator_impl.hh"
+#include "casm/app/enum/EnumInterface_impl.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/external/MersenneTwister/MersenneTwister.h"
 #include "casm/clex/FilteredConfigIterator.hh"

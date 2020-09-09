@@ -20,7 +20,7 @@
 // template definitions
 #include "casm/app/QueryHandler_impl.hh"
 #include "casm/clex/ConfigEnumAllOccupations_impl.hh"
-#include "casm/enumerator/Enumerator_impl.hh"
+#include "casm/app/enum/EnumInterface_impl.hh"
 
 using namespace CASM;
 
@@ -38,7 +38,7 @@ TEST(Selection_Test, Test1) {
 
   // -- Generate Supercell & Configuration --
 
-  ScelEnumByProps enum_scel(primclex, ScelEnumProps(1, 5));
+  ScelEnumByProps enum_scel(primclex, xtal::ScelEnumProps(1, 5));
   EXPECT_EQ(true, true);
 
   ConfigEnumAllOccupations::run(primclex, enum_scel.begin(), enum_scel.end());

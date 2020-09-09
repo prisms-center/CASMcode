@@ -11,9 +11,6 @@
 
 namespace CASM {
 
-  template<typename ValueType, bool IsConst>
-  class ValEnumerator;
-
   /** \defgroup Enumerator
    *
    *  \ingroup Container

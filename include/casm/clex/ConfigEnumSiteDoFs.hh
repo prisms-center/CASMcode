@@ -1,10 +1,11 @@
 #ifndef CASM_ConfigEnumSiteDoFs
 #define CASM_ConfigEnumSiteDoFs
 
-#include "casm/symmetry/PermuteIterator.hh"
+#include "casm/app/enum/EnumInterface.hh"
 #include "casm/enumerator/InputEnumerator.hh"
-#include "casm/container/Counter.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/container/Counter.hh"
+#include "casm/symmetry/PermuteIterator.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_ConfigEnumSiteDoFs_interface();

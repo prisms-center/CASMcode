@@ -7,10 +7,11 @@
 #include "casm/clex/ScelEnumEquivalents.hh"
 
 /// What is being used to test it:
-#include "casm/crystallography/Structure.hh"
+#include "casm/clex/NeighborList.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ScelEnum.hh"
-#include "casm/clex/NeighborList.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/enumerator/ConfigEnumInput.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/ProjectSettings.hh"
@@ -62,7 +63,7 @@ TEST(ConfigEnumEquivalentsTest, Test1) {
     double tol = primclex.crystallography_tol();
 
     // generate supercells
-    ScelEnumProps enum_props(1, j["max_vol"].get<int>() + 1);
+    xtal::ScelEnumProps enum_props(1, j["max_vol"].get<int>() + 1);
     ScelEnumByProps scel_enum(primclex, enum_props);
     for(const auto &scel : scel_enum) {
     }

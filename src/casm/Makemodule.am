@@ -24,6 +24,9 @@ libcasm_la_SOURCES = \
     include/casm/app/casm_functions.hh\
     include/casm/app/composition.hh\
     include/casm/app/enum.hh\
+    include/casm/app/enum/EnumInterface.hh\
+    include/casm/app/enum/EnumInterface_impl.hh\
+    include/casm/app/enum/io/json_io.hh\
     include/casm/app/errors.hh\
     include/casm/app/files.hh\
     include/casm/app/format.hh\
@@ -273,14 +276,13 @@ libcasm_la_SOURCES = \
     include/casm/database/Update_impl.hh\
     include/casm/database/json/jsonDatabase.hh\
     include/casm/database/json/jsonPropertiesDatabase.hh\
+    include/casm/enumerator/ConfigEnumInput.hh\
     include/casm/enumerator/DoFSpace.hh\
     include/casm/enumerator/EnumInputParser.hh\
     include/casm/enumerator/Enumerator.hh\
-    include/casm/enumerator/Enumerator_impl.hh\
     include/casm/enumerator/InputEnumerator.hh\
     include/casm/enumerator/RandomAccessEnumerator.hh\
     include/casm/enumerator/io/json/DoFSpace.hh\
-    include/casm/enumerator/io/json_io.hh\
     include/casm/external/Eigen/Array\
     include/casm/external/Eigen/CASM_AddOns\
     include/casm/external/Eigen/CMakeLists.txt\
@@ -730,6 +732,8 @@ libcasm_la_SOURCES = \
     src/casm/app/casm_functions.cc\
     src/casm/app/composition.cc\
     src/casm/app/enum.cc\
+    src/casm/app/enum/EnumInterface.cc\
+    src/casm/app/enum/io/json_io.cc\
     src/casm/app/files.cc\
     src/casm/app/format.cc\
     src/casm/app/import.cc\
@@ -882,11 +886,10 @@ libcasm_la_SOURCES = \
     src/casm/database/Selection.cc\
     src/casm/database/json/jsonDatabase.cc\
     src/casm/database/json/jsonPropertiesDatabase.cc\
+    src/casm/enumerator/ConfigEnumInput.cc\
     src/casm/enumerator/DoFSpace.cc\
     src/casm/enumerator/EnumInputParser.cc\
-    src/casm/enumerator/Enumerator.cc\
     src/casm/enumerator/io/json/DoFSpace.cc\
-    src/casm/enumerator/io/json_io.cc\
     src/casm/external/gzstream/gzstream.C\
     src/casm/external/qhull/libqhull_r/geom2_r.c\
     src/casm/external/qhull/libqhull_r/geom_r.c\

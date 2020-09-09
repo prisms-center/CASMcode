@@ -1,7 +1,5 @@
-#ifndef CASM_enumerator_json_io
-#define CASM_enumerator_json_io
-
-#include <vector>
+#ifndef CASM_app_enum_json_io
+#define CASM_app_enum_json_io
 
 namespace CASM {
 

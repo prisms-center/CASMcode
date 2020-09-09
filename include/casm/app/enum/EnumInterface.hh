@@ -1,5 +1,5 @@
-#ifndef CASM_Enumerator
-#define CASM_Enumerator
+#ifndef CASM_EnumInterface
+#define CASM_EnumInterface
 
 #include <string>
 
@@ -11,6 +11,14 @@
 #include "casm/misc/unique_cloneable_map.hh"
 
 namespace CASM {
+
+  class ConfigEnumInput;
+  class ScelEnum;
+
+  namespace xtal {
+    class ScelEnumProps;
+    class SuperlatticeEnumerator;
+  }
 
   namespace Completer {
     class EnumOptionBase;
@@ -32,13 +40,13 @@ namespace CASM {
     const Completer::EnumOptionBase &enum_opt);
 
   /// \brief Standardizes parsing casm enum input options to make an ScelEnumProps
-  ScelEnumProps make_enumerator_scel_enum_props(
+  xtal::ScelEnumProps make_enumerator_scel_enum_props(
     const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOptionBase &enum_opt);
 
   /// \brief Standardizes parsing casm enum input options to make a SuperlatticeEnumerator
-  std::unique_ptr<SuperlatticeEnumerator> make_enumerator_superlat_enum(
+  std::unique_ptr<xtal::SuperlatticeEnumerator> make_enumerator_superlat_enum(
     const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOptionBase &enum_opt);

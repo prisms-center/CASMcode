@@ -1,13 +1,14 @@
-#include "casm/app/EnumeratorHandler.hh"
-#include "casm/app/ProjectSettings.hh"
-
 #include <boost/filesystem.hpp>
+
 #include "casm/system/RuntimeLibrary.hh"
+#include "casm/app/EnumeratorHandler.hh"
 #include "casm/app/LogRuntimeLibrary.hh"
-#include "casm/enumerator/Enumerator.hh"
-#include "casm/clex/PrimClex.hh"
+#include "casm/app/ProjectSettings.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/app/enum/EnumInterface.hh"
+#include "casm/clex/PrimClex.hh"
 #include "casm/completer/Handlers.hh"
+#include "casm/enumerator/Enumerator.hh"
 
 namespace CASM {
 

@@ -1,7 +1,8 @@
+#include "casm/app/enum/EnumInterface.hh"
+#include "casm/app/enum/io/json_io.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/enumerator/Enumerator.hh"
-#include "casm/enumerator/io/json_io.hh"
 #include "casm/global/enum/json_io.hh"
 
 namespace CASM {

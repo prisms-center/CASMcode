@@ -1,11 +1,12 @@
 #ifndef CASM_ScelEnum
 #define CASM_ScelEnum
 
-#include "casm/misc/cloneable_ptr.hh"
+#include "casm/app/enum/EnumInterface.hh"
+#include "casm/clex/Supercell.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/enumerator/InputEnumerator.hh"
 #include "casm/enumerator/RandomAccessEnumerator.hh"
-#include "casm/clex/Supercell.hh"
+#include "casm/misc/cloneable_ptr.hh"
 
 /** \defgroup ScelEnumGroup Supercell Enumerators
  *
@@ -76,10 +77,10 @@ namespace CASM {
   public:
 
     /// \brief Construct with shared prim Structure and ScelEnumProps settings
-    ScelEnumByProps(std::shared_ptr<const Structure> &shared_prim, const ScelEnumProps &enum_props);
+    ScelEnumByProps(std::shared_ptr<const Structure> &shared_prim, const xtal::ScelEnumProps &enum_props);
 
     /// \brief Construct with PrimClex and ScelEnumProps settings
-    ScelEnumByProps(const PrimClex &primclex, const ScelEnumProps &enum_props, bool existing_only = false);
+    ScelEnumByProps(const PrimClex &primclex, const xtal::ScelEnumProps &enum_props, bool existing_only = false);
 
     /// \brief Construct with PrimClex and ScelEnumProps JSON settings
     ScelEnumByProps(const PrimClex &primclex, const jsonParser &input);
@@ -106,9 +107,9 @@ namespace CASM {
     notstd::cloneable_ptr<Supercell> m_current;
     PrimClex const *m_primclex;
 
-    std::unique_ptr<SuperlatticeEnumerator > m_lattice_enum;
-    SuperlatticeEnumerator::const_iterator m_lat_it;
-    SuperlatticeEnumerator::const_iterator m_lat_end;
+    std::unique_ptr<xtal::SuperlatticeEnumerator> m_lattice_enum;
+    xtal::SuperlatticeEnumerator::const_iterator m_lat_it;
+    xtal::SuperlatticeEnumerator::const_iterator m_lat_end;
 
     bool m_existing_only;
   };
@@ -188,7 +189,7 @@ namespace CASM {
   /// }
   /// \endcode
   ///
-  ScelEnumProps make_scel_enum_props(const PrimClex &primclex, const jsonParser &input);
+  xtal::ScelEnumProps make_scel_enum_props(const PrimClex &primclex, const jsonParser &input);
 
   template <>
   struct jsonConstructor<xtal::ScelEnumProps> {

@@ -3,7 +3,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/symmetry/SupercellSymInfo_impl.hh"
-#include "casm/enumerator/Enumerator_impl.hh"
+#include "casm/app/enum/EnumInterface_impl.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/clex/ScelEnum.hh"
 //#include "casm/clex/Supercell.hh"

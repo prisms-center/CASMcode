@@ -9,6 +9,7 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/database/Database.hh"
+#include "casm/enumerator/ConfigEnumInput.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/enum.hh"
@@ -63,7 +64,7 @@ TEST(ConfigEnumTest, ConfigEnumAllOccupationsTest) {
     PrimClex primclex(test_proj_dir, null_log());
 
     // generate supercells
-    ScelEnumProps enum_props(j["min_vol"].get<int>(), j["max_vol"].get<int>() + 1);
+    xtal::ScelEnumProps enum_props(j["min_vol"].get<int>(), j["max_vol"].get<int>() + 1);
     ScelEnumByProps scel_enum(primclex, enum_props);
     for(const auto &scel : scel_enum) {
       (void) scel;

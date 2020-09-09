@@ -1,12 +1,13 @@
 #ifndef CASM_SuperConfigEnum
 #define CASM_SuperConfigEnum
 
-#include "casm/crystallography/LinearIndexConverter.hh"
-#include "casm/misc/cloneable_ptr.hh"
-#include "casm/container/Counter.hh"
-#include "casm/enumerator/InputEnumerator.hh"
+#include "casm/app/enum/EnumInterface.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
+#include "casm/container/Counter.hh"
+#include "casm/crystallography/LinearIndexConverter.hh"
+#include "casm/enumerator/InputEnumerator.hh"
+#include "casm/misc/cloneable_ptr.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_SuperConfigEnum_interface();

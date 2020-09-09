@@ -8,7 +8,7 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/app/enum.hh"
-#include "casm/enumerator/Enumerator_impl.hh"
+#include "casm/app/enum/EnumInterface_impl.hh"
 #include "casm/database/Selection.hh"
 #include "casm/database/ConfigDatabase.hh"
 
@@ -172,7 +172,7 @@ namespace CASM {
     _kwargs.get_if(primitive_only, "primitive_only");
 
     // -- make SuperlatticeEnumerator & filter_expr from input
-    std::unique_ptr<SuperlatticeEnumerator> superlat_enum =
+    std::unique_ptr<xtal::SuperlatticeEnumerator> superlat_enum =
       make_enumerator_superlat_enum(primclex, _kwargs, enum_opt);
     std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
 

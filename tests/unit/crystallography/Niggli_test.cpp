@@ -93,8 +93,8 @@ namespace CASM {
     int minvol = 1;
     int maxvol = 10;
 
-    ScelEnumProps enum_props(minvol, maxvol + 1, dirs);
-    SuperlatticeEnumerator latenumerator(pg.begin(), pg.end(), testlat, enum_props);
+    xtal::ScelEnumProps enum_props(minvol, maxvol + 1, dirs);
+    xtal::SuperlatticeEnumerator latenumerator(pg.begin(), pg.end(), testlat, enum_props);
     std::vector<Lattice> enumerated_lat(latenumerator.begin(), latenumerator.end());
 
 
@@ -185,4 +185,3 @@ TEST(NiggliTest, EasyTests) {
 TEST(NiggliTest, EvilNiggliTest) {
   CASM::single_dimension_test();
 }
-

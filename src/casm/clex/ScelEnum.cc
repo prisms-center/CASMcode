@@ -84,13 +84,13 @@ namespace CASM {
   /// Note: This variant does not require a PrimClex, and there for cannot insert Supercells into
   /// a Supercell database automatically.
   ///
-  ScelEnumByProps::ScelEnumByProps(std::shared_ptr<const Structure> &shared_prim, const ScelEnumProps &enum_props) :
+  ScelEnumByProps::ScelEnumByProps(std::shared_ptr<const Structure> &shared_prim, const xtal::ScelEnumProps &enum_props) :
     m_shared_prim(shared_prim),
     m_primclex(nullptr),
     m_existing_only(false) {
 
     auto const &pg = m_shared_prim->point_group();
-    m_lattice_enum.reset(new SuperlatticeEnumerator(
+    m_lattice_enum.reset(new xtal::SuperlatticeEnumerator(
                            pg.begin(),
                            pg.end(),
                            m_shared_prim->lattice(),
@@ -124,13 +124,13 @@ namespace CASM {
   ///
   /// Note: This variant inserts Supercells into the Supercell database automatically.
   ///
-  ScelEnumByProps::ScelEnumByProps(const PrimClex &primclex, const ScelEnumProps &enum_props, bool existing_only) :
+  ScelEnumByProps::ScelEnumByProps(const PrimClex &primclex, const xtal::ScelEnumProps &enum_props, bool existing_only) :
     m_shared_prim(),
     m_primclex(&primclex),
     m_existing_only(existing_only) {
 
     auto const &pg = m_primclex->prim().point_group();
-    m_lattice_enum.reset(new SuperlatticeEnumerator(
+    m_lattice_enum.reset(new xtal::SuperlatticeEnumerator(
                            pg.begin(),
                            pg.end(),
                            m_primclex->prim().lattice(),
@@ -410,11 +410,11 @@ namespace CASM {
     return generating_matrix;
   }
 
-  ScelEnumProps make_scel_enum_props(const PrimClex &primclex, const jsonParser &input) {
+  xtal::ScelEnumProps make_scel_enum_props(const PrimClex &primclex, const jsonParser &input) {
 
     // read volume range
-    ScelEnumProps::size_type min_vol;
-    ScelEnumProps::size_type max_vol;
+    xtal::ScelEnumProps::size_type min_vol;
+    xtal::ScelEnumProps::size_type max_vol;
 
     if(!input.contains("min")) {
       min_vol = 1;
@@ -428,7 +428,7 @@ namespace CASM {
     }
 
     // read "max" scel size, or by default use largest existing supercell
-    ScelEnumProps::size_type max_scel_size = 0;
+    xtal::ScelEnumProps::size_type max_scel_size = 0;
     for(const auto &scel : primclex.db<Supercell>()) {
       if(scel.volume() > max_scel_size) {
         max_scel_size = scel.volume();
@@ -447,9 +447,9 @@ namespace CASM {
     std::string dirs;
     input.get_else<std::string>(dirs, "dirs", "abc");
     if(max_vol == 0) {
-      return ScelEnumProps(1, 1, dirs, generating_matrix);
+      return xtal::ScelEnumProps(1, 1, dirs, generating_matrix);
     }
-    return ScelEnumProps(min_vol, max_vol + 1, dirs, generating_matrix);
+    return xtal::ScelEnumProps(min_vol, max_vol + 1, dirs, generating_matrix);
   }
 
   xtal::ScelEnumProps jsonConstructor<xtal::ScelEnumProps>::from_json(const jsonParser &json, const PrimClex &primclex) {

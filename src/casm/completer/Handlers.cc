@@ -1,22 +1,21 @@
 #ifndef HANDLERS_CC
 #define HANDLERS_CC
 
-#include "casm/completer/Handlers.hh"
-#include "casm/global/enum/io_traits.hh"
+#include "casm/app/APICommand.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/app/enum/EnumInterface.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/dataformatter/DataFormatter.hh"
 #include "casm/casm_io/enum/stream_io.hh"
 #include "casm/clex/Configuration.hh"
-#include "casm/clex/Supercell.hh"
-#include "casm/app/DirectoryStructure.hh"
-#include "casm/database/DatabaseTypes.hh"
-#include "casm/enumerator/Enumerator.hh"
-#include "casm/app/EnumeratorHandler.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/app/APICommand.hh"
-#include "casm/database/ScelDatabase.hh"
+#include "casm/clex/Supercell.hh"
+#include "casm/completer/Handlers.hh"
 #include "casm/database/ConfigDatabase.hh"
-#include "casm/casm_io/Log.hh"
-#include "casm/app/ProjectSettings.hh"
+#include "casm/database/DatabaseTypes.hh"
+#include "casm/database/ScelDatabase.hh"
+#include "casm/global/enum/io_traits.hh"
 
 namespace CASM {
   namespace Completer {

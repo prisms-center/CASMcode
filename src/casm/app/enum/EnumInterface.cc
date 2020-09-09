@@ -12,6 +12,7 @@
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/SymType.hh"
 #include "casm/crystallography/io/UnitCellCoordIO.hh"
+#include "casm/enumerator/ConfigEnumInput.hh"
 
 namespace CASM {
 
@@ -150,7 +151,7 @@ namespace CASM {
   }
 
   /// \brief Standardizes parsing casm enum input options to make an ScelEnumProps
-  ScelEnumProps make_enumerator_scel_enum_props(
+  xtal::ScelEnumProps make_enumerator_scel_enum_props(
     const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOptionBase &enum_opt) {
@@ -163,20 +164,20 @@ namespace CASM {
   /// \brief Standardizes parsing casm enum input options to make a SuperlatticeEnumerator
   ///
   /// See SuperConfigEnum for example documentation
-  std::unique_ptr<SuperlatticeEnumerator> make_enumerator_superlat_enum(
+  std::unique_ptr<xtal::SuperlatticeEnumerator> make_enumerator_superlat_enum(
     const PrimClex &primclex,
     const jsonParser &_kwargs,
     const Completer::EnumOptionBase &enum_opt) {
 
-    ScelEnumProps enum_props = make_enumerator_scel_enum_props(
-                                 primclex,
-                                 _kwargs,
-                                 enum_opt);
+    xtal::ScelEnumProps enum_props = make_enumerator_scel_enum_props(
+                                       primclex,
+                                       _kwargs,
+                                       enum_opt);
 
     Supercell unit_cell(&primclex, enum_props.generating_matrix());
 
     auto fg = unit_cell.factor_group();
-    return notstd::make_unique<SuperlatticeEnumerator>(
+    return notstd::make_unique<xtal::SuperlatticeEnumerator>(
              fg.begin(),
              fg.end(),
              primclex.prim().lattice(),

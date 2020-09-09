@@ -2,7 +2,7 @@
 #define CASM_ConfigEnumAllOccupations_impl
 
 #include "casm/clex/ConfigEnumAllOccupations.hh"
-#include "casm/enumerator/Enumerator_impl.hh"
+#include "casm/app/enum/EnumInterface_impl.hh"
 
 namespace CASM {
 

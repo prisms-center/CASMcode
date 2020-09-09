@@ -1,9 +1,10 @@
 #ifndef CASM_TestEnum
 #define CASM_TestEnum
 
+#include "casm/app/enum/EnumInterface.hh"
+#include "casm/clex/Configuration.hh"
 #include "casm/container/Counter.hh"
 #include "casm/enumerator/InputEnumerator.hh"
-#include "casm/clex/Configuration.hh"
 #include "casm/misc/cloneable_ptr.hh"
 
 extern "C" {

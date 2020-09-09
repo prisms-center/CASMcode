@@ -1,7 +1,8 @@
 #ifndef CASM_DoFSpace
 #define CASM_DoFSpace
 
-#include "casm/enumerator/Enumerator.hh"
+#include "casm/crystallography/DoFDecl.hh"
+#include "casm/enumerator/ConfigEnumInput.hh"
 
 namespace CASM {
   struct VectorSpaceSymReport;

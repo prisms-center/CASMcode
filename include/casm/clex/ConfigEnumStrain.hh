@@ -1,11 +1,12 @@
 #ifndef CASM_ConfigEnumStrain
 #define CASM_ConfigEnumStrain
 
-#include "casm/symmetry/PermuteIterator.hh"
-#include "casm/strain/StrainConverter.hh"
-#include "casm/enumerator/InputEnumerator.hh"
-#include "casm/container/Counter.hh"
+#include "casm/app/enum/EnumInterface.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/container/Counter.hh"
+#include "casm/enumerator/InputEnumerator.hh"
+#include "casm/strain/StrainConverter.hh"
+#include "casm/symmetry/PermuteIterator.hh"
 
 extern "C" {
   CASM::EnumInterfaceBase *make_ConfigEnumStrain_interface();
