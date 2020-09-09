@@ -130,7 +130,6 @@ namespace CASM {
   //in. Allowed modes are listed in STRAIN_METRIC
   Matrix3d StrainConverter::strain_metric_to_F(Eigen::Ref<const Matrix3d> const &E) const {
     assert(curr_inv_metric_func && "StrainConverter object improperly initialized!");
-    std::cout << "curr_inv_metric_func: " << curr_inv_metric_func << std::endl;
     return (*curr_inv_metric_func)(E);
   }
 
@@ -192,12 +191,10 @@ namespace CASM {
 
     /// GREEN_LAGRANGE = 1/2 * (F^{T} F - I)
     if(mode_name == "STRAIN_GL" || mode_name == "GL") {
-      std::cout << "here: " << mode_name << std::endl;
       STRAIN_METRIC_MODE = STRAIN_METRIC::GREEN_LAGRANGE;
       set_conventional_order_symmetric();
       curr_metric_func = &StrainConverter::green_lagrange;
       curr_inv_metric_func = &StrainConverter::green_lagrange_to_F;
-      std::cout << "set_mode: curr_inv_metric_func: " << curr_inv_metric_func << std::endl;
     }
     /// BIOT = (U-I)
     else if(mode_name == "STRAIN_B" || mode_name == "B") {
