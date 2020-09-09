@@ -1,16 +1,16 @@
-#ifndef CASM_Enumerator_impl
-#define CASM_Enumerator_impl
+#ifndef CASM_EnumInterface_impl
+#define CASM_EnumInterface_impl
 
-#include "casm/system/RuntimeLibrary.hh"
-#include "casm/enumerator/Enumerator.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/QueryHandler.hh"
+#include "casm/app/casm_functions.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/clex/FilteredConfigIterator.hh"
+#include "casm/completer/Handlers.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/ScelDatabase.hh"
-#include "casm/app/casm_functions.hh"
-#include "casm/completer/Handlers.hh"
+#include "casm/enumerator/Enumerator.hh"
+#include "casm/system/RuntimeLibrary.hh"
 
 namespace CASM {
 
