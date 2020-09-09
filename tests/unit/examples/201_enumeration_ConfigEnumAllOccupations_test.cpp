@@ -13,30 +13,42 @@
 
 #include "crystallography/TestStructures.hh" // for test::ZrO_prim
 
-// This test fixture class constructs a CASM project for enumeration examples
+// ConfigEnumInput
+// ---------------
 //
-// Note:
-// - Currently, in order to enumerate Supercells, Configurations, etc. a CASM project must be given
-//   a project directory, even if they are never written to disk. In the future this requirement
-//   will be removed.
-// - To create a project directory for example and testing purposes use the `test::proj_dir`
-//   function as shown below. It will automatically create a new directory by appending ".N" to the
-//   path argument, where N is an incremented integer to ensure a unique new directory.
+// All Configuration enumerators act on a ConfigEnumInput object which specifies a starting
+// Configuration used to indicate
+// and enumerator specific which provides in CASM are classes that provide iterators which when incremented iteratively
+// constuct new objects, typically Supercell or Configuration. When used via the casm command line
+// program subcommand `casm enum`, the constructed objects are added to a database for future use.
+// When used in C++ code, the constructed objects can be stored in the database or the used in other
+// ways.
 //
+// This example demonstrates enumerating Supercell. There are three related Supercell enumerators:
+// - `ScelEnumByProps`: Enumerate Supercell by enumerating superlattices as specifying parameters
+//   (CASM::xtal::ScelEnumProps) such as the beginning volume, ending volume, what the unit
+//   lattice is (in terms of the prim lattice), and which lattice vectors to enumerate over. This
+//   is similar to the example 002_crystallography_superlattice_test.cpp.
+// - `ScelEnumByName`: Iterates over Supercell that already exist in the Supercell database by
+//   specifying a list of Supercell by name. This is mostly useful as an input to other methods
+//   specifying which Supercells to use as input.
+// - `ScelEnum`: This enumerator is primarily intended for command line program use and allows use
+//   of either `ScelEnumByProps` or `ScelEnumByName` depending on which parameters are passed.
+//
+
+// This test fixture class constructs a CASM PrimClex and Supercells for enumeration examples
 class ExampleEnumerationZrOConfigEnumAllOccupations : public testing::Test {
 protected:
 
   std::string title;
   std::shared_ptr<CASM::Structure const> shared_prim;
-  CASM::fs::path root_dir;
   CASM::ProjectSettings project_settings;
   CASM::PrimClex primclex;
 
   ExampleEnumerationZrOConfigEnumAllOccupations():
     title("ExampleEnumerationZrOConfigEnumAllOccupations"),
     shared_prim(std::make_shared<CASM::Structure const>(test::ZrO_prim())),
-    root_dir(test::proj_dir(autotools::abs_srcdir() + "/tests/unit/test_projects/ZrOConfigEnumAllOccupations")),
-    project_settings(make_default_project_settings(*shared_prim, title, root_dir)),
+    project_settings(make_default_project_settings(*shared_prim, title)),
     primclex(project_settings, shared_prim) {
 
     int begin_volume {1};
@@ -45,21 +57,27 @@ protected:
     Eigen::Matrix3i generating_matrix {Eigen::Matrix3i::Identity()};
     CASM::xtal::ScelEnumProps enumeration_params {begin_volume, end_volume, dirs, generating_matrix};
     bool existing_only = false;
+
+    // The ScelEnumByProps variant that accepts a PrimClex in the constructor inserts Supercells into
+    // the Supercell database available at `primclex.db<Supercell>()` as it constructs them.
     CASM::ScelEnumByProps enumerator {primclex, enumeration_params, existing_only};
 
-    // Currently, when CASM::ScelEnumByProps enumerates a Supercell it is automatically added
-    //  to the supercell database available at `primclex.db<Supercell>()`.
+    // Increments the enumerator iterators to construct all Supercell
     int count = std::distance(enumerator.begin(), enumerator.end());
     EXPECT_EQ(count, 20);
+    EXPECT_EQ(primclex.db<Supercell>().size(), 20);
   }
 
 };
 
 
 TEST_F(ExampleEnumerationZrOConfigEnumAllOccupations, Example1) {
-
+  // Example enumerating all symmetrically unique occupational orderings in each of the supercells
+  // in the Supercell database
   std::vector<CASM::Configuration> configurations;
   for(auto const &scel : primclex.db<Supercell>()) {
+
+    // Constructing ConfigEnumInput with a Supercell does:
     CASM::ConfigEnumInput input {scel};
     CASM::ConfigEnumAllOccupations enumerator {input};
     std::copy(enumerator.begin(), enumerator.end(), std::back_inserter(configurations));
