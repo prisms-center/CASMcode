@@ -278,7 +278,6 @@ libcasm_la_SOURCES = \
     include/casm/database/json/jsonPropertiesDatabase.hh\
     include/casm/enumerator/ConfigEnumInput.hh\
     include/casm/enumerator/DoFSpace.hh\
-    include/casm/enumerator/EnumInputParser.hh\
     include/casm/enumerator/Enumerator.hh\
     include/casm/enumerator/InputEnumerator.hh\
     include/casm/enumerator/RandomAccessEnumerator.hh\
@@ -888,7 +887,6 @@ libcasm_la_SOURCES = \
     src/casm/database/json/jsonPropertiesDatabase.cc\
     src/casm/enumerator/ConfigEnumInput.cc\
     src/casm/enumerator/DoFSpace.cc\
-    src/casm/enumerator/EnumInputParser.cc\
     src/casm/enumerator/io/json/DoFSpace.cc\
     src/casm/external/gzstream/gzstream.C\
     src/casm/external/qhull/libqhull_r/geom2_r.c\

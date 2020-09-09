@@ -411,7 +411,6 @@ casm_enumerator_includedir=$(includedir)/casm/enumerator
 casm_enumerator_include_HEADERS = \
     include/casm/enumerator/ConfigEnumInput.hh\
     include/casm/enumerator/DoFSpace.hh\
-    include/casm/enumerator/EnumInputParser.hh\
     include/casm/enumerator/Enumerator.hh\
     include/casm/enumerator/InputEnumerator.hh\
     include/casm/enumerator/RandomAccessEnumerator.hh
