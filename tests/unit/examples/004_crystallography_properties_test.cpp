@@ -1,5 +1,10 @@
-
-
+#include "gtest/gtest.h"
+#include "casm/crystallography/AnisoValTraits.hh"
+#include "casm/crystallography/Lattice.hh"
+#include "casm/crystallography/Strain.hh"
+#include "casm/crystallography/SymTools.hh"
+#include "casm/symmetry/SymGroup.hh"
+#include "casm/symmetry/SymInfo.hh"
 
 /// Crystal properties
 /// ------------------
@@ -58,33 +63,41 @@ namespace {
 
   /// Adapts CASM::xtal::SymOp to more complicated CASM::SymOp type before printing description
   std::string brief_description(CASM::xtal::SymOp const &symop, CASM::xtal::Lattice const &lattice) {
-    CASM::SymOp adapted_symop = adapter::Adapter<CASM::SymOp, CASM::xtal::SymOp>(symop);
-    return brief_description(adapted_symop, lattice);
+    return brief_description(CASM::adapter::Adapter<CASM::SymOp, CASM::xtal::SymOp>()(symop), lattice);
   }
 }
 
 TEST(ExampleCrystallographyProperties, ApplySymmetry) {
 
-  using Eigen::Vector3d;
-  using CASM::xtal::Coordinate;
-  using CASM::xtal::Lattice;
-  using CASM::xtal::Molecule;
-  using CASM::xtal::Site;
-  using CASM::xtal::SiteDoFSet;
-  using CASM::AnisoValTraits;
-
   // First, construct a Lattice
-  Vector3d a {1.0, 0.0, 0.0};
-  Vector3d b {0.0, 1.0, 0.0};
-  Vector3d c {0.0, 0.0, 1.0};
-  Lattice lattice {a, b, c};
+  Eigen::Vector3d a {1.0, 0.0, 0.0};
+  Eigen::Vector3d b {0.0, 1.0, 0.0};
+  Eigen::Vector3d c {0.0, 0.0, 1.0};
+  CASM::xtal::Lattice lattice {a, b, c};
 
   // Construct the lattice point group
   std::vector<CASM::xtal::SymOp> point_group = CASM::xtal::make_point_group(lattice);
 
-  // Construct a map of properties: pairs of <property name>: <property value>
+  // Construct a map of properties: pairs of <property name>: <property value vector>
+  Eigen::VectorXd dx {3};
+  dx << 0.01, 0.0, 0.0;
+
+  // Construct a strain metric vector
+  //
+  // Deformation tensor, F:
+  //     after_strain_lat_column_mat = F * before_strain_lat_column_mat
+  Eigen::Matrix3d F;
+  F << 1.01, 0.0, 0.0,
+  0.0,  1.0, 0.0,
+  0.0,  0.0, 1.0;
+
+  CASM::StrainConverter strain_converter {"U"};
+  Eigen::VectorXd Ustrain_Exx_unrolled = strain_converter.unrolled_strain_metric(F);
+
+  // Property vectors
   std::map<std::string, Eigen::VectorXd> properties {
-    {"disp", Eigen::VectorXd {0.01, 0.0, 0.0}}  // a displacement along x
+    {CASM::AnisoValTraits::disp().name(), dx},               // a displacement along x
+    {CASM::AnisoValTraits::strain("U").name(), Ustrain_Exx_unrolled}  // Right-stretch strain tensor Exx
   };
 
   std::cout << "Original properties:\n";
@@ -93,17 +106,19 @@ TEST(ExampleCrystallographyProperties, ApplySymmetry) {
     Eigen::VectorXd property_value = property_pair.second;
     std::cout << "- " << property_name << ": " << property_value.transpose() << std::endl;
   }
+  std::cout << std::endl;
 
   // For each symmetry operation in the point group, transform the properties
+  int i = 0;
   for(CASM::xtal::SymOp symop : point_group) {
-    std::cout << "Point group op " << i << "  " << brief_description(symop, lattice) << std::endl;
+    std::cout << "Lattice point group operation " << i++ << ": " << brief_description(symop, lattice) << std::endl;
     std::map<std::string, Eigen::VectorXd> transformed_properties;
 
     for(auto const &property_pair : properties) {
       std::string property_name = property_pair.first;
       Eigen::VectorXd property_value = property_pair.second;
       CASM::AnisoValTraits traits {property_name};
-      auto matrix = traits.symop_to_matrix(symop.matrix(), symop.tau(), symop.time_reversal());
+      auto matrix = traits.symop_to_matrix(symop.matrix, symop.translation, symop.is_time_reversal_active);
       transformed_properties[property_name] = matrix * property_value;
     }
     std::cout << "Transformed properties:\n";
@@ -112,7 +127,7 @@ TEST(ExampleCrystallographyProperties, ApplySymmetry) {
       Eigen::VectorXd property_value = property_pair.second;
       std::cout << "- " << property_name << ": " << property_value.transpose() << std::endl;
     }
-    std::cout << std::endl << std::endl;
+    std::cout << std::endl;
   }
 
 }

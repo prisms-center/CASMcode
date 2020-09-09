@@ -87,7 +87,7 @@ TEST(NeighborListTest, SuperNeighborListBasics) {
   EXPECT_EQ(nlist.size(), 177);
 
   // construct SuperNeighborList
-  Eigen::Matrix3i T;
+  Eigen::Matrix3l T;
   T << 2, 0, 0,
   0, 2, 0,
   0, 0, 2;

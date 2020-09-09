@@ -291,11 +291,13 @@ casm_unit_examples_SOURCES = \
     tests/unit/examples/001_crystallography_lattice_symmetry_test.cpp\
     tests/unit/examples/002_crystallography_superlattice_test.cpp\
     tests/unit/examples/003_crystallography_coordinate_test.cpp\
+    tests/unit/examples/004_crystallography_properties_test.cpp\
     tests/unit/examples/004_crystallography_site_test.cpp\
     tests/unit/examples/005_crystallography_basicstructure_test.cpp\
     tests/unit/examples/006_crystallography_structure_test.cpp\
     tests/unit/examples/007_crystallography_unitcellcoord_test.cpp\
     tests/unit/examples/100_symmetry_test.cpp\
+    tests/unit/examples/200_enumeration_Configuration_test.cpp\
     tests/unit/examples/200_enumeration_ScelEnum_test.cpp\
     tests/unit/examples/201_enumeration_ConfigEnumAllOccupations_test.cpp\
     tests/unit/examples/202_enumeration_ConfigEnumStrain_test.cpp\
@@ -305,6 +307,7 @@ casm_unit_examples_SOURCES = \
     tests/unit/examples/303_clusterography_cluster_orbits_io_test.cpp\
     tests/unit/examples/304_clusterography_cluster_specs_io_test.cpp\
     tests/unit/examples/400_clex_test.cpp\
+    tests/unit/examples/401_clex_neighbor_list_test.cpp\
     tests/unit/examples/500_monte_test.cpp\
     tests/unit/gtest_main_run_all.cpp
 casm_unit_examples_LDADD = \

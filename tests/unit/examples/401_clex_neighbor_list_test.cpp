@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/clex/NeighborList.hh"
+#include "casm/crystallography/LinearIndexConverter.hh"
 #include "crystallography/TestStructures.hh" // for test::ZrO_prim
 
 // Neighbor lists
@@ -76,6 +77,8 @@ TEST(ExampleCrystallography, NeighborList) {
   // Expand, adding a nearest neighbor unit cells (adds the 6 in-plane nearest neighbors)
   prim_nlist.expand({1, 0, 0});
   EXPECT_EQ(prim_nlist.size(), 7);
+
+  // // Uncomment to print neighboring unit cells of the origin unit cell
   // std::cout << "PrimNeighborList (expanded with {0, 0, 0}):\n";
   // for(CASM::xtal::UnitCell unitcell : prim_nlist) {
   //   std::cout << unitcell.transpose() << std::endl;
@@ -91,6 +94,8 @@ TEST(ExampleCrystallography, NeighborList) {
   // - 7 each in the planes z==+c, z==-c
   prim_nlist.expand({1, 1, 1});
   EXPECT_EQ(prim_nlist.size(), 27);
+
+  // // Uncomment to print neighboring unit cells of the origin unit cell
   // std::cout << "PrimNeighborList (expanded with {1, 1, 1}):\n";
   // for(CASM::xtal::UnitCell unitcell : prim_nlist) {
   //   std::cout << unitcell.transpose() << std::endl;
@@ -122,23 +127,23 @@ TEST(ExampleCrystallography, NeighborList) {
     std::vector<CASM::Index> unitcell_index_neighbors_to_i = supercell_nlist.unitcells(i);
     EXPECT_EQ(unitcell_index_neighbors_to_i.size(), prim_nlist.size());
 
-    // Uncomment to print neighboring unit cells of unit cell i
-    std::cout << "\nSuperNeighborList of " << unitcell_index_converter(i).transpose() << ":\n";
-    for(CASM::Index unitcell_index : unitcell_index_neighbors_to_i) {
-      std::cout << unitcell_index_converter(unitcell_index).transpose() << std::endl;
-    }
-    std::cout << std::endl;
+    // // Uncomment to print neighboring unit cells of unit cell i
+    // std::cout << "\nSuperNeighborList of " << unitcell_index_converter(i).transpose() << ":\n";
+    // for(CASM::Index unitcell_index : unitcell_index_neighbors_to_i) {
+    //   std::cout << unitcell_index_converter(unitcell_index).transpose() << std::endl;
+    // }
+    // std::cout << std::endl;
 
     // SuperNeighborList::sites provides a vector of "site_index" specifying sites that are neighbors
     // to a particular unit cell
     std::vector<CASM::Index> site_index_neighbors_to_i = supercell_nlist.sites(i);
     EXPECT_EQ(site_index_neighbors_to_i.size(), prim_nlist.size()*prim_nlist.sublat_indices().size());
 
-    // Uncomment to print neighboring sites of unit cell i
-    std::cout << "\nSuperNeighborList of " << unitcellcoord_index_converter(i) << ":\n";
-    for(CASM::Index site_index : site_index_neighbors_to_i) {
-      std::cout << unitcellcoord_index_converter(site_index) << std::endl;
-    }
-    std::cout << std::endl;
+    // // Uncomment to print neighboring sites of unit cell i
+    // std::cout << "\nSuperNeighborList of " << unitcellcoord_index_converter(i) << ":\n";
+    // for(CASM::Index site_index : site_index_neighbors_to_i) {
+    //   std::cout << unitcellcoord_index_converter(site_index) << std::endl;
+    // }
+    // std::cout << std::endl;
   }
 }
