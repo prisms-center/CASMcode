@@ -81,6 +81,7 @@ namespace CASM {
   /// \code
   /// {
   ///   "max_poly_order": <int, optional, default=-1>
+  /// }
   /// \endcode
   ///
   void parse(InputParser<DoF_impl::MagSpinDoFSpecs> &parser, const Structure &prim);
@@ -91,6 +92,7 @@ namespace CASM {
   /// \code
   /// {
   ///   "max_poly_order": <int, optional, default=-1>
+  /// }
   /// \endcode
   ///
   void to_json(const DoF_impl::MagSpinDoFSpecs &occ_specs, jsonParser &json);

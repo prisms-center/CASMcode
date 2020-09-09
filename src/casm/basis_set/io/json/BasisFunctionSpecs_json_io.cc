@@ -41,7 +41,7 @@ namespace CASM {
   ///         types require their own DoFSpecs. See documentation for a particular DoF type to
   ///         determine if it is required.
   ///
-  ///         For "occupation": (required if "occupation" dof included)
+  ///         For "occ": (required if occupation dof included)
   ///             site_basis_functions: string or array (required)
   ///                 Must be one of:
   ///                 - "chebychev": For basis functions generated about the random alloy.

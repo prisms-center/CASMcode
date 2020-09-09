@@ -111,18 +111,14 @@ namespace CASM {
       std::vector<double> const &_max_length,
       std::vector<IntegralClusterOrbitGenerator> const &_custom_generators = {});
 
-    /// ** These get set by constructor **
-
     /// The prim
     std::shared_ptr<Structure const> shared_prim;
 
-    /// The group used to generate orbits, shared_prim->factor_group()
+    /// The group used to generate orbits, most commonly shared_prim->factor_group()
     notstd::cloneable_ptr<SymGroup> generating_group;
 
     /// The comparisons used for orbit generation
     notstd::cloneable_ptr<PrimPeriodicSymCompare<IntegralCluster>> sym_compare;
-
-    /// ** These get set individually **
 
     /// A filter which excludes sites that are part of the unit cell neighborhood from being
     /// included in orbits. If `site_filter(site)==true`, then the site is included, else excluded.
@@ -162,8 +158,6 @@ namespace CASM {
       std::vector<double> const &_cutoff_radius,
       std::vector<IntegralClusterOrbitGenerator> const &_custom_generators = {});
 
-    /// ** These get set by constructor **
-
     /// The prim
     std::shared_ptr<Structure const> shared_prim;
 
@@ -175,9 +169,6 @@ namespace CASM {
 
     /// Phenomenal cluster, used to find local neighborhood
     IntegralCluster phenomenal;
-
-
-    /// ** These get set individually **
 
     /// A filter which excludes sites that are part of the local neighborhood from being included in
     /// orbits. If `site_filter(site)==true`, then the site is included, else excluded.
@@ -230,8 +221,6 @@ namespace CASM {
       std::vector<IntegralClusterOrbitGenerator> const &_custom_generators = {},
       notstd::cloneable_ptr<IntegralCluster> _phenomenal = notstd::cloneable_ptr<IntegralCluster>());
 
-    /// ** These get set by constructor **
-
     /// The prim
     std::shared_ptr<Structure const> shared_prim;
 
@@ -246,9 +235,6 @@ namespace CASM {
 
     /// Phenomenal cluster, if valid, use with cutoff_radius to find local neighborhood
     notstd::cloneable_ptr<IntegralCluster> phenomenal;
-
-
-    /// ** These get set individually **
 
     /// A filter which excludes sites that are part of the local neighborhood from being included in
     /// orbits. If `site_filter(site)==true`, then the site is included, else excluded.

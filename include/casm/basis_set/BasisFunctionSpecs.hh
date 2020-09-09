@@ -62,7 +62,7 @@ namespace CASM {
     ///      basis functions, and then specifying this value and re-generating the ClexBasis.
     /// \param _param_pack_type  Specify the Clexulator underlying data structure type.
     ///
-    /// Notes on _dof_specs_begin, _dof_specs_end:
+    /// Notes on _dof_specs:
     /// - Not all DoF types require their own DoFSpecs. See documentation for a particular DoFTraits
     ///   class to determine if it is required (i.e. OccupationDoFSpecs is required for
     ///   OccupationDoFTraits) for the "construct_site_bases" method, which should throw an error
@@ -73,7 +73,7 @@ namespace CASM {
     ///   functions.
     ///
     /// Notes on _include_functions and _exclude_functions:
-    /// - These parameters should be seen as mutually exclusive. Including both with result in an
+    /// - These parameters should be seen as mutually exclusive. Including both will result in an
     ///   error.
     ///
     /// Notes on _param_pack_type choices:
