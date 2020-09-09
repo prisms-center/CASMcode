@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Strain.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/strain/StrainConverter.hh"
 
 // StrainConverter
@@ -24,16 +25,18 @@
 // - C: F^{T} * F
 
 namespace {
+
   template<CASM::strain::METRIC METRIC_TYPE>
   void check_conversions(Eigen::Matrix3d const &F) {
+
     // Convert from F -> E
-    Eigen::Matrix3d strain_metric = strain::deformation_tensor_to_metric<METRIC_TYPE>(F);
+    Eigen::Matrix3d strain_metric = CASM::strain::deformation_tensor_to_metric<METRIC_TYPE>(F);
     std::cout << "strain_metric: \n" << strain_metric << std::endl << std::endl;
 
     // Convert from E -> F
-    Eigen::Matrix3d deformation_tensor = strain::metric_to_deformation_tensor<METRIC_TYPE>(strain_metric);
+    Eigen::Matrix3d deformation_tensor = CASM::strain::metric_to_deformation_tensor<METRIC_TYPE>(strain_metric);
 
-    EXPECT_TRUE(almost_equal(deformation_tensor, F, tol));
+    EXPECT_TRUE(almost_equal(deformation_tensor, F, CASM::TOL));
   }
 }
 
@@ -56,21 +59,22 @@ TEST(ExampleCrystallographyStrain, StrainConverter) {
   // Deformation tensor, F:
   //     deformed_lattice.lat_column_mat() = F * ideal_lattice.lat_column_mat()
   //     D = F * L  ->  D.t = L.t * F.t
-  Eigen::MatrixXd F = L.transpose().fullPivHouseholderQr().solve(D.transpose()).transpose();
-  EXPECT_TRUE(almost_equal(D, F * L, TOL));
+  Eigen::Matrix3d F = L.transpose().fullPivHouseholderQr().solve(D.transpose()).transpose();
+  std::cout << "F: \n" << F << std::endl;
+  EXPECT_TRUE(almost_equal(D, F * L, CASM::TOL));
 
-  // Example strain conversions between F and E:
+  // Example strain conversions between F and E using:
+  // - CASM::strain::deformation_tensor_to_metric<METRIC_TYPE>
+  // - CASM::strain::metric_to_deformation_tensor<METRIC_TYPE>
   check_conversions<CASM::strain::METRIC::GREEN_LAGRANGE>(F);
   check_conversions<CASM::strain::METRIC::BIOT>(F);
   check_conversions<CASM::strain::METRIC::HENCKY>(F);
   check_conversions<CASM::strain::METRIC::EULER_ALMANSI>(F);
-  check_conversions<CASM::strain::METRIC::STRETCH>(F);
-  check_conversions<CASM::strain::METRIC::DISP_GRAD>(F);
 
   // CASM represents all property values as vectors.  For strain metric properties, unroll as a
   // vector (and convert back) using StrainConverter:
-  CASM::StrainConverter strain_converter {"U"};
+  CASM::StrainConverter strain_converter {"GL"};
   Eigen::VectorXd unrolled_strain_metric = strain_converter.unrolled_strain_metric(F);
-  std::cout << "U: " << U.transpose() << std::endl;
-  EXPECT_TRUE(almost_equal(strain_converter.unrolled_strain_metric_to_F(unrolled_strain_metric), F, TOL));
+  Eigen::Matrix3d F2 = strain_converter.unrolled_strain_metric_to_F(unrolled_strain_metric);
+  EXPECT_TRUE(almost_equal(F2, F, CASM::TOL));
 }

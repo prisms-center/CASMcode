@@ -3,6 +3,7 @@
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Strain.hh"
 #include "casm/crystallography/SymTools.hh"
+#include "casm/strain/StrainConverter.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymInfo.hh"
 
@@ -100,18 +101,21 @@ TEST(ExampleCrystallographyProperties, ApplySymmetry) {
     {CASM::AnisoValTraits::strain("U").name(), Ustrain_Exx_unrolled}  // Right-stretch strain tensor Exx
   };
 
-  std::cout << "Original properties:\n";
-  for(auto const &property_pair : properties) {
-    std::string property_name = property_pair.first;
-    Eigen::VectorXd property_value = property_pair.second;
-    std::cout << "- " << property_name << ": " << property_value.transpose() << std::endl;
-  }
-  std::cout << std::endl;
+  // // Uncomment to print properties
+  // std::cout << "Original properties:\n";
+  // for(auto const &property_pair : properties) {
+  //   std::string property_name = property_pair.first;
+  //   Eigen::VectorXd property_value = property_pair.second;
+  //   std::cout << "- " << property_name << ": " << property_value.transpose() << std::endl;
+  // }
+  // std::cout << std::endl;
 
   // For each symmetry operation in the point group, transform the properties
   int i = 0;
   for(CASM::xtal::SymOp symop : point_group) {
-    std::cout << "Lattice point group operation " << i++ << ": " << brief_description(symop, lattice) << std::endl;
+
+    // // Uncomment to print point group operations
+    //std::cout << "Lattice point group operation " << i++ << ": " << brief_description(symop, lattice) << std::endl;
     std::map<std::string, Eigen::VectorXd> transformed_properties;
 
     for(auto const &property_pair : properties) {
@@ -121,13 +125,15 @@ TEST(ExampleCrystallographyProperties, ApplySymmetry) {
       auto matrix = traits.symop_to_matrix(symop.matrix, symop.translation, symop.is_time_reversal_active);
       transformed_properties[property_name] = matrix * property_value;
     }
-    std::cout << "Transformed properties:\n";
-    for(auto const &property_pair : transformed_properties) {
-      std::string property_name = property_pair.first;
-      Eigen::VectorXd property_value = property_pair.second;
-      std::cout << "- " << property_name << ": " << property_value.transpose() << std::endl;
-    }
-    std::cout << std::endl;
+
+    // // Uncomment to print properties
+    // std::cout << "Transformed properties:\n";
+    // for(auto const &property_pair : transformed_properties) {
+    //   std::string property_name = property_pair.first;
+    //   Eigen::VectorXd property_value = property_pair.second;
+    //   std::cout << "- " << property_name << ": " << property_value.transpose() << std::endl;
+    // }
+    // std::cout << std::endl;
   }
 
 }

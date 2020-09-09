@@ -293,6 +293,7 @@ casm_unit_examples_SOURCES = \
     tests/unit/examples/003_crystallography_coordinate_test.cpp\
     tests/unit/examples/004_crystallography_properties_test.cpp\
     tests/unit/examples/004_crystallography_site_test.cpp\
+    tests/unit/examples/004_crystallography_strain_test.cpp\
     tests/unit/examples/005_crystallography_basicstructure_test.cpp\
     tests/unit/examples/006_crystallography_structure_test.cpp\
     tests/unit/examples/007_crystallography_unitcellcoord_test.cpp\
