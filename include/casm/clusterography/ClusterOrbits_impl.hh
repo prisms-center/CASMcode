@@ -72,16 +72,16 @@ namespace CASM {
   ///
   /// \param phenomenal IntegralCluster
   /// \param cutoff_radius The neighborhood distance cutoff
-  /// \param site_filter A filter function that returns true for CoordType that
+  /// \param site_filter A filter function that returns true for UnitCellCoord that
   ///        should be considered for the neighborhood
   /// \param result Output iterator for container of UnitCellCoord
-  /// \param xtal_tol Crystallography tolerance used to contstruct UnitCellCoord from CoordType
+  /// \param xtal_tol Crystallography tolerance used to contstruct UnitCellCoord
   ///
   /// \returns Output iterator after generating the neighborhood
   ///
   /// \ingroup IntegralCluster
   ///
-  template<typename CoordType, typename OutputIterator>
+  template<typename OutputIterator>
   OutputIterator neighborhood(
     IntegralCluster const &phenomenal,
     double cutoff_radius,

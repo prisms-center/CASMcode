@@ -72,6 +72,11 @@ namespace CASM {
     const PrimType *m_prim_ptr;
 
   };
+
+  template<typename Iterator>
+  IntegralCluster::IntegralCluster(PrimType const &prim, Iterator begin, Iterator end):
+    m_element(begin, end),
+    m_prim_ptr(&prim) {}
 }
 
 #endif

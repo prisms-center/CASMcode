@@ -2,6 +2,7 @@
 #define CASM_GenericCluster
 
 #include <vector>
+#include <algorithm>
 
 #include "casm/container/Permutation.hh"
 #include "casm/container/algorithm.hh"

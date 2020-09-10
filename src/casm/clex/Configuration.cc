@@ -1314,16 +1314,6 @@ namespace CASM {
     return _config.is_canonical();
   }
 
-  /// \brief returns true if _config is an endpoint of an existing diff_trans_config in the database
-  bool is_diff_trans_endpoint(const Configuration &_config) {
-    return _config.is_diff_trans_endpoint();
-  }
-
-  /// \brief returns which diff_trans _config is an endpoint of
-  std::string diff_trans_endpoint_of(const Configuration &_config) {
-    return _config.diff_trans_endpoint_of();
-  }
-
   bool has_relaxed_energy(const Configuration &_config) {
     return _config.calc_properties().has_scalar("relaxed_energy");
   }

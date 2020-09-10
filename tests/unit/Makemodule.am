@@ -18,19 +18,19 @@ EXTRA_DIST += \
 check_LTLIBRARIES += \
     libcasmtesting.la
 libcasmtesting_la_SOURCES = \
-    tests/unit/Common.cpp\
-    tests/unit/Common.hh\
-    tests/unit/FCCTernaryProj.hh\
-    tests/unit/Proj.hh\
-    tests/unit/TestConfiguration.cc\
-    tests/unit/TestConfiguration.hh\
-    tests/unit/TestOrbits.cc\
     tests/unit/TestOrbits.hh\
-    tests/unit/TestSupercell.cc\
-    tests/unit/TestSupercell.hh\
+    tests/unit/FCCTernaryProj.hh\
+    tests/unit/autotools.hh\
+    tests/unit/Proj.hh\
+    tests/unit/Common.hh\
     tests/unit/ZrOProj.hh\
+    tests/unit/TestSupercell.hh\
+    tests/unit/TestConfiguration.hh\
+    tests/unit/TestSupercell.cc\
+    tests/unit/TestOrbits.cc\
+    tests/unit/TestConfiguration.cc\
     tests/unit/autotools.cc\
-    tests/unit/autotools.hh
+    tests/unit/Common.cpp
 libcasmtesting_la_CPPFLAGS = \
     $(AM_CPPFLAGS)\
     -DABS_SRCDIR=\"$(abs_srcdir)\"\
@@ -45,20 +45,20 @@ TESTS += \
 check_PROGRAMS += \
     casm_unit_App
 casm_unit_App_SOURCES = \
-    tests/unit/App/App_test.cpp\
     tests/unit/App/EnumeratorPlugin_test.cpp\
+    tests/unit/App/App_test.cpp\
     tests/unit/App/LogRuntimeLibrary_test.cpp\
     tests/unit/App/QueryPlugin_test.cpp\
     tests/unit/App/settings_test.cpp\
     tests/unit/gtest_main_run_all.cpp
 casm_unit_App_LDADD = \
-    $(BOOST_CHRONO_LIB)\
-    $(BOOST_FILESYSTEM_LIB)\
-    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    libcasm.la\
+    libcasmtesting.la\
     $(BOOST_REGEX_LIB)\
     $(BOOST_SYSTEM_LIB)\
-    libcasm.la\
-    libcasmtesting.la
+    $(BOOST_FILESYSTEM_LIB)\
+    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    $(BOOST_CHRONO_LIB)
 casm_unit_App_CPPFLAGS = \
     $(AM_CPPFLAGS)\
     -I$(top_srcdir)/tests/unit/
@@ -78,17 +78,17 @@ TESTS += \
 check_PROGRAMS += \
     casm_unit_basis_set
 casm_unit_basis_set_SOURCES = \
-    tests/unit/basis_set/BasisFunctionSpecs_test.cpp\
     tests/unit/basis_set/OccupationDoFTraits_test.cpp\
+    tests/unit/basis_set/BasisFunctionSpecs_test.cpp\
     tests/unit/gtest_main_run_all.cpp
 casm_unit_basis_set_LDADD = \
-    $(BOOST_CHRONO_LIB)\
-    $(BOOST_FILESYSTEM_LIB)\
-    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    libcasm.la\
+    libcasmtesting.la\
     $(BOOST_REGEX_LIB)\
     $(BOOST_SYSTEM_LIB)\
-    libcasm.la\
-    libcasmtesting.la
+    $(BOOST_FILESYSTEM_LIB)\
+    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    $(BOOST_CHRONO_LIB)
 casm_unit_basis_set_CPPFLAGS = \
     $(AM_CPPFLAGS)\
     -I$(top_srcdir)/tests/unit/
@@ -101,18 +101,18 @@ TESTS += \
 check_PROGRAMS += \
     casm_unit_casm_io
 casm_unit_casm_io_SOURCES = \
-    tests/unit/casm_io/DataFormatterDictionary_test.cpp\
     tests/unit/casm_io/EnumIO_test.cpp\
+    tests/unit/casm_io/DataFormatterDictionary_test.cpp\
     tests/unit/casm_io/jsonParser_test.cpp\
     tests/unit/gtest_main_run_all.cpp
 casm_unit_casm_io_LDADD = \
-    $(BOOST_CHRONO_LIB)\
-    $(BOOST_FILESYSTEM_LIB)\
-    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    libcasm.la\
+    libcasmtesting.la\
     $(BOOST_REGEX_LIB)\
     $(BOOST_SYSTEM_LIB)\
-    libcasm.la\
-    libcasmtesting.la
+    $(BOOST_FILESYSTEM_LIB)\
+    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    $(BOOST_CHRONO_LIB)
 casm_unit_casm_io_CPPFLAGS = \
     $(AM_CPPFLAGS)\
     -I$(top_srcdir)/tests/unit/
@@ -125,29 +125,29 @@ TESTS += \
 check_PROGRAMS += \
     casm_unit_clex
 casm_unit_clex_SOURCES = \
+    tests/unit/clex/PrimClex_test.cpp\
+    tests/unit/clex/ConfigEnumInterpolation_test.cpp\
+    tests/unit/clex/ScelEnumEquivalents_test.cpp\
+    tests/unit/clex/ConfigEnumRandomOccupations_test.cpp\
+    tests/unit/clex/Configuration_test.cpp\
+    tests/unit/clex/ScelEnum_test.cpp\
     tests/unit/clex/ChemicalReference_test.cpp\
     tests/unit/clex/Clexulator_test.cpp\
-    tests/unit/clex/ConfigEnumAllOccupations_test.cpp\
-    tests/unit/clex/ConfigEnumEquivalents_test.cpp\
-    tests/unit/clex/ConfigEnumInterpolation_test.cpp\
-    tests/unit/clex/ConfigEnumRandomOccupations_test.cpp\
-    tests/unit/clex/ConfigIO_test.cpp\
-    tests/unit/clex/Configuration_test.cpp\
     tests/unit/clex/NeighborList_test.cpp\
-    tests/unit/clex/PrimClex_test.cpp\
-    tests/unit/clex/ScelEnumEquivalents_test.cpp\
-    tests/unit/clex/ScelEnum_test.cpp\
+    tests/unit/clex/ConfigEnumEquivalents_test.cpp\
+    tests/unit/clex/ConfigEnumAllOccupations_test.cpp\
+    tests/unit/clex/ConfigIO_test.cpp\
     tests/unit/clex/SuperConfigEnum_test.cpp\
     tests/unit/clex/Supercell_test.cpp\
     tests/unit/gtest_main_run_all.cpp
 casm_unit_clex_LDADD = \
-    $(BOOST_CHRONO_LIB)\
-    $(BOOST_FILESYSTEM_LIB)\
-    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    libcasm.la\
+    libcasmtesting.la\
     $(BOOST_REGEX_LIB)\
     $(BOOST_SYSTEM_LIB)\
-    libcasm.la\
-    libcasmtesting.la
+    $(BOOST_FILESYSTEM_LIB)\
+    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    $(BOOST_CHRONO_LIB)
 casm_unit_clex_CPPFLAGS = \
     $(AM_CPPFLAGS)\
     -I$(top_srcdir)/tests/unit/
@@ -167,13 +167,13 @@ casm_unit_clusterography_SOURCES = \
     tests/unit/clusterography/Clusterography_test.cpp\
     tests/unit/gtest_main_run_all.cpp
 casm_unit_clusterography_LDADD = \
-    $(BOOST_CHRONO_LIB)\
-    $(BOOST_FILESYSTEM_LIB)\
-    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    libcasm.la\
+    libcasmtesting.la\
     $(BOOST_REGEX_LIB)\
     $(BOOST_SYSTEM_LIB)\
-    libcasm.la\
-    libcasmtesting.la
+    $(BOOST_FILESYSTEM_LIB)\
+    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    $(BOOST_CHRONO_LIB)
 casm_unit_clusterography_CPPFLAGS = \
     $(AM_CPPFLAGS)\
     -I$(top_srcdir)/tests/unit/
@@ -187,17 +187,17 @@ TESTS += \
 check_PROGRAMS += \
     casm_unit_container
 casm_unit_container_SOURCES = \
-    tests/unit/container/Counter_test.cpp\
     tests/unit/container/Enumerator_test.cpp\
+    tests/unit/container/Counter_test.cpp\
     tests/unit/gtest_main_run_all.cpp
 casm_unit_container_LDADD = \
-    $(BOOST_CHRONO_LIB)\
-    $(BOOST_FILESYSTEM_LIB)\
-    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    libcasm.la\
+    libcasmtesting.la\
     $(BOOST_REGEX_LIB)\
     $(BOOST_SYSTEM_LIB)\
-    libcasm.la\
-    libcasmtesting.la
+    $(BOOST_FILESYSTEM_LIB)\
+    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    $(BOOST_CHRONO_LIB)
 casm_unit_container_CPPFLAGS = \
     $(AM_CPPFLAGS)\
     -I$(top_srcdir)/tests/unit/
@@ -210,32 +210,32 @@ TESTS += \
 check_PROGRAMS += \
     casm_unit_crystallography
 casm_unit_crystallography_SOURCES = \
-    tests/unit/crystallography/AnisoValTraits_test.cpp\
-    tests/unit/crystallography/BasicStructure_test.cpp\
-    tests/unit/crystallography/Coordinate_test.cpp\
+    tests/unit/crystallography/UnitCellCoord_test.cpp\
+    tests/unit/crystallography/SymRepBuilder_test.cpp\
     tests/unit/crystallography/FactorGroupConsistency_test.cpp\
+    tests/unit/crystallography/SuperlatticeEnumerator_test.cpp\
     tests/unit/crystallography/HermiteCounter_test.cpp\
+    tests/unit/crystallography/SymType_test.cpp\
+    tests/unit/crystallography/LinearIndexConverter_test.cpp\
+    tests/unit/crystallography/BasicStructure_test.cpp\
+    tests/unit/crystallography/Structure_test.cpp\
+    tests/unit/crystallography/Niggli_test.cpp\
+    tests/unit/crystallography/Molecule_test.cpp\
     tests/unit/crystallography/IntegralCoordinateWithin_test.cpp\
+    tests/unit/crystallography/Site_test.cpp\
+    tests/unit/crystallography/Coordinate_test.cpp\
     tests/unit/crystallography/LatticeEnumEquivalents_test.cpp\
     tests/unit/crystallography/Lattice_test.cpp\
-    tests/unit/crystallography/LinearIndexConverter_test.cpp\
-    tests/unit/crystallography/Molecule_test.cpp\
-    tests/unit/crystallography/Niggli_test.cpp\
-    tests/unit/crystallography/Site_test.cpp\
-    tests/unit/crystallography/Structure_test.cpp\
-    tests/unit/crystallography/SuperlatticeEnumerator_test.cpp\
-    tests/unit/crystallography/SymRepBuilder_test.cpp\
-    tests/unit/crystallography/SymType_test.cpp\
-    tests/unit/crystallography/UnitCellCoord_test.cpp\
+    tests/unit/crystallography/AnisoValTraits_test.cpp\
     tests/unit/gtest_main_run_all.cpp
 casm_unit_crystallography_LDADD = \
-    $(BOOST_CHRONO_LIB)\
-    $(BOOST_FILESYSTEM_LIB)\
-    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    libcasm.la\
+    libcasmtesting.la\
     $(BOOST_REGEX_LIB)\
     $(BOOST_SYSTEM_LIB)\
-    libcasm.la\
-    libcasmtesting.la
+    $(BOOST_FILESYSTEM_LIB)\
+    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    $(BOOST_CHRONO_LIB)
 casm_unit_crystallography_CPPFLAGS = \
     $(AM_CPPFLAGS)\
     -I$(top_srcdir)/tests/unit/
@@ -261,20 +261,20 @@ TESTS += \
 check_PROGRAMS += \
     casm_unit_database
 casm_unit_database_SOURCES = \
-    tests/unit/database/ScelDatabase_test.cpp\
     tests/unit/database/Selection_test.cpp\
+    tests/unit/database/jsonScelDatabase_test.cpp\
     tests/unit/database/jsonConfigDatabase_test.cpp\
     tests/unit/database/jsonPropertiesDatabase_test.cpp\
-    tests/unit/database/jsonScelDatabase_test.cpp\
+    tests/unit/database/ScelDatabase_test.cpp\
     tests/unit/gtest_main_run_all.cpp
 casm_unit_database_LDADD = \
-    $(BOOST_CHRONO_LIB)\
-    $(BOOST_FILESYSTEM_LIB)\
-    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    libcasm.la\
+    libcasmtesting.la\
     $(BOOST_REGEX_LIB)\
     $(BOOST_SYSTEM_LIB)\
-    libcasm.la\
-    libcasmtesting.la
+    $(BOOST_FILESYSTEM_LIB)\
+    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    $(BOOST_CHRONO_LIB)
 casm_unit_database_CPPFLAGS = \
     $(AM_CPPFLAGS)\
     -I$(top_srcdir)/tests/unit/
@@ -287,54 +287,33 @@ TESTS += \
 check_PROGRAMS += \
     casm_unit_examples
 casm_unit_examples_SOURCES = \
-    tests/unit/examples/000_crystallography_lattice_test.cpp\
-    tests/unit/examples/001_crystallography_lattice_symmetry_test.cpp\
     tests/unit/examples/002_crystallography_superlattice_test.cpp\
-    tests/unit/examples/003_crystallography_coordinate_test.cpp\
     tests/unit/examples/004_crystallography_site_test.cpp\
+    tests/unit/examples/000_crystallography_lattice_test.cpp\
     tests/unit/examples/005_crystallography_basicstructure_test.cpp\
-    tests/unit/examples/006_crystallography_structure_test.cpp\
-    tests/unit/examples/007_crystallography_unitcellcoord_test.cpp\
-    tests/unit/examples/100_symmetry_test.cpp\
-    tests/unit/examples/200_enumeration_test.cpp\
-    tests/unit/examples/300_clusterography_IntegralCluster_test.cpp\
     tests/unit/examples/301_clusterography_cluster_orbits_test.cpp\
-    tests/unit/examples/302_clusterography_cluster_specs_test.cpp\
-    tests/unit/examples/303_clusterography_cluster_orbits_io_test.cpp\
     tests/unit/examples/304_clusterography_cluster_specs_io_test.cpp\
+    tests/unit/examples/302_clusterography_cluster_specs_test.cpp\
     tests/unit/examples/400_clex_test.cpp\
+    tests/unit/examples/007_crystallography_unitcellcoord_test.cpp\
+    tests/unit/examples/300_clusterography_IntegralCluster_test.cpp\
     tests/unit/examples/500_monte_test.cpp\
+    tests/unit/examples/200_enumeration_test.cpp\
+    tests/unit/examples/006_crystallography_structure_test.cpp\
+    tests/unit/examples/001_crystallography_lattice_symmetry_test.cpp\
+    tests/unit/examples/100_symmetry_test.cpp\
+    tests/unit/examples/303_clusterography_cluster_orbits_io_test.cpp\
+    tests/unit/examples/003_crystallography_coordinate_test.cpp\
     tests/unit/gtest_main_run_all.cpp
 casm_unit_examples_LDADD = \
-    $(BOOST_CHRONO_LIB)\
-    $(BOOST_FILESYSTEM_LIB)\
-    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    libcasm.la\
+    libcasmtesting.la\
     $(BOOST_REGEX_LIB)\
     $(BOOST_SYSTEM_LIB)\
-    libcasm.la\
-    libcasmtesting.la
+    $(BOOST_FILESYSTEM_LIB)\
+    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    $(BOOST_CHRONO_LIB)
 casm_unit_examples_CPPFLAGS = \
-    $(AM_CPPFLAGS)\
-    -I$(top_srcdir)/tests/unit/
-
-
-#-------------------------------------------------------------------------------#
-
-TESTS += \
-    casm_unit_kinetics
-check_PROGRAMS += \
-    casm_unit_kinetics
-casm_unit_kinetics_SOURCES = \
-    tests/unit/gtest_main_run_all.cpp
-casm_unit_kinetics_LDADD = \
-    $(BOOST_CHRONO_LIB)\
-    $(BOOST_FILESYSTEM_LIB)\
-    $(BOOST_PROGRAM_OPTIONS_LIB)\
-    $(BOOST_REGEX_LIB)\
-    $(BOOST_SYSTEM_LIB)\
-    libcasm.la\
-    libcasmtesting.la
-casm_unit_kinetics_CPPFLAGS = \
     $(AM_CPPFLAGS)\
     -I$(top_srcdir)/tests/unit/
 
@@ -346,16 +325,16 @@ TESTS += \
 check_PROGRAMS += \
     casm_unit_mapping
 casm_unit_mapping_SOURCES = \
-    tests/unit/gtest_main_run_all.cpp\
-    tests/unit/mapping/StrucMapping_test.cpp
+    tests/unit/mapping/StrucMapping_test.cpp\
+    tests/unit/gtest_main_run_all.cpp
 casm_unit_mapping_LDADD = \
-    $(BOOST_CHRONO_LIB)\
-    $(BOOST_FILESYSTEM_LIB)\
-    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    libcasm.la\
+    libcasmtesting.la\
     $(BOOST_REGEX_LIB)\
     $(BOOST_SYSTEM_LIB)\
-    libcasm.la\
-    libcasmtesting.la
+    $(BOOST_FILESYSTEM_LIB)\
+    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    $(BOOST_CHRONO_LIB)
 casm_unit_mapping_CPPFLAGS = \
     $(AM_CPPFLAGS)\
     -I$(top_srcdir)/tests/unit/
@@ -368,16 +347,16 @@ TESTS += \
 check_PROGRAMS += \
     casm_unit_misc
 casm_unit_misc_SOURCES = \
-    tests/unit/gtest_main_run_all.cpp\
-    tests/unit/misc/cloneable_ptr_test.cpp
+    tests/unit/misc/cloneable_ptr_test.cpp\
+    tests/unit/gtest_main_run_all.cpp
 casm_unit_misc_LDADD = \
-    $(BOOST_CHRONO_LIB)\
-    $(BOOST_FILESYSTEM_LIB)\
-    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    libcasm.la\
+    libcasmtesting.la\
     $(BOOST_REGEX_LIB)\
     $(BOOST_SYSTEM_LIB)\
-    libcasm.la\
-    libcasmtesting.la
+    $(BOOST_FILESYSTEM_LIB)\
+    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    $(BOOST_CHRONO_LIB)
 casm_unit_misc_CPPFLAGS = \
     $(AM_CPPFLAGS)\
     -I$(top_srcdir)/tests/unit/
@@ -390,17 +369,17 @@ TESTS += \
 check_PROGRAMS += \
     casm_unit_monte_carlo
 casm_unit_monte_carlo_SOURCES = \
-    tests/unit/gtest_main_run_all.cpp\
     tests/unit/monte_carlo/GrandCanonical_test.cpp\
-    tests/unit/monte_carlo/OccLocation_test.cpp
+    tests/unit/monte_carlo/OccLocation_test.cpp\
+    tests/unit/gtest_main_run_all.cpp
 casm_unit_monte_carlo_LDADD = \
-    $(BOOST_CHRONO_LIB)\
-    $(BOOST_FILESYSTEM_LIB)\
-    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    libcasm.la\
+    libcasmtesting.la\
     $(BOOST_REGEX_LIB)\
     $(BOOST_SYSTEM_LIB)\
-    libcasm.la\
-    libcasmtesting.la
+    $(BOOST_FILESYSTEM_LIB)\
+    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    $(BOOST_CHRONO_LIB)
 casm_unit_monte_carlo_CPPFLAGS = \
     $(AM_CPPFLAGS)\
     -I$(top_srcdir)/tests/unit/
@@ -416,18 +395,18 @@ TESTS += \
 check_PROGRAMS += \
     casm_unit_symmetry
 casm_unit_symmetry_SOURCES = \
-    tests/unit/gtest_main_run_all.cpp\
-    tests/unit/symmetry/InvariantSubgroup_test.cpp\
     tests/unit/symmetry/Orbit_test.cpp\
-    tests/unit/symmetry/SymBasisPermute_test.cpp
+    tests/unit/symmetry/SymBasisPermute_test.cpp\
+    tests/unit/symmetry/InvariantSubgroup_test.cpp\
+    tests/unit/gtest_main_run_all.cpp
 casm_unit_symmetry_LDADD = \
-    $(BOOST_CHRONO_LIB)\
-    $(BOOST_FILESYSTEM_LIB)\
-    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    libcasm.la\
+    libcasmtesting.la\
     $(BOOST_REGEX_LIB)\
     $(BOOST_SYSTEM_LIB)\
-    libcasm.la\
-    libcasmtesting.la
+    $(BOOST_FILESYSTEM_LIB)\
+    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    $(BOOST_CHRONO_LIB)
 casm_unit_symmetry_CPPFLAGS = \
     $(AM_CPPFLAGS)\
     -I$(top_srcdir)/tests/unit/
@@ -441,16 +420,16 @@ TESTS += \
 check_PROGRAMS += \
     casm_unit_system
 casm_unit_system_SOURCES = \
-    tests/unit/gtest_main_run_all.cpp\
-    tests/unit/system/RuntimeLibrary_test.cpp
+    tests/unit/system/RuntimeLibrary_test.cpp\
+    tests/unit/gtest_main_run_all.cpp
 casm_unit_system_LDADD = \
-    $(BOOST_CHRONO_LIB)\
-    $(BOOST_FILESYSTEM_LIB)\
-    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    libcasm.la\
+    libcasmtesting.la\
     $(BOOST_REGEX_LIB)\
     $(BOOST_SYSTEM_LIB)\
-    libcasm.la\
-    libcasmtesting.la
+    $(BOOST_FILESYSTEM_LIB)\
+    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    $(BOOST_CHRONO_LIB)
 casm_unit_system_CPPFLAGS = \
     $(AM_CPPFLAGS)\
     -I$(top_srcdir)/tests/unit/
