@@ -254,8 +254,9 @@ namespace CASM {
     return lattice() < B.lattice();
   }
 
-  /// \brief Insert the canonical form of this into the database
+  /// \brief Insert the canonical form of this into the database [deprecated]
   ///
+  /// Note: prefer using `make_canonical_and_insert`
   /// Note: does not commit the change in the database
   std::pair<DB::DatabaseIterator<Supercell>, bool> Supercell::insert() const {
     return primclex().db<Supercell>().emplace(
