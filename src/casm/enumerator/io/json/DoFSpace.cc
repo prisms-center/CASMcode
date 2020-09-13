@@ -12,9 +12,9 @@ namespace CASM {
     {
       jsonParser &cjson = json["initial_configuration"];
 
-      cjson["identifier"] = dofspace.config_region.name();
+      cjson["identifier"] = dofspace.config_region.configuration().name();
 
-      SimpleStructure sstruc = make_simple_structure(dofspace.config_region.config());
+      SimpleStructure sstruc = make_simple_structure(dofspace.config_region.configuration());
 
       cjson["lattice_vectors"] = sstruc.lat_column_mat.transpose();
 
@@ -34,4 +34,3 @@ namespace CASM {
 
 
 }
-

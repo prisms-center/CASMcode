@@ -1,51 +1,118 @@
 #include "casm/clex/Supercell.hh"
-#include "casm/enumerator/ConfigEnumInput.hh"
+#include "casm/enumerator/ConfigEnumInput_impl.hh"
+#include "casm/symmetry/PermuteIterator.hh"
 
 namespace CASM {
 
-  ConfigEnumInput::ConfigEnumInput(Configuration const &_config, std::set<Index> const &_sites_selection, std::string const &_name) :
-    m_name(_name),
-    m_sites_selection(_sites_selection),
-    m_config(_config) {
+  /** \addtogroup Enumerator
+      @{
+  */
 
-    if(m_name.empty())
-      m_name = _config.name();
-
-    if(m_sites_selection.empty()) {
-      for(Index i = 0; i < _config.size(); ++i)
-        m_sites_selection.insert(i);
-    }
-
+  /// Construct with a Configuration and all sites selected
+  ConfigEnumInput::ConfigEnumInput(Configuration const &_configuration) :
+    m_configuration(_configuration) {
+    select_all_sites();
   }
 
-  ConfigEnumInput::ConfigEnumInput(Supercell const &_scel, std::set<Index> const &_sites_selection) :
-    ConfigEnumInput(Configuration::zeros(_scel), _sites_selection, _scel.name()) {}
+  /// Construct using a Supercell's default Configuration and all sites selected
+  ///
+  /// Note:
+  /// - The Supercell default Configuration is given by `Configuration::zeros(_supercell)`
+  ConfigEnumInput::ConfigEnumInput(Supercell const &_supercell) :
+    ConfigEnumInput(Configuration::zeros(_supercell)) {}
 
-  void ConfigEnumInput::_generate_group() const {
-    for(PermuteIterator const &perm_it : config().factor_group()) {
-      bool add_it = true;
+  /// Construct with a Configuration and specified sites selected
+  ///
+  /// Note:
+  /// - Empty `_site_index_selection` results in no sites being selected
+  ConfigEnumInput::ConfigEnumInput(Configuration const &_configuration,
+                                   std::set<Index> const &_site_index_selection = {}) :
+    m_site_index_selection(_site_index_selection),
+    m_configuration(_configuration) {}
 
-      for(Index s : sites()) {
-        if(sites().count(perm_it.permute_ind(s)) == 0) {
-          add_it = false;
-          break;
-        }
-      }
-      if(add_it)
-        m_group.push_back(perm_it);
-    }
+  /// Construct using a Supercell's default Configuration and specified sites selected
+  ///
+  /// Note:
+  /// - The Supercell default Configuration is given by `Configuration::zeros(_supercell)`
+  /// - Empty `_site_index_selection` results in no sites being selected
+  ConfigEnumInput::ConfigEnumInput(Supercell const &_supercell,
+                                   std::set<Index> const &_site_index_selection = {}) :
+    ConfigEnumInput(Configuration::zeros(_supercell), _site_index_selection) {}
 
+  Configuration const &ConfigEnumInput::configuration() const {
+    return m_configuration;
   }
 
-  void ConfigEnumInput::_add_site(Index b) {
-    Index V = m_config.supercell().volume();
+  // /// (deprecated) Prefer using configuration()
+  // Configuration const &ConfigEnumInput::config() const {
+  //   return configuration();
+  // }
+  //
+  // /// (deprecated) Prefer using configuration()
+  // Supercell const &ConfigEnumInput::supercell() const {
+  //   return configuration().supercell();
+  // }
+  //
+  // /// (deprecated) Prefer using configuration()
+  // ConfigDoF const &ConfigEnumInput::configdof() const {
+  //   return configuration().configdof();
+  // }
+
+  std::set<Index> const &ConfigEnumInput::sites() const {
+    return m_site_index_selection;
+  }
+
+  void ConfigEnumInput::clear_sites() {
+    m_site_index_selection.clear();
+  }
+
+  void ConfigEnumInput::select_all_sites() {
+    for(Index i = 0; i < configuration().size(); ++i)
+      m_site_index_selection.insert(i);
+  }
+
+  void ConfigEnumInput::select_site(Index site_index) {
+    m_site_index_selection.insert(site_index);
+  }
+
+  void ConfigEnumInput::select_site(UnitCellCoord const &site_uccord) {
+    auto const &converter = configuration().supercell().sym_info().unitcellcoord_index_converter();
+    m_site_index_selection.insert(converter(site_uccord));
+  }
+
+  void ConfigEnumInput::select_sublattice(Index sublattice_index) {
+    Index b = sublattice_index;
+    Index V = m_configuration.supercell().volume();
     for(Index i = b * V; i < (b + 1)*V; ++i) {
-      m_sites_selection.insert(i);
+      m_site_index_selection.insert(i);
     }
   }
 
-  void ConfigEnumInput::_add_site(UnitCellCoord const &_ucc) {
-    m_sites_selection.insert(this->supercell().sym_info().unitcellcoord_index_converter()(_ucc));
-    return;
+  namespace {
+    bool no_permutation_between_selected_and_unselected_sites(PermuteIterator const &perm_it,
+                                                              std::set<Index> const &selected_sites) {
+      return std::none_of(
+               selected_sites.begin(),
+               selected_sites.end(),
+      [&](Index s) {
+        return selected_sites.count(perm_it.permute_ind(s)) == 0;
+      });
+    }
   }
+
+  std::vector<PermuteIterator> make_invariant_group(ConfigEnumInput const &config_enum_input) {
+
+    std::vector<PermuteIterator> invariant_group;
+    auto factor_group = config_enum_input.configuration().factor_group();
+    std::set<Index> const &selected_sites = config_enum_input.sites();
+
+    for(PermuteIterator const &perm_it : factor_group) {
+      if(no_permutation_between_selected_and_unselected_sites(perm_it, selected_sites)) {
+        invariant_group.push_back(perm_it);
+      }
+    }
+    return invariant_group;
+  }
+
+  /** @}*/
 }
