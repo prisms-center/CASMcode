@@ -82,13 +82,17 @@ namespace CASM {
   }
 
   jsonParser &KwargsParser::report() {
+    std::string sep = ".";
+    if(name().empty()) {
+      sep = "";
+    }
     if(warning.size()) {
-      parent()[name() + ".WARNING"] = warning;
-      parent()[name() + ".WARNING"].set_force_column();
+      parent()[name() + sep + "WARNING"] = warning;
+      parent()[name() + sep + "WARNING"].set_force_column();
     }
     if(error.size()) {
-      parent()[name() + ".ERROR"] = error;
-      parent()[name() + ".ERROR"].set_force_column();
+      parent()[name() + sep + "ERROR"] = error;
+      parent()[name() + sep + "ERROR"].set_force_column();
     }
     return input;
   }

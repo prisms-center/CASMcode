@@ -322,7 +322,7 @@ namespace CASM {
   template<typename T>
   template<typename RequiredType, typename...Args>
   std::shared_ptr<InputParser<RequiredType>> InputParser<T>::subparse_if(fs::path option, Args &&...args) {
-    auto subparser = std::shared_ptr<InputParser<RequiredType>>(
+    auto subparser = std::make_shared<InputParser<RequiredType>>(
                        this->input, this->relpath(option), false, std::forward<Args>(args)...);
     kwargs[subparser->path] = subparser;
     return subparser;

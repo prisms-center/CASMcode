@@ -85,7 +85,8 @@ namespace CASM {
 
     Log &log = primclex.log();
     auto &db_config = primclex.db<Configuration>();
-
+    auto const &configuration = in_config.configuration();
+    auto const &supercell = configuration.supercell();
 
     std::string dry_run_msg = CASM::dry_run_msg(dry_run);
 
@@ -97,9 +98,9 @@ namespace CASM {
 
     auto enumerator_ptr = f(in_config);
     auto &enumerator = *enumerator_ptr;
-    log << dry_run_msg << "Enumerate configurations for " << in_config.name() << " ...  " << std::flush;
+    log << dry_run_msg << "Enumerate configurations for " << configuration.name() << " ...  " << std::flush;
 
-    Index num_before = db_config.scel_range_size(in_config.supercell().name());
+    Index num_before = db_config.scel_range_size(supercell.name());
     if(!filter_expr.empty()) {
       try {
         primclex.db<Configuration>().insert(
@@ -119,7 +120,7 @@ namespace CASM {
       primclex.db<Configuration>().insert(enumerator.begin(), enumerator.end());
     }
 
-    log << (db_config.scel_range_size(in_config.supercell().name()) - num_before) << " configs." << std::endl;
+    log << (db_config.scel_range_size(supercell.name()) - num_before) << " configs." << std::endl;
     log << dry_run_msg << "  DONE." << std::endl << std::endl;
 
     Index Nfinal = db_config.size();
@@ -201,6 +202,8 @@ namespace CASM {
 
     Log &log = primclex.log();
     auto &db_config = primclex.db<Configuration>();
+    auto const &configuration = in_config.configuration();
+    auto const &supercell = configuration.supercell();
 
     std::string dry_run_msg = CASM::dry_run_msg(dry_run);
 
@@ -209,11 +212,11 @@ namespace CASM {
 
     log.begin(method);
 
-    log << dry_run_msg << "Enumerate configurations for " << in_config.name() << " ...  " << std::flush;
+    log << dry_run_msg << "Enumerate configurations for " << configuration.name() << " ...  " << std::flush;
 
     auto enumerator_ptr = f(in_config);
     auto &enumerator = *enumerator_ptr;
-    Index num_before = db_config.scel_range_size(in_config.supercell().name());
+    Index num_before = db_config.scel_range_size(supercell.name());
     if(!filter_expr.empty()) {
       try {
         auto it = filter_begin(
@@ -246,7 +249,7 @@ namespace CASM {
       }
     }
 
-    log << (db_config.scel_range_size(in_config.supercell().name()) - num_before) << " configs." << std::endl;
+    log << (db_config.scel_range_size(supercell.name()) - num_before) << " configs." << std::endl;
 
     log << dry_run_msg << "  DONE." << std::endl << std::endl;
 

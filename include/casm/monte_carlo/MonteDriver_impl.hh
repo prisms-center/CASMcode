@@ -8,6 +8,7 @@
 #include <boost/filesystem/fstream.hpp>
 
 #include "casm/casm_io/container/json_io.hh"
+#include "casm/clex/io/json/ConfigDoF_json_io.hh"
 #include "casm/monte_carlo/MonteIO.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
 #include "casm/monte_carlo/MonteCarloEnum.hh"

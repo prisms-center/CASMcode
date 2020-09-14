@@ -5,6 +5,7 @@
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/database/ScelDatabase.hh"
+#include "casm/database/ScelDatabaseTools.hh"
 #include "casm/clex/ConfigEnumAllOccupations_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ScelEnum.hh"
@@ -70,7 +71,6 @@ protected:
 
 };
 
-
 TEST_F(ExampleEnumerationZrOConfigEnumAllOccupations, Example1) {
   // Example enumerating all symmetrically unique occupational orderings in each of the supercells
   // in the Supercell database
@@ -83,4 +83,21 @@ TEST_F(ExampleEnumerationZrOConfigEnumAllOccupations, Example1) {
     std::copy(enumerator.begin(), enumerator.end(), std::back_inserter(configurations));
   }
   EXPECT_EQ(configurations.size(), 336);
+}
+
+TEST_F(ExampleEnumerationZrOConfigEnumAllOccupations, Example2) {
+
+  // Enumerate point and pair cluster perturbations of an ordered structure
+
+  // Configuration with composition Zr_{6}O_{1}
+
+  Eigen::Matrix3l T;
+  T << 2, -1, 1,
+  1, 1, 1,
+  0, 0, 1;
+
+  CASM::Supercell const &supercell = *make_canonical_and_insert(shared_prim, T, primclex.db<Supercell>()).first;
+
+  std::cout << "super lattice: \n" << supercell.lattice().lat_column_mat() << std::endl;
+  std::cout << "T:\n" << supercell.sym_info().transformation_matrix_to_super() << std::endl;
 }

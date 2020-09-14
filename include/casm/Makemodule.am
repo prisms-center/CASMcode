@@ -409,7 +409,10 @@ casm_database_json_include_HEADERS = \
 
 casm_enumerator_includedir=$(includedir)/casm/enumerator
 casm_enumerator_include_HEADERS = \
+    include/casm/enumerator/ClusterSitesSelector.hh\
+    include/casm/enumerator/ClusterSitesSelector_impl.hh\
     include/casm/enumerator/ConfigEnumInput.hh\
+    include/casm/enumerator/ConfigEnumInput_impl.hh\
     include/casm/enumerator/DoFSpace.hh\
     include/casm/enumerator/Enumerator.hh\
     include/casm/enumerator/InputEnumerator.hh\
@@ -419,6 +422,7 @@ casm_enumerator_include_HEADERS = \
 
 casm_enumerator_io_json_includedir=$(includedir)/casm/enumerator/io/json
 casm_enumerator_io_json_include_HEADERS = \
+    include/casm/enumerator/io/json/ConfigEnumInput_json_io.hh\
     include/casm/enumerator/io/json/DoFSpace.hh
 
 #-------------------------------------------------------------------------------#

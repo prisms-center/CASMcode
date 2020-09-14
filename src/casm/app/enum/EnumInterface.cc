@@ -1,6 +1,7 @@
 
 #include "casm/app/enum.hh"
 #include "casm/app/enum/EnumInterface_impl.hh"
+#include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/ConfigEnumRandomOccupations.hh"
 #include "casm/clex/ConfigEnumRandomLocal.hh"
@@ -13,6 +14,7 @@
 #include "casm/crystallography/SymType.hh"
 #include "casm/crystallography/io/UnitCellCoordIO.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
+#include "casm/enumerator/io/json/ConfigEnumInput_json_io.hh"
 
 namespace CASM {
 
@@ -202,62 +204,18 @@ namespace CASM {
     jsonParser const &_kwargs,
     Completer::EnumOptionBase const &enum_opt,
     EnumeratorMap const *interface_map) {
-    std::vector<ConfigEnumInput> result;
-    std::vector<std::string> confignames;
-    try {
-      auto scel_enum = make_enumerator_scel_enum(primclex, _kwargs, enum_opt);
-      for(auto const &scel : *scel_enum)
-        result.push_back(ConfigEnumInput(scel));
 
-      _kwargs.get_if(confignames, "confignames");
-      if(enum_opt.vm().count("confignames")) {
-        for(std::string const &configname : enum_opt.config_strs())
-          confignames.push_back(configname);
-      }
-      for(std::string const &configname : confignames) {
-        auto it = primclex.const_db<Configuration>().find(configname);
-        auto end = primclex.const_db<Configuration>().end();
-        if(it == end)
-          throw std::runtime_error("Attempting to parse enumeration input, but no valid config exists named '" + configname + "'.");
-        result.push_back(ConfigEnumInput(*it));
-      }
+    jsonParser json {_kwargs};
+    InputParser<std::vector<ConfigEnumInput>> parser {
+      json,
+      primclex.shared_prim(),
+      primclex.db<Supercell>(),
+      primclex.db<Configuration>()};
 
-      if(_kwargs.contains("configs_from_enum")) {
-        throw std::runtime_error("How do we extract configurations from enumerator? OutputIterator interface?");
-        //interface_map->run(primclex, _kwargs["configs_from_enum"], Completer::EnumOption(), interface_map);
-      }
+    std::runtime_error error_if_invalid {"Error reading enumerator input from JSON"};
+    report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
 
-      bool is_init = false;
-      auto find_it = _kwargs.find("sublats");
-      if(find_it != _kwargs.end()) {
-        is_init = true;
-        std::vector<Index> sublats;
-        find_it->get(sublats);
-        for(ConfigEnumInput &config : result) {
-          config.set_sites(sublats);
-        }
-      }
-
-      find_it = _kwargs.find("sites");
-      if(find_it != _kwargs.end()) {
-        std::vector<UnitCellCoord> sites;
-        find_it->get(sites);
-        Index l = 0;
-        if(is_init) {
-          l = result.size();
-          result.reserve(2 * result.size());
-
-          for(Index i = 0; i < l; ++i)
-            result.push_back(result[i]);
-        }
-        for(; l < result.size(); ++l)
-          result[l].set_sites(sites);
-      }
-    }
-    catch(std::exception const &e) {
-      throw std::runtime_error(std::string("Unable to parse configurtion input arguments:\n") + e.what());
-    }
-    return result;
+    return *parser.value;
   }
 
   /// \brief Standardizes parsing casm enum filter expressions

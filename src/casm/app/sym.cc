@@ -63,13 +63,17 @@ namespace Local {
   }
 
   static void _write_config_symmetry_files(ConfigEnumInput const &config, fs::path sym_dir) {
+
+    Lattice config_lattice = config.configuration().ideal_lattice();
+    std::vector<PermuteIterator> invariant_permute_group = make_invariant_group(config);
+
     // Write lattice point group
     {
-      SymGroup lattice_pg(SymGroup::lattice_point_group(config.config().ideal_lattice()));
+      SymGroup config_lattice_pg(SymGroup::lattice_point_group(config_lattice));
       fs::ofstream outfile;
       jsonParser json;
       outfile.open(sym_dir / "lattice_point_group.json");
-      write_symgroup(lattice_pg, json);
+      write_symgroup(config_lattice_pg, json);
       json.print(outfile);
       outfile.close();
     }
@@ -79,9 +83,8 @@ namespace Local {
       fs::ofstream outfile;
       jsonParser json;
       outfile.open(sym_dir / "factor_group.json");
-      write_symgroup(make_sym_group(config.group().begin(),
-                                    config.group().end(),
-                                    config.config().ideal_lattice()), json);
+      SymGroup config_factor_group = make_sym_group(invariant_permute_group, config_lattice);
+      write_symgroup(config_factor_group, json);
       json.print(outfile);
       outfile.close();
     }
@@ -91,9 +94,8 @@ namespace Local {
       fs::ofstream outfile;
       jsonParser json;
       outfile.open(sym_dir / "crystal_point_group.json");
-      write_symgroup(make_point_group(config.group().begin(),
-                                      config.group().end(),
-                                      config.config().ideal_lattice()), json);
+      SymGroup config_point_group = make_point_group(invariant_permute_group, config_lattice);
+      write_symgroup(config_point_group, json);
       json.print(outfile);
       outfile.close();
     }
@@ -322,7 +324,13 @@ namespace CASM {
 
       // For each enumeration envrionment, perform analysis and write files.
       for(ConfigEnumInput const &config : configs) {
-        fs::path sym_dir = primclex().dir().symmetry_dir(config.name());
+
+        if(config.configuration().id() == "none") {
+          log() << "Configuration does not exist in database: skipping" << std::endl;
+          continue;
+        }
+
+        fs::path sym_dir = primclex().dir().symmetry_dir(config.configuration().name());
         fs::create_directories(sym_dir);
 
         Local::_write_config_symmetry_files(config, sym_dir);

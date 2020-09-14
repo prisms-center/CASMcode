@@ -276,11 +276,15 @@ libcasm_la_SOURCES = \
     include/casm/database/Update_impl.hh\
     include/casm/database/json/jsonDatabase.hh\
     include/casm/database/json/jsonPropertiesDatabase.hh\
+    include/casm/enumerator/ClusterSitesSelector.hh\
+    include/casm/enumerator/ClusterSitesSelector_impl.hh\
     include/casm/enumerator/ConfigEnumInput.hh\
+    include/casm/enumerator/ConfigEnumInput_impl.hh\
     include/casm/enumerator/DoFSpace.hh\
     include/casm/enumerator/Enumerator.hh\
     include/casm/enumerator/InputEnumerator.hh\
     include/casm/enumerator/RandomAccessEnumerator.hh\
+    include/casm/enumerator/io/json/ConfigEnumInput_json_io.hh\
     include/casm/enumerator/io/json/DoFSpace.hh\
     include/casm/external/Eigen/Array\
     include/casm/external/Eigen/CASM_AddOns\
@@ -818,6 +822,7 @@ libcasm_la_SOURCES = \
     src/casm/clex/SupercellIO.cc\
     src/casm/clex/SupercellTraits.cc\
     src/casm/clex/io/json/ClexBasisSpecs_json_io.cc\
+    src/casm/clex/io/json/ConfigDoF_json_io.cc\
     src/casm/clex/io/json/ECIContainer_json_io.cc\
     src/casm/clusterography/ClusterInvariants.cc\
     src/casm/clusterography/ClusterOrbits.cc\
@@ -881,12 +886,14 @@ libcasm_la_SOURCES = \
     src/casm/database/PropertiesDatabase.cc\
     src/casm/database/Remove.cc\
     src/casm/database/ScelDatabase.cc\
+    src/casm/database/ScelDatabaseTools.cc\
     src/casm/database/Selected.cc\
     src/casm/database/Selection.cc\
     src/casm/database/json/jsonDatabase.cc\
     src/casm/database/json/jsonPropertiesDatabase.cc\
     src/casm/enumerator/ConfigEnumInput.cc\
     src/casm/enumerator/DoFSpace.cc\
+    src/casm/enumerator/io/json/ConfigEnumInput_json_io.cc\
     src/casm/enumerator/io/json/DoFSpace.cc\
     src/casm/external/gzstream/gzstream.C\
     src/casm/external/qhull/libqhull_r/geom2_r.c\

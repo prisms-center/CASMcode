@@ -283,6 +283,29 @@ casm_unit_database_CPPFLAGS = \
 #-------------------------------------------------------------------------------#
 
 TESTS += \
+    casm_unit_enumerator
+check_PROGRAMS += \
+    casm_unit_enumerator
+casm_unit_enumerator_SOURCES = \
+    tests/unit/enumerator/ConfigEnumInput_json_io_test.cpp\
+    tests/unit/enumerator/ConfigEnumInput_test.cpp\
+    tests/unit/gtest_main_run_all.cpp
+casm_unit_enumerator_LDADD = \
+    $(BOOST_CHRONO_LIB)\
+    $(BOOST_FILESYSTEM_LIB)\
+    $(BOOST_PROGRAM_OPTIONS_LIB)\
+    $(BOOST_REGEX_LIB)\
+    $(BOOST_SYSTEM_LIB)\
+    libcasm.la\
+    libcasmtesting.la
+casm_unit_enumerator_CPPFLAGS = \
+    $(AM_CPPFLAGS)\
+    -I$(top_srcdir)/tests/unit/
+
+
+#-------------------------------------------------------------------------------#
+
+TESTS += \
     casm_unit_examples
 check_PROGRAMS += \
     casm_unit_examples

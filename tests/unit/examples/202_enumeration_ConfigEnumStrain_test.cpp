@@ -529,13 +529,13 @@ namespace enumeration_test_impl {
   }
 
   SymGroupRep const &global_dof_symrep(ConfigEnumInput const &config_input, DoFKey global_dof_key) {
-    return global_dof_symrep(config_input.supercell().prim(), global_dof_key);
+    return global_dof_symrep(config_input.configuration().supercell().prim(), global_dof_key);
   }
 
   SymGroup make_point_group(ConfigEnumInput const &config_input) {
     return make_point_group(
-             config_input.group(),
-             config_input.supercell().sym_info().supercell_lattice());
+             make_invariant_group(config_input),
+             config_input.configuration().supercell().sym_info().supercell_lattice());
   }
 
   // check if there is a solution X, for:  B = A * X
