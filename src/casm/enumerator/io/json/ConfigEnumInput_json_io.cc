@@ -167,7 +167,6 @@ namespace CASM {
     // check for "sublats"
     std::vector<Index> sublats;
     parser.optional(sublats, "sublats");
-    std::cout << "sublats: " << sublats << std::endl;
     for(Index b : sublats) {
       if(b < 0 || b >= shared_prim->basis().size()) {
         std::stringstream msg;
@@ -179,9 +178,6 @@ namespace CASM {
     // check for "sites"
     std::vector<UnitCellCoord> sites;
     parser.optional(sites, "sites");
-    jsonParser tmp;
-    tmp["sites"] = sites;
-    std::cout << "sites: \n" << tmp << std::endl;
     Index i = 0;
     for(UnitCellCoord site_uccoord : sites) {
       Index b = site_uccoord.sublattice();
@@ -194,28 +190,22 @@ namespace CASM {
     }
 
     // check for "cluster_specs"
-    std::cout << "hi 0" << std::endl;
     auto cluster_specs_subparser = parser.subparse_if<ClusterSpecs>("cluster_specs", shared_prim);
 
-    std::cout << "hi 1" << std::endl;
     if(!parser.valid()) {
       return;
     }
 
     // Use the parsed input to construct ConfigEnumInput:
-    std::cout << "hi 2" << std::endl;
     parser.value = notstd::make_unique<std::vector<ConfigEnumInput>>();
     auto &config_enum_input = *parser.value;
 
-    std::cout << "hi 3" << std::endl;
     for(const auto &config : config_selection.selected()) {
       config_enum_input.emplace_back(config);
     }
-    std::cout << "hi 4" << std::endl;
     for(const auto &scel : supercell_selection.selected()) {
       config_enum_input.emplace_back(scel);
     }
-    std::cout << "hi 5" << std::endl;
     if(scel_enum_props_subparser->value) {
       ScelEnumByProps enumerator {shared_prim, *scel_enum_props_subparser->value};
       for(const auto &scel : enumerator) {
@@ -223,7 +213,6 @@ namespace CASM {
         config_enum_input.emplace_back(*scel_it);
       }
     }
-    std::cout << "hi 6" << std::endl;
     if(sublats.size() || sites.size()) {
       for(ConfigEnumInput &input : config_enum_input) {
         input.clear_sites();
@@ -231,7 +220,6 @@ namespace CASM {
         input.select_sites(sites);
       }
     }
-    std::cout << "hi 7" << std::endl;
     if(cluster_specs_subparser->value) {
       ClusterSpecs const &cluster_specs = *cluster_specs_subparser->value;
       std::vector<ConfigEnumInput> with_cluster_sites;
@@ -241,7 +229,6 @@ namespace CASM {
       }
       config_enum_input = std::move(with_cluster_sites);
     }
-    std::cout << "hi 8" << std::endl;
 
   }
 
