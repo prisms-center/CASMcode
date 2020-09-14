@@ -9,7 +9,9 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/ScelEnum.hh"
+#include "casm/clex/SimpleStructureTools.hh"
 #include "casm/clex/Supercell.hh"
+#include "casm/crystallography/io/VaspIO.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/ScelDatabase.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
@@ -223,6 +225,11 @@ TEST_F(ConfigEnumInputjsonIOTest, Test6) {
     ]
   })"));
 
+  std::vector<UnitCellCoord> sites {
+    UnitCellCoord {0, UnitCell {0, 0, 0} },
+    UnitCellCoord {0, UnitCell {1, 0, 0} }
+  };
+
   InputParser<std::vector<ConfigEnumInput>> parser {json,
                                                     shared_prim,
                                                     primclex.db<Supercell>(),
@@ -231,7 +238,41 @@ TEST_F(ConfigEnumInputjsonIOTest, Test6) {
   std::runtime_error error_if_invalid {"Failed to parse ConfigEnumInput JSON"};
   report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
   EXPECT_EQ(parser.value->size(), 13);
-  jsonParser show;
-  show["input"] = *parser.value;
-  std::cout << show << std::endl;
+  for(ConfigEnumInput const &input : *parser.value) {
+    EXPECT_EQ(input.sites().count(input.configuration().linear_index(sites[0])), 1);
+    EXPECT_EQ(input.sites().count(input.configuration().linear_index(sites[1])), 1);
+  }
+}
+
+namespace {
+
+  std::string _pos_string(Configuration const &_config, std::string name = "none") {
+    std::stringstream ss;
+    VaspIO::PrintPOSCAR p(make_simple_structure(_config.supercell(), _config.configdof()), name);
+    p.sort();
+    p.print(ss);
+    return ss.str();
+  }
+}
+
+TEST_F(ConfigEnumInputjsonIOTest, Test7) {
+
+  std::cout << "here 0" << std::endl;
+  auto conventional_fcc = std::make_shared<Supercell>(shared_prim, _fcc_conventional_transf_mat());
+  std::cout << "here 1" << std::endl;
+  auto conventional_fcc_3x3x3 = std::make_shared<Supercell>(shared_prim, 3 * _fcc_conventional_transf_mat());
+  std::cout << "here 2" << std::endl;
+  Configuration config_L12 {conventional_fcc};
+  std::cout << "here 3" << std::endl;
+  config_L12.configdof().occ(0) = 1;
+  std::cout << "here 4" << std::endl;
+  FillSupercell filler {conventional_fcc_3x3x3, config_L12, TOL};
+  std::cout << "here 5" << std::endl;
+  Configuration config_L12_3x3x3 = filler(config_L12);
+
+  std::cout << "here 6" << std::endl;
+  std::cout << _pos_string(config_L12) << std::endl;
+  std::cout << _pos_string(config_L12_3x3x3) << std::endl;
+
+  EXPECT_EQ(1, 1);
 }

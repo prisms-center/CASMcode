@@ -1,10 +1,8 @@
 #include "gtest/gtest.h"
 #include "autotools.hh"
-
-/// What is being tested:
 #include "casm/clex/Supercell.hh"
-#include "casm/enumerator/ConfigEnumInput.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/enumerator/ConfigEnumInput.hh"
 #include "crystallography/TestStructures.hh"
 
 using namespace CASM;
