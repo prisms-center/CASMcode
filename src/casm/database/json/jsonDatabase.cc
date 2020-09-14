@@ -6,6 +6,7 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/QueryHandler_impl.hh"
 #include "casm/clex/PrimClex_impl.hh"
+#include "casm/clex/io/json/ConfigDoF_json_io.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/database/DatabaseHandler_impl.hh"
