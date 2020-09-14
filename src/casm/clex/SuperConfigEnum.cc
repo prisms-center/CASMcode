@@ -201,7 +201,7 @@ namespace CASM {
 
     // -- Enumerator construction --
     auto lambda = [&](ConfigEnumInput const & _config) {
-      return notstd::make_unique<SuperConfigEnum>(_config.supercell(), subconfig.begin(), subconfig.end());
+      return notstd::make_unique<SuperConfigEnum>(_config.configuration().supercell(), subconfig.begin(), subconfig.end());
     };
 
     int returncode = insert_configs_via_lattice_enum(

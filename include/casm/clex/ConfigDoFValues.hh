@@ -4,7 +4,6 @@
 #include "casm/basis_set/DoFSet.hh"
 #include "casm/crystallography/AnisoValTraits.hh"
 namespace CASM {
-  class jsonParser;
 
   class ConfigDoFValues {
   public:
@@ -101,8 +100,6 @@ namespace CASM {
     std::vector<SymGroupRepID> m_symrep_IDs;
   };
 
-  jsonParser &to_json(LocalDiscreteConfigDoFValues const &_values, jsonParser &_json);
-  void from_json(LocalDiscreteConfigDoFValues &_values, jsonParser const &_json);
 
   class LocalContinuousConfigDoFValues : public ConfigDoFValues {
   public:
@@ -186,8 +183,6 @@ namespace CASM {
     std::vector<DoFSetInfo> m_info;
   };
 
-  jsonParser &to_json(LocalContinuousConfigDoFValues const &_values, jsonParser &_json);
-  void from_json(LocalContinuousConfigDoFValues &_values, jsonParser const &_json);
 
   class GlobalContinuousConfigDoFValues : public ConfigDoFValues {
   public:
@@ -244,10 +239,6 @@ namespace CASM {
     ValueType m_vals;
     DoFSetInfo m_info;
   };
-
-  jsonParser &to_json(GlobalContinuousConfigDoFValues const &_values, jsonParser &_json);
-  void from_json(GlobalContinuousConfigDoFValues &_values, jsonParser const &_json);
-
 
 }
 

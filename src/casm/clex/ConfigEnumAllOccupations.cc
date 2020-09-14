@@ -92,7 +92,7 @@ namespace CASM {
 
   namespace local_impl {
     std::vector<int> max_selected_occupation(ConfigEnumInput const &_config) {
-      std::vector<int> max = _config.supercell().max_allowed_occupation();
+      std::vector<int> max = _config.configuration().supercell().max_allowed_occupation();
 
       std::vector<int> maxselect;
       for(Index i : _config.sites())
@@ -114,7 +114,7 @@ namespace CASM {
       local_impl::max_selected_occupation(_input_config),
       std::vector<int>(_input_config.sites().size(), 1)),
 
-    m_current(notstd::make_cloneable<Configuration>(_input_config.config())),
+    m_current(notstd::make_cloneable<Configuration>(_input_config.configuration())),
     m_subset_mode(false) {
 
     if(m_counter.size() != _input_config.sites().size())

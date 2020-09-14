@@ -150,7 +150,9 @@ namespace CASM {
 
     bool sym_axes(false);
 
-    Index nsites = in_configs[0].sites().size();
+    Configuration const &reference_configuration = in_configs[0].configuration();
+    std::set<Index> const &reference_sites = in_configs[0].sites();
+    Index nsites = reference_sites.size();
     std::vector<Index> dof_dims;
     Index tot_dim(0);
     for(auto const &_in : in_configs) {
@@ -169,9 +171,9 @@ namespace CASM {
       from_json(dof, _kwargs["dof"]);
       DoFType::traits(dof);
 
-      auto const &dof_info = in_configs[0].configdof().local_dof(dof).info();
-      for(Index l : in_configs[0].sites()) {
-        dof_dims.push_back(dof_info[in_configs[0].config().sublat(l)].dim());
+      auto const &dof_info = reference_configuration.configdof().local_dof(dof).info();
+      for(Index l : reference_sites) {
+        dof_dims.push_back(dof_info[reference_configuration.sublat(l)].dim());
         tot_dim += dof_dims.back();
       }
 
@@ -281,18 +283,21 @@ namespace CASM {
                               Index _max_nonzero,
                               std::vector<std::string> const &_filter_expr,
                               bool dry_run) {
-    Configuration tconfig = _in_config.config();
+    Configuration tconfig = _in_config.configuration();
+    auto &tlocal_dof = tconfig.configdof().local_dof(_dof);
+    auto const &selected_sites = _in_config.sites();
 
-    if(_in_config.sites().size() == 0) {
-      tconfig.configdof().local_dof(_dof).values().setZero();
+    if(selected_sites.size() == 0) {
+      tlocal_dof.values().setZero();
     }
     else {
-      for(Index s : _in_config.sites()) {
-        tconfig.configdof().local_dof(_dof).site_value(s).setZero();
+      for(Index s : selected_sites) {
+        tlocal_dof.site_value(s).setZero();
       }
     }
 
-    ConfigEnumInput config(tconfig, _in_config.sites());
+    ConfigEnumInput config {tconfig, selected_sites};
+    std::vector<PermuteIterator> config_invariant_group = make_invariant_group(config);
     Eigen::MatrixXd axes = _axes;
     //PRINT INFO TO LOG:
     Log &log = _primclex.log();
@@ -301,9 +306,9 @@ namespace CASM {
       log << "Option \"sym_axes\" selected. Preparing to construct symmetry-adapted axes. This may take several minutes...\n\n";
       auto irreps = irrep_decomposition(config.sites().begin(),
                                         config.sites().end(),
-                                        config.supercell().sym_info(),
+                                        config.configuration().supercell().sym_info(),
                                         _dof,
-                                        config.group(),
+                                        config_invariant_group,
                                         _axes);
       axes = full_trans_mat(irreps).transpose();
       log << "ConfigEnumSiteDoFs summary for DoF '" << _dof << "':\n";
@@ -348,7 +353,7 @@ namespace CASM {
 
     int returncode = insert_configs(enumerator_name,
                                     _primclex,
-                                    config.supercell(),
+                                    config.configuration().supercell(),
                                     constructor,
                                     _filter_expr,
                                     false,
@@ -367,7 +372,6 @@ namespace CASM {
                                          Index _min_nonzero,
                                          Index _max_nonzero) :
 
-    //m_current(_init.config()),
     m_dof_key(_dof),
     m_min_nonzero(_min_nonzero),
     m_max_nonzero(_max_nonzero),
@@ -381,18 +385,16 @@ namespace CASM {
     //m_combo_mode(false),
     m_combo_index(0) {
 
+    Configuration const &configuration = _init.configuration();
 
-
-    if(_init.config().size() != _init.sites().size())
+    if(configuration.size() != m_sites.size())
       m_subset_mode = true;
-
-
 
     if(m_axes.cols() == 0) {
       this->_invalidate();
     }
     else {
-      m_current = notstd::make_cloneable<Configuration>(_init.config());
+      m_current = notstd::make_cloneable<Configuration>(configuration);
       reset_properties(*m_current);
 
       m_dof_vals = &(m_current->configdof().local_dof(m_dof_key));

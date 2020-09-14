@@ -234,7 +234,9 @@ namespace CASM {
                             bool dry_run) {
     std::vector<SymRepTools::SubWedge> wedges;
     std::vector<int> dims;
-    SymGroup pg = make_point_group(_config.group(), _config.supercell().sym_info().supercell_lattice());
+    std::vector<PermuteIterator> _config_invariant_group = make_invariant_group(_config);
+    Lattice const &supercell_lattice = _config.configuration().supercell().sym_info().supercell_lattice();
+    SymGroup pg = make_point_group(_config_invariant_group, supercell_lattice);
     DoFKey strain_dof_key;
     std::vector<DoFKey> tdof_types = global_dof_types(_primclex.prim());
     Index istrain = find_index_if(tdof_types,
@@ -306,7 +308,7 @@ namespace CASM {
                                      bool trim_corners) :
     m_strain_key(_strain_key),
     m_trim_corners(trim_corners),
-    m_current(_init.config()),
+    m_current(_init.configuration()),
     m_equiv_ind(0),
     m_wedges(_wedges),
     m_shape_factor(Eigen::MatrixXd::Identity(min_val.size(), min_val.size())) {

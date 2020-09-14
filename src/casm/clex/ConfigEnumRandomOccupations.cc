@@ -137,7 +137,7 @@ namespace CASM {
     MTRand &_mtrand):
     m_n_config(_n_config),
     m_mtrand(&_mtrand),
-    m_max_allowed(_in_config.supercell().max_allowed_occupation()),
+    m_max_allowed(_in_config.configuration().supercell().max_allowed_occupation()),
     m_site_selection(_in_config.sites().begin(), _in_config.sites().end()) {
 
     if(m_n_config < 0) {
@@ -148,7 +148,7 @@ namespace CASM {
       return;
     }
 
-    m_current = notstd::make_cloneable<Configuration>(_in_config.config());
+    m_current = notstd::make_cloneable<Configuration>(_in_config.configuration());
 
     reset_properties(*m_current);
     this->_initialize(&(*m_current));

@@ -12,8 +12,6 @@ namespace CASM {
   class jsonParser;
   class SymGroupRepID;
   class SymOp;
-  template<typename T>
-  struct jsonConstructor;
 
   /// \brief A container class for the different degrees of freedom a Configuration
   /// might have
@@ -194,22 +192,6 @@ namespace CASM {
 
   };
 
-  template<>
-  struct jsonConstructor<ConfigDoF> {
-
-    static ConfigDoF from_json(const jsonParser &json,
-                               Index NB,
-                               std::map<DoFKey, DoFSetInfo> const &global_info,
-                               std::map<DoFKey, std::vector<DoFSetInfo> > const &local_info,
-                               std::vector<SymGroupRepID> const &_occ_symrep_IDs,
-                               double _tol);
-    //from_json(const jsonParser &json, Index NB);
-  };
-
-  jsonParser &to_json(const ConfigDoF &value, jsonParser &json);
-
-  void from_json(ConfigDoF &value, const jsonParser &json);//, Index NB);
-
   void swap(ConfigDoF &A, ConfigDoF &B);
 
   inline
@@ -254,10 +236,6 @@ namespace CASM {
       m_local_dofs[dof.first] = LocalContinuousConfigDoFValues(ttraits, _N_sublat, _N_vol, Eigen::MatrixXd::Zero(dim, _N_sublat * _N_vol), dof.second);
     }
   }
-
-  class Structure;
-
-  std::vector<SymGroupRepID> occ_symrep_IDs(Structure const &_struc);
 
 }
 

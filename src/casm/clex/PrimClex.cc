@@ -306,7 +306,7 @@ namespace CASM {
     return *(m_data->prim_ptr);
   }
 
-  std::shared_ptr<PrimClex::PrimType const> &PrimClex::shared_prim() const {
+  std::shared_ptr<PrimClex::PrimType const> const &PrimClex::shared_prim() const {
     return this->m_data->prim_ptr;
   }
 
@@ -314,7 +314,7 @@ namespace CASM {
     return prim().basis().size();
   }
 
-  std::shared_ptr<PrimNeighborList> &PrimClex::shared_nlist() const {
+  std::shared_ptr<PrimNeighborList> const &PrimClex::shared_nlist() const {
     // lazy neighbor list generation
     if(!m_data->nlist) {
 

@@ -191,10 +191,10 @@ namespace CASM {
   ///
   xtal::ScelEnumProps make_scel_enum_props(const PrimClex &primclex, const jsonParser &input);
 
-  template <>
-  struct jsonConstructor<xtal::ScelEnumProps> {
-    static xtal::ScelEnumProps from_json(const jsonParser &json, const PrimClex &primclex);
-  };
+  // template <>
+  // struct jsonConstructor<xtal::ScelEnumProps> {
+  //   static xtal::ScelEnumProps from_json(const jsonParser &json, const PrimClex &primclex);
+  // };
 
 
 }

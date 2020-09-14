@@ -176,7 +176,7 @@ namespace CASM {
                      volume(),
                      global_dof_info(prim()),
                      local_dof_info(prim()),
-                     occ_symrep_IDs(prim()),
+                     prim().occupant_symrep_IDs(),
                      tol);
   }
 
@@ -435,7 +435,7 @@ namespace CASM {
                             _prim.factor_group(),
                             _prim.basis_permutation_symrep_ID(),
                             global_dof_symrep_IDs,
-                            occ_symrep_IDs(_prim),
+                            _prim.occupant_symrep_IDs(),
                             local_dof_symrep_IDs);
 
 

@@ -118,13 +118,13 @@ namespace CASM {
     const PrimType &prim() const;
 
     /// Access to the primitive Structure as a shared resource
-    std::shared_ptr<PrimType const> &shared_prim() const;
+    std::shared_ptr<PrimType const> const &shared_prim() const;
 
     /// const Access to number of basis atoms
     Index n_basis() const;
 
     /// Access to the primitive neighbor list as a shared resource
-    std::shared_ptr<PrimNeighborList> &shared_nlist() const;
+    std::shared_ptr<PrimNeighborList> const &shared_nlist() const;
 
     ///Access to the primitive neighbor list
     PrimNeighborList &nlist() const;

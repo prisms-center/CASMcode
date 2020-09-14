@@ -19,6 +19,7 @@
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clex/MappedPropertiesTools.hh"
 #include "casm/clex/SimpleStructureTools.hh"
+#include "casm/clex/io/json/ConfigDoF_json_io.hh"
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/IntegralCoordinateWithin.hh"
@@ -112,11 +113,7 @@ namespace CASM {
     m_configdof(Configuration::zeros(_supercell).configdof()) {
     if(_id == "none") {
       if(_data.contains("dof")) {
-        *this = Configuration(_supercell, _data, _data["dof"].get<ConfigDoF>(primclex().n_basis(),
-                                                                             global_dof_info(primclex().prim()),
-                                                                             local_dof_info(primclex().prim()),
-                                                                             occ_symrep_IDs(primclex().prim()),
-                                                                             primclex().crystallography_tol()));
+        *this = Configuration(_supercell, _data, _data["dof"].get<ConfigDoF>(primclex().prim()));
         return;
       }
       *this = Configuration(_supercell, _data);

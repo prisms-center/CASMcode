@@ -452,9 +452,9 @@ namespace CASM {
     return xtal::ScelEnumProps(min_vol, max_vol + 1, dirs, generating_matrix);
   }
 
-  xtal::ScelEnumProps jsonConstructor<xtal::ScelEnumProps>::from_json(const jsonParser &json, const PrimClex &primclex) {
-    return make_scel_enum_props(primclex, json);
-  }
+  // xtal::ScelEnumProps jsonConstructor<xtal::ScelEnumProps>::from_json(const jsonParser &json, const PrimClex &primclex) {
+  //   return make_scel_enum_props(primclex, json);
+  // }
 
 
 }
