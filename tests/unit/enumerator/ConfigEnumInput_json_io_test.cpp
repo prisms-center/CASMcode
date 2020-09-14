@@ -8,6 +8,7 @@
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
+#include "casm/clex/FillSupercell.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/clex/SimpleStructureTools.hh"
 #include "casm/clex/Supercell.hh"
@@ -257,20 +258,15 @@ namespace {
 
 TEST_F(ConfigEnumInputjsonIOTest, Test7) {
 
-  std::cout << "here 0" << std::endl;
+  // Make L12 (A3B1) configuration in conventional FCC (4 atom) supercell
   auto conventional_fcc = std::make_shared<Supercell>(shared_prim, _fcc_conventional_transf_mat());
-  std::cout << "here 1" << std::endl;
-  auto conventional_fcc_3x3x3 = std::make_shared<Supercell>(shared_prim, 3 * _fcc_conventional_transf_mat());
-  std::cout << "here 2" << std::endl;
   Configuration config_L12 {conventional_fcc};
-  std::cout << "here 3" << std::endl;
   config_L12.configdof().occ(0) = 1;
-  std::cout << "here 4" << std::endl;
-  FillSupercell filler {conventional_fcc_3x3x3, config_L12, TOL};
-  std::cout << "here 5" << std::endl;
-  Configuration config_L12_3x3x3 = filler(config_L12);
 
-  std::cout << "here 6" << std::endl;
+  // 3x3x3 super configuration of config_L12
+  auto conventional_fcc_3x3x3 = std::make_shared<Supercell>(shared_prim, 3 * _fcc_conventional_transf_mat());
+  Configuration config_L12_3x3x3 = fill_supercell(config_L12, conventional_fcc_3x3x3);
+
   std::cout << _pos_string(config_L12) << std::endl;
   std::cout << _pos_string(config_L12_3x3x3) << std::endl;
 

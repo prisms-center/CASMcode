@@ -9,6 +9,7 @@
 #include "TestConfiguration.hh"
 #include "FCCTernaryProj.hh"
 #include "casm/app/AppIO.hh"
+#include "casm/clex/FillSupercell.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/database/ConfigDatabase.hh"
@@ -29,7 +30,7 @@ void check_made_from_name(const Configuration &config, std::string name) {
     true);
 
   // fill supercell and check that config are identical
-  Configuration in_same_supercell = made_from_name.fill_supercell(config.supercell());
+  Configuration in_same_supercell = fill_supercell(made_from_name, config.supercell());
   EXPECT_EQ((config == in_same_supercell), true);
 }
 
@@ -365,7 +366,7 @@ TEST(ConfigurationTest, TestConfigurationName) {
 
 TEST(ConfigurationTest, Test2) {
 
-  // test Configuration::fill_supercell
+  // test fill_supercell
 
   test::FCCTernaryProj proj;
   proj.check_init();
@@ -387,7 +388,7 @@ TEST(ConfigurationTest, Test2) {
     // Identity op
     Supercell scel {&primclex, Lattice(c, a - b, a + b - c)};
     const SymGroup &fg = config.supercell().factor_group();
-    Configuration filled = config.fill_supercell(scel, fg[0]);
+    Configuration filled = fill_supercell(fg[0], config, scel);
 
     Configuration check(scel);
     check.set_occupation(std::vector<int>({1, 0}));
@@ -399,7 +400,7 @@ TEST(ConfigurationTest, Test2) {
     // supercell
     Supercell scel {&primclex, Lattice(c, a - b, 2.*(a + b - c))};
     const SymGroup &fg = config.supercell().factor_group();
-    Configuration filled = config.fill_supercell(scel, fg[0]);
+    Configuration filled = fill_supercell(fg[0], config, scel);
 
     Configuration check(scel);
     check.set_occupation(std::vector<int>({1, 0, 1, 0}));
@@ -412,7 +413,7 @@ TEST(ConfigurationTest, Test2) {
     Supercell scel {&primclex, Lattice(c, a - b, a + b - c)};
     const SymGroup &fg = config.supercell().factor_group();
     //std::cout << to_string(fg.info(1), CART) << std::endl;
-    Configuration filled = config.fill_supercell(scel, fg[1]);
+    Configuration filled = fill_supercell(fg[1], config, scel);
 
     Configuration check(scel);
     check.set_occupation(std::vector<int>({1, 0}));
@@ -434,7 +435,7 @@ TEST(ConfigurationTest, Test2) {
     // Identity op
     Supercell scel {&primclex, Lattice(c, a - b, a + b - c)};
     const SymGroup &fg = config.supercell().factor_group();
-    Configuration filled = config.fill_supercell(scel, fg[0]);
+    Configuration filled = fill_supercell(fg[0], config, scel);
 
     Configuration check(scel);
     check.set_occupation(std::vector<int>({1, 0}));
@@ -448,7 +449,7 @@ TEST(ConfigurationTest, Test2) {
     // supercell
     Supercell scel {&primclex, Lattice(c, a - b, 2.*(a + b - c))};
     const SymGroup &fg = config.supercell().factor_group();
-    Configuration filled = config.fill_supercell(scel, fg[0]);
+    Configuration filled = fill_supercell(fg[0], config, scel);
 
     Configuration check(scel);
     check.set_occupation(std::vector<int>({1, 0, 1, 0}));
@@ -463,7 +464,7 @@ TEST(ConfigurationTest, Test2) {
     // 90 deg rotation
     Supercell scel {&primclex, Lattice(c, a - b, a + b - c)};
     const SymGroup &fg = config.supercell().factor_group();
-    Configuration filled = config.fill_supercell(scel, fg[1]);
+    Configuration filled = fill_supercell(fg[1], config, scel);
 
     Configuration check(scel);
     check.set_occupation(std::vector<int>({1, 0}));

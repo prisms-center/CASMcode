@@ -131,6 +131,7 @@ libcasm_la_SOURCES = \
     include/casm/clex/Configuration_impl.hh\
     include/casm/clex/DiffClexParamPack.hh\
     include/casm/clex/ECIContainer.hh\
+    include/casm/clex/FillSupercell.hh\
     include/casm/clex/FilteredConfigIterator.hh\
     include/casm/clex/HasCanonicalForm.hh\
     include/casm/clex/HasCanonicalForm_impl.hh\
@@ -161,6 +162,7 @@ libcasm_la_SOURCES = \
     include/casm/clex/Supercell_impl.hh\
     include/casm/clex/io/json/ChemicalReference.hh\
     include/casm/clex/io/json/ClexBasisSpecs_json_io.hh\
+    include/casm/clex/io/json/ConfigDoF_json_io.hh\
     include/casm/clex/io/json/ConfigMapping.hh\
     include/casm/clex/io/json/ECIContainer_json_io.hh\
     include/casm/clex/io/json_io.hh\
@@ -268,12 +270,15 @@ libcasm_la_SOURCES = \
     include/casm/database/Remove.hh\
     include/casm/database/Remove_impl.hh\
     include/casm/database/ScelDatabase.hh\
+    include/casm/database/ScelDatabaseTools.hh\
     include/casm/database/Selected.hh\
     include/casm/database/Selected_impl.hh\
     include/casm/database/Selection.hh\
     include/casm/database/Selection_impl.hh\
     include/casm/database/Update.hh\
     include/casm/database/Update_impl.hh\
+    include/casm/database/io/json_io.hh\
+    include/casm/database/io/json_io_impl.hh\
     include/casm/database/json/jsonDatabase.hh\
     include/casm/database/json/jsonPropertiesDatabase.hh\
     include/casm/enumerator/ClusterSitesSelector.hh\
@@ -806,6 +811,7 @@ libcasm_la_SOURCES = \
     src/casm/clex/Configuration.cc\
     src/casm/clex/ConfigurationTraits.cc\
     src/casm/clex/ECIContainer.cc\
+    src/casm/clex/FillSupercell.cc\
     src/casm/clex/MappedProperties.cc\
     src/casm/clex/MappedPropertiesTools.cc\
     src/casm/clex/NeighborList.cc\

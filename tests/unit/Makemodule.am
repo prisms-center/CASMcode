@@ -287,6 +287,7 @@ TESTS += \
 check_PROGRAMS += \
     casm_unit_enumerator
 casm_unit_enumerator_SOURCES = \
+    tests/unit/enumerator/ClusterSitesSelector_test.cpp\
     tests/unit/enumerator/ConfigEnumInput_json_io_test.cpp\
     tests/unit/enumerator/ConfigEnumInput_test.cpp\
     tests/unit/gtest_main_run_all.cpp

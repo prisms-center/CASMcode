@@ -29,7 +29,6 @@ namespace CASM {
   class PrimClex;
   class Supercell;
   class Clexulator;
-  class FillSupercell;
   class ConfigIsEquivalent;
   template<typename ConfigType, typename IsEqualImpl> class GenericConfigCompare;
   using ConfigCompare = GenericConfigCompare<Configuration, ConfigIsEquivalent>;
@@ -377,15 +376,6 @@ namespace CASM {
     /// \brief Returns the point group that leaves the Configuration unchanged
     std::string point_group_name() const;
 
-    /// \brief Fills supercell 'scel' with configuration
-    Configuration fill_supercell(const Supercell &scel) const;
-
-    /// \brief Fills supercell 'scel' with reoriented configuration, as if by apply(op,*this)
-    Configuration fill_supercell(const Supercell &scel, const SymOp &op) const;
-
-    /// \brief Fills supercell 'scel' with reoriented configuration, as if by apply(op,*this)
-    Configuration fill_supercell(const Supercell &scel, const SymGroup &g) const;
-
     /// \brief Transform Configuration from PermuteIterator via *this = permute_iterator * *this
     Configuration &apply_sym(const PermuteIterator &it);
 
@@ -503,8 +493,11 @@ namespace CASM {
 
   /// \brief Operations that transform a canonical primitive configuration to any equivalent
   ///
+  /// \code
   /// Configuration equiv_prim_config = copy_apply(from_canonical_config, prim_canon_config);
-  /// Configuration config = equiv_prim_config.fill_supercell(config.supercell(), from_canonical_lat);
+  /// FillSupercell f {config.supercell()};
+  /// Configuration config = f(from_canonical_lat, equiv_prim_config);
+  /// \endcode
   struct RefToCanonicalPrim {
 
     /// \brief Get operations that transform canonical primitive to this
@@ -661,49 +654,6 @@ namespace CASM {
 
   bool has_relaxed_mag_basis(const Configuration &_config);
 
-
-  /// \brief Apply SymOp not in Supercell factor group, and make supercells
-  ///
-  class FillSupercell {
-
-  public:
-
-    /// \brief Constructor, for canonical Supercell
-    FillSupercell(const Supercell &_scel, const SymOp &_op);
-
-    /// \brief Find first SymOp in the prim factor group such that apply(op, motif)
-    ///        can be used to fill the Supercell
-    FillSupercell(const Supercell &_scel, const Configuration &motif, double tol);
-
-    /// \brief Constructor, for non-canonical Supercell
-    FillSupercell(const std::shared_ptr<Supercell> &_scel, const SymOp &_op);
-
-    /// \brief Find first SymOp in the prim factor group such that apply(op, motif)
-    ///        can be used to fill the non-canonical Supercell
-    FillSupercell(const std::shared_ptr<Supercell> &_scel, const Configuration &motif, double tol);
-
-    Configuration operator()(const Configuration &motif) const;
-
-    /// \brief Find first SymOp in the prim factor group such that apply(op, motif)
-    ///        can be used to fill the Supercell
-    const SymOp *find_symop(const Configuration &motif, double tol);
-
-    const SymOp &symop() const {
-      return *m_op;
-    }
-
-  private:
-
-    void _init(const Supercell &_motif_scel) const;
-
-    std::shared_ptr<Supercell> m_supercell_ptr;
-    const Supercell *m_scel;
-    const SymOp *m_op;
-
-    mutable const Supercell *m_motif_scel;
-    mutable std::vector<std::vector<Index> > m_index_table;
-
-  };
 
   std::ostream &operator<<(std::ostream &sout, const Configuration &c);
 

@@ -194,6 +194,7 @@ casm_clex_include_HEADERS = \
     include/casm/clex/Configuration_impl.hh\
     include/casm/clex/DiffClexParamPack.hh\
     include/casm/clex/ECIContainer.hh\
+    include/casm/clex/FillSupercell.hh\
     include/casm/clex/FilteredConfigIterator.hh\
     include/casm/clex/HasCanonicalForm.hh\
     include/casm/clex/HasCanonicalForm_impl.hh\
@@ -236,6 +237,7 @@ casm_clex_io_json_includedir=$(includedir)/casm/clex/io/json
 casm_clex_io_json_include_HEADERS = \
     include/casm/clex/io/json/ChemicalReference.hh\
     include/casm/clex/io/json/ClexBasisSpecs_json_io.hh\
+    include/casm/clex/io/json/ConfigDoF_json_io.hh\
     include/casm/clex/io/json/ConfigMapping.hh\
     include/casm/clex/io/json/ECIContainer_json_io.hh
 
@@ -391,12 +393,20 @@ casm_database_include_HEADERS = \
     include/casm/database/Remove.hh\
     include/casm/database/Remove_impl.hh\
     include/casm/database/ScelDatabase.hh\
+    include/casm/database/ScelDatabaseTools.hh\
     include/casm/database/Selected.hh\
     include/casm/database/Selected_impl.hh\
     include/casm/database/Selection.hh\
     include/casm/database/Selection_impl.hh\
     include/casm/database/Update.hh\
     include/casm/database/Update_impl.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_database_io_includedir=$(includedir)/casm/database/io
+casm_database_io_include_HEADERS = \
+    include/casm/database/io/json_io.hh\
+    include/casm/database/io/json_io_impl.hh
 
 #-------------------------------------------------------------------------------#
 

@@ -8,9 +8,6 @@
 
 namespace CASM {
 
-  class Supercell;
-  class FillSupercell;
-
   /// \brief Enumerate all equivalent Configurations in a Supercell, as generated
   ///        by Supercell factor group symmetry
   ///

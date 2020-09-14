@@ -4,6 +4,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "casm/clex/ConfigEnumEquivalents.hh"
+#include "casm/clex/FillSupercell.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/app/casm_functions.hh"
@@ -143,9 +144,9 @@ namespace CASM {
     std::vector<Configuration> &subconfig) {
 
     primclex.log() << "\nGenerating equivalents: \n";
+    FillSupercell f {unit_cell};
     for(auto &_pair : prim_subconfig) {
       auto &pconfig = _pair.first;
-      FillSupercell f(unit_cell, pconfig, primclex.crystallography_tol());
       ConfigEnumEquivalents e(f(pconfig));
       for(auto it = e.begin(); it != e.end(); ++it) {
         subconfig.push_back(*it);

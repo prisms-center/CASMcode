@@ -17,6 +17,7 @@
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/ECIContainer.hh"
+#include "casm/clex/FillSupercell.hh"
 #include "casm/clex/MappedPropertiesTools.hh"
 #include "casm/clex/SimpleStructureTools.hh"
 #include "casm/clex/io/json/ConfigDoF_json_io.hh"
@@ -241,17 +242,7 @@ namespace CASM {
   /// - Canonical Supercell will be inserted in the PrimClex.db<Supercell>() if
   ///   necessary
   Configuration Configuration::in_canonical_supercell() const {
-
-    const Supercell &canon_scel = supercell().canonical_form();
-
-    FillSupercell f(canon_scel, *this, crystallography_tol());
-    Configuration in_canon = f(*this);
-
-    // only OK to use if canon_scel and this->supercell() are stored in
-    //   primclex supercell list
-    //Configuration in_canon = primclex().fill_supercell(canon_scel, *this);
-
-    return in_canon.canonical_form();
+    return fill_supercell(*this, supercell().canonical_form()).canonical_form();
   }
 
   //*******************************************************************************
@@ -348,55 +339,6 @@ namespace CASM {
     return cache()["point_group_name"].get<std::string>();
   }
 
-  //*******************************************************************************
-
-  /// \brief Fills supercell 'scel' with configuration
-  Configuration Configuration::fill_supercell(const Supercell &scel) const {
-    FillSupercell f(scel, prim().factor_group()[0]);
-    return f(*this);
-  }
-
-
-  //*******************************************************************************
-
-  /// \brief Fills supercell 'scel' with reoriented configuration, op*(*this)
-  Configuration Configuration::fill_supercell(const Supercell &scel, const SymOp &op) const {
-    FillSupercell f(scel, op);
-    return f(*this);
-  }
-
-  //*******************************************************************************
-
-  /// \brief Fills supercell 'scel' with reoriented configuration, op*(*this)
-  ///
-  /// - Uses the first symop in g that such that scel is a supercell of op*(*this)
-  Configuration Configuration::fill_supercell(const Supercell &scel, const SymGroup &g) const {
-
-    auto res = xtal::is_equivalent_superlattice(
-                 scel.lattice(),
-                 ideal_lattice(),
-                 g.begin(),
-                 g.end(),
-                 crystallography_tol());
-
-    if(res.first == g.end()) {
-
-      std::cerr << "Requested supercell transformation matrix: \n"
-                << scel.transf_mat() << "\n";
-      std::cerr << "Requested motif Configuration: " <<
-                name() << "\n";
-      std::cerr << "Configuration transformation matrix: \n"
-                << supercell().transf_mat() << "\n";
-
-      throw std::runtime_error(
-        "Error in 'Configuration::fill_supercell(const Supercell &scel, const SymGroup& g)'\n"
-        "  The motif cannot be tiled onto the specified supercell."
-      );
-    }
-
-    return fill_supercell(scel, *res.first);
-  }
-
   //********** ACCESSORS ***********
 
   const Lattice &Configuration::ideal_lattice()const {
@@ -413,7 +355,8 @@ namespace CASM {
     //
     // op1: a prim_canon_config.supercell() PermuteIterator
     // op2: a prim().point_group() SymOp
-    // *this == copy_apply(op1, prim_canon_config).fill_supercell(supercell(), op2);
+    // FillSupercell fill_supercell_f {supercell()};
+    // *this == fill_supercell_f(op2, copy_apply(op1, prim_canon_config));
 
     // first find op2 == *res.first
     auto res = xtal::is_equivalent_superlattice(
@@ -426,12 +369,14 @@ namespace CASM {
     this->transf_mat = iround(res.second);
 
     // given op2, find op1
-    auto f = config.equal_to();
+    auto is_equal_to_f = config.equal_to();
     auto begin = prim_canon_config.supercell().sym_info().permute_begin();
     auto end = prim_canon_config.supercell().sym_info().permute_end();
+    FillSupercell fill_supercell_f {config.supercell()};
     for(auto op1 = begin; op1 != end; ++op1) {
       auto test = copy_apply(op1, this->prim_canon_config);
-      if(f(test.fill_supercell(config.supercell(), *res.first))) {
+      Configuration super_configuration = fill_supercell_f(*res.first, test);
+      if(is_equal_to_f(super_configuration)) {
         this->from_canonical_config = op1;
         return;
       }
@@ -481,7 +426,7 @@ namespace CASM {
     if(is_canon_equiv_lat) {
 
       // put Configuration in canonical supercell
-      Configuration canon_scel_config = fill_supercell(supercell().canonical_form());
+      Configuration canon_scel_config = fill_supercell(*this, supercell().canonical_form());
 
       // if canonical
       if(canon_scel_config.is_canonical()) {
@@ -1049,17 +994,11 @@ namespace CASM {
 
       // canonical equivalent supercells can be found in the database
       if(tokens[1] == "super") {
-        FillSupercell f(
-          *primclex.db<Supercell>().find(scelname),
-          sym_op);
-
-        return f(non_canon_config);
+        return fill_supercell(sym_op, non_canon_config, *primclex.db<Supercell>().find(scelname));
       }
       // non canonical equivalent supercells must be constructed
       else {
-        std::shared_ptr<Supercell> scel = make_shared_supercell(primclex, scelname);
-        FillSupercell f(scel, sym_op);
-        return f(non_canon_config);
+        return fill_supercell(sym_op, non_canon_config, make_shared_supercell(primclex, scelname));
       }
     }
 
@@ -1371,151 +1310,6 @@ namespace CASM {
     return _config.calc_properties().site.count("relaxed_mag_basis");
   }
 
-
-  /// \brief Constructor
-  ///
-  /// \param _scel Supercell to be filled
-  /// \param _op SymOp that transforms the input motif before tiling into the
-  ///        Supercell that is filled
-  FillSupercell::FillSupercell(const Supercell &_scel, const SymOp &_op) :
-    m_scel(&_scel), m_op(&_op), m_motif_scel(nullptr) {}
-
-  /// \brief Constructor
-  ///
-  /// \param _scel Supercell to be filled
-  /// \param _motif Find the first SymOp that after application to _motif enables
-  ///               tiling into _scel
-  /// \param _tol tolerance
-  ///
-  FillSupercell::FillSupercell(const Supercell &_scel, const Configuration &_motif, double _tol) :
-    m_scel(&_scel), m_op(find_symop(_motif, _tol)), m_motif_scel(nullptr) {}
-
-  /// \brief Constructor
-  ///
-  /// \param _scel Supercell to be filled
-  /// \param _op SymOp that transforms the input motif before tiling into the
-  ///        Supercell that is filled
-  FillSupercell::FillSupercell(const std::shared_ptr<Supercell> &_scel, const SymOp &_op) :
-    m_supercell_ptr(_scel), m_scel(m_supercell_ptr.get()), m_op(&_op), m_motif_scel(nullptr) {}
-
-  /// \brief Constructor
-  ///
-  /// \param _scel Supercell to be filled
-  /// \param _motif Find the first SymOp that after application to _motif enables
-  ///               tiling into _scel
-  /// \param _tol tolerance
-  ///
-  FillSupercell::FillSupercell(const std::shared_ptr<Supercell> &_scel, const Configuration &_motif, double _tol) :
-    m_supercell_ptr(_scel), m_scel(m_supercell_ptr.get()), m_op(find_symop(_motif, _tol)), m_motif_scel(nullptr) {}
-
-  Configuration FillSupercell::operator()(const Configuration &motif) const {
-
-    if(&motif.supercell() != m_motif_scel) {
-      _init(motif.supercell());
-    }
-
-    std::unique_ptr<Configuration> result;
-    if(m_supercell_ptr) {
-      result = notstd::make_unique<Configuration>(m_supercell_ptr);
-    }
-    else {
-      result = notstd::make_unique<Configuration>(*m_scel);
-    }
-
-    // We reorien the starting configuration (motif) by m_op in two steps.
-    // In the first step, we transform the DoFs of motif by m_op, without permuting their site indices
-    // Then, we utilize m_index_table to decorate the new cell with these transformed DoFs.
-    // m_index_table is built in FillSupercel::_init() by explicitly transforming each UnitCellCoordinate of
-    // the starting supercell (*m_motif_scel) and finding it in the resultant supercell (*m_supercell_ptr)
-    // This ensures that sublattice permutation and microscopic translations are handled appropriately
-    ConfigDoF trans_motif(motif.configdof());
-    trans_motif.apply_sym_no_permute(*m_op);
-
-    // copy transformed dof, as many times as necessary to fill the supercell
-    for(auto const &dof : trans_motif.global_dofs())
-      result->configdof().set_global_dof(dof.first, dof.second.values());
-
-    for(Index s = 0; s < m_index_table.size(); ++s) {
-      for(Index i = 0; i < m_index_table[s].size(); ++i) {
-        Index scel_s = m_index_table[s][i];
-
-        if(trans_motif.has_occupation()) {
-          result->configdof().occ(scel_s) = trans_motif.occ(s);
-        }
-      }
-    }
-
-    for(auto const &dof : trans_motif.local_dofs()) {
-      LocalContinuousConfigDoFValues &res_ref(result->configdof().local_dof(dof.first));
-      for(Index s = 0; s < m_index_table.size(); ++s) {
-        for(Index i = 0; i < m_index_table[s].size(); ++i) {
-          Index scel_s = m_index_table[s][i];
-          res_ref.site_value(scel_s) = dof.second.site_value(s);
-        }
-      }
-    }
-    return *result;
-  }
-
-  /// \brief Find first SymOp in the prim factor group such that apply(op, motif)
-  ///        can be used to fill the Supercell
-  const SymOp *FillSupercell::find_symop(const Configuration &motif, double tol) {
-
-    const Lattice &motif_lat = motif.supercell().lattice();
-    const Lattice &scel_lat = m_scel->lattice();
-    auto begin = m_scel->prim().factor_group().begin();
-    auto end = m_scel->prim().factor_group().end();
-
-    auto res = xtal::is_equivalent_superlattice(scel_lat, motif_lat, begin, end, tol);
-    if(res.first == end) {
-
-      std::cerr << "Requested supercell transformation matrix: \n"
-                << m_scel->transf_mat() << "\n";
-      std::cerr << "Requested motif Configuration: "
-                << motif.name() << "\n";
-      std::cerr << "Configuration transformation matrix: \n"
-                << motif.supercell().transf_mat() << "\n";
-
-      throw std::runtime_error(
-        "Error in 'FillSupercell::find_symop':\n"
-        "  The motif cannot be tiled onto the specified supercell."
-      );
-    }
-
-    return &(*res.first);
-  }
-
-  void FillSupercell::_init(const Supercell &_motif_scel) const {
-    m_motif_scel = &_motif_scel;
-
-    // ------- site dof ----------
-    Lattice oriented_motif_lat = sym::copy_apply(*m_op, m_motif_scel->lattice());
-
-    auto oriended_motif_lattice_points = xtal::make_lattice_points(oriented_motif_lat, m_scel->lattice(), TOL);
-
-    const Structure &prim = m_scel->prim();
-    m_index_table.resize(m_motif_scel->num_sites());
-
-    // for each site in motif
-    for(Index s = 0 ; s < m_motif_scel->num_sites() ; s++) {
-
-      // apply symmetry to re-orient and find unit cell coord
-      UnitCellCoord oriented_uccoord = sym::copy_apply(*m_op, m_motif_scel->uccoord(s), prim.lattice(), prim.basis_permutation_symrep_ID());
-
-      // for each unit cell of the oriented motif in the supercell, copy the occupation
-      for(const UnitCell &oriented_motif_uc : oriended_motif_lattice_points) {
-        UnitCell oriented_motif_uc_relative_to_prim = oriented_motif_uc.reset_tiling_unit(oriented_motif_lat, prim.lattice());
-
-        Index prim_motif_tile_ind = m_scel->sym_info().unitcell_index_converter()(oriented_motif_uc_relative_to_prim);
-
-        UnitCellCoord mc_uccoord(
-          oriented_uccoord.sublattice(),
-          m_scel->sym_info().unitcell_index_converter()(prim_motif_tile_ind) + oriented_uccoord.unitcell());
-
-        m_index_table[s].push_back(m_scel->linear_index(mc_uccoord));
-      }
-    }
-  }
 
   std::ostream &operator<<(std::ostream &sout, const Configuration &c) {
     sout << c.name() << "\n";

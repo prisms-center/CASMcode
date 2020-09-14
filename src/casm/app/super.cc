@@ -13,6 +13,7 @@
 #include "casm/crystallography/CanonicalForm.hh"
 #include "casm/crystallography/Adapter.hh"
 #include "casm/crystallography/SymTools.hh"
+#include "casm/clex/FillSupercell.hh"
 #include "casm/clex/Supercell_impl.hh"
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/clex/ConfigMapping.hh"
@@ -421,8 +422,7 @@ namespace CASM {
       if(vm.count("add-canonical")) {
         args.log() << "Add super configurations:\n";
         for(auto it = config_lat.begin(); it != config_lat.end(); ++it) {
-          auto res = xtal::is_equivalent_superlattice(superduper, it->second, begin, end, TOL);
-          FillSupercell f(superduper_scel, *res.first);
+          FillSupercell f {superduper_scel};
           auto insert_res = f(*primclex.db<Configuration>().find(it->first)).insert();
           if(insert_res.insert_canonical) {
             args.log() << "  " << it->first << "  ->  " << insert_res.canonical_it->name() << "\n";
@@ -682,5 +682,3 @@ namespace CASM {
   };
 
 }
-
-
