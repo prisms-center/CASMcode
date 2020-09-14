@@ -18,6 +18,7 @@ namespace CASM {
     class UnitCellCoord;
   }
   template<typename OrbitType> struct OrbitGenerators;
+  class PermuteIterator;
   class Structure;
   class SymGroup;
 

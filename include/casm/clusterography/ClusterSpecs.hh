@@ -210,7 +210,8 @@ namespace CASM {
     /// Note: Parameter _phenomenal is optional. If present, local orbits will be generated using
     /// the cutoff_radius. Otherwise, all sites will be used to generate orbits. In both cases,
     /// the cluster cutoff is based on max_length compared to cluster sites distances calculated
-    /// using the minimum distance between any periodic images of cluster sites in the supercell defined by the _shared_prim and _superlattice_matrix (Coordinate::robust_min_dist).
+    /// using the minimum distance between any periodic images of cluster sites in the supercell
+    /// defined by the _shared_prim and _superlattice_matrix (Coordinate::robust_min_dist).
     WithinScelMaxLengthClusterSpecs(
       std::shared_ptr<Structure const> _shared_prim,
       Eigen::Matrix3l const &_superlattice_matrix,

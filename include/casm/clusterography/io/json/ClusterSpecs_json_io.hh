@@ -9,6 +9,7 @@ namespace CASM {
   template<typename T> class InputParser;
   class LocalMaxLengthClusterSpecs;
   class PeriodicMaxLengthClusterSpecs;
+  class WithinScelMaxLengthClusterSpecs;
   class PrimClex;
   class SymGroup;
   class jsonParser;
@@ -27,17 +28,24 @@ namespace CASM {
     const std::shared_ptr<Structure const> &shared_prim,
     const SymGroup &super_group);
 
+  /// Parse WithinScelMaxLengthClusterSpecs from JSON
+  void parse(
+    InputParser<WithinScelMaxLengthClusterSpecs> &parser,
+    const std::shared_ptr<Structure const> &shared_prim,
+    const SymGroup &super_group,
+    Eigen::Matrix3l const &transformation_matrix_to_super);
+
   /// \brief Parse PeriodicMaxLengthClusterSpecs or LocalMaxLengthClusterSpecs from JSON & validate
   void parse(
     InputParser<ClusterSpecs> &parser,
     const std::shared_ptr<Structure const> &shared_prim);
 
-  /// \brief Parse PeriodicMaxLengthClusterSpecs or LocalMaxLengthClusterSpecs from JSON &
-  ///        validate with specified generating_group
+  /// \brief Parse ClusterSpecs from JSON & validate
   void parse(
     InputParser<ClusterSpecs> &parser,
     const std::shared_ptr<Structure const> &shared_prim,
-    const SymGroup &super_group);
+    const SymGroup &super_group,
+    Eigen::Matrix3l const *transformation_matrix_to_super = nullptr);
 
   /// \brief Write PeriodicMaxLengthClusterSpecs to JSON
   jsonParser &to_json(
@@ -47,6 +55,11 @@ namespace CASM {
   /// \brief Write LocalMaxLengthClusterSpecs to JSON
   jsonParser &to_json(
     const LocalMaxLengthClusterSpecs &cspecs,
+    jsonParser &json);
+
+  /// \brief Write WithinScelMaxLengthClusterSpecs to JSON
+  jsonParser &to_json(
+    const WithinScelMaxLengthClusterSpecs &cspecs,
     jsonParser &json);
 
   /// \brief Write PeriodicMaxLengthClusterSpecs or LocalMaxLengthClusterSpecs to JSON

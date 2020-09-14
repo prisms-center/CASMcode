@@ -1,4 +1,5 @@
 #include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/symmetry/PermuteIterator.hh"
 
 namespace CASM {
 
@@ -25,17 +26,18 @@ namespace CASM {
     std::vector<PrimPeriodicIntegralClusterOrbit> const &prim_periodic_orbits) {
 
     // Create `generators` constructor arguments
+    auto const &T = transformation_matrix_to_super;
+    xtal::Lattice super_lattice = make_superlattice(shared_prim->lattice(), T);
     SymGroup _generating_group = make_sym_group(generating_group, super_lattice);
-    xtal::IntegralCoordinateWithin_f bring_within_f {transformation_matrix_to_super};
     double tol = shared_prim->lattice().tol();
-    ScelPeriodicSymCompare<IntegralCluster> sym_compare {shared_prim, bring_within_f, tol};
+    WithinScelSymCompare<IntegralCluster> sym_compare {shared_prim, T, tol};
 
     // Inserting clusters into `generators` keeps only the symmetrically
     // unique clusters as defined by "within_scel" sym_compare
     OrbitGenerators<WithinScelIntegralClusterOrbit> generators {_generating_group, sym_compare};
 
     // Try inserting all clusters in the supercell
-    auto unitcells = xtal::make_lattice_points(transformation_matrix_to_super);
+    auto unitcells = xtal::make_lattice_points(T);
     for(const auto &orbit : prim_periodic_orbits) {
       for(const auto &equiv : orbit) {
         for(const auto &unitcell : unitcells) {
