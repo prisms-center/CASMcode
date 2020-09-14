@@ -113,7 +113,7 @@ namespace CASM {
     m_configdof(Configuration::zeros(_supercell).configdof()) {
     if(_id == "none") {
       if(_data.contains("dof")) {
-        *this = Configuration(_supercell, _data, _data["dof"].get<ConfigDoF>(primclex().prim()));
+        *this = Configuration(_supercell, _data, _data["dof"].get<ConfigDoF>(_supercell.prim()));
         return;
       }
       *this = Configuration(_supercell, _data);
@@ -1463,8 +1463,8 @@ namespace CASM {
 
     const Lattice &motif_lat = motif.supercell().lattice();
     const Lattice &scel_lat = m_scel->lattice();
-    auto begin = m_scel->primclex().prim().factor_group().begin();
-    auto end = m_scel->primclex().prim().factor_group().end();
+    auto begin = m_scel->prim().factor_group().begin();
+    auto end = m_scel->prim().factor_group().end();
 
     auto res = xtal::is_equivalent_superlattice(scel_lat, motif_lat, begin, end, tol);
     if(res.first == end) {
