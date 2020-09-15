@@ -20,6 +20,24 @@ namespace CASM {
 
   */
 
+  /// Returns, as a SymGroup, all allowed operations that leave the structure unchanged. This
+  /// is equivalent to the factor group.
+  SymGroup make_generating_group(Structure const &structure);
+
+  /// Returns, as a SymGroup, all allowed permute operations that leave the supercell lattice
+  /// unchanged.
+  SymGroup make_generating_group(Supercell const &supercell);
+
+  /// Returns, as a SymGroup, the configuration factor group (all allowed permute operations that
+  /// leave the supercell lattice and configuration DoF values unchanged).
+  SymGroup make_generating_group(Configuration const &configuration);
+
+  /// Returns, as a std::unique_ptr<SymGroup>, the subgroup of the configuration factor group
+  /// that does cause any permutation between the sets of selected and unselected sites of
+  /// "config_enum_input".
+  SymGroup make_generating_group(ConfigEnumInput const &config_enum_input);
+
+
   /// Base class, enables runtime choice of which orbit type is generated via input file parameters
   ///
   /// Note:
@@ -106,7 +124,7 @@ namespace CASM {
     /// Constructor
     PeriodicMaxLengthClusterSpecs(
       std::shared_ptr<Structure const> _shared_prim,
-      std::unique_ptr<SymGroup> _generating_group,
+      SymGroup const &_generating_group,
       SiteFilterFunction const &_site_filter,
       std::vector<double> const &_max_length,
       std::vector<IntegralClusterOrbitGenerator> const &_custom_generators = {});
@@ -115,10 +133,10 @@ namespace CASM {
     std::shared_ptr<Structure const> shared_prim;
 
     /// The group used to generate orbits, most commonly shared_prim->factor_group()
-    notstd::cloneable_ptr<SymGroup> generating_group;
+    SymGroup generating_group;
 
     /// The comparisons used for orbit generation
-    notstd::cloneable_ptr<PrimPeriodicSymCompare<IntegralCluster>> sym_compare;
+    PrimPeriodicSymCompare<IntegralCluster> sym_compare;
 
     /// A filter which excludes sites that are part of the unit cell neighborhood from being
     /// included in orbits. If `site_filter(site)==true`, then the site is included, else excluded.
@@ -151,8 +169,8 @@ namespace CASM {
 
     LocalMaxLengthClusterSpecs(
       std::shared_ptr<Structure const> _shared_prim,
-      std::unique_ptr<SymGroup> _generating_group,
-      IntegralCluster const &phenomenal,
+      SymGroup const &_generating_group,
+      IntegralCluster const &_phenomenal,
       SiteFilterFunction const &_site_filter,
       std::vector<double> const &_max_length,
       std::vector<double> const &_cutoff_radius,
@@ -162,10 +180,10 @@ namespace CASM {
     std::shared_ptr<Structure const> shared_prim;
 
     /// The invariant group of the phenomenal object, used to generate local orbits
-    notstd::cloneable_ptr<SymGroup> generating_group;
+    SymGroup generating_group;
 
     /// The comparisons used for orbit generation
-    notstd::cloneable_ptr<LocalSymCompare<IntegralCluster>> sym_compare;
+    LocalSymCompare<IntegralCluster> sym_compare;
 
     /// Phenomenal cluster, used to find local neighborhood
     IntegralCluster phenomenal;
@@ -207,20 +225,25 @@ namespace CASM {
 
     /// Constructor
     ///
-    /// Note: Parameter _phenomenal is optional. If present, local orbits will be generated using
-    /// the cutoff_radius. Otherwise, all sites will be used to generate orbits. In both cases,
-    /// the cluster cutoff is based on max_length compared to cluster sites distances calculated
-    /// using the minimum distance between any periodic images of cluster sites in the supercell
-    /// defined by the _shared_prim and _superlattice_matrix (Coordinate::robust_min_dist).
+    /// Note:
+    /// - Parameter _phenomenal is optional. If present, local orbits will be generated using
+    ///   the cutoff_radius. Otherwise, all sites will be used to generate orbits. In both cases,
+    ///   the cluster cutoff is based on max_length compared to cluster sites distances calculated
+    ///   using the minimum distance between any periodic images of cluster sites in the supercell
+    ///   defined by the _shared_prim and _superlattice_matrix (Coordinate::robust_min_dist).
+    /// - Parameter _cutoff_radius is optional, required if _phenomenal is present. If present, it
+    ///   must be the same size as _max_length or the constructor will throw.
+    /// - Parameter _generating_group should include within Supercell translations (i.e. it could
+    ///   be constructed from a Configuration factor group)
     WithinScelMaxLengthClusterSpecs(
       std::shared_ptr<Structure const> _shared_prim,
       Eigen::Matrix3l const &_superlattice_matrix,
-      std::unique_ptr<SymGroup> _generating_group,
+      SymGroup const &_generating_group,
       SiteFilterFunction const &_site_filter,
       std::vector<double> const &_max_length,
-      std::vector<double> const &_cutoff_radius,
       std::vector<IntegralClusterOrbitGenerator> const &_custom_generators = {},
-      notstd::cloneable_ptr<IntegralCluster> _phenomenal = notstd::cloneable_ptr<IntegralCluster>());
+      notstd::cloneable_ptr<IntegralCluster> _phenomenal = notstd::cloneable_ptr<IntegralCluster>(),
+      std::vector<double> const &_cutoff_radius = {});
 
     /// The prim
     std::shared_ptr<Structure const> shared_prim;
@@ -228,13 +251,13 @@ namespace CASM {
     /// Used to implement putting sites "within" the supercell, checking distance to nearest images
     Eigen::Matrix3l superlattice_matrix;
 
-    /// The invariant group of the phenomenal object, used to generate local orbits
-    notstd::cloneable_ptr<SymGroup> generating_group;
+    /// The group used to generate orbits, most commonly shared_prim->factor_group()
+    SymGroup generating_group;
 
     /// The comparisons used for orbit generation
-    notstd::cloneable_ptr<WithinScelSymCompare<IntegralCluster>> sym_compare;
+    WithinScelSymCompare<IntegralCluster> sym_compare;
 
-    /// Phenomenal cluster, if valid, use with cutoff_radius to find local neighborhood
+    /// Phenomenal cluster (optional). If not empty, use with cutoff_radius to find local neighborhood
     notstd::cloneable_ptr<IntegralCluster> phenomenal;
 
     /// A filter which excludes sites that are part of the local neighborhood from being included in
@@ -276,7 +299,7 @@ namespace CASM {
     GenericPeriodicClusterSpecs(
       std::string _method_name,
       std::shared_ptr<Structure const> _shared_prim,
-      std::unique_ptr<SymGroup> _generating_group,
+      SymGroup const &_generating_group,
       SymCompareType const &_sym_compare,
       SiteFilterFunction _site_filter,
       std::vector<ClusterFilterFunction> _cluster_filter,
@@ -288,10 +311,10 @@ namespace CASM {
     std::shared_ptr<Structure const> shared_prim;
 
     /// The orbit generating group
-    notstd::cloneable_ptr<SymGroup> generating_group;
+    SymGroup generating_group;
 
     /// The comparisons used for orbit generation
-    notstd::cloneable_ptr<SymCompareType> sym_compare;
+    SymCompareType sym_compare;
 
     /// A filter which excludes sites that are part of the neighborhood from being included in
     /// orbits. If `site_filter(site)==true`, then the site is included, else excluded.
@@ -331,7 +354,7 @@ namespace CASM {
     GenericLocalClusterSpecs(
       std::string _method_name,
       std::shared_ptr<Structure const> _shared_prim,
-      std::unique_ptr<SymGroup> _generating_group,
+      SymGroup const &_generating_group,
       SymCompareType const &_sym_compare,
       SiteFilterFunction _site_filter,
       std::vector<ClusterFilterFunction> _cluster_filter,
@@ -343,10 +366,10 @@ namespace CASM {
     std::shared_ptr<Structure const> shared_prim;
 
     /// The orbit generating group
-    notstd::cloneable_ptr<SymGroup> generating_group;
+    SymGroup generating_group;
 
     /// The comparisons used for orbit generation
-    notstd::cloneable_ptr<SymCompareType> sym_compare;
+    SymCompareType sym_compare;
 
     /// A filter which excludes sites that are part of the local neighborhood from being included in
     /// orbits. If `site_filter(site)==true`, then the site is included, else excluded.
@@ -387,7 +410,7 @@ namespace CASM {
     GenericWithinScelClusterSpecs(
       std::string _method_name,
       std::shared_ptr<Structure const> _shared_prim,
-      std::unique_ptr<SymGroup> _generating_group,
+      SymGroup const &_generating_group,
       SymCompareType const &_sym_compare,
       SiteFilterFunction _site_filter,
       std::vector<ClusterFilterFunction> _cluster_filter,
@@ -399,10 +422,10 @@ namespace CASM {
     std::shared_ptr<Structure const> shared_prim;
 
     /// The orbit generating group
-    notstd::cloneable_ptr<SymGroup> generating_group;
+    SymGroup generating_group;
 
     /// The comparisons used for orbit generation
-    notstd::cloneable_ptr<SymCompareType> sym_compare;
+    SymCompareType sym_compare;
 
     /// A filter which excludes sites that are part of the neighborhood from being included in
     /// orbits. If `site_filter(site)==true`, then the site is included, else excluded.

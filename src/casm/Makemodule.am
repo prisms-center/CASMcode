@@ -897,6 +897,7 @@ libcasm_la_SOURCES = \
     src/casm/database/Selection.cc\
     src/casm/database/json/jsonDatabase.cc\
     src/casm/database/json/jsonPropertiesDatabase.cc\
+    src/casm/enumerator/ClusterSitesSelector.cc\
     src/casm/enumerator/ConfigEnumInput.cc\
     src/casm/enumerator/DoFSpace.cc\
     src/casm/enumerator/io/json/ConfigEnumInput_json_io.cc\

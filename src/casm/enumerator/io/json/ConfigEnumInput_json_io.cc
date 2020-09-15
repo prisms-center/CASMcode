@@ -84,7 +84,7 @@ namespace CASM {
   /// state of enumeration is equivalent to selecting the configuration in that supercell with all
   /// values of DoF set to 0.
   ///
-  /// Options are:
+  /// Options for specifying supercells and configurations are:
   ///     supercell_selection: string (optional)
   ///         Name of a selection of supercells to use as initial states for enumeration
   ///     scelnames: array of string (optional)
@@ -112,7 +112,7 @@ namespace CASM {
   /// given is selecting all sites for enumeration. The values of DoF on all the sites that are not
   /// selected are frozen.
   ///
-  /// Options are:
+  /// Options for selecting sites are:
   ///     sublats: array of integer (optional)
   ///         Indices of sublattices to allow enumeration on.
   ///     sites: array of array of integer (optional)
@@ -129,7 +129,8 @@ namespace CASM {
   ///         JSON object specifying orbits of clusters to generate. Each orbit prototype is used
   ///         to select sites to enumerate on each selected supercell or configuration. If there are
   ///         4 supercells or configurations selected, and there are 10 orbits generated, then there
-  ///         will be 4*10=40 ConfigEnumInput generated.
+  ///         will be 4*10=40 ConfigEnumInput generated. The "cluster_specs" option cannot be used
+  ///         with the "sublats" or "sites" options.
   ///
   void parse(
     InputParser<std::vector<ConfigEnumInput>> &parser,
@@ -183,23 +184,31 @@ namespace CASM {
       Index b = site_uccoord.sublattice();
       if(b < 0 || b >= shared_prim->basis().size()) {
         std::stringstream msg;
-        msg << "Error reading sites[" << i << "]: sublattice index out of range [0, " << shared_prim->basis().size() << ")";
+        msg << "Error reading sites[" << i << "]: sublattice index out of range [0, "
+            << shared_prim->basis().size() << ")";
         parser.error.insert(msg.str());
       }
       ++i;
     }
 
-    // check for "cluster_specs"
-    auto cluster_specs_subparser = parser.subparse_if<ClusterSpecs>("cluster_specs", shared_prim);
+    // Do not allow "cluster_specs" with "sublats" or "sites"
+    //  (when would this be useful? which order to apply?)
+    if((sublats.size() || sites.size()) && parser.self.contains("cluster_specs")) {
+      std::stringstream msg;
+      msg << "Error creating enumerator initial states: "
+          << "cannot include \"cluster_specs\" with \"sublats\" or \"sites\"";
+      parser.error.insert(msg.str());
+    }
 
+    // at this point we have parsed everything except "cluster_specs",
+    //   which is parsed later for each ConfigEnumInput
     if(!parser.valid()) {
       return;
     }
 
-    // Use the parsed input to construct ConfigEnumInput:
-    parser.value = notstd::make_unique<std::vector<ConfigEnumInput>>();
-    auto &config_enum_input = *parser.value;
-
+    // Use the supercells and configurations input to construct ConfigEnumInput,
+    //   by default these have all sites selected
+    std::vector<ConfigEnumInput> config_enum_input;
     for(const auto &config : config_selection.selected()) {
       config_enum_input.emplace_back(config);
     }
@@ -213,6 +222,8 @@ namespace CASM {
         config_enum_input.emplace_back(*scel_it);
       }
     }
+
+    // select sublattices and individual sites
     if(sublats.size() || sites.size()) {
       for(ConfigEnumInput &input : config_enum_input) {
         input.clear_sites();
@@ -220,16 +231,33 @@ namespace CASM {
         input.select_sites(sites);
       }
     }
-    if(cluster_specs_subparser->value) {
-      ClusterSpecs const &cluster_specs = *cluster_specs_subparser->value;
+
+    // select clusters
+    if(parser.self.contains("cluster_specs")) {
+
+      // this will generate more ConfigEnumInput, with cluster sites selected
       std::vector<ConfigEnumInput> with_cluster_sites;
       for(ConfigEnumInput &input : config_enum_input) {
+        input.clear_sites();
+        // parse "cluster_specs" for this input (depends on supercell)
+        Supercell const &supercell = input.configuration().supercell();
+        Eigen::Matrix3l const &T = supercell.sym_info().transformation_matrix_to_super();
+        auto cluster_specs_subparser = parser.subparse<ClusterSpecs>(
+                                         "cluster_specs", shared_prim, make_invariant_sym_group(input), &T);
+        if(!cluster_specs_subparser->valid()) {
+          return;
+        }
+
+        // generate ConfigEnumInput with cluster sites selected according to cluster_specs
+        ClusterSpecs const &cluster_specs = *cluster_specs_subparser->value;
         auto selector = make_cluster_sites_selector(input, std::back_inserter(with_cluster_sites));
         for_all_orbits(cluster_specs, null_log(), selector);
       }
       config_enum_input = std::move(with_cluster_sites);
     }
 
+    // Move all constructed ConfigEnumInput into the parser.value
+    parser.value = notstd::make_unique<std::vector<ConfigEnumInput>>(std::move(config_enum_input));
   }
 
 }

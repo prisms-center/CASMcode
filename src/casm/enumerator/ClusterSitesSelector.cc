@@ -1,3 +1,4 @@
+#include "casm/clusterography/ClusterSpecs_impl.hh"
 #include "casm/enumerator/ClusterSitesSelector_impl.hh"
 
 namespace CASM {

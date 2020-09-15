@@ -151,6 +151,7 @@ namespace CASM {
     transf_mat_type transf_mat,
     double tol):
     m_prim(prim_ptr),
+    m_transf_mat(transf_mat),
     m_bring_within_f(transf_mat),
     m_tol(tol) {}
 
@@ -203,6 +204,7 @@ namespace CASM {
     transf_mat_type transf_mat,
     double tol):
     m_prim(prim_ptr),
+    m_transf_mat(transf_mat),
     m_bring_within_f(transf_mat),
     m_tol(tol) {}
 

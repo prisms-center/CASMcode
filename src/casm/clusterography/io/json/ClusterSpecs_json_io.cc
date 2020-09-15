@@ -75,19 +75,14 @@ namespace CASM {
 
     std::unique_ptr<SymGroup> group_from_indices(
       const SymGroup &super_group,
-      const std::vector<Index> &indices) {
+      const std::set<Index> &indices) {
 
       auto result = notstd::make_unique<SymGroup>();
       result->set_lattice(super_group.lattice());
-      const MasterSymGroup &master_group = super_group.master_group();
-      for(const auto &i : indices) {
-        const auto &op = master_group[i];
-
-        auto it = find_by_master_group_index(op, super_group);
-        if(it == super_group.end()) {
-          continue;
+      for(SymOp const &op : super_group) {
+        if(indices.count(op.index())) {
+          result->push_back(op);
         }
-        result->push_back(*it);
       }
       result->sort();
       if((*result)[0].index() != 0) {
@@ -99,35 +94,27 @@ namespace CASM {
       return result;
     }
 
+    template<typename SymCompareType>
     std::unique_ptr<SymGroup> local_group_from_indices(
       const SymGroup &super_group,
-      const std::vector<Index> &indices,
+      const std::set<Index> &indices,
       const IntegralCluster &phenomenal,
-      const PrimPeriodicSymCompare<IntegralCluster> &sym_compare) { // TODO: check this?
+      const SymCompareType &sym_compare) { // TODO: check this?
 
       IntegralCluster e {sym_compare.prepare(phenomenal)};
-
-      const MasterSymGroup &master_group = super_group.master_group();
-
       auto result = notstd::make_unique<SymGroup>();
-      result->set_lattice(master_group.lattice());
-      for(const auto &i : indices) {
-
-        const auto &op = master_group[i];
-
-        auto it = find_by_master_group_index(op, super_group);
-        if(it == super_group.end()) {
-          continue;
-        }
-
-        // get translation & check that phenomenal cluster sites remain invariant
-        // - note: this is a minimum requirement check that provides the translation, it does not
-        //   guarantee the user input op is correct for a particular context (i.e. DiffTrans)
-        if(sym_compare.equal(e, sym_compare.prepare(sym_compare.copy_apply(op, e)))) {
-          result->push_back(sym_compare.spatial_transform()*op);
-        }
-        else {
-          throw std::runtime_error("Error in local_group_from_indices: Phenomenal cluster sites are not invariant.");
+      result->set_lattice(super_group.lattice());
+      for(SymOp const &op : super_group) {
+        if(indices.count(op.index())) {
+          // get translation & check that phenomenal cluster sites remain invariant
+          // - note: this is a minimum requirement check that provides the translation, it does not
+          //   guarantee the user input indices are correct for a particular context (i.e. DiffTrans)
+          if(sym_compare.equal(e, sym_compare.prepare(sym_compare.copy_apply(op, e)))) {
+            result->push_back(sym_compare.spatial_transform()*op);
+          }
+          else {
+            throw std::runtime_error("Error in local_group_from_indices: Phenomenal cluster sites are not invariant.");
+          }
         }
       }
       result->sort();
@@ -145,7 +132,7 @@ namespace CASM {
       const std::shared_ptr<const Structure> &shared_prim,
       const SymGroup &super_group) {
 
-      auto generating_group_indices = parser.optional<std::vector<Index>>("generating_group");
+      auto generating_group_indices = parser.optional<std::set<Index>>("generating_group");
       if(generating_group_indices) {
         try {
           return group_from_indices(super_group, *generating_group_indices);
@@ -160,20 +147,20 @@ namespace CASM {
       }
     }
 
+    template<typename SymCompareType>
     std::unique_ptr<SymGroup> parse_local_generating_group(
       KwargsParser &parser,
       const std::shared_ptr<const Structure> &shared_prim,
       const IntegralCluster &phenomenal,
-      const SymGroup &super_group) {
+      const SymGroup &super_group,
+      const SymCompareType &sym_compare) {
 
-      std::vector<Index> generating_group_indices;
+      std::set<Index> generating_group_indices;
       parser.require(generating_group_indices, "generating_group");
       if(!parser.valid()) {
         return std::unique_ptr<SymGroup>();
       }
       try {
-        typedef PrimPeriodicSymCompare<IntegralCluster> SymCompareType;
-        SymCompareType sym_compare {shared_prim, shared_prim->lattice().tol()}; // TODO: check this?
         return local_group_from_indices(
                  super_group,
                  generating_group_indices,
@@ -222,9 +209,12 @@ namespace CASM {
     std::vector<IntegralClusterOrbitGenerator> custom_generators;
     parser.subparse_if(custom_generators, "orbit_specs", *shared_prim);
 
+    if(!parser.valid) {
+      return;
+    }
     parser.value = notstd::make_unique<PeriodicMaxLengthClusterSpecs>(
                      shared_prim,
-                     std::move(generating_group_ptr),
+                     *generating_group_ptr,
                      dof_sites_filter(),
                      max_length,
                      custom_generators);
@@ -275,7 +265,9 @@ namespace CASM {
     IntegralCluster phenomenal = *phenomenal_subparser_ptr->value;
 
     // parse generating group
-    auto generating_group_ptr = parse_local_generating_group(parser, shared_prim, phenomenal, super_group);
+    typedef PrimPeriodicSymCompare<IntegralCluster> SymCompareType;
+    SymCompareType sym_compare {shared_prim, shared_prim->lattice().tol()};
+    auto generating_group_ptr = parse_local_generating_group(parser, shared_prim, phenomenal, super_group, sym_compare);
 
     // parse max_length and cutoff_radius
     auto max_length = parse_orbit_branch_specs_attr(parser, "max_length");
@@ -284,10 +276,12 @@ namespace CASM {
     // parse custom generators ("orbit_specs")
     std::vector<IntegralClusterOrbitGenerator> custom_generators;
     parser.subparse_if(custom_generators, "orbit_specs", *shared_prim);
-
+    if(!parser.valid) {
+      return;
+    }
     parser.value = notstd::make_unique<LocalMaxLengthClusterSpecs>(
                      shared_prim,
-                     std::move(generating_group_ptr),
+                     *generating_group_ptr,
                      phenomenal,
                      dof_sites_filter(),
                      max_length,
@@ -312,7 +306,10 @@ namespace CASM {
     if(phenomenal_subparser_ptr->value != nullptr) {
       // if phenomenal, get generating group with translations that leave phenomenal sites invariant
       IntegralCluster const &phenomenal = *phenomenal_subparser_ptr->value;
-      generating_group_ptr = parse_local_generating_group(parser, shared_prim, phenomenal, super_group);
+      typedef WithinScelSymCompare<IntegralCluster> SymCompareType;
+      SymCompareType sym_compare {shared_prim, transformation_matrix_to_super, shared_prim->lattice().tol()};
+      generating_group_ptr = parse_local_generating_group(parser, shared_prim, phenomenal, super_group, sym_compare);
+
     }
     else {
       // if exists, get generating group
@@ -331,32 +328,40 @@ namespace CASM {
     std::vector<IntegralClusterOrbitGenerator> custom_generators;
     parser.subparse_if(custom_generators, "orbit_specs", *shared_prim);
 
+    if(!parser.valid) {
+      return;
+    }
     parser.value = notstd::make_unique<WithinScelMaxLengthClusterSpecs>(
                      shared_prim,
                      transformation_matrix_to_super,
-                     std::move(generating_group_ptr),
+                     *generating_group_ptr,
                      dof_sites_filter(),
                      max_length,
-                     cutoff_radius,
                      custom_generators,
-                     std::move(phenomenal_subparser_ptr->value));
+                     std::move(phenomenal_subparser_ptr->value),
+                     cutoff_radius);
   }
 
 
   /// \brief Parse PeriodicMaxLengthClusterSpecs or LocalMaxLengthClusterSpecs from JSON & validate
   ///
   /// This overload is equivalent to: `parse(parser, shared_prim, shared_prim->factor_group())`.
+  ///
+  /// Note:
+  /// - This is not appropriate for reading WithinScelMaxLengthClusterSpecs
   void parse(
     InputParser<ClusterSpecs> &parser,
     const std::shared_ptr<const Structure> &shared_prim) {
     parse(parser, shared_prim, shared_prim->factor_group());
   }
 
-  /// \brief Parse PeriodicMaxLengthClusterSpecs or LocalMaxLengthClusterSpecs from JSON & validate with specified generating_group
+  /// \brief Parse any supported type of ClusterSpecs from JSON & validate with specified generating_group
   ///
   /// \param parser (InputParser<ClusterSpecs>) Holds resulting value and error or warning messages
   /// \param shared_prim (const std::shared_ptr<const Structure> &) Prim structure
-  /// \param super_group (const SymGroup &) Used to generate orbits
+  /// \param super_group (const SymGroup &) Used to generate orbits. For WithinScelMaxLengthClusterSpecs,
+  ///        this should include within supercell translations (i.e. correspond to a Configuraiton
+  ///        factor group).
   /// \param transformation_matrix_to_super (Eigen::Matrix3l const *) Optional super lattice
   ///        transformation matrix for contexts when "within_scel_max_length" is supported.
   ///
@@ -459,7 +464,7 @@ namespace CASM {
   ///             phenomenal: object (optional)
   ///                 The "phenomenal" cluster about which local clusters are generated. See the
   ///                 cluster input format below.
-  ///             generating_group: array of int (optional)
+  ///             generating_group: array of int (optional, required with "phenomenal")
   ///                 An array of symop indices into the prim structure factor group specifying
   ///                 the invariant group of the "phenomenal" cluster which should be used to
   ///                 for generating cluster orbits. In some contexts, the relevant symmetry
@@ -574,7 +579,7 @@ namespace CASM {
 
     using namespace ClusterSpecs_json_io_impl;
     orbit_branch_specs_attr_to_json(cspecs.max_length, "max_length", json_params);
-    write_group_indices(*cspecs.generating_group, json_params["generating_group"]);
+    write_group_indices(cspecs.generating_group, json_params["generating_group"]);
     if(cspecs.custom_generators.size()) {
       json_params["orbit_specs"] = cspecs.custom_generators;
     }
@@ -595,7 +600,7 @@ namespace CASM {
     using namespace ClusterSpecs_json_io_impl;
     orbit_branch_specs_attr_to_json(cspecs.max_length, "max_length", json_params);
     orbit_branch_specs_attr_to_json(cspecs.cutoff_radius, "cutoff_radius", json_params);
-    write_group_indices(*cspecs.generating_group, json_params["generating_group"]);
+    write_group_indices(cspecs.generating_group, json_params["generating_group"]);
     to_json(cspecs.phenomenal, json_params["phenomenal"]);
     if(cspecs.custom_generators.size()) {
       json_params["orbit_specs"] = cspecs.custom_generators;
@@ -616,7 +621,7 @@ namespace CASM {
     using namespace ClusterSpecs_json_io_impl;
     orbit_branch_specs_attr_to_json(cspecs.max_length, "max_length", json_params);
     orbit_branch_specs_attr_to_json(cspecs.cutoff_radius, "cutoff_radius", json_params);
-    write_group_indices(*cspecs.generating_group, json_params["generating_group"]);
+    write_group_indices(cspecs.generating_group, json_params["generating_group"]);
     if(cspecs.phenomenal != nullptr) {
       to_json(*cspecs.phenomenal, json_params["phenomenal"]);
     }

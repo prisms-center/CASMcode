@@ -159,8 +159,8 @@ TEST(ExampleClusterographyClusterSpecs, PeriodicMaxLengthClusterSpecs) {
   // Construct a ZrO prim (same as above)
   auto shared_prim = std::make_shared<CASM::Structure const>(test::ZrO_prim());
 
-  // The generating group
-  std::unique_ptr<CASM::SymGroup> generating_group_ptr = notstd::clone(shared_prim->factor_group());
+  // Use the complete factor group as the generating group
+  CASM::SymGroup const &generating_group = shared_prim->factor_group();
 
   // Cluster "max_length" cutoff values: max_length[b] is cutoff value for orbit branch b
   // - null and point cluster values are ignored
@@ -170,7 +170,7 @@ TEST(ExampleClusterographyClusterSpecs, PeriodicMaxLengthClusterSpecs) {
   // PeriodicMaxLengthClusterSpecs is constructed with:
   CASM::PeriodicMaxLengthClusterSpecs cluster_specs {
     shared_prim,                        // the prim Structure
-    std::move(generating_group_ptr),    // the orbit generating group
+    generating_group,                   // the orbit generating group
     CASM::alloy_sites_filter,           // filter to include sites with >1 occupant in cluster orbits
     max_length,                         // cluster "max_length" cutoff values
     example::make_custom_generators(shared_prim) // custom triplet clusters (and subclusters)

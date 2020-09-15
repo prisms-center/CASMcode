@@ -9,6 +9,33 @@
 
 namespace CASM {
 
+  /// Returns, as a SymGroup, all allowed operations that leave the structure unchanged. This
+  /// is equivalent to the factor group.
+  SymGroup make_generating_group(Structure const &structure) {
+    return structure.factor_group();
+  }
+
+  /// Returns, as a SymGroup, all allowed permute operations that leave the supercell lattice
+  /// unchanged.
+  SymGroup make_generating_group(Supercell const &supercell) {
+    return make_sym_group(supercell.permute_begin(), supercell.permute_end(), supercell.lattice());
+  }
+
+  /// Returns, as a SymGroup, the configuration factor group (all allowed permute operations that
+  /// leave the supercell lattice and configuration DoF values unchanged).
+  SymGroup make_generating_group(Configuration const &configuration) {
+    return make_sym_group(configuration.factor_group(), configuration.supercell().lattice());
+  }
+
+  /// Returns, as a std::unique_ptr<SymGroup>, the subgroup of the configuration factor group
+  /// that does cause any permutation between the sets of selected and unselected sites of
+  /// "config_enum_input".
+  SymGroup make_generating_group(ConfigEnumInput const &config_enum_input) {
+    Supercell const &supercell = config_enum_input.configuration().supercell();
+    return make_sym_group(make_invariant_group(config_enum_input), supercell.lattice());
+  }
+
+
   std::string ClusterSpecs::name() const {
     return this->_name();
   }
@@ -76,16 +103,13 @@ namespace CASM {
 
   PeriodicMaxLengthClusterSpecs::PeriodicMaxLengthClusterSpecs(
     std::shared_ptr<Structure const> _shared_prim,
-    std::unique_ptr<SymGroup> _generating_group,
+    SymGroup const &_generating_group,
     SiteFilterFunction const &_site_filter,
     std::vector<double> const &_max_length,
     std::vector<IntegralClusterOrbitGenerator> const &_custom_generators):
     shared_prim(_shared_prim),
-    generating_group(std::move(_generating_group)),
-    sym_compare(
-      notstd::make_unique<PrimPeriodicSymCompare<IntegralCluster>>(
-        shared_prim,
-        shared_prim->lattice().tol())),
+    generating_group(_generating_group),
+    sym_compare(shared_prim, shared_prim->lattice().tol()),
     site_filter(_site_filter),
     max_length(_max_length),
     custom_generators(_custom_generators) {
@@ -101,7 +125,7 @@ namespace CASM {
 
   ClusterSpecs::PeriodicOrbitVec PeriodicMaxLengthClusterSpecs::_make_periodic_orbits(
     IntegralClusterVec const &generating_elements) const {
-    return generate_orbits(generating_elements, *generating_group, *sym_compare);
+    return generate_orbits(generating_elements, generating_group, sym_compare);
   }
 
   ClusterSpecs::PeriodicOrbitVec PeriodicMaxLengthClusterSpecs::_make_periodic_orbits(
@@ -137,9 +161,9 @@ namespace CASM {
         *shared_prim,
         candidate_sites.begin(),
         candidate_sites.end(),
-        *generating_group,
+        generating_group,
         cluster_filter,
-        *sym_compare);
+        sym_compare);
     }
 
     // now generate orbits
@@ -153,17 +177,15 @@ namespace CASM {
 
   LocalMaxLengthClusterSpecs::LocalMaxLengthClusterSpecs(
     std::shared_ptr<Structure const> _shared_prim,
-    std::unique_ptr<SymGroup> _generating_group,
+    SymGroup const &_generating_group,
     IntegralCluster const &_phenomenal,
     SiteFilterFunction const &_site_filter,
     std::vector<double> const &_max_length,
     std::vector<double> const &_cutoff_radius,
     std::vector<IntegralClusterOrbitGenerator> const &_custom_generators):
     shared_prim(_shared_prim),
-    generating_group(std::move(_generating_group)),
-    sym_compare(
-      notstd::make_unique<LocalSymCompare<IntegralCluster>>(
-        shared_prim, shared_prim->lattice().tol())),
+    generating_group(_generating_group),
+    sym_compare(shared_prim, shared_prim->lattice().tol()),
     phenomenal(_phenomenal),
     site_filter(_site_filter),
     max_length(_max_length),
@@ -181,7 +203,7 @@ namespace CASM {
 
   ClusterSpecs::LocalOrbitVec LocalMaxLengthClusterSpecs::_make_local_orbits(
     IntegralClusterVec const &generating_elements) const {
-    return generate_orbits(generating_elements, *generating_group, *sym_compare);
+    return generate_orbits(generating_elements, generating_group, sym_compare);
   }
 
   ClusterSpecs::LocalOrbitVec LocalMaxLengthClusterSpecs::_make_local_orbits(
@@ -214,9 +236,9 @@ namespace CASM {
         *shared_prim,
         candidate_sites.begin(),
         candidate_sites.end(),
-        *generating_group,
+        generating_group,
         cluster_filter,
-        *sym_compare);
+        sym_compare);
     }
 
     // now generate orbits
@@ -231,25 +253,30 @@ namespace CASM {
   WithinScelMaxLengthClusterSpecs::WithinScelMaxLengthClusterSpecs(
     std::shared_ptr<Structure const> _shared_prim,
     Eigen::Matrix3l const &_superlattice_matrix,
-    std::unique_ptr<SymGroup> _generating_group,
+    SymGroup const &_generating_group,
     SiteFilterFunction const &_site_filter,
     std::vector<double> const &_max_length,
-    std::vector<double> const &_cutoff_radius,
     std::vector<IntegralClusterOrbitGenerator> const &_custom_generators,
-    notstd::cloneable_ptr<IntegralCluster> _phenomenal):
+    notstd::cloneable_ptr<IntegralCluster> _phenomenal,
+    std::vector<double> const &_cutoff_radius):
     shared_prim(_shared_prim),
     superlattice_matrix(_superlattice_matrix),
-    generating_group(std::move(_generating_group)),
-    sym_compare(
-      notstd::make_unique<WithinScelSymCompare<IntegralCluster>>(
-        shared_prim,
-        superlattice_matrix,
-        shared_prim->lattice().tol())),
+    generating_group(_generating_group),
+    sym_compare(shared_prim, superlattice_matrix, shared_prim->lattice().tol()),
     phenomenal(std::move(_phenomenal)),
     site_filter(_site_filter),
     max_length(_max_length),
     cutoff_radius(_cutoff_radius),
     custom_generators(_custom_generators) {
+
+    if(phenomenal && (cutoff_radius.size() != max_length.size())) {
+      std::stringstream msg;
+      msg << "Error constructing WithinScelMaxLengthClusterSpecs: "
+          << "cutoff_radius.size() != max_length.size() "
+          << "[" << cutoff_radius.size() << " != " << max_length.size() << "] "
+          << "(required with phenomenal cluster)";
+      throw std::runtime_error(msg.str());
+    }
   }
 
   std::string WithinScelMaxLengthClusterSpecs::_name() const {
@@ -262,7 +289,7 @@ namespace CASM {
 
   ClusterSpecs::WithinScelOrbitVec WithinScelMaxLengthClusterSpecs::_make_within_scel_orbits(
     IntegralClusterVec const &generating_elements) const {
-    return generate_orbits(generating_elements, *generating_group, *sym_compare);
+    return generate_orbits(generating_elements, generating_group, sym_compare);
   }
 
   ClusterSpecs::WithinScelOrbitVec WithinScelMaxLengthClusterSpecs::_make_within_scel_orbits(
@@ -311,9 +338,9 @@ namespace CASM {
         *shared_prim,
         candidate_sites.begin(),
         candidate_sites.end(),
-        *generating_group,
+        generating_group,
         cluster_filter,
-        *sym_compare);
+        sym_compare);
     }
 
     // now generate orbits
@@ -326,15 +353,15 @@ namespace CASM {
   GenericPeriodicClusterSpecs::GenericPeriodicClusterSpecs(
     std::string _method_name,
     std::shared_ptr<Structure const> _shared_prim,
-    std::unique_ptr<SymGroup> _generating_group,
+    SymGroup const &_generating_group,
     SymCompareType const &_sym_compare,
     SiteFilterFunction _site_filter,
     std::vector<ClusterFilterFunction> _cluster_filter,
     std::vector<CandidateSitesFunction> _candidate_sites,
     std::vector<IntegralClusterOrbitGenerator> _custom_generators) :
     shared_prim(_shared_prim),
-    generating_group(std::move(_generating_group)),
-    sym_compare(notstd::clone(_sym_compare)),
+    generating_group(_generating_group),
+    sym_compare(_sym_compare),
     site_filter(_site_filter),
     cluster_filter(_cluster_filter),
     candidate_sites(_candidate_sites),
@@ -351,7 +378,7 @@ namespace CASM {
 
   ClusterSpecs::PeriodicOrbitVec GenericPeriodicClusterSpecs::_make_periodic_orbits(
     IntegralClusterVec const &generating_elements) const {
-    return generate_orbits(generating_elements, *generating_group, *sym_compare);
+    return generate_orbits(generating_elements, generating_group, sym_compare);
   }
 
   ClusterSpecs::PeriodicOrbitVec GenericPeriodicClusterSpecs::_make_periodic_orbits(
@@ -372,9 +399,9 @@ namespace CASM {
         *shared_prim,
         tmp.begin(),
         tmp.end(),
-        *generating_group,
+        generating_group,
         cluster_filter[branch],
-        *sym_compare);
+        sym_compare);
     }
 
     // now generate orbits
@@ -387,15 +414,15 @@ namespace CASM {
   GenericLocalClusterSpecs::GenericLocalClusterSpecs(
     std::string _method_name,
     std::shared_ptr<Structure const> _shared_prim,
-    std::unique_ptr<SymGroup> _generating_group,
+    SymGroup const &_generating_group,
     SymCompareType const &_sym_compare,
     SiteFilterFunction _site_filter,
     std::vector<ClusterFilterFunction> _cluster_filter,
     std::vector<CandidateSitesFunction> _candidate_sites,
     std::vector<IntegralClusterOrbitGenerator> _custom_generators) :
     shared_prim(_shared_prim),
-    generating_group(std::move(_generating_group)),
-    sym_compare(notstd::clone(_sym_compare)),
+    generating_group(_generating_group),
+    sym_compare(_sym_compare),
     site_filter(_site_filter),
     cluster_filter(_cluster_filter),
     candidate_sites(_candidate_sites),
@@ -413,7 +440,7 @@ namespace CASM {
 
   ClusterSpecs::LocalOrbitVec GenericLocalClusterSpecs::_make_local_orbits(
     IntegralClusterVec const &generating_elements) const {
-    return generate_orbits(generating_elements, *generating_group, *sym_compare);
+    return generate_orbits(generating_elements, generating_group, sym_compare);
   }
 
   ClusterSpecs::LocalOrbitVec GenericLocalClusterSpecs::_make_local_orbits(
@@ -434,9 +461,9 @@ namespace CASM {
         *shared_prim,
         tmp.begin(),
         tmp.end(),
-        *generating_group,
+        generating_group,
         cluster_filter[branch],
-        *sym_compare);
+        sym_compare);
     }
 
     // now generate orbits
@@ -449,15 +476,15 @@ namespace CASM {
   GenericWithinScelClusterSpecs::GenericWithinScelClusterSpecs(
     std::string _method_name,
     std::shared_ptr<Structure const> _shared_prim,
-    std::unique_ptr<SymGroup> _generating_group,
+    SymGroup const &_generating_group,
     SymCompareType const &_sym_compare,
     SiteFilterFunction _site_filter,
     std::vector<ClusterFilterFunction> _cluster_filter,
     std::vector<CandidateSitesFunction> _candidate_sites,
     std::vector<IntegralClusterOrbitGenerator> _custom_generators) :
     shared_prim(_shared_prim),
-    generating_group(std::move(_generating_group)),
-    sym_compare(notstd::clone(_sym_compare)),
+    generating_group(_generating_group),
+    sym_compare(_sym_compare),
     site_filter(_site_filter),
     cluster_filter(_cluster_filter),
     candidate_sites(_candidate_sites),
@@ -474,7 +501,7 @@ namespace CASM {
 
   ClusterSpecs::WithinScelOrbitVec GenericWithinScelClusterSpecs::_make_within_scel_orbits(
     IntegralClusterVec const &generating_elements) const {
-    return generate_orbits(generating_elements, *generating_group, *sym_compare);
+    return generate_orbits(generating_elements, generating_group, sym_compare);
   }
 
   ClusterSpecs::WithinScelOrbitVec GenericWithinScelClusterSpecs::_make_within_scel_orbits(
@@ -495,9 +522,9 @@ namespace CASM {
         *shared_prim,
         tmp.begin(),
         tmp.end(),
-        *generating_group,
+        generating_group,
         cluster_filter[branch],
-        *sym_compare);
+        sym_compare);
     }
 
     // now generate orbits

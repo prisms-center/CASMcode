@@ -240,6 +240,24 @@ namespace CASM {
     return sym_group;
   }
 
+  /// \brief Returns a std::unique_ptr<SymGroup> generated from a range of PermuteIterator
+  ///
+  /// \param begin,end A range of PermuteIterator
+  ///
+  /// - The result is sorted
+  /// - The result uses the Supercell lattice for periodic comparisons
+  template<typename PermuteIteratorIt>
+  std::unique_ptr<SymGroup> make_unique_sym_group(PermuteIteratorIt begin, PermuteIteratorIt end, const Lattice &supercell_lattice) {
+    auto sym_group_ptr = notstd::make_unique<SymGroup>();
+    sym_group_ptr->set_lattice(supercell_lattice);
+    while(begin != end) {
+      sym_group_ptr->push_back(begin->sym_op());
+      ++begin;
+    }
+    sym_group_ptr->sort();
+    return sym_group_ptr;
+  }
+
   template SymGroup make_sym_group(
     PermuteIterator begin,
     PermuteIterator end, const Lattice &supercell_lattice);

@@ -181,6 +181,20 @@ namespace CASM {
   template<typename PermuteIteratorIt>
   SymGroup make_sym_group(PermuteIteratorIt begin, PermuteIteratorIt end, const Lattice &supercell_lattice);
 
+  /// \brief Returns a std::unique_ptr<SymGroup> generated from a container of PermuteIterator
+  ///
+  /// \param container A container of PermuteIterator
+  ///
+  /// - The result is sorted
+  template<typename PermuteIteratorContainer>
+  std::unique_ptr<SymGroup> make_unique_sym_group(const PermuteIteratorContainer &container, const Lattice &supercell_lattice) {
+    return make_unique_sym_group(container.begin(), container.end(), supercell_lattice);
+  }
+
+  /// \brief Returns a SymGroup generated from a range of PermuteIterator
+  template<typename PermuteIteratorIt>
+  std::unique_ptr<SymGroup> make_unique_sym_group(PermuteIteratorIt begin, PermuteIteratorIt end, const Lattice &supercell_lattice);
+
   jsonParser &to_json(const PermuteIterator &clust, jsonParser &json);
 
 
