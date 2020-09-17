@@ -1,4 +1,5 @@
 #include "casm/clex/Supercell.hh"
+#include "casm/clusterography/SupercellClusterOrbits.hh"
 #include "casm/enumerator/ConfigEnumInput_impl.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 
@@ -88,18 +89,8 @@ namespace CASM {
     }
   }
 
-  namespace {
-    bool no_permutation_between_selected_and_unselected_sites(PermuteIterator const &perm_it,
-                                                              std::set<Index> const &selected_sites) {
-      return std::none_of(
-               selected_sites.begin(),
-               selected_sites.end(),
-      [&](Index s) {
-        return selected_sites.count(perm_it.permute_ind(s)) == 0;
-      });
-    }
-  }
-
+  /// Returns the subgroup of the configuration factor group that not cause any permutation between
+  /// the set of selected and unselected sites of "config_enum_input"
   std::vector<PermuteIterator> make_invariant_group(ConfigEnumInput const &config_enum_input) {
 
     std::vector<PermuteIterator> invariant_group;
@@ -107,7 +98,7 @@ namespace CASM {
     std::set<Index> const &selected_sites = config_enum_input.sites();
 
     for(PermuteIterator const &perm_it : factor_group) {
-      if(no_permutation_between_selected_and_unselected_sites(perm_it, selected_sites)) {
+      if(cluster_site_indices_are_invariant(perm_it, selected_sites)) {
         invariant_group.push_back(perm_it);
       }
     }

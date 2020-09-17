@@ -96,8 +96,13 @@ namespace CASM {
       m_op_index = -1;
     }
 
+    /// Index of this operation within the master_group (equivalent to master_group_index)
+    Index index() const {
+      return m_op_index;
+    }
+
     /// Index of this operation within the master_group
-    Index index()const {
+    Index master_group_index() const {
       return m_op_index;
     }
 

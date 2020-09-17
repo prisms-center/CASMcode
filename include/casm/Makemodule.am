@@ -259,7 +259,9 @@ casm_clusterography_include_HEADERS = \
     include/casm/clusterography/IntegralClusterSymCompareTraits.hh\
     include/casm/clusterography/IntegralClusterSymCompareTraits_impl.hh\
     include/casm/clusterography/IntegralCluster_impl.hh\
-    include/casm/clusterography/SubClusterGenerator.hh
+    include/casm/clusterography/SubClusterGenerator.hh\
+    include/casm/clusterography/SupercellClusterOrbits.hh\
+    include/casm/clusterography/SupercellClusterOrbits_impl.hh
 
 #-------------------------------------------------------------------------------#
 

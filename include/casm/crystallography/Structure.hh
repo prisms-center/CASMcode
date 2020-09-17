@@ -158,6 +158,10 @@ namespace CASM {
 
   Index local_dof_dim(DoFKey const &_name, xtal::BasicStructure const &_struc);
 
+
+  class SupercellSymInfo;
+  SupercellSymInfo make_supercell_sym_info(Structure const &prim, Lattice const &super_lattice);
+
   /** @} */
 }
 

@@ -126,7 +126,7 @@ TEST_F(ExampleClusterographyClusterOrbitsIO, ReadWriteJSON) {
     json,
     *cluster_specs->shared_prim,
     cluster_specs->shared_prim->factor_group(),
-    *cluster_specs->sym_compare);
+    cluster_specs->sym_compare);
 
   EXPECT_EQ(orbits_in.size(), 6);
 
@@ -137,7 +137,7 @@ TEST_F(ExampleClusterographyClusterOrbitsIO, ReadWriteJSON) {
     full_orbit_json,
     *cluster_specs->shared_prim,
     cluster_specs->shared_prim->factor_group(),
-    *cluster_specs->sym_compare);
+    cluster_specs->sym_compare);
 
   EXPECT_EQ(full_orbit_in.size(), 6);
 }

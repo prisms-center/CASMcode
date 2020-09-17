@@ -24,6 +24,7 @@ namespace CASM {
 
   /// \brief A class that collects all symmetry information for for performing symmetry transformations on the
   /// site indices, site DoFs, and global DoFs of a Supercell or Configuration
+  ///
   class SupercellSymInfo {
   public:
     using permute_const_iterator = PermuteIterator;
@@ -39,22 +40,14 @@ namespace CASM {
                      std::vector<SymGroupRepID> const &occ_symrep_IDs,
                      std::map<DoFKey, std::vector<SymGroupRepID> > const &local_dof_symrep_IDs);
 
-    /// \brief  SymGroupRep handle for SUBLATTICE permutation representation of supercell's factor group
-    /// a sublattice permutation consists of an index permutation and an integer lattice translation
-    SymGroupRep::RemoteHandle const &basis_permutation_symrep() const {
-      return m_basis_perm_symrep;
-    }
+    /// Returns a "RemoteHandle" to the sublattice permutation representation of the supercell's factor group
+    SymGroupRep::RemoteHandle const &basis_permutation_symrep() const;
 
-    /// \brief  SymGroupRep handle for SITE permutation representation of supercell's factor group
-    /// a site permutation consists of an index permutation for the sites of the supercell
-    /// NOTE: If site_coordinate(index_after) = apply(operation,site_coordinate(index_before)), then this encodes permutation as
-    ///         permutation[index_after]=index_before
-    /// This convention treats fixed positions in space as having an unchanging order, and the permutation describes a rearrangement of
-    /// objects among those sites, due to a transformation
+    /// Returns a "RemoteHandle" to the site permutation representation of the supercell's factor group
     SymGroupRep::RemoteHandle const &site_permutation_symrep() const;
 
 
-    /// \brief  SymGroupRep handle for global DoF matrix representation of supercell's factor group
+    /// Returns a "RemoteHandle" to the global DoF matrix representation of the supercell's factor group
     SymGroupRep::RemoteHandle const &global_dof_symrep(DoFKey const &_key) const {
       return m_global_dof_symreps.at(_key);
     }
@@ -125,7 +118,7 @@ namespace CASM {
     }
 
     /// \brief long-int transformation from primitive lattice vectors to supercell lattice vectors
-    ///   supercell_lattice().lat_column_mat() = prim_lattice().lat_column_mat() * transformation_matrix()
+    ///   supercell_lattice().lat_column_mat() = prim_lattice().lat_column_mat() * transformation_matrix_to_super()
     Eigen::Matrix3l transformation_matrix_to_super() const {
       return this->superlattice().transformation_matrix_to_super();
     }
@@ -134,17 +127,17 @@ namespace CASM {
     //// Equivalent to permute_begin()
     permute_const_iterator translate_begin() const;
 
-    /// \brief End PermuteIterator over pure translational permutations
+    /// End PermuteIterator over pure translational permutations
     permute_const_iterator translate_end() const;
 
-    /// \brief Site permutation corresponding to factor group operation i
-    const Permutation &factor_group_permute(Index i) const;
+    /// Site permutation corresponding to supercell factor group operation
+    const Permutation &factor_group_permute(Index supercell_factor_group_index) const;
 
     // begin and end iterators for iterating over translation and factor group permutations
     permute_const_iterator permute_begin() const;
     permute_const_iterator permute_end() const;
-    permute_const_iterator permute_it(Index fg_index, Index trans_index) const;
-    permute_const_iterator permute_it(Index fg_index, UnitCell trans) const;
+    permute_const_iterator permute_it(Index supercell_factor_group_index, Index translation_index) const;
+    permute_const_iterator permute_it(Index supercell_factor_group_index, UnitCell translation) const;
 
   private:
 

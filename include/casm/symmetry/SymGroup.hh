@@ -77,7 +77,11 @@ namespace CASM {
       return at(0).master_group();
     }
 
+    /// Return the MasterSymGroup indices of the operations in this SymGroup (equivalent to master_group_indices)
     std::vector<Index> op_indices() const;
+
+    /// Return the MasterSymGroup indices of the operations in this SymGroup
+    std::vector<Index> master_group_indices() const;
 
 
     ///Check to see if a SymOp is contained in in SymGroup

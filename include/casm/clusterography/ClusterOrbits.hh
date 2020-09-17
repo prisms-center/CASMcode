@@ -344,12 +344,6 @@ namespace CASM {
   template<typename ClusterOrbitIterator, typename OutputIterator>
   OutputIterator flower_neighborhood(ClusterOrbitIterator begin, ClusterOrbitIterator end, OutputIterator result);
 
-  /// Construct "within_scel" orbits from "prim_periodic" orbits
-  std::vector<WithinScelIntegralClusterOrbit> make_within_scel_orbits_from_prim_periodic(
-    std::shared_ptr<Structure const> const &shared_prim,
-    Eigen::Matrix3l const &transformation_matrix_to_super,
-    std::vector<PermuteIterator> const &generating_group,
-    std::vector<PrimPeriodicIntegralClusterOrbit> const &prim_periodic_orbits);
 }
 
 #endif

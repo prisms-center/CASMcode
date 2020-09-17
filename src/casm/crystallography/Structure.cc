@@ -24,6 +24,7 @@
 #include "casm/basis_set/DoF.hh"
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/basis_set/DoFIsEquivalent_impl.hh"
+#include "casm/symmetry/SupercellSymInfo_impl.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymBasisPermute.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
@@ -445,5 +446,38 @@ namespace CASM {
         result = max(result, site.dof(_name).dim());
     }
     return result;
+  }
+
+  SupercellSymInfo make_supercell_sym_info(Structure const &prim, Lattice const &super_lattice) {
+
+    // Structure data needs to be reorganized for SupercellSymInfo construction
+
+    // map of global DoFKey -> SymGroupRepID
+    std::map<DoFKey, SymGroupRepID> global_dof_symrep_IDs;
+    for(auto const &key : global_dof_types(prim)) {
+      global_dof_symrep_IDs.emplace(std::make_pair(key, prim.global_dof_symrep_ID(key)));
+    }
+
+    // map of site DoFKey -> std::vector<SymGroupRepID>
+    std::map<DoFKey, std::vector<SymGroupRepID> > local_dof_symrep_IDs;
+    for(auto const &key : continuous_local_dof_types(prim)) {
+      std::vector<SymGroupRepID> treps(prim.basis().size());
+      for(Index b = 0; b < prim.basis().size(); ++b) {
+        if(prim.basis()[b].has_dof(key))
+          treps[b] = prim.site_dof_symrep_IDs()[b][key];
+      }
+      local_dof_symrep_IDs.emplace(std::make_pair(key, std::move(treps)));
+    }
+
+    return SupercellSymInfo(prim.lattice(),
+                            super_lattice,
+                            prim.basis().size(),
+                            prim.factor_group(),
+                            prim.basis_permutation_symrep_ID(),
+                            global_dof_symrep_IDs,
+                            prim.occupant_symrep_IDs(),
+                            local_dof_symrep_IDs);
+
+
   }
 }

@@ -59,7 +59,8 @@ TEST(InvariantSubgroupTest, Test0) {
       EXPECT_EQ(cluster_group_a.size(), cluster_group_b.size());
 
       // Test make_invariant_subgroup using Supercell
-      std::vector<PermuteIterator> cluster_group_c = make_invariant_subgroup(orbit.prototype(), prim_scel);
+      SymGroup cluster_group_c = make_invariant_subgroup(
+        orbit.prototype(), prim_scel.sym_info().factor_group(), orbit.sym_compare());
       EXPECT_EQ(cluster_group_a.size(), cluster_group_c.size());
 
     }
@@ -172,7 +173,8 @@ TEST(InvariantSubgroupTest, Test0) {
         EXPECT_EQ(cluster_group_a.size(), cluster_group_b.size());
 
         // Test make_invariant_subgroup using Supercell
-        std::vector<PermuteIterator> cluster_group_c = make_invariant_subgroup(el, scel_vol2);
+        SymGroup cluster_group_c = make_invariant_subgroup(
+          el, scel_vol2.sym_info().factor_group(), scel_sym_compare);
         EXPECT_EQ(cluster_group_a.size(), cluster_group_c.size());
       }
 

@@ -159,6 +159,41 @@ namespace CASM {
 
   };
 
+
+  /// \brief Functor to find the canonical generating element for an orbit
+  ///
+  /// - Uses generating PermuteIterator range, SymCompareType::prepare, SymCompareType::compare
+  ///
+  /// \ingroup OrbitGeneration
+  ///
+  template<typename _OrbitType>
+  struct PermuteCanonicalGenerator {
+
+    typedef _OrbitType OrbitType;
+    typedef typename OrbitType::Element Element;
+    typedef typename OrbitType::SymCompareType SymCompareType;
+
+    std::vector<PermuteIterator> const &generating_group;
+    SymCompareType const &sym_compare;
+
+    PermuteCanonicalGenerator(
+      std::vector<PermuteIterator> const &_generating_group,
+      SymCompareType const &_sym_compare);
+
+    /// \brief Applies symmetry to return an equivalent Element in a canonical form
+    Element operator()(Element const &e) const;
+
+    /// \brief After using call operator, this can be checked
+    PermuteIterator const &to_canonical() const;
+
+    /// \brief After using call operator, this can be checked
+    PermuteIterator const &from_canonical() const;
+
+  private:
+
+    mutable PermuteIterator const *m_to_canonical;
+  };
+
 }
 
 #endif

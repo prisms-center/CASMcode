@@ -164,6 +164,7 @@ TESTS += \
 check_PROGRAMS += \
     casm_unit_clusterography
 casm_unit_clusterography_SOURCES = \
+    tests/unit/clusterography/ClusterSpecs_test.cpp\
     tests/unit/clusterography/Clusterography_test.cpp\
     tests/unit/gtest_main_run_all.cpp
 casm_unit_clusterography_LDADD = \

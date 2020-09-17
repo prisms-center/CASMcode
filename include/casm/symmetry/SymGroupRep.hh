@@ -167,7 +167,11 @@ namespace CASM {
   /// SymGroupRepHandle is used to provide easy remote access to a SymGroup representation
   /// The head group may be a subgroup of the MasterSymGroup where the SymGroupRep is stored.
   class SymGroupRepHandle { // <-- typedefed as SymGroupRep::RemoteHandle
+
+    /// Pointer to the SymGroupRep this is providing an interface to
     SymGroupRep const *m_group_rep;
+
+    /// MasterSymGroup indices of the operations in this SymGroupRep
     std::vector<Index> m_subgroup_op_inds;
   public:
     SymGroupRepHandle():
@@ -185,7 +189,7 @@ namespace CASM {
       assert(m_group_rep);
     }
 
-    /// Size of the associate SymGroup
+    /// Size of the associated SymGroupRep
     Index size() const {
       return m_subgroup_op_inds.size();
     }
@@ -211,6 +215,9 @@ namespace CASM {
       return rep_ptr();
     }
 
+    /// SymOpRepresentation for this->rep_ptr()[i]
+    ///
+    /// \param i Index into SymGroup, which may be a subgroup of the MasterSymGroup
     SymOpRepresentation const *operator[](Index i) const {
       return m_group_rep->at(m_subgroup_op_inds[i]);
     }

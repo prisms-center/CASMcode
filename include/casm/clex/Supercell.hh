@@ -186,8 +186,6 @@ namespace CASM {
   /// \brief Get canonical supercell from name. If not yet in database, construct and insert.
   const Supercell &make_supercell(const PrimClex &primclex, std::string name);
 
-  SupercellSymInfo make_supercell_sym_info(Structure const &_prim, Lattice const &_slat);
-
   /// \brief Construct non-canonical supercell from name. Uses equivalent niggli lattice.
   std::shared_ptr<Supercell> make_shared_supercell(const PrimClex &primclex, std::string name);
 

@@ -9,7 +9,7 @@ namespace CASM {
   template<typename T> class InputParser;
   class LocalMaxLengthClusterSpecs;
   class PeriodicMaxLengthClusterSpecs;
-  class WithinScelMaxLengthClusterSpecs;
+  // class WithinScelMaxLengthClusterSpecs;
   class PrimClex;
   class SymGroup;
   class jsonParser;
@@ -28,13 +28,6 @@ namespace CASM {
     const std::shared_ptr<Structure const> &shared_prim,
     const SymGroup &super_group);
 
-  /// Parse WithinScelMaxLengthClusterSpecs from JSON
-  void parse(
-    InputParser<WithinScelMaxLengthClusterSpecs> &parser,
-    const std::shared_ptr<Structure const> &shared_prim,
-    const SymGroup &super_group,
-    Eigen::Matrix3l const &transformation_matrix_to_super);
-
   /// \brief Parse PeriodicMaxLengthClusterSpecs or LocalMaxLengthClusterSpecs from JSON & validate
   void parse(
     InputParser<ClusterSpecs> &parser,
@@ -44,8 +37,14 @@ namespace CASM {
   void parse(
     InputParser<ClusterSpecs> &parser,
     const std::shared_ptr<Structure const> &shared_prim,
-    const SymGroup &super_group,
-    Eigen::Matrix3l const *transformation_matrix_to_super = nullptr);
+    const SymGroup &super_group);
+
+  // /// Parse ClusterSpecs from JSON for supercell orbits & validate
+  // void parse(
+  //   InputParser<ClusterSpecs> &parser,
+  //   const std::shared_ptr<Structure const> &shared_prim,
+  //   std::vector<PermuteIterator> const &super_group,
+  //   SupercellSymInfo const &sym_info);
 
   /// \brief Write PeriodicMaxLengthClusterSpecs to JSON
   jsonParser &to_json(
@@ -57,10 +56,10 @@ namespace CASM {
     const LocalMaxLengthClusterSpecs &cspecs,
     jsonParser &json);
 
-  /// \brief Write WithinScelMaxLengthClusterSpecs to JSON
-  jsonParser &to_json(
-    const WithinScelMaxLengthClusterSpecs &cspecs,
-    jsonParser &json);
+  // /// \brief Write WithinScelMaxLengthClusterSpecs to JSON
+  // jsonParser &to_json(
+  //   const WithinScelMaxLengthClusterSpecs &cspecs,
+  //   jsonParser &json);
 
   /// \brief Write PeriodicMaxLengthClusterSpecs or LocalMaxLengthClusterSpecs to JSON
   jsonParser &to_json(

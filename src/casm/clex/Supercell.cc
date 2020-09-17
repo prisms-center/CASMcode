@@ -410,39 +410,6 @@ namespace CASM {
     return std::make_shared<Supercell>(&primclex, niggli_lat);
   }
 
-  SupercellSymInfo make_supercell_sym_info(Structure const &_prim, Lattice const &_slat) {
-    std::map<DoFKey, SymGroupRepID> global_dof_symrep_IDs;
-    for(auto const &key : global_dof_types(_prim)) {
-      /* global_dof_symrep_IDs.emplace(std::make_pair(key, _prim.structure().global_dof(key).symrep_ID())); */
-      global_dof_symrep_IDs.emplace(std::make_pair(key, _prim.global_dof_symrep_ID(key)));
-    }
-
-    std::map<DoFKey, std::vector<SymGroupRepID> > local_dof_symrep_IDs;
-    for(auto const &key : continuous_local_dof_types(_prim)) {
-      std::vector<SymGroupRepID> treps(_prim.basis().size());
-      for(Index b = 0; b < _prim.basis().size(); ++b) {
-        if(_prim.basis()[b].has_dof(key))
-          /* treps[b] = _prim.basis()[b].dof(key).symrep_ID(); */
-          treps[b] = _prim.site_dof_symrep_IDs()[b][key];
-      }
-      local_dof_symrep_IDs.emplace(std::make_pair(key, std::move(treps)));
-    }
-
-
-    return SupercellSymInfo(_prim.lattice(),
-                            _slat,
-                            _prim.basis().size(),
-                            _prim.factor_group(),
-                            _prim.basis_permutation_symrep_ID(),
-                            global_dof_symrep_IDs,
-                            _prim.occupant_symrep_IDs(),
-                            local_dof_symrep_IDs);
-
-
-  }
-
-
-
   Supercell &apply(const SymOp &op, Supercell &scel) {
     return scel = copy_apply(op, scel);
   }

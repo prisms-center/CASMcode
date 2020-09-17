@@ -1,9 +1,9 @@
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/casm_io/json/InputParser.hh"
+#include "casm/clusterography/SupercellClusterOrbits.hh"
 #include "casm/clusterography/io/json/ClusterOrbits_json_io.hh"
 #include "casm/clusterography/io/json/ClusterSpecs_json_io.hh"
 #include "casm/clusterography/io/json/IntegralCluster_json_io.hh"
-//#include "casm/symmetry/OrbitGeneration_impl.hh"
 
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clusterography/ClusterSpecs_impl.hh"
@@ -58,6 +58,18 @@ namespace CASM {
       for(const auto &op : grp) {
         json.push_back(op.index());
       }
+    }
+
+    void write_group_indices(
+      std::vector<PermuteIterator> const &grp,
+      jsonParser &json) {
+
+      std::set<Index> prim_factor_group_indices;
+      for(auto const &permute_it : grp) {
+        prim_factor_group_indices.insert(permute_it.prim_factor_group_index());
+      }
+
+      json = prim_factor_group_indices;
     }
 
     std::vector<SymOp>::const_iterator find_by_master_group_index(
@@ -209,7 +221,7 @@ namespace CASM {
     std::vector<IntegralClusterOrbitGenerator> custom_generators;
     parser.subparse_if(custom_generators, "orbit_specs", *shared_prim);
 
-    if(!parser.valid) {
+    if(!parser.valid()) {
       return;
     }
     parser.value = notstd::make_unique<PeriodicMaxLengthClusterSpecs>(
@@ -276,7 +288,7 @@ namespace CASM {
     // parse custom generators ("orbit_specs")
     std::vector<IntegralClusterOrbitGenerator> custom_generators;
     parser.subparse_if(custom_generators, "orbit_specs", *shared_prim);
-    if(!parser.valid) {
+    if(!parser.valid()) {
       return;
     }
     parser.value = notstd::make_unique<LocalMaxLengthClusterSpecs>(
@@ -289,58 +301,76 @@ namespace CASM {
                      custom_generators);
   }
 
-  /// Parse WithinScelMaxLengthClusterSpecs from JSON
-  void parse(
-    InputParser<WithinScelMaxLengthClusterSpecs> &parser,
-    std::shared_ptr<Structure const> const &shared_prim,
-    SymGroup const &super_group,
-    Eigen::Matrix3l const &transformation_matrix_to_super) {
-
-    using namespace ClusterSpecs_json_io_impl;
-
-    // parse phenomenal
-    auto phenomenal_subparser_ptr = parser.subparse_if<IntegralCluster>("phenomenal", *shared_prim);
-
-    // parse generating group
-    std::unique_ptr<SymGroup> generating_group_ptr;
-    if(phenomenal_subparser_ptr->value != nullptr) {
-      // if phenomenal, get generating group with translations that leave phenomenal sites invariant
-      IntegralCluster const &phenomenal = *phenomenal_subparser_ptr->value;
-      typedef WithinScelSymCompare<IntegralCluster> SymCompareType;
-      SymCompareType sym_compare {shared_prim, transformation_matrix_to_super, shared_prim->lattice().tol()};
-      generating_group_ptr = parse_local_generating_group(parser, shared_prim, phenomenal, super_group, sym_compare);
-
-    }
-    else {
-      // if exists, get generating group
-      generating_group_ptr = parse_generating_group(parser, shared_prim, super_group);
-      if(!generating_group_ptr) {
-        // else use super group
-        generating_group_ptr = notstd::clone(super_group);
-      }
-    }
-
-    // parse max_length and cutoff_radius
-    auto max_length = parse_orbit_branch_specs_attr(parser, "max_length");
-    auto cutoff_radius = parse_orbit_branch_specs_attr(parser, "cutoff_radius");
-
-    // parse custom generators ("orbit_specs")
-    std::vector<IntegralClusterOrbitGenerator> custom_generators;
-    parser.subparse_if(custom_generators, "orbit_specs", *shared_prim);
-
-    if(!parser.valid) {
-      return;
-    }
-    parser.value = notstd::make_unique<WithinScelMaxLengthClusterSpecs>(
-                     shared_prim,
-                     transformation_matrix_to_super,
-                     *generating_group_ptr,
-                     dof_sites_filter(),
-                     max_length,
-                     custom_generators,
-                     std::move(phenomenal_subparser_ptr->value),
-                     cutoff_radius);
-  }
+  // /// Parse WithinScelMaxLengthClusterSpecs from JSON
+  // void parse(
+  //   InputParser<WithinScelMaxLengthClusterSpecs> &parser,
+  //   std::shared_ptr<Structure const> const &shared_prim,
+  //   std::vector<PermuteIterator> const &super_group,
+  //   SupercellSymInfo const &sym_info) {
+  //
+  //   using namespace ClusterSpecs_json_io_impl;
+  //
+  //   // parse phenomenal
+  //   auto phenomenal_subparser_ptr = parser.subparse_if<IntegralCluster>("phenomenal", *shared_prim);
+  //
+  //   // parse generating group
+  //   std::vector<PermuteIterator> generating_group;
+  //   if(phenomenal_subparser_ptr->value != nullptr) {
+  //     // if phenomenal, get generating group with translations that leave phenomenal sites invariant
+  //     std::set<Index> phenomenal_indices = make_cluster_site_indices(
+  //                                            *phenomenal_subparser_ptr->value,
+  //                                            sym_info);
+  //
+  //     std::set<Index> generating_group_indices;
+  //     parser.require(generating_group_indices, "generating_group");
+  //     if(parser.valid()) {
+  //       for(auto const &permute_it : super_group) {
+  //         if(generating_group_indices.count(permute_it.prim_factor_group_index()) &&
+  //            cluster_site_indices_are_invariant(permute_it, phenomenal_indices)) {
+  //           generating_group.push_back(permute_it);
+  //         }
+  //       }
+  //     }
+  //   }
+  //   else {
+  //     // no phenomenal cluster
+  //     if(parser.self.contains("generating_group")) {
+  //       std::set<Index> generating_group_indices;
+  //       parser.require(generating_group_indices, "generating_group");
+  //       if(parser.valid()) {
+  //         for(auto const &permute_it : super_group) {
+  //           if(generating_group_indices.count(permute_it.prim_factor_group_index())) {
+  //             generating_group.push_back(permute_it);
+  //           }
+  //         }
+  //       }
+  //     }
+  //     else {
+  //       generating_group = super_group;
+  //     }
+  //   }
+  //
+  //   // parse max_length and cutoff_radius
+  //   auto max_length = parse_orbit_branch_specs_attr(parser, "max_length");
+  //   auto cutoff_radius = parse_orbit_branch_specs_attr(parser, "cutoff_radius");
+  //
+  //   // parse custom generators ("orbit_specs")
+  //   std::vector<IntegralClusterOrbitGenerator> custom_generators;
+  //   parser.subparse_if(custom_generators, "orbit_specs", *shared_prim);
+  //
+  //   if(!parser.valid()) {
+  //     return;
+  //   }
+  //   parser.value = notstd::make_unique<WithinScelMaxLengthClusterSpecs>(
+  //                    shared_prim,
+  //                    &sym_info,
+  //                    generating_group,
+  //                    dof_sites_filter(),
+  //                    max_length,
+  //                    custom_generators,
+  //                    std::move(phenomenal_subparser_ptr->value),
+  //                    cutoff_radius);
+  // }
 
 
   /// \brief Parse PeriodicMaxLengthClusterSpecs or LocalMaxLengthClusterSpecs from JSON & validate
@@ -401,13 +431,6 @@ namespace CASM {
   ///           clusters the radius of sites from "phenomenal" cluster include, and the maximum
   ///           distance between sites in a cluster. This is the appropriate method for cluster
   ///           expansions of properties associated with the "phenomenal" cluster.
-  ///         - "within_scel_max_length": Clusters differing by a super lattice translation are
-  ///           considered equivalent. The "phenomenal" cluster is optional. If present, local
-  ///           orbits will be generated using the cutoff_radius. Otherwise, all sites will be used
-  ///           to generate orbits. In both cases, the cluster cutoff is based on max_length
-  ///           compared to cluster sites distances calculated using the minimum distance between
-  ///           any periodic images of cluster sites in the supercell (using
-  ///           Coordinate::robust_min_dist).
   ///     params: object (required)
   ///         Specifies parameters for the method selected by `method`. Options depend on the
   ///         `method` chosen:
@@ -448,35 +471,6 @@ namespace CASM {
   ///                 parameter is not necessary for 1-point clusters and ignored if present.
   ///
   ///                 Example:
-  ///                     "orbit_branch_specs": {
-  ///                         "1": { "cutoff_radius": 6.0 },
-  ///                         "2": { "max_length": 9.0, "cutoff_radius": 6.0 },
-  ///                         "3": { "max_length": 8.0, "cutoff_radius": 6.0 },
-  ///                         ...
-  ///                     }
-  ///
-  ///             orbit_specs: array (optional)
-  ///                 An array of clusters which are used to generate and include orbits of clusters
-  ///                 whether or not they meet the `cutoff_radius` or `max_length` truncation
-  ///                 criteria. See the cluster input format below.
-  ///
-  ///         For method=="within_scel_max_length":
-  ///             phenomenal: object (optional)
-  ///                 The "phenomenal" cluster about which local clusters are generated. See the
-  ///                 cluster input format below.
-  ///             generating_group: array of int (optional, required with "phenomenal")
-  ///                 An array of symop indices into the prim structure factor group specifying
-  ///                 the invariant group of the "phenomenal" cluster which should be used to
-  ///                 for generating cluster orbits. In some contexts, the relevant symmetry
-  ///                 is lower than that determined from the phenomenal cluster sites alone.
-  ///             orbit_branch_specs: object (optional)
-  ///                 All sites within `cutoff_radius` distance of any site in the phenomenal
-  ///                 cluster are considered candidates for inclusion in clusters of a particular
-  ///                 orbit branch. Cluster generation is truncated by specifying the maximum
-  ///                 distance between sites in a cluster for each orbit branch. The `max_length`
-  ///                 parameter is not necessary for 1-point clusters and ignored if present.
-  ///
-  ///                 Example, ("cutoff_radius" only required with "phenomenal"):
   ///                     "orbit_branch_specs": {
   ///                         "1": { "cutoff_radius": 6.0 },
   ///                         "2": { "max_length": 9.0, "cutoff_radius": 6.0 },
@@ -530,8 +524,7 @@ namespace CASM {
   void parse(
     InputParser<ClusterSpecs> &parser,
     const std::shared_ptr<const Structure> &shared_prim,
-    const SymGroup &super_group,
-    Eigen::Matrix3l const *transformation_matrix_to_super) {
+    const SymGroup &super_group) {
 
     std::string method;
     parser.require(method, "method");
@@ -547,16 +540,42 @@ namespace CASM {
       parser.subparse_as<LocalMaxLengthClusterSpecs>("params", shared_prim, super_group);
     }
     else if(method == "within_scel_max_length") {
-      if(!transformation_matrix_to_super) {
-        parser.error.insert("Error parsing ClusterSpecs: 'within_scel_max_length' is not allowed in this context (no supercell specified).");
-        return;
-      }
-      parser.subparse_as<WithinScelMaxLengthClusterSpecs>("params", shared_prim, super_group, *transformation_matrix_to_super);
+      parser.error.insert("Error: \"within_scel_max_length\" is not accepted in this context");
     }
     else {
       parser.error.insert("Error: unknown cluster_specs method '" + method + "'.");
     }
   }
+
+  // /// Parse ClusterSpecs from JSON for supercell orbits & validate
+  // void parse(
+  //   InputParser<ClusterSpecs> &parser,
+  //   const std::shared_ptr<Structure const> &shared_prim,
+  //   std::vector<PermuteIterator> const &super_group,
+  //   SupercellSymInfo const &sym_info) {
+  //
+  //   std::string method;
+  //   parser.require(method, "method");
+  //   if(method.empty()) {
+  //     return;
+  //   }
+  //
+  //   // ** this could be a dictionary lookup **
+  //   if(method == "periodic_max_length") {
+  //     // TODO: can implement this
+  //     parser.error.insert("Error: \"periodic_max_length\" is not accepted in this context");
+  //   }
+  //   else if(method == "local_max_length") {
+  //     // TODO: can implement this
+  //     parser.error.insert("Error: \"local_max_length\" is not accepted in this context");
+  //   }
+  //   else if(method == "within_scel_max_length") {
+  //     parser.subparse_as<WithinScelMaxLengthClusterSpecs>("params", shared_prim, super_group, sym_info);
+  //   }
+  //   else {
+  //     parser.error.insert("Error: unknown cluster_specs method '" + method + "'.");
+  //   }
+  // }
 
 
   namespace ClusterSpecs_json_io_impl {
@@ -609,29 +628,29 @@ namespace CASM {
     return json;
   }
 
-  /// \brief Write WithinScelMaxLengthClusterSpecs to JSON
-  jsonParser &to_json(
-    const WithinScelMaxLengthClusterSpecs &cspecs,
-    jsonParser &json) {
-
-    json["method"] = cspecs.name();
-    jsonParser &json_params = json["params"];;
-
-    // select based on method
-    using namespace ClusterSpecs_json_io_impl;
-    orbit_branch_specs_attr_to_json(cspecs.max_length, "max_length", json_params);
-    orbit_branch_specs_attr_to_json(cspecs.cutoff_radius, "cutoff_radius", json_params);
-    write_group_indices(cspecs.generating_group, json_params["generating_group"]);
-    if(cspecs.phenomenal != nullptr) {
-      to_json(*cspecs.phenomenal, json_params["phenomenal"]);
-    }
-    if(cspecs.custom_generators.size()) {
-      json_params["orbit_specs"] = cspecs.custom_generators;
-    }
-    // currently fixed: site_filter=dof_sites_filter()
-    // not output: cspecs.superlattice_matrix, typically this is set based on the context
-    return json;
-  }
+  // /// \brief Write WithinScelMaxLengthClusterSpecs to JSON
+  // jsonParser &to_json(
+  //   const WithinScelMaxLengthClusterSpecs &cspecs,
+  //   jsonParser &json) {
+  //
+  //   json["method"] = cspecs.name();
+  //   jsonParser &json_params = json["params"];;
+  //
+  //   // select based on method
+  //   using namespace ClusterSpecs_json_io_impl;
+  //   orbit_branch_specs_attr_to_json(cspecs.max_length, "max_length", json_params);
+  //   orbit_branch_specs_attr_to_json(cspecs.cutoff_radius, "cutoff_radius", json_params);
+  //   write_group_indices(cspecs.generating_group, json_params["generating_group"]);
+  //   if(cspecs.phenomenal != nullptr) {
+  //     to_json(*cspecs.phenomenal, json_params["phenomenal"]);
+  //   }
+  //   if(cspecs.custom_generators.size()) {
+  //     json_params["orbit_specs"] = cspecs.custom_generators;
+  //   }
+  //   // currently fixed: site_filter=dof_sites_filter()
+  //   // not output: cspecs.superlattice_matrix, typically this is set based on the context
+  //   return json;
+  // }
 
   /// \brief Write PeriodicMaxLengthClusterSpecs or LocalMaxLengthClusterSpecs to JSON
   jsonParser &to_json(

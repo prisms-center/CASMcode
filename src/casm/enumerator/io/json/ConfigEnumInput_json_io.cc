@@ -200,6 +200,20 @@ namespace CASM {
       parser.error.insert(msg.str());
     }
 
+    // check for "cluster_specs"
+    auto cluster_specs_subparser = parser.subparse_if<ClusterSpecs>(
+                                     "cluster_specs",
+                                     shared_prim,
+                                     shared_prim->factor_group());
+    if(cluster_specs_subparser->value) {
+      if(cluster_specs_subparser->value->periodicity_type() != CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC) {
+        std::stringstream msg;
+        msg << "Error creating enumerator initial states: "
+            << "\"cluster_specs\" method must be \"periodic_max_length\"";
+        cluster_specs_subparser->error.insert(msg.str());
+      }
+    }
+
     // at this point we have parsed everything except "cluster_specs",
     //   which is parsed later for each ConfigEnumInput
     if(!parser.valid()) {
@@ -235,23 +249,13 @@ namespace CASM {
     // select clusters
     if(parser.self.contains("cluster_specs")) {
 
+      // generate orbits from cluster_specs
+      auto orbits = cluster_specs_subparser->value->make_periodic_orbits(log());
+
       // this will generate more ConfigEnumInput, with cluster sites selected
       std::vector<ConfigEnumInput> with_cluster_sites;
       for(ConfigEnumInput &input : config_enum_input) {
-        input.clear_sites();
-        // parse "cluster_specs" for this input (depends on supercell)
-        Supercell const &supercell = input.configuration().supercell();
-        Eigen::Matrix3l const &T = supercell.sym_info().transformation_matrix_to_super();
-        auto cluster_specs_subparser = parser.subparse<ClusterSpecs>(
-                                         "cluster_specs", shared_prim, make_invariant_sym_group(input), &T);
-        if(!cluster_specs_subparser->valid()) {
-          return;
-        }
-
-        // generate ConfigEnumInput with cluster sites selected according to cluster_specs
-        ClusterSpecs const &cluster_specs = *cluster_specs_subparser->value;
-        auto selector = make_cluster_sites_selector(input, std::back_inserter(with_cluster_sites));
-        for_all_orbits(cluster_specs, null_log(), selector);
+        select_cluster_sites(input, orbits, std::back_inserter(with_cluster_sites));
       }
       config_enum_input = std::move(with_cluster_sites);
     }

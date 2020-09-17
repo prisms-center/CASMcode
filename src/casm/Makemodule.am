@@ -182,6 +182,8 @@ libcasm_la_SOURCES = \
     include/casm/clusterography/IntegralClusterSymCompareTraits_impl.hh\
     include/casm/clusterography/IntegralCluster_impl.hh\
     include/casm/clusterography/SubClusterGenerator.hh\
+    include/casm/clusterography/SupercellClusterOrbits.hh\
+    include/casm/clusterography/SupercellClusterOrbits_impl.hh\
     include/casm/clusterography/io/json/ClusterOrbits_json_io.hh\
     include/casm/clusterography/io/json/ClusterSpecs_json_io.hh\
     include/casm/clusterography/io/json/IntegralCluster_json_io.hh\
@@ -835,6 +837,7 @@ libcasm_la_SOURCES = \
     src/casm/clusterography/ClusterSpecs.cc\
     src/casm/clusterography/IntegralCluster.cc\
     src/casm/clusterography/IntegralClusterSymCompareTraits.cc\
+    src/casm/clusterography/SupercellClusterOrbits.cc\
     src/casm/clusterography/io/json/ClusterOrbits_json_io.cc\
     src/casm/clusterography/io/json/ClusterSpecs_json_io.cc\
     src/casm/clusterography/io/json/IntegralCluster_json_io.cc\
@@ -897,7 +900,6 @@ libcasm_la_SOURCES = \
     src/casm/database/Selection.cc\
     src/casm/database/json/jsonDatabase.cc\
     src/casm/database/json/jsonPropertiesDatabase.cc\
-    src/casm/enumerator/ClusterSitesSelector.cc\
     src/casm/enumerator/ConfigEnumInput.cc\
     src/casm/enumerator/DoFSpace.cc\
     src/casm/enumerator/io/json/ConfigEnumInput_json_io.cc\

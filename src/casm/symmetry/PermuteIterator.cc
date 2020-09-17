@@ -50,22 +50,33 @@ namespace CASM {
     return translation_permute() * factor_group_permute();
   }
 
-  /// Return the index into Supercell::factor_group_permute of the factor group op being pointed at
+  /// Reference the SupercellSymInfo containing the operations being pointed at
   SupercellSymInfo const &PermuteIterator::sym_info() const {
     return *m_sym_info;
   }
 
-  /// Return the index into Supercell::factor_group_permute of the factor group op being pointed at
+  /// Reference the supercell factor group (`SupercellSymInfo::factor_group()`)
   SymGroup const &PermuteIterator::factor_group() const {
     return sym_info().factor_group();
   }
 
-  /// Return the index into Supercell::factor_group_permute of the factor group op being pointed at
+  /// Return the supercell factor group index
+  ///
+  /// Index into `SupercellSymInfo::factor_group()` of the factor group op being pointed at
   Index PermuteIterator::factor_group_index() const {
     return m_factor_group_index;
   }
 
-  /// Return the index into Supercell::translation_permute of the translation being pointed at
+  /// Return the prim factor group index
+  ///
+  /// Index into `Structure::factor_group()` of the factor group op being pointed at
+  Index PermuteIterator::prim_factor_group_index() const {
+    return factor_group()[factor_group_index()].master_group_index();
+  }
+
+  /// Return the index into the supercell translation permutations
+  ///
+  /// Index into `SupercellSymInfo::translation_permutations()` of the translation being pointed at
   Index PermuteIterator::translation_index() const {
     return m_translation_index;
   }

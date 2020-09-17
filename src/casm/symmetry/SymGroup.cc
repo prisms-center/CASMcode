@@ -875,7 +875,16 @@ namespace CASM {
   }
 
   //*****************************************************************
+
+  /// Return the MasterSymGroup indices of the operations in this SymGroup (equivalent to master_group_indices)
   std::vector<Index> SymGroup::op_indices() const {
+    return master_group_indices();
+  }
+
+  //*****************************************************************
+
+  /// Return the MasterSymGroup indices of the operations in this SymGroup
+  std::vector<Index> SymGroup::master_group_indices() const {
     std::vector<Index> ind_array(size());
     for(Index i = 0; i < size(); i++) {
       if(!valid_index(at(i).index()) && at(i).has_valid_master()) {

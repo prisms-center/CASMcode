@@ -13,23 +13,28 @@ namespace CASM {
    *  @{
    */
 
-  /// Permutation bidirectional Iterator class
-  ///   Can iterate over all combined factor group and translation permutations for a Supercell
+  /// Iterate over all combined factor group and translation permutations for a Supercell
   ///
-  ///   The sequence:
-  ///   for( it = scel.permute_begin(); it != scel.permute_end(); ++it) {
-  ///     after_array = it->permute(before_array);
+  /// The sequence:
+  /// \code
+  /// SupercellSymInfo sym_info = ...
+  /// for(it = sym_info.permute_begin(); it != sym_info.permute_end(); ++it) {
+  ///   after_array = it->permute(before_array);
+  /// }
+  /// \endcode
+  ///
+  /// Replicates this sequence of permutations:
+  /// \code
+  /// SupercellSymInfo sym_info = ...
+  /// for( f=0; f<sym_info.factor_group().size(); f++) {
+  ///   for( t=0; t<sym_info.translation_permutations().size(); t++) {
+  ///     after_array = sym_info.translation_permute(t).permute(sym_info.factor_group_permute(f).permute(before_array));
   ///   }
+  /// }
+  /// \endcode
   ///
-  ///   replicates this sequence of permutations:
-  ///   for( f=0; f<scel->factor_group().size(); f++) {
-  ///     for( t=0; t<scel->translation_permute().size(); t++) {
-  ///       after_array = scel->translation_permute(t).permute(scel->factor_group_permute(f).permute(before_array));
-  ///     }
-  ///   }
-  ///
-  ///   Bidirectional iterators are supposed to be input/output iterators,
-  ///     but this is actually only an input iterator... meaning operator* returns by value
+  /// Bidirectional iterators are supposed to be input/output iterators, but this is actually
+  /// only an input iterator (meaning operator* returns by value).
   ///
   ///
   class PermuteIterator :
@@ -38,7 +43,8 @@ namespace CASM {
 
     SupercellSymInfo const *m_sym_info;
 
-    /// m_trans_permute points to the vector<Permutation> of translation permutations inside of m_sym_info (to provide faster access)
+    /// Pointer to the vector<Permutation> of translation permutations
+    /// inside of m_sym_info (to provide faster access)
     std::vector<Permutation> const *m_trans_permute;
 
     Index m_factor_group_index;
@@ -46,7 +52,6 @@ namespace CASM {
 
   public:
 
-    //TODO: What does this even mean? You're asking for a segmentation fault
     PermuteIterator();
 
     PermuteIterator(const PermuteIterator &iter);
@@ -67,15 +72,19 @@ namespace CASM {
     /// Returns the combination of factor_group permutation and translation permutation
     Permutation combined_permute() const;
 
+    /// Reference the `SupercellSymInfo::factor_group()`
     SymGroup const &factor_group() const;
 
-    //TODO: Get rid of this?
+    /// Reference the SupercellSymInfo containing the operations being pointed at
     SupercellSymInfo const &sym_info() const;
 
-    /// Return the index into m_factor_group_permute of the factor group op being pointed at
+    /// Return the supercell factor group index
     Index factor_group_index() const;
 
-    /// Return the index into m_prim_grid of the translation being pointed at
+    /// Return the prim factor group index
+    Index prim_factor_group_index() const;
+
+    /// Return the index into the supercell translation permutations
     Index translation_index() const;
 
     /// Return the factor group permutation being pointed at
@@ -96,10 +105,10 @@ namespace CASM {
 
     /// gets the SymOp for the current operation, defined by translation_op[trans_index]*factor_group_op[fg_index]
     /// i.e, equivalent to application of the factor group operation, FOLLOWED BY application of the translation operation
-    SymOp sym_op()const;
+    SymOp sym_op() const;
 
     /// Index-wise permutation defined via:
-    ///    after_permutation[i] = before_permutation[permutat_iterator.permute_ind(i)];
+    ///    after_permutation[i] = before_permutation[permute_iterator.permute_ind(i)];
     Index permute_ind(Index i) const;
 
     bool operator<(const PermuteIterator &iter) const;
@@ -122,6 +131,7 @@ namespace CASM {
 
     PermuteIterator inverse() const;
 
+    /// Return the PermuteIterator product (equivalent to first applying RHS and then applying *this).
     PermuteIterator operator*(const PermuteIterator &RHS) const;
 
     friend void swap(PermuteIterator &a, PermuteIterator &b);

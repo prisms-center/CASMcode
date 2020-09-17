@@ -96,15 +96,35 @@ namespace CASM {
     return perm_rep_ID;
   }
 
+  /// Returns a "RemoteHandle" to the sublattice permutation representation of the supercell's factor group
+  ///
+  /// A sublattice permutation consists of an index permutation and an integer lattice translation
+  SymGroupRep::RemoteHandle const &SupercellSymInfo::basis_permutation_symrep() const {
+    return m_basis_perm_symrep;
+  }
 
-  // the permutation_symrep is the SymGroupRep of prim().factor_group() that describes how
-  // operations of m_factor_group permute sites of the Supercell.
-  // NOTE: The permutation representation is for (*this).prim().factor_group(), which may contain
-  //       more operations than m_factor_group, so the Permutation SymGroupRep may have 'gaps' at the
-  //       operations that aren't in m_factor_group. You should access elements of the SymGroupRep using
-  //       SymGroupRep::get_representation(m_factor_group[i]) or SymGroupRep::get_permutation(m_factor_group[i]),
-  //       so that you don't encounter the gaps (i.e., the representation can be indexed using the
-  //       SymOps of m_factor_group
+  /// Returns a "RemoteHandle" to the site permutation representation
+  ///
+  /// A site permutation consists of an index permutation for the sites of the supercell. If
+  ///
+  ///     site_coordinate(index_after) = apply(operation, site_coordinate(index_before)),
+  ///
+  /// then this encodes permutations as
+  ///
+  ///     permutation[index_after] = index_before.
+  ///
+  /// This convention treats fixed positions in space as having an unchanging order, and the
+  /// permutation describes a rearrangement of objects among those sites, due to a transformation.
+  ///
+  /// Note:
+  /// - The permutation representation is constructed for `this->prim().factor_group()`, which may
+  ///   contain more operations than `this->factor_group()`, so the Permutation SymGroupRep may have
+  ///   'gaps' at the operations that aren't in `this->factor_group()`.
+  /// - This function returns the "RemoteHandle" to the permutation representation which allows
+  ///   accessing permutation representations using the "supercell_factor_group_index" (index into
+  ///   `this->factor_group()`) instead of the "prim_factor_group_index" (index into
+  ///   `this->prim().factor_group()`).
+  ///
   SymGroupRep::RemoteHandle const &SupercellSymInfo::site_permutation_symrep() const {
     if(m_site_perm_symrep.empty()) {
       m_site_perm_symrep = SymGroupRep::RemoteHandle(this->factor_group(), make_permutation_representation(this->factor_group(), this->unitcellcoord_index_converter(), this->prim_lattice(), this->basis_permutation_symrep().symrep_ID()));
@@ -114,9 +134,9 @@ namespace CASM {
   }
 
 
-  // permutation_symrep() populates permutation symrep if needed
-  const Permutation &SupercellSymInfo::factor_group_permute(Index i) const {
-    return *(site_permutation_symrep()[i]->permutation());
+  /// Site permutation corresponding to supercell factor group operation
+  const Permutation &SupercellSymInfo::factor_group_permute(Index supercell_factor_group_index) const {
+    return *(site_permutation_symrep()[supercell_factor_group_index]->permutation());
   }
 
   /// \brief Begin iterator over translation permutations
@@ -138,8 +158,7 @@ namespace CASM {
   }
 
   SupercellSymInfo::permute_const_iterator SupercellSymInfo::permute_it(Index fg_index, Index trans_index) const {
-    return permute_const_iterator(*this,
-                                  fg_index, trans_index);
+    return permute_const_iterator(*this, fg_index, trans_index);
   }
 
   SupercellSymInfo::permute_const_iterator SupercellSymInfo::permute_it(Index fg_index, UnitCell trans) const {

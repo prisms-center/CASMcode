@@ -2,6 +2,7 @@
 #define CASM_OrbitGeneration_impl
 
 #include "casm/symmetry/OrbitGeneration.hh"
+#include "casm/symmetry/PermuteIterator.hh"
 
 namespace CASM {
 
@@ -116,6 +117,44 @@ namespace CASM {
   /// \brief After using call operator, this can be checked
   template<typename _OrbitType>
   const SymOp &CanonicalGenerator<_OrbitType>::from_canonical() const {
+    return to_canonical().inverse();
+  }
+
+
+  // --- template<typename _OrbitType> class CanonicalGenerator ---
+
+  template<typename _OrbitType>
+  PermuteCanonicalGenerator<_OrbitType>::PermuteCanonicalGenerator(
+    std::vector<PermuteIterator> const &_generating_group,
+    SymCompareType const &_sym_compare) :
+    generating_group(_generating_group),
+    sym_compare(_sym_compare),
+    m_to_canonical(nullptr) {}
+
+  /// \brief Applies symmetry to return an equivalent Element in a canonical form
+  template<typename _OrbitType>
+  typename PermuteCanonicalGenerator<_OrbitType>::Element
+  PermuteCanonicalGenerator<_OrbitType>::operator()(Element const &e) const {
+    Element result = sym_compare.prepare(e);
+    for(PermuteIterator const &permute : generating_group) {
+      auto test = sym_compare.prepare(sym_compare.copy_apply(permute.sym_op(), e));
+      if(sym_compare.compare(result, test)) {
+        result = test;
+        m_to_canonical = &permute;
+      }
+    }
+    return result;
+  }
+
+  /// \brief After using call operator, this can be checked
+  template<typename _OrbitType>
+  PermuteIterator const &PermuteCanonicalGenerator<_OrbitType>::to_canonical() const {
+    return *m_to_canonical;
+  }
+
+  /// \brief After using call operator, this can be checked
+  template<typename _OrbitType>
+  PermuteIterator const &PermuteCanonicalGenerator<_OrbitType>::from_canonical() const {
     return to_canonical().inverse();
   }
 
