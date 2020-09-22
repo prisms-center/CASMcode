@@ -27,7 +27,7 @@ namespace CASM {
     SupercellSymInfo const &prim_ref_supercell_sym_info = prim_ref_config.supercell().sym_info();
     PrimPeriodicSymCompare<IntegralCluster> prim_periodic_sym_compare = orbits.begin()->sym_compare();
 
-    // Construct orbit generating elements for orbits with ref_supercell_sym_info.factor_group() symmetry
+    // Construct orbit generating elements for orbits with prim_ref_supercell_sym_info.factor_group() symmetry
     // - shared_prim->factor_group() -> prim_ref_supercell_sym_info.factor_group() symmetry breaking
     std::vector<IntegralCluster> prim_ref_supercell_generators;
     make_suborbit_generators(

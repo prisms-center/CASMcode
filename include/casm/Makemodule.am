@@ -32,8 +32,6 @@ casm_app_include_HEADERS = \
     include/casm/app/format.hh\
     include/casm/app/import.hh\
     include/casm/app/init.hh\
-    include/casm/app/json_io.hh\
-    include/casm/app/json_io_impl.hh\
     include/casm/app/monte.hh\
     include/casm/app/query.hh\
     include/casm/app/ref.hh\
@@ -52,20 +50,51 @@ casm_app_include_HEADERS = \
 casm_app_enum_includedir=$(includedir)/casm/app/enum
 casm_app_enum_include_HEADERS = \
     include/casm/app/enum/EnumInterface.hh\
-    include/casm/app/enum/EnumInterface_impl.hh
+    include/casm/app/enum/EnumInterface_impl.hh\
+    include/casm/app/enum/enumerate_configurations.hh\
+    include/casm/app/enum/enumerate_configurations_impl.hh\
+    include/casm/app/enum/enumerate_supercells.hh\
+    include/casm/app/enum/enumerate_supercells_impl.hh\
+    include/casm/app/enum/standard_ConfigEnumInput_help.hh\
+    include/casm/app/enum/standard_enumerator_interfaces.hh
 
 #-------------------------------------------------------------------------------#
 
 casm_app_enum_io_includedir=$(includedir)/casm/app/enum/io
 casm_app_enum_io_include_HEADERS = \
-    include/casm/app/enum/io/json_io.hh
+    include/casm/app/enum/io/enumerate_configurations_json_io.hh\
+    include/casm/app/enum/io/enumerate_supercells_json_io.hh\
+    include/casm/app/enum/io/json_io.hh\
+    include/casm/app/enum/io/stream_io.hh\
+    include/casm/app/enum/io/stream_io_impl.hh
 
 #-------------------------------------------------------------------------------#
 
-casm_app_io_json_includedir=$(includedir)/casm/app/io/json
-casm_app_io_json_include_HEADERS = \
-    include/casm/app/io/json/SpeciesSetParser.hh\
-    include/casm/app/io/json/SpeciesSetParser_impl.hh
+casm_app_enum_methods_includedir=$(includedir)/casm/app/enum/methods
+casm_app_enum_methods_include_HEADERS = \
+    include/casm/app/enum/methods/ConfigEnumAllOccupationsInterface.hh\
+    include/casm/app/enum/methods/ConfigEnumRandomLocalInterface.hh\
+    include/casm/app/enum/methods/ConfigEnumRandomOccupationsInterface.hh\
+    include/casm/app/enum/methods/ConfigEnumSiteDoFsInterface.hh\
+    include/casm/app/enum/methods/ConfigEnumStrainInterface.hh\
+    include/casm/app/enum/methods/ScelEnumInterface.hh\
+    include/casm/app/enum/methods/SuperConfigEnumInterface.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_app_io_includedir=$(includedir)/casm/app/io
+casm_app_io_include_HEADERS = \
+    include/casm/app/io/json_io.hh\
+    include/casm/app/io/json_io_impl.hh
+
+#-------------------------------------------------------------------------------#
+
+casm_app_sym_includedir=$(includedir)/casm/app/sym
+casm_app_sym_include_HEADERS = \
+    include/casm/app/sym/dof_space_analysis.hh\
+    include/casm/app/sym/json_io.hh\
+    include/casm/app/sym/symmetrize.hh\
+    include/casm/app/sym/write_prim_symmetry.hh
 
 #-------------------------------------------------------------------------------#
 
@@ -127,6 +156,8 @@ casm_casm_io_dataformatter_includedir=$(includedir)/casm/casm_io/dataformatter
 casm_casm_io_dataformatter_include_HEADERS = \
     include/casm/casm_io/dataformatter/DataFormatter.hh\
     include/casm/casm_io/dataformatter/DataFormatterDecl.hh\
+    include/casm/casm_io/dataformatter/DataFormatterFilter.hh\
+    include/casm/casm_io/dataformatter/DataFormatterFilter_impl.hh\
     include/casm/casm_io/dataformatter/DataFormatterTools.hh\
     include/casm/casm_io/dataformatter/DataFormatterTools_impl.hh\
     include/casm/casm_io/dataformatter/DataFormatter_impl.hh\
@@ -174,10 +205,7 @@ casm_clex_include_HEADERS = \
     include/casm/clex/ConfigDoFIsEquivalent.hh\
     include/casm/clex/ConfigDoFValues.hh\
     include/casm/clex/ConfigEnumAllOccupations.hh\
-    include/casm/clex/ConfigEnumAllOccupations_impl.hh\
     include/casm/clex/ConfigEnumEquivalents.hh\
-    include/casm/clex/ConfigEnumInterpolation.hh\
-    include/casm/clex/ConfigEnumOccPerturbations.hh\
     include/casm/clex/ConfigEnumRandomLocal.hh\
     include/casm/clex/ConfigEnumRandomOccupations.hh\
     include/casm/clex/ConfigEnumSiteDoFs.hh\
@@ -195,6 +223,7 @@ casm_clex_include_HEADERS = \
     include/casm/clex/DiffClexParamPack.hh\
     include/casm/clex/ECIContainer.hh\
     include/casm/clex/FillSupercell.hh\
+    include/casm/clex/FillSupercell_impl.hh\
     include/casm/clex/FilteredConfigIterator.hh\
     include/casm/clex/HasCanonicalForm.hh\
     include/casm/clex/HasCanonicalForm_impl.hh\
@@ -215,7 +244,6 @@ casm_clex_include_HEADERS = \
     include/casm/clex/RemoveSupercell.hh\
     include/casm/clex/ScelEnum.hh\
     include/casm/clex/ScelEnumEquivalents.hh\
-    include/casm/clex/ScelEnum_impl.hh\
     include/casm/clex/SimpleStructureTools.hh\
     include/casm/clex/SuperConfigEnum.hh\
     include/casm/clex/Supercell.hh\
@@ -377,6 +405,7 @@ casm_database_include_HEADERS = \
     include/casm/database/ConfigData_impl.hh\
     include/casm/database/ConfigDatabase.hh\
     include/casm/database/ConfigDatabaseDefs.hh\
+    include/casm/database/ConfigDatabaseTools.hh\
     include/casm/database/ConfigImport.hh\
     include/casm/database/Database.hh\
     include/casm/database/DatabaseHandler.hh\
@@ -426,6 +455,7 @@ casm_enumerator_include_HEADERS = \
     include/casm/enumerator/ConfigEnumInput.hh\
     include/casm/enumerator/ConfigEnumInput_impl.hh\
     include/casm/enumerator/DoFSpace.hh\
+    include/casm/enumerator/DoFSpace_impl.hh\
     include/casm/enumerator/Enumerator.hh\
     include/casm/enumerator/InputEnumerator.hh\
     include/casm/enumerator/RandomAccessEnumerator.hh

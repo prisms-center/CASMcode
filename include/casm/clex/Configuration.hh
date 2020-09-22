@@ -74,7 +74,7 @@ namespace CASM {
     ///   also.
     /// - This Configuration does own its own Supercell, so the lifetime of the Supercell is
     ///   guaranteed to exceed the lifetime of this Configuration
-    explicit Configuration(std::shared_ptr<Supercell> const &_supercell_ptr);
+    explicit Configuration(std::shared_ptr<Supercell const> const &_supercell_ptr);
 
     /// Construct a default Configuration, with a shared Supercell
     ///
@@ -84,14 +84,14 @@ namespace CASM {
     ///   also.
     /// - This Configuration does own its own Supercell, so the lifetime of the Supercell is
     ///   guaranteed to exceed the lifetime of this Configuration
-    explicit Configuration(std::shared_ptr<Supercell> const &_supercell_ptr,
+    explicit Configuration(std::shared_ptr<Supercell const> const &_supercell_ptr,
                            ConfigDoF const &_dof);
 
     /// Build a Configuration sized to _supercell with all fields initialized and set to zero
-    static Configuration zeros(const std::shared_ptr<Supercell> &_supercell_ptr);
+    static Configuration zeros(const std::shared_ptr<Supercell const> &_supercell_ptr);
 
     /// Build a Configuration sized to _supercell with all fields initialized and set to zero
-    static Configuration zeros(const std::shared_ptr<Supercell> &_supercell_ptr, double _tol);
+    static Configuration zeros(const std::shared_ptr<Supercell const> &_supercell_ptr, double _tol);
 
 
     // *** The following constructors should be avoided in new code, if possible ***
@@ -100,7 +100,7 @@ namespace CASM {
     //     the Configuration uses a Supercell from a Database<Supercell> and/or
     //     Configuration "source" information is required and cannot be stored
     //     another way. In the future:
-    //     - Configuration will make exclusive use of std::shared_ptr<Supercell>
+    //     - Configuration will make exclusive use of std::shared_ptr<Supercell const>
     //     - The "source" information will be stored outside of Configuration
     //     - The jsonConstructor<Configuration>::from_json method will be used to
     //       construct Configuration from JSON
@@ -133,7 +133,7 @@ namespace CASM {
     /// - This Configuration does own its own Supercell, so the lifetime of the Supercell is
     ///   guaranteed to exceed the lifetime of this Configuration
     /// - In the future, "source" information will be stored outside of Configuration.
-    explicit Configuration(const std::shared_ptr<Supercell> &_supercell,
+    explicit Configuration(const std::shared_ptr<Supercell const> &_supercell,
                            const jsonParser &source);
 
     /// Construct a default Configuration that owns its Supercell
@@ -143,7 +143,7 @@ namespace CASM {
     /// - This Configuration does own its own Supercell, so the lifetime of the Supercell is
     ///   guaranteed to exceed the lifetime of this Configuration
     /// - In the future, "source" information will be stored outside of Configuration.
-    explicit Configuration(const std::shared_ptr<Supercell> &_supercell,
+    explicit Configuration(const std::shared_ptr<Supercell const> &_supercell,
                            const jsonParser &source,
                            const ConfigDoF &_dof);
 
@@ -439,11 +439,11 @@ namespace CASM {
     /// - Checks that all DoF are the same, within tolerance
     bool eq_impl(const Configuration &B) const;
 
-    /// const pointer to the (non-const) Supercell for this Configuration
-    const Supercell *m_supercell;
+    /// Pointer to the Supercell for this Configuration
+    Supercell const *m_supercell;
 
     /// Used when constructing temporary Configuration in non-canonical Supercell
-    std::shared_ptr<Supercell> m_supercell_ptr;
+    std::shared_ptr<Supercell const> m_supercell_ptr;
 
     /// Degrees of Freedom
     ConfigDoF m_configdof;
@@ -535,7 +535,7 @@ namespace CASM {
   ///
   /// - Copies DoF from the super-configuration directly into the sub-configuration
   ///
-  Configuration sub_configuration(std::shared_ptr<Supercell> sub_scel_ptr,
+  Configuration sub_configuration(std::shared_ptr<Supercell const> sub_scel_ptr,
                                   const Configuration &super_config,
                                   const UnitCell &origin = UnitCell(0, 0, 0));
 

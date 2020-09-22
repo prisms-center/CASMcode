@@ -6,7 +6,7 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/database/ScelDatabase.hh"
 #include "casm/database/ScelDatabaseTools.hh"
-#include "casm/clex/ConfigEnumAllOccupations_impl.hh"
+#include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/crystallography/Structure.hh"

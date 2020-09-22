@@ -326,7 +326,7 @@ namespace CASM {
 
       //-------------------------------------------------------------------------------------//
 
-      ///Add a plain --help suboption
+      ///Add a plain --help and --desc suboptions
       void add_help_suboption();
 
       //-------------------------------------------------------------------------------------//
@@ -866,9 +866,10 @@ namespace CASM {
 
     public:
 
-      using OptionHandlerBase::selection_path;
-
+      using OptionHandlerBase::coordtype_str;
+      using OptionHandlerBase::coordtype_enum;
       using OptionHandlerBase::dof_strs;
+      using OptionHandlerBase::selection_path;
 
 
       SymOption();

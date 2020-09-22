@@ -33,6 +33,7 @@
 #include "casm/crystallography/io/VaspIO.hh"
 #include "casm/crystallography/io/SimpleStructureIO.hh"
 #include "casm/database/ConfigDatabase.hh"
+#include "casm/database/ConfigDatabaseTools.hh"
 #include "casm/database/Named_impl.hh"
 #include "casm/database/ScelDatabase.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
@@ -51,12 +52,12 @@ namespace CASM {
     template class Named<CRTPBase<Configuration> >;
   }
 
-  Configuration::Configuration(std::shared_ptr<Supercell> const &_supercell_ptr):
+  Configuration::Configuration(std::shared_ptr<Supercell const> const &_supercell_ptr):
     m_supercell(_supercell_ptr.get()),
     m_supercell_ptr(_supercell_ptr),
     m_configdof(_supercell_ptr->zero_configdof(_supercell_ptr->prim().lattice().tol())) {}
 
-  Configuration::Configuration(std::shared_ptr<Supercell> const &_supercell_ptr,
+  Configuration::Configuration(std::shared_ptr<Supercell const> const &_supercell_ptr,
                                ConfigDoF const &_dof):
     m_supercell(_supercell_ptr.get()),
     m_supercell_ptr(_supercell_ptr),
@@ -85,7 +86,7 @@ namespace CASM {
 
   /// Construct a default Configuration that owns its Supercell
   Configuration::Configuration(
-    const std::shared_ptr<Supercell> &_supercell_ptr,
+    const std::shared_ptr<Supercell const> &_supercell_ptr,
     const jsonParser &source) :
     m_supercell(_supercell_ptr.get()),
     m_supercell_ptr(_supercell_ptr),
@@ -96,7 +97,7 @@ namespace CASM {
 
   /// Construct a default Configuration that owns its Supercell
   Configuration::Configuration(
-    const std::shared_ptr<Supercell> &_supercell,
+    const std::shared_ptr<Supercell const> &_supercell,
     const jsonParser &source,
     const ConfigDoF &_configdof) :
     m_supercell(_supercell.get()),
@@ -146,13 +147,13 @@ namespace CASM {
 
   //*********************************************************************************
 
-  Configuration Configuration::zeros(const std::shared_ptr<Supercell> &_supercell_ptr) {
+  Configuration Configuration::zeros(const std::shared_ptr<Supercell const> &_supercell_ptr) {
     return Configuration {_supercell_ptr};
   }
 
   //*********************************************************************************
 
-  Configuration Configuration::zeros(const std::shared_ptr<Supercell> &_supercell_ptr, double _tol) {
+  Configuration Configuration::zeros(const std::shared_ptr<Supercell const> &_supercell_ptr, double _tol) {
     return Configuration {_supercell_ptr, _supercell_ptr->zero_configdof(_tol)};
   }
 
@@ -229,7 +230,12 @@ namespace CASM {
                           crystallography_tol()).make_right_handed().reduced_cell();
 
       // create a sub configuration in the new supercell
-      tconfig = sub_configuration(std::make_shared<Supercell>(&primclex(), new_lat), tconfig);
+      if(supercell().has_primclex()) {
+        tconfig = sub_configuration(std::make_shared<Supercell>(&primclex(), new_lat), tconfig);
+      }
+      else {
+        tconfig = sub_configuration(std::make_shared<Supercell>(supercell().shared_prim(), new_lat), tconfig);
+      }
     }
 
     return tconfig;
@@ -241,8 +247,12 @@ namespace CASM {
   ///
   /// - Canonical Supercell will be inserted in the PrimClex.db<Supercell>() if
   ///   necessary
+  /// - Prefer to use the standalone `in_canonical_supercell` directly
   Configuration Configuration::in_canonical_supercell() const {
-    return fill_supercell(*this, supercell().canonical_form()).canonical_form();
+    return DB::in_canonical_supercell(
+             *this,
+             &primclex(),
+             primclex().db<Supercell>());
   }
 
   //*******************************************************************************
@@ -256,29 +266,14 @@ namespace CASM {
   /// - Supercells are inserted in the Supercell database as necessary
   /// - If this is already known to be primitive & canonical, prefer to use
   ///   PrimClex::db<Configuration>.insert(config) directly.
+  /// - Prefer to use the standalone `DB::make_canonical_and_insert` directly
   ConfigInsertResult Configuration::insert(bool primitive_only) const {
-
-    ConfigInsertResult res;
-
-    Configuration pconfig = this->primitive().in_canonical_supercell();
-    std::tie(res.primitive_it, res.insert_primitive) =
-      primclex().db<Configuration>().insert(pconfig);
-
-    // if the primitive supercell is the same as the equivalent canonical supercell
-    if(supercell().canonical_form() == pconfig.supercell()) {
-      res.insert_canonical = res.insert_primitive;
-      res.canonical_it = res.primitive_it;
-    }
-    else {
-      if(primitive_only) {
-        res.insert_canonical = false;
-      }
-      else {
-        std::tie(res.canonical_it, res.insert_canonical) =
-          primclex().db<Configuration>().insert(this->in_canonical_supercell());
-      }
-    }
-    return res;
+    return DB::make_canonical_and_insert(
+             *this,
+             &primclex(),
+             primclex().db<Supercell>(),
+             primclex().db<Configuration>(),
+             primitive_only);
   }
 
   //*******************************************************************************
@@ -416,6 +411,10 @@ namespace CASM {
     /// if 'id' is known
     if(id() != "none") {
       return supercell().name() + "/" + id();
+    }
+
+    if(!supercell().has_primclex()) {
+      throw std::runtime_error("Error in Configuration::generate_name_impl: No PrimClex pointer.");
     }
 
     const auto &db = primclex().db<Configuration>();
@@ -852,7 +851,7 @@ namespace CASM {
 
 
   Configuration sub_configuration(
-    std::shared_ptr<Supercell> sub_scel_ptr,
+    std::shared_ptr<Supercell const> sub_scel_ptr,
     const Configuration &super_config,
     const UnitCell &origin) {
 

@@ -389,6 +389,13 @@ namespace CASM {
 
   };
 
+  /// Can be specialized to return true if enumerator output is guaranteed to be canonical,
+  /// primitive, etc. as required for database insertion
+  template<typename EnumeratorType>
+  bool is_guaranteed_for_database_insert(EnumeratorType const &enumerator) {
+    return false;
+  }
+
   /** @}*/
 
 }

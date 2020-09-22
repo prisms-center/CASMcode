@@ -60,7 +60,7 @@ TEST(InvariantSubgroupTest, Test0) {
 
       // Test make_invariant_subgroup using Supercell
       SymGroup cluster_group_c = make_invariant_subgroup(
-        orbit.prototype(), prim_scel.sym_info().factor_group(), orbit.sym_compare());
+                                   orbit.prototype(), prim_scel.sym_info().factor_group(), orbit.sym_compare());
       EXPECT_EQ(cluster_group_a.size(), cluster_group_c.size());
 
     }
@@ -174,7 +174,7 @@ TEST(InvariantSubgroupTest, Test0) {
 
         // Test make_invariant_subgroup using Supercell
         SymGroup cluster_group_c = make_invariant_subgroup(
-          el, scel_vol2.sym_info().factor_group(), scel_sym_compare);
+                                     el, scel_vol2.sym_info().factor_group(), scel_sym_compare);
         EXPECT_EQ(cluster_group_a.size(), cluster_group_c.size());
       }
 

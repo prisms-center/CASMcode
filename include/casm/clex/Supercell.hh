@@ -104,6 +104,13 @@ namespace CASM {
 
     double crystallography_tol() const;
 
+    /// Use while transitioning Supercell to no longer need a `PrimClex const *`
+    bool has_primclex() const;
+
+    /// Use while transitioning Supercell to no longer need a `PrimClex const *`
+    void set_primclex(PrimClex const *primclex_ptr) const;
+
+    /// Use while transitioning Supercell to no longer need a `PrimClex const *`
     const PrimClex &primclex() const;
 
     ///Return number of primitive cells that fit inside of *this
@@ -120,17 +127,11 @@ namespace CASM {
     /// \brief The super lattice
     const Lattice &lattice() const;
 
-    /// Set the PrimNeighborList directly
-    ///
-    /// Note:
-    /// - If this Supercell was constructed with a PrimClex const *, PrimNeighborList is already set
-    void set_prim_nlist(std::shared_ptr<PrimNeighborList> const &shared_prim_nlist);
-
     /// \brief Returns the SuperNeighborList
     ///
     /// Requires that the prim_nlist has been set by one of:
     /// - constructing Supercell with a PrimClex const *
-    /// - setting the PrimNeighborList directly with `set_prim_nlist`
+    /// - using set_primclex to set a PrimClex const *
     ///
     /// At each access, the underlying PrimNeighborList will be checked and if it has been expanded
     /// then the SuperNeighborList will be extended also. References obtained from this function
@@ -160,15 +161,17 @@ namespace CASM {
 
     std::string generate_name_impl() const;
 
-    // May be nullptr, in which case, some features will throw
-    const PrimClex *m_primclex;
+    // Note:
+    // - Prefer not to access PrimClex via Supercell. In future, PrimClex access via Supercell will
+    //   be removed completely.
+    // - Until this is removed, it may be nullptr, in which case, some features will throw. Only
+    //   access via this->primclex() so that an error will be thrown if m_primclex is nullptr.
+    // - Mutable as a temporary workaround
+    mutable PrimClex const *m_primclex;
 
     std::shared_ptr<Structure const> m_shared_prim;
 
     SupercellSymInfo m_sym_info;
-
-    /// shared PrimNeighborList
-    std::shared_ptr<PrimNeighborList> m_prim_nlist;
 
     /// SuperNeighborList, mutable for lazy construction
     mutable notstd::cloneable_ptr<SuperNeighborList> m_nlist;

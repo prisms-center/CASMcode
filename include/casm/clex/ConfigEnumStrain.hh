@@ -1,22 +1,52 @@
 #ifndef CASM_ConfigEnumStrain
 #define CASM_ConfigEnumStrain
 
-#include "casm/app/enum/EnumInterface.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/container/Counter.hh"
 #include "casm/enumerator/InputEnumerator.hh"
 #include "casm/strain/StrainConverter.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 
-extern "C" {
-  CASM::EnumInterfaceBase *make_ConfigEnumStrain_interface();
-}
-
 namespace CASM {
 
   namespace SymRepTools {
     class SubWedge;
   }
+
+  class ConfigEnumInput;
+
+  struct ConfigEnumStrainParams {
+
+    /// Type of strain
+    DoFKey dof;
+
+    /// The positive coordinate space defined by the SubWedge axes are a symmetrically unique portion
+    /// of the strain space. It may require multiple SubWedge to fill strain space, hence the vector.
+    ///
+    /// Note:
+    /// - Symmetry adapted wedges can be obtained from VectorSpaceSymReport::irreducible_wedge
+    /// - The "SubWedge::make_dummy" static function can be used to create a fake SubWedge to
+    ///   generate strain states directly on custom axes
+    std::vector<SymRepTools::SubWedge> wedges;
+
+    // The options "min_val", "inc_val", "max_val" defines a grid of points to sample along each
+    // wedge axis.
+    // Must have same dimension as the number of subwedge axes columns.
+
+    Eigen::VectorXd min_val;
+    Eigen::VectorXd max_val;
+    Eigen::VectorXd inc_val;
+
+    // If true, set min_val[i]=-max_val[i], for strain components, i, with multiplicity==1
+    // Typically, set to true if using symmetry adapted axes
+    bool auto_range = true;
+
+    /// If true, fit an ellipsoid inside the grid defined by min_val/max_val and exclude grid points
+    /// that lie outside the ellipsoid
+    bool trim_corners = true;
+
+  };
+
 
   /// Enumerate strained Configurations
   ///
@@ -28,40 +58,23 @@ namespace CASM {
 
   public:
 
-    ConfigEnumStrain(const ConfigEnumInput &_init,
-                     const std::vector<SymRepTools::SubWedge> &_wedges,
+    ConfigEnumStrain(ConfigEnumInput const &initial_state,
+                     ConfigEnumStrainParams const &params);
+
+    ConfigEnumStrain(ConfigEnumInput const &initial_state,
+                     std::vector<SymRepTools::SubWedge> const &wedges,
                      Eigen::VectorXd min_val,
                      Eigen::VectorXd max_val,
                      Eigen::VectorXd inc_val,
-                     DoFKey const &_strain_key,
+                     DoFKey const &strain_key,
                      bool auto_range,
                      bool trim_corners);
 
 
-    std::string name() const override {
-      return enumerator_name;
-    }
+    std::string name() const override;
 
     static const std::string enumerator_name;
 
-    static std::string interface_help();
-
-    static int run(PrimClex const &primclex,
-                   jsonParser const &kwargs,
-                   Completer::EnumOption const &enum_opt,
-                   EnumeratorMap const *interface_map);
-
-    static int run(PrimClex const &_primclex,
-                   ConfigEnumInput const &_config,
-                   Eigen::Ref<const Eigen::MatrixXd> const &_axes,
-                   Eigen::Ref<const Eigen::VectorXd> const &min_val,
-                   Eigen::Ref<const Eigen::VectorXd> const &max_val,
-                   Eigen::Ref<const Eigen::VectorXd> const &inc_val,
-                   bool sym_axes,
-                   bool auto_range,
-                   bool trim_corners,
-                   std::vector<std::string> const &_filter_expr,
-                   bool dry_run);
   private:
 
     /// Implements increment over all strain states

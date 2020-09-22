@@ -1,0 +1,76 @@
+#ifndef CASM_enum_enumerate_supercells_impl
+#define CASM_enum_enumerate_supercells_impl
+
+#include "casm/app/enum/EnumInterface.hh"
+#include "casm/app/enum/enumerate_supercells.hh"
+#include "casm/clex/Supercell_impl.hh"
+#include "casm/database/ScelDatabase.hh"
+#include "casm/database/ScelDatabaseTools.hh"
+
+namespace CASM {
+
+  /// Enumerate supercells
+  ///
+  /// Note:
+  /// - To avoid unnecessary supercell canonicalization, specialize the following method:
+  ///   `template<> bool is_guaranteed_for_database_insert(EnumeratorType const &);`
+  ///
+  /// \param options See EnumerateSupercellsOptions for method options
+  /// \param enumerator A supercell enumerator.
+  /// \param supercell_db Will commit any new Supercell if `options.dry_run==false`.
+  /// \param logging For printing progress and errors
+  ///
+  template<typename EnumeratorType>
+  void enumerate_supercells(
+    EnumerateSupercellsOptions const &options,
+    EnumeratorType &enumerator,
+    DB::Database<Supercell> &supercell_db,
+    Logging const &logging) {
+
+    Log &log = logging.log();
+    std::pair<DB::Database<Supercell>::iterator, bool> insert_result;
+    std::string dry_run_msg = CASM::dry_run_msg(options.dry_run);
+
+    log.set_verbosity(options.verbosity);
+    log.begin<Log::standard>(options.method_name);
+
+    for(Supercell const &supercell : enumerator) {
+
+      /// Use while transitioning Supercell to no longer need a `PrimClex const *`
+      if(!supercell.has_primclex()) {
+        supercell.set_primclex(options.primclex_ptr);
+      }
+
+      if(options.filter && !options.filter(supercell)) {
+        continue;
+      }
+
+      if(is_guaranteed_for_database_insert(enumerator)) {
+        insert_result = supercell_db.insert(supercell);
+      }
+      else {
+        insert_result = make_canonical_and_insert(supercell.shared_prim(),
+                                                  supercell.lattice(),
+                                                  supercell_db);
+      }
+
+      if(insert_result.second) {
+        log << dry_run_msg << "  Generated: " << insert_result.first->name() << "\n";
+      }
+      else {
+        log << dry_run_msg << "  Generated: " << insert_result.first->name() << " (already existed)\n";
+      }
+    }
+    log << dry_run_msg << "  DONE." << std::endl << std::endl;
+
+    if(!options.dry_run) {
+      log << "Committing database..." << std::endl;
+      supercell_db.commit();
+      log << "  DONE" << std::endl << std::endl;
+    }
+    log.end_section();
+  }
+
+}
+
+#endif

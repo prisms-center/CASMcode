@@ -1114,13 +1114,17 @@ namespace CASM {
 
   namespace SymRepTools {
 
-    IrrepWedge IrrepWedge::make_dummy_irrep_wedge(const Eigen::MatrixXd &axes) {
+    IrrepWedge IrrepWedge::make_dummy(const Eigen::MatrixXd &axes) {
       IrrepWedge irrep_wedge(IrrepInfo::make_dummy(axes), axes);
       irrep_wedge.mult.reserve(axes.cols());
       for(Index i = 0; i < axes.cols(); ++i) {
         irrep_wedge.mult.push_back(1);
       }
       return irrep_wedge;
+    }
+
+    SubWedge SubWedge::make_dummy(const Eigen::MatrixXd &axes) {
+      return SubWedge({IrrepWedge::make_dummy(_axes)});
     }
 
     Eigen::MatrixXd SubWedge::_subwedge_to_trans_mat(std::vector<IrrepWedge> const &_iwedges) {

@@ -9,13 +9,25 @@
 
 namespace CASM {
 
+  /// Return true if a configuration (in any equivalent orientation) can be tiled into a supercell
+  ///
+  /// Note:
+  /// - This will return true if, any SymOp in the prim factor group, `apply(symop, configuration)`
+  ///   can be used used to fill the Supercell. Otherwise it will return false.
+  bool is_valid_sub_configuration(
+    Lattice const &sub_configuration_lattice,
+    Supercell const &supercell) {
+    FillSupercell f {supercell};
+    return f.find_symop(sub_configuration_lattice) != nullptr;
+  }
+
   /// Create a super configuration by tiling the motif Configuration into the supercell.
   ///
   /// Note:
   /// - This overload finds the first SymOp in the prim factor group such that apply(symop, motif)
   ///   can be used to fill the Supercell. If none can be found, it throws.
   Configuration fill_supercell(Configuration const &motif,
-                               std::shared_ptr<Supercell> const &shared_supercell) {
+                               std::shared_ptr<Supercell const> const &shared_supercell) {
     FillSupercell f {shared_supercell};
     return f(motif);
   }
@@ -23,7 +35,7 @@ namespace CASM {
   /// Create a super configuration by tiling the motif Configuration into the supercell.
   ///
   /// Note:
-  /// - Prefer to use `std::shared_ptr<Supercell>` overload if possible
+  /// - Prefer to use `std::shared_ptr<Supercell const>` overload if possible
   /// - This overload finds the first SymOp in the prim factor group such that apply(symop, motif)
   ///   can be used to fill the Supercell. If none can be found, it throws.
   Configuration fill_supercell(Configuration const &motif, Supercell const &supercell) {
@@ -37,7 +49,7 @@ namespace CASM {
   /// - Will throw if apply(symop, motif) cannot be tiled into the supercell
   Configuration fill_supercell(SymOp const &symop,
                                Configuration const &motif,
-                               std::shared_ptr<Supercell> const &shared_supercell) {
+                               std::shared_ptr<Supercell const> const &shared_supercell) {
     FillSupercell f {shared_supercell};
     return f(symop, motif);
   }
@@ -45,7 +57,7 @@ namespace CASM {
   /// Create a super configuration by tiling the apply(symop, motif) Configuration into the supercell
   ///
   /// Note:
-  /// - Prefer to use `std::shared_ptr<Supercell>` overload if possible
+  /// - Prefer to use `std::shared_ptr<Supercell const>` overload if possible
   /// - Will throw if apply(symop, motif) cannot be tiled into the supercell
   Configuration fill_supercell(SymOp const &symop,
                                Configuration const &motif,
@@ -60,7 +72,7 @@ namespace CASM {
   /// \param _scel Supercell to be filled
   /// \param _op SymOp that transforms the input motif before tiling into the
   ///        Supercell that is filled
-  FillSupercell::FillSupercell(std::shared_ptr<Supercell> const &_shared_supercell) :
+  FillSupercell::FillSupercell(std::shared_ptr<Supercell const> const &_shared_supercell) :
     m_shared_supercell(_shared_supercell),
     m_supercell_ptr(m_shared_supercell.get()),
     m_symop_ptr(nullptr),
@@ -75,8 +87,8 @@ namespace CASM {
     m_supercell_ptr(&_supercell), m_symop_ptr(nullptr), m_motif_supercell(nullptr) {}
 
   Configuration FillSupercell::operator()(Configuration const &motif) const {
-
     if(&motif.supercell() != m_motif_supercell) {
+      m_symop_ptr = find_symop(m_motif_supercell->lattice());
       _init(motif.supercell());
     }
     return (*this)(*m_symop_ptr, motif);
@@ -84,8 +96,19 @@ namespace CASM {
 
   Configuration FillSupercell::operator()(SymOp const &symop,
                                           Configuration const &motif) const {
-
     if(&motif.supercell() != m_motif_supercell || &symop != m_symop_ptr) {
+      if(&symop != m_symop_ptr) {
+        Lattice const &motif_lattice = motif.supercell().lattice();
+        if(!is_superlattice(
+             m_supercell_ptr->lattice(),
+             sym::copy_apply(symop, motif_lattice),
+             motif_lattice.tol()).first) {
+          throw std::runtime_error(
+            "Error in 'FillSupercell: super lattice != sym::copy_apply(symop, motif lattice)"
+          );
+        }
+        m_symop_ptr = &symop;
+      }
       _init(motif.supercell());
     }
 
@@ -146,17 +169,8 @@ namespace CASM {
     return &(*res.first);
   }
 
-  void FillSupercell::_init(const Supercell &_motif_supercell) const {
+  void FillSupercell::_init(Supercell const &_motif_supercell) const {
     m_motif_supercell = &_motif_supercell;
-
-    // ------- find_symop --------
-    m_symop_ptr = find_symop(m_motif_supercell->lattice());
-    if(m_symop_ptr == nullptr) {
-      throw std::runtime_error(
-        "Error in 'FillSupercell::find_symop':\n"
-        "  The motif lattice cannot be tiled into the supercell lattice."
-      );
-    }
 
     // ------- site dof ----------
     Lattice oriented_motif_lat = sym::copy_apply(*m_symop_ptr, m_motif_supercell->lattice());

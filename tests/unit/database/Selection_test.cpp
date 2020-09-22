@@ -19,7 +19,6 @@
 
 // template definitions
 #include "casm/app/QueryHandler_impl.hh"
-#include "casm/clex/ConfigEnumAllOccupations_impl.hh"
 #include "casm/app/enum/EnumInterface_impl.hh"
 
 using namespace CASM;

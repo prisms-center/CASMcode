@@ -91,18 +91,9 @@ namespace CASM {
 
   /// Returns the subgroup of the configuration factor group that not cause any permutation between
   /// the set of selected and unselected sites of "config_enum_input"
-  std::vector<PermuteIterator> make_invariant_group(ConfigEnumInput const &config_enum_input) {
-
-    std::vector<PermuteIterator> invariant_group;
-    auto factor_group = config_enum_input.configuration().factor_group();
-    std::set<Index> const &selected_sites = config_enum_input.sites();
-
-    for(PermuteIterator const &perm_it : factor_group) {
-      if(cluster_site_indices_are_invariant(perm_it, selected_sites)) {
-        invariant_group.push_back(perm_it);
-      }
-    }
-    return invariant_group;
+  std::vector<PermuteIterator> make_invariant_subgroup(ConfigEnumInput const &config_enum_input) {
+    std::vector<PermuteIterator> factor_group = config_enum_input.configuration().factor_group();
+    return make_invariant_subgroup(config_enum_input, factor_group.begin(), factor_group.end());
   }
 
   /** @}*/

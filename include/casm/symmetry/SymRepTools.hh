@@ -92,11 +92,14 @@ namespace CASM {
       /// Symmetric multiplicity of each column of 'axes'
       std::vector<Index> mult;
 
-      /// Makes a dummy irrep wedge from the axes provided with mult vector size as the number of columns of axes
-      /// and the each element of the mult vector being 1.
-      /// This implies each of the directions in the columns of axes are unique and have no orbits (This is what
-      /// we want when doing square grid enumeration with no symmetry)
-      static IrrepWedge make_dummy_irrep_wedge(const Eigen::MatrixXd &axes);
+      /// Makes a "dummy" IrrepWedge with given axes
+      ///
+      /// Note:
+      /// - Sets the multiplicity for each IrrepWedge axis to 1. This means each direction in the
+      ///   columns of axes are unique and have no orbits
+      /// - This is a way to directly specify a custom enumeration grid for methods that are written
+      ///   to enumerate on a vector of SubWedge spaces (i.e. ConfigEnumStrain).
+      static IrrepWedge make_dummy(const Eigen::MatrixXd &axes);
     };
 
     ///\brief SubWedge is a vector of IrrepWedge, one from each irreducible subspace
@@ -119,6 +122,15 @@ namespace CASM {
       Eigen::MatrixXd const &trans_mat() const {
         return m_trans_mat;
       }
+
+      /// Makes a "dummy" SubWedge from a single "dummy" IrrepWedge with given axes
+      ///
+      /// Note:
+      /// - Sets the multiplicity for each IrrepWedge axis to 1. This means each direction in the
+      ///   columns of axes are unique and have no orbits
+      /// - This is a way to directly specify a custom enumeration grid for methods that are written
+      ///   to enumerate on a vector of SubWedge spaces (i.e. ConfigEnumStrain).
+      static SubWedge make_dummy(Eigen::MatrixXd const &axes);
 
     private:
       std::vector<IrrepWedge> m_iwedges;

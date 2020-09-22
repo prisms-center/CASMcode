@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "casm/app/casm_functions.hh"
+#include "casm/app/enum/standard_enumerator_interfaces.hh"
 
 namespace CASM {
 
@@ -12,7 +13,6 @@ namespace CASM {
     class EnumOption;
   }
 
-  typedef InterfaceMap<Completer::EnumOption> EnumeratorMap;
   class RuntimeLibrary;
   class ProjectSettings;
 
@@ -20,32 +20,32 @@ namespace CASM {
     CLONEABLE_NEEDS_DESTRUCTOR_DEF(EnumeratorHandler)
   public:
 
-    EnumeratorHandler(const ProjectSettings &set);
+    EnumeratorHandler(ProjectSettings const &set);
 
-    EnumeratorMap &map() {
-      return *m_enumerator;
+    EnumInterfaceVector &get() {
+      return m_enumerator;
     }
 
-    const EnumeratorMap &map() const {
-      return *m_enumerator;
+    EnumInterfaceVector const &get() const {
+      return m_enumerator;
     }
 
   private:
 
-    const ProjectSettings *m_set;
+    ProjectSettings const *m_set;
 
-    notstd::cloneable_ptr<EnumeratorMap> m_enumerator;
+    EnumInterfaceVector m_enumerator;
 
     std::map<std::string, std::shared_ptr<RuntimeLibrary> > m_lib;
 
   };
 
   /// \brief Load enumerator plugins from a CASM project
-  template<typename EnumeratorMapInserter, typename RuntimeLibInserter>
-  std::pair<EnumeratorMapInserter, RuntimeLibInserter>
+  template<typename EnumInterfaceVectorInserter, typename RuntimeLibInserter>
+  std::pair<EnumInterfaceVectorInserter, RuntimeLibInserter>
   load_enumerator_plugins(
-    const ProjectSettings &set,
-    EnumeratorMapInserter enum_it,
+    ProjectSettings const &set,
+    EnumInterfaceVectorInserter enum_it,
     RuntimeLibInserter lib_it);
 
 }

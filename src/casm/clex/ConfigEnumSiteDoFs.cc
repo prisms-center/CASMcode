@@ -1,368 +1,27 @@
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/clex/ConfigEnumSiteDoFs.hh"
-#include "casm/crystallography/Structure.hh"
-#include "casm/clex/PrimClex.hh"
+#include "casm/enumerator/ConfigEnumInput.hh"
 #include "casm/symmetry/SupercellSymInfo_impl.hh"
-#include "casm/app/enum/EnumInterface_impl.hh"
-#include "casm/database/ConfigDatabase.hh"
-#include "casm/clex/ScelEnum.hh"
-//#include "casm/clex/Supercell.hh"
-#include "casm/clex/ConfigIsEquivalent.hh"
-//#include "casm/misc/CASM_math.hh"
-//#include "casm/misc/CASM_Eigen_math.hh"
-//#include "casm/misc/algorithm.hh"
 
-extern "C" {
-  CASM::EnumInterfaceBase *make_ConfigEnumSiteDoFs_interface() {
-    return new CASM::EnumInterface<CASM::ConfigEnumSiteDoFs>();
-  }
-}
 
 namespace CASM {
 
-  struct MakeConfigInvariantSubgroup {
-
-    MakeConfigInvariantSubgroup() {}
-
-    template<typename PermuteOutputIterator>
-    PermuteOutputIterator operator()(const Configuration &config, PermuteIterator begin, PermuteIterator end, PermuteOutputIterator result) {
-      ConfigIsEquivalent f(config, config.crystallography_tol());
-      return std::copy_if(begin, end, result, f);
-    }
-
-  };
-
-  const std::string ConfigEnumSiteDoFs::enumerator_name = "ConfigEnumSiteDoFs";
-
-  std::string ConfigEnumSiteDoFs::interface_help() {
-    return
-      "ConfigEnumSiteDoFs: \n\n"
-
-      "  confignames: Array of strings (optional) \n"
-      "    Names of configurations to be used as initial state of enumeration. All \n"
-      "    specified sublattices or sites will be enumerated on and all other DoFs will\n"
-      "    maintain the values of the initial state.\n"
-      "    Ex: \"confignames\" : [\"SCEL1_1_1_1_0_0_0/1\",\"SCEL2_2_1_1_0_0_0/3\"]\n\n"
-
-      "  scelnames: Array of strings (optional) \n"
-      "    Names of supercells used as initial state of enumeration. All site occupants\n"
-      "    will be set to the first listed occupant, and all DoFs will be set to zero.\n"
-      "    Ex: \"scelnames\" : [\"SCEL1_1_1_1_0_0_0\",\"SCEL2_2_1_1_0_0_0\"]\n\n"
-
-      "  sublats: array of integers (optional, default none) \n"
-      "    Restricts enumeration to specified sublattices. Each sublattice index corresponds\n"
-      "    to a basis site in prim.json, indexed from 0.\n"
-      "    Ex: \"sublats\" : [0,2]\n\n"
-
-      "  sites: array of 4-entry integer arrays (optional, default none) \n"
-      "    Restricts enumeration to specified sites. Sites are specified in [b,i,j,k] convention,\n"
-      "    where 'b' is sublattice index and [i,j,k] specifies linear combinations of primitive-\n"
-      "    cell lattice vectors.\n"
-      "    Ex: \"sites\" : [[0,0,0,0],\n"
-      "                   [2,0,0,0]]\n\n"
-
-      "  filter: string (optional, default=None)\n"
-      "    A query command to use to filter which Configurations are kept.          \n\n"
-
-      "  dry_run: bool (optional, default=false)\n"
-      "    Perform dry run.\n\n"
-
-      "  supercells: ScelEnum JSON settings (default='{\"existing_only\"=true}')\n"
-      "    Indicate supercells to use as initial states of enumeration in terms of size\n"
-      "    and unit cell via a JSON object conforming to the format of 'ScelEnum' JSON\n"
-      "    settings. \"scelnames\" will override \"supercells\", but if neither is specified\n"
-      "    all existing supercells are used by default. See 'ScelEnum' description for details.\n\n"
-
-      "  dof: string (required) \n"
-      "    Name of site degree of freecom for which normal coordinates are to be generated.\n"
-      "    Must be one of the degrees of freedom under consideration in the current project,\n"
-      "    as determined by prim.json\n\n"
-
-      "  sites: array of 4-entry integer arrays (optional, default none) \n"
-      "    Restricts normal coordinate determination to specified sites. Sites are specified\n"
-      "    in [b,i,j,k] convention, where 'b' is sublattice index and [i,j,k] spedifies line-\n"
-      "    ar combinations of primitive-cell lattice vectors.\n"
-      "    Ex: \"sites\" : [[0,0,0,0],\n"
-      "                   [2,0,0,0]]\n\n"
-
-      "  axes: matrix of doubles (optional, default=identity matrix) \n"
-      "    Coordinate axes of dof grid. Rows of matrix specify unrolled elements of\n"
-      "    MxN DoF matrix, where M is dimension of on-site DoF and N is number of sites\n"
-      "    in specified configuration or supercell. DoF values are unrolled in column-\n"
-      "    major order, such that values from a particular site are listed contiguously.\n"
-      "    'axes' matrix be rank deficient.\n"
-      "    Ex: \"axes\" : [[1, 1, 1, 1, 1, 1],\n"
-      "                  [1,-1, 0,-1, 1, 0],\n"
-      "                  [1,-1, 0, 1,-1, 0]]\n\n"
-
-      "  sym_axes: bool (optional, default=false)\n"
-      "    If true, overrides \"axes\" field and instead constructs symmetry-adapted grid axes\n"
-      "    as the symmetry-adapted DoF order parameters of 'config'. Run with option \n"
-      "    \"dry_run\": true to obtain analysis report including the symmetry-adapted axes\n"
-      "    without adding enumerated configurations to project.\n\n"
-
-      "  min: number, or array of numbers (optional, default = [0,...,0]) \n"
-      "    Minimum, starting value of grid counter\n"
-      "    Dimension must be equal to number of rows of \"axes\"\n"
-      "    Ex: \"min\" : [-0.05, -0.1, -0.1]\n\n"
-
-      "  max: number, or array of numbers (required) \n"
-      "    Maximum, final value of grid counter\n"
-      "    Dimension must be equal to number of rows of \"axes\"\n"
-      "    Ex: \"max\" : [0.05, 0.1, 0.1]\n\n"
-
-      "  increment: number, or array of numbers (required) \n"
-      "    Amount by which to increment counter elements\n"
-      "    Dimension must be equal to number of rows of \"axes\"\n"
-      "    Ex: \"increment\" : [0.01, 0.01, 0.01]\n\n"
-
-      "  min_nonzero: integer (optional, default = 0) \n"
-      "    Minimum number of coordinate amplitudes that are allowed\n"
-      "    to be nonzero. Must be less than or equal to number of rows of \"axes\".\n\n"
-
-      "  max_nonzero: integer (optional, default = axes.rows()) \n"
-      "    Maximum number of coordinate amplitudes that are allowed\n"
-      "    to be nonzero. Must be less than or equal to number of rows of \"axes\".\n\n"
-
-      "  Examples:\n"
-      "    To enumerate all DoF perturbations of a particular configuration:\n"
-      "      casm enum --method ConfigEnumSiteDoFs -i \n"
-      "      '{ \n"
-      "        \"config\": \"SCEL4_1_4_1_0_0_0/3\",\n"
-      "        \"analysis\": true,\n"
-      "        } \n"
-      "      }' \n\n";
-  }
-
-  int ConfigEnumSiteDoFs::run(
-    PrimClex const &primclex,
-    jsonParser const &_kwargs,
-    Completer::EnumOption const &enum_opt,
-    EnumeratorMap const *interface_map) {
-
-    std::vector<ConfigEnumInput> in_configs = make_enumerator_input_configs(primclex, _kwargs, enum_opt, interface_map);
-    std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
-
-    DoFKey dof;
-    if(!in_configs.size()) {
-      return 1;
-    }
-
-    bool sym_axes(false);
-
-    Configuration const &reference_configuration = in_configs[0].configuration();
-    std::set<Index> const &reference_sites = in_configs[0].sites();
-    Index nsites = reference_sites.size();
-    std::vector<Index> dof_dims;
-    Index tot_dim(0);
-    for(auto const &_in : in_configs) {
-      if(_in.sites().size() != nsites) {
-        throw std::runtime_error("Starting configurations or supercells passed to ConfigEnumSiteDoFs must all have the same number of selected sites!\n");
-      }
-    }
-
-    Index max_nonzero(-1), min_nonzero(0);
-    Eigen::MatrixXd axes;
-    Eigen::VectorXd min, max, inc;
-    try {
-      if(!_kwargs.contains("dof")) {
-        throw std::runtime_error("Field \"dof\" is required.\n");
-      }
-      from_json(dof, _kwargs["dof"]);
-      DoFType::traits(dof);
-
-      auto const &dof_info = reference_configuration.configdof().local_dof(dof).info();
-      for(Index l : reference_sites) {
-        dof_dims.push_back(dof_info[reference_configuration.sublat(l)].dim());
-        tot_dim += dof_dims.back();
-      }
-
-      if(_kwargs.contains("sym_axes")) {
-        _kwargs["sym_axes"].get(sym_axes);
-      }
-
-      if(!_kwargs.contains("axes")) {
-        axes = Eigen::MatrixXd::Identity(tot_dim, tot_dim);
-      }
-      else {
-        axes = _kwargs["axes"].get<Eigen::MatrixXd>().transpose();
-        if(axes.rows() != tot_dim) {
-          throw std::runtime_error("Number of columns of \"axes\" must be equal to dimensionality of selected variable space ("
-                                   + std::to_string(tot_dim) + "). Size as parsed: " + std::to_string(axes.rows()));
-        }
-        if(axes.cols() > tot_dim) {
-          throw std::runtime_error("Number of coordinate axes (i.e., number of rows of field \"axes\") must be less than or equal to dimensionality of selected variable space ("
-                                   + std::to_string(tot_dim) + "). Number of axes parsed: " + std::to_string(axes.cols()));
-        }
-      }
-
-      //min
-      if(_kwargs.contains("min")) {
-
-        if(_kwargs["min"].is_number()) {
-          min = Eigen::VectorXd::Constant(axes.cols(), _kwargs["min"].get<double>());
-        }
-        else {
-          _kwargs["min"].get(min);
-          if(min.size() != axes.cols()) {
-            throw std::runtime_error("Array field \"min\" must have dimension equal to number of coordinate axes!");
-          }
-        }
-      }
-      else {
-        min = Eigen::VectorXd::Constant(axes.cols(), 0);
-      }
-
-      //max
-      if(!_kwargs.contains("max")) {
-        throw std::runtime_error("Field \"max\" is required.\n");
-      }
-      if(_kwargs["max"].is_number()) {
-        max = Eigen::VectorXd::Constant(axes.cols(), _kwargs["max"].get<double>());
-      }
-      else {
-        _kwargs["max"].get(max);
-        if(max.size() != axes.cols()) {
-          throw std::runtime_error("Array field \"max\" must have dimension equal to number of coordinate axes!");
-        }
-      }
-
-      //inc
-      if(!_kwargs.contains("increment")) {
-        throw std::runtime_error("Field \"increment\" is required.\n");
-      }
-      if(_kwargs["increment"].is_number()) {
-        inc = Eigen::VectorXd::Constant(axes.cols(), _kwargs["increment"].get<double>());
-      }
-      else {
-        _kwargs["increment"].get(inc);
-        if(inc.size() != axes.cols()) {
-          throw std::runtime_error("Array field \"increment\" must have dimension equal to number of coordinate axes!");
-        }
-
-      }
-
-      _kwargs.get_if(min_nonzero, "min_nonzero");
-
-      _kwargs.get_else(max_nonzero, "max_nonzero", axes.cols());
-
-    }
-    catch(std::exception &e) {
-      throw std::runtime_error(std::string("Error parsing JSON arguments for ConfigEnumSiteDoFs: ") + e.what());
-    }
-
-    for(ConfigEnumInput const &config : in_configs) {
-      Index result = run(primclex,
-                         config,
-                         dof,
-                         axes,
-                         min,
-                         max,
-                         inc,
-                         sym_axes,
-                         min_nonzero,
-                         max_nonzero,
-                         filter_expr,
-                         CASM::dry_run(_kwargs, enum_opt));
-      if(result)
-        return result;
-    }
-
-    return 0;
-  }
-
-  int ConfigEnumSiteDoFs::run(PrimClex const &_primclex,
-                              ConfigEnumInput const &_in_config,
-                              DoFKey const &_dof,
-                              Eigen::Ref<const Eigen::MatrixXd> const &_axes,
-                              Eigen::Ref<const Eigen::VectorXd> const &min_val,
-                              Eigen::Ref<const Eigen::VectorXd> const &max_val,
-                              Eigen::Ref<const Eigen::VectorXd> const &inc_val,
-                              bool sym_axes,
-                              Index _min_nonzero,
-                              Index _max_nonzero,
-                              std::vector<std::string> const &_filter_expr,
-                              bool dry_run) {
-    Configuration tconfig = _in_config.configuration();
-    auto &tlocal_dof = tconfig.configdof().local_dof(_dof);
-    auto const &selected_sites = _in_config.sites();
-
-    if(selected_sites.size() == 0) {
-      tlocal_dof.values().setZero();
-    }
-    else {
-      for(Index s : selected_sites) {
-        tlocal_dof.site_value(s).setZero();
-      }
-    }
-
-    ConfigEnumInput config {tconfig, selected_sites};
-    std::vector<PermuteIterator> config_invariant_group = make_invariant_group(config);
-    Eigen::MatrixXd axes = _axes;
-    //PRINT INFO TO LOG:
-    Log &log = _primclex.log();
-    Eigen::IOFormat tformat(4, 0, 8, " ", "\n", "    ", "", "", "");
-    if(sym_axes) {
-      log << "Option \"sym_axes\" selected. Preparing to construct symmetry-adapted axes. This may take several minutes...\n\n";
-      auto irreps = irrep_decomposition(config.sites().begin(),
-                                        config.sites().end(),
-                                        config.configuration().supercell().sym_info(),
-                                        _dof,
-                                        config_invariant_group,
-                                        _axes);
-      axes = full_trans_mat(irreps).transpose();
-      log << "ConfigEnumSiteDoFs summary for DoF '" << _dof << "':\n";
-
-      //std::cout << "Axes:\n" << axes.transpose().format(tformat) << "\n";
-      log << "Enumeration will be performed using symmetry-adapted normal coordinates as axes.\n"
-          << "Normal coordinates partition DoF space into " << irreps.size() << " subspaces.\n"
-          << "Normal coordinates are:\n";
-      Index l = 0;
-      for(Index d = 0; d < irreps.size(); ++d) {
-        log << "Axes for irreducible representation " << (d + 1) << "\n  --------------\n";
-        Index dim = irreps[d].irrep_dim();
-        for(Index i = 0; i < dim; ++i, ++l) {
-          log <<  axes.col(l).transpose().format(tformat) << "\n";
-        }
-      }
-      if(axes.cols() != _axes.cols()) {
-        throw std::runtime_error("In ConfigEnumSiteDoFs, symmetry-adapted axes do not have same dimension as provided axes. "
-                                 "Please ensure that provided axes completely span one or more of subspaces listed above.");
-      }
-    }
-    else {
-      log << "Enumeration will be performed using user-specified axes. Axes are:\n";
-      log << axes.transpose().format(tformat) << "\n";
-    }
-    log << "\nEnumeration will be performed from starting vector: \n" << min_val.transpose().format(tformat) << "\n";
-    log << "\nEnumeration will be performed to final vector: \n" << max_val.transpose().format(tformat) << "\n";
-    log << "\nEnumeration will be performed using grid increment vector: \n" << inc_val.transpose().format(tformat) << "\n";
-    log << "---------\nEnd of summary.\n\n";
+  /// See `ConfigEnumSiteDoFsParams` for method and parameter details
+  ConfigEnumSiteDoFs::ConfigEnumSiteDoFs(
+    ConfigEnumInput const &_in_config,
+    ConfigEnumSiteDoFsParams const &params):
+    ConfigEnumSiteDoFs(
+      _in_config,
+      params.dof,
+      params.axes,
+      params.min_val,
+      params.max_val,
+      params.inc_val,
+      params.min_nonzero,
+      params.max_nonzero) {}
 
 
-    auto constructor = [&](const ConfigEnumInput & _config) {
-      return notstd::make_unique<ConfigEnumSiteDoFs>(config,
-                                                     _dof,
-                                                     axes,
-                                                     min_val,
-                                                     max_val,
-                                                     inc_val,
-                                                     _min_nonzero,
-                                                     _max_nonzero);
-    };
-
-    int returncode = insert_configs(enumerator_name,
-                                    _primclex,
-                                    config.configuration().supercell(),
-                                    constructor,
-                                    _filter_expr,
-                                    false,
-                                    dry_run);
-
-    return returncode;
-
-  }
-
+  /// See `ConfigEnumSiteDoFsParams` for method and parameter details
   ConfigEnumSiteDoFs::ConfigEnumSiteDoFs(ConfigEnumInput const &_init,
                                          DoFKey const &_dof,
                                          Eigen::Ref<const Eigen::MatrixXd> const &_axes,
@@ -412,6 +71,12 @@ namespace CASM {
       m_current->set_source(this->source(step()));
     }
   }
+
+  std::string ConfigEnumSiteDoFs::name() const {
+    return enumerator_name;
+  }
+
+  const std::string ConfigEnumSiteDoFs::enumerator_name = "ConfigEnumSiteDoFs";
 
   bool ConfigEnumSiteDoFs::_increment_combo() {
     Index k = max<Index>(m_combo.size(), m_min_nonzero);

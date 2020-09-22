@@ -23,6 +23,25 @@ namespace CASM {
       select_sublattice(sublattice_index);
   }
 
+  /// Returns the subgroup of [group_begin, group_end] that does not cause any permutation
+  /// between the set of selected and unselected sites of "config_enum_input"
+  template<typename PermuteIteratorIt>
+  std::vector<PermuteIterator> make_invariant_subgroup(
+    ConfigEnumInput const &config_enum_input,
+    PermuteIteratorIt group_begin,
+    PermuteIteratorIt group_end) {
+
+    std::vector<PermuteIterator> invariant_subgroup;
+    std::set<Index> const &selected_sites = config_enum_input.sites();
+
+    for(auto it = group_begin; it != group_end; ++it) {
+      if(cluster_site_indices_are_invariant(*it, selected_sites)) {
+        invariant_subgroup.push_back(*it);
+      }
+    }
+    return invariant_subgroup;
+  }
+
   /** @}*/
 }
 

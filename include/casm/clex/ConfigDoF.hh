@@ -13,15 +13,69 @@ namespace CASM {
   class SymGroupRepID;
   class SymOp;
 
-  /// \brief A container class for the different degrees of freedom a Configuration
-  /// might have
-  ///
-  /// Contains an std::vector<int> that tells you the current occupant of each
-  /// site, an Eigen::MatrixXd that tells you the displacements at each site, and
-  /// a LatticeStrain that tells you the strain of the Configuration. Everything
-  /// is public.
+  /// A container class for the different degrees of freedom values a Configuration might have
   ///
   /// \ingroup Configuration
+  ///
+  /// ConfigDoF has:
+  /// - The values of the discrete site DoF within the supercell ("occupation", Eigen::VectorXi)
+  ///
+  ///   Example: Occupation values, accessed via `Eigen::VectorXi const &ConfigDoF::occupation()`,
+  ///   with integer value corresponding to which Molecule in the the a Site::occupant_dof vector
+  ///   is occupying a particular site:
+  ///
+  ///       [<- sublattice 0 "occ" values -> | <- sublattice 1 "occ" values -> | ... ]
+  ///
+  /// - The values of the continuous site DoF within the supercell ("local_dofs",
+  ///   std::map<DoFKey, LocalContinuousConfigDoFValues>)
+  ///
+  ///   Example: Displacement values, with prim DoF basis equal to the standard basis (dx, dy, dz),
+  ///   accessed via `Eigen::MatrixXd const &ConfigDoF::local_dofs("disp").values()`:
+  ///
+  ///       [<- sublattice 0 dx values -> | <- sublattice 1 dx values -> | ... ]
+  ///       [<- sublattice 0 dy values -> | <- sublattice 1 dy values -> | ... ]
+  ///       [<- sublattice 0 dz values -> | <- sublattice 1 dz values -> | ... ]
+  ///
+  ///   Example: Displacement values, with non-standard prim DoF basis:
+  ///
+  ///       "basis" : [ {
+  ///           "coordinate": [c0x, c0y, c0z],
+  ///           "occupants": [...],
+  ///           "dofs": {
+  ///             "disp" : {
+  ///               "axis_names" : ["dxy", "dz"],
+  ///               "axes" : [[1.0, 1.0, 0.0],
+  ///                       [0.0, 0.0, 1.0]]}}
+  ///         },
+  ///         {
+  ///           "coordinate": [c1x, c1y, c1z],
+  ///           "occupants": [...],
+  ///           "dofs": {
+  ///             "disp" : {
+  ///               "axis_names" : ["d\bar{x}y", "dz"],
+  ///               "axes" : [[-1.0, 1.0, 0.0],
+  ///                       [0.0, 0.0, 1.0]]}}
+  //          },
+  ///         ...
+  ///       }
+  ///
+  ///       [<- sublattice 0 dxy values -> | <- sublattice 1 d\bar{x}y values ->| ... ]
+  ///       [<- sublattice 0 dz values  -> | <- sublattice 1 dz values ->       | ... ]
+  ///       [<- 0.0 values ->              | <- 0.0 values ->                   | ... ]
+  ///
+  /// - The values of the continuous global DoF ("global_dofs",
+  ///   std::map<DoFKey, GlobalDoFContainerType>).
+  ///
+  ///   Example: GLstrain values, with prim DoF basis equal to the standard basis, accessed via
+  ///   `Eigen::VectorXd const &ConfigDoF::global_dofs("GLstrain").values()`:
+  ///
+  ///       [e_xx, e_yy, e_zz, sqrt(2)*e_yz, sqrt(2)*e_xz, sqrt(2)*e_xy]
+  ///
+  /// Note: Continuous DoF values stored in memory in ConfigDoF are coordinates in the
+  /// prim DoF basis (the "axes" given in "prim.json" which set xtal::SiteDoFSet::basis() or
+  /// xtal::DoFSet::basis()), but when saved to file (i.e. `.casm/config/config_list.json`) they are
+  /// saved as coordinates in the standard DoF basis (with axes meaning as described by
+  /// AnisoValTraits::standard_var_names()).
   ///
   class ConfigDoF {
 
@@ -47,9 +101,6 @@ namespace CASM {
               LocalInfoContainerType const &local_dof_info,
               std::vector<SymGroupRepID> const &occ_symrep_IDs,
               double _tol);
-
-    ///Initialize with explicit occupation
-    //ConfigDoF(const std::vector<int> &_occupation, double _tol = TOL);
 
     ///\brief Number of sites in the ConfigDoF
     Index size() const {
@@ -121,8 +172,6 @@ namespace CASM {
       return global_dofs().count(_key);
     }
 
-    //void reset_global_dof(DoFKey const &_key);
-
     void set_global_dof(DoFKey const &_key, Eigen::Ref<const Eigen::VectorXd> const &_val);
 
     std::map<DoFKey, LocalDoFContainerType> const &local_dofs() const {
@@ -143,8 +192,6 @@ namespace CASM {
     bool has_local_dof(DoFKey const &_key) const {
       return local_dofs().count(_key);
     }
-
-    //void reset_local_dof(DoFKey const &_key);
 
     void set_local_dof(DoFKey const &_key, Eigen::Ref<const Eigen::MatrixXd> const &_val);
 
@@ -185,9 +232,9 @@ namespace CASM {
 
     std::map<std::string, LocalDoFContainerType> m_local_dofs;
 
-    /// Tolerance used for transformation to canonical form -- used also for comparisons, since
-    /// Since comparisons are only meaningful to within the tolerance used for finding the canonical form
-    /// (This is relevant only for continuous degrees of freedom)
+    /// Tolerance used for transformation to canonical form -- used also for continuous DoF
+    /// comparisons, since comparisons are only meaningful to within the tolerance used for finding
+    /// the canonical form.
     mutable double m_tol;
 
   };

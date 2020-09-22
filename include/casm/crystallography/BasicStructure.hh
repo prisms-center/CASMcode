@@ -48,7 +48,7 @@ namespace CASM {
 
       //TODO: Extract
       //CASM canonical input/output
-      void read(std::istream &stream);  //John do this
+      void read(std::istream &stream, double tol = TOL);  //John do this
 
     public:
 
@@ -60,7 +60,7 @@ namespace CASM {
       /// do not depend on the lattice of 'RHS'
       BasicStructure(const BasicStructure &RHS);
 
-      static BasicStructure from_poscar_stream(std::istream &poscar_stream);
+      static BasicStructure from_poscar_stream(std::istream &poscar_stream, double tol = TOL);
 
       ~BasicStructure() {};
 

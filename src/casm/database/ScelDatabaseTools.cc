@@ -6,6 +6,21 @@
 namespace CASM {
   namespace DB {
 
+    /// Return const reference to canonical equivalent supercell in the supercell database
+    ///
+    /// Note:
+    /// - Will insert the canonical supercell into "supercell_db"
+    /// - The resulting Supercell will have a `PrimClex const*` (this will be deprecated)
+    Supercell const &canonical_supercell(
+      Supercell const &supercell,
+      PrimClex const *primclex,
+      Database<Supercell> &supercell_db) {
+      return *(make_canonical_and_insert(
+                 primclex,
+                 supercell.sym_info().supercell_lattice(),
+                 supercell_db).first);
+    }
+
     /// Make canonical supercell and insert into supercell database
     std::pair<Database<Supercell>::iterator, bool> make_canonical_and_insert(
       PrimClex const *primclex,
@@ -27,6 +42,20 @@ namespace CASM {
       auto const &prim = primclex->prim();
       xtal::Lattice super_lattice = make_superlattice(prim.lattice(), transformation_matrix_to_super);
       return make_canonical_and_insert(primclex, super_lattice, supercell_db);
+    }
+
+    /// Return const reference to canonical equivalent supercell in the supercell database
+    ///
+    /// Note:
+    /// - Will insert the canonical supercell into "supercell_db"
+    /// - The resulting Supercell may not have a `PrimClex const*` (this is preferred if possible)
+    Supercell const &canonical_supercell(
+      Supercell const &supercell,
+      Database<Supercell> &supercell_db) {
+      return *(make_canonical_and_insert(
+                 supercell.sym_info().shared_prim(),
+                 supercell.sym_info().supercell_lattice(),
+                 supercell_db).first);
     }
 
     /// Make canonical supercell and insert into supercell database

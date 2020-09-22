@@ -67,9 +67,7 @@ EXTRA_DIST += \
     tests/unit/App/TestCompN.hh\
     tests/unit/App/TestConfigname.cc\
     tests/unit/App/TestConfigname.hh\
-    tests/unit/App/TestEnum.cc\
-    tests/unit/App/TestEnum.hh\
-    tests/unit/App/TestEnum_impl.hh
+    tests/unit/App/TestEnum.cc
 
 #-------------------------------------------------------------------------------#
 

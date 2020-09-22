@@ -1,0 +1,151 @@
+#include "casm/app/enum/enumerate_configurations_impl.hh"
+#include "casm/app/enum/methods/ConfigEnumRandomLocalInterface.hh"
+#include "casm/clex/ConfigEnumRandomLocal.hh"
+
+#include "casm/app/APICommand.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/app/QueryHandler_impl.hh"
+#include "casm/app/enum/standard_ConfigEnumInput_help.hh"
+#include "casm/app/enum/io/enumerate_configurations_json_io.hh"
+#include "casm/casm_io/json/InputParser_impl.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/enumerator/ConfigEnumInput.hh"
+#include "casm/enumerator/io/json/ConfigEnumInput_json_io.hh"
+
+namespace CASM {
+
+  std::string ConfigEnumRandomLocalInterface::desc() const {
+
+    std::string custom_options =
+      "  n_config: integer (optional, default=100) \n"
+      "    How many random configurations to generate. Includes duplicate and pre-\n"
+      "    existing configurations.                                                 \n\n"
+
+      "  magnitude: positive number (optional, default=1.0) \n"
+      "    Magnitude used to scale random vector at each site. If \"distribution\" == \"normal\",\n"
+      "    magnitude specifies standard deviation of D-dimensional Gaussian (D is dimension of \n"
+      "    site DoF value). If \"distribution\" == \"uniform\", magnitude is radius of D-dimensional\n"
+      "    ball from which random vectors are chosen.\n\n"
+
+      "  dof: string (required) \n"
+      "    Name of site degree of freecom  for which normal coordinates are to be generated.\n"
+      "    Must be one of the degrees of freedom under consideration in the current project,\n"
+      "    as determined by prim.json\n\n"
+
+      "  distribution: string (optional, default=\"normal\") \n"
+      "    Distribution from which perturbation vectors are drawn. Options are \"uniform\"\n"
+      "    (i.e., uniform on the unit sphere), or \"normal\" (i.e., zero-centered Gaussian).\n\n";
+
+
+    std::string examples =
+      "  Examples:\n"
+      "    To enumerate 200 random occupations in supercells up to and including size 4:\n"
+      "      casm enum --method ConfigEnumRandomLocal -i \n"
+      "        '{\"supercells\":{\"max\":4}, \"n_config\": 200}' \n"
+      "\n"
+      "    To enumerate 200 random occupations in all existing supercells:\n"
+      "      casm enum --method ConfigEnumRandomLocal -i '{\"n_config\": 200}' \n"
+      "\n"
+      "    To enumerate 100 random occupations in all existing supercells:\n"
+      "      casm enum --method ConfigEnumRandomLocal --all \n"
+      "\n"
+      "    To enumerate 200 random occupations in particular supercells:\n"
+      "      casm enum --method ConfigEnumRandomLocal -i \n"
+      "      '{ \n"
+      "        \"scelnames\": [\n"
+      "           \"SCEL1_1_1_1_0_0_0\",\n"
+      "           \"SCEL2_1_2_1_0_0_0\",\n"
+      "           \"SCEL4_1_4_1_0_0_0\"\n"
+      "        ],\n"
+      "        \"n_config\": 200\n"
+      "      }' \n\n";
+
+    return name() + ": \n\n" + custom_options + standard_ConfigEnumInput_help() + examples;
+  }
+
+  std::string ConfigEnumRandomLocalInterface::name() const {
+    return ConfigEnumRandomLocal::enumerator_name;
+  }
+
+  void parse(InputParser<ConfigEnumRandomLocalParams> &parser, MTRand &mtrand) {
+    DoFKey dof_key;
+    double mag;
+    Index n_config;
+    bool normal_distribution;
+
+    parser.require(dof_key, "dof");
+    parser.optional_else(mag, "magnitude", double {1.0});
+    parser.optional_else(n_config, "n_config", Index {100});
+
+    std::string distribution_name;
+    parser.optional_else(distribution_name, "distribution", std::string {"normal"});
+    if(distribution_name == "normal") {
+      normal_distribution = true;
+    }
+    else if(distribution_name == "uniform") {
+      normal_distribution = false;
+    }
+    else {
+      std::stringstream msg;
+      msg << "Error: \"distribution\" must be \"normal\" (default) or \"uniform\"";
+      parser.error.insert(msg.str());
+    }
+
+    parser.value = notstd::make_unique<ConfigEnumRandomLocalParams>(
+                     mtrand, dof_key, n_config, mag, normal_distribution);
+
+  }
+
+  void ConfigEnumRandomLocalInterface::run(
+    APICommandBase const &cmd,
+    jsonParser const &json_options,
+    jsonParser const &cli_options_as_json) const {
+
+    // Get project and log
+    PrimClex &primclex = cmd.primclex();
+    Logging const &logging = cmd;
+
+    // combine JSON options and CLI options
+    jsonParser json_combined = combine_configuration_enum_json_options(
+                                 json_options,
+                                 cli_options_as_json);
+
+    // Read input data from JSON
+    ParentInputParser parser {json_combined};
+
+    MTRand mtrand;
+    auto random_local_params_parser_ptr = parser.parse_as<ConfigEnumRandomLocalParams>(mtrand);
+    auto input_parser_ptr = parser.parse_as<std::vector<std::pair<std::string, ConfigEnumInput>>>(
+                              primclex.shared_prim(),
+                              &primclex,
+                              primclex.db<Supercell>(),
+                              primclex.db<Configuration>());
+    auto options_parser_ptr = parser.parse_as<EnumerateConfigurationsOptions>(
+                                ConfigEnumRandomLocal::enumerator_name,
+                                primclex,
+                                primclex.settings().query_handler<Configuration>().dict());
+
+    std::runtime_error error_if_invalid {"Error reading ConfigEnumRandomLocal JSON input"};
+    report_and_throw_if_invalid(parser, logging.log(), error_if_invalid);
+
+    ConfigEnumRandomLocalParams const &random_local_params = *random_local_params_parser_ptr->value;
+    auto const &input_name_value_pairs = *input_parser_ptr->value;
+    EnumerateConfigurationsOptions const &options = *options_parser_ptr->value;
+
+    auto make_enumerator_f = [&](std::string name, ConfigEnumInput const & initial_state) {
+      return ConfigEnumRandomLocal {
+        initial_state,
+        random_local_params};
+    };
+
+    enumerate_configurations(
+      options,
+      make_enumerator_f,
+      input_name_value_pairs.begin(),
+      input_name_value_pairs.end(),
+      primclex.db<Supercell>(),
+      primclex.db<Configuration>(),
+      logging);
+  }
+
+}

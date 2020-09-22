@@ -12,6 +12,7 @@ namespace CASM {
   ///\brief Compositiong of enumeration environment (as ConfigEnumInput), DoF type (as DoFKey),
   // and vector subpsace. This simplifies generation of a VectorSpaceSymReport for a range of inputs
   struct DoFSpace {
+
     /// Definition of Configuration region for which enumeration/analysis is to be performed
     ConfigEnumInput config_region;
 
@@ -36,8 +37,18 @@ namespace CASM {
 
   };
 
+  Index get_dof_space_dimension(DoFKey dof_key,
+                                Configuration const &configuration,
+                                std::set<Index> const &sites);
 
-  VectorSpaceSymReport vector_space_sym_report(DoFSpace const &_space,
+  std::vector<std::string> make_axis_glossary(DoFKey dof_key,
+                                              Configuration const &configuration,
+                                              std::set<Index> const &sites);
+
+  template<typename PermuteIteratorIt>
+  VectorSpaceSymReport vector_space_sym_report(DoFSpace const &dof_space,
+                                               PermuteIteratorIt group_begin,
+                                               PermuteIteratorIt group_end,
                                                bool calc_wedges = true);
 
 }

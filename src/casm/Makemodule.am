@@ -26,16 +26,31 @@ libcasm_la_SOURCES = \
     include/casm/app/enum.hh\
     include/casm/app/enum/EnumInterface.hh\
     include/casm/app/enum/EnumInterface_impl.hh\
+    include/casm/app/enum/enumerate_configurations.hh\
+    include/casm/app/enum/enumerate_configurations_impl.hh\
+    include/casm/app/enum/enumerate_supercells.hh\
+    include/casm/app/enum/enumerate_supercells_impl.hh\
+    include/casm/app/enum/io/enumerate_configurations_json_io.hh\
+    include/casm/app/enum/io/enumerate_supercells_json_io.hh\
     include/casm/app/enum/io/json_io.hh\
+    include/casm/app/enum/io/stream_io.hh\
+    include/casm/app/enum/io/stream_io_impl.hh\
+    include/casm/app/enum/methods/ConfigEnumAllOccupationsInterface.hh\
+    include/casm/app/enum/methods/ConfigEnumRandomLocalInterface.hh\
+    include/casm/app/enum/methods/ConfigEnumRandomOccupationsInterface.hh\
+    include/casm/app/enum/methods/ConfigEnumSiteDoFsInterface.hh\
+    include/casm/app/enum/methods/ConfigEnumStrainInterface.hh\
+    include/casm/app/enum/methods/ScelEnumInterface.hh\
+    include/casm/app/enum/methods/SuperConfigEnumInterface.hh\
+    include/casm/app/enum/standard_ConfigEnumInput_help.hh\
+    include/casm/app/enum/standard_enumerator_interfaces.hh\
     include/casm/app/errors.hh\
     include/casm/app/files.hh\
     include/casm/app/format.hh\
     include/casm/app/import.hh\
     include/casm/app/init.hh\
-    include/casm/app/io/json/SpeciesSetParser.hh\
-    include/casm/app/io/json/SpeciesSetParser_impl.hh\
-    include/casm/app/json_io.hh\
-    include/casm/app/json_io_impl.hh\
+    include/casm/app/io/json_io.hh\
+    include/casm/app/io/json_io_impl.hh\
     include/casm/app/monte.hh\
     include/casm/app/query.hh\
     include/casm/app/ref.hh\
@@ -46,6 +61,10 @@ libcasm_la_SOURCES = \
     include/casm/app/status.hh\
     include/casm/app/super.hh\
     include/casm/app/sym.hh\
+    include/casm/app/sym/dof_space_analysis.hh\
+    include/casm/app/sym/json_io.hh\
+    include/casm/app/sym/symmetrize.hh\
+    include/casm/app/sym/write_prim_symmetry.hh\
     include/casm/app/update.hh\
     include/casm/app/view.hh\
     include/casm/basis_set/Adapter.hh\
@@ -78,6 +97,8 @@ libcasm_la_SOURCES = \
     include/casm/casm_io/container/stream_io.hh\
     include/casm/casm_io/dataformatter/DataFormatter.hh\
     include/casm/casm_io/dataformatter/DataFormatterDecl.hh\
+    include/casm/casm_io/dataformatter/DataFormatterFilter.hh\
+    include/casm/casm_io/dataformatter/DataFormatterFilter_impl.hh\
     include/casm/casm_io/dataformatter/DataFormatterTools.hh\
     include/casm/casm_io/dataformatter/DataFormatterTools_impl.hh\
     include/casm/casm_io/dataformatter/DataFormatter_impl.hh\
@@ -111,10 +132,7 @@ libcasm_la_SOURCES = \
     include/casm/clex/ConfigDoFIsEquivalent.hh\
     include/casm/clex/ConfigDoFValues.hh\
     include/casm/clex/ConfigEnumAllOccupations.hh\
-    include/casm/clex/ConfigEnumAllOccupations_impl.hh\
     include/casm/clex/ConfigEnumEquivalents.hh\
-    include/casm/clex/ConfigEnumInterpolation.hh\
-    include/casm/clex/ConfigEnumOccPerturbations.hh\
     include/casm/clex/ConfigEnumRandomLocal.hh\
     include/casm/clex/ConfigEnumRandomOccupations.hh\
     include/casm/clex/ConfigEnumSiteDoFs.hh\
@@ -132,6 +150,7 @@ libcasm_la_SOURCES = \
     include/casm/clex/DiffClexParamPack.hh\
     include/casm/clex/ECIContainer.hh\
     include/casm/clex/FillSupercell.hh\
+    include/casm/clex/FillSupercell_impl.hh\
     include/casm/clex/FilteredConfigIterator.hh\
     include/casm/clex/HasCanonicalForm.hh\
     include/casm/clex/HasCanonicalForm_impl.hh\
@@ -152,7 +171,6 @@ libcasm_la_SOURCES = \
     include/casm/clex/RemoveSupercell.hh\
     include/casm/clex/ScelEnum.hh\
     include/casm/clex/ScelEnumEquivalents.hh\
-    include/casm/clex/ScelEnum_impl.hh\
     include/casm/clex/SimpleStructureTools.hh\
     include/casm/clex/SuperConfigEnum.hh\
     include/casm/clex/Supercell.hh\
@@ -254,6 +272,7 @@ libcasm_la_SOURCES = \
     include/casm/database/ConfigData_impl.hh\
     include/casm/database/ConfigDatabase.hh\
     include/casm/database/ConfigDatabaseDefs.hh\
+    include/casm/database/ConfigDatabaseTools.hh\
     include/casm/database/ConfigImport.hh\
     include/casm/database/Database.hh\
     include/casm/database/DatabaseHandler.hh\
@@ -288,6 +307,7 @@ libcasm_la_SOURCES = \
     include/casm/enumerator/ConfigEnumInput.hh\
     include/casm/enumerator/ConfigEnumInput_impl.hh\
     include/casm/enumerator/DoFSpace.hh\
+    include/casm/enumerator/DoFSpace_impl.hh\
     include/casm/enumerator/Enumerator.hh\
     include/casm/enumerator/InputEnumerator.hh\
     include/casm/enumerator/RandomAccessEnumerator.hh\
@@ -743,11 +763,24 @@ libcasm_la_SOURCES = \
     src/casm/app/composition.cc\
     src/casm/app/enum.cc\
     src/casm/app/enum/EnumInterface.cc\
+    src/casm/app/enum/io/enumerate_configurations_json_io.cc\
+    src/casm/app/enum/io/enumerate_supercells_json_io.cc\
     src/casm/app/enum/io/json_io.cc\
+    src/casm/app/enum/io/stream_io.cc\
+    src/casm/app/enum/methods/ConfigEnumAllOccupationsInterface.cc\
+    src/casm/app/enum/methods/ConfigEnumRandomLocalInterface.cc\
+    src/casm/app/enum/methods/ConfigEnumRandomOccupationsInterface.cc\
+    src/casm/app/enum/methods/ConfigEnumSiteDoFsInterface.cc\
+    src/casm/app/enum/methods/ConfigEnumStrainInterface.cc\
+    src/casm/app/enum/methods/ScelEnumInterface.cc\
+    src/casm/app/enum/methods/SuperConfigEnumInterface.cc\
+    src/casm/app/enum/standard_ConfigEnumInput_help.cc\
+    src/casm/app/enum/standard_enumerator_interfaces.cc\
     src/casm/app/files.cc\
     src/casm/app/format.cc\
     src/casm/app/import.cc\
     src/casm/app/init.cc\
+    src/casm/app/io/json_io.cc\
     src/casm/app/monte.cc\
     src/casm/app/perturb.cc\
     src/casm/app/query.cc\
@@ -759,6 +792,10 @@ libcasm_la_SOURCES = \
     src/casm/app/status.cc\
     src/casm/app/super.cc\
     src/casm/app/sym.cc\
+    src/casm/app/sym/dof_space_analysis.cc\
+    src/casm/app/sym/json_io.cc\
+    src/casm/app/sym/symmetrize.cc\
+    src/casm/app/sym/write_prim_symmetry.cc\
     src/casm/app/update.cc\
     src/casm/app/view.cc\
     src/casm/basis_set/BasisFunction.cc\
@@ -785,7 +822,6 @@ libcasm_la_SOURCES = \
     src/casm/casm_io/Log.cc\
     src/casm/casm_io/json/InputParser.cc\
     src/casm/casm_io/jsonParser.cc\
-    src/casm/casm_io/json_io/SpeciesSetParser.cc\
     src/casm/casm_io/json_io/clex.cc\
     src/casm/clex/Calculable.cc\
     src/casm/clex/ChemicalReference.cc\
@@ -798,8 +834,6 @@ libcasm_la_SOURCES = \
     src/casm/clex/ConfigDoFValues.cc\
     src/casm/clex/ConfigEnumAllOccupations.cc\
     src/casm/clex/ConfigEnumEquivalents.cc\
-    src/casm/clex/ConfigEnumInterpolation.cc\
-    src/casm/clex/ConfigEnumOccPerturbations.cc\
     src/casm/clex/ConfigEnumRandomLocal.cc\
     src/casm/clex/ConfigEnumRandomOccupations.cc\
     src/casm/clex/ConfigEnumSiteDoFs.cc\
@@ -887,6 +921,7 @@ libcasm_la_SOURCES = \
     src/casm/crystallography/io/VaspIO.cc\
     src/casm/database/ConfigData.cc\
     src/casm/database/ConfigDatabase.cc\
+    src/casm/database/ConfigDatabaseTools.cc\
     src/casm/database/ConfigImport.cc\
     src/casm/database/Database.cc\
     src/casm/database/DatabaseHandler.cc\

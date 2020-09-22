@@ -188,9 +188,9 @@ namespace CASM {
     }
 
     void ArgHandler::enummethod_to_bash(std::vector<std::string> &arguments) {
-      const EnumeratorMap map = *(make_standard_enumerator_map().get());
-      for(const auto &e : map) {
-        arguments.push_back(e.name());
+      auto enumerator_interfaces = make_standard_enumerator_interfaces();
+      for(auto const &e : enumerator_interfaces) {
+        arguments.push_back(e->name());
       }
       return;
     }

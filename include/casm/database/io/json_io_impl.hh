@@ -23,7 +23,7 @@ namespace CASM {
     /// Notes:
     /// - Reads selection from 'sel_key' first, using "NONE" if 'sel_key' does not
     ///   exist. Then reads names from 'name_key' array and adds them to the selection.
-    /// - If 'name_key' and 'sel_key' do not exist, throw exception.
+    /// - If 'name_key' and 'sel_key' do not exist return "NONE" selection.
     ///
     template<typename DataObject>
     Selection<DataObject> make_selection(
@@ -32,12 +32,6 @@ namespace CASM {
       std::string name_key,
       std::string sel_key,
       OnError on_error) {
-
-      if(!kwargs.contains(name_key) && !kwargs.contains(sel_key)) {
-        std::string msg = "Error in make_selection<" + type_name<DataObject>() + ">: One of " +
-                          name_key + " or " + sel_key + " must be given.";
-        throw std::runtime_error(msg);
-      }
 
       std::vector<std::string> obj_names;
       std::string sel_name;

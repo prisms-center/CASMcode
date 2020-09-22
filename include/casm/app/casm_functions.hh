@@ -161,7 +161,7 @@ namespace CASM {
 
     virtual std::string name() const = 0;
 
-    virtual int run(const PrimClex &primclex, const jsonParser &kwargs, const OptionType &opt, InterfaceMap<OptionType> const *interface_map = nullptr) const = 0;
+    virtual int run(PrimClex const &primclex, jsonParser const &json_options) const = 0;
 
     std::unique_ptr<InterfaceBase> clone() const {
       return std::unique_ptr<InterfaceBase>(this->_clone());

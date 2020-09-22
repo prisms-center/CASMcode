@@ -18,11 +18,11 @@ namespace CASM {
       }
     };
 
-    SymOp const &to_sym_op(SymOp const &sym_op) {
+    inline SymOp const &to_sym_op(SymOp const &sym_op) {
       return sym_op;
     }
 
-    SymOp to_sym_op(PermuteIterator const &permute_it) {
+    inline SymOp to_sym_op(PermuteIterator const &permute_it) {
       return permute_it.sym_op();
     }
 
@@ -31,26 +31,26 @@ namespace CASM {
   // --- MakeSubOrbitGenerators ---
   //
 
-  /// Output generating elements for the sub-orbits corresponding to group -> subgroup symmetry breaking
-  ///
-  /// \param element An orbit generating element w.r.t. [group_begin, group_end)
-  /// \param sym_compare SymCompareType functor for comparing elements and applying symmetry
-  /// \param result Output iterator outputs sub-orbit generating elements w.r.t. [subgroup_begin, subgroup_end)
-  ///
-  /// The invariant subgroup of element w.r.t. [group_begin, group_end) is generated as an
-  /// temporary intermediate. If it is already available use the other overload.
-  template<typename GroupOpIterator, typename SubgroupOpIterator>
-  template<typename Element, typename SymCompareType, typename ElementOutputIterator>
-  ElementOutputIterator MakeSubOrbitGenerators<GroupOpIterator, SubgroupOpIterator>::operator()(
-    Element const &element,
-    SymCompareType const &sym_compare,
-    ElementOutputIterator result) const {
-
-    typedef typename std::remove_reference<decltype(*std::declval<GroupOpIterator &>())>::type OpType;
-    std::vector<OpType> invariant_subgroup;
-    make_invariant_subgroup(element, m_group_begin, m_group_end, sym_compare, std::back_inserter(invariant_subgroup));
-    return (*this)(element, sym_compare, invariant_subgroup.begin(), invariant_subgroup.end(), result);
-  }
+  // /// Output generating elements for the sub-orbits corresponding to group -> subgroup symmetry breaking
+  // ///
+  // /// \param element An orbit generating element w.r.t. [group_begin, group_end)
+  // /// \param sym_compare SymCompareType functor for comparing elements and applying symmetry
+  // /// \param result Output iterator outputs sub-orbit generating elements w.r.t. [subgroup_begin, subgroup_end)
+  // ///
+  // /// The invariant subgroup of element w.r.t. [group_begin, group_end) is generated as an
+  // /// temporary intermediate. If it is already available use the other overload.
+  // template<typename GroupOpIterator, typename SubgroupOpIterator>
+  // template<typename Element, typename SymCompareType, typename ElementOutputIterator>
+  // ElementOutputIterator MakeSubOrbitGenerators<GroupOpIterator, SubgroupOpIterator>::operator()(
+  //   Element const &element,
+  //   SymCompareType const &sym_compare,
+  //   ElementOutputIterator result) const {
+  //
+  //   typedef typename std::remove_reference<decltype(*std::declval<GroupOpIterator &>())>::type OpType;
+  //   std::vector<OpType> invariant_subgroup;
+  //   make_invariant_subgroup(element, m_group_begin, m_group_end, sym_compare, std::back_inserter(invariant_subgroup));
+  //   return (*this)(element, sym_compare, invariant_subgroup.begin(), invariant_subgroup.end(), result);
+  // }
 
   /// Output generating elements for the sub-orbits corresponding to group -> subgroup symmetry breaking
   ///
@@ -61,10 +61,11 @@ namespace CASM {
   /// \param result Output iterator outputs sub-orbit generating elements w.r.t. [subgroup_begin, subgroup_end)
   ///
   template<typename GroupOpIterator, typename SubgroupOpIterator>
-  template<typename Element, typename SymCompareType, typename InvariantSubgroupOpIterator, typename ElementOutputIterator>
+  template<typename Element, typename CopyApplyFunctionType, typename PrepareFunctionType, typename InvariantSubgroupOpIterator, typename ElementOutputIterator>
   ElementOutputIterator MakeSubOrbitGenerators<GroupOpIterator, SubgroupOpIterator>::operator()(
     Element const &element,
-    SymCompareType const &sym_compare,
+    CopyApplyFunctionType copy_apply_f,
+    PrepareFunctionType prepare_f,
     InvariantSubgroupOpIterator invariant_subgroup_begin,
     InvariantSubgroupOpIterator invariant_subgroup_end,
     ElementOutputIterator result) const {
@@ -112,10 +113,11 @@ namespace CASM {
     // Use the first operation in each set to
     // transform element into a sub-orbit generator.
     for(auto const &current_set : transform_to_suborbit_sets) {
-      *result++ = sym_compare.prepare(sym_compare.copy_apply(to_sym_op(*current_set.begin()), element));
+      *result++ = prepare_f(copy_apply_f(to_sym_op(*current_set.begin()), element));
     }
     return result;
   }
+
 
   template<typename GroupOpIterator, typename SubgroupOpIterator, typename ElementIterator, typename SymCompareType, typename ElementOutputIterator>
   ElementOutputIterator make_suborbit_generators(
@@ -129,8 +131,17 @@ namespace CASM {
     ElementOutputIterator result) {
     MakeSubOrbitGenerators<GroupOpIterator, SubgroupOpIterator> f {
       group_begin, group_end, subgroup_begin, subgroup_end};
+    typedef typename std::remove_reference<decltype(*std::declval<GroupOpIterator &>())>::type OpType;
+    auto copy_apply_f = [&](SymOp const & op, typename SymCompareType::Element obj) {
+      return sym_compare.copy_apply(op, obj);
+    };
+    auto prepare_f = [&](typename SymCompareType::Element obj) {
+      return sym_compare.prepare(obj);
+    };
     for(auto it = element_begin; it != element_end; ++it) {
-      result = f(*it, sym_compare, result);
+      std::vector<OpType> invariant_subgroup;
+      make_invariant_subgroup(*it, group_begin, group_end, sym_compare, std::back_inserter(invariant_subgroup));
+      result = f(*it, copy_apply_f, prepare_f, invariant_subgroup.begin(), invariant_subgroup.end(), result);
     }
     return result;
   }

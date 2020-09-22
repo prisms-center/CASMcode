@@ -11,102 +11,78 @@ namespace CASM {
                      Eigen::MatrixXd _dof_subspace) :
     config_region(std::move(_config_region)),
     dof_key(_dof_key) {
-    Index dofdim = 0;
-    if(AnisoValTraits(dof_key).global()) {
-      dofdim = config_region.configuration().configdof().global_dof(dof_key).dim();
-    }
-    else if(dof_key == "occ") {
-      std::vector<int> max_occ = config_region.configuration().supercell().max_allowed_occupation();
-      for(Index i : config_region.sites()) {
-        dofdim += max_occ[i] + 1;
-      }
-    }
-    else {
-      dofdim = config_region.configuration().configdof().local_dof(dof_key).dim() * config_region.sites().size();
-    }
+
+    Index dof_space_dimension = get_dof_space_dimension(
+                                  _dof_key,
+                                  _config_region.configuration(),
+                                  _config_region.sites());
 
     if(dof_subspace.size() == 0)
-      dof_subspace.setIdentity(dofdim, dofdim);
-    if(dof_subspace.rows() != dofdim) {
+      dof_subspace.setIdentity(dof_space_dimension, dof_space_dimension);
+    if(dof_subspace.rows() != dof_space_dimension) {
       throw std::runtime_error("Attempting to construct DoFSpace with " + std::to_string(dof_subspace.rows())
-                               + " but " + std::to_string(dofdim) + " rows are required.");
+                               + " but " + std::to_string(dof_space_dimension) + " rows are required.");
     }
 
   }
 
+  Index get_dof_space_dimension(DoFKey dof_key,
+                                Configuration const &configuration,
+                                std::set<Index> const &sites) {
 
-  VectorSpaceSymReport vector_space_sym_report(DoFSpace const &_space,
-                                               bool calc_wedges) {
+    Index dof_space_dimension = 0;
+    auto const &supercell = configuration.supercell();
+    auto const &configdof = configuration.configdof();
 
-    // We need a temporary mastersymgroup to manage the symmetry representation for the DoF
-    // The particular group used is specified by DoFSpace, and defaults to factor group of configuration/supercell
-    MasterSymGroup g;
-    SymGroupRepID id;
-    DoFKey dof_key = _space.dof_key;
-    AnisoValTraits val_traits(dof_key);
+    if(AnisoValTraits(dof_key).global()) {
+      dof_space_dimension = configdof.global_dof(dof_key).dim();
+    }
+    else if(dof_key == "occ") {
+      std::vector<int> max_occ = supercell.max_allowed_occupation();
+      for(Index i : sites) {
+        dof_space_dimension += max_occ[i] + 1;
+      }
+    }
+    else {
+      dof_space_dimension = configdof.local_dof(dof_key).dim() * sites.size();
+    }
+    return dof_space_dimension;
+  }
 
-    ConfigEnumInput const &config_region = _space.config_region;
-    SupercellSymInfo const &sym_info = config_region.configuration().supercell().sym_info();
-    xtal::BasicStructure const &prim_struc = config_region.configuration().prim().structure();
+  /// Return a vector<std::string> with DoF component descriptions
+  ///
+  /// Note:
+  /// - Site DoF components are written with site index using a "beginning from 1" convention
+  ///   - For example: if single DoF component per site with name "dx", and "sites" is {0, 2}, the
+  ///     output is: {"dx[1]", "dx[3]"}
+  std::vector<std::string> make_axis_glossary(DoFKey dof_key,
+                                              Configuration const &configuration,
+                                              std::set<Index> const &sites) {
+
+    xtal::BasicStructure const &prim_struc = configuration.prim().structure();
 
     // The axis_glossary gives names un-symmetrized coordinate system
     // It will be populated based on whether the DoF is global or local
     std::vector<std::string> axis_glossary;
 
-    // Populate temporary objects for two cases
-    // CASE 1: DoF is global (use prim_struc's list of global DoFs, rather than relying on val_traits.is_global()
     if(prim_struc.global_dofs().count(dof_key)) {
-
-      // Global DoF, use point group only
-      SymGroup pointgroup = make_point_group(make_invariant_group(config_region), sym_info.supercell_lattice());
-      g = make_master_sym_group(pointgroup,
-                                sym_info.supercell_lattice());
-
-      id = g.allocate_representation();
-      SymGroupRep const &rep = *(sym_info.global_dof_symrep(dof_key).rep_ptr());
-      for(Index i = 0; i < pointgroup.size(); ++i) {
-        Index fg_ix = pointgroup[i].index();
-        g[i].set_rep(id, *rep[fg_ix]);
-      }
-
       // Global DoF, axis_glossary comes straight from the DoF
       axis_glossary = component_descriptions(prim_struc.global_dof(dof_key));
     }
-    // CASE 2: DoF is local
     else {
-      auto group_and_ID = collective_dof_symrep(config_region.sites().begin(),
-                                                config_region.sites().end(),
-                                                sym_info,
-                                                dof_key,
-                                                make_invariant_group(config_region));
-      g = group_and_ID.first;
-      g.is_temporary_of(group_and_ID.first);
-      id = group_and_ID.second;
-
       // Generate full axis_glossary for all active sites of the config_region
-      for(Index l : config_region.sites()) {
-        Index b = config_region.configuration().sublat(l);
-        if(!prim_struc.basis()[b].dofs().count(dof_key))
+      for(Index site_index : sites) {
+        Index sublattice_index = configuration.sublat(site_index);
+        xtal::Site const &site = prim_struc.basis()[sublattice_index];
+        if(!site.dofs().count(dof_key))
           continue;
-        std::vector<std::string> tdescs = component_descriptions(prim_struc.basis()[b].dof(dof_key));
+        std::vector<std::string> tdescs = component_descriptions(site.dof(dof_key));
         for(std::string const &desc : tdescs) {
-          axis_glossary.push_back(desc + "[" + std::to_string(l + 1) + "]");
+          axis_glossary.push_back(desc + "[" + std::to_string(site_index + 1) + "]");
         }
       }
-
     }
-
-    SymGroupRep const &rep = g.representation(id);
-
-    // Generate report, based on constructed inputs
-    VectorSpaceSymReport result = vector_space_sym_report(rep,
-                                                          g,
-                                                          _space.dof_subspace,
-                                                          calc_wedges);
-    result.axis_glossary = std::move(axis_glossary);
-    return result;
-
+    return axis_glossary;
   }
-
 
 }

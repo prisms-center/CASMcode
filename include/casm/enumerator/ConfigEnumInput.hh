@@ -77,9 +77,18 @@ namespace CASM {
     Configuration m_configuration;
   };
 
-  /// Returns the subgroup of the configuration factor group that not cause any permutation between
-  /// the set of selected and unselected sites of "config_enum_input"
-  std::vector<PermuteIterator> make_invariant_group(ConfigEnumInput const &config_enum_input);
+
+  /// Returns the subgroup of the configuration factor group that does not cause any permutation
+  /// between the set of selected and unselected sites of "config_enum_input"
+  std::vector<PermuteIterator> make_invariant_subgroup(ConfigEnumInput const &config_enum_input);
+
+  /// Returns the subgroup of [group_begin, group_end) that does not cause any permutation
+  /// between the set of selected and unselected sites of "config_enum_input"
+  template<typename PermuteIteratorIt>
+  std::vector<PermuteIterator> make_invariant_subgroup(
+    ConfigEnumInput const &config_enum_input,
+    PermuteIteratorIt group_begin,
+    PermuteIteratorIt group_end);
 
   /** @}*/
 }

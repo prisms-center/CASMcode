@@ -13,9 +13,9 @@
 
 namespace CASM {
   namespace xtal {
-    BasicStructure BasicStructure::from_poscar_stream(std::istream &poscar_stream) {
+    BasicStructure BasicStructure::from_poscar_stream(std::istream &poscar_stream, double tol) {
       BasicStructure poscar_structure;
-      poscar_structure.read(poscar_stream);
+      poscar_structure.read(poscar_stream, tol);
       return poscar_structure;
     }
 
@@ -120,7 +120,7 @@ namespace CASM {
     //modified to read PRIM file and determine which basis to use
     //Changed by Ivy to read new VASP POSCAR format
 
-    void BasicStructure::read(std::istream &stream) {
+    void BasicStructure::read(std::istream &stream, double tol) {
       int i, t_int;
       char ch;
       std::vector<double> num_elem;
@@ -137,6 +137,7 @@ namespace CASM {
         throw std::runtime_error(std::string("Structure file is formatted for DOS. Please convert to Unix format. (This can be done with the dos2unix command.)"));
 
       m_lattice.read(stream);
+      m_lattice.set_tol(tol);
 
       stream.ignore(100, '\n');
 

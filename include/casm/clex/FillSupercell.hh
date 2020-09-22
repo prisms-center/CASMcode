@@ -14,17 +14,26 @@ namespace CASM {
   class Supercell;
   class SymOp;
 
+  /// Return true if a configuration (in any equivalent orientation) can be tiled into a supercell
+  ///
+  /// Note:
+  /// - This will return true if, any SymOp in the prim factor group, `apply(symop, configuration)`
+  ///   can be used used to fill the Supercell. Otherwise it will return false.
+  bool is_valid_sub_configuration(
+    Configuration const &configuration,
+    Supercell const &supercell);
+
   /// Create a super configuration by tiling the motif Configuration into the supercell.
   ///
   /// Note:
   /// - This overload finds the first SymOp in the prim factor group such that apply(symop, motif)
   ///   can be used to fill the Supercell. If none can be found, it throws.
-  Configuration fill_supercell(Configuration const &motif, std::shared_ptr<Supercell> const &shared_supercell);
+  Configuration fill_supercell(Configuration const &motif, std::shared_ptr<Supercell const> const &shared_supercell);
 
   /// Create a super configuration by tiling the motif Configuration into the supercell.
   ///
   /// Note:
-  /// - Prefer to use `std::shared_ptr<Supercell>` overload if possible
+  /// - Prefer to use `std::shared_ptr<Supercell const>` overload if possible
   /// - This overload finds the first SymOp in the prim factor group such that apply(symop, motif)
   ///   can be used to fill the Supercell. If none can be found, it throws.
   Configuration fill_supercell(Configuration const &motif, Supercell const &supercell);
@@ -33,15 +42,21 @@ namespace CASM {
   ///
   /// Note:
   /// - Will throw if apply(symop, motif) cannot be tiled into the supercell
-  Configuration fill_supercell(SymOp const &symop, Configuration const &motif, std::shared_ptr<Supercell> const &shared_supercell);
+  Configuration fill_supercell(SymOp const &symop, Configuration const &motif, std::shared_ptr<Supercell const> const &shared_supercell);
 
   /// Create a super configuration by tiling the apply(symop, motif) Configuration into the supercell
   ///
   /// Note:
-  /// - Prefer to use `std::shared_ptr<Supercell>` overload if possible
+  /// - Prefer to use `std::shared_ptr<Supercell const>` overload if possible
   /// - Will throw if apply(symop, motif) cannot be tiled into the supercell
   Configuration fill_supercell(SymOp const &symop, Configuration const &motif, Supercell const &supercell);
 
+  /// Make all super configurations that fill a particular supercell
+  template<typename ConfigOutputIterator>
+  ConfigOutputIterator make_all_super_configurations(
+    Configuration const &configuration,
+    std::shared_ptr<Supercell const> shared_supercell,
+    ConfigOutputIterator result);
 
   /// Functor to fill a Supercell with a tiling of a motif Configuration
   ///
@@ -60,7 +75,7 @@ namespace CASM {
     /// Constructor, so that the generated super configuration uses `std::shared_ptr<Supercell>`
     ///
     /// \param _shared_supercell Supercell to be filled
-    FillSupercell(std::shared_ptr<Supercell> const &_shared_supercell);
+    FillSupercell(std::shared_ptr<Supercell const> const &_shared_supercell);
 
     /// Constructor, so that the generated super configuration uses `Supercell const &`
     ///
@@ -90,17 +105,17 @@ namespace CASM {
 
   private:
 
-    void _init(const Supercell &_motif_scel) const;
+    void _init(Supercell const &_motif_scel) const;
 
-    std::shared_ptr<Supercell> m_shared_supercell;
-    const Supercell *m_supercell_ptr;
+    std::shared_ptr<Supercell const> m_shared_supercell;
+    Supercell const *m_supercell_ptr;
 
     // These mutable members are used by `operator()`. They are mutable members instead of
     // temporary variables so they can be reused if FillSupercell is called repeatedly on motif
     // Configuration from the same Supercell.
 
-    mutable const SymOp *m_symop_ptr;
-    mutable const Supercell *m_motif_supercell;
+    mutable SymOp const *m_symop_ptr;
+    mutable Supercell const *m_motif_supercell;
     mutable std::vector<std::vector<Index> > m_index_table;
 
   };

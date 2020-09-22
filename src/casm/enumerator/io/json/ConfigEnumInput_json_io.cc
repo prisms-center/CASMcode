@@ -1,6 +1,6 @@
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clex/ConfigDoF.hh"
-#include "casm/clex/ScelEnum_impl.hh"
+#include "casm/clex/ScelEnum.hh"
 #include "casm/clex/io/json/ConfigDoF_json_io.hh"
 #include "casm/clusterography/ClusterSpecs_impl.hh"
 #include "casm/clusterography/io/json/ClusterSpecs_json_io.hh"
@@ -59,21 +59,57 @@ namespace CASM {
   ///
   /// Note: See `parse` for JSON documentation
   void from_json(
-    std::vector<ConfigEnumInput> &config_enum_input,
+    std::vector<std::pair<std::string, ConfigEnumInput>> &config_enum_input,
     jsonParser const &json,
     std::shared_ptr<Structure const> shared_prim,
+    PrimClex const *primclex,
     DB::Database<Supercell> &supercell_db,
     DB::Database<Configuration> &configuration_db) {
 
     jsonParser tjson {json};
-    InputParser<std::vector<ConfigEnumInput>> parser {tjson, shared_prim, supercell_db, configuration_db};
+    InputParser<std::vector<std::pair<std::string, ConfigEnumInput>>> parser {tjson, shared_prim, primclex, supercell_db, configuration_db};
 
     std::runtime_error error_if_invalid {"Error reading std::vector<ConfigEnumInput> from JSON"};
     report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
   }
 
+  /// Make a ScelEnumProps object from JSON input
+  void parse(
+    InputParser<xtal::ScelEnumProps> &parser,
+    DB::Database<Supercell> &supercell_db) {
+    int min, max;
+    std::string dirs;
+    std::string default_dirs {"abc"};
+    Eigen::Matrix3i generating_matrix;
+    Eigen::Matrix3i default_matrix {Eigen::Matrix3i::Identity()};
+    parser.require(min, "min");
+    parser.require(max, "max");
+    parser.optional_else(dirs, "dirs", default_dirs);
 
-  /// Parse JSON to construct initial states for enumeration (as std::vector<ConfigEnumInput>)
+    // support "unit_cell" == supercell name
+    if(parser.self.contains("unit_cell") && parser.self["unit_cell"].is_string()) {
+      std::string scelname = parser.self["unit_cell"].get<std::string>();
+      auto supercell_it = supercell_db.find(scelname);
+      if(supercell_it == supercell_db.end()) {
+        std::stringstream msg;
+        msg << "Error parsing \"unit_cell\": string value not equal to any existing supercell name";
+        parser.error.insert(msg.str());
+      }
+      else {
+        generating_matrix = supercell_it->sym_info().transformation_matrix_to_super().cast<int>();
+      }
+    }
+    else {
+      parser.optional_else(generating_matrix, "unit_cell", default_matrix);
+    }
+
+    parser.value = notstd::make_unique<xtal::ScelEnumProps>(min, max + 1, dirs, generating_matrix);
+  }
+
+  /// Parse JSON to construct initial states for enumeration (as std::vector<std::pair<std::string, ConfigEnumInput>>)
+  ///
+  /// The result pairs a name, describing the Supercell or Configuration and selected sites name, to
+  /// a ConfigEnumInput.
   ///
   /// This method enables several options for specifying initial states for enumeration. There are
   /// two main categories of options: i) options specifying supercells and configurations, and ii)
@@ -92,12 +128,11 @@ namespace CASM {
   ///     config_selection: string (optional)
   ///         Name of a selection of configurations to use as initial states for enumeration
   ///     confignames: array of string (optional)
-  ///         Array of names of configuration to use as initial states for enumeration. Also accepts
-  ///         "scelnames" for this option.
+  ///         Array of names of configuration to use as initial states for enumeration
   ///     supercells: object (optional)
   ///         Specifies parameters for enumerating supercells. Options are:
   ///
-  ///         min: int (required)
+  ///         min: int (optional, default=1)
   ///             Minimum volume supercells to enumerate
   ///         max: int (required)
   ///             Maximum volume supercells to enumerate
@@ -107,17 +142,16 @@ namespace CASM {
   ///             The unit cell to tile into supercells.
   ///
   /// Specifying all sites, particular sublattices, particular sites, or particular clusters of
-  /// sites to enumerate local DoF: These options are all additive in the sense that the result will
-  /// be the combination of all that are found. The default behavior if none of these options are
+  /// sites to enumerate local DoF. The default behavior if none of these options are
   /// given is selecting all sites for enumeration. The values of DoF on all the sites that are not
   /// selected are frozen.
   ///
   /// Options for selecting sites are:
   ///     sublats: array of integer (optional)
-  ///         Indices of sublattices to allow enumeration on.
+  ///         Indices of sublattices to allow enumeration on. May be used with "sites".
   ///     sites: array of array of integer (optional)
   ///         Indices of sites to allow enumeration on, using [b, i, j, k] notation (b=sublattice
-  ///         index, (i,j,k)=unit cell indices). Example:
+  ///         index, (i,j,k)=unit cell indices). May be used with "sublats". Example:
   ///
   ///             "sites": [
   ///               [0, 0, 0, 0],
@@ -132,34 +166,40 @@ namespace CASM {
   ///         will be 4*10=40 ConfigEnumInput generated. The "cluster_specs" option cannot be used
   ///         with the "sublats" or "sites" options.
   ///
+  ///
+  /// Note:
+  /// - Parameter `PrimClex const *primclex` is used while transitioning Supercell to no longer need
+  ///   a `PrimClex const *`
+  /// - An error is inserted if no ConfigEnumInput are generated
   void parse(
-    InputParser<std::vector<ConfigEnumInput>> &parser,
+    InputParser<std::vector<std::pair<std::string, ConfigEnumInput>>> &parser,
     std::shared_ptr<Structure const> shared_prim,
+    PrimClex const *primclex,
     DB::Database<Supercell> &supercell_db,
     DB::Database<Configuration> &configuration_db) {
 
     // check for "config_selection" and "confignames"
     DB::Selection<Configuration> config_selection;
-    if(parser.self.contains("confignames") || parser.self.contains("config_selection")) {
-      try {
-        config_selection = DB::make_selection<Configuration>(
-                             configuration_db, parser.self, "confignames", "config_selection");
-      }
-      catch(std::exception &e) {
-        parser.error.insert(std::string("Error creating enumerator initial states from configurations: ") + e.what());
-      }
+    try {
+      config_selection = DB::make_selection<Configuration>(
+                           configuration_db, parser.self, "confignames", "config_selection");
+    }
+    catch(std::exception &e) {
+      std::stringstream msg;
+      msg << "Error creating enumerator initial states from configurations: " << e.what();
+      parser.error.insert(msg.str());
     }
 
     // check for "supercell_selection" and "scelnames"
     DB::Selection<Supercell> supercell_selection;
-    if(parser.self.contains("scelnames") || parser.self.contains("supercell_selection")) {
-      try {
-        supercell_selection = DB::make_selection<Supercell>(
-                                supercell_db, parser.self, "scelnames", "supercell_selection");
-      }
-      catch(std::exception &e) {
-        parser.error.insert(std::string("Error creating enumerator initial states from supercells: ") + e.what());
-      }
+    try {
+      supercell_selection = DB::make_selection<Supercell>(
+                              supercell_db, parser.self, "scelnames", "supercell_selection");
+    }
+    catch(std::exception &e) {
+      std::stringstream msg;
+      msg << "Error creating enumerator initial states from supercells: " << e.what();
+      parser.error.insert(msg.str());
     }
 
     // check for "supercells"
@@ -222,46 +262,72 @@ namespace CASM {
 
     // Use the supercells and configurations input to construct ConfigEnumInput,
     //   by default these have all sites selected
-    std::vector<ConfigEnumInput> config_enum_input;
+    std::vector<std::pair<std::string, ConfigEnumInput>> config_enum_input;
     for(const auto &config : config_selection.selected()) {
-      config_enum_input.emplace_back(config);
+      config_enum_input.emplace_back(config.name(), config);
     }
     for(const auto &scel : supercell_selection.selected()) {
-      config_enum_input.emplace_back(scel);
+      config_enum_input.emplace_back(scel.name(), scel);
     }
     if(scel_enum_props_subparser->value) {
       ScelEnumByProps enumerator {shared_prim, *scel_enum_props_subparser->value};
-      for(const auto &scel : enumerator) {
-        auto scel_it = supercell_db.insert(scel).first;
-        config_enum_input.emplace_back(*scel_it);
+      for(auto const &supercell : enumerator) {
+        auto supercell_it = supercell_db.insert(supercell).first;
+        config_enum_input.emplace_back(supercell_it->name(), *supercell_it);
       }
     }
 
     // select sublattices and individual sites
     if(sublats.size() || sites.size()) {
-      for(ConfigEnumInput &input : config_enum_input) {
-        input.clear_sites();
-        input.select_sublattices(sublats);
-        input.select_sites(sites);
+      for(auto &input_name_value_pair : config_enum_input) {
+
+        // select sublats & sites, and modify name with sublats & sites
+        input_name_value_pair.second.clear_sites();
+
+        std::stringstream ss;
+        if(sublats.size()) {
+          ss << ", sublats=" << jsonParser {sublats};
+          input_name_value_pair.second.select_sublattices(sublats);
+        }
+        if(sites.size()) {
+          ss << ", sites=" << jsonParser {sites};
+          input_name_value_pair.second.select_sites(sites);
+        }
+        input_name_value_pair.first += ss.str();
       }
     }
 
     // select clusters
-    if(parser.self.contains("cluster_specs")) {
+    if(cluster_specs_subparser->value != nullptr) {
 
       // generate orbits from cluster_specs
       auto orbits = cluster_specs_subparser->value->make_periodic_orbits(log());
 
       // this will generate more ConfigEnumInput, with cluster sites selected
-      std::vector<ConfigEnumInput> with_cluster_sites;
-      for(ConfigEnumInput &input : config_enum_input) {
-        select_cluster_sites(input, orbits, std::back_inserter(with_cluster_sites));
+      std::vector<std::pair<std::string, ConfigEnumInput>> all_with_cluster_sites;
+      for(auto &input_name_value_pair : config_enum_input) {
+        std::vector<ConfigEnumInput> with_cluster_sites;
+        select_cluster_sites(input_name_value_pair.second, orbits, std::back_inserter(with_cluster_sites));
+
+        // modify name with cluster site indices
+        for(auto const &value : with_cluster_sites) {
+          std::stringstream ss;
+          ss << ", cluster_sites=" << jsonParser {value.sites()};
+          std::string name = input_name_value_pair.first + ss.str();
+          all_with_cluster_sites.emplace_back(name, value);
+        }
       }
-      config_enum_input = std::move(with_cluster_sites);
+      config_enum_input = std::move(all_with_cluster_sites);
     }
 
     // Move all constructed ConfigEnumInput into the parser.value
-    parser.value = notstd::make_unique<std::vector<ConfigEnumInput>>(std::move(config_enum_input));
+    parser.value = notstd::make_unique<std::vector<std::pair<std::string, ConfigEnumInput>>>(std::move(config_enum_input));
+
+    if(parser.value->size() == 0) {
+      std::stringstream msg;
+      msg << "Error creating enumerator initial states: No supercells or configurations.";
+      parser.error.insert(msg.str());
+    }
   }
 
 }

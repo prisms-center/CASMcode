@@ -1,17 +1,12 @@
 #ifndef CASM_SuperConfigEnum
 #define CASM_SuperConfigEnum
 
-#include "casm/app/enum/EnumInterface.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/container/Counter.hh"
 #include "casm/crystallography/LinearIndexConverter.hh"
 #include "casm/enumerator/InputEnumerator.hh"
 #include "casm/misc/cloneable_ptr.hh"
-
-extern "C" {
-  CASM::EnumInterfaceBase *make_SuperConfigEnum_interface();
-}
 
 namespace CASM {
 
@@ -24,6 +19,10 @@ namespace CASM {
   ///   sub_config
   /// - enumerates all Configurations, including non-primitive and non-canonical
   ///
+  /// Notes:
+  /// - Make use of `is_valid_sub_configuration` and `make_all_super_configurations` when preparing
+  ///   valid constructor inputs.
+  ///
   /// \ingroup ConfigEnumGroup
   ///
   class SuperConfigEnum : public InputEnumeratorBase<Configuration> {
@@ -34,31 +33,18 @@ namespace CASM {
 
     /// \brief Constructor, using all Supercell permutations
     template<typename ConfigIterator>
-    SuperConfigEnum(const Supercell &_target_scel,
-                    ConfigIterator _begin,
-                    ConfigIterator _end);
+    SuperConfigEnum(Supercell const &_target_scel,
+                    ConfigIterator sub_config_begin,
+                    ConfigIterator sub_config_end);
 
-    /// \brief Constructor
-    template<typename ConfigIterator>
-    SuperConfigEnum(const Supercell &_target_scel,
-                    ConfigIterator _begin,
-                    ConfigIterator _end,
-                    PermuteIterator _perm_begin,
-                    PermuteIterator _perm_end);
-
-    std::string name() const override {
-      return enumerator_name;
-    }
+    std::string name() const override;
 
     static const std::string enumerator_name;
-    static std::string interface_help();
-    static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt, EnumeratorMap const *interface_map);
-
 
     // -- Unique -------------------
 
     /// Access the sub-configurations
-    const std::vector<Configuration> &sub_config() const {
+    std::vector<Configuration> const &sub_config() const {
       return m_sub_config;
     }
 
@@ -67,7 +53,7 @@ namespace CASM {
     /// - The counter indicates how the sub-configurations tile into the
     ///   super-configuration
     /// - sub_config()[counter()[i]] is tiled into the i-th lattice point location
-    const Array<int> &counter() const {
+    Array<int> const &counter() const {
       return m_counter();
     }
 
@@ -88,12 +74,12 @@ namespace CASM {
     bool _check_current() const;
 
     /// Access the super-config supercell
-    const Supercell &_target_supercell() {
+    Supercell const &_target_supercell() {
       return m_target_scel;
     }
 
     /// Access the sub-config supercell
-    const Supercell &_sub_supercell() const {
+    Supercell const &_sub_supercell() const {
       return *m_sub_scel;
     }
 
@@ -110,26 +96,16 @@ namespace CASM {
     /// Fill DoF from sub_config into a Configuration
     ///
     /// \param summary The index of the sub_config on each lattice site
-    void _fill(const Array<int> &counter_val, Configuration &config);
-
-    const PermuteIterator &_perm_begin() const {
-      return m_perm_begin;
-    }
-    const PermuteIterator &_perm_end() const {
-      return m_perm_end;
-    }
-
+    void _fill(Array<int> const &counter_val, Configuration &config);
 
     /// The supercell being filled
-    const Supercell &m_target_scel;
+    Supercell const &m_target_scel;
 
     /// A vector containing each possible sub_config
     std::vector<Configuration> m_sub_config;
 
-    PermuteIterator m_perm_begin, m_perm_end;
-
     // All sub_config use the same supercell
-    const Supercell *m_sub_scel;
+    Supercell const *m_sub_scel;
 
     /// The 'current' Configuration
     notstd::cloneable_ptr<Configuration> m_current;
@@ -142,37 +118,17 @@ namespace CASM {
     /// m_current->occ(m_index_map[i][j]) = m_sub_scel[i].occ(j)
     std::vector<std::vector<Index> > m_index_map;
 
-    bool m_has_occ;
-
   };
 
-  /// \brief Constructor, using all Supercell permutations
+  /// Constructor
   ///
   template<typename ConfigIterator>
-  SuperConfigEnum::SuperConfigEnum(const Supercell &_target_scel,
-                                   ConfigIterator _begin,
-                                   ConfigIterator _end) :
-    SuperConfigEnum(_target_scel,
-                    _begin,
-                    _end,
-                    _target_scel.sym_info().permute_begin(),
-                    _target_scel.sym_info().permute_end()) {}
-
-  /// \brief Constructor
-  ///
-  template<typename ConfigIterator>
-  SuperConfigEnum::SuperConfigEnum(const Supercell &_target_scel,
-                                   ConfigIterator _begin,
-                                   ConfigIterator _end,
-                                   PermuteIterator _perm_begin,
-                                   PermuteIterator _perm_end) :
+  SuperConfigEnum::SuperConfigEnum(Supercell const &_target_scel,
+                                   ConfigIterator sub_config_begin,
+                                   ConfigIterator sub_config_end) :
     m_target_scel(_target_scel),
-    m_sub_config(_begin, _end),
-    m_perm_begin(_perm_begin),
-    m_perm_end(_perm_end) {
-
+    m_sub_config(sub_config_begin, sub_config_end) {
     _init();
-
   }
 
 }
