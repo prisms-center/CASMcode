@@ -72,6 +72,7 @@ build*
 #autotools self generating
 configure
 Makefile
+Makemodule.am
 Makefile.in
 build-aux
 *.log

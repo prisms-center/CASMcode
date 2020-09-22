@@ -60,7 +60,7 @@ def basic_maker_string(variable, operator, targets):
     str
 
     """
-    targets.sort()
+    # targets.sort()
 
     value = "{} {} \\\n".format(variable, operator)
     # spacing = len(value) - 2
@@ -216,8 +216,7 @@ def files_with_extension_at_directory(extensions, directory):
 
     """
     files = [
-        f
-        for ext in extensions
+        f for ext in extensions
         for f in glob.glob(os.path.join(directory, "*{}".format(ext)))
     ]
     return files
@@ -388,8 +387,8 @@ def all_boost_LDADD_flags():
     def flagify(lib):
         return "$(BOOST_{}_LIB)".format(lib)
 
-    libs = ["SYSTEM", "FILESYSTEM", "PROGRAM_OPTIONS", "REGEX", "CHRONO"]
-    libs.sort()
+    libs = ["REGEX", "SYSTEM", "FILESYSTEM", "PROGRAM_OPTIONS", "CHRONO"]
+    # libs.sort()
 
     return [flagify(lib) for lib in libs]
 
@@ -480,8 +479,7 @@ def make_libcasmtesting():
     libdir = "tests/unit"
     #We want all the files in libdir, except gtest_main_run_all.cpp
     sources_candidates = [
-        f
-        for f in files_with_extension_at_directory(
+        f for f in files_with_extension_at_directory(
             header_and_source_extensions(), libdir)
         if "gtest_main_run_all" not in f
     ]
@@ -573,7 +571,8 @@ def make_include(includeable_path):
     assert (includeable_path[0:8] == "include/")
 
     available_files = [
-        os.path.join(includeable_path, f) for f in os.listdir(includeable_path)
+        os.path.join(includeable_path, f)
+        for f in os.listdir(includeable_path)
         if os.path.isfile(os.path.join(includeable_path, f))
     ]
     only_tracked_files = purge_untracked_files(available_files)
@@ -679,10 +678,13 @@ def make_lib(libname, search_root, additional_sources, **kwargs):
     str
 
     """
-    files = [(dirpath, files)
-             for dirpath, dirnames, files in os.walk(search_root)]
+    files = [
+        (dirpath, files) for dirpath, dirnames, files in os.walk(search_root)
+    ]
     source_files = [
-        os.path.join(d, f) for d, fs in files for f in fs
+        os.path.join(d, f)
+        for d, fs in files
+        for f in fs
         if has_source_extension(f)
     ]
 
@@ -778,7 +780,8 @@ def main():
     string_to_file(chunk, target)
 
     header_files = [
-        f.replace('\\', '').replace(' ', '') for f in chunk.splitlines()
+        f.replace('\\', '').replace(' ', '')
+        for f in chunk.splitlines()
         if "include/" in f
     ]
 
@@ -791,7 +794,8 @@ def main():
     string_to_file(chunk, target)
 
     header_files = [
-        f.replace('\\', '').replace(' ', '') for f in chunk.splitlines()
+        f.replace('\\', '').replace(' ', '')
+        for f in chunk.splitlines()
         if "include/" in f
     ]
 
