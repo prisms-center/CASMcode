@@ -111,8 +111,8 @@ def make_add_to_LTLIBRARIES(libname, LT_prefix, **kwargs):
         if not kwargs[k] or len(kwargs[k]) == 0:
             continue
         value += "\n"
-        value += basic_maker_string("{}_la_{}".format(
-            libname.replace('-', '_'), k), '=', kwargs[k])
+        value += basic_maker_string(
+            "{}_la_{}".format(libname.replace('-', '_'), k), '=', kwargs[k])
 
     return value
 
@@ -141,8 +141,8 @@ def make_add_to_PROGRAMS(program_name, PROGRAMS_prefix, **kwargs):
         if not kwargs[k] or len(kwargs[k]) == 0:
             continue
         value += "\n"
-        value += basic_maker_string("{}_{}".format(
-            program_name.replace('-', '_'), k), '=', kwargs[k])
+        value += basic_maker_string(
+            "{}_{}".format(program_name.replace('-', '_'), k), '=', kwargs[k])
 
     return value
 
@@ -302,8 +302,8 @@ def all_files_tracked_by_git():
 
 
 def all_files_ignored_by_git():
-    return subprocess.check_output(
-        ["git", "status", "--ignored"], encoding="utf-8").splitlines()
+    return subprocess.check_output(["git", "status", "--ignored"],
+                                   encoding="utf-8").splitlines()
 
 
 @static_vars(cached_roots={})
@@ -468,6 +468,28 @@ def make_unit_test(unit_test_directory):
     return value
 
 
+def make_functional_test(functional_test_directory):
+    """Creates Makefile segment for a particular functional test.
+    These types of tests are expected to be simple scripts, and
+    should be generated during the bootstrap.sh step from run.sh.in
+    or run.py.in files.
+
+    Parameters
+    ----------
+    functional_test_directory : path to functional test, e.g. "tests/functional/FCC_NiAl_Hstrain_enumeration
+
+    Returns
+    -------
+    str
+
+    """
+    #TODO: If you're writing the tests in python, you have to make
+    #this smart enough to tell the difference between run.sh and run.py
+    test_name = os.path.join(functional_test_directory, "run.sh")
+    value = basic_maker_string("TESTS", "+=", [test_name])
+    return value
+
+
 def make_libcasmtesting():
     """Creates the Makefile segment for the libcasmtesting library,
     which contains implementations shared across various unit tests.
@@ -499,7 +521,7 @@ def make_libcasmtesting():
 
 def make_aggregated_unit_test():
     """Create a jumbo Makefile that has everything you need to
-    run anything within tests.
+    run anything within unit tests.
     Returns
     -------
     string
@@ -532,6 +554,39 @@ def make_aggregated_unit_test():
     for d in test_directories:
         print("Create Makefile segment for unit test {}".format(d))
         value += make_unit_test(d)
+        value += horizontal_divide()
+
+    return value
+
+
+def make_aggregated_functional_test():
+    """Create Makefile segment that will add functional tests as part of te testing suite.
+    These are typically scripts that chain together several casm commands, emulating
+    what a user would do in a real project.
+    Returns
+    -------
+    string
+
+    """
+    value = horizontal_divide()
+
+    test_root = "tests/functional"
+    test_group = [
+        name for name in os.listdir(test_root)
+        if name not in [".deps", ".libs"]
+    ]
+    test_group.sort()
+
+    test_directories = [
+        name
+        for name in [os.path.join(test_root, group) for group in test_group]
+        if os.path.isdir(name)
+    ]
+    test_directories.sort()
+
+    for d in test_directories:
+        print("Create Makefile segment for functional test {}".format(d))
+        value += make_functional_test(d)
         value += horizontal_divide()
 
     return value
@@ -625,11 +680,10 @@ def make_ccasm():
 
     """
     print("Create Makefile for ccasm program")
-    value = make_add_to_PROGRAMS(
-        "ccasm",
-        "bin",
-        SOURCES=["apps/ccasm/ccasm.cpp"],
-        LDADD=["libcasm.la"] + all_boost_LDADD_flags())
+    value = make_add_to_PROGRAMS("ccasm",
+                                 "bin",
+                                 SOURCES=["apps/ccasm/ccasm.cpp"],
+                                 LDADD=["libcasm.la"] + all_boost_LDADD_flags())
     return value
 
 
@@ -650,11 +704,11 @@ def make_casm_complete():
                                 ["apps/completer/casm"])
     value += "\n"
 
-    value += make_add_to_PROGRAMS(
-        "casm-complete",
-        "bin",
-        SOURCES=["apps/completer/complete.cpp"],
-        LDADD=["libcasm.la"] + all_boost_LDADD_flags())
+    value += make_add_to_PROGRAMS("casm-complete",
+                                  "bin",
+                                  SOURCES=["apps/completer/complete.cpp"],
+                                  LDADD=["libcasm.la"] +
+                                  all_boost_LDADD_flags())
 
     value += "\n\nendif"
 
@@ -688,8 +742,10 @@ def make_lib(libname, search_root, additional_sources, **kwargs):
         if has_source_extension(f)
     ]
 
-    return make_add_to_LTLIBRARIES(
-        libname, "lib", SOURCES=source_files + additional_sources, **kwargs)
+    return make_add_to_LTLIBRARIES(libname,
+                                   "lib",
+                                   SOURCES=source_files + additional_sources,
+                                   **kwargs)
 
 
 def make_libcasm(additional_sources):
@@ -706,13 +762,13 @@ def make_libcasm(additional_sources):
     str
 
     """
-    value = make_lib(
-        "libcasm",
-        "src/casm",
-        additional_sources,
-        LIBADD=all_boost_LDADD_flags(),
-        LDFLAGS=["-avoid-version", "$(BOOST_LDFLAGS)"])
-    value += "\nsrc/casm/version/autoversion.lo: .FORCE"
+    value = make_lib("libcasm",
+                     "src/casm",
+                     additional_sources,
+                     LIBADD=all_boost_LDADD_flags(),
+                     LDFLAGS=["-avoid-version", "$(BOOST_LDFLAGS)"])
+    # Uncomment if you want to forcefully recompile every time to ensure the version gets baked in
+    # value += "\nsrc/casm/version/autoversion.lo: .FORCE"
     return value
 
 
@@ -730,8 +786,10 @@ def make_libccasm(additional_sources):
     str
 
     """
-    value = make_lib(
-        "libccasm", "src/ccasm", additional_sources, LDFLAGS=["-avoid-version"])
+    value = make_lib("libccasm",
+                     "src/ccasm",
+                     additional_sources,
+                     LDFLAGS=["-avoid-version"])
     return value
 
 
@@ -773,6 +831,10 @@ def main():
 
     chunk = make_aggregated_unit_test()
     target = os.path.join("tests", "unit", "Makemodule.am")
+    string_to_file(chunk, target)
+
+    chunk = make_aggregated_functional_test()
+    target = os.path.join("tests", "functional", "Makemodule.am")
     string_to_file(chunk, target)
 
     chunk = make_recursive_include("include/casm")

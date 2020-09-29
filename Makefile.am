@@ -61,6 +61,7 @@ include $(srcdir)/include/ccasm/Makemodule.am
 include $(srcdir)/src/casm/Makemodule.am
 include $(srcdir)/src/ccasm/Makemodule.am
 include $(srcdir)/tests/unit/Makemodule.am
+include $(srcdir)/tests/functional/Makemodule.am
 #============================================================#
 
 #Misc targets

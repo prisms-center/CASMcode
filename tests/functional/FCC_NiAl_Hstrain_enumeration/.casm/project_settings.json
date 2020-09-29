@@ -1,0 +1,31 @@
+{
+  "cluster_expansions" : {
+    "formation_energy" : {
+      "bset" : "default",
+      "calctype" : "default",
+      "eci" : "default",
+      "name" : "formation_energy",
+      "property" : "formation_energy",
+      "ref" : "default"
+    }
+  },
+  "crystallography_tol" : 1.000000000000000082e-05,
+  "default_clex" : "formation_energy",
+  "lin_alg_tol" : 1.000000000000000036e-10,
+  "name" : "NiAl",
+  "nlist_sublat_indices" : [ 0 ],
+  "nlist_weight_matrix" : [
+    [ 2, 1, 1 ],
+    [ 1, 2, 1 ],
+    [ 1, 1, 2 ]
+  ],
+  "query_alias" : {
+  },
+  "required_properties" : {
+    "Configuration" : {
+      "default" : [ "relaxed_energy" ]
+    }
+  },
+  "view_command" : "",
+  "view_command_video" : ""
+}
