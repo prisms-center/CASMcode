@@ -214,13 +214,13 @@ xtal::BasicStructure select_first_allowed_occupant_for_basis(const xtal::BasicSt
 }
 
 
-TEST(SymMappingTest1, FCCTernaryPrim) {
+TEST(SymMappingTest, FCCTernaryPrim) {
   // Read in test PRIM and run tests
   xtal::BasicStructure prim = test::FCC_ternary_prim();
   sym_mapping_test(::select_first_allowed_occupant_for_basis(prim), 48);
 }
 
-TEST(SymMappingTest2, ZrOPrim) {
+TEST(SymMappingTest, ZrOPrim) {
   // Read in test PRIM and run tests
   xtal::BasicStructure prim = test::ZrO_prim();
   sym_mapping_test(::select_first_allowed_occupant_for_basis(prim), 24);
@@ -232,4 +232,32 @@ TEST(KBestMappingTest, Struc1) {
   k_best_mapping_test(map_struc1(pow(8. * M_PI / 3, 1. / 3.), 0.3), 0.3);
 }
 
+TEST(SelfMappingTest, MultipleAllowedOccupants) {
+  Eigen::Matrix3d fcc_lat_vecs;
+  fcc_lat_vecs << 0, 2, 2, 0, 2, 0, 2, 2, 0;
+
+  auto make_fcc = [ = ](const std::string & occupant) {
+    xtal::SimpleStructure fcc;
+    fcc.lat_column_mat = fcc_lat_vecs;
+    fcc.atom_info.resize(1);
+    fcc.atom_info.names[0] = occupant;
+    return fcc;
+  };
+
+  auto parent = make_fcc("Z");
+  auto fcc_X = make_fcc("X");
+  auto fcc_Y = make_fcc("Y");
+
+  xtal::SimpleStrucMapCalculator iface(
+  parent, {CASM::xtal::SymOp::identity()}, CASM::xtal::SimpleStructure::SpeciesMode::ATOM, {{"Y", "X"}});
+  xtal::StrucMapper mapper(iface);
+
+  auto X_results = mapper.map_deformed_struc(fcc_X);
+  auto Y_results = mapper.map_deformed_struc(fcc_Y);
+  auto Z_results = mapper.map_deformed_struc(parent);
+
+  EXPECT_EQ(Z_results.size(), Index{0}); //Z is not an allowed occupant in the mapper
+  EXPECT_EQ(X_results.size(), Index{48});
+  EXPECT_EQ(X_results.size(), Y_results.size());
+}
 
