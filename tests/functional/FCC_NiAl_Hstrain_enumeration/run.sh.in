@@ -28,6 +28,12 @@ count_selected_configs()
     casm status | grep "configurations currently selected:" | grep -oE '[^[:space:]]+$'
 }
 
+add_json_key_to_file()
+{
+    jsonstr=$(cat $1)
+    jq ". + { \"$2\": $3 }" <<<$jsonstr > $1
+}
+
 prepare_environment
 
 cp ${prim} ./prim.json
@@ -51,7 +57,10 @@ if [ ! -e symmetry/analysis/SCEL4_2_2_1_1_1_0/0/dof_analysis_Hstrain.json ]; the
 fi
 
 cp symmetry/analysis/SCEL4_2_2_1_1_1_0/0/dof_analysis_Hstrain.json strain_enum.json
-python3 ${python_helpers_root}/insert_e1_e2_e2_ranges.py strain_enum.json
+add_json_key_to_file strain_enum.json "min" "[-0.8, 0, 0, 0, 0, 0]"
+add_json_key_to_file strain_enum.json "max" "[0.8, 0.8, 0.8, 0, 0, 0]"
+add_json_key_to_file strain_enum.json "increment" "[-0.8, 0, 0, 0, 0, 0]"
+add_json_key_to_file strain_enum.json "confignames" "[\"SCEL4_2_2_1_1_1_0/0\"]"
 casm enum -m ConfigEnumStrain -s strain_enum.json
 
 #There should only be new strained configs relative to the L12 cell
