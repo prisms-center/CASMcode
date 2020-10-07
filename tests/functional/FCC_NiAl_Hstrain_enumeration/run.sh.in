@@ -7,7 +7,7 @@ prim=${input_files}/prims/FCC_NiAl_Hstrain.json
 
 casm()
 {
-    /home/mesto/programming/CASMcode-dev/build/ccasm "$@"
+    @abs_top_builddir@/ccasm "$@"
 }
 
 prepare_environment()
