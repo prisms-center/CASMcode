@@ -50,7 +50,9 @@ namespace CASM {
   ///        `make_enumerator_f` to construct a series of enumerators which are executed in turn.
   /// \param supercell_db Will commit any new Supercell if `options.dry_run==false`.
   /// \param configuration_db Will commit any new Configuration if `options.dry_run==false`.
-  /// \param logging For printing progress and errors
+  ///
+  /// Note:
+  /// - Uses CASM::log() for logging progress
   ///
   template<typename MakeEnumeratorFunctor, typename InputNameValuePairIterator>
   void enumerate_configurations(
@@ -59,10 +61,9 @@ namespace CASM {
     InputNameValuePairIterator name_value_pairs_begin,
     InputNameValuePairIterator name_value_pairs_end,
     DB::Database<Supercell> &supercell_db,
-    DB::Database<Configuration> &configuration_db,
-    Logging const &logging) {
+    DB::Database<Configuration> &configuration_db) {
 
-    Log &log = logging.log();
+    Log &log = CASM::log();
     std::pair<DB::Database<Configuration>::iterator, bool> insert_result;
     std::string dry_run_msg = CASM::dry_run_msg(options.dry_run);
 
@@ -95,16 +96,14 @@ namespace CASM {
         }
         ++count;
 
-        if(is_guaranteed_for_database_insert(enumerator)) {
-          configuration_db.insert(configuration);
-        }
-        else {
-          make_canonical_and_insert(
-            configuration,
-            supercell_db,
-            configuration_db,
-            options.primitive_only);
-        }
+        // checks `is_guaranteed_for_database_insert(enumerator)` to see if configuration
+        // can be directly inserted, else makes canonical before inserting
+        make_canonical_and_insert(
+          enumerator,
+          configuration,
+          supercell_db,
+          configuration_db,
+          options.primitive_only);
       }
 
       Index num_after = configuration_db.size();

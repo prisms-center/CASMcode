@@ -229,10 +229,9 @@ namespace CASM {
       const PrimClex &primclex,
       const StructureMap<Configuration> &mapper,
       ImportSettings const &_set,
-      std::string const &report_dir,
-      Log &file_log) :
+      std::string const &report_dir) :
 
-      ImportT(primclex, mapper, _set, report_dir, file_log) {}
+      ImportT(primclex, mapper, _set, report_dir) {}
 
 
     const std::string Import<Configuration>::desc =
@@ -391,7 +390,7 @@ namespace CASM {
       used_settings["data"] = import_settings;
 
       // -- print used settings --
-      Log &log = primclex.log();
+      Log &log = CASM::log();
       log.read("Settings");
       log << used_settings << std::endl << std::endl;
 
@@ -400,8 +399,7 @@ namespace CASM {
         primclex,
         mapper,
         import_settings,
-        report_dir,
-        primclex.log());
+        report_dir);
 
       // -- read structure file paths --
       std::set<fs::path> pos;
@@ -641,7 +639,7 @@ namespace CASM {
       // bool overwrite = false;
 
       // -- print used settings --
-      Log &log = primclex.log();
+      Log &log = CASM::log();
       log.read("Settings");
       log << used << std::endl << std::endl;
 

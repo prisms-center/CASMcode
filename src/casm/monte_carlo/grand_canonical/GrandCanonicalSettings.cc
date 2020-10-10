@@ -72,7 +72,7 @@ namespace CASM {
         return cond;
       }
       catch(std::runtime_error &e) {
-        Log &err_log = default_err_log();
+        Log &err_log = CASM::err_log();
         err_log.error<Log::standard>("Reading Monte Carlo settings");
         err_log << "Tried to read an array of GrandCanonicalConditions from [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
         err_log << _help() << std::endl;
@@ -118,7 +118,7 @@ namespace CASM {
       }
 
       if(!set.has_clex(formation_energy)) {
-        Log &err_log = default_err_log();
+        Log &err_log = CASM::err_log();
         err_log.error<Log::standard>("Reading Monte Carlo settings");
         err_log << "Error reading [\"model\"][\"formation_energy\"]\n";
         err_log << "[\"model\"][\"formation_energy\"]: (string, optional, default='formation_energy')\n";
@@ -147,7 +147,7 @@ namespace CASM {
         return false;
       }
       catch(std::runtime_error &e) {
-        Log &err_log = default_err_log();
+        Log &err_log = CASM::err_log();
         err_log.error<Log::standard>("Reading Monte Carlo settings");
         err_log << "Error checking if 'all_correlations' should be sampled.\n";
         err_log << "Error reading settings at [\"" << level1 << "\"][\"" << level2 << "\"]\n";
@@ -165,7 +165,7 @@ namespace CASM {
         return _conditions((*this)[level1][level2]);
       }
       catch(std::runtime_error &e) {
-        Log &err_log = default_err_log();
+        Log &err_log = CASM::err_log();
         err_log.error<Log::standard>("Reading Monte Carlo settings");
         err_log << "Error reading: " << name << std::endl;
         err_log << "Tried to construct GrandCanonicalCondtions from [\"" << level1 << "\"][\"" << level2 << "\"]" << std::endl;
@@ -182,4 +182,3 @@ namespace CASM {
 
   }
 }
-

@@ -103,6 +103,13 @@ namespace CASM {
       parser.optional_else(generating_matrix, "unit_cell", default_matrix);
     }
 
+    if(parser.self.contains("existing_only")) {
+      std::stringstream msg;
+      msg << "The option \"existing_only\" is no longer supported. "
+          << "To select all existing supercells use \"supercell_selection\": \"ALL\".";
+      parser.error.insert(msg.str());
+    }
+
     parser.value = notstd::make_unique<xtal::ScelEnumProps>(min, max + 1, dirs, generating_matrix);
   }
 

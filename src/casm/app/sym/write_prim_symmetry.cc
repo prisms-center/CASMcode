@@ -15,7 +15,6 @@
 namespace CASM {
 
   class DirectoryStructure;
-  class Log;
   class Structure;
 
   /// Write/print prim symmetry
@@ -132,11 +131,10 @@ namespace CASM {
     return description;
   }
 
-  /// Write/print prim symmetry (ignores JSON input)
-  void write_prim_symmetry(APICommandBase const &cmd,
+  /// Write/print prim symmetry
+  void write_prim_symmetry(PrimClex &primclex,
                            jsonParser const &json_options,
                            jsonParser const &cli_options_as_json) {
-    Log &log = cmd.log();
 
     jsonParser json_combined {json_options};
     std::map<std::string, std::string> cli_to_combined_keys {
@@ -161,13 +159,13 @@ namespace CASM {
     parser.optional_else(print_crystal_point_group, "print_crystal_point_group", false);
     parser.optional_else(coordtype, "coordinate_mode", FRAC);
     std::runtime_error error_if_invalid {"Error reading `casm sym` input"};
-    report_and_throw_if_invalid(parser, log, error_if_invalid);
+    report_and_throw_if_invalid(parser, log(), error_if_invalid);
 
     write_prim_symmetry_impl(
-      cmd.primclex().prim(),
-      cmd.primclex().dir(),
+      primclex.prim(),
+      primclex.dir(),
       coordtype,
-      cmd.log(),
+      log(),
       print_lattice_point_group,
       print_factor_group,
       print_crystal_point_group);

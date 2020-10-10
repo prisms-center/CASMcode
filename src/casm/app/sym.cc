@@ -4,6 +4,7 @@
 #include "casm/app/sym/json_io.hh"
 #include "casm/app/sym/symmetrize.hh"
 #include "casm/app/sym/write_prim_symmetry.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/clex/PrimClex.hh"
 
 namespace CASM {
@@ -86,20 +87,19 @@ namespace CASM {
 
   int SymCommand::run() const {
 
-    jsonParser json_options = make_json_input(opt());
-
-    jsonParser cli_options_as_json;
-    to_json(opt(), cli_options_as_json);
+    jsonParser json_options = make_json_input(opt()); // JSON from --input string or --settings file
+    jsonParser cli_options_as_json {opt()};           // All CLI options as JSON object
 
     if(vm().count("symmetrize")) {
-      symmetrize(*this, json_options, cli_options_as_json);
+      symmetrize(primclex(), json_options, cli_options_as_json);
     }
     else if(vm().count("dof-space-analysis")) {
-      dof_space_analysis(*this, json_options, cli_options_as_json);
+      dof_space_analysis(primclex(), json_options, cli_options_as_json);
     }
     else {
-      write_prim_symmetry(*this, json_options, cli_options_as_json);
+      write_prim_symmetry(primclex(), json_options, cli_options_as_json);
     }
+
     return 0;
   }
 

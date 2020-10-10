@@ -62,24 +62,24 @@ namespace CASM {
       /** --help option
       */
       if(vm.count("help")) {
-        args.log() << "\n";
-        args.log() << view_opt.desc() << std::endl;
+        log() << "\n";
+        log() << view_opt.desc() << std::endl;
 
         return 0;
       }
 
       if(vm.count("desc")) {
-        args.log() << "\n";
-        args.log() << view_opt.desc() << std::endl;
-        args.log() << "This allows opening visualization programs directly from \n"
-                   "CASM. It iterates over all selected configurations and   \n"
-                   "one by one writes a POSCAR and executes                  \n"
-                   "   '$VIEW_COMMAND /path/to/POSCAR'                       \n"
-                   "where $VIEW_COMMAND is set via 'casm settings --set-view-command'.\n"
-                   "A script 'casm.view' is included with can be used to run \n"
-                   "a command and then pause 1s, which is useful for opening \n"
-                   "POSCARs with VESTA.  An example on Mac might look like:  \n"
-                   "  casm settings --set-view-command 'casm.view \"open -a /Applications/VESTA/VESTA.app\"' \n\n";
+        log() << "\n";
+        log() << view_opt.desc() << std::endl;
+        log() << "This allows opening visualization programs directly from \n"
+              "CASM. It iterates over all selected configurations and   \n"
+              "one by one writes a POSCAR and executes                  \n"
+              "   '$VIEW_COMMAND /path/to/POSCAR'                       \n"
+              "where $VIEW_COMMAND is set via 'casm settings --set-view-command'.\n"
+              "A script 'casm.view' is included with can be used to run \n"
+              "a command and then pause 1s, which is useful for opening \n"
+              "POSCARs with VESTA.  An example on Mac might look like:  \n"
+              "  casm settings --set-view-command 'casm.view \"open -a /Applications/VESTA/VESTA.app\"' \n\n";
 
         return 0;
       }
@@ -91,30 +91,30 @@ namespace CASM {
       confignames = view_opt.config_strs();
     }
     catch(po::error &e) {
-      args.err_log() << "ERROR: " << e.what() << std::endl << std::endl;
-      args.err_log() << view_opt.desc() << std::endl;
+      err_log() << "ERROR: " << e.what() << std::endl << std::endl;
+      err_log() << view_opt.desc() << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
-      args.err_log() << "Unhandled Exception reached the top of main: "
-                     << e.what() << ", application will now exit" << std::endl;
+      err_log() << "Unhandled Exception reached the top of main: "
+                << e.what() << ", application will now exit" << std::endl;
       return ERR_UNKNOWN;
 
     }
 
     const fs::path &root = args.root;
     if(root.empty()) {
-      args.err_log().error("No casm project found");
-      args.err_log() << std::endl;
+      err_log().error("No casm project found");
+      err_log() << std::endl;
       return ERR_NO_PROJ;
     }
 
     ProjectSettings set = open_project_settings(root);
     if(set.view_command().empty()) {
-      args.err_log() << "Error in 'casm view': No command set. Use 'casm settings "
-                     "--set-view-command' to set the command to open visualization "
-                     "software. It should take one argument, the path to a POSCAR "
-                     "to be visualized. For example, to use VESTA on Mac: casm settings --set-view-command 'casm.view \"open -a /Applications/VESTA/VESTA.app\"'.\n";
+      err_log() << "Error in 'casm view': No command set. Use 'casm settings "
+                "--set-view-command' to set the command to open visualization "
+                "software. It should take one argument, the path to a POSCAR "
+                "to be visualized. For example, to use VESTA on Mac: casm settings --set-view-command 'casm.view \"open -a /Applications/VESTA/VESTA.app\"'.\n";
       return ERR_MISSING_DEPENDS;
     }
 
@@ -150,8 +150,8 @@ namespace CASM {
 
         //Make pos_path the path to properties.calc.json constructed from it
         fs::path pos_path = calc_properties_path(primclex, config.name());
-        args.log() << "Obtaining relaxed structure from:\n";
-        args.log() << pos_path.string() << std::endl;
+        log() << "Obtaining relaxed structure from:\n";
+        log() << pos_path.string() << std::endl;
         SimpleStructure import_struc;
         jsonParser datajson(pos_path);
         from_json(import_struc, datajson);
@@ -161,10 +161,10 @@ namespace CASM {
         p.sort();
         p.print(file);
         file.close();
-        args.log() << config.name() << " relaxed" << ":\n";
+        log() << config.name() << " relaxed" << ":\n";
         Popen popen;
         popen.popen(set.view_command() + " " + POSCARpath.string());
-        popen.print(std::cout);
+        popen.print(log());
       }
       else {
         // write '.casm/tmp/POSCAR'
@@ -176,12 +176,12 @@ namespace CASM {
         p.print(file);
         file.close();
         if(vm.count("relaxed")) {
-          args.log() << "No relaxed structure found." << "\n";
+          log() << "No relaxed structure found." << "\n";
         }
-        args.log() << config.name() << ":\n";
+        log() << config.name() << ":\n";
         Popen popen;
         popen.popen(set.view_command() + " " + POSCARpath.string());
-        popen.print(args.log());
+        popen.print(log());
       }
     }
 

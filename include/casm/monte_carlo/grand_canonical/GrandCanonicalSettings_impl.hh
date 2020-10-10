@@ -155,7 +155,7 @@ namespace CASM {
 
       }
       catch(std::runtime_error &e) {
-        Log &err_log = default_err_log();
+        Log &err_log = CASM::err_log();
         err_log.error<Log::standard>("'MonteSettings::samplers(const PrimClex &primclex, SamplerInsertIterator result)'");
         err_log << "Error reading [\"" << level1 << "\"][\"" << level2 << "\"]\n" << std::endl;
         throw;
@@ -433,7 +433,7 @@ namespace CASM {
       if(test.size() != col.size()) {
         std::stringstream ss;
         ss << "Error constructing Monte Carlo samplers from query: '" << prop_name << "'";
-        Log &err_log = primclex.err_log();
+        Log &err_log = CASM::err_log();
         err_log << ss.str();
         err_log << "headers: " << col << std::endl;
         err_log << "  Some queries may not be available for sampling at this time." << std::endl;

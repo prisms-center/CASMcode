@@ -42,6 +42,18 @@ namespace CASM {
       Database<Supercell> &supercell_db,
       Database<Configuration> &configuration_db,
       bool primitive_only);
+
+    /// Insert this configuration (in primitive & canonical form) in the database
+    ///
+    /// - This version checks `is_guaranteed_for_database_insert` and either inserts directly
+    ///   or makes canonical and then inserts
+    template<typename EnumeratorType>
+    ConfigInsertResult make_canonical_and_insert(
+      EnumeratorType const &enumerator,
+      Configuration const &configuration,
+      Database<Supercell> &supercell_db,
+      Database<Configuration> &configuration_db,
+      bool primitive_only);
   }
 }
 

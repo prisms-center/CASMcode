@@ -12,7 +12,7 @@ namespace CASM {
   std::string dof_space_analysis_desc();
 
   /// Perform DoF space analysis
-  void dof_space_analysis(APICommandBase const &cmd,
+  void dof_space_analysis(PrimClex &primclex,
                           jsonParser const &json_options,
                           jsonParser const &cli_options_as_json);
 

@@ -13,10 +13,14 @@
 #include "casm/app/AppIO.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/enum.hh"
+#include "casm/app/enum/methods/ConfigEnumAllOccupationsInterface.hh"
+#include "casm/app/enum/methods/ScelEnumInterface.hh"
 #include "casm/app/CLIParse.hh"
+
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
 #include "ZrOProj.hh"
+#include "clex/TestClexEnumerators.hh"
 
 using namespace CASM;
 using namespace test;
@@ -24,6 +28,7 @@ using namespace test;
 TEST(ConfigEnumTest, ConfigEnumAllOccupationsTest) {
 
   // tests ConfigEnumAllOccupations and ConfigEnumEquivalents
+  ScopedNullLogging logging;
 
   // read test file
   fs::path test_cases_path(autotools::abs_srcdir() + "/tests/unit/clex/ConfigEnumAllOccupations_test_cases.json");
@@ -61,11 +66,11 @@ TEST(ConfigEnumTest, ConfigEnumAllOccupationsTest) {
     build_project(project_settings, prim);
 
     // read primclex
-    PrimClex primclex(test_proj_dir, null_log());
+    PrimClex primclex(test_proj_dir);
 
     // generate supercells
     xtal::ScelEnumProps enum_props(j["min_vol"].get<int>(), j["max_vol"].get<int>() + 1);
-    ScelEnumByProps scel_enum(primclex, enum_props);
+    ScelEnumByProps scel_enum(primclex.shared_prim(), enum_props);
     for(const auto &scel : scel_enum) {
       (void) scel;
     }
@@ -94,20 +99,20 @@ TEST(ConfigEnumTest, ConfigEnumAllOccupationsTest) {
   }
 }
 
-TEST(ConfigEnumTest, ConfigEnumAllOccupationsRunTest) {
+TEST(ConfigEnumTest, ConfigEnumAllOccupationsInterfaceTest) {
 
   // create a project
   test::FCCTernaryProj proj;
   proj.check_init();
 
   // construct PrimClex
-  PrimClex primclex(proj.dir, null_log());
+  ScopedNullLogging logging;
+  PrimClex primclex(proj.dir);
 
   // --dry-run test
   {
-    Completer::EnumOption opt;
-    parse_args(opt, "casm enum --method ScelEnum --max 4 --dry-run", primclex);
-    ScelEnum::run(primclex, jsonParser(), opt, nullptr);
+    std::string cli_str = "casm enum --method ScelEnum --max 4 --dry-run";
+    run_enum_interface<ScelEnumInterface>(cli_str, primclex);
   }
   EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
   primclex.generic_db<Supercell>().close();
@@ -116,9 +121,8 @@ TEST(ConfigEnumTest, ConfigEnumAllOccupationsRunTest) {
 
 
   {
-    Completer::EnumOption opt;
-    parse_args(opt, "casm enum --method ScelEnum --max 4", primclex);
-    ScelEnum::run(primclex, jsonParser(), opt, nullptr);
+    std::string cli_str = "casm enum --method ScelEnum --max 4";
+    run_enum_interface<ScelEnumInterface>(cli_str, primclex);
   }
   EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
   primclex.generic_db<Supercell>().close();
@@ -127,9 +131,8 @@ TEST(ConfigEnumTest, ConfigEnumAllOccupationsRunTest) {
 
   // --dry-run test
   {
-    Completer::EnumOption opt;
-    parse_args(opt, "casm enum --method ConfigEnumAllOccupations -a --dry-run", primclex);
-    ConfigEnumAllOccupations::run(primclex, jsonParser(), opt, nullptr);
+    std::string cli_str = "casm enum --method ConfigEnumAllOccupations -a --dry-run";
+    run_enum_interface<ConfigEnumAllOccupationsInterface>(cli_str, primclex);
   }
   EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
   EXPECT_EQ(primclex.generic_db<Configuration>().size(), 126);
@@ -139,9 +142,8 @@ TEST(ConfigEnumTest, ConfigEnumAllOccupationsRunTest) {
   EXPECT_EQ(primclex.generic_db<Configuration>().size(), 0);
 
   {
-    Completer::EnumOption opt;
-    parse_args(opt, "casm enum --method ConfigEnumAllOccupations -a", primclex);
-    ConfigEnumAllOccupations::run(primclex, jsonParser(), opt, nullptr);
+    std::string cli_str = "casm enum --method ConfigEnumAllOccupations -a";
+    run_enum_interface<ConfigEnumAllOccupationsInterface>(cli_str, primclex);
   }
   EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
   EXPECT_EQ(primclex.generic_db<Configuration>().size(), 126);

@@ -473,6 +473,7 @@ namespace CASM {
     return log;
   }
 
+
   class OStringStreamLog : public Log {
 
   public:
@@ -504,39 +505,112 @@ namespace CASM {
   };
 
 
-  class Logging {
+  /// For the life of ScopedLogging CASM::log() and CASM::err_log() provide references
+  /// to `new_log` and `new_err_log`, unless overridden by another ScopedLogging. The references
+  /// are reverted upon destruction.
+  class ScopedLogging {
+  public:
+    ScopedLogging(Log &new_log, Log &new_err_log):
+      m_old_log(CASM::log()),
+      m_old_err_log(CASM::err_log()) {
+      CASM::log() = new_log;
+      CASM::err_log() = new_err_log;
+    }
 
+    ~ScopedLogging() {
+      CASM::log() = m_old_log;
+      CASM::err_log() = m_old_err_log;
+    }
+
+    Log &m_old_log;
+    Log &m_old_err_log;
+  };
+
+  /// For the life of ScopedNullLogging CASM::log() and CASM::err_log() provide references
+  /// to CASM::null_log(), unless overridden by another ScopedLogging. The references are
+  /// reverted upon destruction.
+  class ScopedNullLogging {
+  public:
+    ScopedNullLogging():
+      m_logging(null_log(), null_log()) {}
+  private:
+    ScopedLogging m_logging;
+  };
+
+  /// For the life of ScopedStringStreamLogging CASM::log() and CASM::err_log() provide references
+  /// to OStringStreamLog. The string values can be obtained from ScopedStringStreamLogging::ss()
+  /// and ScopedStringStreamLogging::err_ss(). The references are
+  /// reverted upon destruction.
+  class ScopedStringStreamLogging {
   public:
 
-    Logging(Log &log = default_log(), Log &debug_log = default_log(), Log &err_log = default_err_log()) :
-      m_log(&log),
-      m_debug_log(&debug_log),
-      m_err_log(&err_log) {
+    /// Construct scoped StringStreamLog
+    ScopedStringStreamLogging(int _verbosity = Log::standard, bool _show_clock = false):
+      m_ss_log(_verbosity, _show_clock),
+      m_ss_err_log(_verbosity, _show_clock) {
+      m_logging = notstd::make_unique<ScopedLogging>(m_ss_log, m_ss_err_log);
     }
 
-    Log &log() const {
-      return *m_log;
+    ~ScopedStringStreamLogging() {
+      m_logging.reset();
     }
 
-    Log &debug_log() const {
-      return *m_debug_log;
-    }
+    std::ostringstream &ss() {
+      return m_ss_log.ss();
+    };
 
-    Log &err_log() const {
-      return *m_err_log;
-    }
+    const std::ostringstream &ss() const {
+      return m_ss_log.ss();
+    };
 
-    static Logging null() {
-      return Logging(null_log(), null_log(), null_log());
-    }
+    std::ostringstream &err_ss() {
+      return m_ss_err_log.ss();
+    };
+
+    const std::ostringstream &err_ss() const {
+      return m_ss_err_log.ss();
+    };
 
   private:
-
-    Log *m_log;
-    Log *m_debug_log;
-    Log *m_err_log;
-
+    std::unique_ptr<ScopedLogging> m_logging;
+    OStringStreamLog m_ss_log;
+    OStringStreamLog m_ss_err_log;
   };
+
+
+  // class Logging {
+  //
+  // public:
+  //
+  //   Logging(Log &log = default_log(), Log &debug_log = default_log(), Log &err_log = default_err_log()) :
+  //     m_log(&log),
+  //     m_debug_log(&debug_log),
+  //     m_err_log(&err_log) {
+  //   }
+  //
+  //   Log &log() const {
+  //     return *m_log;
+  //   }
+  //
+  //   Log &debug_log() const {
+  //     return *m_debug_log;
+  //   }
+  //
+  //   Log &err_log() const {
+  //     return *m_err_log;
+  //   }
+  //
+  //   static Logging null() {
+  //     return Logging(null_log(), null_log(), null_log());
+  //   }
+  //
+  // private:
+  //
+  //   Log *m_log;
+  //   Log *m_debug_log;
+  //   Log *m_err_log;
+  //
+  // };
 
 }
 

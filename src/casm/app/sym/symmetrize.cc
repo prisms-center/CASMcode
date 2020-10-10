@@ -42,7 +42,7 @@ namespace symmetrize_impl {
     lattice.set_tol(orig_tol);
 
     for(Index i = 0; i < tols.size(); i++) {
-      std::cout << tols[i] << "\t" << num_ops[i] << "\t" << is_group[i] << "\t" << num_enforced_ops[i] << "\t name: " << name[i] << "\n";
+      print_stream << tols[i] << "\t" << num_ops[i] << "\t" << is_group[i] << "\t" << num_enforced_ops[i] << "\t name: " << name[i] << "\n";
     }
 
     return;
@@ -81,8 +81,8 @@ namespace symmetrize_impl {
   /// - Write the symmetrized structure to "output_poscar_location" (default="POSCAR_sym")
   ///
   void symmetrize_v1(fs::path poscar_path,
-                     double tol,
-                     Log &log) {
+                     double tol) {
+    Log &log = CASM::log();
     // fs::path poscar_path = opt().poscar_path();
     // double tol = opt().tol();
     log << "\n***************************\n" << std::endl;
@@ -103,7 +103,7 @@ namespace symmetrize_impl {
 
     tmp.factor_group();
     // b) find factor group with same tolerance
-    symmetrize_impl::_print_factor_group_convergence(tmp, tmp.structure().lattice().tol(), tol, (tol - tmp.structure().lattice().tol()) / 10.0, std::cout);
+    symmetrize_impl::_print_factor_group_convergence(tmp, tmp.structure().lattice().tol(), tol, (tol - tmp.structure().lattice().tol()) / 10.0, log);
     // c) symmetrize the basis sites
     SymGroup g = tmp.factor_group();
     tmp = xtal::symmetrize(tmp, g);
@@ -146,12 +146,12 @@ namespace symmetrize_impl {
   /// \param enforced_tol Tolerance used to generate the "enforced factor group"
   /// \param input_tol Tolerance used to generate original input structure factor group
   ///
-  void symmetrize_v2(
-    Log &log,
-    fs::path input_poscar_location,
-    fs::path output_poscar_location,
-    double enforced_tol,
-    double input_tol = TOL) {
+  void symmetrize_v2(fs::path input_poscar_location,
+                     fs::path output_poscar_location,
+                     double enforced_tol,
+                     double input_tol) {
+
+    Log &log = CASM::log();
 
     log << "\n***************************\n" << std::endl;
     log << "Symmetrizing: " << input_poscar_location << std::endl;
@@ -243,11 +243,11 @@ namespace CASM {
   }
 
   /// Adjust a structure's lattice and basis to increase factor group symmetry
-  void symmetrize(APICommandBase const &cmd,
+  void symmetrize(PrimClex &primclex,
                   jsonParser const &json_options,
                   jsonParser const &cli_options_as_json) {
 
-    Log &log = cmd.log();
+    Log &log = CASM::log();
 
     std::map<std::string, std::string> cli_to_combined_keys {
       {"tol", "tol"},                 // --tol
@@ -270,15 +270,13 @@ namespace CASM {
     report_and_throw_if_invalid(parser, log, error_if_invalid);
 
     symmetrize_impl::symmetrize_v1(poscar_path,
-                                   enforced_tol,
-                                   log);
+                                   enforced_tol);
 
     // TODO: check equivalence of v1 and v2
-    // symmetrize_impl::symmetrize_v2(cmd.opt().poscar_path(),
+    // symmetrize_impl::symmetrize_v2(poscar_path,
     //                                "POSCAR_sym",
-    //                                cmd.opt().tol(), // enforced tol
-    //                                TOL,
-    //                                cmd.log());
+    //                                enforced tol,
+    //                                TOL);
   }
 
 }

@@ -204,8 +204,9 @@ TEST(ConfigIOTest, AllTest) {
   proj.check_composition();
   proj.check_enum();
 
-  Log log = null_log();
-  PrimClex primclex(proj.dir, log);
+  ScopedNullLogging logging;
+  Log &log = CASM::log();
+  PrimClex primclex(proj.dir);
 
   log << "---- Comp -------------" << std::endl;
   ConfigIO::Comp comp;

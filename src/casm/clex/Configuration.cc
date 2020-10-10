@@ -291,7 +291,7 @@ namespace CASM {
   std::vector<PermuteIterator> Configuration::invariant_subgroup() const {
     std::vector<PermuteIterator> fg = ConfigurationBase::invariant_subgroup();
     if(fg.size() == 0) {
-      default_err_log() << "Something went very wrong in invariant_subgroup returning group size 0" << std::endl;
+      err_log() << "Something went very wrong in invariant_subgroup returning group size 0" << std::endl;
     }
     int mult = this->prim().factor_group().size() / fg.size();
     cache_insert("multiplicity", mult);
@@ -760,9 +760,9 @@ namespace CASM {
     std::vector<std::string> splt_vec;
     boost::split(splt_vec, configname, boost::is_any_of("/"), boost::token_compress_on);
     if(splt_vec.size() != 2) {
-      default_err_log().error("Parsing configuration name");
-      default_err_log() << "configuration '" << configname << "' not valid." << std::endl;
-      default_err_log() << "must have form: scelname/configid" << std::endl;
+      err_log().error("Parsing configuration name");
+      err_log() << "configuration '" << configname << "' not valid." << std::endl;
+      err_log() << "must have form: scelname/configid" << std::endl;
       throw std::invalid_argument("Error in Configuration::split_name(const std::string &configname) const: Not valid");
     }
 
@@ -917,10 +917,10 @@ namespace CASM {
       boost::split(tokens, name, boost::is_any_of("."), boost::token_compress_on);
       std::string canon_config_name = tokens[0];
       if(tokens.size() != 4) {
-        primclex.err_log().error("In make_configuration");
-        primclex.err_log() << "expected format: " << format << "\n";
-        primclex.err_log() << "name: " << name << std::endl;
-        primclex.err_log() << "tokens: " << tokens << std::endl;
+        err_log().error("In make_configuration");
+        err_log() << "expected format: " << format << "\n";
+        err_log() << "name: " << name << std::endl;
+        err_log() << "tokens: " << tokens << std::endl;
         throw std::invalid_argument("Error in make_configuration: configuration name format error");
       }
 
@@ -953,10 +953,10 @@ namespace CASM {
       Index fg_op_index = 0;
 
       if(tokens[1] != "super" && tokens[2] != "super") {
-        primclex.err_log().error("In make_configuration");
-        primclex.err_log() << "expected format: " << format << "\n";
-        primclex.err_log() << "name: " << name << std::endl;
-        primclex.err_log() << "tokens: " << tokens << std::endl;
+        err_log().error("In make_configuration");
+        err_log() << "expected format: " << format << "\n";
+        err_log() << "name: " << name << std::endl;
+        err_log() << "tokens: " << tokens << std::endl;
 
         throw std::invalid_argument("Error in make_configuration: configuration name format error");
       }
@@ -976,10 +976,10 @@ namespace CASM {
         }
       }
       catch(...) {
-        primclex.err_log().error("In make_configuration");
-        primclex.err_log() << "expected format: " << format << "\n";
-        primclex.err_log() << "name: " << name << std::endl;
-        primclex.err_log() << "tokens: " << tokens << std::endl;
+        err_log().error("In make_configuration");
+        err_log() << "expected format: " << format << "\n";
+        err_log() << "name: " << name << std::endl;
+        err_log() << "tokens: " << tokens << std::endl;
 
         throw std::invalid_argument("Error in make_configuration: configuration name format error");
       }
@@ -1132,7 +1132,7 @@ namespace CASM {
     const ECIContainer &eci = primclex.eci(formation_energy);
 
     if(eci.index().back() >= clexulator.corr_size()) {
-      Log &err_log = default_err_log();
+      Log &err_log = CASM::err_log();
       err_log.error<Log::standard>("bset and eci mismatch");
       err_log << "using cluster expansion: 'formation_energy'" << std::endl;
       err_log << "basis set size: " << clexulator.corr_size() << std::endl;

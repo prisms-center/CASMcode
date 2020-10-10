@@ -4,6 +4,7 @@
 #include <string>
 #include "casm/global/definitions.hh"
 #include "casm/misc/cloneable_ptr.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clex/PrimClex.hh"
@@ -326,7 +327,7 @@ namespace CASM {
 
       catch(std::runtime_error &e) {
 
-        Log &err_log = default_err_log();
+        Log &err_log = CASM::err_log();
         std::stringstream ss;
         ss << "Monte Carlo setting " << "[\"" << level1 << "\"]";
 
@@ -351,7 +352,7 @@ namespace CASM {
 
       catch(std::runtime_error &e) {
 
-        Log &err_log = default_err_log();
+        Log &err_log = CASM::err_log();
         std::stringstream ss;
         ss << "Monte Carlo setting [\"" << level1 << "\"][\"" << level2 << "\"]";
 
@@ -385,7 +386,7 @@ namespace CASM {
 
       catch(std::runtime_error &e) {
 
-        Log &err_log = default_err_log();
+        Log &err_log = CASM::err_log();
         std::stringstream ss;
         ss << "Monte Carlo setting [\"" << level1 << "\"][\"" << level2 << "\"][\"" << level3 << "\"]";
 

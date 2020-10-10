@@ -3,7 +3,6 @@
 
 #include <boost/program_options.hpp>
 #include "casm/app/casm_functions.hh"
-#include "casm/casm_io/Log.hh"
 
 namespace CASM {
 
@@ -13,7 +12,7 @@ namespace CASM {
   ///
   /// - Do not inherit from this directly, instead inherit from APICommand<OptionType>
   /// - See the run_api_command function for context when implementing virtual functions
-  class APICommandBase : public Logging {
+  class APICommandBase {
 
   public:
     APICommandBase(const CommandArgs &_args);
@@ -27,8 +26,6 @@ namespace CASM {
     bool in_project() const;
 
     PrimClex &primclex() const;
-
-    PrimClex &primclex(Log &status_log) const;
 
     virtual int vm_count_check() const = 0;
 
@@ -75,6 +72,14 @@ namespace CASM {
 
     OptionType &m_opt;
   };
+
+  /// Parse command line options and make API command. Throws for parsing errors.
+  template<typename CommandType>
+  std::unique_ptr<CommandType> make_api_command(CommandArgs const &args);
+
+  /// Parse command line options and make API command. Throws for parsing errors.
+  template<typename CommandType>
+  std::unique_ptr<CommandType> make_api_command(std::string cli_str, PrimClex &primclex);
 
   /// Standardizes how 'casm X' api commands are executed and implemented
   template<typename CommandType>

@@ -16,13 +16,14 @@ namespace CASM {
 
       "ScelEnum: \n\n"
 
-      "  min: int, >0 (optional, default=1, override with --min)\n"
-      "    The minimum volume supercell to enumerate. The volume is measured\n"
-      "    relative the unit cell being used to generate supercells.\n"
+      "  min: int, >0 (optional, default=1, override with --min)               \n"
+      "    The minimum volume supercell to enumerate. The volume is measured   \n"
+      "    relative the unit cell being used to generate supercells.           \n"
       "\n"
-      "  max: int, >= min (required, override with --max)\n"
-      "    The maximum volume supercell to enumerate. The volume is measured\n"
-      "    relative the unit cell being used to generate supercells.\n"
+      "  max: int, >= min (optional, override with --max)                      \n"
+      "    The maximum volume supercell to enumerate. The volume is measured   \n"
+      "    relative the unit cell being used to generate supercells. One of    \n"
+      "    \"max\" or \"all\" must be given.                                   \n"
       "\n"
       "  dirs: string (optional, default=\"abc\")\n"
       "    This option may be used to restrict the supercell enumeration to 1, \n"
@@ -30,7 +31,7 @@ namespace CASM {
       "    supercells. By specifying combinations of 'a', 'b', and 'c', you    \n"
       "    determine which of the unit cell lattice vectors you want to        \n"
       "    enumerate over. For example, to enumerate 1-dimensional supercells  \n"
-      "    along the 'c' use \"dirs\":\"c\". If you want 2-dimensional        \n"
+      "    along the 'c' use \"dirs\":\"c\". If you want 2-dimensional         \n"
       "    supercells along the 'a' and 'c' lattice vectors, specify           \n"
       "    \"dirs\":\"ac\". \n"
       "\n"
@@ -89,13 +90,11 @@ namespace CASM {
     return "ScelEnum";
   }
 
-  void ScelEnumInterface::run(APICommandBase const &cmd,
+  void ScelEnumInterface::run(PrimClex &primclex,
                               jsonParser const &json_options,
                               jsonParser const &cli_options_as_json) const {
 
-    // Get project and log
-    PrimClex &primclex = cmd.primclex();
-    Logging const &logging = cmd;
+    Log &log = CASM::log();
 
     // combine JSON options and CLI options
     jsonParser json_combined = combine_supercell_enum_json_options(
@@ -113,13 +112,13 @@ namespace CASM {
                                 primclex.settings().query_handler<Supercell>().dict());
 
     std::runtime_error error_if_invalid {"Error reading ScelEnum JSON input"};
-    report_and_throw_if_invalid(parser, logging.log(), error_if_invalid);
+    report_and_throw_if_invalid(parser, log, error_if_invalid);
 
     xtal::ScelEnumProps const &scel_enum_props = *scel_enum_props_parser_ptr->value;
     EnumerateSupercellsOptions const &options = *options_parser_ptr->value;
 
     ScelEnumByProps enumerator {primclex.shared_prim(), scel_enum_props};
-    enumerate_supercells(options, enumerator, primclex.db<Supercell>(), logging);
+    enumerate_supercells(options, enumerator, primclex.db<Supercell>());
   }
 
 }

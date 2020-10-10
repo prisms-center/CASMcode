@@ -20,18 +20,17 @@ TEST(ScelEnumTest, Test1) {
   test::ZrOProj proj;
   proj.check_init();
 
-  PrimClex primclex(proj.dir, null_log());
+  ScopedNullLogging logging;
+  PrimClex primclex(proj.dir);
   primclex.settings().set_crystallography_tol(1e-5);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
 
-  std::vector<std::string> m_names;
-
   // -- Test ScelEnumByProps --------------------
   {
     xtal::ScelEnumProps enum_props(1, 10);
-    ScelEnumByProps e(primclex, enum_props);
+    ScelEnumByProps e(primclex.shared_prim(), enum_props);
 
     EXPECT_EQ(e.name(), "ScelEnumByProps");
 
@@ -44,7 +43,6 @@ TEST(ScelEnumTest, Test1) {
 
     Index count = 0;
     for(; it != end; ++it, ++count) {
-      m_names.push_back(it->name());
 
       Lattice canon_check = xtal::canonical::equivalent(
                               it->lattice(),
@@ -70,26 +68,6 @@ TEST(ScelEnumTest, Test1) {
     EXPECT_TRUE(it == end);
   }
 
-  // -- use results to Test ScelEnumByName --------------------
-  {
-    ScelEnumByName e(primclex, m_names.begin(), m_names.end());
-    EXPECT_EQ(e.name(), "ScelEnumByName");
-
-    auto it = e.begin();
-    EXPECT_TRUE(true);
-    EXPECT_EQ(it.name(), "ScelEnumByName");
-
-    auto end = e.end();
-    EXPECT_TRUE(true);
-
-    Index count = 0;
-    for(; it != end; ++it, ++count) {
-      //std::cout << it->name() << std::endl;
-    }
-    EXPECT_EQ(count, 114);
-    EXPECT_TRUE(it == end);
-  }
-
 }
 
 TEST(ScelEnumTest, Test2) {
@@ -99,18 +77,16 @@ TEST(ScelEnumTest, Test2) {
   proj.check_init();
 
   // in case you want to see what's happening
-  OStringStreamLog ss_log;
-  OStringStreamLog ss_debug_log;
-  OStringStreamLog ss_err_log;
+  ScopedStringStreamLogging logging;
 
   // construct PrimClex
-  PrimClex primclex(proj.dir, Logging(ss_log, ss_debug_log, ss_err_log));
+  PrimClex primclex(proj.dir);
 
   auto exec = [&](const std::string & args) {
-    CommandArgs cmdargs(args, &primclex, proj.dir, ss_log, ss_err_log);
+    CommandArgs cmdargs(args, &primclex, proj.dir);
     int code = casm_api(cmdargs);
-    //std::cout << ss_log.ss().str() << std::endl;
-    //std::cout << ss_err_log.ss().str() << std::endl;
+    //std::cout << logging.ss().str() << std::endl;
+    //std::cout << logging.err_ss().str() << std::endl;
     return code;
   };
 

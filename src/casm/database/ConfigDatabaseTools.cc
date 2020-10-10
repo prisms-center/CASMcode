@@ -1,4 +1,5 @@
 #include "casm/clex/Configuration.hh"
+#include "casm/clex/FillSupercell.hh"
 #include "casm/database/ConfigDatabaseTools.hh"
 #include "casm/database/ScelDatabaseTools.hh"
 
@@ -49,16 +50,16 @@ namespace CASM {
                                                             primclex,
                                                             supercell_db);
 
-      Configuration prim_config = in_canonical_supercell(
-                                    configuration.primitive(),
-                                    primclex,
-                                    supercell_db);
+      Configuration prim_config_in_canon_supercell = in_canonical_supercell(
+                                                       configuration.primitive(),
+                                                       primclex,
+                                                       supercell_db);
 
       std::tie(res.primitive_it, res.insert_primitive) =
         configuration_db.insert(prim_config_in_canon_supercell);
 
       // if the primitive supercell is the same as the equivalent canonical supercell
-      if(canon_supercell_of_configuration == canon_supercell_of_prim_config) {
+      if(canon_supercell_of_configuration == prim_config_in_canon_supercell.supercell()) {
         res.insert_canonical = res.insert_primitive;
         res.canonical_it = res.primitive_it;
       }
@@ -118,15 +119,15 @@ namespace CASM {
                                                             configuration.supercell(),
                                                             supercell_db);
 
-      Configuration prim_config = in_canonical_supercell(
-                                    configuration.primitive(),
-                                    supercell_db);
+      Configuration prim_config_in_canon_supercell = in_canonical_supercell(
+                                                       configuration.primitive(),
+                                                       supercell_db);
 
       std::tie(res.primitive_it, res.insert_primitive) =
         configuration_db.insert(prim_config_in_canon_supercell);
 
       // if the primitive supercell is the same as the equivalent canonical supercell
-      if(canon_supercell_of_configuration == prim_config.supercell()) {
+      if(canon_supercell_of_configuration == prim_config_in_canon_supercell.supercell()) {
         res.insert_canonical = res.insert_primitive;
         res.canonical_it = res.primitive_it;
       }

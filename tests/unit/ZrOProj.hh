@@ -131,17 +131,15 @@ namespace test {
 
       {
         m_p.popen(cd_and() + autotools::abs_ccasm_path() + " enum --method ScelEnum --max 10");
-        std::stringstream ss;
-        Log log(ss);
-        PrimClex primclex(dir, log);
+        ScopedStringStreamLogging logging;
+        PrimClex primclex(dir);
         EXPECT_EQ(primclex.generic_db<Supercell>().size(), 147) << m_p.gets();
       }
 
       {
         m_p.popen(cd_and() + autotools::abs_ccasm_path() + " enum --method ConfigEnumAllOccupations --max 6");
-        std::stringstream ss;
-        Log log(ss);
-        PrimClex primclex(dir, log);
+        ScopedStringStreamLogging logging;
+        PrimClex primclex(dir);
         EXPECT_EQ(primclex.generic_db<Configuration>().size(), 5763) << m_p.gets();
       }
     }

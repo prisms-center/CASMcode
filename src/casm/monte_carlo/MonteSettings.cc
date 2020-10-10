@@ -397,7 +397,7 @@ namespace CASM {
       }
 
       catch(std::runtime_error &e) {
-        Log &err_log = default_err_log();
+        Log &err_log = CASM::err_log();
         err_log.error<Log::standard>("Reading Monte Carlo settings");
         err_log << "No [\"" << level1 << "\"] setting found.\n" << std::endl;
         throw e;
@@ -411,7 +411,7 @@ namespace CASM {
       }
 
       catch(std::runtime_error &e) {
-        Log &err_log = default_err_log();
+        Log &err_log = CASM::err_log();
         err_log.error<Log::standard>("Reading Monte Carlo settings");
         if(this->contains(level1)) {
           err_log << "No [\"" << level1 << "\"][\"" << level2 << "\"] setting found" << std::endl;
@@ -618,7 +618,7 @@ namespace CASM {
         }
       }
       else {
-        Log &err_log = default_err_log();
+        Log &err_log = CASM::err_log();
         err_log.error<Log::standard>("Reading Monte Carlo settings");
         err_log << "Could not determine max data length.\n";
         err_log << "Please check 'sample_by', 'max_pass' or 'max_step', and 'sample_period' in your input file.\n" << std::endl;

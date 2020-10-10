@@ -66,7 +66,8 @@ TEST(ConfigurationTest, Test1) {
   test::FCCTernaryProj proj;
   proj.check_init();
 
-  PrimClex primclex(proj.dir, null_log());
+  ScopedNullLogging logging;
+  PrimClex primclex(proj.dir);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
@@ -130,7 +131,8 @@ TEST(ConfigurationTest, TestConfigurationName) {
   test::FCCTernaryProj proj;
   proj.check_init();
 
-  PrimClex primclex(proj.dir, null_log());
+  ScopedNullLogging logging;
+  PrimClex primclex(proj.dir);
   auto &db = primclex.db<Configuration>();
 
   Eigen::Vector3d a, b, c;
@@ -371,7 +373,8 @@ TEST(ConfigurationTest, Test2) {
   test::FCCTernaryProj proj;
   proj.check_init();
 
-  PrimClex primclex(proj.dir, null_log());
+  ScopedNullLogging logging;
+  PrimClex primclex(proj.dir);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
@@ -482,7 +485,8 @@ TEST(ConfigurationTest, Test3) {
   test::FCCTernaryProj proj;
   proj.check_init();
 
-  PrimClex primclex(proj.dir, null_log());
+  ScopedNullLogging logging;
+  PrimClex primclex(proj.dir);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();

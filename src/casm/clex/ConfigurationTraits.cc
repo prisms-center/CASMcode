@@ -32,10 +32,10 @@ namespace CASM {
       return false;
     }
     catch(std::exception &e) {
-      default_err_log().error("In traits<Configuration>::name_compare");
-      default_err_log() << "A: " << A << std::endl;
-      default_err_log() << "B: " << B << std::endl;
-      default_err_log() << e.what() << std::endl;
+      err_log().error("In traits<Configuration>::name_compare");
+      err_log() << "A: " << A << std::endl;
+      err_log() << "B: " << B << std::endl;
+      err_log() << e.what() << std::endl;
       throw e;
     }
   };

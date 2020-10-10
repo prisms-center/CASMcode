@@ -81,8 +81,7 @@ namespace CASM {
         const PrimClex &primclex,
         const StructureMap<ConfigType> &mapper,
         ImportSettings const  &_set,
-        std::string report_dir,
-        Log &_file_log);
+        std::string report_dir);
 
       template<typename PathIterator>
       void import(PathIterator begin, PathIterator end);

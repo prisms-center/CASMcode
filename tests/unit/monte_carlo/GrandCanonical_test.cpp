@@ -27,9 +27,8 @@ TEST(GrandCanonicalTest, Test0) {
   proj.check_init();
   proj.check_composition();
 
-  Logging logging = Logging::null();
-  //Logging logging;
-  PrimClex primclex(proj.dir, logging);
+  ScopedNullLogging logging;
+  PrimClex primclex(proj.dir);
 
   fs::path eci_src = autotools::abs_srcdir() + "/tests/unit/monte_carlo/eci_0.json";
   fs::path eci_dest = primclex.dir().eci("formation_energy", "default", "default", "default", "default");
@@ -51,7 +50,7 @@ TEST(GrandCanonicalTest, Test0) {
   commit(primclex.settings());
 
   auto check = [&](std::string str) {
-    CommandArgs args(str, &primclex, primclex.dir().root_dir(), Logging::null());
+    CommandArgs args(str, &primclex, primclex.dir().root_dir());
     return !casm_api(args);
   };
 

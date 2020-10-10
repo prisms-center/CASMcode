@@ -10,9 +10,8 @@ namespace CASM {
 
     // --- class ConfigData ---
     template<typename ConfigType>
-    ConfigData::ConfigData(const PrimClex &_primclex, Log &_file_log, TypeTag<ConfigType>) :
-      m_primclex(_primclex),
-      m_file_log(_file_log) {
+    ConfigData::ConfigData(const PrimClex &_primclex, TypeTag<ConfigType>) :
+      m_primclex(_primclex) {
       m_db_props_func = [&]()->PropertiesDatabase& {
         return primclex().template db_props<ConfigType>(
           primclex().settings().default_clex().calctype);

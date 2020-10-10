@@ -10,6 +10,7 @@
 #include "casm/clex/ConfigIOStrucScore.hh"
 #include "casm/clex/ConfigIOStrain.hh"
 #include "casm/clex/ConfigMapping.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
 #include "casm/casm_io/dataformatter/DataFormatterTools_impl.hh"
 #include "casm/app/ClexDescription.hh"
@@ -333,7 +334,7 @@ namespace CASM {
         m_clexulator = primclex.clexulator(desc.bset);
         m_eci = primclex.eci(desc);
         if(m_eci.index().back() >= m_clexulator.corr_size()) {
-          Log &err_log = default_err_log();
+          Log &err_log = CASM::err_log();
           err_log.error<Log::standard>("bset and eci mismatch");
           err_log << "basis set size: " << m_clexulator.corr_size() << std::endl;
           err_log << "max eci index: " << m_eci.index().back() << std::endl;

@@ -53,7 +53,7 @@ namespace CASM {
       Supercell const &supercell,
       Database<Supercell> &supercell_db) {
       return *(make_canonical_and_insert(
-                 supercell.sym_info().shared_prim(),
+                 supercell.shared_prim(),
                  supercell.sym_info().supercell_lattice(),
                  supercell_db).first);
     }

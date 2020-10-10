@@ -22,7 +22,8 @@ TEST(EnumeratorPlugin, Test1) {
   proj.check_init();
   proj.check_composition();
 
-  PrimClex primclex(proj.dir, null_log());
+  ScopedNullLogging logging;
+  PrimClex primclex(proj.dir);
 
   auto cp = [&](std::string _filename) {
 
@@ -47,7 +48,7 @@ TEST(EnumeratorPlugin, Test1) {
   primclex.refresh(true);
 
   auto check = [&](std::string str) {
-    CommandArgs args(str, &primclex, primclex.dir().root_dir(), primclex);
+    CommandArgs args(str, &primclex, primclex.dir().root_dir());
     ASSERT_TRUE(!run_api_command<EnumCommand>(args));
   };
 

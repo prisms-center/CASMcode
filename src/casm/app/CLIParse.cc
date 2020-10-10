@@ -1,12 +1,12 @@
-#include "casm/app/CLIParse.hh"
 #include <boost/program_options.hpp>
+#include "casm/app/CLIParse.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/completer/Handlers.hh"
 
 namespace CASM {
 
   /// Non-owning
-  CLIParse::CLIParse(int _argc, char **_argv, const Logging &_logging) :
-    Logging(_logging),
+  CLIParse::CLIParse(int _argc, char **_argv) :
     m_argc(_argc),
     m_argv(_argv),
     m_parse_result(0),
@@ -14,8 +14,7 @@ namespace CASM {
   }
 
   /// Owning
-  CLIParse::CLIParse(std::string _args, const Logging &_logging) :
-    Logging(_logging),
+  CLIParse::CLIParse(std::string _args) :
     m_free_p(false) {
 
     // parse _args -> argc, argv
@@ -47,8 +46,8 @@ namespace CASM {
   }
 
   /// Take CLI args string, 'casm X ...', and use boost::program_options to parse into Options
-  void parse_args(Completer::OptionHandlerBase &opt, std::string args, const Logging &_logging) {
-    CLIParse parse(args, _logging);
+  void parse_args(Completer::OptionHandlerBase &opt, std::string args) {
+    CLIParse parse(args);
     po::store(po::parse_command_line(parse.argc(), parse.argv(), opt.desc()), opt.vm());
     // gets default values
     po::notify(opt.vm());

@@ -69,8 +69,8 @@ namespace CASM {
 
   void SymGroupRep::set_rep(const SymOp &base_op, const SymOpRepresentation &new_rep) {
     if(!has_valid_master()) {
-      default_err_log() << "CRITICAL ERROR: In SymGroupRep::set_rep(), you are trying to assign the representation of a SymOp whose factor_group is not specified!\n"
-                        << "                Exiting...\n";
+      err_log() << "CRITICAL ERROR: In SymGroupRep::set_rep(), you are trying to assign the representation of a SymOp whose factor_group is not specified!\n"
+                << "                Exiting...\n";
       assert(0);
       exit(1);
     }
@@ -86,16 +86,16 @@ namespace CASM {
 
   void SymGroupRep::set_rep(const SymOpRepresentation &base_op, const SymOpRepresentation &new_rep) {
     if(!has_valid_master()) {
-      default_err_log() << "CRITICAL ERROR: In SymGroupRep::set_rep(), you are trying to assign the representation of a SymOpRepresentation whose factor_group is not specified!\n"
-                        << "                Exiting...\n";
+      err_log() << "CRITICAL ERROR: In SymGroupRep::set_rep(), you are trying to assign the representation of a SymOpRepresentation whose factor_group is not specified!\n"
+                << "                Exiting...\n";
       assert(0);
       exit(1);
     }
     if(valid_index(base_op.index()))
       set_rep(base_op.index(), new_rep);
     else {
-      default_err_log() << "CRITICAL ERROR: In SymGroupRep::set_rep(), you are trying to assign the representation of a SymOpRepresentation whose index is not specified!\n"
-                        << "                Exiting...\n";
+      err_log() << "CRITICAL ERROR: In SymGroupRep::set_rep(), you are trying to assign the representation of a SymOpRepresentation whose index is not specified!\n"
+                << "                Exiting...\n";
       assert(0);
       exit(1);
     }
@@ -108,8 +108,8 @@ namespace CASM {
 
     assert(valid_index(op_index) && op_index < size() && "In SymGroupRep::set_rep(), reference representation is improperly initialized.");
     if(at(op_index)) {
-      default_err_log() << "CRITICAL ERROR: In SymGroupRep::set_rep(), representation already exists for operation " << op_index << ".\n"
-                        << "                Exiting...\n";
+      err_log() << "CRITICAL ERROR: In SymGroupRep::set_rep(), representation already exists for operation " << op_index << ".\n"
+                << "                Exiting...\n";
       assert(0);
       exit(1);
     }
@@ -167,7 +167,7 @@ namespace CASM {
     if(!_rep.size())
       return new_rep;
     if(_rep[0] && !(_rep.MatrixXd(0))) {
-      default_err_log() << "CRITICAL ERROR: Trying to perform matrix transformation on a non-matrix SymRep. Exiting...\n";
+      err_log() << "CRITICAL ERROR: Trying to perform matrix transformation on a non-matrix SymRep. Exiting...\n";
       assert(0);
       exit(1);
     }

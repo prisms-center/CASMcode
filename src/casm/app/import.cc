@@ -1,4 +1,5 @@
 #include "casm/app/import.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/database/DatabaseTypes.hh"
 #include "casm/database/Import.hh"
@@ -59,7 +60,7 @@ namespace CASM {
   // -- class ImportCommandImplBase --------------------------------------------
 
   /// Defaults used if DataObject type doesn't matter or not given
-  class ImportCommandImplBase : public Logging {
+  class ImportCommandImplBase {
   public:
 
     ImportCommandImplBase(const ImportCommand &cmd);
@@ -78,7 +79,6 @@ namespace CASM {
   };
 
   ImportCommandImplBase::ImportCommandImplBase(const ImportCommand &cmd) :
-    Logging(cmd),
     m_cmd(cmd) {}
 
   int ImportCommandImplBase::help() const {

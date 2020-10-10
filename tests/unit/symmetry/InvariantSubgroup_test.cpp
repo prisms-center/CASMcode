@@ -21,8 +21,8 @@ TEST(InvariantSubgroupTest, Test0) {
   test::ZrOProj proj;
   proj.check_init();
 
-  Logging logging = Logging::null();
-  PrimClex primclex(proj.dir, logging);
+  ScopedNullLogging logging;
+  PrimClex primclex(proj.dir);
   const Structure &prim = primclex.prim();
   const SymGroup &prim_fg = primclex.prim().factor_group();
   Supercell prim_scel(&primclex, Eigen::Matrix3i::Identity());
@@ -39,13 +39,12 @@ TEST(InvariantSubgroupTest, Test0) {
   //   bspecs,
   //   alloy_sites_filter,
   //   primclex.crystallography_tol(),
-  //   std::back_inserter(orbits),
-  //   primclex.log());
+  //   std::back_inserter(orbits));
   EXPECT_EQ(true, true);
 
   PrototypePrinter<IntegralCluster> printer;
   printer.opt.coord_type = INTEGRAL;
-  // print_clust(orbits.begin(), orbits.end(), primclex.log(), printer);
+  // print_clust(orbits.begin(), orbits.end(), log(), printer);
 
   // Make cluster groups & check size, based on prim.factor_group symmetry
   {

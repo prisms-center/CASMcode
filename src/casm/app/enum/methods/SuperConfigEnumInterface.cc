@@ -95,15 +95,12 @@ namespace CASM {
   }
 
   void SuperConfigEnumInterface::run(
-    APICommandBase const &cmd,
+    PrimClex &primclex,
     jsonParser const &json_options,
     jsonParser const &cli_options_as_json) const {
 
-    // Get project and log
-    PrimClex &primclex = cmd.primclex();
     auto shared_prim = primclex.shared_prim();
-    Logging const &logging = cmd;
-    Log &log = logging.log();
+    Log &log = CASM::log();
 
     // combine JSON options and CLI options
     jsonParser json_combined = combine_configuration_enum_json_options(
@@ -194,8 +191,7 @@ namespace CASM {
       target_supercells.begin(),
       target_supercells.end(),
       primclex.db<Supercell>(),
-      primclex.db<Configuration>(),
-      logging);
+      primclex.db<Configuration>());
   }
 
 }

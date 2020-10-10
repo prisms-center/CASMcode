@@ -18,15 +18,13 @@ TEST(settingsTest, Basics) {
   proj.check_init();
 
   // in case you want to see what's happening
-  OStringStreamLog ss_log;
-  OStringStreamLog ss_debug_log;
-  OStringStreamLog ss_err_log;
+  ScopedStringStreamLogging logging;
 
   // construct PrimClex
-  PrimClex primclex(proj.dir, Logging(ss_log, ss_debug_log, ss_err_log));
+  PrimClex primclex(proj.dir);
 
   auto exec = [&](const std::string & args) {
-    CommandArgs cmdargs(args, &primclex, proj.dir, ss_log, ss_err_log);
+    CommandArgs cmdargs(args, &primclex, proj.dir);
     return casm_api(cmdargs);
   };
 
@@ -41,7 +39,7 @@ TEST(settingsTest, Basics) {
   EXPECT_EQ(exec("casm settings --set-bset test1"), 0);
   EXPECT_EQ(exec("casm settings --set-bset default"), 0);
 
-  //std::cout << ss_log.ss().str() << std::endl;
-  //std::cout << ss_err_log.ss().str() << std::endl;
+  //std::cout << logging.ss().str() << std::endl;
+  //std::cout << logging.err_ss().str() << std::endl;
 
 }

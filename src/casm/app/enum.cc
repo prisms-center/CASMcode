@@ -8,10 +8,10 @@
 #include "casm/app/enum/EnumInterface.hh"
 #include "casm/app/enum/standard_enumerator_interfaces.hh"
 #include "casm/app/io/json_io_impl.hh"
-#include "casm/enumerator/Enumerator.hh"
+#include "casm/casm_io/Log.hh"
+#include "casm/casm_io/container/stream_io.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/completer/Handlers.hh"
-#include "casm/casm_io/container/stream_io.hh"
 
 namespace CASM {
   namespace Completer {
@@ -153,10 +153,8 @@ namespace CASM {
     // - if no name match, attempt to interpret --method as index into this->enumerators()
     // - otherwise provide a useful error message
 
-    jsonParser json_options = make_json_input(opt());
-
-    jsonParser cli_options_as_json;
-    to_json(opt(), cli_options_as_json);
+    jsonParser json_options = make_json_input(opt()); // JSON from --input string or --settings file
+    jsonParser cli_options_as_json {opt()};           // All CLI options as JSON object
 
     // find how many method names match the --method input value
     auto enumeration_method_name_matches = [&](notstd::cloneable_ptr<EnumInterfaceBase> const & interface_ptr) {
@@ -166,7 +164,7 @@ namespace CASM {
 
     if(count == 1) {
       auto it = std::find_if(enumerators().begin(), enumerators().end(), enumeration_method_name_matches);
-      (*it)->run(*this, json_options, cli_options_as_json);
+      (*it)->run(primclex(), json_options, cli_options_as_json);
       return 0;
     }
     else if(count < 1) {
@@ -189,7 +187,7 @@ namespace CASM {
 
       auto it = enumerators().begin();
       std::advance(it, method_index);
-      (*it)->run(*this, json_options, cli_options_as_json);
+      (*it)->run(primclex(), json_options, cli_options_as_json);
       return 0;
     }
     else if(count > 1) {

@@ -8,7 +8,6 @@
 namespace CASM {
 
   class Configuration;
-  class Logging;
   class PrimClex;
   class Supercell;
 
@@ -50,8 +49,7 @@ namespace CASM {
     MakeEnumeratorFunctor make_enumerator_f,
     std::map<std::string, InputType> input_name_value_map,
     DB::Database<Supercell> &supercell_db,
-    DB::Database<Configuration> &configuration_db,
-    Logging const &logging);
+    DB::Database<Configuration> &configuration_db);
 
 }
 

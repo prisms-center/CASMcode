@@ -94,9 +94,8 @@ void run_case(ProjType &proj, ConfigInit f, MTRand &mtrand) {
   proj.check_init();
   proj.check_composition();
 
-  Logging logging = Logging::null();
-  //Logging logging;
-  PrimClex primclex(proj.dir, logging);
+  ScopedNullLogging logging;
+  PrimClex primclex(proj.dir);
 
   Eigen::Matrix3i T;
   T << 9, 0, 0,

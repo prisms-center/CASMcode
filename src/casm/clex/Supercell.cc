@@ -6,6 +6,7 @@
 #include <boost/lexical_cast.hpp>
 #include "casm/clex/ChemicalReference.hh"
 #include "casm/crystallography/io/VaspIO.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/container/stream_io.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
@@ -86,11 +87,11 @@ namespace CASM {
 
     auto res = xtal::is_superlattice(superlattice, prim().lattice(), crystallography_tol());
     if(!res.first) {
-      _prim->err_log() << "Error in Supercell(PrimClex *_prim, const Lattice &superlattice)" << std::endl
-                       << "  Bad supercell, the transformation matrix is not integer." << std::endl;
-      _prim->err_log() << "superlattice: \n" << superlattice.lat_column_mat() << std::endl;
-      _prim->err_log() << "prim lattice: \n" << prim().lattice().lat_column_mat() << std::endl;
-      _prim->err_log() << "transformation matrix: \n" << res.second << std::endl;
+      err_log() << "Error in Supercell(PrimClex *_prim, const Lattice &superlattice)" << std::endl
+                << "  Bad supercell, the transformation matrix is not integer." << std::endl;
+      err_log() << "superlattice: \n" << superlattice.lat_column_mat() << std::endl;
+      err_log() << "prim lattice: \n" << prim().lattice().lat_column_mat() << std::endl;
+      err_log() << "transformation matrix: \n" << res.second << std::endl;
       throw std::invalid_argument("Error constructing Supercell: the transformation matrix is not integer");
     }
   }
@@ -318,8 +319,8 @@ namespace CASM {
       fs::create_directories(dir.configuration_dir(_scel.name()));
     }
     catch(const fs::filesystem_error &ex) {
-      default_err_log() << "Error in Supercell::write_pos()." << std::endl;
-      default_err_log() << ex.what() << std::endl;
+      err_log() << "Error in Supercell::write_pos()." << std::endl;
+      err_log() << ex.what() << std::endl;
     }
 
     fs::ofstream file(dir.LAT(_scel.name()));
@@ -374,12 +375,12 @@ namespace CASM {
     }
     catch(std::exception &e) {
       std::string format = "SCELV_T00_T11_T22_T12_T02_T01";
-      primclex.err_log().error("In make_supercell");
-      primclex.err_log() << "expected format: " << format << "\n";
-      primclex.err_log() << "name: |" << name << "|" << std::endl;
-      primclex.err_log() << "tokens: " << tokens << std::endl;
-      primclex.err_log() << "tokens.size(): " << tokens.size() << std::endl;
-      primclex.err_log() << e.what() << std::endl;
+      err_log().error("In make_supercell");
+      err_log() << "expected format: " << format << "\n";
+      err_log() << "name: |" << name << "|" << std::endl;
+      err_log() << "tokens: " << tokens << std::endl;
+      err_log() << "tokens.size(): " << tokens.size() << std::endl;
+      err_log() << e.what() << std::endl;
       throw e;
     }
 
@@ -393,11 +394,11 @@ namespace CASM {
       0, 0, cast(tokens[3]);
     }
     catch(std::exception &e) {
-      primclex.err_log().error("In make_supercell");
-      primclex.err_log() << "Could not construct transformation matrix from supercell name" << std::endl;
-      primclex.err_log() << "  name: " << name << std::endl;
-      primclex.err_log() << "  tokens: " << tokens << std::endl;
-      primclex.err_log() << e.what() << std::endl;
+      err_log().error("In make_supercell");
+      err_log() << "Could not construct transformation matrix from supercell name" << std::endl;
+      err_log() << "  name: " << name << std::endl;
+      err_log() << "  tokens: " << tokens << std::endl;
+      err_log() << e.what() << std::endl;
       throw e;
     }
 
@@ -416,10 +417,10 @@ namespace CASM {
     // validate name
     if(tokens.size() != 2) {
       std::string format = "$CANON_SCEL_NAME.$PRIM_FG_OP";
-      primclex.err_log().error("In make_shared_supercell");
-      primclex.err_log() << "expected format: " << format << "\n";
-      primclex.err_log() << "name: " << name << std::endl;
-      primclex.err_log() << "tokens: " << tokens << std::endl;
+      err_log().error("In make_shared_supercell");
+      err_log() << "expected format: " << format << "\n";
+      err_log() << "name: " << name << std::endl;
+      err_log() << "tokens: " << tokens << std::endl;
       throw std::invalid_argument("Error in make_shared_supercell: supercell name format error");
     }
 

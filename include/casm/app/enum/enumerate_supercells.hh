@@ -7,7 +7,6 @@
 
 namespace CASM {
 
-  class Logging;
   class PrimClex;
   class Supercell;
 
@@ -41,8 +40,7 @@ namespace CASM {
   void enumerate_supercells(
     EnumerateSupercellsOptions const &options,
     EnumeratorType &enumerator,
-    DB::Database<Supercell> &supercell_db,
-    Logging const &logging);
+    DB::Database<Supercell> &supercell_db);
 
 }
 

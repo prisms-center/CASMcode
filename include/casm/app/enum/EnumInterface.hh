@@ -6,7 +6,7 @@
 
 namespace CASM {
 
-  class APICommandBase;
+  class PrimClex;
   class jsonParser;
 
   namespace Completer {
@@ -29,7 +29,7 @@ namespace CASM {
 
     /// Enumeration method implementation
     ///
-    /// \param cmd APICommandBase object provides access to PrimClex, Logging, root, etc.
+    /// \param primclex PrimClex gives access to project resources
     /// \param json_options JSON input, as by --input or --settings CLI options
     /// \param cli_options_as_json CLI options converted to JSON. Includes:
     ///        --desc as "desc": array of string (method names to print help for)
@@ -49,7 +49,7 @@ namespace CASM {
     /// Notes:
     /// - It is up to the individual method to determine how to combine and use `json_options` and
     ///   `cli_options_as_json`, but by convention prefer using CLI input in case of collisions.
-    virtual void run(APICommandBase const &cmd,
+    virtual void run(PrimClex &primclex,
                      jsonParser const &json_options,
                      jsonParser const &cli_options_as_json) const = 0;
 

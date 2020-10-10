@@ -5,7 +5,6 @@
 namespace CASM {
 
   APICommandBase::APICommandBase(const CommandArgs &_args) :
-    Logging(_args),
     m_args(_args),
     m_in_project(!find_casmroot(_args.root).empty()) {}
 
@@ -22,15 +21,11 @@ namespace CASM {
   }
 
   PrimClex &APICommandBase::primclex() const {
-    return primclex(log());
-  }
-
-  PrimClex &APICommandBase::primclex(Log &status_log) const {
     if(m_args.primclex) {
       return *m_args.primclex;
     }
     else if(!m_primclex) {
-      m_primclex.reset(new PrimClex(root(), status_log));
+      m_primclex.reset(new PrimClex(root()));
     }
     return *m_primclex;
   }

@@ -172,16 +172,13 @@ namespace CASM {
   /// - The analysis finds irreducible representations of the DoF vector space and
   ///   optionally calculates the symmetrically unique wedges in that space
   /// - See `dof_space_analysis_desc()` for JSON and CLI input options
-  void dof_space_analysis(APICommandBase const &cmd,
+  void dof_space_analysis(PrimClex &primclex,
                           jsonParser const &json_options,
                           jsonParser const &cli_options_as_json) {
 
     using namespace dof_space_analysis_impl;
 
-    // Get project and log
-    PrimClex &primclex = cmd.primclex();
-    Logging const &logging = cmd;
-    Log &log = logging.log();
+    Log &log = CASM::log();
     DirectoryStructure const &dir = primclex.dir();
 
     // combine JSON options and CLI options

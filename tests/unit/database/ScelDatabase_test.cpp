@@ -24,7 +24,8 @@ TEST(ScelDatabase_Test, Test1) {
   proj.check_init();
   EXPECT_EQ(1, 1);
 
-  PrimClex primclex(proj.dir, null_log());
+  ScopedNullLogging logging;
+  PrimClex primclex(proj.dir);
   const Structure &prim(primclex.prim());
   primclex.settings().set_crystallography_tol(1e-5);
   EXPECT_EQ(fs::equivalent(proj.dir, primclex.dir().root_dir()), true);

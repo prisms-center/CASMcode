@@ -527,7 +527,7 @@ namespace CASM {
 
   std::vector<std::vector< Eigen::MatrixXd> > special_subspaces(SymGroupRep const &_rep, SymGroup const &head_group) {
     if(!_rep.size() || !_rep.MatrixXd(0)) {
-      default_err_log() << "CRITICAL ERROR: In special_subspaces() called on imcompatible SymGroupRep.\n Exiting...\n";
+      err_log() << "CRITICAL ERROR: In special_subspaces() called on imcompatible SymGroupRep.\n Exiting...\n";
       exit(1);
     }
 
@@ -549,7 +549,7 @@ namespace CASM {
     // 'i' loops over subgroup "orbits". There are 0 to 'dim' special directions associated with each orbit.
     for(i = 0; i < sg_op_inds.size(); i++) {
       if(sg_op_inds[i].size() == 0 || sg_op_inds[i].begin()->size() == 0) {
-        default_err_log() << "CRITICAL ERROR: In special_subspaces(), attempting to use a zero-size subgroup.\n Exiting...\n";
+        err_log() << "CRITICAL ERROR: In special_subspaces(), attempting to use a zero-size subgroup.\n Exiting...\n";
         exit(1);
       }
 
@@ -766,15 +766,15 @@ namespace CASM {
                                                           bool allow_complex) {
     std::set<SymRepTools::IrrepInfo, Local::IrrepCompare > result{Local::IrrepCompare()};
     if(!_rep.size() || !head_group.size() || !_rep.MatrixXd(head_group[0])) {
-      default_err_log() << "WARNING:  In irrep_decomposition(), size of representation is " << _rep.size() << " and MatrixXd address is " << _rep.MatrixXd(head_group[0]) << std::endl
-                        << "          No valid irreps will be returned.\n";
+      err_log() << "WARNING:  In irrep_decomposition(), size of representation is " << _rep.size() << " and MatrixXd address is " << _rep.MatrixXd(head_group[0]) << std::endl
+                << "          No valid irreps will be returned.\n";
       return {};
     }
     assert(Local::_rep_check(_rep, head_group, true) && "REPRESENTATION IS ILL-DEFINED!!");
     int dim(_rep.dim());
     std::vector<Eigen::MatrixXcd> commuters;
-    std::cout.precision(8);
-    std::cout.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
+    // std::cout.precision(8);
+    // std::cout.flags(std::ios::showpoint | std::ios::fixed | std::ios::right);
     if(!is_irrep(_rep, head_group)) {
       // Identity always commutes, and by putting it first we prevent some accidental degeneracies
       commuters.push_back(Eigen::MatrixXcd::Identity(dim, dim) / sqrt(double(dim)));
@@ -1003,8 +1003,8 @@ namespace CASM {
       Permutation const *perm_ptr(permute_rep.permutation(np));
       if(perm_ptr == NULL) {
         // This check may not make sense. Some representations may not have all operations.  If it's causing problems, comment it out
-        default_err_log() << "CRITICAL ERROR: In subset_permutation_rep(SymGroupRep,std::vector<Index>::X2), permute_rep is missing at least one permutation!\n"
-                          << "                Exiting...\n";
+        err_log() << "CRITICAL ERROR: In subset_permutation_rep(SymGroupRep,std::vector<Index>::X2), permute_rep is missing at least one permutation!\n"
+                  << "                Exiting...\n";
         assert(0);
         exit(1);
       }
@@ -1025,8 +1025,8 @@ namespace CASM {
         }
 
         if(ns2 >= subsets.size()) {
-          default_err_log() << "CRITICAL ERROR: In subset_permutation_rep(SymGroupRep,std::vector<Index>::X2), subsets are not closed under permute_rep permutations!\n"
-                            << "                Exiting...\n";
+          err_log() << "CRITICAL ERROR: In subset_permutation_rep(SymGroupRep,std::vector<Index>::X2), subsets are not closed under permute_rep permutations!\n"
+                    << "                Exiting...\n";
           assert(0);
           exit(1);
         }
@@ -1045,8 +1045,8 @@ namespace CASM {
 
     std::vector<Index> rep_dims(sum_reps.size(), 0);
     if(permute_rep.permutation(0) == NULL) {
-      default_err_log() << "CRITICAL ERROR: In permuted_direct_sum_rep(SymGroupRep,std::vector<SymGroupRep const*>), permute_rep does not contain permutations!\n"
-                        << "                Exiting...\n";
+      err_log() << "CRITICAL ERROR: In permuted_direct_sum_rep(SymGroupRep,std::vector<SymGroupRep const*>), permute_rep does not contain permutations!\n"
+                << "                Exiting...\n";
       assert(0);
       exit(1);
     }
@@ -1058,8 +1058,8 @@ namespace CASM {
       if((permute_rep.has_valid_master() != sum_reps[i]->has_valid_master())
          || (permute_rep.has_valid_master() && &(permute_rep.master_group()) != &(sum_reps[i]->master_group()))
          || sum_reps[i]->MatrixXd(0) == NULL) {
-        default_err_log() << "CRITICAL ERROR: In permuted_direct_sum_rep(SymGroupRep,std::vector<SymGroupRep const*>), found incompatible SymGroupReps!\n"
-                          << "                Exiting...\n";
+        err_log() << "CRITICAL ERROR: In permuted_direct_sum_rep(SymGroupRep,std::vector<SymGroupRep const*>), found incompatible SymGroupReps!\n"
+                  << "                Exiting...\n";
         assert(0);
         exit(1);
       }
@@ -1090,8 +1090,8 @@ namespace CASM {
 
   SymGroupRep kron_rep(SymGroupRep const &LHS, SymGroupRep const &RHS) {
     if((LHS.has_valid_master() != RHS.has_valid_master()) || (LHS.has_valid_master() && &LHS.master_group() != &RHS.master_group())) {
-      default_err_log() << "CRITICAL ERROR: In kron_rep(SymGroupRep,SymGroupRep), taking product of two incompatible SymGroupReps!\n"
-                        << "                Exiting...\n";
+      err_log() << "CRITICAL ERROR: In kron_rep(SymGroupRep,SymGroupRep), taking product of two incompatible SymGroupReps!\n"
+                << "                Exiting...\n";
       exit(1);
     }
     SymGroupRep new_rep(SymGroupRep::NO_HOME, LHS.size());
@@ -1124,7 +1124,7 @@ namespace CASM {
     }
 
     SubWedge SubWedge::make_dummy(const Eigen::MatrixXd &axes) {
-      return SubWedge({IrrepWedge::make_dummy(_axes)});
+      return SubWedge({IrrepWedge::make_dummy(axes)});
     }
 
     Eigen::MatrixXd SubWedge::_subwedge_to_trans_mat(std::vector<IrrepWedge> const &_iwedges) {

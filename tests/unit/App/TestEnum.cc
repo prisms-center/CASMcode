@@ -10,6 +10,7 @@
 
 // --- TestEnum ---
 
+#include "casm/casm_io/Log.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/container/Counter.hh"
@@ -227,7 +228,6 @@ namespace CASM {
 
       // Get project and log
       PrimClex &primclex = cmd.primclex();
-      Logging const &logging = cmd;
 
       // combine JSON options and CLI options
       jsonParser json_combined = combine_configuration_enum_json_options(
@@ -248,7 +248,7 @@ namespace CASM {
                                   primclex.settings().query_handler<Configuration>().dict());
 
       std::runtime_error error_if_invalid {"Error reading TestEnum JSON input"};
-      report_and_throw_if_invalid(parser, logging.log(), error_if_invalid);
+      report_and_throw_if_invalid(parser, log(), error_if_invalid);
 
       auto const &input_name_value_pairs = *input_parser_ptr->value;
       EnumerateConfigurationsOptions const &options = *options_parser_ptr->value;
@@ -263,8 +263,7 @@ namespace CASM {
         input_name_value_pairs.begin(),
         input_name_value_pairs.end(),
         primclex.db<Supercell>(),
-        primclex.db<Configuration>(),
-        logging);
+        primclex.db<Configuration>());
     }
 
   };

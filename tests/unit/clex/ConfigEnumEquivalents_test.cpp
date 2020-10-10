@@ -24,6 +24,7 @@ using namespace test;
 TEST(ConfigEnumEquivalentsTest, Test1) {
 
   // tests ConfigEnumAllOccupations and ConfigEnumEquivalents
+  ScopedNullLogging logging;
 
   // read test file
   fs::path test_cases_path(autotools::abs_srcdir() + "/tests/unit/clex/ConfigEnumEquivalents_test_cases.json");
@@ -59,12 +60,12 @@ TEST(ConfigEnumEquivalentsTest, Test1) {
     build_project(project_settings, prim);
 
     // read primclex
-    PrimClex primclex(test_proj_dir, null_log());
+    PrimClex primclex(test_proj_dir);
     double tol = primclex.crystallography_tol();
 
     // generate supercells
     xtal::ScelEnumProps enum_props(1, j["max_vol"].get<int>() + 1);
-    ScelEnumByProps scel_enum(primclex, enum_props);
+    ScelEnumByProps scel_enum(primclex.shared_prim(), enum_props);
     for(const auto &scel : scel_enum) {
     }
 

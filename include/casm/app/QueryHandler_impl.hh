@@ -4,6 +4,7 @@
 #include "casm/system/RuntimeLibrary.hh"
 #include "casm/app/QueryHandler.hh"
 #include "casm/app/ProjectSettings.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/dataformatter/DataFormatterTools_impl.hh"
 #include "casm/database/Selection_impl.hh"
 #include "casm/database/Selected_impl.hh"

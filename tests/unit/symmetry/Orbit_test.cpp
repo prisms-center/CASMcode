@@ -42,8 +42,8 @@ TEST(OrbitTest, Test0) {
   test::ZrOProj proj;
   proj.check_init();
 
-  Logging logging = Logging::null();
-  PrimClex primclex(proj.dir, logging);
+  ScopedNullLogging logging;
+  PrimClex primclex(proj.dir);
   const Structure &prim = primclex.prim();
 
   const auto &g = prim.factor_group();

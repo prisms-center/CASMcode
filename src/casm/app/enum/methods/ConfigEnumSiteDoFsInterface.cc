@@ -315,10 +315,9 @@ namespace CASM {
     struct MakeEnumerator {
 
       MakeEnumerator(
-        Log &_log,
         ConfigEnumSiteDoFsParams const &_params,
         bool _make_symmetry_adapted_axes):
-        log(_log),
+        log(CASM::log()),
         params(_params),
         make_symmetry_adapted_axes(_make_symmetry_adapted_axes) {}
 
@@ -357,14 +356,11 @@ namespace CASM {
   }
 
   void ConfigEnumSiteDoFsInterface::run(
-    APICommandBase const &cmd,
+    PrimClex &primclex,
     jsonParser const &json_options,
     jsonParser const &cli_options_as_json) const {
 
-    // Get project and log
-    PrimClex &primclex = cmd.primclex();
-    Logging const &logging = cmd;
-    Log &log = logging.log();
+    Log &log = CASM::log();
 
     // combine JSON options and CLI options
     jsonParser json_combined = combine_configuration_enum_json_options(
@@ -421,7 +417,7 @@ namespace CASM {
 
     // 4) Enumerate configurations ------------------
 
-    ConfigEnumSiteDoFsInterface_impl::MakeEnumerator make_enumerator_f {log, params, sym_axes_option};
+    ConfigEnumSiteDoFsInterface_impl::MakeEnumerator make_enumerator_f {params, sym_axes_option};
 
     enumerate_configurations(
       options,
@@ -429,8 +425,7 @@ namespace CASM {
       named_initial_states.begin(),
       named_initial_states.end(),
       primclex.db<Supercell>(),
-      primclex.db<Configuration>(),
-      logging);
+      primclex.db<Configuration>());
   }
 
 }

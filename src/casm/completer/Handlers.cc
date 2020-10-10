@@ -5,6 +5,7 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/enum/EnumInterface.hh"
+#include "casm/app/enum/standard_enumerator_interfaces.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/dataformatter/DataFormatter.hh"
 #include "casm/casm_io/enum/stream_io.hh"
@@ -132,7 +133,8 @@ namespace CASM {
 
     void ArgHandler::scelname_to_bash(std::vector<std::string> &arguments) {
       if(!find_casmroot(boost::filesystem::current_path()).empty()) {
-        const PrimClex &pclex = PrimClex(find_casmroot(boost::filesystem::current_path()), null_log());
+        ScopedNullLogging logging;
+        const PrimClex &pclex = PrimClex(find_casmroot(boost::filesystem::current_path()));
         for(const auto &scel : pclex.const_db<Supercell>()) {
           arguments.push_back(scel.name());
         }
@@ -142,7 +144,8 @@ namespace CASM {
 
     void ArgHandler::configname_to_bash(std::vector<std::string> &arguments) {
       if(!find_casmroot(boost::filesystem::current_path()).empty()) {
-        const PrimClex &pclex = PrimClex(find_casmroot(boost::filesystem::current_path()), null_log());
+        ScopedNullLogging logging;
+        const PrimClex &pclex = PrimClex(find_casmroot(boost::filesystem::current_path()));
         for(const auto &config : pclex.const_db<Configuration>()) {
           arguments.push_back(config.name());
         }

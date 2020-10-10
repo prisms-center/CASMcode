@@ -3,7 +3,6 @@
 
 #include <memory>
 #include "casm/global/definitions.hh"
-#include "casm/casm_io/Log.hh"
 
 /// Cluster expansion class
 namespace CASM {
@@ -50,7 +49,7 @@ namespace CASM {
   /// - supercells & configurations
   /// - clusters, basis sets, neighbor lists, & ECI
   /// -
-  class PrimClex : public Logging {
+  class PrimClex {
 
   public:
     typedef Structure PrimType;
@@ -60,12 +59,11 @@ namespace CASM {
     /// Initial construction of a PrimClex, from ProjectSettings and shared prim
     explicit PrimClex(
       ProjectSettings const &_project_settings,
-      std::shared_ptr<PrimType const> _shared_prim,
-      const Logging &logging = Logging());
+      std::shared_ptr<PrimType const> _shared_prim);
 
     /// Construct PrimClex from existing CASM project directory
     ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
-    explicit PrimClex(const fs::path &_root, const Logging &logging = Logging());
+    explicit PrimClex(const fs::path &_root);
 
     PrimClex(const PrimClex &) = delete;
 

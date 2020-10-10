@@ -38,8 +38,6 @@ namespace CASM {
           }
         }
         catch(const std::exception &e) {
-          // default_err_log() << "Error in Orbit constructor: \n"
-          //                   << "  Failed constructing EqMapRow." << std::endl;
           throw libcasm_runtime_error("Error in Orbit constructor: Failed constructing EqMapRow.");
         }
       };
@@ -64,9 +62,6 @@ namespace CASM {
           }
         }
         catch(const std::exception &e) {
-          // default_err_log() << "Error in Orbit constructor: \n"
-          //                   << "  Failed constructing RelEqMap." << std::endl;
-          // throw e;
           throw libcasm_runtime_error("Error in Orbit constructor: Failed constructing RelEqMap.");
         }
       }
@@ -130,9 +125,6 @@ namespace CASM {
       }
     }
     catch(const std::exception &e) {
-      // default_err_log() << "Error in Orbit constructor: \n"
-      //                   << "  Failed generating unique equivalents." << std::endl;
-      // throw e;
       throw libcasm_runtime_error("Error in Orbit constructor: Failed generating unique equivalents.");
     }
 
@@ -153,17 +145,11 @@ namespace CASM {
       // sanity check that equivalence_map is rectangular
       for(Index j = 1; j < tmp_equivalence_map.size(); ++j) {
         if(tmp_equivalence_map[0].size() != tmp_equivalence_map[j].size()) {
-          // jsonParser json;
-          // default_err_log() << "SymGroup, Symmetry application, or SymCompareType error: "
-          //                   "initial equivalence map is not rectangular: \n"
-          //                   << to_json(tmp_equivalence_map, json) << std::endl;
           throw libcasm_runtime_error("Error in Orbit constructor: equivalence map is not rectangular");
         }
       }
     }
     catch(const std::exception &e) {
-      // default_err_log() << "Error in Orbit constructor: \n"
-      //                   << "  Failed generating initial equivalence map." << std::endl;
       throw libcasm_runtime_error(std::string("Error in Orbit constructor: ")
                                   + "Failed generating initial equivalence map: " + e.what());
     }
@@ -185,9 +171,6 @@ namespace CASM {
       }
     }
     catch(const std::exception &e) {
-      // default_err_log() << "Error in Orbit constructor: \n"
-      //                   << "  Failed generating sorted equivalence map." << std::endl;
-      // throw e;
       throw libcasm_runtime_error("Error in Orbit constructor: Failed generating sorted equivalence map.");
     }
 
@@ -220,9 +203,6 @@ namespace CASM {
       }
     }
     catch(const std::exception &e) {
-      // default_err_log() << "Error in Orbit constructor: \n"
-      //                   << "  Failed copying sorted elements and equivalence map." << std::endl;
-      // throw e;
       throw libcasm_runtime_error("Error in Orbit constructor: Failed copying sorted elements and equivalence map.");
     }
 

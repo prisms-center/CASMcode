@@ -40,8 +40,8 @@ namespace CASM {
 
   Structure::Structure(const fs::path &filepath) {
     if(!fs::exists(filepath)) {
-      default_err_log() << "Error in Structure::Structure(const fs::path &filepath)." << std::endl;
-      default_err_log() << "  File does not exist at: " << filepath << std::endl;
+      err_log() << "Error in Structure::Structure(const fs::path &filepath)." << std::endl;
+      err_log() << "  File does not exist at: " << filepath << std::endl;
       exit(1);
     }
     fs::ifstream infile(filepath);
@@ -161,8 +161,8 @@ namespace CASM {
   void Structure::_generate_basis_symreps() {
     std::string clr(100, ' ');
     if(factor_group().size() <= 0) {
-      default_err_log() << "ERROR in generate_basis_permutation_representation" << std::endl;
-      default_err_log() << "Factor group is empty." << std::endl;;
+      err_log() << "ERROR in generate_basis_permutation_representation" << std::endl;
+      err_log() << "Factor group is empty." << std::endl;;
       exit(1);
     }
 
@@ -262,8 +262,8 @@ namespace CASM {
   //the comparators in basis_set in favor of the ones in the xtal namespace
   void Structure::_generate_global_symreps() {
     if(factor_group().size() <= 0) {
-      default_err_log() << "ERROR in generate_global_dof_representations" << std::endl;
-      default_err_log() << "Factor group is empty." << std::endl;
+      err_log() << "ERROR in generate_global_dof_representations" << std::endl;
+      err_log() << "Factor group is empty." << std::endl;
       exit(1);
     }
     for(auto const &name_dof_pr : this->structure().global_dofs()) {

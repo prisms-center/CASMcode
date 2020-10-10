@@ -33,7 +33,7 @@ struct Checks {
 TEST(AppTest, ProjectCommands) {
 
   Popen p;
-  Log &log = default_log();
+  Log &log = CASM::log();
 
   // checks for what happens when running casm from a non-project directory
   std::vector<Checks> command = {

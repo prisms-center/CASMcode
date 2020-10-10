@@ -37,8 +37,8 @@ TEST(SymBasisPermuteTest, Test0) {
   test::ZrOProj proj;
   proj.check_init();
 
-  Logging logging = Logging::null();
-  PrimClex primclex(proj.dir, logging);
+  ScopedNullLogging logging;
+  PrimClex primclex(proj.dir);
 
   TestConfig0 td(primclex);
 

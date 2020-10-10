@@ -14,7 +14,7 @@ namespace CASM {
 
     std::string name() const override;
 
-    void run(APICommandBase const &cmd, jsonParser const &json_options, jsonParser const &cli_options_as_json) const override;
+    void run(PrimClex &primclex, jsonParser const &json_options, jsonParser const &cli_options_as_json) const override;
 
   };
 

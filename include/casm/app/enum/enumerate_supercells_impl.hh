@@ -3,6 +3,7 @@
 
 #include "casm/app/enum/EnumInterface.hh"
 #include "casm/app/enum/enumerate_supercells.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/clex/Supercell_impl.hh"
 #include "casm/database/ScelDatabase.hh"
 #include "casm/database/ScelDatabaseTools.hh"
@@ -18,16 +19,17 @@ namespace CASM {
   /// \param options See EnumerateSupercellsOptions for method options
   /// \param enumerator A supercell enumerator.
   /// \param supercell_db Will commit any new Supercell if `options.dry_run==false`.
-  /// \param logging For printing progress and errors
+  ///
+  /// Note:
+  /// - Uses CASM::log() for logging progress
   ///
   template<typename EnumeratorType>
   void enumerate_supercells(
     EnumerateSupercellsOptions const &options,
     EnumeratorType &enumerator,
-    DB::Database<Supercell> &supercell_db,
-    Logging const &logging) {
+    DB::Database<Supercell> &supercell_db) {
 
-    Log &log = logging.log();
+    Log &log = CASM::log();
     std::pair<DB::Database<Supercell>::iterator, bool> insert_result;
     std::string dry_run_msg = CASM::dry_run_msg(options.dry_run);
 

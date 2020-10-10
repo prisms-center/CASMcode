@@ -6,7 +6,10 @@
 /// What is being used to test it:
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
+#include "clex/TestClexEnumerators.hh"
 #include "casm/app/enum.hh"
+#include "casm/app/enum/methods/ConfigEnumRandomOccupationsInterface.hh"
+#include "casm/app/enum/methods/ScelEnumInterface.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/database/Database.hh"
@@ -20,7 +23,8 @@ TEST(ConfigEnumRandomOccupationsTest, Test1) {
   test::FCCTernaryProj proj;
   proj.check_init();
 
-  PrimClex primclex(proj.dir, null_log());
+  ScopedNullLogging logging;
+  PrimClex primclex(proj.dir);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
@@ -37,11 +41,8 @@ TEST(ConfigEnumRandomOccupationsTest, Test1) {
 
 
   {
-    jsonParser json;
-    json["existing_only"] = false;
-    json["max"] = 4;
-
-    ScelEnum e(primclex, json);
+    xtal::ScelEnumProps enum_props(1, 5);
+    ScelEnumByProps e(primclex.shared_prim(), enum_props);
     for(const auto &scel : e) {
       (void) scel;
     }
@@ -49,10 +50,10 @@ TEST(ConfigEnumRandomOccupationsTest, Test1) {
   }
 
   {
-    Completer::EnumOption enum_opt;
-    jsonParser json;
-    json["n_config"] = 200;
-    ConfigEnumRandomOccupations::run(primclex, json, enum_opt, nullptr);
+    jsonParser json_options;
+    json_options["n_config"] = 200;
+    std::string cli_str = "casm enum --method ConfigEnumRandomOccupations -a";
+    test::run_enum_interface<ConfigEnumRandomOccupationsInterface>(cli_str, primclex, json_options);
     EXPECT_GT(primclex.generic_db<Configuration>().size(), 150);
   }
 
@@ -65,12 +66,12 @@ TEST(ConfigEnumRandomOccupationsTest, ConfigEnumRandomOccupationsRunTest) {
   proj.check_init();
 
   // construct PrimClex
-  PrimClex primclex(proj.dir, null_log());
+  ScopedNullLogging logging;
+  PrimClex primclex(proj.dir);
 
   {
-    Completer::EnumOption opt;
-    parse_args(opt, "casm enum --method ScelEnum --max 4", primclex);
-    ScelEnum::run(primclex, jsonParser(), opt, nullptr);
+    std::string cli_str = "casm enum --method ScelEnum --max 4";
+    test::run_enum_interface<ScelEnumInterface>(cli_str, primclex);
   }
   EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
   primclex.generic_db<Supercell>().close();
@@ -78,15 +79,13 @@ TEST(ConfigEnumRandomOccupationsTest, ConfigEnumRandomOccupationsRunTest) {
   EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
 
   std::string cmd = R"(casm enum --method ConfigEnumRandomOccupations -a)";
-  jsonParser kwargs;
-  kwargs.put_obj();
-  kwargs["n_config"] = 10;
+  jsonParser json_options;
+  json_options["n_config"] = 10;
 
   // --dry-run test
   {
-    Completer::EnumOption opt;
-    parse_args(opt, cmd + " --dry-run", primclex);
-    ConfigEnumRandomOccupations::run(primclex, kwargs, opt, nullptr);
+    std::string cli_str = cmd + " --dry-run";
+    test::run_enum_interface<ConfigEnumRandomOccupationsInterface>(cli_str, primclex, json_options);
   }
   EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
   EXPECT_GT(primclex.generic_db<Configuration>().size(), 0);
@@ -96,9 +95,8 @@ TEST(ConfigEnumRandomOccupationsTest, ConfigEnumRandomOccupationsRunTest) {
   EXPECT_EQ(primclex.generic_db<Configuration>().size(), 0);
 
   {
-    Completer::EnumOption opt;
-    parse_args(opt, cmd, primclex);
-    ConfigEnumRandomOccupations::run(primclex, kwargs, opt, nullptr);
+    std::string cli_str = cmd;
+    test::run_enum_interface<ConfigEnumRandomOccupationsInterface>(cli_str, primclex, json_options);
   }
   EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
   EXPECT_GT(primclex.generic_db<Configuration>().size(), 0);

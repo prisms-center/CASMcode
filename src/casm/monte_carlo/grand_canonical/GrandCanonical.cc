@@ -368,7 +368,7 @@ namespace CASM {
           //save the result
           double dpot_nrg = event.dEpot();
           if(dpot_nrg < 0.0) {
-            Log &err_log = default_err_log();
+            Log &err_log = CASM::err_log();
             err_log.error<Log::standard>("Calculating low temperature expansion");
             err_log << "  Defect lowered the potential energy. Your motif configuration "
                     << "is not the 0K ground state.\n" << std::endl;
