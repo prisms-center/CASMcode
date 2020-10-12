@@ -35,7 +35,7 @@ namespace CASM {
     std::set<Index> const &selected_sites = config_enum_input.sites();
 
     for(auto it = group_begin; it != group_end; ++it) {
-      if(cluster_site_indices_are_invariant(*it, selected_sites)) {
+      if(site_indices_are_invariant(*it, selected_sites)) {
         invariant_subgroup.push_back(*it);
       }
     }

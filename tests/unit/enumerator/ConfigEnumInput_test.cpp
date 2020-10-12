@@ -40,7 +40,7 @@ TEST_F(ConfigEnumInputTest, ConstructorTest1) {
     EXPECT_EQ(configdof.occ(i), 0);
   }
 
-  std::vector<PermuteIterator> invariant_group = make_invariant_group(config_enum_input);
+  std::vector<PermuteIterator> invariant_group = make_invariant_subgroup(config_enum_input);
   EXPECT_EQ(invariant_group.size(), 48 * 4);
 }
 
@@ -60,7 +60,7 @@ TEST_F(ConfigEnumInputTest, ConstructorTest2) {
     EXPECT_EQ(configdof.occ(i), configuration.configdof().occ(i));
   }
 
-  std::vector<PermuteIterator> invariant_group = make_invariant_group(config_enum_input);
+  std::vector<PermuteIterator> invariant_group = make_invariant_subgroup(config_enum_input);
   EXPECT_EQ(invariant_group.size(), 48);
 }
 
@@ -76,7 +76,7 @@ TEST_F(ConfigEnumInputTest, ConstructorTest3) {
     EXPECT_EQ(configdof.occ(i), 0);
   }
 
-  std::vector<PermuteIterator> invariant_group = make_invariant_group(config_enum_input);
+  std::vector<PermuteIterator> invariant_group = make_invariant_subgroup(config_enum_input);
   EXPECT_EQ(invariant_group.size(), 48);
 }
 
@@ -96,6 +96,6 @@ TEST_F(ConfigEnumInputTest, ConstructorTest4) {
     EXPECT_EQ(configdof.occ(i), configuration.configdof().occ(i));
   }
 
-  std::vector<PermuteIterator> invariant_group = make_invariant_group(config_enum_input);
+  std::vector<PermuteIterator> invariant_group = make_invariant_subgroup(config_enum_input);
   EXPECT_EQ(invariant_group.size(), 16);
 }

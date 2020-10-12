@@ -4,13 +4,15 @@
 
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/database/ScelDatabase.hh"
-#include "casm/database/ScelDatabaseTools.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/Superlattice.hh"
+#include "casm/database/ScelDatabase.hh"
+#include "casm/database/ScelDatabaseTools_impl.hh"
+#include "casm/enumerator/ConfigEnumInput_impl.hh"
+#include "casm/enumerator/DoFSpace_impl.hh"
 
 #include "crystallography/TestStructures.hh" // for test::ZrO_prim
 
@@ -57,16 +59,14 @@ protected:
     std::string dirs {"abc"};
     Eigen::Matrix3i generating_matrix {Eigen::Matrix3i::Identity()};
     CASM::xtal::ScelEnumProps enumeration_params {begin_volume, end_volume, dirs, generating_matrix};
-    bool existing_only = false;
 
-    // The ScelEnumByProps variant that accepts a PrimClex in the constructor inserts Supercells into
-    // the Supercell database available at `primclex.db<Supercell>()` as it constructs them.
-    CASM::ScelEnumByProps enumerator {primclex, enumeration_params, existing_only};
-
-    // Increments the enumerator iterators to construct all Supercell
-    int count = std::distance(enumerator.begin(), enumerator.end());
-    EXPECT_EQ(count, 20);
+    // Enumerate supercells and insert into Supercell database
+    CASM::ScelEnumByProps supercell_enumerator {shared_prim, enumeration_params};
+    for(auto const &supercell : supercell_enumerator) {
+      make_canonical_and_insert(supercell_enumerator, supercell, primclex.db<Supercell>());
+    }
     EXPECT_EQ(primclex.db<Supercell>().size(), 20);
+
   }
 
 };

@@ -33,23 +33,6 @@ namespace CASM {
     return cluster;
   }
 
-  /// Return true if the permutation does not mix cluster sites and other sites
-  bool cluster_site_indices_are_invariant(PermuteIterator const &permute_it,
-                                          std::set<Index> const &cluster_site_indices) {
-
-    // Applying the permutation indicated by `permute_it` moves the value from site index
-    // `permute_it.permute_ind(s)` to site index `s`, for each `s` in the cluster. Therefore,
-    // if none of `permute_it.permute_ind(s)` are outside the set `cluster_site_indices` the cluster
-    // sites are invariant.
-
-    return std::none_of(
-             cluster_site_indices.begin(),
-             cluster_site_indices.end(),
-    [&](Index s) {
-      return cluster_site_indices.count(permute_it.permute_ind(s)) == 0;
-    });
-  }
-
   /// Rather than permute values, here we want to permute cluster site indices
   ///
   /// Since, when permuting values, value[i] = value[permute[i]], or,

@@ -12,6 +12,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/ScelEnum.hh"
+#include "casm/enumerator/ConfigEnumInput_impl.hh"
 #include "casm/enumerator/Enumerator.hh"
 #include "casm/app/QueryHandler.hh"
 #include "casm/app/enum.hh"
@@ -19,6 +20,7 @@
 #include "casm/database/ConfigDatabaseTools_impl.hh"
 #include "casm/database/Database.hh"
 #include "casm/database/ScelDatabase.hh"
+#include "casm/database/ScelDatabaseTools_impl.hh"
 
 // template definitions
 #include "casm/app/QueryHandler_impl.hh"
@@ -43,14 +45,21 @@ TEST(Selection_Test, Test1) {
 
   // -- Generate Supercell & Configuration --
 
-  ScelEnumByProps enum_scel {primclex.shared_prim(), xtal::ScelEnumProps(1, 5)};
+  ScelEnumByProps supercell_enumerator {primclex.shared_prim(), xtal::ScelEnumProps(1, 5)};
   EXPECT_EQ(true, true);
 
   bool primitive_only = true;
-  for(auto const &scel : enum_scel) {
-    ConfigEnumAllOccupations enum_config {scel};
-    for(auto const &config : enum_config) {
-      make_canonical_and_insert(enum_config, config, supercell_db, configuration_db, primitive_only);
+  for(auto const &supercell : supercell_enumerator) {
+    auto result = make_canonical_and_insert(supercell_enumerator, supercell, supercell_db);
+    std::cout << "result.second: " << result.second << std::endl;
+    std::cout << "supercell_db.size(): " << supercell_db.size() << std::endl;
+    ConfigEnumAllOccupations configuration_enumerator {*result.first};
+    for(auto const &configuration : configuration_enumerator) {
+      make_canonical_and_insert(configuration_enumerator,
+                                configuration,
+                                supercell_db,
+                                configuration_db,
+                                primitive_only);
     }
   }
   EXPECT_EQ(true, true);

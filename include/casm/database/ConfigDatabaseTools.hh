@@ -17,19 +17,19 @@ namespace CASM {
     // not for enumeration without calculated properties.
 
 
-    /// Returns the canonical form Configuration in the canonical Supercell
-    Configuration in_canonical_supercell(
-      Configuration const &configuration,
-      PrimClex const *primclex,
-      Database<Supercell> &supercell_db);
-
-    /// Insert this configuration (in primitive & canonical form) in the database
-    ConfigInsertResult make_canonical_and_insert(
-      Configuration const &configuration,
-      PrimClex const *primclex,
-      Database<Supercell> &supercell_db,
-      Database<Configuration> &configuration_db,
-      bool primitive_only);
+    // /// Returns the canonical form Configuration in the canonical Supercell
+    // Configuration in_canonical_supercell(
+    //   Configuration const &configuration,
+    //   PrimClex const *primclex,
+    //   Database<Supercell> &supercell_db);
+    //
+    // /// Insert this configuration (in primitive & canonical form) in the database
+    // ConfigInsertResult make_canonical_and_insert(
+    //   Configuration const &configuration,
+    //   PrimClex const *primclex,
+    //   Database<Supercell> &supercell_db,
+    //   Database<Configuration> &configuration_db,
+    //   bool primitive_only);
 
     /// Returns the canonical form Configuration in the canonical Supercell
     Configuration in_canonical_supercell(
@@ -45,8 +45,8 @@ namespace CASM {
 
     /// Insert this configuration (in primitive & canonical form) in the database
     ///
-    /// - This version checks `is_guaranteed_for_database_insert` and either inserts directly
-    ///   or makes canonical and then inserts
+    /// - This version checks `is_guaranteed_for_database_insert(enumerator)` and either inserts
+    ///   directly or makes canonical and then inserts
     template<typename EnumeratorType>
     ConfigInsertResult make_canonical_and_insert(
       EnumeratorType const &enumerator,

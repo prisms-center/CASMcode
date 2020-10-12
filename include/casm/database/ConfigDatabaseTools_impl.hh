@@ -21,14 +21,18 @@ namespace CASM {
       Database<Configuration> &configuration_db,
       bool primitive_only) {
       if(is_guaranteed_for_database_insert(enumerator)) {
-        configuration_db.insert(configuration);
+        ConfigInsertResult res;
+        std::tie(res.primitive_it, res.insert_primitive) = configuration_db.insert(configuration);
+        res.insert_canonical = res.insert_primitive;
+        res.canonical_it = res.primitive_it;
+        return res;
       }
       else {
-        make_canonical_and_insert(
-          configuration,
-          supercell_db,
-          configuration_db,
-          primitive_only);
+        return make_canonical_and_insert(
+                 configuration,
+                 supercell_db,
+                 configuration_db,
+                 primitive_only);
       }
     }
   }

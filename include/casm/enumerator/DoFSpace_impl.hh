@@ -2,6 +2,8 @@
 #define CASM_DoFSpace_impl
 
 #include "casm/enumerator/DoFSpace.hh"
+#include "casm/symmetry/SupercellSymInfo_impl.hh"
+#include "casm/symmetry/SymRepTools.hh"
 
 namespace CASM {
 

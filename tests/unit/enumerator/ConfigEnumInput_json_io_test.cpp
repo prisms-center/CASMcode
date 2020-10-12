@@ -14,7 +14,9 @@
 #include "casm/clex/Supercell.hh"
 #include "casm/crystallography/io/VaspIO.hh"
 #include "casm/database/ConfigDatabase.hh"
+#include "casm/database/ConfigDatabaseTools_impl.hh"
 #include "casm/database/ScelDatabase.hh"
+#include "casm/database/ScelDatabaseTools_impl.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
 #include "casm/enumerator/io/json/ConfigEnumInput_json_io.hh"
 #include "casm/crystallography/Structure.hh"
@@ -54,25 +56,25 @@ protected:
     std::string dirs {"abc"};
     Eigen::Matrix3i generating_matrix {Eigen::Matrix3i::Identity()};
     CASM::xtal::ScelEnumProps enumeration_params {begin_volume, end_volume, dirs, generating_matrix};
-    bool existing_only = false;
 
-    // The ScelEnumByProps variant that accepts a PrimClex in the constructor inserts Supercells into
-    // the Supercell database available at `primclex.db<Supercell>()` as it constructs them.
-    CASM::ScelEnumByProps enumerator {primclex, enumeration_params, existing_only};
-
-    // Increments the enumerator iterators to construct all Supercell
-    int count = std::distance(enumerator.begin(), enumerator.end());
-    EXPECT_EQ(count, 13);
-    EXPECT_EQ(primclex.db<Supercell>().size(), 13);
-
-    // Also add Configurations
-    for(auto const &supercell : primclex.db<Supercell>()) {
-      CASM::ConfigEnumAllOccupations enumerator {supercell};
-      for(auto const &configuration : enumerator) {
-        primclex.db<Configuration>().insert(configuration);
+    // Enumerate Supercells and Configurations
+    bool primitive_only = true;
+    CASM::ScelEnumByProps supercell_enumerator {shared_prim, enumeration_params};
+    for(auto const &supercell : supercell_enumerator) {
+      auto result = make_canonical_and_insert(supercell_enumerator,
+                                              supercell,
+                                              primclex.db<Supercell>());
+      CASM::ConfigEnumAllOccupations configuration_enumerator {*result.first};
+      for(auto const &configuration : configuration_enumerator) {
+        make_canonical_and_insert(configuration_enumerator,
+                                  configuration,
+                                  primclex.db<Supercell>(),
+                                  primclex.db<Configuration>(),
+                                  primitive_only);
       }
     }
 
+    EXPECT_EQ(primclex.db<Supercell>().size(), 13);
     EXPECT_EQ(primclex.db<Configuration>().size(), 126);
   }
 
@@ -91,10 +93,12 @@ protected:
 TEST_F(ConfigEnumInputjsonIOTest, Test1) {
   jsonParser json = CASM::jsonParser::parse(std::string(R"({"supercells": { "min":1, "max":4 } })"));
 
-  InputParser<std::vector<ConfigEnumInput>> parser {json,
-                                                    shared_prim,
-                                                    primclex.db<Supercell>(),
-                                                    primclex.db<Configuration>()};
+  InputParser<std::vector<std::pair<std::string, ConfigEnumInput>>> parser {
+    json,
+    shared_prim,
+    &primclex,
+    primclex.db<Supercell>(),
+    primclex.db<Configuration>()};
 
   std::runtime_error error_if_invalid {"Failed to parse ConfigEnumInput JSON"};
   report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
@@ -113,10 +117,12 @@ TEST_F(ConfigEnumInputjsonIOTest, Test2) {
     ]
   })"));
 
-  InputParser<std::vector<ConfigEnumInput>> parser {json,
-                                                    shared_prim,
-                                                    primclex.db<Supercell>(),
-                                                    primclex.db<Configuration>()};
+  InputParser<std::vector<std::pair<std::string, ConfigEnumInput>>> parser {
+    json,
+    shared_prim,
+    &primclex,
+    primclex.db<Supercell>(),
+    primclex.db<Configuration>()};
 
   std::runtime_error error_if_invalid {"Failed to parse ConfigEnumInput JSON"};
   report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
@@ -151,10 +157,12 @@ TEST_F(ConfigEnumInputjsonIOTest, Test3) {
   })"));
   json["supercell_selection"] = out_path.string();
 
-  InputParser<std::vector<ConfigEnumInput>> parser {json,
-                                                    shared_prim,
-                                                    primclex.db<Supercell>(),
-                                                    primclex.db<Configuration>()};
+  InputParser<std::vector<std::pair<std::string, ConfigEnumInput>>> parser {
+    json,
+    shared_prim,
+    &primclex,
+    primclex.db<Supercell>(),
+    primclex.db<Configuration>()};
 
   std::runtime_error error_if_invalid {"Failed to parse ConfigEnumInput JSON"};
   report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
@@ -170,10 +178,12 @@ TEST_F(ConfigEnumInputjsonIOTest, Test4) {
     ]
   })"));
 
-  InputParser<std::vector<ConfigEnumInput>> parser {json,
-                                                    shared_prim,
-                                                    primclex.db<Supercell>(),
-                                                    primclex.db<Configuration>()};
+  InputParser<std::vector<std::pair<std::string, ConfigEnumInput>>> parser {
+    json,
+    shared_prim,
+    &primclex,
+    primclex.db<Supercell>(),
+    primclex.db<Configuration>()};
 
   std::runtime_error error_if_invalid {"Failed to parse ConfigEnumInput JSON"};
   report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
@@ -204,10 +214,12 @@ TEST_F(ConfigEnumInputjsonIOTest, Test5) {
   })"));
   json["config_selection"] = out_path.string();
 
-  InputParser<std::vector<ConfigEnumInput>> parser {json,
-                                                    shared_prim,
-                                                    primclex.db<Supercell>(),
-                                                    primclex.db<Configuration>()};
+  InputParser<std::vector<std::pair<std::string, ConfigEnumInput>>> parser {
+    json,
+    shared_prim,
+    &primclex,
+    primclex.db<Supercell>(),
+    primclex.db<Configuration>()};
 
   std::runtime_error error_if_invalid {"Failed to parse ConfigEnumInput JSON"};
   report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
@@ -231,15 +243,18 @@ TEST_F(ConfigEnumInputjsonIOTest, Test6) {
     UnitCellCoord {0, UnitCell {1, 0, 0} }
   };
 
-  InputParser<std::vector<ConfigEnumInput>> parser {json,
-                                                    shared_prim,
-                                                    primclex.db<Supercell>(),
-                                                    primclex.db<Configuration>()};
+  InputParser<std::vector<std::pair<std::string, ConfigEnumInput>>> parser {
+    json,
+    shared_prim,
+    &primclex,
+    primclex.db<Supercell>(),
+    primclex.db<Configuration>()};
 
   std::runtime_error error_if_invalid {"Failed to parse ConfigEnumInput JSON"};
   report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
   EXPECT_EQ(parser.value->size(), 13);
-  for(ConfigEnumInput const &input : *parser.value) {
+  for(std::pair<std::string, ConfigEnumInput> const &named_initial_state : *parser.value) {
+    ConfigEnumInput const &input = named_initial_state.second;
     EXPECT_EQ(input.sites().count(input.configuration().linear_index(sites[0])), 1);
     EXPECT_EQ(input.sites().count(input.configuration().linear_index(sites[1])), 1);
   }

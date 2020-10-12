@@ -205,6 +205,11 @@ namespace CASM {
   template<typename PermuteIteratorIt>
   std::unique_ptr<SymGroup> make_unique_sym_group(PermuteIteratorIt begin, PermuteIteratorIt end, const Lattice &supercell_lattice);
 
+
+  /// Return true if the permutation does not given sites and other sites
+  bool site_indices_are_invariant(PermuteIterator const &permute_it,
+                                  std::set<Index> const &site_indices);
+
   jsonParser &to_json(const PermuteIterator &clust, jsonParser &json);
 
 

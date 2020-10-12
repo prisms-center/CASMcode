@@ -6,7 +6,7 @@
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/Supercell_impl.hh"
 #include "casm/database/ScelDatabase.hh"
-#include "casm/database/ScelDatabaseTools.hh"
+#include "casm/database/ScelDatabaseTools_impl.hh"
 
 namespace CASM {
 
@@ -47,14 +47,9 @@ namespace CASM {
         continue;
       }
 
-      if(is_guaranteed_for_database_insert(enumerator)) {
-        insert_result = supercell_db.insert(supercell);
-      }
-      else {
-        insert_result = make_canonical_and_insert(supercell.shared_prim(),
-                                                  supercell.lattice(),
-                                                  supercell_db);
-      }
+      // checks `is_guaranteed_for_database_insert(enumerator)` to see if supercell
+      // can be directly inserted, else makes canonical before inserting
+      insert_result = make_canonical_and_insert(enumerator, supercell, supercell_db);
 
       if(insert_result.second) {
         log << dry_run_msg << "  Generated: " << insert_result.first->name() << "\n";

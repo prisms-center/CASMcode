@@ -273,6 +273,7 @@ libcasm_la_SOURCES = \
     include/casm/database/ConfigDatabase.hh\
     include/casm/database/ConfigDatabaseDefs.hh\
     include/casm/database/ConfigDatabaseTools.hh\
+    include/casm/database/ConfigDatabaseTools_impl.hh\
     include/casm/database/ConfigImport.hh\
     include/casm/database/Database.hh\
     include/casm/database/DatabaseHandler.hh\
@@ -292,6 +293,7 @@ libcasm_la_SOURCES = \
     include/casm/database/Remove_impl.hh\
     include/casm/database/ScelDatabase.hh\
     include/casm/database/ScelDatabaseTools.hh\
+    include/casm/database/ScelDatabaseTools_impl.hh\
     include/casm/database/Selected.hh\
     include/casm/database/Selected_impl.hh\
     include/casm/database/Selection.hh\

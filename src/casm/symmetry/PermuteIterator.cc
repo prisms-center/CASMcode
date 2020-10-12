@@ -296,6 +296,22 @@ namespace CASM {
     std::swap(a.m_translation_index, b.m_translation_index);
   }
 
+  /// Return true if the permutation does not given sites and other sites
+  bool site_indices_are_invariant(PermuteIterator const &permute_it,
+                                  std::set<Index> const &site_indices) {
+    // Applying the permutation indicated by `permute_it` moves the value from site index
+    // `permute_it.permute_ind(s)` to site index `s`, for each `s` in the set. Therefore,
+    // if none of `permute_it.permute_ind(s)` are outside the set `site_indices` the sites are
+    // invariant.
+
+    return std::none_of(
+             site_indices.begin(),
+             site_indices.end(),
+    [&](Index s) {
+      return site_indices.count(permute_it.permute_ind(s)) == 0;
+    });
+  }
+
   jsonParser &to_json(const PermuteIterator &it, jsonParser &json) {
     json.put_obj();
     json["factgrp"] = it.factor_group_index();

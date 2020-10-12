@@ -328,7 +328,7 @@ namespace CASM {
   //     if(parser.valid()) {
   //       for(auto const &permute_it : super_group) {
   //         if(generating_group_indices.count(permute_it.prim_factor_group_index()) &&
-  //            cluster_site_indices_are_invariant(permute_it, phenomenal_indices)) {
+  //            site_indices_are_invariant(permute_it, phenomenal_indices)) {
   //           generating_group.push_back(permute_it);
   //         }
   //       }

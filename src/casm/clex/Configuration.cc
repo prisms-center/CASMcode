@@ -249,10 +249,9 @@ namespace CASM {
   ///   necessary
   /// - Prefer to use the standalone `in_canonical_supercell` directly
   Configuration Configuration::in_canonical_supercell() const {
-    return DB::in_canonical_supercell(
-             *this,
-             &primclex(),
-             primclex().db<Supercell>());
+    Configuration result = DB::in_canonical_supercell(*this, primclex().db<Supercell>());
+    result.supercell().set_primclex(&primclex());
+    return result;
   }
 
   //*******************************************************************************
@@ -268,12 +267,17 @@ namespace CASM {
   ///   PrimClex::db<Configuration>.insert(config) directly.
   /// - Prefer to use the standalone `DB::make_canonical_and_insert` directly
   ConfigInsertResult Configuration::insert(bool primitive_only) const {
-    return DB::make_canonical_and_insert(
-             *this,
-             &primclex(),
-             primclex().db<Supercell>(),
-             primclex().db<Configuration>(),
-             primitive_only);
+    auto result = DB::make_canonical_and_insert(*this,
+                                                primclex().db<Supercell>(),
+                                                primclex().db<Configuration>(),
+                                                primitive_only);
+    if(result.insert_primitive) {
+      result.primitive_it->supercell().set_primclex(&primclex());
+    }
+    if(result.insert_canonical) {
+      result.canonical_it->supercell().set_primclex(&primclex());
+    }
+    return result;
   }
 
   //*******************************************************************************

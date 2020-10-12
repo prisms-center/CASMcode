@@ -24,10 +24,6 @@ namespace CASM {
                                Structure const &prim,
                                SupercellSymInfo const &sym_info);
 
-  /// Return true if the permutation does not mix cluster sites and other sites
-  bool cluster_site_indices_are_invariant(PermuteIterator const &permute_it,
-                                          std::set<Index> const &cluster_site_indices);
-
   /// Make inverse permutations
   template<typename PermuteIteratorIt>
   std::vector<Permutation> make_inverse_permutations(

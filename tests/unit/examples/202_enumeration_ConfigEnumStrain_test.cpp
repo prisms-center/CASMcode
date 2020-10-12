@@ -4,13 +4,15 @@
 
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/database/ScelDatabase.hh"
 #include "casm/clex/ConfigEnumStrain.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/Superlattice.hh"
-#include "casm/enumerator/DoFSpace.hh"
+#include "casm/database/ScelDatabase.hh"
+#include "casm/database/ScelDatabaseTools_impl.hh"
+#include "casm/enumerator/ConfigEnumInput_impl.hh"
+#include "casm/enumerator/DoFSpace_impl.hh"
 #include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/symmetry/SymRepTools.hh"
 #include "casm/symmetry/io/json/SymRepTools.hh"
@@ -183,12 +185,16 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, VectorSpaceSymReport) {
   // Construct the SimpleCubic GLstrain DoF space.
   Supercell const &supercell = *primclex.db<Supercell>().begin();
   ConfigEnumInput config_input {supercell};
+  std::vector<PermuteIterator> group = make_invariant_subgroup(config_input);
   DoFKey dof_key = "GLstrain";
   DoFSpace dof_space {config_input, dof_key};
 
   // Construct the VectorSpaceSymReport for the SimpleCubic GLstrain space.
   bool calc_wedges = true;  // explanation TODO
-  VectorSpaceSymReport sym_report = vector_space_sym_report(dof_space, calc_wedges);
+  VectorSpaceSymReport sym_report = vector_space_sym_report(dof_space,
+                                                            group.begin(),
+                                                            group.end(),
+                                                            calc_wedges);
 
   // Uncomment to print dof_space:
   // jsonParser dof_space_json;
@@ -491,7 +497,7 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, FullSpaceDirectGridStrainE
   // We'll "trick" the enumerator by creating a "dummy subwedge" which defines the axes of the space
   //   we want to sample.
   std::vector<SymRepTools::SubWedge> subwedges;
-  subwedges.push_back(SymRepTools::SubWedge({SymRepTools::IrrepWedge::make_dummy_irrep_wedge(axes)}));
+  subwedges.push_back(SymRepTools::SubWedge::make_dummy(axes));
 
   EXPECT_EQ(almost_equal(subwedges[0].trans_mat(), axes, tol), true);
   EXPECT_EQ(subwedges.size(), 1);
@@ -534,7 +540,7 @@ namespace enumeration_test_impl {
 
   SymGroup make_point_group(ConfigEnumInput const &config_input) {
     return make_point_group(
-             make_invariant_group(config_input),
+             make_invariant_subgroup(config_input),
              config_input.configuration().supercell().sym_info().supercell_lattice());
   }
 
@@ -556,15 +562,12 @@ ExampleEnumerationSimpleCubicConfigEnumStrain::ExampleEnumerationSimpleCubicConf
   std::string dirs {"abc"};
   Eigen::Matrix3i generating_matrix {Eigen::Matrix3i::Identity()};
   CASM::xtal::ScelEnumProps enumeration_params {begin_volume, end_volume, dirs, generating_matrix};
-  bool existing_only = false;
 
-  // The ScelEnumByProps variant that accepts a PrimClex in the constructor inserts Supercells into
-  // the Supercell database available at `primclex.db<Supercell>()` as it constructs them.
-  CASM::ScelEnumByProps enumerator {primclex, enumeration_params, existing_only};
-
-  // Increments the enumerator iterators to construct all Supercell
-  int count = std::distance(enumerator.begin(), enumerator.end());
-  EXPECT_EQ(count, 1);
+  // Enumerate supercells
+  CASM::ScelEnumByProps enumerator {shared_prim, enumeration_params};
+  for(Supercell const &supercell : enumerator) {
+    make_canonical_and_insert(enumerator, supercell, primclex.db<Supercell>());
+  }
   EXPECT_EQ(primclex.db<Supercell>().size(), 1);
 
   // Expected symmetry adapted GLstrain axes for a simple cubic structure
