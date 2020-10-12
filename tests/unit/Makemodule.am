@@ -125,6 +125,7 @@ check_PROGRAMS += \
 casm_unit_clex_SOURCES = \
     tests/unit/clex/ChemicalReference_test.cpp\
     tests/unit/clex/Clexulator_test.cpp\
+    tests/unit/clex/ConfigDoF_test.cpp\
     tests/unit/clex/ConfigEnumAllOccupations_test.cpp\
     tests/unit/clex/ConfigEnumEquivalents_test.cpp\
     tests/unit/clex/ConfigEnumRandomOccupations_test.cpp\
@@ -289,6 +290,7 @@ casm_unit_enumerator_SOURCES = \
     tests/unit/enumerator/ClusterSitesSelector_test.cpp\
     tests/unit/enumerator/ConfigEnumInput_json_io_test.cpp\
     tests/unit/enumerator/ConfigEnumInput_test.cpp\
+    tests/unit/enumerator/DoFSpace_test.cpp\
     tests/unit/gtest_main_run_all.cpp
 casm_unit_enumerator_LDADD = \
     $(BOOST_CHRONO_LIB)\

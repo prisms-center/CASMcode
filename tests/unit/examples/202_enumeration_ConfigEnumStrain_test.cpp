@@ -4,6 +4,7 @@
 
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/ProjectSettings.hh"
+#include "casm/casm_io/container/stream_io.hh"
 #include "casm/clex/ConfigEnumStrain.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ScelEnum.hh"
@@ -183,28 +184,36 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, VectorSpaceSymReport) {
   // - TODO: more description ...
 
   // Construct the SimpleCubic GLstrain DoF space.
+  std::cout << "here 0" << std::endl;
   Supercell const &supercell = *primclex.db<Supercell>().begin();
+  std::cout << "here 1" << std::endl;
   ConfigEnumInput config_input {supercell};
+  std::cout << "here 2" << std::endl;
   std::vector<PermuteIterator> group = make_invariant_subgroup(config_input);
+  std::cout << "here 3" << std::endl;
   DoFKey dof_key = "GLstrain";
+  std::cout << "here 4" << std::endl;
   DoFSpace dof_space {config_input, dof_key};
 
   // Construct the VectorSpaceSymReport for the SimpleCubic GLstrain space.
+  std::cout << "here 5" << std::endl;
   bool calc_wedges = true;  // explanation TODO
   VectorSpaceSymReport sym_report = vector_space_sym_report(dof_space,
                                                             group.begin(),
                                                             group.end(),
                                                             calc_wedges);
+  std::cout << "here 6" << std::endl;
+
 
   // Uncomment to print dof_space:
-  // jsonParser dof_space_json;
-  // to_json(dof_space, dof_space_json);
-  // std::cout << "DoFSpace:\n" << dof_space_json << std::endl;
+  jsonParser dof_space_json;
+  to_json(dof_space, dof_space_json);
+  std::cout << "DoFSpace:\n" << dof_space_json << std::endl;
 
   // Uncomment to print sym_report:
-  // jsonParser sym_report_json;
-  // to_json(sym_report, sym_report_json);
-  // std::cout << "VectorSpaceSymReport:\n" << sym_report_json << std::endl;
+  jsonParser sym_report_json;
+  to_json(sym_report, sym_report_json);
+  std::cout << "VectorSpaceSymReport:\n" << sym_report_json << std::endl;
 
   // Expect three irreducible representations
   EXPECT_EQ(sym_report.irreps.size(), 3);
@@ -553,9 +562,20 @@ namespace enumeration_test_impl {
 
 ExampleEnumerationSimpleCubicConfigEnumStrain::ExampleEnumerationSimpleCubicConfigEnumStrain():
   title("ExampleEnumerationSimpleCubicConfigEnumStrain"),
-  shared_prim(std::make_shared<CASM::Structure const>(test::SimpleCubicGLstrain())),
+  shared_prim(std::make_shared<CASM::Structure const>(test::SimpleCubicGLstrain_prim())),
   project_settings(make_default_project_settings(*shared_prim, title)),
   primclex(project_settings, shared_prim) {
+
+  std::cout << "SimpleCubicGLstrain:" << std::endl;
+  auto const &struc = *shared_prim;
+  std::cout << "all_dof_types: " << all_dof_types(struc) << std::endl;
+  std::cout << "check types: " << std::endl;
+  for(auto const &dof : all_dof_types(struc)) {
+    std::cout << "dof: " << dof << std::endl;
+    auto aniso_val_traits = AnisoValTraits {dof};
+    std::cout << "name: " << aniso_val_traits.name() << std::endl;
+  }
+  std::cout << "check types: done" << std::endl;
 
   int begin_volume {1};
   int end_volume {2};

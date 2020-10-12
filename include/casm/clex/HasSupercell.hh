@@ -25,6 +25,8 @@ namespace CASM {
 
     double crystallography_tol() const;
 
+    bool has_primclex() const;
+
     const PrimClex &primclex() const;
 
   };

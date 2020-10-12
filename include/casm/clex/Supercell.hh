@@ -65,10 +65,10 @@ namespace CASM {
     Supercell(const Supercell &RHS);
 
     Supercell(std::shared_ptr<Structure const> const &_shared_prim, const Lattice &superlattice);
-    Supercell(std::shared_ptr<Structure const> const &_shared_prim, const Eigen::Ref<const Eigen::Matrix3i> &superlattice_matrix);
+    Supercell(std::shared_ptr<Structure const> const &_shared_prim, Eigen::Matrix3l const &superlattice_matrix);
 
     Supercell(const PrimClex *_prim, const Lattice &superlattice);
-    Supercell(const PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &superlattice_matrix);
+    Supercell(const PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3l> &superlattice_matrix);
 
     ~Supercell();
 
@@ -196,9 +196,9 @@ namespace CASM {
 
   Supercell copy_apply(const SymOp &op, const Supercell &scel);
 
-  Eigen::Matrix3i transf_mat(const Lattice &prim_lat, const Lattice &super_lat);
+  Eigen::Matrix3l transf_mat(const Lattice &prim_lat, const Lattice &super_lat);
 
-  std::string generate_name(const Eigen::Matrix3i &transf_mat);
+  std::string generate_name(const Eigen::Matrix3l &transf_mat);
 
   std::string scelname(const Structure &prim, const Lattice &superlat);
 

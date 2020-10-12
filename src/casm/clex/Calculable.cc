@@ -14,7 +14,7 @@ namespace CASM {
   /// - If nothing calculated, returns empty MappedProperties object
   template<typename _Base>
   MappedProperties const &Calculable<_Base>::calc_properties(std::string calctype) const {
-    if(calctype.empty()) {
+    if(calctype.empty() && derived().has_primclex()) {
       calctype = derived().primclex().settings().default_clex().calctype;
     }
     auto it = m_calc_properties_map.find(calctype);
@@ -29,6 +29,10 @@ namespace CASM {
   template<typename _Base>
   void Calculable<_Base>::set_calc_properties(const MappedProperties &_prop, std::string calctype) {
     if(calctype.empty()) {
+      if(!derived().has_primclex()) {
+        m_calc_properties_map.clear();
+        return;
+      }
       calctype = derived().primclex().settings().default_clex().calctype;
     }
     m_calc_properties_map[calctype] = _prop;
@@ -113,6 +117,9 @@ namespace CASM {
 
   template<typename _Base>
   void Calculable<_Base>::_refresh_calc_properties(std::string calctype) const {
+    if(!derived().has_primclex()) {
+      return;
+    }
     const PrimClex &primclex = derived().primclex();
     const auto &db = primclex.const_db_props<MostDerived>(calctype);
     if(calctype.empty()) {

@@ -13,6 +13,39 @@
 
 using namespace CASM;
 
+TEST(SupercellTest, Constructor1) {
+
+  // basic construction: shared prim structure and
+  //                     prim lattice -> supercell lattice transformation matrix
+
+  auto shared_prim = std::make_shared<Structure const>(test::FCC_ternary_prim());
+  Eigen::Matrix3l T = Eigen::Matrix3l::Identity();
+  auto shared_supercell = std::make_shared<Supercell const>(shared_prim, T);
+  EXPECT_EQ(shared_supercell->transf_mat(), T);
+}
+
+TEST(SupercellTest, Constructor2) {
+
+  // basic construction: shared prim structure and
+  //                     supercell lattice
+
+  auto shared_prim = std::make_shared<Structure const>(test::FCC_ternary_prim());
+  Eigen::Matrix3l T = Eigen::Matrix3l::Identity();
+  Lattice supercell_lattice = make_superlattice(shared_prim->lattice(), T);
+  auto shared_supercell = std::make_shared<Supercell const>(shared_prim, supercell_lattice);
+  EXPECT_TRUE(almost_equal(shared_supercell->lattice(), supercell_lattice));
+  EXPECT_EQ(shared_supercell->transf_mat(), T);
+}
+
+TEST(SupercellTest, ConstructorFail) {
+
+  // fail construction: shared prim structure with no basis sites
+
+  auto shared_prim = std::make_shared<Structure const>(test::empty_prim());
+  Eigen::Matrix3l T = Eigen::Matrix3l::Identity();
+  ASSERT_ANY_THROW(std::make_shared<Supercell const>(shared_prim, T));
+}
+
 TEST(SupercellTest, TestSupercellName) {
 
   test::FCCTernaryProj proj;

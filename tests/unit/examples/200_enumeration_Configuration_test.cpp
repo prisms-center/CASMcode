@@ -152,7 +152,7 @@ TEST(ExampleEnumerationSupercell, SupercellConstructor) {
 
   // The prim to super lattice transformation matrix, T:
   //   super_lattice_column_matrix = T * prim_lattice_column_matrix
-  Eigen::Matrix3i T;
+  Eigen::Matrix3l T;
   T << 2, 0, 0,
   0, 2, 0,
   0, 0, 2;
@@ -170,7 +170,7 @@ TEST(ExampleEnumerationConfiguration, ConfigurationConstructor) {
 
   // The prim to super lattice transformation matrix, T:
   //   super_lattice_column_matrix = T * prim_lattice_column_matrix
-  Eigen::Matrix3i T;
+  Eigen::Matrix3l T;
   T << 2, 0, 0,
   0, 2, 0,
   0, 0, 2;

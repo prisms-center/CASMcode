@@ -9,6 +9,19 @@
 
 namespace test {
 
+  inline CASM::xtal::BasicStructure empty_prim() {
+
+    using namespace CASM;
+    using namespace CASM::xtal;
+
+    BasicStructure struc { Lattice {Eigen::Matrix3d::Identity()} };
+    struc.set_title("empty");
+    Molecule A = Molecule::make_atom("A");
+    struc.push_back(Site(Coordinate(Eigen::Vector3d::Zero(), struc.lattice(), FRAC), std::vector<Molecule> {A}));
+
+    return struc;
+  }
+
   inline CASM::xtal::BasicStructure ZrO_prim() {
 
     using namespace CASM;
@@ -59,7 +72,7 @@ namespace test {
 
   }
 
-  inline CASM::xtal::BasicStructure SimpleCubicGLstrain() {
+  inline CASM::xtal::BasicStructure SimpleCubicGLstrain_prim() {
 
     using namespace CASM;
     using namespace CASM::xtal;
@@ -80,6 +93,29 @@ namespace test {
     // Add global DoF
     // GLstrain: Green-Lagrange strain
     struc.set_global_dofs({ AnisoValTraits::strain("GL") });
+
+    return struc;
+
+  }
+
+  inline CASM::xtal::BasicStructure FCC_ternary_strain_disp_prim() {
+
+    using namespace CASM;
+    using namespace CASM::xtal;
+
+    BasicStructure struc = FCC_ternary_prim();
+
+    // Add global DoF
+    // GLstrain: Green-Lagrange strain
+    struc.set_global_dofs({ AnisoValTraits::strain("GL") });
+
+    // Update basis to add displacement
+    SiteDoFSet disp_dofset {AnisoValTraits::disp()};
+    std::vector<Site> new_basis;
+    for(auto &site : struc.basis()) {
+      new_basis.emplace_back(Coordinate {site}, site.occupant_dof(), std::vector<SiteDoFSet> {disp_dofset});
+    }
+    struc.set_basis(new_basis);
 
     return struc;
 

@@ -21,6 +21,11 @@ namespace CASM {
   }
 
   template<typename Base>
+  bool HasSupercell<Base>::has_primclex() const {
+    return derived().supercell().has_primclex();
+  }
+
+  template<typename Base>
   const PrimClex &HasSupercell<Base>::primclex() const {
     return derived().supercell().primclex();
   }

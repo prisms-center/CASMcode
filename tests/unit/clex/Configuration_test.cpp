@@ -140,11 +140,14 @@ TEST(ConfigurationTest, TestConfigurationName) {
 
   {
     // prim cell
+    std::cout << "construct scel" << std::endl;
     Supercell scel {&primclex, Lattice(a, b, c)};
 
     {
       // canonical scel, canonical primitive occ
+      std::cout << "construct config" << std::endl;
       Configuration config(scel);
+      std::cout << "set occupation" << std::endl;
       config.set_occupation(std::vector<int>({0}));
 
       // not in datbase -> id == "none"

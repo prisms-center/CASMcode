@@ -21,7 +21,8 @@ namespace CASM {
   /// Note: This variant does not require a PrimClex, and there for cannot insert Supercells into
   /// a Supercell database automatically.
   ///
-  ScelEnumByProps::ScelEnumByProps(std::shared_ptr<const Structure> const &shared_prim, const xtal::ScelEnumProps &enum_props) :
+  ScelEnumByProps::ScelEnumByProps(std::shared_ptr<const Structure> const &shared_prim,
+                                   const xtal::ScelEnumProps &enum_props) :
     m_shared_prim(shared_prim) {
 
     auto const &pg = m_shared_prim->point_group();
@@ -34,10 +35,6 @@ namespace CASM {
 
     m_lat_it = m_lattice_enum->begin();
     m_lat_end = m_lattice_enum->end();
-
-    while(m_lat_it != m_lat_end) {
-      ++m_lat_it;
-    }
 
     if(m_lat_it != m_lat_end) {
       double xtal_tol = m_shared_prim->lattice().tol();
@@ -59,10 +56,6 @@ namespace CASM {
   /// Implements increment over supercells
   void ScelEnumByProps::increment() {
     ++m_lat_it;
-
-    while(m_lat_it != m_lat_end) {
-      ++m_lat_it;
-    }
 
     if(m_lat_it != m_lat_end) {
       double xtal_tol = m_shared_prim->lattice().tol();

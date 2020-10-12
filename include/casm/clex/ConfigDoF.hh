@@ -158,7 +158,10 @@ namespace CASM {
     }
 
     GlobalDoFContainerType const &global_dof(DoFKey const &_key) const {
-      return global_dofs().at(_key);
+      auto it = m_global_dofs.find(_key);
+      if(it == m_global_dofs.end())
+        throw std::runtime_error("Attempting to access uninitialized ConfigDoF value for '" + _key + "'");
+      return it->second;
     }
 
     GlobalDoFContainerType &global_dof(DoFKey const &_key) {
@@ -179,7 +182,10 @@ namespace CASM {
     }
 
     LocalDoFContainerType const &local_dof(DoFKey const &_key) const {
-      return local_dofs().at(_key);
+      auto it = m_local_dofs.find(_key);
+      if(it == m_local_dofs.end())
+        throw std::runtime_error("Attempting to access uninitialized ConfigDoF value for '" + _key + "'");
+      return it->second;
     }
 
     LocalDoFContainerType &local_dof(DoFKey const &_key) {

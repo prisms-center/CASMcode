@@ -46,7 +46,7 @@ namespace CASM {
 
   }
 
-  Supercell::Supercell(std::shared_ptr<Structure const> const &_shared_prim, const Eigen::Ref<const Eigen::Matrix3i> &transf_mat_init) :
+  Supercell::Supercell(std::shared_ptr<Structure const> const &_shared_prim, Eigen::Matrix3l const &transf_mat_init) :
     m_primclex(nullptr),
     m_shared_prim(_shared_prim),
     m_sym_info(make_supercell_sym_info(prim(), Lattice(prim().lattice().lat_column_mat() * transf_mat_init.cast<double>(), crystallography_tol()))),
@@ -71,7 +71,7 @@ namespace CASM {
     }
   }
 
-  Supercell::Supercell(const PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &transf_mat_init) :
+  Supercell::Supercell(const PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3l> &transf_mat_init) :
     m_primclex(_prim),
     m_shared_prim(_prim->shared_prim()),
     m_sym_info(make_supercell_sym_info(prim(), Lattice(prim().lattice().lat_column_mat() * transf_mat_init.cast<double>(), crystallography_tol()))),
@@ -384,7 +384,7 @@ namespace CASM {
       throw e;
     }
 
-    Eigen::Matrix3i T;
+    Eigen::Matrix3l T;
     try {
       auto cast = [](std::string val) {
         return boost::lexical_cast<Index>(val);
@@ -443,7 +443,7 @@ namespace CASM {
     return Supercell(&scel.primclex(), sym::copy_apply(op, scel.lattice()));
   }
 
-  Eigen::Matrix3i transf_mat(const Lattice &prim_lat, const Lattice &super_lat, double tol) {
+  Eigen::Matrix3l transf_mat(const Lattice &prim_lat, const Lattice &super_lat, double tol) {
     auto res = xtal::is_superlattice(super_lat, prim_lat, tol);
     if(!res.first) {
       std::stringstream err_msg;
@@ -459,10 +459,10 @@ namespace CASM {
     return iround(res.second);
   }
 
-  std::string generate_name(const Eigen::Matrix3i &transf_mat) {
+  std::string generate_name(const Eigen::Matrix3l &transf_mat) {
     std::string name_str;
 
-    Eigen::Matrix3i H = hermite_normal_form(transf_mat).first;
+    Eigen::Matrix3l H = hermite_normal_form(transf_mat).first;
     name_str = "SCEL";
     std::stringstream tname;
     //Consider using a for loop with HermiteCounter_impl::_canonical_unroll here
