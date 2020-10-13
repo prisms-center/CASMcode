@@ -1,5 +1,5 @@
-#ifndef CASMtest_TestClexEnumerators
-#define CASMtest_TestClexEnumerators
+#ifndef CASMtest_TestEnumeratorInterface
+#define CASMtest_TestEnumeratorInterface
 
 #include "casm/app/CLIParse.hh"
 #include "casm/app/enum/EnumInterface.hh"

@@ -16,6 +16,15 @@ namespace CASM {
 
       return max_allowed_on_selected_sites;
     }
+
+    void set_occupation(Configuration &configuration,
+                        std::set<Index> const &site_indices,
+                        std::vector<int> const &counter) {
+      Index i = 0;
+      for(Index site_index : site_indices) {
+        configuration.set_occ(site_index, counter[i++]);
+      }
+    }
   }
 
   /// Conditionally true for ConfigEnumAllOccupations (true when enumerating on all sites)
@@ -35,7 +44,7 @@ namespace CASM {
     m_enumerate_on_a_subset_of_supercell_sites(
       m_site_index_selection.size() != config_enum_input.configuration().size()) {
 
-    m_current->set_occupation(m_counter());
+    local_impl::set_occupation(*m_current, m_site_index_selection, m_counter);
     reset_properties(*m_current);
     this->_initialize(&(*m_current));
 
@@ -72,9 +81,7 @@ namespace CASM {
     bool is_valid_config {false};
 
     while(!is_valid_config && ++m_counter) {
-      for(Index site_index : m_site_index_selection) {
-        m_current->set_occ(site_index, m_counter[site_index]);
-      }
+      local_impl::set_occupation(*m_current, m_site_index_selection, m_counter);
       is_valid_config = _current_is_valid_for_output();
     }
 
