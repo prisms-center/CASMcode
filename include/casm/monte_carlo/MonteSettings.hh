@@ -101,7 +101,7 @@ namespace CASM {
       fs::path motif_configdof_path() const;
 
       /// \brief Supercell matrix defining the simulation cell
-      Eigen::Matrix3i simulation_cell_matrix() const;
+      Eigen::Matrix3l simulation_cell_matrix() const;
 
 
       // --- Driver ---------------------

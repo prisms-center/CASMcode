@@ -97,7 +97,7 @@ void run_case(ProjType &proj, ConfigInit f, MTRand &mtrand) {
   ScopedNullLogging logging;
   PrimClex primclex(proj.dir);
 
-  Eigen::Matrix3i T;
+  Eigen::Matrix3l T;
   T << 9, 0, 0,
   0, 9, 0,
   0, 0, 9;

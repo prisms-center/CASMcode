@@ -144,7 +144,7 @@ namespace CASM {
     // this is the smallest of the target supercells, the rest are supercells of this
     auto shared_unit_supercell = std::make_shared<Supercell>(
                                    shared_prim,
-                                   scel_enum_props.generating_matrix());
+                                   scel_enum_props.generating_matrix().cast<long>());
 
     // logic check: require input configurations can fill the unit supercell
     require_valid_sub_configurations(parser, config_selection, *shared_unit_supercell);

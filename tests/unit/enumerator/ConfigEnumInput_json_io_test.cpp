@@ -26,8 +26,8 @@ using namespace CASM;
 using namespace test;
 
 namespace {
-  Eigen::Matrix3i _fcc_conventional_transf_mat() {
-    Eigen::Matrix3i transf_mat;
+  Eigen::Matrix3l _fcc_conventional_transf_mat() {
+    Eigen::Matrix3l transf_mat;
     transf_mat << -1, 1, 1, 1, -1, 1, 1, 1, -1;
     return transf_mat;
   }

@@ -26,7 +26,7 @@ namespace {
     TestConfig0(const PrimClex &primclex) :
       TestConfiguration(
         primclex,
-        Eigen::Vector3i(2, 1, 1).asDiagonal(), {
+        Eigen::Vector3l(2, 1, 1).asDiagonal(), {
       0, 0,  0, 0,  1, 1,  0, 0
     }) {
 

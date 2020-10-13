@@ -179,7 +179,7 @@ namespace CASM {
       auto it = json["supercells"].begin();
       auto end = json["supercells"].end();
       for(; it != end; ++it) {
-        Eigen::Matrix3i mat;
+        Eigen::Matrix3l mat;
         from_json(mat, *it);
         this->emplace(&primclex(), mat);
       }
@@ -203,7 +203,7 @@ namespace CASM {
       //  0 1 0
       //  0 0 2
 
-      Eigen::Matrix3i mat;
+      Eigen::Matrix3l mat;
 
       std::string s;
       fs::ifstream stream(primclex().dir().SCEL());

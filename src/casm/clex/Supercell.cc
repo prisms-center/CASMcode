@@ -456,13 +456,13 @@ namespace CASM {
               "transformation matrix: \n" << res.second << "\n";
       throw std::invalid_argument(err_msg.str());
     }
-    return iround(res.second);
+    return lround(res.second);
   }
 
   std::string generate_name(const Eigen::Matrix3l &transf_mat) {
     std::string name_str;
 
-    Eigen::Matrix3l H = hermite_normal_form(transf_mat).first;
+    Eigen::Matrix3i H = hermite_normal_form(transf_mat.cast<int>()).first;
     name_str = "SCEL";
     std::stringstream tname;
     //Consider using a for loop with HermiteCounter_impl::_canonical_unroll here

@@ -20,7 +20,7 @@ using namespace test;
 namespace {
 
   /// Make transformation_matrix_to_super for conventional 4 atom FCC cell, from the 1 atom primitive
-  Eigen::Matrix3i _fcc_conventional_transf_mat();
+  Eigen::Matrix3l _fcc_conventional_transf_mat();
 
   /// Make L12 (A3B1), in conventional 4 atom FCC cell
   Configuration _make_configuration_L12(std::shared_ptr<CASM::Structure const> shared_prim);
@@ -233,8 +233,8 @@ TEST_F(ClusterSitesSelectorTest, Test1) {
 namespace {
 
   /// Make transformation_matrix_to_super for conventional 4 atom FCC cell, from the 1 atom primitive
-  Eigen::Matrix3i _fcc_conventional_transf_mat() {
-    Eigen::Matrix3i transf_mat;
+  Eigen::Matrix3l _fcc_conventional_transf_mat() {
+    Eigen::Matrix3l transf_mat;
     transf_mat << -1, 1, 1, 1, -1, 1, 1, 1, -1;
     return transf_mat;
   }

@@ -13,7 +13,7 @@ namespace CASM {
     namespace {
       Configuration default_prim_config(const PrimClex &primclex) {
 
-        const Supercell &scel = *primclex.db<Supercell>().emplace(&primclex, Eigen::Matrix3i::Identity()).first;
+        const Supercell &scel = *primclex.db<Supercell>().emplace(&primclex, Eigen::Matrix3l::Identity()).first;
         Configuration res(scel);
         res.init_occupation();
         return res;

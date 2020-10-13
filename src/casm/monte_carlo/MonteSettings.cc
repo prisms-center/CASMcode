@@ -103,11 +103,11 @@ namespace CASM {
 
 
     /// \brief Supercell matrix defining the simulation cell
-    Eigen::Matrix3i MonteSettings::simulation_cell_matrix() const {
+    Eigen::Matrix3l MonteSettings::simulation_cell_matrix() const {
       std::string help = "3x3 transformation matrix, T, such that S = U*T,\n"
                          "  where S, is the supercell lattice vectors,\n"
                          "  and P, is the primitive cell lattice vectors.\n";
-      return _get_setting<Eigen::Matrix3i>("supercell", help);
+      return _get_setting<Eigen::Matrix3l>("supercell", help);
     }
 
 

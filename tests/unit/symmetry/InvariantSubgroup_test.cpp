@@ -25,7 +25,7 @@ TEST(InvariantSubgroupTest, Test0) {
   PrimClex primclex(proj.dir);
   const Structure &prim = primclex.prim();
   const SymGroup &prim_fg = primclex.prim().factor_group();
-  Supercell prim_scel(&primclex, Eigen::Matrix3i::Identity());
+  Supercell prim_scel(&primclex, Eigen::Matrix3l::Identity());
 
   EXPECT_EQ(true, true);
 

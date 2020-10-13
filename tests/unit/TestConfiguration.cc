@@ -12,7 +12,7 @@ namespace test {
 
   TestConfiguration::TestConfiguration(
     const PrimClex &primclex,
-    const Eigen::Matrix3i &T,
+    const Eigen::Matrix3l &T,
     const std::vector<int> &_occupation) :
     TestConfiguration(primclex, xtal::make_superlattice(primclex.prim().lattice(), T), _occupation) {}
 
@@ -26,8 +26,8 @@ namespace test {
   }
 
   namespace {
-    Configuration make_superconfig(const Configuration &unit, const Eigen::Matrix3i &T) {
-      std::shared_ptr<Supercell> scel = std::make_shared<Supercell>(&unit.primclex(), unit.supercell().transf_mat().cast<int>() * T);
+    Configuration make_superconfig(const Configuration &unit, const Eigen::Matrix3l &T) {
+      std::shared_ptr<Supercell> scel = std::make_shared<Supercell>(&unit.primclex(), unit.supercell().transf_mat() * T);
       FillSupercell f {scel};
       return f(unit);
     }
@@ -36,7 +36,7 @@ namespace test {
   TestConfiguration::TestConfiguration(
     const PrimClex &primclex,
     const Configuration &unit,
-    const Eigen::Matrix3i &T,
+    const Eigen::Matrix3l &T,
     double tol) :
     TestConfiguration(primclex, make_superconfig(unit, T)) {}
 

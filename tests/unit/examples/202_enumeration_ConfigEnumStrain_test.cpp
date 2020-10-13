@@ -562,7 +562,7 @@ namespace enumeration_test_impl {
 
 ExampleEnumerationSimpleCubicConfigEnumStrain::ExampleEnumerationSimpleCubicConfigEnumStrain():
   title("ExampleEnumerationSimpleCubicConfigEnumStrain"),
-  shared_prim(std::make_shared<CASM::Structure const>(test::SimpleCubicGLstrain_prim())),
+  shared_prim(std::make_shared<CASM::Structure const>(test::SimpleCubic_GLstrain_prim())),
   project_settings(make_default_project_settings(*shared_prim, title)),
   primclex(project_settings, shared_prim) {
 
