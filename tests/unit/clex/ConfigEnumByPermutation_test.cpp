@@ -3,7 +3,7 @@
 
 /// What is being tested:
 #include "casm/clex/ConfigEnumAllOccupations.hh"
-#include "casm/clex/ConfigEnumEquivalents.hh"
+#include "casm/clex/ConfigEnumByPermutation.hh"
 #include "casm/clex/ScelEnumEquivalents.hh"
 
 /// What is being used to test it:
@@ -21,13 +21,13 @@
 using namespace CASM;
 using namespace test;
 
-TEST(ConfigEnumEquivalentsTest, Test1) {
+TEST(ConfigEnumByPermutationTest, Test1) {
 
-  // tests ConfigEnumAllOccupations and ConfigEnumEquivalents
+  // tests ConfigEnumAllOccupations and ConfigEnumByPermutation
   ScopedNullLogging logging;
 
   // read test file
-  fs::path test_cases_path(autotools::abs_srcdir() + "/tests/unit/clex/ConfigEnumEquivalents_test_cases.json");
+  fs::path test_cases_path(autotools::abs_srcdir() + "/tests/unit/clex/ConfigEnumByPermutation_test_cases.json");
   jsonParser tests(test_cases_path);
   fs::path test_proj_dir(autotools::abs_srcdir() + "/tests/unit/clex/test_proj");
 
@@ -100,7 +100,7 @@ TEST(ConfigEnumEquivalentsTest, Test1) {
       }
 
       for(auto &config : enumerator) {
-        ConfigEnumEquivalents equiv_enum(config);
+        ConfigEnumByPermutation equiv_enum(config);
         for(auto &equiv : equiv_enum) {
           ++total_count[i];
           ++prim_count[i];

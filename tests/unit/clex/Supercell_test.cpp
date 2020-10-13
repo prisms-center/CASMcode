@@ -33,7 +33,7 @@ TEST(SupercellTest, Constructor2) {
   Eigen::Matrix3l T = Eigen::Matrix3l::Identity();
   Lattice supercell_lattice = make_superlattice(shared_prim->lattice(), T);
   auto shared_supercell = std::make_shared<Supercell const>(shared_prim, supercell_lattice);
-  EXPECT_TRUE(almost_equal(shared_supercell->lattice(), supercell_lattice));
+  EXPECT_EQ(shared_supercell->lattice(), supercell_lattice);
   EXPECT_EQ(shared_supercell->transf_mat(), T);
 }
 
@@ -41,17 +41,16 @@ TEST(SupercellTest, ConstructorFail) {
 
   // fail construction: shared prim structure with no basis sites
 
-  auto shared_prim = std::make_shared<Structure const>(test::empty_prim());
+  auto shared_prim = std::make_shared<Structure const>(test::no_basis_prim());
   Eigen::Matrix3l T = Eigen::Matrix3l::Identity();
   ASSERT_ANY_THROW(std::make_shared<Supercell const>(shared_prim, T));
 }
 
 TEST(SupercellTest, TestSupercellName) {
 
+  ScopedNullLogging logging;
   test::FCCTernaryProj proj;
   proj.check_init();
-
-  ScopedNullLogging logging;
   PrimClex primclex(proj.dir);
 
   Eigen::Vector3d a, b, c;

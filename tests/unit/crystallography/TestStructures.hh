@@ -9,16 +9,25 @@
 
 namespace test {
 
-  inline CASM::xtal::BasicStructure empty_prim() {
+  inline CASM::xtal::BasicStructure no_basis_prim() {
 
     using namespace CASM;
     using namespace CASM::xtal;
 
     BasicStructure struc { Lattice {Eigen::Matrix3d::Identity()} };
     struc.set_title("empty");
-    Molecule A = Molecule::make_atom("A");
-    struc.push_back(Site(Coordinate(Eigen::Vector3d::Zero(), struc.lattice(), FRAC), std::vector<Molecule> {A}));
 
+    return struc;
+  }
+
+  inline CASM::xtal::BasicStructure no_dof_prim() {
+
+    using namespace CASM;
+    using namespace CASM::xtal;
+
+    BasicStructure struc { Lattice {Eigen::Matrix3d::Identity()} };
+    struc.set_title("empty");
+    struc.push_back(Site(Coordinate(Eigen::Vector3d::Zero(), struc.lattice(), FRAC), std::vector<Molecule> {}));
     return struc;
   }
 
@@ -72,7 +81,7 @@ namespace test {
 
   }
 
-  inline CASM::xtal::BasicStructure SimpleCubicGLstrain_prim() {
+  inline CASM::xtal::BasicStructure SimpleCubic_GLstrain_prim() {
 
     using namespace CASM;
     using namespace CASM::xtal;
@@ -84,7 +93,7 @@ namespace test {
         0.0, 0.0, 1.0;
 
     BasicStructure struc {Lattice{lat}};
-    struc.set_title("SimpleCubicGLstrain");
+    struc.set_title("SimpleCubic_GLstrain");
 
     Molecule A = Molecule::make_atom("A");
 
@@ -98,12 +107,38 @@ namespace test {
 
   }
 
+  inline CASM::xtal::BasicStructure SimpleCubic_disp_prim() {
+
+    using namespace CASM;
+    using namespace CASM::xtal;
+
+    // lattice vectors as cols
+    Eigen::Matrix3d lat;
+    lat << 1.0, 0.0, 0.0,
+        0.0, 1.0, 0.0,
+        0.0, 0.0, 1.0;
+
+    BasicStructure struc {Lattice{lat}};
+    struc.set_title("SimpleCubic_disp");
+
+    Molecule A = Molecule::make_atom("A");
+    SiteDoFSet disp_dofset {AnisoValTraits::disp()};
+    Site site {Coordinate(Eigen::Vector3d::Zero(), struc.lattice(), CART),
+               std::vector<Molecule> {A},
+               std::vector<SiteDoFSet> {disp_dofset}};
+    struc.push_back(site);
+
+    return struc;
+
+  }
+
   inline CASM::xtal::BasicStructure FCC_ternary_strain_disp_prim() {
 
     using namespace CASM;
     using namespace CASM::xtal;
 
     BasicStructure struc = FCC_ternary_prim();
+    struc.set_title("FCC_ternary_strain_disp");
 
     // Add global DoF
     // GLstrain: Green-Lagrange strain

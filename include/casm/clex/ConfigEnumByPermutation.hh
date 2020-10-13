@@ -1,5 +1,5 @@
-#ifndef CASM_ConfigEnumEquivalents
-#define CASM_ConfigEnumEquivalents
+#ifndef CASM_ConfigEnumByPermutation
+#define CASM_ConfigEnumByPermutation
 
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/symmetry/PermuteIterator.hh"
@@ -8,8 +8,7 @@
 
 namespace CASM {
 
-  /// \brief Enumerate all equivalent Configurations in a Supercell, as generated
-  ///        by Supercell factor group symmetry
+  /// \brief Enumerate all equivalent Configurations obtained by permuations in a Supercell
   ///
   /// - The 'begin' Configuration is always the canonical form
   /// - Note that there may be other Configurations equivalent by primitive
@@ -19,15 +18,15 @@ namespace CASM {
   /// \ingroup EnumEquivalents
   /// \ingroup ConfigEnumGroup
   ///
-  class ConfigEnumEquivalents : public EnumEquivalents<Configuration, PermuteIterator> {
+  class ConfigEnumByPermutation : public EnumEquivalents<Configuration, PermuteIterator> {
 
     // -- Required -------------------
 
   public:
 
-    ConfigEnumEquivalents(const Configuration &config);
+    ConfigEnumByPermutation(const Configuration &config);
 
-    ConfigEnumEquivalents(const Configuration &config, PermuteIterator begin, PermuteIterator end);
+    ConfigEnumByPermutation(const Configuration &config, PermuteIterator begin, PermuteIterator end);
 
     std::string name() const override {
       return enumerator_name;

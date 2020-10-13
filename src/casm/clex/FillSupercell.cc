@@ -88,7 +88,7 @@ namespace CASM {
 
   Configuration FillSupercell::operator()(Configuration const &motif) const {
     if(&motif.supercell() != m_motif_supercell) {
-      m_symop_ptr = find_symop(m_motif_supercell->lattice());
+      m_symop_ptr = find_symop(motif.supercell().lattice());
       _init(motif.supercell());
     }
     return (*this)(*m_symop_ptr, motif);

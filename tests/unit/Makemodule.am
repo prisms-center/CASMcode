@@ -127,10 +127,11 @@ casm_unit_clex_SOURCES = \
     tests/unit/clex/Clexulator_test.cpp\
     tests/unit/clex/ConfigDoF_test.cpp\
     tests/unit/clex/ConfigEnumAllOccupations_test.cpp\
-    tests/unit/clex/ConfigEnumEquivalents_test.cpp\
+    tests/unit/clex/ConfigEnumByPermutation_test.cpp\
     tests/unit/clex/ConfigEnumRandomOccupations_test.cpp\
     tests/unit/clex/ConfigIO_test.cpp\
     tests/unit/clex/Configuration_test.cpp\
+    tests/unit/clex/FillSupercell_test.cpp\
     tests/unit/clex/NeighborList_test.cpp\
     tests/unit/clex/PrimClex_test.cpp\
     tests/unit/clex/ScelEnumEquivalents_test.cpp\
@@ -151,7 +152,7 @@ casm_unit_clex_CPPFLAGS = \
     -I$(top_srcdir)/tests/unit/
 EXTRA_DIST += \
     tests/unit/clex/ConfigEnumAllOccupations_test_cases.json\
-    tests/unit/clex/ConfigEnumEquivalents_test_cases.json\
+    tests/unit/clex/ConfigEnumByPermutation_test_cases.json\
     tests/unit/clex/TestClexBasisSpecs.hh\
     tests/unit/clex/TestClexEnumerators.hh\
     tests/unit/clex/test_Clexulator.cc

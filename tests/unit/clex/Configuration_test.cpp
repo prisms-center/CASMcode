@@ -63,10 +63,9 @@ Lattice non_canonical_equiv_test_lat(const PrimClex &primclex) {
 
 TEST(ConfigurationTest, Test1) {
 
+  ScopedNullLogging logging;
   test::FCCTernaryProj proj;
   proj.check_init();
-
-  ScopedNullLogging logging;
   PrimClex primclex(proj.dir);
 
   Eigen::Vector3d a, b, c;
@@ -126,12 +125,175 @@ TEST(ConfigurationTest, Test1) {
   */
 }
 
-TEST(ConfigurationTest, TestConfigurationName) {
-  // test Configuration::generate_name_impl
+TEST(ConfigurationTest, Test2) {
+
+  // test fill_supercell
+  ScopedNullLogging logging;
   test::FCCTernaryProj proj;
   proj.check_init();
+  PrimClex primclex(proj.dir);
 
+  Eigen::Vector3d a, b, c;
+  std::tie(a, b, c) = primclex.prim().lattice().vectors();
+
+  Supercell scel {&primclex, Lattice(c, a - b, a + b - c)};
+
+  Configuration config(scel);
+  EXPECT_EQ(config.size(), 2);
+
+  // include occupation only
+  config.set_occupation(std::vector<int>({1, 0}));
+
+  {
+    // Identity op
+    Supercell scel {&primclex, Lattice(c, a - b, a + b - c)};
+    const SymGroup &fg = config.supercell().factor_group();
+    Configuration filled = fill_supercell(fg[0], config, scel);
+
+    Configuration check(scel);
+    check.set_occupation(std::vector<int>({1, 0}));
+
+    EXPECT_EQ(filled, check);
+  }
+
+  {
+    // supercell
+    Supercell scel {&primclex, Lattice(c, a - b, 2.*(a + b - c))};
+    const SymGroup &fg = config.supercell().factor_group();
+    Configuration filled = fill_supercell(fg[0], config, scel);
+
+    Configuration check(scel);
+    check.set_occupation(std::vector<int>({1, 0, 1, 0}));
+
+    EXPECT_EQ(filled, check);
+  }
+
+  {
+    // 90 deg rotation
+    Supercell scel {&primclex, Lattice(c, a - b, a + b - c)};
+    const SymGroup &fg = config.supercell().factor_group();
+    //std::cout << to_string(fg.info(1), CART) << std::endl;
+    Configuration filled = fill_supercell(fg[1], config, scel);
+
+    Configuration check(scel);
+    check.set_occupation(std::vector<int>({1, 0}));
+
+    EXPECT_EQ(filled, check);
+  }
+
+
+  // include occupation & displacements
+  Eigen::Vector3d dzero(0., 0., 0.);
+  Eigen::Vector3d dx(0.001, 0., 0.);
+  Eigen::Vector3d dy(0., 0.001, 0.);
+  Eigen::Vector3d dz(0., 0., 0.001);
+
+
+  //config.set_disp(0, dx);
+
+  {
+    // Identity op
+    Supercell scel {&primclex, Lattice(c, a - b, a + b - c)};
+    const SymGroup &fg = config.supercell().factor_group();
+    Configuration filled = fill_supercell(fg[0], config, scel);
+
+    Configuration check(scel);
+    check.set_occupation(std::vector<int>({1, 0}));
+    //check.set_disp(0, dx);
+
+
+    EXPECT_EQ(filled, check);
+  }
+
+  {
+    // supercell
+    Supercell scel {&primclex, Lattice(c, a - b, 2.*(a + b - c))};
+    const SymGroup &fg = config.supercell().factor_group();
+    Configuration filled = fill_supercell(fg[0], config, scel);
+
+    Configuration check(scel);
+    check.set_occupation(std::vector<int>({1, 0, 1, 0}));
+    //check.init_displacement();
+    //check.set_disp(0, dx);
+    //check.set_disp(2, dx);
+
+    EXPECT_EQ(filled, check);
+  }
+
+  {
+    // 90 deg rotation
+    Supercell scel {&primclex, Lattice(c, a - b, a + b - c)};
+    const SymGroup &fg = config.supercell().factor_group();
+    Configuration filled = fill_supercell(fg[1], config, scel);
+
+    Configuration check(scel);
+    check.set_occupation(std::vector<int>({1, 0}));
+    //check.init_displacement();
+    //check.set_disp(0, dy);
+
+    EXPECT_EQ(filled, check);
+  }
+
+}
+
+TEST(ConfigurationTest, Test3) {
+  // test ConfigCanonicalForm functions
   ScopedNullLogging logging;
+  test::FCCTernaryProj proj;
+  proj.check_init();
+  PrimClex primclex(proj.dir);
+
+  Eigen::Vector3d a, b, c;
+  std::tie(a, b, c) = primclex.prim().lattice().vectors();
+  // a = 0, 2, 2; b = 2, 0, 2; c = 2, 2, 0
+
+
+  {
+    // supercell (standard cubic FCC)
+    Supercell scel {&primclex, Lattice(b + c - a, a + c - b, a + b - c)};
+    //std::cout << scel.lattice().lat_column_mat() << std::endl;
+    EXPECT_EQ(scel.is_canonical(), true);
+
+    {
+      Configuration config(scel);
+      config.set_occupation(std::vector<int>({1, 0, 0, 0}));
+      EXPECT_EQ(config.is_canonical(), true);
+      EXPECT_EQ(config.is_primitive(), true);
+      EXPECT_EQ(config.invariant_subgroup().size(), 48);
+
+      {
+        Configuration test(scel);
+        test.set_occupation(std::vector<int>({1, 0, 0, 0}));
+        EXPECT_EQ(config == test, true);
+        EXPECT_EQ(config.is_sym_equivalent(test), true);
+        EXPECT_EQ(test.is_sym_equivalent(config), true);
+        EXPECT_EQ(test < config, false);
+        EXPECT_EQ(config < test, false);
+      }
+
+      {
+        Configuration test(scel);
+        test.set_occupation(std::vector<int>({0, 1, 0, 0}));
+        EXPECT_EQ(config == test, false);
+        EXPECT_EQ(config.is_sym_equivalent(test), true);
+        EXPECT_EQ(test.is_sym_equivalent(config), true);
+        EXPECT_EQ(test < config, true);
+        EXPECT_EQ(config < test, false);
+
+        auto to_canonical = test.to_canonical();
+        EXPECT_EQ(to_canonical.factor_group_index(), 0);
+        EXPECT_EQ(to_canonical.translation_index(), 1);
+        EXPECT_EQ(copy_apply(to_canonical, test) == config, true);
+      }
+    }
+  }
+}
+
+TEST(ConfigurationTest, TestConfigurationName) {
+  // test Configuration::generate_name_impl
+  ScopedNullLogging logging;
+  test::FCCTernaryProj proj;
+  proj.check_init();
   PrimClex primclex(proj.dir);
   auto &db = primclex.db<Configuration>();
 
@@ -140,14 +302,11 @@ TEST(ConfigurationTest, TestConfigurationName) {
 
   {
     // prim cell
-    std::cout << "construct scel" << std::endl;
     Supercell scel {&primclex, Lattice(a, b, c)};
 
     {
       // canonical scel, canonical primitive occ
-      std::cout << "construct config" << std::endl;
       Configuration config(scel);
-      std::cout << "set occupation" << std::endl;
       config.set_occupation(std::vector<int>({0}));
 
       // not in datbase -> id == "none"
@@ -367,172 +526,4 @@ TEST(ConfigurationTest, TestConfigurationName) {
     }
   }
 
-}
-
-TEST(ConfigurationTest, Test2) {
-
-  // test fill_supercell
-
-  test::FCCTernaryProj proj;
-  proj.check_init();
-
-  ScopedNullLogging logging;
-  PrimClex primclex(proj.dir);
-
-  Eigen::Vector3d a, b, c;
-  std::tie(a, b, c) = primclex.prim().lattice().vectors();
-
-  Supercell scel {&primclex, Lattice(c, a - b, a + b - c)};
-
-  Configuration config(scel);
-  EXPECT_EQ(config.size(), 2);
-
-  // include occupation only
-  config.set_occupation(std::vector<int>({1, 0}));
-
-  {
-    // Identity op
-    Supercell scel {&primclex, Lattice(c, a - b, a + b - c)};
-    const SymGroup &fg = config.supercell().factor_group();
-    Configuration filled = fill_supercell(fg[0], config, scel);
-
-    Configuration check(scel);
-    check.set_occupation(std::vector<int>({1, 0}));
-
-    EXPECT_EQ(filled, check);
-  }
-
-  {
-    // supercell
-    Supercell scel {&primclex, Lattice(c, a - b, 2.*(a + b - c))};
-    const SymGroup &fg = config.supercell().factor_group();
-    Configuration filled = fill_supercell(fg[0], config, scel);
-
-    Configuration check(scel);
-    check.set_occupation(std::vector<int>({1, 0, 1, 0}));
-
-    EXPECT_EQ(filled, check);
-  }
-
-  {
-    // 90 deg rotation
-    Supercell scel {&primclex, Lattice(c, a - b, a + b - c)};
-    const SymGroup &fg = config.supercell().factor_group();
-    //std::cout << to_string(fg.info(1), CART) << std::endl;
-    Configuration filled = fill_supercell(fg[1], config, scel);
-
-    Configuration check(scel);
-    check.set_occupation(std::vector<int>({1, 0}));
-
-    EXPECT_EQ(filled, check);
-  }
-
-
-  // include occupation & displacements
-  Eigen::Vector3d dzero(0., 0., 0.);
-  Eigen::Vector3d dx(0.001, 0., 0.);
-  Eigen::Vector3d dy(0., 0.001, 0.);
-  Eigen::Vector3d dz(0., 0., 0.001);
-
-
-  //config.set_disp(0, dx);
-
-  {
-    // Identity op
-    Supercell scel {&primclex, Lattice(c, a - b, a + b - c)};
-    const SymGroup &fg = config.supercell().factor_group();
-    Configuration filled = fill_supercell(fg[0], config, scel);
-
-    Configuration check(scel);
-    check.set_occupation(std::vector<int>({1, 0}));
-    //check.set_disp(0, dx);
-
-
-    EXPECT_EQ(filled, check);
-  }
-
-  {
-    // supercell
-    Supercell scel {&primclex, Lattice(c, a - b, 2.*(a + b - c))};
-    const SymGroup &fg = config.supercell().factor_group();
-    Configuration filled = fill_supercell(fg[0], config, scel);
-
-    Configuration check(scel);
-    check.set_occupation(std::vector<int>({1, 0, 1, 0}));
-    //check.init_displacement();
-    //check.set_disp(0, dx);
-    //check.set_disp(2, dx);
-
-    EXPECT_EQ(filled, check);
-  }
-
-  {
-    // 90 deg rotation
-    Supercell scel {&primclex, Lattice(c, a - b, a + b - c)};
-    const SymGroup &fg = config.supercell().factor_group();
-    Configuration filled = fill_supercell(fg[1], config, scel);
-
-    Configuration check(scel);
-    check.set_occupation(std::vector<int>({1, 0}));
-    //check.init_displacement();
-    //check.set_disp(0, dy);
-
-    EXPECT_EQ(filled, check);
-  }
-
-}
-
-TEST(ConfigurationTest, Test3) {
-  // test ConfigCanonicalForm functions
-
-  test::FCCTernaryProj proj;
-  proj.check_init();
-
-  ScopedNullLogging logging;
-  PrimClex primclex(proj.dir);
-
-  Eigen::Vector3d a, b, c;
-  std::tie(a, b, c) = primclex.prim().lattice().vectors();
-  // a = 0, 2, 2; b = 2, 0, 2; c = 2, 2, 0
-
-
-  {
-    // supercell (standard cubic FCC)
-    Supercell scel {&primclex, Lattice(b + c - a, a + c - b, a + b - c)};
-    //std::cout << scel.lattice().lat_column_mat() << std::endl;
-    EXPECT_EQ(scel.is_canonical(), true);
-
-    {
-      Configuration config(scel);
-      config.set_occupation(std::vector<int>({1, 0, 0, 0}));
-      EXPECT_EQ(config.is_canonical(), true);
-      EXPECT_EQ(config.is_primitive(), true);
-      EXPECT_EQ(config.invariant_subgroup().size(), 48);
-
-      {
-        Configuration test(scel);
-        test.set_occupation(std::vector<int>({1, 0, 0, 0}));
-        EXPECT_EQ(config == test, true);
-        EXPECT_EQ(config.is_sym_equivalent(test), true);
-        EXPECT_EQ(test.is_sym_equivalent(config), true);
-        EXPECT_EQ(test < config, false);
-        EXPECT_EQ(config < test, false);
-      }
-
-      {
-        Configuration test(scel);
-        test.set_occupation(std::vector<int>({0, 1, 0, 0}));
-        EXPECT_EQ(config == test, false);
-        EXPECT_EQ(config.is_sym_equivalent(test), true);
-        EXPECT_EQ(test.is_sym_equivalent(config), true);
-        EXPECT_EQ(test < config, true);
-        EXPECT_EQ(config < test, false);
-
-        auto to_canonical = test.to_canonical();
-        EXPECT_EQ(to_canonical.factor_group_index(), 0);
-        EXPECT_EQ(to_canonical.translation_index(), 1);
-        EXPECT_EQ(copy_apply(to_canonical, test) == config, true);
-      }
-    }
-  }
 }

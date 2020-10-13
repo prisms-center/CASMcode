@@ -205,7 +205,7 @@ casm_clex_include_HEADERS = \
     include/casm/clex/ConfigDoFIsEquivalent.hh\
     include/casm/clex/ConfigDoFValues.hh\
     include/casm/clex/ConfigEnumAllOccupations.hh\
-    include/casm/clex/ConfigEnumEquivalents.hh\
+    include/casm/clex/ConfigEnumByPermutation.hh\
     include/casm/clex/ConfigEnumRandomLocal.hh\
     include/casm/clex/ConfigEnumRandomOccupations.hh\
     include/casm/clex/ConfigEnumSiteDoFs.hh\

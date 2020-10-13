@@ -132,7 +132,7 @@ libcasm_la_SOURCES = \
     include/casm/clex/ConfigDoFIsEquivalent.hh\
     include/casm/clex/ConfigDoFValues.hh\
     include/casm/clex/ConfigEnumAllOccupations.hh\
-    include/casm/clex/ConfigEnumEquivalents.hh\
+    include/casm/clex/ConfigEnumByPermutation.hh\
     include/casm/clex/ConfigEnumRandomLocal.hh\
     include/casm/clex/ConfigEnumRandomOccupations.hh\
     include/casm/clex/ConfigEnumSiteDoFs.hh\
@@ -835,7 +835,7 @@ libcasm_la_SOURCES = \
     src/casm/clex/ConfigDoF.cc\
     src/casm/clex/ConfigDoFValues.cc\
     src/casm/clex/ConfigEnumAllOccupations.cc\
-    src/casm/clex/ConfigEnumEquivalents.cc\
+    src/casm/clex/ConfigEnumByPermutation.cc\
     src/casm/clex/ConfigEnumRandomLocal.cc\
     src/casm/clex/ConfigEnumRandomOccupations.cc\
     src/casm/clex/ConfigEnumSiteDoFs.cc\

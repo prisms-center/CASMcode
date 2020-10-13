@@ -860,9 +860,8 @@ namespace CASM {
     const UnitCell &origin) {
 
 
-    if(&sub_scel_ptr->primclex() != &super_config.primclex()) {
-      throw std::runtime_error(std::string("Error in 'sub_configuration:"
-                                           " PrimClex of sub-Supercell and super-configuration are not the same"));
+    if(sub_scel_ptr->shared_prim() != super_config.shared_prim()) {
+      throw std::runtime_error("Error sub_configuration: prim is not the same.");
     }
 
     Configuration sub_config {sub_scel_ptr};

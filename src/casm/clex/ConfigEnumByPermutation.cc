@@ -1,4 +1,4 @@
-#include "casm/clex/ConfigEnumEquivalents.hh"
+#include "casm/clex/ConfigEnumByPermutation.hh"
 #include <algorithm>
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/Configuration.hh"
@@ -23,17 +23,17 @@ namespace CASM {
     };
   }
 
-  const std::string ConfigEnumEquivalents::enumerator_name = "ConfigEnumEquivalents";
+  const std::string ConfigEnumByPermutation::enumerator_name = "ConfigEnumByPermutation";
 
-  ConfigEnumEquivalents::ConfigEnumEquivalents(
+  ConfigEnumByPermutation::ConfigEnumByPermutation(
     const Configuration &config) :
-    ConfigEnumEquivalents(
+    ConfigEnumByPermutation(
       config,
       config.supercell().sym_info().permute_begin(),
       config.supercell().sym_info().permute_end()) {
   }
 
-  ConfigEnumEquivalents::ConfigEnumEquivalents(
+  ConfigEnumByPermutation::ConfigEnumByPermutation(
     const Configuration &config,
     PermuteIterator begin,
     PermuteIterator end) :

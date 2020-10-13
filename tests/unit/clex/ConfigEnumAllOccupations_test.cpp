@@ -27,7 +27,7 @@ using namespace test;
 
 TEST(ConfigEnumTest, ConfigEnumAllOccupationsTest) {
 
-  // tests ConfigEnumAllOccupations and ConfigEnumEquivalents
+  // tests ConfigEnumAllOccupations and ConfigEnumByPermutation
   ScopedNullLogging logging;
 
   // read test file
