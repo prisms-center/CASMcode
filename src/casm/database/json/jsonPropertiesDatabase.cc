@@ -3,6 +3,7 @@
 #include <boost/filesystem.hpp>
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/casm_io/SafeOfstream.hh"
+#include "casm/global/errors.hh"
 
 namespace CASM {
   namespace DB {
@@ -14,49 +15,25 @@ namespace CASM {
       m_location(location) {}
 
     DatabaseBase &jsonPropertiesDatabase::open() {
-      if(m_is_open || !fs::exists(m_location)) {
+      if(m_is_open || m_location.empty() || !fs::exists(m_location)) {
+        m_is_open = true;
         return *this;
       }
 
-      jsonParser json(m_location);
-
-      from_json(m_default_score, json["default_conflict_score"]);
-
-      {
-        auto it = json["conflict_score"].begin();
-        auto end = json["conflict_score"].end();
-        for(; it != end; ++it) {
-          set_score_method(it.name(), it->get<ScoreMappedProperties>());
-        }
-      }
-
-      {
-        MappedProperties obj;
-        auto it = json["data"].begin();
-        auto end = json["data"].end();
-        for(; it != end; ++it) {
-          from_json(obj, *it);
-          insert(obj);
-        }
-      }
-
+      jsonParser json {m_location};
+      this->from_json(json);
       m_is_open = true;
       return *this;
     }
 
     void jsonPropertiesDatabase::commit() {
-      jsonParser json;
 
-      json["data"] = m_data;
-      json["default_conflict_score"] = m_default_score;
-
-      json["conflict_score"].put_obj();
-      jsonParser &j = json["conflict_score"];
-      for(const auto &val : m_origins) {
-        if(val.second.key_comp().score_method() != m_default_score) {
-          j[val.first] = val.second.key_comp().score_method();
-        }
+      if(!m_is_open || m_location.empty()) {
+        return;
       }
+
+      jsonParser json;
+      this->to_json(json);
 
       SafeOfstream file;
       fs::create_directories(m_location.parent_path());
@@ -72,6 +49,49 @@ namespace CASM {
       m_data.clear();
       m_origins.clear();
       m_is_open = false;
+    }
+
+    void jsonPropertiesDatabase::from_json(jsonParser const &json) {
+
+      m_data.clear();
+      m_origins.clear();
+
+      CASM::from_json(m_default_score, json["default_conflict_score"]);
+
+      {
+        auto it = json["conflict_score"].begin();
+        auto end = json["conflict_score"].end();
+        for(; it != end; ++it) {
+          set_score_method(it.name(), it->get<ScoreMappedProperties>());
+        }
+      }
+
+      {
+        MappedProperties obj;
+        auto it = json["data"].begin();
+        auto end = json["data"].end();
+        for(; it != end; ++it) {
+          CASM::from_json(obj, *it);
+          insert(obj);
+        }
+      }
+    }
+
+    jsonParser &jsonPropertiesDatabase::to_json(jsonParser &json) const {
+      if(!json.is_obj()) {
+        throw libcasm_runtime_error("Error in jsonPropertiesDatabase::to_json: Not a JSON object.");
+      }
+      json["data"] = m_data;
+      json["default_conflict_score"] = m_default_score;
+
+      json["conflict_score"].put_obj();
+      jsonParser &j = json["conflict_score"];
+      for(const auto &val : m_origins) {
+        if(val.second.key_comp().score_method() != m_default_score) {
+          j[val.first] = val.second.key_comp().score_method();
+        }
+      }
+      return json;
     }
 
     /// \brief Begin iterator
@@ -200,4 +220,3 @@ namespace CASM {
 
   }
 }
-

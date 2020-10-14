@@ -9,18 +9,15 @@ detect_os
 
 check_var "CASM_BUILD_DIR" "CASMcode repository location"
 check_var "CASM_TESTS" "Particular test categories to run (default="", runs all tests)" ""
-check_var "CASM_TEST_FLAGS" "Customize the options given to the test programs" ""
 
 . $CASM_BUILD_DIR/build_scripts/make-cpp.sh
 
 # Run tests and print output
 cd $CASM_BUILD_DIR
 echo "CASM_TESTS: '$CASM_TESTS'"
-echo "CASM_TEST_FLAGS: '$CASM_TEST_FLAGS'"
-echo "CASM_BOOST_PREFIX: '$CASM_BOOST_PREFIX'"
-echo 'make check -j $CASM_NCPU CASM_BOOST_PREFIX=$CASM_BOOST_PREFIX ${CASM_TESTS:+TESTS="$CASM_TESTS"} ${CASM_TEST_FLAGS:+TEST_FLAGS="$CASM_TEST_FLAGS"}'
+echo 'make check -j $CASM_NCPU ${CASM_TESTS:+TESTS="$CASM_TESTS"}'
 
 rm -rf test-suite.log
-make check -j $CASM_NCPU CASM_BOOST_PREFIX="$CASM_BOOST_PREFIX" ${CASM_TESTS:+TESTS="$CASM_TESTS"} ${CASM_TEST_FLAGS:+TEST_FLAGS="$CASM_TEST_FLAGS"} \
+make check -j $CASM_NCPU ${CASM_TESTS:+TESTS="$CASM_TESTS"} \
   || do_if_failed "eval [ -f test-suite.log ] && cat test-suite.log" \
-  || { echo "'make check -j $CASM_NCPU CASM_BOOST_PREFIX=$CASM_BOOST_PREFIX ${CASM_TESTS:+TESTS="$CASM_TESTS"} ${CASM_TEST_FLAGS:+TEST_FLAGS="$CASM_TEST_FLAGS"}' failed"; exit 1; }
+  || { echo "'make check -j $CASM_NCPU ${CASM_TESTS:+TESTS="$CASM_TESTS"}' failed"; exit 1; }

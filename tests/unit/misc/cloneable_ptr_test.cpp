@@ -64,6 +64,8 @@ public:
   BTest(const BTest &other) :
     m_value(other.m_value) {};
 
+  virtual ~BTest() {}
+
   BTest(BTest &&other) {
     if(this != &other) {
       m_value = other.m_value;
@@ -151,7 +153,7 @@ public:
 
   };
 
-  virtual int value() const {
+  int value() const override {
     return m_value;
   }
 
@@ -161,7 +163,7 @@ public:
 
 private:
 
-  virtual CTest *_clone() const {
+  CTest *_clone() const override {
     return new CTest(m_value, true);
   }
 
@@ -268,4 +270,3 @@ TEST(CloneablePtrTest, CloneFunctionTest) {
   EXPECT_EQ(Bptr2->value(), 2);
 
 }
-

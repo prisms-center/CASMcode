@@ -2,6 +2,7 @@
 
 #include "casm/app/enum.hh"
 #include "casm/casm_io/container/json_io.hh"
+#include "casm/crystallography/CanonicalForm.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/SymType.hh"
 #include "casm/crystallography/Structure.hh"
@@ -75,6 +76,45 @@ namespace CASM {
 
   const std::string ScelEnumByProps::enumerator_name = "ScelEnumByProps";
 
+  /// \brief Construct with shared prim Structure and ScelEnumProps settings
+  ///
+  /// \param shared_prim A shared prim Structure for which to enumerate Supercells
+  /// \param enum_props Specifies which Supercells to enumerate
+  ///
+  /// Note: This variant does not require a PrimClex, and there for cannot insert Supercells into
+  /// a Supercell database automatically.
+  ///
+  ScelEnumByProps::ScelEnumByProps(std::shared_ptr<const Structure> &shared_prim, const ScelEnumProps &enum_props) :
+    m_shared_prim(shared_prim),
+    m_primclex(nullptr),
+    m_existing_only(false) {
+
+    auto const &pg = m_shared_prim->point_group();
+    m_lattice_enum.reset(new SuperlatticeEnumerator(
+                           pg.begin(),
+                           pg.end(),
+                           m_shared_prim->lattice(),
+                           enum_props
+                         ));
+
+    m_lat_it = m_lattice_enum->begin();
+    m_lat_end = m_lattice_enum->end();
+
+    while(!_include(*m_lat_it) && m_lat_it != m_lat_end) {
+      ++m_lat_it;
+    }
+
+    if(m_lat_it != m_lat_end) {
+      double xtal_tol = m_shared_prim->lattice().tol();
+      Lattice canonical_lattice = xtal::canonical::equivalent(*m_lat_it, pg, xtal_tol);
+      m_current = notstd::make_unique<Supercell>(m_shared_prim, canonical_lattice);
+      this->_initialize(&(*m_current));
+    }
+    else {
+      this->_invalidate();
+    }
+  }
+
   /// \brief Construct with PrimClex and ScelEnumProps settings
   ///
   /// \param primclex A PrimClex for which to enumerate Supercells
@@ -82,11 +122,14 @@ namespace CASM {
   /// \param existing_only Skip Supercells specified by enum_props but not already
   ///        existing in the Supercell list
   ///
+  /// Note: This variant inserts Supercells into the Supercell database automatically.
+  ///
   ScelEnumByProps::ScelEnumByProps(const PrimClex &primclex, const ScelEnumProps &enum_props, bool existing_only) :
+    m_shared_prim(),
     m_primclex(&primclex),
     m_existing_only(existing_only) {
 
-    auto pg = m_primclex->prim().point_group();
+    auto const &pg = m_primclex->prim().point_group();
     m_lattice_enum.reset(new SuperlatticeEnumerator(
                            pg.begin(),
                            pg.end(),
@@ -145,9 +188,17 @@ namespace CASM {
     }
 
     if(m_lat_it != m_lat_end) {
-      Supercell scel(m_primclex, *m_lat_it);
-
-      this->_set_current_ptr(&*scel.insert().first);
+      if(m_shared_prim) {
+        double xtal_tol = m_shared_prim->lattice().tol();
+        auto const &pg = m_shared_prim->point_group();
+        Lattice canonical_lattice = xtal::canonical::equivalent(*m_lat_it, pg, xtal_tol);
+        m_current = notstd::make_unique<Supercell>(m_shared_prim, canonical_lattice);
+        this->_initialize(&(*m_current));
+      }
+      else {
+        Supercell scel(m_primclex, *m_lat_it);
+        this->_set_current_ptr(&*scel.insert().first);
+      }
       this->_increment_step();
     }
     else {

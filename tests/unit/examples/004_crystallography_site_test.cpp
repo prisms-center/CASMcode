@@ -44,9 +44,9 @@ TEST(ExampleCrystallographySite, SiteConstructor) {
   //      - a map of <attribute name string>:<SpeciesAttribute>
   //
   //      SpeciesAttribute have:
-  //      - AnisoValTraits, which provides the attribute type name, a standard coordinate system,
-  //        and specifies how values transform under application of symmetry.
-  //      - a Eigen::VectorXd value
+  //      - AnisoValTraits, which provides the attribute type name, a standard coordinate system
+  //        (the "standard basis"), and specifies how values transform under application of symmetry.
+  //      - a Eigen::VectorXd value, with meaning determined by the type of SpeciesAttribute
   //
   //   Molecules can be compared using the `Molecule::is_identical` function, which requires that
   //     all components and subcomponents of the two molecules are identical up to a specified
@@ -62,16 +62,15 @@ TEST(ExampleCrystallographySite, SiteConstructor) {
   //   sublattice (i.e. displacement).
   //
   //      SiteDoFSet have:
-  //      - AnisoValTraits, which provides the DoF type name, a standard coordinate system, and
-  //        specifies how values transform under application of symmetry.
-  //      - a set of named basis vectors, which are denoted relative to the standard coordinate axes,
-  //       allowing the user to specify the DoFSet components, name them, and restrict DoF values to
-  //       a particular subspace
-  //     - a SymGroupRepID, which is a key for retrieving the SymGroupRep that encodes how the
-  //       DoFSet transforms with symmetry
-  //     - a list of site occupants for which the DoF does not apply
+  //      - AnisoValTraits, which provides the DoF type name, a standard coordinate system (the
+  //        "standard basis"), and specifies how values transform under application of symmetry.
+  //      - a "DoF basis", a set of named basis vectors which are denoted relative to the standard
+  //        basis, allowing the user to specify the DoFSet components, name them, and restrict DoF
+  //        values to a particular subspace
+  //      - a list of site occupants for which the DoF does not apply ("excluded_occupants",
+  //        std::unordered_set<std::string>)
   //
-  // Examples of standard coordinate systems specified by AnisoValTraits:
+  // Examples of standard basis specified by AnisoValTraits:
   // - "disp" -> (dx, dy, dz) -> displacement components relative to fixed laboratory frame
   // - "strain" -> (e_xx, e_yy, e_zz, sqrt(2)*e_yz, sqrt(2)*e_xz, sqrt(2)*e_xy) -> tensor elements
 

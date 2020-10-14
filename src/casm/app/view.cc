@@ -154,7 +154,7 @@ namespace CASM {
         args.log() << pos_path.string() << std::endl;
         SimpleStructure import_struc;
         jsonParser datajson(pos_path);
-        from_json(import_struc, datajson, "relaxed");
+        from_json(import_struc, datajson);
 
         file.open(POSCARpath);
         VaspIO::PrintPOSCAR p(import_struc);

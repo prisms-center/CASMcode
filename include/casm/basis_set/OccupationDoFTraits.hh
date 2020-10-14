@@ -115,12 +115,7 @@ namespace CASM {
     public:
       using BasicTraits = DoF::BasicTraits;
       OccupationDoFTraits():
-        DoFType::Traits(BasicTraits("occ",
-      {},
-      BasicTraits::LOCAL),
-      /*_requires_site_basis = */ true) {
-
-      }
+        DoFType::Traits(BasicTraits::occ(), /*_requires_site_basis = */ true) {}
 
       std::string site_basis_description(BasisSet site_bset, Site site, Index site_ix) const override;
 

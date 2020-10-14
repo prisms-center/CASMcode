@@ -330,4 +330,3 @@ namespace CASM {
   }
 
 }
-

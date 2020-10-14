@@ -244,8 +244,8 @@ namespace CASM {
     if(istrain == tdof_types.size())
       throw std::runtime_error("Cannot enumerate strains for project in which strain has not been specified as a degree of freedom.");
     strain_dof_key = tdof_types[istrain];
-    if(!sym_axes){
-        wedges.push_back(SymRepTools::SubWedge({SymRepTools::IrrepWedge::make_dummy_irrep_wedge(_axes)}));
+    if(!sym_axes) {
+      wedges.push_back(SymRepTools::SubWedge({SymRepTools::IrrepWedge::make_dummy_irrep_wedge(_axes)}));
     }
     else
       /* wedges = SymRepTools::symrep_subwedges(pg, _primclex.prim().structure().global_dof(strain_dof_key).symrep_ID()); */
@@ -342,12 +342,13 @@ namespace CASM {
     m_counter.reset();
 
     //Increment past any invalid values, including those that are outside specified ellipsoid (if trim_corners==true)
-    
+
     while(m_counter.valid() && (trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat().transpose()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat()*m_counter()) > 1.0 + TOL)) {
       ++m_counter;
     }
-    
+
     reset_properties(m_current);
+    m_current.configdof().set_global_dof(m_strain_key, m_wedges[m_equiv_ind].trans_mat() * m_counter());
     this->_initialize(&m_current);
 
     if(!m_counter.valid()) {
@@ -362,7 +363,7 @@ namespace CASM {
     while(++m_counter && (m_trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat().transpose()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat()*m_counter()) > 1.0 + TOL)) {
 
     }
-    
+
     // move to next part of wedge if necessary
     if(!m_counter.valid() && m_equiv_ind + 1 < m_wedges.size()) {
       m_counter.reset();
@@ -370,17 +371,17 @@ namespace CASM {
 
       //Increment past any invalid values, including those that are outside specified ellipsoid (if trim_corners==true)
       // this time it's for the new wedge
-    
+
       while(m_counter &&
             (m_trim_corners && double(m_counter().transpose()*m_wedges[m_equiv_ind].trans_mat().transpose()*m_shape_factor * m_wedges[m_equiv_ind].trans_mat()*m_counter()) > 1.0 + TOL)) {
         ++m_counter;
       }
     }
-    
+
     if(m_counter.valid()) {
 
-    m_current.configdof().set_global_dof(m_strain_key, m_wedges[m_equiv_ind].trans_mat() * m_counter());
-    
+      m_current.configdof().set_global_dof(m_strain_key, m_wedges[m_equiv_ind].trans_mat() * m_counter());
+
       _increment_step();
     }
     else {
@@ -392,4 +393,3 @@ namespace CASM {
   }
 
 }
-

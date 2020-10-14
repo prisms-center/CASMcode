@@ -298,13 +298,13 @@ namespace CASM {
       result.trans_mat = irrep.trans_mat * subspace.adjoint().template cast<std::complex<double> >();
 
       result.directions.clear();
-      for (const auto& direction_orbit : irrep.directions){
-          std::vector<Eigen::VectorXd> new_orbit;
-          new_orbit.reserve(direction_orbit.size());
-          for (const auto& directions: direction_orbit){
-              new_orbit.push_back(subspace*directions);
-          }
-          result.directions.push_back(std::move(new_orbit));
+      for(const auto &direction_orbit : irrep.directions) {
+        std::vector<Eigen::VectorXd> new_orbit;
+        new_orbit.reserve(direction_orbit.size());
+        for(const auto &directions : direction_orbit) {
+          new_orbit.push_back(subspace * directions);
+        }
+        result.directions.push_back(std::move(new_orbit));
       }
       return result;
     }
@@ -738,8 +738,8 @@ namespace CASM {
 
     SymGroupRep sub_rep = coord_transformed_copy(_rep, subspace.transpose());
 
-    auto subspace_symmetrizer = [&](const Eigen::Ref<const Eigen::MatrixXcd>& _subspace){
-        return irrep_symmetrizer(sub_rep, head_group, _subspace, TOL);
+    auto subspace_symmetrizer = [&](const Eigen::Ref<const Eigen::MatrixXcd> &_subspace) {
+      return irrep_symmetrizer(sub_rep, head_group, _subspace, TOL);
     };
 
     std::vector<SymRepTools::IrrepInfo> irreps = irrep_decomposition(sub_rep, head_group, subspace_symmetrizer, allow_complex);
@@ -749,7 +749,7 @@ namespace CASM {
     l = 0;
     for(auto const &irrep : irreps) {
       //std::cout << "irrep " << ++l << " index: " << irrep.index << "\n";
-      
+
 
       result.push_back(Local::_subspace_to_full_space(irrep, subspace));
     }
@@ -1114,13 +1114,13 @@ namespace CASM {
 
   namespace SymRepTools {
 
-    IrrepWedge IrrepWedge::make_dummy_irrep_wedge(const Eigen::MatrixXd& axes){
-        IrrepWedge irrep_wedge(IrrepInfo::make_dummy(axes), axes);
-        irrep_wedge.mult.reserve(axes.cols());
-        for (Index i=0; i < axes.cols(); ++i){
-            irrep_wedge.mult.push_back(1);
-        }
-        return irrep_wedge;
+    IrrepWedge IrrepWedge::make_dummy_irrep_wedge(const Eigen::MatrixXd &axes) {
+      IrrepWedge irrep_wedge(IrrepInfo::make_dummy(axes), axes);
+      irrep_wedge.mult.reserve(axes.cols());
+      for(Index i = 0; i < axes.cols(); ++i) {
+        irrep_wedge.mult.push_back(1);
+      }
+      return irrep_wedge;
     }
 
     Eigen::MatrixXd SubWedge::_subwedge_to_trans_mat(std::vector<IrrepWedge> const &_iwedges) {

@@ -49,6 +49,17 @@ namespace CASM {
     template class Named<CRTPBase<Configuration> >;
   }
 
+  Configuration::Configuration(std::shared_ptr<Supercell> const &_supercell_ptr):
+    m_supercell(_supercell_ptr.get()),
+    m_supercell_ptr(_supercell_ptr),
+    m_configdof(_supercell_ptr->zero_configdof(_supercell_ptr->prim().lattice().tol())) {}
+
+  Configuration::Configuration(std::shared_ptr<Supercell> const &_supercell_ptr,
+                               ConfigDoF const &_dof):
+    m_supercell(_supercell_ptr.get()),
+    m_supercell_ptr(_supercell_ptr),
+    m_configdof(_dof) {}
+
   /// Construct a default Configuration
   Configuration::Configuration(
     const Supercell &_supercell,
@@ -126,7 +137,7 @@ namespace CASM {
   //*********************************************************************************
 
   Configuration Configuration::zeros(Supercell const &_scel) {
-    return Configuration(_scel, jsonParser(), _scel.zero_configdof(_scel.primclex().crystallography_tol()));
+    return Configuration(_scel, jsonParser(), _scel.zero_configdof(_scel.prim().lattice().tol()));
   }
 
   //*********************************************************************************
@@ -137,14 +148,14 @@ namespace CASM {
 
   //*********************************************************************************
 
-  Configuration Configuration::zeros(const std::shared_ptr<Supercell> &_scel) {
-    return Configuration(_scel, jsonParser(),  _scel->zero_configdof(_scel->primclex().crystallography_tol()));
+  Configuration Configuration::zeros(const std::shared_ptr<Supercell> &_supercell_ptr) {
+    return Configuration {_supercell_ptr};
   }
 
   //*********************************************************************************
 
-  Configuration Configuration::zeros(const std::shared_ptr<Supercell> &_scel, double _tol) {
-    return Configuration(_scel, jsonParser(),  _scel->zero_configdof(_tol));
+  Configuration Configuration::zeros(const std::shared_ptr<Supercell> &_supercell_ptr, double _tol) {
+    return Configuration {_supercell_ptr, _supercell_ptr->zero_configdof(_tol)};
   }
 
   //*********************************************************************************
@@ -874,7 +885,7 @@ namespace CASM {
   std::string config_json_string(Configuration const  &_config) {
     std::stringstream ss;
 
-    jsonParser tjson;// = json_supplement(_config);
+    jsonParser tjson;
     to_json(make_simple_structure(_config), tjson);
     tjson.print(ss);
     return ss.str();

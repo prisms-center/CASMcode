@@ -72,19 +72,6 @@ namespace CASM {
     static Matrix3d strain_metric(Eigen::Ref<const Matrix3d> const &F, STRAIN_METRIC MODE);
     //-------------------------------------------------
 
-    StrainConverter(bool override_flag = false) {
-      if(!override_flag) {
-        std::cerr << "WARNING in CASM::StrainConverter you are calling the default constructor" << std::endl;
-        std::cerr << "This is going to initialize a \"default\" sop_transf_mat and order_strain" << std::endl;
-        std::cerr << "The Green-Lagrange strain metric will be used for the calculation of all deformation metrics" << std::endl;
-        std::cerr << "PLEASE USE WITH CAUTION" << std::endl;
-      }
-      STRAIN_METRIC_MODE = STRAIN_METRIC::GREEN_LAGRANGE;
-      curr_metric_func = &StrainConverter::green_lagrange;
-      set_conventional_sop_transf_mat();
-      set_conventional_order_symmetric();
-    };
-
     StrainConverter(const STRAIN_METRIC &_MODE, const MatrixXd &_sop_transf_mat,
                     const std::vector<std::vector<Index> >  &_order_strain) :
       STRAIN_METRIC_MODE(_MODE), m_sop_transf_mat(_sop_transf_mat),
@@ -103,8 +90,7 @@ namespace CASM {
         curr_metric_func = &StrainConverter::disp_grad;
     }
 
-    StrainConverter(const std::string &mode_name) :
-      StrainConverter(true) {
+    StrainConverter(const std::string &mode_name) {
       set_mode(mode_name);
     }
 

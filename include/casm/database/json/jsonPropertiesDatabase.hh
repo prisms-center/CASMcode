@@ -55,11 +55,17 @@ namespace CASM {
       base_iterator m_it;
     };
 
-
+    /// An implementation of PropertiesDatabase for reading/writing JSON
     class jsonPropertiesDatabase : public PropertiesDatabase {
 
     public:
 
+      /// Constructor
+      ///
+      /// \param location Where the JSON is read from on "open", written to on "commit". Can be
+      /// used all in memory with empty location.
+      ///
+      /// Note: "_primclex" and "calc_type" are unused and will be removed in the future
       jsonPropertiesDatabase(const PrimClex &_primclex, std::string calc_type, fs::path location);
 
       DatabaseBase &open() override;
@@ -67,6 +73,12 @@ namespace CASM {
       void commit() override;
 
       void close() override;
+
+      /// Clear all and read from JSON
+      void from_json(jsonParser const &json);
+
+      /// Export all to JSON
+      jsonParser &to_json(jsonParser &json) const;
 
       /// \brief Begin iterator
       iterator begin() const override;

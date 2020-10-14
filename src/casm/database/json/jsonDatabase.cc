@@ -67,7 +67,9 @@ namespace CASM {
 
     void jsonDB::insert(DatabaseHandler &db_handler) {
       DB::for_each_type(InsertImpl(db_handler));
-      DB::for_each_config_type(InsertPropsImpl(db_handler));
+      if(db_handler.primclex().has_dir()) {
+        DB::for_each_config_type(InsertPropsImpl(db_handler));
+      }
     }
 
     jsonDB::DirectoryStructure::DirectoryStructure(const fs::path _root) :
@@ -99,12 +101,14 @@ namespace CASM {
         return *this;
       }
 
-      jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
-      if(fs::exists(dir.obj_list<Supercell>())) {
-        _read_scel_list();
-      }
-      else if(fs::exists(primclex().dir().SCEL())) {
-        _read_SCEL();
+      if(primclex().has_dir()) {
+        jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
+        if(fs::exists(dir.obj_list<Supercell>())) {
+          _read_scel_list();
+        }
+        else if(fs::exists(primclex().dir().SCEL())) {
+          _read_SCEL();
+        }
       }
       master_selection() = Selection<Supercell>(*this);
       this->read_aliases();
@@ -114,6 +118,10 @@ namespace CASM {
     }
 
     void jsonDatabase<Supercell>::commit() {
+      if(!primclex().has_dir()) {
+        throw std::runtime_error("Error in jsonDatabase<Supercell>::commit(): CASM project has no root directory.");
+      }
+
       jsonParser json;
       json["version"] = traits<jsonDB>::version;
 
@@ -147,6 +155,9 @@ namespace CASM {
     }
 
     void jsonDatabase<Supercell>::_read_scel_list() {
+      if(!primclex().has_dir()) {
+        throw std::runtime_error("Error in jsonDatabase<Supercell>::_read_scel_list(): CASM project has no root directory.");
+      }
       jsonDB::DirectoryStructure dir(primclex().dir().root_dir());
       jsonParser json(dir.obj_list<Supercell>());
 
@@ -174,6 +185,9 @@ namespace CASM {
     }
 
     void jsonDatabase<Supercell>::_read_SCEL() {
+      if(!primclex().has_dir()) {
+        throw std::runtime_error("Error in jsonDatabase<Supercell>::_read_SCEL(): CASM project has no root directory.");
+      }
       // expect a file with format:
       //
       // Supercell Number: 0 Volume: 1
@@ -210,6 +224,12 @@ namespace CASM {
 
     jsonDatabase<Configuration> &jsonDatabase<Configuration>::open() {
       if(m_is_open) {
+        return *this;
+      }
+
+      if(!primclex().has_dir()) {
+        m_is_open = true;
+        master_selection() = Selection<Configuration>(*this);
         return *this;
       }
 
@@ -270,6 +290,9 @@ namespace CASM {
 
       if(!m_is_open) {
         throw std::runtime_error("Error in jsonDatabase<Configuration>::commit(): Database not open");
+      }
+      if(!primclex().has_dir()) {
+        throw std::runtime_error("Error in jsonDatabase<Configuration>::commit(): CASM project has no root directory.");
       }
 
       jsonDB::DirectoryStructure dir(primclex().dir().root_dir());

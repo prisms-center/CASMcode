@@ -90,7 +90,7 @@ namespace CASM {
 
     /// Stores the neighboring UnitCell and which sublattices to include in neighbor lists
     /// - mutable for lazy construction
-    mutable notstd::cloneable_ptr<PrimNeighborList> nlist;
+    mutable std::shared_ptr<PrimNeighborList> nlist;
 
     typedef std::string BasisSetName;
     mutable std::map<BasisSetName, ClexBasisSpecs> basis_set_specs;
@@ -235,10 +235,7 @@ namespace CASM {
 
     if(read_configs) {
 
-      if(!m_data->db_handler) {
-        m_data->db_handler = notstd::make_unique<DB::DatabaseHandler>(*this);
-      }
-      else {
+      if(m_data->db_handler) {
         // lazy initialization means we just need to close, and the db will be
         // re-opened when needed
         m_data->db_handler->close();
@@ -317,20 +314,23 @@ namespace CASM {
     return prim().basis().size();
   }
 
-  PrimNeighborList &PrimClex::nlist() const {
-
+  std::shared_ptr<PrimNeighborList> &PrimClex::shared_nlist() const {
     // lazy neighbor list generation
     if(!m_data->nlist) {
 
       // construct nlist
-      m_data->nlist = notstd::make_cloneable<PrimNeighborList>(
+      m_data->nlist = std::make_shared<PrimNeighborList>(
                         settings().nlist_weight_matrix(),
                         settings().nlist_sublat_indices().begin(),
                         settings().nlist_sublat_indices().end()
                       );
     }
 
-    return *m_data->nlist;
+    return m_data->nlist;
+  }
+
+  PrimNeighborList &PrimClex::nlist() const {
+    return *shared_nlist();
   }
 
   /// returns true if vacancy are an allowed species
@@ -345,39 +345,45 @@ namespace CASM {
 
   template<typename T>
   DB::ValDatabase<T> &PrimClex::generic_db() const {
-    return m_data->db_handler->template generic_db<T>();
+    return db_handler().template generic_db<T>();
   }
 
   template<typename T>
   const DB::ValDatabase<T> &PrimClex::const_generic_db() const {
-    return m_data->db_handler->template const_generic_db<T>();
+    return db_handler().template const_generic_db<T>();
   }
 
   template<typename T>
   DB::Database<T> &PrimClex::db() const {
-    return m_data->db_handler->template db<T>();
+    return db_handler().template db<T>();
   }
 
   template<typename T>
   const DB::Database<T> &PrimClex::const_db() const {
-    return m_data->db_handler->template const_db<T>();
+    return db_handler().template const_db<T>();
   }
 
   template<typename T>
   DB::PropertiesDatabase &PrimClex::db_props(std::string calc_type) const {
-    return m_data->db_handler->template db_props<T>(calc_type);
+    return db_handler().template db_props<T>(calc_type);
   }
 
   template<typename T>
   const DB::PropertiesDatabase &PrimClex::const_db_props(std::string calc_type) const {
-    return m_data->db_handler->template const_db_props<T>(calc_type);
+    return db_handler().template const_db_props<T>(calc_type);
   }
 
   DB::DatabaseHandler &PrimClex::db_handler() const {
+    if(!m_data->db_handler) {
+      m_data->db_handler = notstd::make_unique<DB::DatabaseHandler>(*this);
+    }
     return *m_data->db_handler;
   }
 
   const DB::DatabaseHandler &PrimClex::const_db_handler() const {
+    if(!m_data->db_handler) {
+      m_data->db_handler = notstd::make_unique<DB::DatabaseHandler>(*this);
+    }
     return *m_data->db_handler;
   }
 

@@ -86,7 +86,6 @@ _simple_subdirs()
     crystallography\
     database\
     hull\
-    kinetics\
     misc\
     monte_carlo\
     strain\

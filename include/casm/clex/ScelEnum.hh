@@ -75,6 +75,9 @@ namespace CASM {
 
   public:
 
+    /// \brief Construct with shared prim Structure and ScelEnumProps settings
+    ScelEnumByProps(std::shared_ptr<const Structure> &shared_prim, const ScelEnumProps &enum_props);
+
     /// \brief Construct with PrimClex and ScelEnumProps settings
     ScelEnumByProps(const PrimClex &primclex, const ScelEnumProps &enum_props, bool existing_only = false);
 
@@ -99,7 +102,9 @@ namespace CASM {
     /// Implements increment over supercells
     void increment() override;
 
-    const PrimClex *m_primclex;
+    std::shared_ptr<Structure const> m_shared_prim;
+    notstd::cloneable_ptr<Supercell> m_current;
+    PrimClex const *m_primclex;
 
     std::unique_ptr<SuperlatticeEnumerator > m_lattice_enum;
     SuperlatticeEnumerator::const_iterator m_lat_it;

@@ -59,7 +59,7 @@ namespace CASM {
       /// irreps are identical if they have the same character vectors
       Index index;
 
-      /// vector_dim() x irrep_dim() matrix that transforms a vector from the initial
+      /// irrep_dim() x vector_dim() matrix that transforms a vector from the initial
       /// vector space into a vector in the irreducible vector space
       Eigen::MatrixXcd trans_mat;
 
@@ -94,9 +94,9 @@ namespace CASM {
 
       /// Makes a dummy irrep wedge from the axes provided with mult vector size as the number of columns of axes
       /// and the each element of the mult vector being 1.
-      /// This implies each of the directions in the columns of axes are unique and have no orbits (This is what 
+      /// This implies each of the directions in the columns of axes are unique and have no orbits (This is what
       /// we want when doing square grid enumeration with no symmetry)
-      static IrrepWedge make_dummy_irrep_wedge(const Eigen::MatrixXd& axes);
+      static IrrepWedge make_dummy_irrep_wedge(const Eigen::MatrixXd &axes);
     };
 
     ///\brief SubWedge is a vector of IrrepWedge, one from each irreducible subspace

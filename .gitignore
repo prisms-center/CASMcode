@@ -67,7 +67,6 @@ src/general/populator
 #binaries
 bin/*
 builds
-build*
 
 #autotools self generating
 configure
@@ -97,4 +96,3 @@ stamp-h1
 .clang
 .nostyle.txt
 doc/doxygen_graph
-

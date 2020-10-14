@@ -111,3 +111,6 @@ TEST(ExampleCrystallographyLattice, ReciprocalLattice) {
   EXPECT_TRUE(lattice_2.is_right_handed());
   EXPECT_TRUE(almost_equal(lattice_2.lat_column_mat(), lattice_1.lat_column_mat()));
 }
+
+// TODO: Other useful examples
+// - reduced form vs Niggli form vs canonical form

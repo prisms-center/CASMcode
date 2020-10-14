@@ -87,13 +87,13 @@ TEST(NeighborListTest, SuperNeighborListBasics) {
   EXPECT_EQ(nlist.size(), 177);
 
   // construct SuperNeighborList
-  Eigen::Matrix3i T;
+  Eigen::Matrix3l T;
   T << 2, 0, 0,
   0, 2, 0,
   0, 0, 2;
   Lattice super_lat = make_superlattice(prim.lattice(), T);
   xtal::Superlattice slat(prim.lattice(), super_lat);
-  SuperNeighborList super_nlist(slat, nlist);
+  SuperNeighborList super_nlist(T, nlist);
 
   // size
   for(int i = 0; i < slat.size(); ++i) {
