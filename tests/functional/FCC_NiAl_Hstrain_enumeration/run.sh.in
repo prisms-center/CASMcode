@@ -1,0 +1,71 @@
+#!/bin/bash
+
+project_root=@abs_top_builddir@/tests/functional/FCC_NiAl_Hstrain_enumeration
+input_files=@abs_top_srcdir@/tests/input_files
+python_helpers_root=@abs_top_srcdir@/tests/functional/FCC_NiAl_Hstrain_enumeration
+prim=${input_files}/prims/FCC_NiAl_Hstrain.json
+
+casm()
+{
+    @abs_top_builddir@/ccasm "$@"
+}
+
+prepare_environment()
+{
+    cd $project_root
+    rm -rf project
+    mkdir project
+    cd project
+}
+
+count_enumerated_configs()
+{
+    casm status | grep "configurations generated:" | grep -oE '[^[:space:]]+$'
+}
+
+count_selected_configs()
+{
+    casm status | grep "configurations currently selected:" | grep -oE '[^[:space:]]+$'
+}
+
+add_json_key_to_file()
+{
+    jsonstr=$(cat $1)
+    jq ". + { \"$2\": $3 }" <<<$jsonstr > $1
+}
+
+prepare_environment
+
+cp ${prim} ./prim.json
+casm init
+casm composition --calc
+casm composition -s 1
+casm enum -m ScelEnum --max 4 > /dev/null
+casm enum -m ConfigEnumAllOccupations > /dev/null
+
+#There should be exactly 29 configurations
+if [ $(count_enumerated_configs) != 29 ]; then
+    echo "Expected to have 29 configurations"
+    exit 1
+fi
+
+casm sym --dofs Hstrain --confignames SCEL4_2_2_1_1_1_0/0   #This is L12
+#There should be a strain analysis file now
+if [ ! -e symmetry/analysis/SCEL4_2_2_1_1_1_0/0/dof_analysis_Hstrain.json ]; then
+    echo "Expected to find dof_analysis_Hstrain.json"
+    exit 2
+fi
+
+cp symmetry/analysis/SCEL4_2_2_1_1_1_0/0/dof_analysis_Hstrain.json strain_enum.json
+add_json_key_to_file strain_enum.json "min" "[-0.8, 0, 0, 0, 0, 0]"
+add_json_key_to_file strain_enum.json "max" "[0.8, 0.8, 0.8, 0, 0, 0]"
+add_json_key_to_file strain_enum.json "increment" "[-0.8, 0, 0, 0, 0, 0]"
+add_json_key_to_file strain_enum.json "confignames" "[\"SCEL4_2_2_1_1_1_0/0\"]"
+casm enum -m ConfigEnumStrain -s strain_enum.json
+
+#There should only be new strained configs relative to the L12 cell
+casm select --set 'eq(scel_size,1)'
+if [ $(count_selected_configs) != 1 ]; then
+    echo "Expected to NOT have enumerated any new configurations outside SCEL4_2_2_1_1_1_0"
+    exit 3
+fi

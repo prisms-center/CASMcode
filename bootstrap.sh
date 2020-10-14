@@ -1,6 +1,7 @@
 #!/bin/bash
 
-bash version.sh
+bash ./version.sh
+python3 ./make_Makemodule.py
 
 if [ ! $# -eq 0  ]; then
     echo "Applying specified tag to version string: $1"
