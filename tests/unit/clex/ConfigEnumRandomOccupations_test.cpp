@@ -6,7 +6,7 @@
 /// What is being used to test it:
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
-#include "clex/TestClexEnumerators.hh"
+#include "App/TestEnumeratorInterface.hh"
 #include "casm/app/enum.hh"
 #include "casm/app/enum/methods/ConfigEnumRandomOccupationsInterface.hh"
 #include "casm/app/enum/methods/ScelEnumInterface.hh"

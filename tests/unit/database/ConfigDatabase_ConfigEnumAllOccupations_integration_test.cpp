@@ -1,8 +1,10 @@
 #include "gtest/gtest.h"
 #include "autotools.hh"
 
+#include "crystallography/TestStructures.hh"
 
 #include "casm/app/ProjectBuilder.hh"
+#include "casm/app/ProjectSettings.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ScelEnum.hh"
@@ -12,6 +14,8 @@
 #include "casm/database/ScelDatabaseTools_impl.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
 #include "crystallography/TestStructures.hh"
+
+using namespace CASM;
 
 TEST(ConfigDatabase_ConfigEnumAllOccupations_IntegrationTest, Test1) {
 
@@ -39,7 +43,7 @@ TEST(ConfigDatabase_ConfigEnumAllOccupations_IntegrationTest, Test1) {
       make_canonical_and_insert(enumerator,
                                 configuration,
                                 primclex.db<Supercell>(),
-                                primclex.db<Supercell>(),
+                                primclex.db<Configuration>(),
                                 primitive_only);
     }
     auto range = primclex.db<Configuration>().scel_range(supercell.name());

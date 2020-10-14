@@ -222,6 +222,20 @@ namespace CASM {
     static PermuteIterator from_json(const jsonParser &json, const SupercellSymInfo &scel_info);
   };
 
+  namespace adapter {
+
+    template <typename ToType, typename FromType>
+    struct Adapter;
+
+    /// Convert CASM::PermuteIterator -> CASM::SymOp
+    template <>
+    struct Adapter<SymOp, PermuteIterator> {
+      SymOp operator()(PermuteIterator const &adaptable) const {
+        return adaptable.sym_op();
+      }
+    };
+  }
+
   /** @} */
 }
 #endif

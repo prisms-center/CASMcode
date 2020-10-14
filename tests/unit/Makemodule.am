@@ -49,6 +49,8 @@ casm_unit_App_SOURCES = \
     tests/unit/App/EnumeratorPlugin_test.cpp\
     tests/unit/App/LogRuntimeLibrary_test.cpp\
     tests/unit/App/QueryPlugin_test.cpp\
+    tests/unit/App/enum_methods_ConfigEnumAllOccupationsInterface_test.cpp\
+    tests/unit/App/enum_methods_ConfigEnumRandomOccupationsInterface_test.cpp\
     tests/unit/App/settings_test.cpp\
     tests/unit/gtest_main_run_all.cpp
 casm_unit_App_LDADD = \
@@ -67,7 +69,8 @@ EXTRA_DIST += \
     tests/unit/App/TestCompN.hh\
     tests/unit/App/TestConfigname.cc\
     tests/unit/App/TestConfigname.hh\
-    tests/unit/App/TestEnum.cc
+    tests/unit/App/TestEnum.cc\
+    tests/unit/App/TestEnumeratorInterface.hh
 
 #-------------------------------------------------------------------------------#
 
@@ -154,7 +157,6 @@ EXTRA_DIST += \
     tests/unit/clex/ConfigEnumAllOccupations_test_cases.json\
     tests/unit/clex/ConfigEnumByPermutation_test_cases.json\
     tests/unit/clex/TestClexBasisSpecs.hh\
-    tests/unit/clex/TestClexEnumerators.hh\
     tests/unit/clex/test_Clexulator.cc
 
 #-------------------------------------------------------------------------------#
@@ -262,6 +264,7 @@ TESTS += \
 check_PROGRAMS += \
     casm_unit_database
 casm_unit_database_SOURCES = \
+    tests/unit/database/ConfigDatabase_ConfigEnumAllOccupations_integration_test.cpp\
     tests/unit/database/ScelDatabase_test.cpp\
     tests/unit/database/Selection_test.cpp\
     tests/unit/database/jsonConfigDatabase_test.cpp\

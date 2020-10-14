@@ -325,4 +325,11 @@ namespace CASM {
     return scel_info.permute_it(json["factgrp"].get<Index>(), json["trans"].get<Index>());
   }
 
+  namespace adapter {
+
+    SymOp Adapter<SymOp, PermuteIterator>::operator()(PermuteIterator const &adaptable) const {
+      return adaptable.sym_op();
+    }
+  }
+
 }

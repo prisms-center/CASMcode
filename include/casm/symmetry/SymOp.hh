@@ -217,6 +217,45 @@ namespace CASM {
   /// \brief Print formatted SymOp matrix and tau
   void print_matrix_tau_col(Log &log, const SymOp &op, Index prec);
 
+  namespace adapter {
+
+    template <typename ToType, typename FromType>
+    struct Adapter;
+
+    /// Convert symmetry types to CASM::SymOp
+    ///
+    /// Works for any symmetry type that has the get_matrix, get_translation, and
+    /// get_time_reversal accessors defined.
+    ///
+    /// If there is a different symmetry type you would like to adapt for CASM::SymOp,
+    /// simply declare and define accessors get_matrix, get_translation, and
+    /// get_time_reversal
+    ///
+    template <typename FromType>
+    struct Adapter<SymOp, FromType> {
+      SymOp operator()(const FromType &adaptable) {
+
+        //TODO: How to get mapping error tol?
+        return SymOp(get_matrix(adaptable), get_translation(adaptable), get_time_reversal(adaptable), CASM::TOL);
+      }
+    };
+
+    /// Convert CASM::SymOp -> CASM::SymOp
+    ///
+    /// Note:
+    /// - This just forwards a reference
+    template <>
+    struct Adapter<SymOp, SymOp> {
+      SymOp const &operator()(SymOp const &adaptable) const {
+        return adaptable;
+      }
+
+      SymOp &operator()(SymOp &adaptable) const {
+        return adaptable;
+      }
+    };
+  }
+
   /** @}*/
 
 }

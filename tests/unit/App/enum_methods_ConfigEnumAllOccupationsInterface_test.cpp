@@ -23,7 +23,7 @@ TEST(enum_methods_ConfigEnumAllOccupationsInterfaceTest, Test1) {
   // --dry-run test
   {
     std::string cli_str = "casm enum --method ScelEnum --max 4 --dry-run";
-    run_enum_interface<ScelEnumInterface>(cli_str, primclex);
+    test::run_enum_interface<ScelEnumInterface>(cli_str, primclex);
   }
   EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
   primclex.generic_db<Supercell>().close();
@@ -33,7 +33,7 @@ TEST(enum_methods_ConfigEnumAllOccupationsInterfaceTest, Test1) {
 
   {
     std::string cli_str = "casm enum --method ScelEnum --max 4";
-    run_enum_interface<ScelEnumInterface>(cli_str, primclex);
+    test::run_enum_interface<ScelEnumInterface>(cli_str, primclex);
   }
   EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
   primclex.generic_db<Supercell>().close();
@@ -43,7 +43,7 @@ TEST(enum_methods_ConfigEnumAllOccupationsInterfaceTest, Test1) {
   // --dry-run test
   {
     std::string cli_str = "casm enum --method ConfigEnumAllOccupations -a --dry-run";
-    run_enum_interface<ConfigEnumAllOccupationsInterface>(cli_str, primclex);
+    test::run_enum_interface<ConfigEnumAllOccupationsInterface>(cli_str, primclex);
   }
   EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
   EXPECT_EQ(primclex.generic_db<Configuration>().size(), 126);
@@ -54,7 +54,7 @@ TEST(enum_methods_ConfigEnumAllOccupationsInterfaceTest, Test1) {
 
   {
     std::string cli_str = "casm enum --method ConfigEnumAllOccupations -a";
-    run_enum_interface<ConfigEnumAllOccupationsInterface>(cli_str, primclex);
+    test::run_enum_interface<ConfigEnumAllOccupationsInterface>(cli_str, primclex);
   }
   EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
   EXPECT_EQ(primclex.generic_db<Configuration>().size(), 126);
