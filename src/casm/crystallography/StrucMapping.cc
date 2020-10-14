@@ -476,6 +476,14 @@ namespace CASM {
         min_vol = vol_range.first;
         max_vol = vol_range.second;
       }
+
+      //There is nothing to enumerate, don't even bother.
+      if(max_vol < 1) {
+        return {};
+      }
+      //Ensure that you don't try to enumerate size zero supercells
+      min_vol = std::max(min_vol, Index{1});
+
       Lattice child_lat(child_struc.lat_column_mat, xtal_tol());
       std::set<MappingNode> mapping_seed;
       for(Index i_vol = min_vol; i_vol <= max_vol; i_vol++) {

@@ -3,6 +3,7 @@
 
 #include <map>
 #include <vector>
+#include <algorithm>
 #include "casm/crystallography/DoFDecl.hh"
 #include "casm/global/definitions.hh"
 #include "casm/misc/cloneable_ptr.hh"

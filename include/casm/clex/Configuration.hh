@@ -347,12 +347,6 @@ namespace CASM {
     /// \brief Return the primitive Configuration
     Configuration primitive() const;
 
-    /// \brief Check if Configuration is an endpoint of any existing diff_trans_config
-    bool is_diff_trans_endpoint() const;
-
-    /// \brief Returns which diff_trans Configuration is an endpoint of
-    std::string diff_trans_endpoint_of() const;
-
     /// \brief Returns the canonical form Configuration in the canonical Supercell
     Configuration in_canonical_supercell() const;
 

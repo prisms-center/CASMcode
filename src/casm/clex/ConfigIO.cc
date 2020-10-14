@@ -424,12 +424,6 @@ namespace CASM {
                                                  [](const Configuration & config)->bool{return CASM::has_failure_type<Configuration>(config);});
     }
 
-    GenericConfigFormatter<std::string> diff_trans_endpoint_of() {
-      return GenericConfigFormatter<std::string>("diff_trans_endpoint_of",
-                                                 "Indicates which diff_trans this configuration is an endpoint of by name.",
-                                                 CASM::diff_trans_endpoint_of);
-    }
-
 
     GenericConfigFormatter<Index> scel_size() {
       return GenericConfigFormatter<Index>("scel_size",
@@ -533,12 +527,6 @@ namespace CASM {
                                           CASM::is_canonical);
     }
 
-    GenericConfigFormatter<bool> is_diff_trans_endpoint() {
-      return GenericConfigFormatter<bool>("is_diff_trans_endpoint",
-                                          "True (1) if the configuration is an endpoint of one of the existing diff_trans_configs",
-                                          CASM::is_diff_trans_endpoint);
-    }
-
     GenericConfigFormatter<double> rms_force() {
       return GenericConfigFormatter<double>("rms_force",
                                             "Root-mean-square forces of relaxed configurations, determined from DFT (eV/Angstr.)",
@@ -599,7 +587,6 @@ namespace CASM {
       alias_or_name<Configuration>(),
       scelname(),
       calc_status(),
-      diff_trans_endpoint_of(),
       failure_type(),
       point_group_name()
     );
@@ -617,7 +604,6 @@ namespace CASM {
       is_calculated(),
       is_canonical(),
       is_primitive(),
-      is_diff_trans_endpoint(),
       DB::Selected<Configuration>(),
       OnClexHull(),
       OnHull()

@@ -421,8 +421,6 @@ namespace CASM {
 
     ConfigIO::GenericConfigFormatter<bool> is_canonical();
 
-    ConfigIO::GenericConfigFormatter<bool> is_diff_trans_endpoint();
-
     ConfigIO::GenericConfigFormatter<double> relaxed_energy();
 
     ConfigIO::GenericConfigFormatter<double> relaxed_energy_per_species();
