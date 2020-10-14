@@ -85,5 +85,6 @@ AC_CHECK_FUNCS([floor iswprint memmove memset mkdir pow rmdir select sqrt strchr
 
 #Generate all the necessary files from *.in
 AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([tests/functional/FCC_NiAl_Hstrain_enumeration/run.sh],[chmod +x tests/functional/FCC_NiAl_Hstrain_enumeration/run.sh])
 
 AC_OUTPUT
