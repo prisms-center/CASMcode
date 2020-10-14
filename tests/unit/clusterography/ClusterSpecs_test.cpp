@@ -178,8 +178,8 @@ TEST_F(ClusterSpecsTest, ScelPeriodicTest) {
 
   // 4) Generate "scel_periodic" orbits:
 
-  std::vector<SimpleOrbit<CASM::ScelPeriodictSymCompare<IntegralCluster>>> scel_periodic_orbits;
-  CASM::PrimPeriodicSymCompare<IntegralCluster> scel_periodic_sym_compare {
+  std::vector<SimpleOrbit<CASM::ScelPeriodicSymCompare<IntegralCluster>>> scel_periodic_orbits;
+  CASM::ScelPeriodicSymCompare<IntegralCluster> scel_periodic_sym_compare {
     shared_prim,
     supercell_sym_info.transformation_matrix_to_super(),
     shared_prim->lattice().tol()};

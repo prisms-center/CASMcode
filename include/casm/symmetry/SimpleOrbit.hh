@@ -29,9 +29,12 @@ namespace CASM {
   class SimpleOrbit {
   public:
 
-    typedef _SymCompareType SymCompareType;
-    typedef typename SymCompareType::Element;
-    typedef typename SymCompareType::InvariantsType;
+    using size_type = unsigned int;
+    using SymCompareType = _SymCompareType;
+    using Element = typename _SymCompareType::Element;
+    using InvariantsType = typename _SymCompareType::InvariantsType;
+    using const_iterator = typename std::vector<Element>::const_iterator;
+
 
     /// Construct a SimpleOrbit using a range of SymOp or PermuteIterator
     template<typename GroupIterator>
@@ -61,35 +64,45 @@ namespace CASM {
     }
 
     /// \brief Identical to element(0)
-    const Element &prototype() const {
+    Element const &prototype() const {
       return m_element[0];
     }
 
     /// \brief Return Element at index, without bounds checking
     ///
     /// - May not be prepared
-    const Element &operator[](size_type index) const {
+    Element const &operator[](size_type index) const {
       return element(index);
     }
 
     /// \brief Equivalent to operator[](size_type index) const
     ///
     /// - May not be prepared
-    const Element &element(size_type index) const {
+    Element const &element(size_type index) const {
       return m_element[index];
     }
 
     /// \brief const Access vector of Element
     ///
     /// - May not be prepared
-    const std::vector<Element> &elements() const {
+    std::vector<Element> const &elements() const {
       return m_element;
+    }
+
+    /// \brief Not implemented: Will throw. Exists only for compatibility with orbit printing.
+    const multivector<SymOp>::X<2> &equivalence_map() const {
+      throw std::runtime_error("No equivalence map for SimpleOrbit");
+    }
+
+    /// \brief Not implemented: Will throw. Exists only for compatibility with orbit printing.
+    const SymGroup &generating_group() const {
+      throw std::runtime_error("No generating group for SimpleOrbit");
     }
 
     /// \brief Return the SymCompare functor reference
     ///
     /// - implements symmetry properties of this orbit
-    const SymCompareType &sym_compare() const {
+    SymCompareType const &sym_compare() const {
       return m_sym_compare;
     }
 
@@ -98,12 +111,12 @@ namespace CASM {
     }
 
     /// Compare orbits, using SymCompareType::inter_orbit_compare
-    bool operator<(const Orbit &B) const;
+    bool operator<(const SimpleOrbit &B) const;
 
   private:
     SymCompareType m_sym_compare;
     InvariantsType m_invariants;
-    std::vector<Element> m_elements;
+    std::vector<Element> m_element;
   };
 }
 

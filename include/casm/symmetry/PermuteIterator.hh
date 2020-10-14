@@ -230,9 +230,7 @@ namespace CASM {
     /// Convert CASM::PermuteIterator -> CASM::SymOp
     template <>
     struct Adapter<SymOp, PermuteIterator> {
-      SymOp operator()(PermuteIterator const &adaptable) const {
-        return adaptable.sym_op();
-      }
+      SymOp operator()(PermuteIterator const &adaptable) const;
     };
   }
 

@@ -723,6 +723,8 @@ libcasm_la_SOURCES = \
     include/casm/symmetry/ScelOrbitGeneration_impl.hh\
     include/casm/symmetry/ScelSubOrbits.hh\
     include/casm/symmetry/ScelSubOrbits_impl.hh\
+    include/casm/symmetry/SimpleOrbit.hh\
+    include/casm/symmetry/SimpleOrbit_impl.hh\
     include/casm/symmetry/SubOrbits.hh\
     include/casm/symmetry/SubOrbits_impl.hh\
     include/casm/symmetry/SupercellSymInfo.hh\
