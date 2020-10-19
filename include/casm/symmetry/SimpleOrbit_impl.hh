@@ -31,7 +31,7 @@ namespace CASM {
     std::set<Element, SimpleOrbitElementCompare<SymCompareType> > tmp {
       SimpleOrbitElementCompare<SymCompareType>{m_sym_compare}};
     adapter::Adapter<SymOp, typename GroupIterator::value_type> to_symop;
-    for(auto it = _group_begin; it != _group_begin; ++it) {
+    for(auto it = _group_begin; it != _group_end; ++it) {
       tmp.insert(m_sym_compare.prepare(m_sym_compare.copy_apply(to_symop(*it), _generating_element)));
     }
 

@@ -163,6 +163,7 @@ namespace CASM {
       SiteFilterFunction const &_site_filter,
       std::vector<double> const &_max_length,
       std::vector<double> const &_cutoff_radius,
+      bool _include_phenomenal_sites,
       std::vector<IntegralClusterOrbitGenerator> const &_custom_generators = {});
 
     /// The prim
@@ -182,16 +183,18 @@ namespace CASM {
     SiteFilterFunction site_filter;
 
     /// Specifies filter for truncating orbits, by orbit branch. The value max_length[b], is the
-    /// max site-to-site distance for clusters to be included in branch b. The b==0 value is
-    /// ignored.
+    /// max site-to-site distance within a cluster for that cluster to be included in branch b. The
+    /// b==0 value is ignored.
     std::vector<double> max_length;
 
-    /// Specifies the diff_trans-to-site cutoff radius for sites to be considered part of the local
-    /// neighborhood, by orbit branch. The value cutoff_radius[b], is the max distance from any
-    /// linearly interpolated path between phenomenal cluster sites to the site under
-    /// consideration for that site to be included in clusters for branch b. The b==0 value
-    /// is ignored.
+    /// Specifies the site-to-site cutoff radius for sites to be considered part of the local
+    /// neighborhood, by orbit branch. For a site to be added to clusters in branch b it must be
+    /// a distance less than cutoff_radius[b] to any site in the phenomenal cluster. The b==0
+    /// value is ignored.
     std::vector<double> cutoff_radius;
+
+    /// If true, local clusters include phenomenal_cluster sites; otherwise they do not
+    bool include_phenomenal_sites;
 
     /// Specifies particular clusters that should be used to generate orbits.
     std::vector<IntegralClusterOrbitGenerator> custom_generators;
@@ -488,7 +491,9 @@ namespace CASM {
   CandidateSitesFunction max_length_neighborhood(double max_length);
 
   /// Sites within cutoff_radius distance to any site in the phenomenal cluster
-  CandidateSitesFunction cutoff_radius_neighborhood(IntegralCluster const &phenomenal, double cutoff_radius);
+  CandidateSitesFunction cutoff_radius_neighborhood(IntegralCluster const &phenomenal,
+                                                    double cutoff_radius,
+                                                    bool include_phenomenal_sites = false);
 
   // /// Sites within cutoff_radius distance (using closest images) to any site in the phenomenal cluster
   // CandidateSitesFunction within_scel_cutoff_radius_neighborhood(

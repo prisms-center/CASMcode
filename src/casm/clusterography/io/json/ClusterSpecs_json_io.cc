@@ -218,8 +218,10 @@ namespace CASM {
     auto max_length = parse_orbit_branch_specs_attr(parser, "max_length");
 
     // parse custom generators ("orbit_specs")
-    auto custom_generators_parser = parser.subparse<std::vector<IntegralClusterOrbitGenerator>>(
+    std::vector<IntegralClusterOrbitGenerator> default_custom_generators {};
+    auto custom_generators_parser = parser.subparse_else<std::vector<IntegralClusterOrbitGenerator>>(
                                       "orbit_specs",
+                                      default_custom_generators,
                                       *shared_prim);
 
     if(!parser.valid()) {
@@ -231,7 +233,6 @@ namespace CASM {
                      dof_sites_filter(),
                      max_length,
                      *custom_generators_parser->value);
-
   }
 
   /// Parse LocalMaxLengthClusterSpecs from JSON
@@ -290,6 +291,10 @@ namespace CASM {
     auto custom_generators_parser = parser.subparse<std::vector<IntegralClusterOrbitGenerator>>(
                                       "orbit_specs",
                                       *shared_prim);
+
+    // TODO: include option in JSON?
+    bool include_phenomenal_sites = false;
+
     if(!parser.valid()) {
       return;
     }
@@ -300,6 +305,7 @@ namespace CASM {
                      dof_sites_filter(),
                      max_length,
                      cutoff_radius,
+                     include_phenomenal_sites,
                      *custom_generators_parser->value);
   }
 
@@ -536,10 +542,16 @@ namespace CASM {
 
     // ** this could be a dictionary lookup **
     if(method == "periodic_max_length") {
-      parser.subparse<PeriodicMaxLengthClusterSpecs>("params", shared_prim, super_group);
+      auto subparser = parser.subparse<PeriodicMaxLengthClusterSpecs>("params", shared_prim, super_group);
+      if(subparser->value) {
+        parser.value = std::move(subparser->value);
+      }
     }
     else if(method == "local_max_length") {
-      parser.subparse<LocalMaxLengthClusterSpecs>("params", shared_prim, super_group);
+      auto subparser = parser.subparse<LocalMaxLengthClusterSpecs>("params", shared_prim, super_group);
+      if(subparser->value) {
+        parser.value = std::move(subparser->value);
+      }
     }
     else if(method == "within_scel_max_length") {
       parser.error.insert("Error: \"within_scel_max_length\" is not accepted in this context");

@@ -147,6 +147,7 @@ namespace CASM {
     IntegralCluster const &phenomenal,
     double cutoff_radius,
     SiteFilterFunction site_filter,
+    bool include_phenomenal_sites,
     OutputIterator result,
     double xtal_tol);
 

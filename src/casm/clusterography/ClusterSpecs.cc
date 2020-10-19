@@ -165,6 +165,7 @@ namespace CASM {
     SiteFilterFunction const &_site_filter,
     std::vector<double> const &_max_length,
     std::vector<double> const &_cutoff_radius,
+    bool _include_phenomenal_sites,
     std::vector<IntegralClusterOrbitGenerator> const &_custom_generators):
     shared_prim(_shared_prim),
     generating_group(_generating_group),
@@ -173,6 +174,7 @@ namespace CASM {
     site_filter(_site_filter),
     max_length(_max_length),
     cutoff_radius(_cutoff_radius),
+    include_phenomenal_sites(_include_phenomenal_sites),
     custom_generators(_custom_generators) {
   }
 
@@ -203,7 +205,7 @@ namespace CASM {
         f = empty_neighborhood();
       }
       else {
-        f = cutoff_radius_neighborhood(phenomenal, cutoff_radius[branch]);
+        f = cutoff_radius_neighborhood(phenomenal, cutoff_radius[branch], include_phenomenal_sites);
       }
       candidate_sites = f(*shared_prim, site_filter);
 
@@ -741,21 +743,28 @@ namespace CASM {
     //   std::vector<xtal::UnitCell> lattice_points;
     // };
 
+    /// Generate a vector of UnitCellCoord that are within cutoff_radius distance to any site in
+    /// the phenomenal cluster
     class CutoffRadiusNeighborhood {
     public:
-      CutoffRadiusNeighborhood(IntegralCluster const &_phenomenal, double _cutoff_radius):
-        phenomenal(_phenomenal), cutoff_radius(_cutoff_radius) {};
+      CutoffRadiusNeighborhood(IntegralCluster const &_phenomenal,
+                               double _cutoff_radius,
+                               bool _include_phenomenal_sites):
+        phenomenal(_phenomenal),
+        cutoff_radius(_cutoff_radius),
+        include_phenomenal_sites(_include_phenomenal_sites) {};
 
       std::vector<xtal::UnitCellCoord> operator()(Structure const &prim, SiteFilterFunction site_filter) {
         std::vector<xtal::UnitCellCoord> result;
         double xtal_tol = prim.lattice().tol();
-        neighborhood(phenomenal, cutoff_radius, site_filter, std::back_inserter(result), xtal_tol);
+        neighborhood(phenomenal, cutoff_radius, site_filter, include_phenomenal_sites, std::back_inserter(result), xtal_tol);
         return result;
       }
 
     private:
       IntegralCluster phenomenal;
       double cutoff_radius;
+      bool include_phenomenal_sites;
     };
 
     // class WithinScelCutoffRadiusNeighborhood {
@@ -848,8 +857,10 @@ namespace CASM {
   }
 
   /// Sites within cutoff_radius distance to any site in the phenomenal cluster
-  CandidateSitesFunction cutoff_radius_neighborhood(IntegralCluster const &phenomenal, double cutoff_radius) {
-    return ClusterSpecs_impl::CutoffRadiusNeighborhood {phenomenal, cutoff_radius};
+  CandidateSitesFunction cutoff_radius_neighborhood(IntegralCluster const &phenomenal,
+                                                    double cutoff_radius,
+                                                    bool include_phenomenal_sites) {
+    return ClusterSpecs_impl::CutoffRadiusNeighborhood {phenomenal, cutoff_radius, include_phenomenal_sites};
   }
 
   // /// Sites within cutoff_radius distance (using closest images) to any site in the phenomenal cluster

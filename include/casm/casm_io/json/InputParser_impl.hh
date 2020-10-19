@@ -331,9 +331,9 @@ namespace CASM {
   template<typename T>
   template<typename RequiredType, typename...Args>
   std::shared_ptr<InputParser<RequiredType>> InputParser<T>::subparse_else(fs::path option, const RequiredType &_default, Args &&...args)  {
-    auto subparser = subparse_if(option, std::forward<Args>(args)...);
-    if(!subparser.exists()) {
-      subparser.value = notstd::make_unique<RequiredType>(_default);
+    auto subparser = subparse_if<RequiredType>(option, std::forward<Args>(args)...);
+    if(!subparser->exists()) {
+      subparser->value = notstd::make_unique<RequiredType>(_default);
     }
     return subparser;
   }
