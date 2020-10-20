@@ -8,7 +8,7 @@
 #include <type_traits>
 #include <boost/math/special_functions/round.hpp>
 
-#include "casm/external/Eigen/CASM_AddOns"
+#include "./KroneckerTensorProduct.h"
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
 #include "casm/misc/CASM_math.hh"
@@ -517,19 +517,19 @@ namespace Eigen {
   ///
   /// For each coefficient, sets \code M(i,j) = boost::math::floor(Mdouble(i, j)) \endcode
   ///
-  namespace Local {
-    template<typename T>
-    struct _Floor {
-      T operator()(T val)const {
-        return floor(val);
-      }
-    };
-  }
-  template<typename Derived>
-  CwiseUnaryOp<Local::_Floor<typename Derived::Scalar>, const Derived >
-  floor(const MatrixBase<Derived> &val) {
-    return val.unaryExpr(Local::_Floor<typename Derived::Scalar>());
-  }
+  /* namespace Local { */
+  /*   template<typename T> */
+  /*   struct _Floor { */
+  /*     T operator()(T val)const { */
+  /*       return floor(val); */
+  /*     } */
+  /*   }; */
+  /* } */
+  /* template<typename Derived> */
+  /* CwiseUnaryOp<Local::_Floor<typename Derived::Scalar>, const Derived > */
+  /* floor(const MatrixBase<Derived> &val) { */
+  /*   return val.unaryExpr(Local::_Floor<typename Derived::Scalar>()); */
+  /* } */
 
 
   /// \brief Equivalent to almost_zero(double(val.norm()), tol);
@@ -682,6 +682,19 @@ namespace Eigen {
     subspace_dims.push_back(value.size() - last_i);
     return subspace_dims;
 
+  }
+
+  template<typename Derived, typename Index = typename Derived::Index>
+  Index print_matrix_width(std::ostream &s, const Derived &m, Index width) {
+    for(Index j = 0; j < m.cols(); ++j) {
+      for(Index i = 0; i < m.rows(); ++i) {
+        std::stringstream sstr;
+        sstr.copyfmt(s);
+        sstr << m.coeff(i, j);
+        width = std::max<Index>(width, Index(sstr.str().length()));
+      }
+    }
+    return width;
   }
 
 

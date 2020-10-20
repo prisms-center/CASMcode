@@ -22,9 +22,9 @@ namespace CASM {
 
     void SimpleStructure::within(double tol) {
       if(mol_info.size())
-        mol_info.coords -= lat_column_mat * Eigen::floor(((lat_column_mat.inverse() * mol_info.coords).array() + tol).matrix()).eval();
+        mol_info.coords -= lat_column_mat * Eigen::floor(((lat_column_mat.inverse() * mol_info.coords).array() + tol).array()).matrix().eval();
       if(atom_info.size())
-        atom_info.coords -= lat_column_mat * Eigen::floor(((lat_column_mat.inverse() * atom_info.coords).array() + tol).matrix()).eval();
+        atom_info.coords -= lat_column_mat * Eigen::floor(((lat_column_mat.inverse() * atom_info.coords).array() + tol).array()).matrix().eval();
 
     }
 

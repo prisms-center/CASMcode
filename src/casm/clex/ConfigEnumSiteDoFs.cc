@@ -296,7 +296,7 @@ namespace CASM {
     Eigen::MatrixXd axes = _axes;
     //PRINT INFO TO LOG:
     Log &log = _primclex.log();
-    Eigen::IOFormat tformat(4, 0, 8, " ", "\n", "    ", "", "", "");
+    Eigen::IOFormat tformat;//(4, 0, 8, " ", "\n", "    ", "", "", "");
     if(sym_axes) {
       log << "Option \"sym_axes\" selected. Preparing to construct symmetry-adapted axes. This may take several minutes...\n\n";
       auto irreps = irrep_decomposition(config.sites().begin(),

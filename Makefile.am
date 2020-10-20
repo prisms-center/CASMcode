@@ -26,6 +26,7 @@ AM_CXXFLAGS = -DTXT_VERSION='"$(TXT_VERSION)"'\
 
 AM_CPPFLAGS = -I$(srcdir)/include/casm/external/qhull/libqhull_r/\
 			  -I$(srcdir)/include/casm/external/gzstream\
+			  -I$(srcdir)/include/casm/external/eigen\
 			  -I$(srcdir)/submodules/googletest/googletest\
 			  -I$(srcdir)/submodules/googletest/googletest/include\
 			  -I$(srcdir)/include\

@@ -261,7 +261,7 @@ namespace CASM {
       log << "  Strains will be enumerated using the user-specified grid\n";
     }
     Index l = 1;
-    Eigen::IOFormat tformat(4, 0, 8, " ", "\n", "    ", "", "", "");
+    Eigen::IOFormat tformat;//(4, 0, 8, " ", "\n", "    ", "", "", "");
     for(SymRepTools::SubWedge const &wedge : wedges) {
       if(sym_axes)
         log << "  Sub-wedge #" << l++ << ": \n";
