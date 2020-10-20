@@ -31,6 +31,20 @@ namespace Local {
     }
     return false;
   }
+
+  //Lambda functions to replace std::ptr_fun, which is deprecated
+  template<typename T>
+  auto round_l = [](T val) {
+    return boost::math::round<T>(val);
+  };
+  template<typename T>
+  auto iround_l = [](T val) {
+    return boost::math::iround<T>(val);
+  };
+  template<typename T>
+  auto lround_l = [](T val) {
+    return boost::math::lround<T>(val);
+  };
 }
 namespace CASM {
 
@@ -177,9 +191,9 @@ namespace CASM {
   /// For each coefficient, sets \code M(i,j) = boost::math::round(Mdouble(i, j)) \endcode
   ///
   template<typename Derived>
-  Eigen::CwiseUnaryOp< decltype(std::ptr_fun(boost::math::round<typename Derived::Scalar>)), const Derived >
+  Eigen::CwiseUnaryOp< decltype(Local::round_l<typename Derived::Scalar>), const Derived >
   round(const Eigen::MatrixBase<Derived> &val) {
-    return val.unaryExpr(std::ptr_fun(boost::math::round<typename Derived::Scalar>));
+    return val.unaryExpr(Local::round_l<typename Derived::Scalar>);
   }
 
   /// \brief Round Eigen::MatrixXd to Eigen::MatrixXi
@@ -191,9 +205,9 @@ namespace CASM {
   /// For each coefficient, sets \code Mint(i,j) = boost::math::iround(Mdouble(i, j)) \endcode
   ///
   template<typename Derived>
-  Eigen::CwiseUnaryOp< decltype(std::ptr_fun(boost::math::iround<typename Derived::Scalar>)), const Derived >
+  Eigen::CwiseUnaryOp< decltype(Local::iround_l<typename Derived::Scalar>), const Derived >
   iround(const Eigen::MatrixBase<Derived> &val) {
-    return val.unaryExpr(std::ptr_fun(boost::math::iround<typename Derived::Scalar>));
+    return val.unaryExpr(Local::iround_l<typename Derived::Scalar>);
   }
 
   /// \brief Round Eigen::MatrixXd to Eigen::MatrixXl
@@ -205,9 +219,9 @@ namespace CASM {
   /// For each coefficient, sets \code Mint(i,j) = std::lround(Mdouble(i, j)) \endcode
   ///
   template<typename Derived>
-  Eigen::CwiseUnaryOp< decltype(std::ptr_fun(boost::math::lround<typename Derived::Scalar>)), const Derived >
+  Eigen::CwiseUnaryOp< decltype(Local::lround_l<typename Derived::Scalar>), const Derived >
   lround(const Eigen::MatrixBase<Derived> &val) {
-    return val.unaryExpr(std::ptr_fun(boost::math::lround<typename Derived::Scalar>));
+    return val.unaryExpr(Local::lround_l<typename Derived::Scalar>);
   }
 
   /// \brief Return the minor of integer Matrix M element row, col
