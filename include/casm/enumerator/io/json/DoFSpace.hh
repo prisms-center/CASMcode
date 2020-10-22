@@ -8,7 +8,7 @@ namespace CASM {
 
   struct DoFSpace;
 
-  jsonParser &to_json(DoFSpace const &dofspace, jsonParser &json);
+  jsonParser &to_json(DoFSpace const &dofspace, jsonParser &json, std::string name);
 
 }
 

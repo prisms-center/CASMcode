@@ -214,13 +214,21 @@ namespace CASM {
     auto const &named_inputs = *input_parser_ptr->value;
     for(auto const &named_input : named_inputs) {
 
+      std::string name = named_input.first;
       ConfigEnumInput const &config_enum_input = named_input.second;
       Configuration const &configuration = config_enum_input.configuration();
       std::vector<PermuteIterator> group = make_invariant_subgroup(configuration);
 
-      // this should not occur. it should be prevented by require_database_configurations.
+      // These should not occur for now. They should be prevented by require_database_configurations.
+      // TODO: add support for other dof space analyses
       if(configuration.id() == "none") {
         throw std::runtime_error("Error in dof_space_analysis: configuration does not exist in database.");
+      }
+      if(name != configuration.name()) {
+        throw std::runtime_error("Error in dof_space_analysis: name error.");
+      }
+      if(config_enum_input.sites().size() != configuration.size()) {
+        throw std::runtime_error("Error in dof_space_analysis: incomplete site selection error.");
       }
 
       fs::path sym_dir = dir.symmetry_dir(configuration.name());
@@ -236,7 +244,7 @@ namespace CASM {
 
         jsonParser json;
         to_json(report, json);
-        to_json(dof_space, json);
+        to_json(dof_space, json, name);
 
         std::string filename = "dof_analysis_" + dof + ".json";
         json.write(sym_dir / filename);

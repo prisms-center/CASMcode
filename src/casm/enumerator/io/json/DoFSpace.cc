@@ -7,12 +7,12 @@
 
 namespace CASM {
 
-  jsonParser &to_json(DoFSpace const &dofspace, jsonParser &json) {
+  jsonParser &to_json(DoFSpace const &dofspace, jsonParser &json, std::string name) {
     json["dof"] = dofspace.dof_key;
     {
       jsonParser &cjson = json["initial_configuration"];
 
-      cjson["identifier"] = dofspace.config_region.configuration().name();
+      cjson["identifier"] = name;
 
       SimpleStructure sstruc = make_simple_structure(dofspace.config_region.configuration());
 
@@ -28,7 +28,13 @@ namespace CASM {
       for(Index s : dofspace.config_region.sites()) {
         cjson["selected_sites"].push_back(s + 1);
       }
+
     }
+
+    json["glossary"] = make_axis_glossary(dofspace.dof_key,
+                                          dofspace.config_region.configuration(),
+                                          dofspace.config_region.sites());
+
     return json;
   }
 

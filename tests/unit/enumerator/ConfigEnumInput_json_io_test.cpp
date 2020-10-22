@@ -61,6 +61,7 @@ protected:
     bool primitive_only = true;
     CASM::ScelEnumByProps supercell_enumerator {shared_prim, enumeration_params};
     for(auto const &supercell : supercell_enumerator) {
+      supercell.set_primclex(&primclex);
       auto result = make_canonical_and_insert(supercell_enumerator,
                                               supercell,
                                               primclex.db<Supercell>());
@@ -282,8 +283,8 @@ TEST_F(ConfigEnumInputjsonIOTest, Test7) {
   auto conventional_fcc_3x3x3 = std::make_shared<Supercell>(shared_prim, 3 * _fcc_conventional_transf_mat());
   Configuration config_L12_3x3x3 = fill_supercell(config_L12, conventional_fcc_3x3x3);
 
-  std::cout << _pos_string(config_L12) << std::endl;
-  std::cout << _pos_string(config_L12_3x3x3) << std::endl;
+  // std::cout << _pos_string(config_L12) << std::endl;
+  // std::cout << _pos_string(config_L12_3x3x3) << std::endl;
 
   EXPECT_EQ(1, 1);
 }

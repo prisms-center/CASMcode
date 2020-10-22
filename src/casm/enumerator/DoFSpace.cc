@@ -12,13 +12,11 @@ namespace CASM {
     config_region(std::move(_config_region)),
     dof_key(_dof_key) {
 
-    std::cout << "begin DoFSpace::DoFSpace" << std::endl;
     Index dof_space_dimension = get_dof_space_dimension(
                                   _dof_key,
-                                  _config_region.configuration(),
-                                  _config_region.sites());
+                                  config_region.configuration(),
+                                  config_region.sites());
 
-    std::cout << "DoFSpace::DoFSpace 0" << std::endl;
     if(dof_subspace.size() == 0)
       dof_subspace.setIdentity(dof_space_dimension, dof_space_dimension);
     if(dof_subspace.rows() != dof_space_dimension) {
@@ -26,45 +24,28 @@ namespace CASM {
                                + " but " + std::to_string(dof_space_dimension) + " rows are required.");
     }
 
-    std::cout << "end DoFSpace::DoFSpace" << std::endl;
   }
 
   Index get_dof_space_dimension(DoFKey dof_key,
                                 Configuration const &configuration,
                                 std::set<Index> const &sites) {
 
-    std::cout << "begin get_dof_space_dimension: " << dof_key << std::endl;
     Index dof_space_dimension = 0;
     auto const &supercell = configuration.supercell();
     auto const &configdof = configuration.configdof();
 
-    std::cout << "configdof.global_dofs: " << std::endl;
-    for(auto const &global_dof : configdof.global_dofs()) {
-      std::cout << "name: " << global_dof.first << std::endl;
-    }
-
-    std::cout << "configdof.local_dofs: " << std::endl;
-    for(auto const &local_dof : configdof.local_dofs()) {
-      std::cout << "name: " << local_dof.first << std::endl;
-    }
-
-    std::cout << "get_dof_space_dimension 0" << std::endl;
     if(AnisoValTraits(dof_key).global()) {
-      std::cout << "get_dof_space_dimension 1" << std::endl;
       dof_space_dimension = configdof.global_dof(dof_key).dim();
     }
     else if(dof_key == "occ") {
-      std::cout << "get_dof_space_dimension 2" << std::endl;
       std::vector<int> max_occ = supercell.max_allowed_occupation();
       for(Index i : sites) {
         dof_space_dimension += max_occ[i] + 1;
       }
     }
     else {
-      std::cout << "get_dof_space_dimension 3" << std::endl;
       dof_space_dimension = configdof.local_dof(dof_key).dim() * sites.size();
     }
-    std::cout << "get_dof_space_dimension 4" << std::endl;
     return dof_space_dimension;
   }
 
