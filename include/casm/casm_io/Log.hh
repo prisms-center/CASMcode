@@ -143,7 +143,8 @@ namespace CASM {
     template<int _required_verbosity = standard>
     void custom(const std::string &what) {
       static_assert(_required_verbosity >= none && _required_verbosity <= debug, "CASM::Log _required_verbosity must be <= 100");
-      m_print = (m_verbosity >= _required_verbosity);
+      end_section();
+      begin_section<_required_verbosity>();
       if(_print()) {
         ostream() << indent_str() << "-- " << what << " -- ";
         _add_time();
@@ -196,6 +197,7 @@ namespace CASM {
       if(m_required_verbosity.size()) {
         m_required_verbosity.pop_back();
       }
+      m_print = (m_verbosity >= m_required_verbosity.back());
     }
 
     // --- Timing ---
@@ -522,8 +524,8 @@ namespace CASM {
       CASM::err_log() = m_old_err_log;
     }
 
-    Log &m_old_log;
-    Log &m_old_err_log;
+    Log m_old_log;
+    Log m_old_err_log;
   };
 
   /// For the life of ScopedNullLogging CASM::log() and CASM::err_log() provide references
