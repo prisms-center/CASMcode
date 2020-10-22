@@ -48,8 +48,6 @@ namespace CASM {
     jsonParser const &json_options,
     jsonParser const &cli_options_as_json) const {
 
-    Log &log = CASM::log();
-
     // combine JSON options and CLI options
     jsonParser json_combined = combine_configuration_enum_json_options(
                                  json_options,
@@ -69,7 +67,7 @@ namespace CASM {
                                 primclex.settings().query_handler<Configuration>().dict());
 
     std::runtime_error error_if_invalid {"Error reading ConfigEnumAllOccupations JSON input"};
-    report_and_throw_if_invalid(parser, log, error_if_invalid);
+    report_and_throw_if_invalid(parser, log(), error_if_invalid);
 
     auto const &input_name_value_pairs = *input_parser_ptr->value;
     EnumerateConfigurationsOptions const &options = *options_parser_ptr->value;

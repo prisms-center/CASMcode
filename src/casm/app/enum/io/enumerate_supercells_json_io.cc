@@ -40,7 +40,7 @@ namespace CASM {
   void parse(
     InputParser<EnumerateSupercellsOptions> &parser,
     std::string method_name,
-    PrimClex &primclex,
+    PrimClex const &primclex,
     DataFormatterDictionary<Supercell> const &dict) {
 
     parser.value = notstd::make_unique<EnumerateSupercellsOptions>(primclex);

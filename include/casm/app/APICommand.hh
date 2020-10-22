@@ -75,11 +75,11 @@ namespace CASM {
 
   /// Parse command line options and make API command. Throws for parsing errors.
   template<typename CommandType>
-  std::unique_ptr<CommandType> make_api_command(CommandArgs const &args);
+  std::unique_ptr<CommandType> make_api_command(CommandArgs const &args, typename CommandType::OptionType &opt);
 
   /// Parse command line options and make API command. Throws for parsing errors.
   template<typename CommandType>
-  std::unique_ptr<CommandType> make_api_command(std::string cli_str, PrimClex &primclex);
+  std::unique_ptr<CommandType> make_api_command(std::string cli_str, PrimClex &primclex, typename CommandType::OptionType &opt);
 
   /// Standardizes how 'casm X' api commands are executed and implemented
   template<typename CommandType>

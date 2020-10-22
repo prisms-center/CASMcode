@@ -17,7 +17,7 @@ namespace CASM {
   /// Options for the `enumerate_supercells` function
   struct EnumerateSupercellsOptions {
 
-    EnumerateSupercellsOptions(PrimClex &primclex):
+    EnumerateSupercellsOptions(PrimClex const &primclex):
       primclex_ptr(&primclex) {}
 
     /// Method name, for printing progress

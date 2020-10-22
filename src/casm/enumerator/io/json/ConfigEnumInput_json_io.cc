@@ -74,15 +74,23 @@ namespace CASM {
   }
 
   /// Make a ScelEnumProps object from JSON input
+  ///
+  /// Notes:
+  /// - Default "min" == 1
+  /// - Default "dirs" == "abc"
+  /// - Default "unit_cell" == 3x3 identity matrix
   void parse(
     InputParser<xtal::ScelEnumProps> &parser,
     DB::Database<Supercell> &supercell_db) {
+
     int min, max;
     std::string dirs;
+    int default_min = 1;
     std::string default_dirs {"abc"};
     Eigen::Matrix3i generating_matrix;
     Eigen::Matrix3i default_matrix {Eigen::Matrix3i::Identity()};
-    parser.require(min, "min");
+
+    parser.optional_else(min, "min", default_min);
     parser.require(max, "max");
     parser.optional_else(dirs, "dirs", default_dirs);
 
@@ -110,7 +118,9 @@ namespace CASM {
       parser.error.insert(msg.str());
     }
 
-    parser.value = notstd::make_unique<xtal::ScelEnumProps>(min, max + 1, dirs, generating_matrix);
+    if(parser.valid()) {
+      parser.value = notstd::make_unique<xtal::ScelEnumProps>(min, max + 1, dirs, generating_matrix);
+    }
   }
 
   /// Parse JSON to construct initial states for enumeration (as std::vector<std::pair<std::string, ConfigEnumInput>>)
@@ -145,8 +155,9 @@ namespace CASM {
   ///             Maximum volume supercells to enumerate
   ///         dirs: string (optional, default="abc")
   ///             Which lattice vectors of unit cell to enumerate over
-  ///         unit_cell: 3x3 matrix of int (optional, default=identity matrix)
-  ///             The unit cell to tile into supercells.
+  ///         unit_cell: 3x3 matrix of int or string (optional, default=identity matrix)
+  ///             The unit cell to tile into supercells. If string, use transformation matrix for
+  ///             the supercell with given name.
   ///
   /// Specifying all sites, particular sublattices, particular sites, or particular clusters of
   /// sites to enumerate local DoF. The default behavior if none of these options are
@@ -210,7 +221,7 @@ namespace CASM {
     }
 
     // check for "supercells"
-    auto scel_enum_props_subparser = parser.subparse_if<xtal::ScelEnumProps>("supercells");
+    auto scel_enum_props_subparser = parser.subparse_if<xtal::ScelEnumProps>("supercells", supercell_db);
 
     // check for "sublats"
     std::vector<Index> sublats;
@@ -308,7 +319,7 @@ namespace CASM {
     if(cluster_specs_subparser->value != nullptr) {
 
       // generate orbits from cluster_specs
-      auto orbits = cluster_specs_subparser->value->make_periodic_orbits(log());
+      auto orbits = cluster_specs_subparser->value->make_periodic_orbits(CASM::log());
 
       // this will generate more ConfigEnumInput, with cluster sites selected
       std::vector<std::pair<std::string, ConfigEnumInput>> all_with_cluster_sites;

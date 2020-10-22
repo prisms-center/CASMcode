@@ -13,6 +13,7 @@
 #include "casm/clex/ScelEnum.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/database/Database.hh"
+#include "casm/database/ScelDatabaseTools_impl.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
 #include "casm/external/MersenneTwister/MersenneTwister.h"
 
@@ -20,11 +21,12 @@ using namespace CASM;
 
 TEST(ConfigEnumRandomOccupationsTest, Test1) {
 
+  ScopedNullLogging logging;
+
   test::FCCTernaryProj proj;
   proj.check_init();
-
-  ScopedNullLogging logging;
   PrimClex primclex(proj.dir);
+  auto &supercell_db = primclex.db<Supercell>();
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
@@ -42,9 +44,9 @@ TEST(ConfigEnumRandomOccupationsTest, Test1) {
 
   {
     xtal::ScelEnumProps enum_props(1, 5);
-    ScelEnumByProps e(primclex.shared_prim(), enum_props);
-    for(const auto &scel : e) {
-      (void) scel;
+    ScelEnumByProps enumerator {primclex.shared_prim(), enum_props};
+    for(const auto &supercell : enumerator) {
+      make_canonical_and_insert(enumerator, supercell, supercell_db);
     }
     EXPECT_EQ(primclex.generic_db<Supercell>().size(), 14);
   }

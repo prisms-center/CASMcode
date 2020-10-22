@@ -94,8 +94,6 @@ namespace CASM {
                               jsonParser const &json_options,
                               jsonParser const &cli_options_as_json) const {
 
-    Log &log = CASM::log();
-
     // combine JSON options and CLI options
     jsonParser json_combined = combine_supercell_enum_json_options(
                                  json_options,
@@ -106,13 +104,14 @@ namespace CASM {
 
     auto scel_enum_props_parser_ptr = parser.parse_as<xtal::ScelEnumProps>(
                                         primclex.db<Supercell>());
+
     auto options_parser_ptr = parser.parse_as<EnumerateSupercellsOptions>(
                                 ScelEnumByProps::enumerator_name,
                                 primclex,
                                 primclex.settings().query_handler<Supercell>().dict());
 
     std::runtime_error error_if_invalid {"Error reading ScelEnum JSON input"};
-    report_and_throw_if_invalid(parser, log, error_if_invalid);
+    report_and_throw_if_invalid(parser, log(), error_if_invalid);
 
     xtal::ScelEnumProps const &scel_enum_props = *scel_enum_props_parser_ptr->value;
     EnumerateSupercellsOptions const &options = *options_parser_ptr->value;

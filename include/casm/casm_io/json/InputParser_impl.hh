@@ -5,6 +5,7 @@
 #include "casm/global/enum/json_io.hh"
 #include "casm/casm_io/Help.hh"
 #include "casm/casm_io/Log.hh"
+#include "casm/misc/TypeInfo.hh"
 
 namespace CASM {
 
@@ -27,7 +28,7 @@ namespace CASM {
     }
     catch(std::exception &e) {
       error.insert(std::string("Error: could not construct type '")
-                   + type_name<RequiredType>() + "' from option '" + option.string() + "'. "
+                   + CASM::type_name<RequiredType>() + "' from option '" + option.string() + "'. "
                    + singleline_help<RequiredType>());
       return res;
     }
@@ -54,7 +55,7 @@ namespace CASM {
     }
     catch(std::exception &e) {
       error.insert(std::string("Error: could not construct type '")
-                   + type_name<RequiredType>() + "' from option '" + option.string() + "'. "
+                   + CASM::type_name<RequiredType>() + "' from option '" + option.string() + "'. "
                    + singleline_help<RequiredType>());
       return;
     }
@@ -87,7 +88,7 @@ namespace CASM {
     }
     catch(std::exception &e) {
       error.insert(std::string("Error: could not construct type '")
-                   + type_name<RequiredType>() + "' from option '" + option.string() + "'. "
+                   + CASM::type_name<RequiredType>() + "' from option '" + option.string() + "'. "
                    + singleline_help<RequiredType>());
       return std::unique_ptr<RequiredType>();
     }
@@ -121,7 +122,7 @@ namespace CASM {
     }
     catch(std::exception &e) {
       error.insert(std::string("Error: could not construct type '")
-                   + type_name<RequiredType>() + "' from option '" + option.string() + "'. "
+                   + CASM::type_name<RequiredType>() + "' from option '" + option.string() + "'. "
                    + singleline_help<RequiredType>());
       return;
     }
@@ -154,7 +155,7 @@ namespace CASM {
     }
     catch(std::exception &e) {
       error.insert(std::string("Error: could not construct type '")
-                   + type_name<RequiredType>() + "' from option '" + option.string() + "'. "
+                   + CASM::type_name<RequiredType>() + "' from option '" + option.string() + "'. "
                    + singleline_help<RequiredType>());
       return _default;
     }
@@ -189,7 +190,7 @@ namespace CASM {
     }
     catch(std::exception &e) {
       error.insert(std::string("Error: could not construct type '")
-                   + type_name<RequiredType>() + "' from option '" + option.string() + "'. "
+                   + CASM::type_name<RequiredType>() + "' from option '" + option.string() + "'. "
                    + singleline_help<RequiredType>());
       return;
     }
@@ -261,53 +262,6 @@ namespace CASM {
     return result;
   }
 
-  // template<typename T>
-  // template<typename...Args>
-  // void InputParser<T>::make(Args &&...args) {
-  //   if(!exists()) {
-  //     error.insert(std::string("Error: ") + "Required input at '" + path.string() + "' does not exist.");
-  //   }
-  //   else {
-  //     try {
-  //       this->value = self.make<T>(std::forward<Args>(args)...);
-  //     }
-  //     catch(std::exception &e) {
-  //       error.insert(std::string("Error: could not construct type '")
-  //                    + type_name<T>() + "' from input at '" + path.string() + "'. "
-  //                    + singleline_help<T>());
-  //     }
-  //   }
-  // }
-
-  // template<typename T>
-  // template<typename...Args>
-  // void InputParser<T>::make_if(Args &&...args) {
-  //   if(exists()) {
-  //     this->make(std::forward<Args>(args)...);
-  //   }
-  // }
-
-  // template<typename T>
-  // template<typename...Args>
-  // void InputParser<T>::make_else(std::unique_ptr<T> _default, Args &&...args) {
-  //   if(!exists()) {
-  //     this->value = std::move(_default);
-  //   }
-  //   else {
-  //     this->make(std::forward<Args>(args)...);
-  //   }
-  // }
-
-  // template<typename T>
-  // template<typename...Args>
-  // void InputParser<T>::make_else_construct_default(Args &&...args) {
-  //   if(!exists()) {
-  //     this->value = notstd::make_unique<T>();
-  //   }
-  //   else {
-  //     this->make(std::forward<Args>(args)...);
-  //   }
-  // }
 
   template<typename T>
   template<typename RequiredType, typename...Args>
@@ -315,7 +269,8 @@ namespace CASM {
 
     auto subparser = std::make_shared<InputParser<RequiredType>>(
                        this->input, this->relpath(option), true, std::forward<Args>(args)...);
-    kwargs[subparser->path] = subparser;
+    subparser->type_name = CASM::type_name<RequiredType>();
+    kwargs.emplace(subparser->path, subparser);
     return subparser;
   }
 
@@ -324,7 +279,8 @@ namespace CASM {
   std::shared_ptr<InputParser<RequiredType>> InputParser<T>::subparse_if(fs::path option, Args &&...args) {
     auto subparser = std::make_shared<InputParser<RequiredType>>(
                        this->input, this->relpath(option), false, std::forward<Args>(args)...);
-    kwargs[subparser->path] = subparser;
+    subparser->type_name = CASM::type_name<RequiredType>();
+    kwargs.emplace(subparser->path, subparser);
     return subparser;
   }
 
@@ -338,61 +294,19 @@ namespace CASM {
     return subparser;
   }
 
-  // template<typename T>
-  // template<typename RequiredType, typename...Args>
-  // void InputParser<T>::subparse(RequiredType &_value, std::string option, Args &&...args) {
-  //
-  //   auto subparser = std::make_shared<InputParser<RequiredType>>(
-  //                      this->input, this->relpath(option), true, std::forward<Args>(args)...);
-  //   kwargs[subparser->path] = subparser;
-  //   if(subparser->value) {
-  //     _value = std::move(*(subparser->value));
-  //   }
-  // }
-  //
-  // template<typename T>
-  // template<typename RequiredType, typename...Args>
-  // void InputParser<T>::subparse_if(RequiredType &_value, std::string option, Args &&...args) {
-  //   if(self.contains(option)) {
-  //     subparse(_value, option, std::forward<Args>(args)...);
-  //   }
-  // }
-  //
-  // template<typename T>
-  // template<typename RequiredType, typename...Args>
-  // void InputParser<T>::subparse_else(RequiredType &_value, std::string option, const RequiredType &_default, Args &&...args)  {
-  //   if(self.contains(option)) {
-  //     subparse(_value, option, std::forward<Args>(args)...);
-  //   }
-  //   else {
-  //     _value = _default;
-  //   }
-  // }
-
   template<typename T>
   template<typename RequiredType, typename...Args>
   std::shared_ptr<InputParser<RequiredType>> InputParser<T>::parse_as(Args &&...args) {
     auto subparser = std::make_shared<InputParser<RequiredType>>(
                        this->input, this->path, true, std::forward<Args>(args)...);
-    kwargs[subparser->path] = subparser;
+    subparser->type_name = CASM::type_name<RequiredType>();
+    kwargs.emplace(subparser->path, subparser);
     return subparser;
   }
 
-  // template<typename T>
-  // template<typename ParseAsType, typename...Args>
-  // void InputParser<T>::subparse_as(std::string option, Args &&...args) {
-  //
-  //   auto subparser = std::make_shared<InputParser<ParseAsType>>(
-  //                      this->input, this->relpath(option), true, std::forward<Args>(args)...);
-  //   kwargs[subparser->path] = subparser;
-  //   if(subparser->value) {
-  //     this->value = std::move(subparser->value);
-  //   }
-  // }
-
   template<typename T>
   void InputParser<T>::insert(fs::path path, const std::shared_ptr<KwargsParser> &subparser) {
-    kwargs[path] = subparser;
+    kwargs.emplace(path, subparser);
   }
 
   template<typename T>
@@ -403,11 +317,6 @@ namespace CASM {
   template<typename T>
   InputParser<T>::map_type::const_iterator InputParser<T>::end() const {
     return kwargs.end();
-  }
-
-  template<typename T>
-  InputParser<T>::map_type::const_iterator InputParser<T>::find(fs::path path) const {
-    return kwargs.find(path);
   }
 
   template<typename T, typename ErrorType>

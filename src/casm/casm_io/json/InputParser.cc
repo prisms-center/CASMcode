@@ -21,7 +21,8 @@ namespace CASM {
     input(_input),
     path(_path),
     self(_self(_input, _path)),
-    required(_required) {
+    required(_required),
+    type_name("") {
     if(required && !exists()) {
       error.insert(std::string("Error: ") + "Required property '" + _path.string() + "' not found.");
     }

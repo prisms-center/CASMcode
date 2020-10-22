@@ -198,7 +198,7 @@ namespace test {
 
       {
         m_p.popen(cd_and() + autotools::abs_ccasm_path() + " enum --method ScelEnum --max 10");
-        ScopedStringStreamLogging logging;
+        //ScopedStringStreamLogging logging;
         PrimClex primclex(dir);
         EXPECT_EQ(primclex.generic_db<Supercell>().size(), 87) << m_p.gets();
       }

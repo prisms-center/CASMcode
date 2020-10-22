@@ -76,6 +76,10 @@ namespace CASM {
     /// If this->input.at(this->path) is required to exist
     bool required;
 
+    /// Default empty, can be used to differentiate between parsers when multiple values are parsed
+    /// from a single JSON object
+    std::string type_name;
+
     /// Construct KwargsParser
     ///
     /// \param _input Reference to top of the JSON document
@@ -334,41 +338,6 @@ namespace CASM {
     /// Return error messages from this and all subparsers
     std::map<fs::path, std::set<std::string>> all_errors() const override;
 
-    // /// If exists(), make this->value from JSON; else add error
-    // ///
-    // /// Note:
-    // /// - If `this->exists()==false`, will insert an error of type:
-    // ///   - "Error: Required input at '<this->path>' does not exist."
-    // /// - Otherwise, make from JSON: `this->value = self.make<T>(std::forward<Args>(args)...)`
-    // ///   - If make from JSON fails, will insert an error of type:
-    // ///     - "Error: could not construct type '<type_name<T>()>' from option '<option>'.
-    // ///       <singleline_help<T>()>"
-    // template<typename...Args>
-    // void make(Args &&...args);
-
-    // /// If exists(), make this->value from JSON; else no error
-    // ///
-    // /// Note:
-    // /// - If `this->exists()==false`: do nothing
-    // /// - Otherwise, equivalent to `this->make(std::forward<Args>(args)...)`
-    // template<typename...Args>
-    // void make_if(Args &&...args);
-
-    // /// If exists(), make this->value from JSON; else set this->value to _default
-    // ///
-    // /// Note:
-    // /// - If `this->exists()==false`, set this->value to _default: `this->value = std::move(_default)`
-    // /// - Otherwise, equivalent to `this->make(std::forward<Args>(args)...)`
-    // template<typename...Args>
-    // void make_else(std::unique_ptr<T> _default, Args &&...args);
-
-    // /// If exists(), make this->value from current json; else make with default constructor
-    // ///
-    // /// Note:
-    // /// - If `this->exists()==false`, construct default value: `this->value = notstd::make_unique<T>()`
-    // /// - Otherwise, equivalent to `this->make(std::forward<Args>(args)...)`
-    // template<typename...Args>
-    // void make_else_construct_default(Args &&...args);
 
     /// Run an InputParser on the JSON subobject at this->path / option, collecting errors and warnings
     ///
@@ -395,50 +364,18 @@ namespace CASM {
     template<typename RequiredType, typename...Args>
     std::shared_ptr<InputParser<RequiredType>> subparse_else(fs::path option, const RequiredType &_default, Args &&...args);
 
-
-    // /// Run an InputParser on the JSON subobject at this->path / option, collecting errors and warnings
-    // ///
-    // /// Will:
-    // /// - If the subparser constructs a value, it will be move-assigned to _value
-    // /// - Subparser errors and warnings are stored using this->insert
-    // ///
-    // /// Equivalent to:
-    // /// \code
-    // /// auto subparser = std::make_shared<InputParser<RequiredType>>(
-    // ///   this->input, this->relpath(option), true, std::forward<Args>(args)...);
-    // /// this->insert(subparser->path, subparser);
-    // /// if(subparser->value) {
-    // ///   _value = std::move(*(subparser->value));
-    // /// }
-    // /// \endcode
-    // template<typename RequiredType, typename...Args>
-    // void subparse(RequiredType &_value, std::string option, Args &&...args);
-    //
-    // /// Subparse, if `this->path / option` exists
-    // ///
-    // /// If the JSON subobject does not exist, `_value` is unchanged, and no errors or warnings are
-    // /// inserted.
-    // template<typename RequiredType, typename...Args>
-    // void subparse_if(RequiredType &_value, std::string option, Args &&...args);
-    //
-    // /// Subparse, if `this->path / option` exists, else assign `_default`
-    // template<typename RequiredType, typename...Args>
-    // void subparse_else(RequiredType &_value, std::string option, const RequiredType &_default, Args &&...args);
-
     /// Parse `this->self` as RequiredType
+    ///
+    /// \param parser_id A string used to differentiate different parsers of the same JSON object
+    /// \param args Arguments forwared to the `parse` method
+    ///
     template<typename RequiredType, typename...Args>
     std::shared_ptr<InputParser<RequiredType>> parse_as(Args &&...args);
 
-    // /// Parse a JSON subobject as a type derived from type `T`
-    // ///
-    // /// This can be used to construct a type derived from type `T` from a JSON subobject and assign
-    // /// it to `this->value`.
-    // template<typename ParseAsType, typename...Args>
-    // void subparse_as(std::string option, Args &&...args);
 
     using Validator::insert;
 
-    typedef std::map<fs::path, std::shared_ptr<KwargsParser>> map_type;
+    typedef std::multimap<fs::path, std::shared_ptr<KwargsParser>> map_type;
 
     /// Insert a subparser
     ///
@@ -453,8 +390,6 @@ namespace CASM {
     /// End iterator over subparsers
     map_type::const_iterator end() const;
 
-    /// Find a subparser by path (from this->input)
-    map_type::const_iterator find(fs::path path) const;
 
   private:
 

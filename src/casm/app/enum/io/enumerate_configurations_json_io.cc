@@ -37,7 +37,7 @@ namespace CASM {
     if(cli_options_as_json.contains("confignames")) {
       json_combined["confignames"] = cli_options_as_json["scelnames"];
     }
-    if(cli_options_as_json.contains("all")) {
+    if(cli_options_as_json.contains("all") && cli_options_as_json["all"] == true) {
       if(json_combined.contains("supercells")) {
         json_combined.erase("supercells");
       }
@@ -69,7 +69,7 @@ namespace CASM {
   void parse(
     InputParser<EnumerateConfigurationsOptions> &parser,
     std::string method_name,
-    PrimClex &primclex,
+    PrimClex const &primclex,
     DataFormatterDictionary<Configuration> const &dict) {
 
     parser.value = notstd::make_unique<EnumerateConfigurationsOptions>(primclex);

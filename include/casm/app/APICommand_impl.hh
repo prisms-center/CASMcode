@@ -8,8 +8,7 @@ namespace CASM {
 
   /// Parse command line options and make API command. Throws for parsing errors.
   template<typename CommandType>
-  std::unique_ptr<CommandType> make_api_command(CommandArgs const &args) {
-    typename CommandType::OptionType opt;
+  std::unique_ptr<CommandType> make_api_command(CommandArgs const &args, typename CommandType::OptionType &opt) {
     po::store(po::parse_command_line(args.argc(), args.argv(), opt.desc()), opt.vm());
     po::notify(opt.vm());
     return notstd::make_unique<CommandType>(args, opt);
@@ -21,66 +20,66 @@ namespace CASM {
   /// \param primclex Existing PrimClex
   ///
   template<typename CommandType>
-  std::unique_ptr<CommandType> make_api_command(std::string cli_str, PrimClex &primclex) {
+  std::unique_ptr<CommandType> make_api_command(std::string cli_str, PrimClex &primclex, typename CommandType::OptionType &opt) {
     fs::path root;
     if(primclex.has_dir()) {
       root = primclex.dir().root_dir();
     }
     CommandArgs args {cli_str, &primclex, root};
-    return make_api_command<CommandType>(args);
+    return make_api_command<CommandType>(args, opt);
   }
 
   /// Standardizes how 'casm X' api commands are executed and implemented
   template<typename CommandType>
   int run_api_command(const CommandArgs &args) {
 
-    typename CommandType::OptionType const *opt;
+    typename CommandType::OptionType opt;
 
     try {
-      // po::store(po::parse_command_line(args.argc(), args.argv(), opt.desc()), opt.vm());
-      //
-      // // gets default values
-      // po::notify(opt.vm());
-      //
-      // CommandType f(args, opt);
+      po::store(po::parse_command_line(args.argc(), args.argv(), opt.desc()), opt.vm());
 
-      auto f_ptr = make_api_command<CommandType>(args);
-      CommandType &f = *f_ptr;
-      opt = &f.opt();
+      // gets default values
+      po::notify(opt.vm());
+
+      CommandType f {args, opt};
 
       // checks that can be made without getting defaults
+      int code;
       if(!f.vm().count("help") && !f.vm().count("desc")) {
-        int res = f.vm_count_check();
-        if(res) {
+        code = f.vm_count_check();
+        if(code) {
           f.help();
-          return res;
+        }
+        else {
+          code = f.run();
         }
       }
       // help
       else if(f.vm().count("help")) {
-        return f.help();
+        code = f.help();
       }
       // extended command descriptions
       else if(f.vm().count("desc")) {
-        return f.desc();
+        code = f.desc();
       }
 
-      // main command logic:
-      return f.run();
-
+      return code;
     }
     catch(po::error &e) {
-      err_log() << opt->desc() << std::endl;
+      log() << "error 0 what: " << e.what() << std::endl;
+      err_log() << opt.desc() << std::endl;
       err_log() << "ERROR: " << e.what() << std::endl << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(CASM::runtime_error &e) {
-      err_log() << opt->desc() << std::endl;
+      log() << "error 1 what: " << e.what() << std::endl;
+      err_log() << opt.desc() << std::endl;
       err_log() << "ERROR: " << e.what() << std::endl << std::endl;
       return e.code();
     }
     catch(std::exception &e) {
-      err_log() << opt->desc() << std::endl;
+      log() << "error 2 what: " << e.what() << std::endl;
+      err_log() << opt.desc() << std::endl;
       err_log() << "ERROR: " << e.what() << std::endl << std::endl;
       return ERR_UNKNOWN;
     }
