@@ -207,7 +207,7 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, VectorSpaceSymReport) {
 
   // Uncomment to print dof_space:
   jsonParser dof_space_json;
-  to_json(dof_space, dof_space_json);
+  to_json(dof_space, dof_space_json, supercell.name() + "/zeros");
   std::cout << "DoFSpace:\n" << dof_space_json << std::endl;
 
   // Uncomment to print sym_report:

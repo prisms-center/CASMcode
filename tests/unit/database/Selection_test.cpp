@@ -50,9 +50,8 @@ TEST(Selection_Test, Test1) {
 
   bool primitive_only = true;
   for(auto const &supercell : supercell_enumerator) {
+    supercell.set_primclex(&primclex);
     auto result = make_canonical_and_insert(supercell_enumerator, supercell, supercell_db);
-    std::cout << "result.second: " << result.second << std::endl;
-    std::cout << "supercell_db.size(): " << supercell_db.size() << std::endl;
     ConfigEnumAllOccupations configuration_enumerator {*result.first};
     for(auto const &configuration : configuration_enumerator) {
       make_canonical_and_insert(configuration_enumerator,

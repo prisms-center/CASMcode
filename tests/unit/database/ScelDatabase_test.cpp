@@ -19,12 +19,13 @@ using xtal::SuperlatticeEnumerator;
 
 TEST(ScelDatabase_Test, Test1) {
 
+  ScopedNullLogging logging;
+
   EXPECT_EQ(1, 1);
   test::FCCTernaryProj proj;
   proj.check_init();
   EXPECT_EQ(1, 1);
 
-  ScopedNullLogging logging;
   PrimClex primclex(proj.dir);
   const Structure &prim(primclex.prim());
   primclex.settings().set_crystallography_tol(1e-5);

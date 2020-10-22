@@ -29,6 +29,7 @@ TEST(ConfigDatabase_ConfigEnumAllOccupations_IntegrationTest, Test1) {
   xtal::ScelEnumProps scel_enum_props {1, 5};
   ScelEnumByProps supercell_enumerator {shared_prim, scel_enum_props};
   for(auto const &supercell : supercell_enumerator) {
+    supercell.set_primclex(&primclex);
     make_canonical_and_insert(supercell_enumerator, supercell, primclex.db<Supercell>());
   }
 
@@ -39,7 +40,7 @@ TEST(ConfigDatabase_ConfigEnumAllOccupations_IntegrationTest, Test1) {
   bool primitive_only = true; //
   for(auto const &supercell : primclex.db<Supercell>()) {
     ConfigEnumAllOccupations enumerator {supercell};
-    for(auto const &configuration : primclex.db<Configuration>()) {
+    for(auto const &configuration : enumerator) {
       make_canonical_and_insert(enumerator,
                                 configuration,
                                 primclex.db<Supercell>(),
