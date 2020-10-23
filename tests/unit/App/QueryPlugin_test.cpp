@@ -14,12 +14,12 @@ using namespace CASM;
 
 TEST(QueryPlugin, Test1) {
 
+  ScopedNullLogging logging;
   test::ZrOProj proj;
   proj.check_init();
   proj.check_composition();
   proj.check_enum();
 
-  ScopedNullLogging logging;
   PrimClex primclex(proj.dir);
 
   //TODO: This is more code duplication

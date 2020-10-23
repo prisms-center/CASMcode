@@ -13,12 +13,12 @@ using namespace CASM;
 
 TEST(settingsTest, Basics) {
 
+  // in case you want to see what's happening
+  ScopedStringStreamLogging logging;
+
   // create a project
   test::FCCTernaryProj proj;
   proj.check_init();
-
-  // in case you want to see what's happening
-  ScopedStringStreamLogging logging;
 
   // construct PrimClex
   PrimClex primclex(proj.dir);

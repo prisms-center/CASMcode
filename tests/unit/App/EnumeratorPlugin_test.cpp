@@ -18,11 +18,11 @@ using namespace CASM;
 
 TEST(EnumeratorPlugin, Test1) {
 
+  ScopedNullLogging logging;
   test::ZrOProj proj;
   proj.check_init();
   proj.check_composition();
 
-  ScopedNullLogging logging;
   PrimClex primclex(proj.dir);
 
   auto cp = [&](std::string _filename) {
@@ -40,8 +40,6 @@ TEST(EnumeratorPlugin, Test1) {
 
   };
 
-  cp("TestEnum.hh");
-  cp("TestEnum_impl.hh");
   cp("TestEnum.cc");
 
   // refresh to load plugins

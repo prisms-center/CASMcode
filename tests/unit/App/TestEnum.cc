@@ -38,7 +38,7 @@ namespace CASM {
     ///   (`config_enum_input.sites()`), but Configuration are only output if the are primitive.
     /// - If all sites are selected, then only canonical Configuration are output. This can be
     ///   checked with `this->canonical_guarantee()`.
-    ConfigEnumAllOccupations(ConfigEnumInput const &config_enum_input);
+    TestEnum(ConfigEnumInput const &config_enum_input);
 
     std::string name() const override;
 
@@ -189,7 +189,7 @@ namespace CASM {
 
 namespace CASM {
 
-  class TestEnumInterface : public EnumInteraceBase {
+  class TestEnumInterface : public EnumInterfaceBase {
     CLONEABLE(TestEnumInterface)
   public:
 
@@ -221,13 +221,9 @@ namespace CASM {
       return TestEnum::enumerator_name;
     }
 
-    void TestEnum::run(
-      APICommandBase const &cmd,
-      jsonParser const &json_options,
-      jsonParser const &cli_options_as_json) const {
-
-      // Get project and log
-      PrimClex &primclex = cmd.primclex();
+    void run(PrimClex &primclex,
+             jsonParser const &json_options,
+             jsonParser const &cli_options_as_json) const override {
 
       // combine JSON options and CLI options
       jsonParser json_combined = combine_configuration_enum_json_options(
