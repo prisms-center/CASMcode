@@ -32,6 +32,7 @@ struct Checks {
 
 TEST(AppTest, ProjectCommands) {
 
+  ScopedNullLogging logging;
   Popen p;
   Log &log = CASM::log();
 

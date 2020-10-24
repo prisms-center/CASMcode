@@ -43,6 +43,8 @@ TEST(EnumeratorPlugin, Test1) {
   cp("TestEnum.cc");
 
   // refresh to load plugins
+  primclex.settings().set_soflags("-shared -lboost_system -lboost_filesystem");
+  commit(primclex.settings());
   primclex.refresh(true);
 
   auto check = [&](std::string str) {
