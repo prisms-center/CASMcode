@@ -15,6 +15,14 @@ namespace CASM {
     std::string attribute_name,
     Index dimension,
     Eigen::VectorXd const *default_value = nullptr);
+
+  /// Parse "axes", "min", "max", and "increment" for continuous DoF enumeration
+  void parse_dof_space_axes(KwargsParser &parser,
+                            Eigen::MatrixXd &axes,
+                            Eigen::VectorXd &min_val,
+                            Eigen::VectorXd &max_val,
+                            Eigen::VectorXd &inc_val,
+                            Index dof_space_dimension);
 }
 
 #endif

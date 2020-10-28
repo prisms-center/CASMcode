@@ -1,6 +1,8 @@
 #ifndef CASM_DoFSpace_impl
 #define CASM_DoFSpace_impl
 
+#include "casm/clex/Supercell.hh"
+#include "casm/enumerator/ConfigEnumInput_impl.hh"
 #include "casm/enumerator/DoFSpace.hh"
 #include "casm/symmetry/SupercellSymInfo_impl.hh"
 #include "casm/symmetry/SymRepTools.hh"

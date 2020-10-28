@@ -235,6 +235,9 @@ namespace CASM {
       ///Add --selection suboption (defaults to MASTER)
       void add_selection_suboption(const fs::path &_default = "MASTER");
 
+      ///Add --selection suboption (no default)
+      void add_selection_no_default_suboption();
+
       ///Add --config suboption (defaults to MASTER)
       void add_configlist_suboption(const fs::path &_default = "MASTER");
 

@@ -17,7 +17,7 @@ namespace CASM {
 
       add_help_suboption();
       add_coordtype_suboption();
-      add_selection_suboption("NONE");
+      add_selection_no_default_suboption();
       add_confignames_suboption();
       //add_scelnames_suboption();
       add_dofs_suboption();
@@ -25,12 +25,13 @@ namespace CASM {
       add_input_suboption(required);
 
       m_desc.add_options()
-      ("lattice-point-group", "Pretty print lattice point group")
-      ("factor-group", "Pretty print factor group")
-      ("crystal-point-group", "Pretty print crystal point group")
-      ("calc-wedge", "Perform calculation of irreducible wedge (may significantly slow down analysis)")
+      ("lattice-point-group", "Pretty print prim lattice point group")
+      ("factor-group", "Pretty print prim factor group")
+      ("crystal-point-group", "Pretty print prim crystal point group")
+      ("calc-wedge", "Perform calculation of irreducible wedge (may significantly slow down analysis). Used for --dof-space-analysis.")
       //("no-directions", "Skip calculation of high-symmetry direction and irreducible wedge (for faster evaluation)")
-      ("tol", po::value<double>(&m_tol)->default_value(1.0e-5), "Tolerance (in Angstr.) used for symmetrization (default 1e-5)")
+      ("tol", po::value<double>(&m_tol)->default_value(1.0e-5), "Tolerance in Angstr. Used for --symmetrize (default 1e-5)")
+      ("dof-space-analysis", "Print DoF Space analysis files")
       ("symmetrize", po::value<fs::path>(&m_poscar_path)->value_name(ArgHandler::path()), "symmetrize a POSCAR specified by path to a given tolerance");
 
       return;
@@ -76,8 +77,7 @@ namespace CASM {
   int SymCommand::desc() const {
     log() << "\n";
     log() << opt().desc() << std::endl;
-    log() << "DESCRIPTION" << std::endl;
-    log() << "    Display symmetry group information.\n";
+    log() << "DESCRIPTION" << std::endl << std::endl;
 
     log() << write_prim_symmetry_desc();
     log() << symmetrize_desc();

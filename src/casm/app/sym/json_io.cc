@@ -76,7 +76,7 @@ namespace CASM {
       json["selection"] = sym_opt.selection_path().string(); //std::string
     }
     if(vm.count("dofs")) {
-      json["selection"] = sym_opt.selection_path().string(); //vector<std::string>
+      json["dofs"] = sym_opt.dof_strs(); //vector<std::string>
     }
     if(vm.count("calc-wedge")) {
       json["calc_wedge"] = static_cast<bool>(vm.count("calc-wedge")); //bool

@@ -122,16 +122,31 @@ namespace CASM {
       "    Must be one of the degrees of freedom under consideration in the current project,\n"
       "    as specified in prim.json.\n\n"
 
-      "  axes: matrix of doubles (optional, default=identity matrix of DoF space dimension) \n"
-      "    Coordinate axes of the DoF grid. Each column correponds to an individual DoF. Each row \n"
-      "    corresponds to a normal mode. Use the option `\"print_dof_space_and_quit\": true` to print \n"
-      "    DoF space information with a glossary describing which DoF is specified by which column \n"
-      "    for a particular initial enumeration state. The 'axes' matrix may be rank deficient \n"
-      "    indicating enumeration should occur in a subspace of the full DoF space specified by the \n"
-      "    \"dof\" value and initial enumeration state.\n"
-      "    Ex: \"axes\" : [[1, 1, 1, 1, 1, 1],\n"
-      "                  [1,-1, 0,-1, 1, 0],\n"
-      "                  [1,-1, 0, 1,-1, 0]]\n\n"
+      "  axes: matrix or JSON object (optional, default=identity matrix of DoF space dimension) \n\n"
+      "    Coordinate axes of the DoF grid. Each element in an axis vector correponds to an \n"
+      "    individual DoF. Each axis vector corresponds to a normal mode. Use the option \n"
+      "    `\"print_dof_space_and_quit\": true` to print DoF space information with a glossary \n"
+      "    describing which DoF is specified by which vector element. The 'axes' may be rank \n"
+      "    deficient indicating enumeration should occur in a subspace of the full DoF space \n"
+      "    specified by the \"dof\" value and initial enumeration state.\n"
+
+      "    Example if matrix (row vector matix): \n"
+      "      \"axes\" : [ \n"
+      "        [1, 1, 1, 1, 1, 1], \n"
+      "        [1,-1, 0,-1, 1, 0], \n"
+      "        [1,-1, 0, 1,-1, 0]  \n"
+      "      ] \n\n"
+
+      "    Example if JSON object (named axis vectors): \n"
+      "        \"axes\": { \n"
+      "          \"q1\": [1, 1, 1, 1, 1, 1], \n"
+      "          \"q2\": [1,-1, 0,-1, 1, 0], \n"
+      "          \"q3\": [1,-1, 0, 1,-1, 0]  \n"
+      "        } \n\n"
+
+      "      Note: \n"
+      "      - If some \"qi\" in the range [1, DoF space dimension] are missing, then enumeration \n"
+      "        is performed in the subspace specified by the axes that are provided. \n\n"
 
       "  sym_axes: bool (optional, default=false)\n"
       "    If true, overrides \"axes\" field and instead constructs symmetry-adapted grid axes\n"
@@ -147,30 +162,30 @@ namespace CASM {
       "    Minimum, starting value of grid counter\n"
       "    If number, specifies using a constant array of DoF space dimension with that given value.\n"
       "    Ex: \"min\" : -0.1  ( -->  [-0.1, -0.1, ..., -0.1])\n"
-      "    If array, dimension must be equal to DoF space dimension.\n"
+      "    If array, dimension must be equal to the \"axes\" dimension.\n"
       "    Ex: \"min\" : [-0.05, -0.1, -0.1]\n\n"
 
       "  max: number, or array of numbers (required) \n"
       "    Maximum, final value of grid counter\n"
       "    If number, specifies using a constant array of DoF space dimension with that given value.\n"
       "    Ex: \"max\" : 0.1  ( -->  [0.1, 0.1, ..., 0.1])\n"
-      "    If array, dimension must be equal to DoF space dimension.\n"
+      "    If array, dimension must be equal to the \"axes\" dimension.\n"
       "    Ex: \"max\" : [0.05, 0.1, 0.1]\n\n"
 
       "  increment: number, or array of numbers (required) \n"
       "    Amount by which to increment counter elements\n"
       "    If number, specifies using a constant array of DoF space dimension with that given value.\n"
       "    Ex: \"increment\" : 0.01  ( -->  [0.01, 0.01, ..., 0.01])\n"
-      "    If array, dimension must be equal to DoF space dimension.\n"
+      "    If array, dimension must be equal to the \"axes\" dimension.\n"
       "    Ex: \"max\" : [0.005, 0.01, 0.01]\n\n"
 
       "  min_nonzero: integer (optional, default = 0) \n"
       "    Minimum number of coordinate amplitudes that are allowed\n"
-      "    to be nonzero. Must be less than or equal to number of rows of \"axes\".\n\n"
+      "    to be nonzero. Must be less than or equal to the \"axes\" dimension.\n\n"
 
       "  max_nonzero: integer (optional, default = axes.rows()) \n"
       "    Maximum number of coordinate amplitudes that are allowed\n"
-      "    to be nonzero. Must be less than or equal to number of rows of \"axes\".\n\n";
+      "    to be nonzero. Must be less than or equal to the \"axes\" dimension.\n\n";
 
     std::string examples =
       "  Examples:\n"
@@ -180,7 +195,8 @@ namespace CASM {
       "        \"confignames\": [ \n"
       "          \"SCEL4_1_4_1_0_0_0/3\"\n"
       "        ],\n"
-      "        \"analysis\": true,\n"
+      "        \"max\": 0.21, \n"
+      "        \"increment\": 0.05, \n"
       "        } \n"
       "      }' \n\n";
 

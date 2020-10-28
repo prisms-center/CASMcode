@@ -447,6 +447,16 @@ namespace CASM {
       return;
     }
 
+    ///Add --selection suboption (no default)
+    void OptionHandlerBase::add_selection_no_default_suboption() {
+      m_desc.add_options()
+      ("selection,c",
+       po::value<fs::path>(&m_selection_path)->value_name(ArgHandler::path()),
+       (std::string("Only consider the selected objects from the given selection file. ") +
+        singleline_help<DB::SELECTION_TYPE>()).c_str());
+      return;
+    }
+
     void OptionHandlerBase::add_configlist_suboption(const fs::path &_default) {
       m_desc.add_options()
       ("config,c",

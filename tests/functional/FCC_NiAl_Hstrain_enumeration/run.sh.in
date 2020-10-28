@@ -31,7 +31,12 @@ count_selected_configs()
 add_json_key_to_file()
 {
     jsonstr=$(cat $1)
-    jq ". + { \"$2\": $3 }" <<<$jsonstr > $1
+    jq -c ". + { \"$2\": $3 }" <<<$jsonstr > $1
+}
+
+cp_json_value_to_file()
+{
+    cat $1 $3 | jq -s -c ".[1] + { \"$4\": .[0]$2}" > $3
 }
 
 prepare_environment
@@ -51,12 +56,14 @@ fi
 
 casm sym --dofs Hstrain --confignames SCEL4_2_2_1_1_1_0/0   #This is L12
 #There should be a strain analysis file now
-if [ ! -e symmetry/analysis/SCEL4_2_2_1_1_1_0/0/dof_analysis_Hstrain.json ]; then
+STRAIN_ANALYIS=symmetry/analysis/SCEL4_2_2_1_1_1_0/0/dof_analysis_Hstrain.json
+if [ ! -e $STRAIN_ANALYIS ]; then
     echo "Expected to find dof_analysis_Hstrain.json"
     exit 2
 fi
 
-cp symmetry/analysis/SCEL4_2_2_1_1_1_0/0/dof_analysis_Hstrain.json strain_enum.json
+echo "{}" > strain_enum.json
+cp_json_value_to_file $STRAIN_ANALYIS ".irreducible_representations.adapted_axes" strain_enum.json "axes"
 add_json_key_to_file strain_enum.json "min" "[-0.8, 0, 0, 0, 0, 0]"
 add_json_key_to_file strain_enum.json "max" "[0.8, 0.8, 0.8, 0, 0, 0]"
 add_json_key_to_file strain_enum.json "increment" "[-0.8, 0, 0, 0, 0, 0]"

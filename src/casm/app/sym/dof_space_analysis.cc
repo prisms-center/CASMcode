@@ -10,7 +10,7 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
-#include "casm/enumerator/DoFSpace.hh"
+#include "casm/enumerator/DoFSpace_impl.hh"
 #include "casm/enumerator/io/json/ConfigEnumInput_json_io.hh"
 #include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/symmetry/SymRepTools.hh"
@@ -31,7 +31,7 @@ namespace dof_space_analysis_impl {
       {"calc_wedge", "calc_wedge"}        // --calc-wedge
     };
 
-    jsonParser json_combined;
+    jsonParser json_combined {json_options};
     return combine_json_options(cli_to_combined_keys,
                                 cli_options_as_json,
                                 json_combined);
@@ -181,10 +181,15 @@ namespace CASM {
     Log &log = CASM::log();
     DirectoryStructure const &dir = primclex.dir();
 
+    log << "json_options:\n" << json_options << std::endl << std::endl;
+    log << "cli_options_as_json:\n" << cli_options_as_json << std::endl << std::endl;
+
     // combine JSON options and CLI options
     jsonParser json_combined = combine_dof_space_analysis_json_options(
                                  json_options,
                                  cli_options_as_json);
+
+    log << "Input:\n" << json_combined << std::endl << std::endl;
 
     // Read input data from JSON
     ParentInputParser parser {json_combined};
@@ -215,6 +220,9 @@ namespace CASM {
     for(auto const &named_input : named_inputs) {
 
       std::string name = named_input.first;
+      log.begin(name);
+      log.increase_indent();
+
       ConfigEnumInput const &config_enum_input = named_input.second;
       Configuration const &configuration = config_enum_input.configuration();
       std::vector<PermuteIterator> group = make_invariant_subgroup(configuration);
@@ -239,6 +247,7 @@ namespace CASM {
 
       // write "dof_analysis_<dof>.json" for each specified DoF type
       for(DoFKey const &dof : dofs) {
+        log << "Working on: " << name << " " << dof << std::endl;
         DoFSpace dof_space {config_enum_input, dof};
         auto report = vector_space_sym_report(dof_space, group.begin(), group.end(), calc_wedge);
 
@@ -248,9 +257,12 @@ namespace CASM {
 
         std::string filename = "dof_analysis_" + dof + ".json";
         json.write(sym_dir / filename);
+        log << "Writing: " << (sym_dir / filename) << std::endl << std::endl;
 
       }
 
+      log.decrease_indent();
+      log << std::endl;
     }
   }
 }
