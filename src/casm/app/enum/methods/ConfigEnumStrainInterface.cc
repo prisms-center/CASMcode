@@ -7,13 +7,13 @@
 #include "casm/app/QueryHandler_impl.hh"
 #include "casm/app/enum/standard_ConfigEnumInput_help.hh"
 #include "casm/app/enum/io/enumerate_configurations_json_io.hh"
-#include "casm/app/enum/io/json_io.hh"
-#include "casm/app/enum/io/stream_io.hh"
+#include "casm/app/enum/io/stream_io_impl.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
 #include "casm/enumerator/DoFSpace.hh"
 #include "casm/enumerator/io/json/ConfigEnumInput_json_io.hh"
+#include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/symmetry/SymRepTools.hh"
 #include "casm/symmetry/io/json/SymRepTools.hh"
 
@@ -127,7 +127,10 @@ namespace CASM {
 
         if(make_symmetry_adapted_axes) { // if sym_axes==true, make and use symmetry adapted axes
 
-          log.begin(std::string("DoF Vector Space Symmetry Report: ") + name);
+          // std::stringstream msg;
+          // msg << "Symmetry adapted " << params.dof << " enumeration: " << name;
+          // log << std::endl;
+          // log.begin(msg.str());
 
           DoFSpace dof_space {initial_state, params.dof, axes};
           bool calc_wedges = true;
@@ -149,7 +152,7 @@ namespace CASM {
           tmp_params.wedges.clear();
           tmp_params.wedges.push_back(SymRepTools::SubWedge::make_dummy(axes));
 
-          return ConfigEnumStrain {initial_state, params};
+          return ConfigEnumStrain {initial_state, tmp_params};
         }
       }
     };
@@ -173,51 +176,22 @@ namespace CASM {
 
     // 1) get DoF type -------------------------------------------------
     // "dof" -> params.dof
-    parser.require(params.dof, "dof");
+    try {
+      params.dof = get_strain_dof_key(initial_state.configuration().supercell().prim());
+    }
+    catch(std::exception &e) {
+      parser.error.insert(e.what());
+      return;
+    }
 
     Index dof_space_dimension = get_dof_space_dimension(params.dof,
                                                         initial_state.configuration(),
                                                         initial_state.sites());
 
-    // 2) get axes -----------------------------------------------------
-    // "axes".transpose() -> axes  (transpose of each other)
-    Eigen::MatrixXd default_axes = Eigen::MatrixXd::Identity(
-                                     dof_space_dimension,
-                                     dof_space_dimension);
-    Eigen::MatrixXd row_vector_axes;
-    parser.optional_else(row_vector_axes, "axes", default_axes);
-    axes = row_vector_axes.transpose();
+    // 2) get axes and normal coordinate grid ------------------------------------------
+    parse_dof_space_axes(parser, axes, params.min_val, params.max_val, params.inc_val, dof_space_dimension);
 
-    // check axes dimensions:
-    if(axes.rows() != dof_space_dimension) {
-      // Note: message "columns" refers to JSON input axes, transpose of axes
-      std::stringstream msg;
-      msg << "Number of columns of \"axes\" must be equal to DoF space dimension ("
-          << dof_space_dimension << "). Size as parsed: " << axes.rows();
-      parser.error.insert(msg.str());
-    }
-    if(axes.cols() > dof_space_dimension) {
-      // Note: message "rows" refers to JSON input axes, transpose of axes
-      std::stringstream msg;
-      msg << "Number of coordinate axes (number of rows of \"axes\") must be less than or equal to "
-          "DoF space dimension (" << dof_space_dimension << "). Number of axes parsed: "
-          << axes.cols();
-      parser.error.insert(msg.str());
-    }
-
-    // 3) get normal coordinate grid -----------------------------------
-
-    // "min" -> params.min_val  (number or array of number, else zeros vector)
-    Eigen::VectorXd default_value = Eigen::VectorXd::Zero(axes.cols());
-    params.min_val = parse_vector_from_number_or_array(parser, "min", axes.cols(), &default_value);
-
-    // "max" -> params.max_val (number or array of number, required)
-    params.max_val = parse_vector_from_number_or_array(parser, "max", axes.cols());
-
-    // "increment" -> params.inc_val (number or array of number, required)
-    params.inc_val = parse_vector_from_number_or_array(parser, "increment", axes.cols());
-
-    // 4) set auto_range option  ---------------------------------------
+    // 3) set auto_range option  ---------------------------------------
     if(!parser.self.contains("min") && sym_axes_option == true) {
       params.auto_range = true;
     }
@@ -225,7 +199,7 @@ namespace CASM {
       params.auto_range = false;
     }
 
-    // 5) get trim_corners option  -------------------------------------
+    // 4) get trim_corners option  -------------------------------------
     // "trim_corners" -> params.trim_corners (bool, default true)
     parser.optional_else(params.trim_corners, "trim_corners", true);
 
@@ -238,14 +212,22 @@ namespace CASM {
 
     Log &log = CASM::log();
 
+    log.subsection().begin("ConfigEnumStrain");
+    log.indent() << "Input from JSON (--input or --setings):\n" << json_options << std::endl << std::endl;
+    log.indent() << "Input from `casm enum` options:\n" << cli_options_as_json << std::endl << std::endl;
+
     // combine JSON options and CLI options
     jsonParser json_combined = combine_configuration_enum_json_options(
                                  json_options,
                                  cli_options_as_json);
 
+    log.indent() << "Combined Input:\n" << json_combined << std::endl << std::endl;
+
     // Read input data from JSON
     ParentInputParser parser {json_combined};
     std::runtime_error error_if_invalid {"Error reading ConfigEnumStrain JSON input"};
+
+    log.custom("Checking input");
 
     // 1) Parse initial enumeration states ------------------
     typedef std::vector<std::pair<std::string, ConfigEnumInput>> NamedInitialEnumerationStates;
@@ -254,13 +236,26 @@ namespace CASM {
                               &primclex,
                               primclex.db<Supercell>(),
                               primclex.db<Configuration>());
+    report_and_throw_if_invalid(parser, log, error_if_invalid);
     auto const &named_initial_states = *input_parser_ptr->value;
+    log.indent() << "# of initial enumeration states: " << named_initial_states.size() << std::endl;
+
+    // 1b) If "verbose", print
+    log.subsection().begin_section<Log::verbose>();
+    log.indent() << "initial enumeration states:" << std::endl;
+    log.increase_indent();
+    for(auto const &named_initial_state : named_initial_states) {
+      log.indent() << named_initial_state.first << std::endl;
+    }
+    log.decrease_indent();
+    log.end_section();
 
     // 2) Parse ConfigEnumStrainParams ------------------
 
     // 2a) check for "sym_axes" option:
     bool sym_axes_option;
     parser.optional_else(sym_axes_option, "sym_axes", false);
+    log.indent() << "sym_axes: " << sym_axes_option << std::endl;
 
     // 2b) parse ConfigEnumStrainParams (except parse "axes" instead of "wedges")
 
@@ -273,12 +268,20 @@ namespace CASM {
                                                                      sym_axes_option);
     report_and_throw_if_invalid(parser, log, error_if_invalid);
     ConfigEnumStrainParams const &params = *params_parser_ptr->value;
+    log.indent() << "axes: \n" << axes << std::endl;
+    log.indent() << "min: " << params.min_val.transpose() << std::endl;
+    log.indent() << "max: " << params.max_val.transpose() << std::endl;
+    log.indent() << "increment: " << params.inc_val.transpose() << std::endl;
+    log.indent() << "auto_range: " << params.auto_range << std::endl;
+    log.indent() << "trim_corners: " << params.trim_corners << std::endl;
 
     // 2c) check for "print_dof_space_and_quit" option:
     bool print_dof_space_and_quit_option;
     parser.optional_else(print_dof_space_and_quit_option, "print_dof_space_and_quit", false);
+    log.indent() << "print_dof_space_and_quit: " << print_dof_space_and_quit_option << std::endl;
 
     if(print_dof_space_and_quit_option) {
+      log.begin<Log::debug>("Print DoF Space and Quit Option");
       for(auto const &named_initial_state : named_initial_states) {
         auto const &name = named_initial_state.first;
         auto const &initial_state = named_initial_state.second;
@@ -287,6 +290,8 @@ namespace CASM {
         std::vector<PermuteIterator> group = initial_state.configuration().factor_group();
         print_dof_space(log, name, dof_space, group.begin(), group.end(), sym_axes_option, calc_wedges);
       }
+
+      log.end_section();
       return;
     }
 
@@ -298,7 +303,23 @@ namespace CASM {
     report_and_throw_if_invalid(parser, log, error_if_invalid);
     EnumerateConfigurationsOptions const &options = *options_parser_ptr->value;
 
+method:
+primitive_only:
+filter:
+dry_run:
+verbosity:
+    log.indent() << "pritive_only: " << options.primitive_only << std::endl;
+    log.indent() << "filter: " << static_cast<bool>(options.filter) << std::endl;
+    if(options.filter) {
+      std::string filter_expression;
+      parser.self.get_if(filter_expression, "filter");
+      log.indent() << "filter expression: " << filter_expression << std::endl;
+    }
+    log.indent() << "verbosity: " << options.verbosity << std::endl;
+
     // 4) Enumerate configurations ------------------
+    log << std::endl;
+    log.begin("ConfigEnumStrain enumeration");
 
     ConfigEnumStrainInterface_impl::MakeEnumerator make_enumerator_f {params, axes, sym_axes_option};
 
@@ -309,6 +330,9 @@ namespace CASM {
       named_initial_states.end(),
       primclex.db<Supercell>(),
       primclex.db<Configuration>());
+
+    log.indent() << "enumeration complete" << std::endl << std::endl;
+    log.end_section();
   }
 
 }

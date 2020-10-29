@@ -11,6 +11,27 @@
 
 namespace CASM {
 
+  bool has_strain_dof(xtal::BasicStructure const &structure) {
+    std::vector<DoFKey> global_dof_types = CASM::global_dof_types(structure);
+    Index istrain = find_index_if(global_dof_types,
+    [](DoFKey const & other) {
+      return other.find("strain") != std::string::npos;
+    });
+    return istrain != global_dof_types.size();
+  }
+
+  DoFKey get_strain_dof_key(xtal::BasicStructure const &structure) {
+    std::vector<DoFKey> global_dof_types = CASM::global_dof_types(structure);
+    Index istrain = find_index_if(global_dof_types,
+    [](DoFKey const & other) {
+      return other.find("strain") != std::string::npos;
+    });
+    if(istrain == global_dof_types.size()) {
+      throw std::runtime_error("Error in get_strain_dof_key: Structure does not have strain DoF.");
+    }
+    return global_dof_types[istrain];
+  }
+
   ConfigEnumStrain::ConfigEnumStrain(ConfigEnumInput const &initial_state,
                                      ConfigEnumStrainParams const &params) :
     ConfigEnumStrain(initial_state,
@@ -81,6 +102,14 @@ namespace CASM {
     if(!m_counter.valid()) {
       this->_invalidate();
     }
+
+    // auto &log = CASM::log();
+    // log.subsection().begin_section<Log::debug>();
+    // log.indent() << "normal coordinates: " << m_counter().transpose() << std::endl;
+    // log.indent() << "dof value: " << (m_wedges[m_equiv_ind].trans_mat() * m_counter()).transpose() << std::endl;
+    // log.indent() << std::endl;
+    // log.end_section();
+
     m_current.set_source(this->source(step()));
   }
 
@@ -106,6 +135,13 @@ namespace CASM {
     }
 
     if(m_counter.valid()) {
+
+      // auto &log = CASM::log();
+      // log.subsection().begin_section<Log::debug>();
+      // log.indent() << "normal coordinates: " << m_counter().transpose() << std::endl;
+      // log.indent() << "dof value: " << (m_wedges[m_equiv_ind].trans_mat() * m_counter()).transpose() << std::endl;
+      // log.indent() << std::endl;
+      // log.end_section();
 
       m_current.configdof().set_global_dof(m_strain_key, m_wedges[m_equiv_ind].trans_mat() * m_counter());
 

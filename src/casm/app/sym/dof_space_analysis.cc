@@ -181,15 +181,17 @@ namespace CASM {
     Log &log = CASM::log();
     DirectoryStructure const &dir = primclex.dir();
 
-    log << "json_options:\n" << json_options << std::endl << std::endl;
-    log << "cli_options_as_json:\n" << cli_options_as_json << std::endl << std::endl;
+    log.subsection().begin<Log::debug>("dof_space_analysis");
+    log.indent() << "json_options:\n" << json_options << std::endl << std::endl;
+    log.indent() << "cli_options_as_json:\n" << cli_options_as_json << std::endl << std::endl;
+    log.end_section();
 
     // combine JSON options and CLI options
     jsonParser json_combined = combine_dof_space_analysis_json_options(
                                  json_options,
                                  cli_options_as_json);
 
-    log << "Input:\n" << json_combined << std::endl << std::endl;
+    log.indent() << "Input:\n" << json_combined << std::endl << std::endl;
 
     // Read input data from JSON
     ParentInputParser parser {json_combined};

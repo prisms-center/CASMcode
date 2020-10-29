@@ -1,16 +1,23 @@
 #include "gtest/gtest.h"
-
+#include "autotools.hh"
 #include "Common.hh"
 #include "App/TestEnumeratorInterface.hh"
 #include "crystallography/TestStructures.hh"
 
+#include "casm/app/ProjectBuilder.hh"
+#include "casm/app/ProjectSettings.hh"
 #include "casm/app/enum.hh"
 #include "casm/app/enum/methods/ConfigEnumStrainInterface.hh"
 #include "casm/app/enum/methods/ScelEnumInterface.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/clex/ConfigEnumStrain.hh"
+#include "casm/clex/PrimClex.hh"
 #include "casm/clex/ScelEnum.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/database/Database.hh"
+#include "casm/database/ScelDatabaseTools_impl.hh"
+#include "casm/database/ConfigDatabaseTools_impl.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
 
 // This test fixture class constructs a CASM project for enumeration examples
@@ -57,6 +64,7 @@ enum_methods_ConfigEnumStrainInterfaceTest::enum_methods_ConfigEnumStrainInterfa
 
     make_canonical_and_insert(enumerator, supercell, primclex.db<Supercell>());
   }
+  primclex.db<Supercell>().commit();
   EXPECT_EQ(primclex.db<Supercell>().size(), 13);
   primclex.db<Supercell>().close();
   primclex.db<Supercell>().open();
@@ -66,12 +74,19 @@ enum_methods_ConfigEnumStrainInterfaceTest::enum_methods_ConfigEnumStrainInterfa
 
 TEST_F(enum_methods_ConfigEnumStrainInterfaceTest, Test1) {
 
-  // ScopedNullLogging logging;
   std::cout << "begin Test1" << std::endl;
+  // ScopedNullLogging logging;
+  //CASM::log().set_verbosity(Log::debug);
 
   {
-    std::string cli_str = "casm enum --method ConfigEnumStrain -a";
-    test::run_enum_interface<ConfigEnumAllOccupationsInterface>(cli_str, primclex);
+    std::string cli_str = "casm enum --method ConfigEnumStrain";
+    jsonParser json_options;
+    json_options["max"] = 0.11;
+    json_options["increment"] = 0.1;
+    json_options["trim_corners"] = false;
+    json_options["scelnames"] = std::vector<std::string> {"SCEL1_1_1_1_0_0_0"};
+    test::run_enum_interface<ConfigEnumStrainInterface>(cli_str, primclex, json_options);
+    EXPECT_EQ(primclex.db<Configuration>().size(), 13);
   }
 
   std::cout << "end Test1" << std::endl;

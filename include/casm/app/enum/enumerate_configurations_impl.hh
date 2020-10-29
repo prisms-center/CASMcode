@@ -68,10 +68,9 @@ namespace CASM {
     std::string dry_run_msg = CASM::dry_run_msg(options.dry_run);
 
     Index Ninit = configuration_db.size();
+    log.subsection().begin_section<Log::debug>();
     log << dry_run_msg << "# configurations in this project: " << Ninit << "\n" << std::endl;
-
-    log.set_verbosity(options.verbosity);
-    log.begin<Log::standard>(options.method_name);
+    log << dry_run_msg << "Begin enumeration" << std::endl;
 
     auto it = name_value_pairs_begin;
     for(; it != name_value_pairs_end; ++it) {
@@ -80,7 +79,7 @@ namespace CASM {
       Index count = 0;
       Index count_filtered = 0;
       Index num_before = configuration_db.size();
-      log << dry_run_msg << "Enumerate configurations for " << input_name_value_pair.first << " ...  " << std::flush;
+      log << dry_run_msg << "Enumerate configurations for: " << input_name_value_pair.first << std::endl;
       auto enumerator = make_enumerator_f(input_name_value_pair.first, input_name_value_pair.second);
 
       for(Configuration const &configuration : enumerator) {
@@ -107,11 +106,11 @@ namespace CASM {
       }
 
       Index num_after = configuration_db.size();
-      log << count << " configurations"
+      log << dry_run_msg << count << " configurations"
           << " (" << (num_after - num_before) << " new, "
           << count_filtered << " excluded by filter)." << std::endl;
     }
-    log << dry_run_msg << "  DONE." << std::endl << std::endl;
+    log << dry_run_msg << "Enumeration complete" << std::endl << std::endl;
 
     Index Nfinal = configuration_db.size();
     log << dry_run_msg << "# new configurations: " << Nfinal - Ninit << "\n";

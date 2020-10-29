@@ -15,6 +15,10 @@ namespace CASM {
 
   class ConfigEnumInput;
 
+  bool has_strain_dof(xtal::BasicStructure const &structure);
+
+  DoFKey get_strain_dof_key(xtal::BasicStructure const &structure);
+
   struct ConfigEnumStrainParams {
 
     /// Type of strain

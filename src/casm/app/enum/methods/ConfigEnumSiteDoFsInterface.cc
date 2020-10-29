@@ -7,13 +7,13 @@
 #include "casm/app/QueryHandler_impl.hh"
 #include "casm/app/enum/standard_ConfigEnumInput_help.hh"
 #include "casm/app/enum/io/enumerate_configurations_json_io.hh"
-#include "casm/app/enum/io/json_io.hh"
 #include "casm/app/enum/io/stream_io.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
 #include "casm/enumerator/DoFSpace.hh"
 #include "casm/enumerator/io/json/ConfigEnumInput_json_io.hh"
+#include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/symmetry/SymRepTools.hh"
 #include "casm/symmetry/io/json/SymRepTools.hh"
 
@@ -245,6 +245,10 @@ namespace CASM {
     InputParser<ConfigEnumSiteDoFsParams> &parser,
     ConfigEnumInput const &initial_state) {
 
+    auto &log = CASM::log();
+    log.increase_indent();
+    log.subsection().begin<Log::debug>("parse ConfigEnumSiteDoFsParams");
+
     parser.value = notstd::make_unique<ConfigEnumSiteDoFsParams>();
     auto &params = *parser.value;
 
@@ -256,44 +260,11 @@ namespace CASM {
                                                         initial_state.configuration(),
                                                         initial_state.sites());
 
-    // 2) get axes -----------------------------------------------------
-    // "axes".transpose() -> params.axes  (transpose of each other)
-    Eigen::MatrixXd default_axes = Eigen::MatrixXd::Identity(dof_space_dimension, dof_space_dimension);
-    Eigen::MatrixXd row_vector_axes;
-    parser.optional_else(row_vector_axes, "axes", default_axes);
-    params.axes = row_vector_axes.transpose();
+    // 2) get axes and normal coordinate grid ------------------------------------------
 
-    // check axes dimensions:
-    if(params.axes.rows() != dof_space_dimension) {
-      // Note: message "columns" refers to JSON input axes, transpose of params.axes
-      std::stringstream msg;
-      msg << "Number of columns of \"axes\" must be equal to site DoF space dimension ("
-          << dof_space_dimension << "). Size as parsed: " << params.axes.rows();
-      parser.error.insert(msg.str());
-    }
-    if(params.axes.cols() > dof_space_dimension) {
-      // Note: message "rows" refers to JSON input axes, transpose of params.axes
-      std::stringstream msg;
-      msg << "Number of coordinate axes (number of rows of \"axes\") must be less than or equal to "
-          "site DoF space dimension (" << dof_space_dimension << "). Number of axes parsed: "
-          << params.axes.cols();
-      parser.error.insert(msg.str());
-    }
-
-
-    // 3) get normal coordinate grid -----------------------------------
-
-    // "min" -> params.min_val  (number or array of number, else zeros vector)
-    Eigen::VectorXd default_value = Eigen::VectorXd::Zero(params.axes.cols());
-    params.min_val = parse_vector_from_number_or_array(parser, "min", params.axes.cols(), &default_value);
-    // note that help indicates default==axes.rows(), but that is params.axes.cols()
-
-    // "max" -> params.max_val (number or array of number, required)
-    params.max_val = parse_vector_from_number_or_array(parser, "max", params.axes.cols());
-
-    // "increment" -> params.inc_val (number or array of number, required)
-    params.inc_val = parse_vector_from_number_or_array(parser, "increment", params.axes.cols());
-
+    log.indent() << "parsing axes and normal coordinate grid..." << std::endl;
+    parse_dof_space_axes(parser, params.axes, params.min_val, params.max_val, params.inc_val, dof_space_dimension);
+    log.indent() << "DONE" << std::endl;
 
     // 4) get min/max nonzero amplitudes -----------------------------------
 
@@ -303,6 +274,10 @@ namespace CASM {
     // "max_nonzero" -> params.max_nonzero
     // note that help indicates default==axes.rows(), but that is params.axes.cols()
     parser.optional_else(params.min_nonzero, "max_nonzero", Index {params.axes.cols()});
+
+    log.indent() << std::endl;
+    log.decrease_indent();
+    log.end_section();
   }
 
   void require_all_input_have_the_same_number_of_selected_sites(
