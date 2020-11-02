@@ -78,7 +78,7 @@ namespace dof_space_analysis_impl {
   ///
   /// Later, could support other ConfigEnumInput JSON options (supercells, selecting sites, clusters,
   /// etc.), but need to determine how to write / print the data
-  void require_database_configurations(KwargsParser &parser) {
+  void require_database_configurations(ParentInputParser &parser) {
     std::set<std::string> do_not_allow {
       "scelnames",
       "supercell_selection",
@@ -101,7 +101,7 @@ namespace dof_space_analysis_impl {
   /// dofs: array of string (optional, default=all_dof_types)
   ///     Entries must exist in "all_dof_types" else an error is inserted.
   ///
-  void parse_dofs(KwargsParser &parser,
+  void parse_dofs(ParentInputParser &parser,
                   std::vector<DoFKey> &dofs,
                   std::vector<DoFKey> const &all_dof_types) {
     parser.optional_else(dofs, "dofs", all_dof_types);

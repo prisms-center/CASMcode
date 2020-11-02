@@ -140,7 +140,7 @@ namespace CASM {
     }
 
     std::unique_ptr<SymGroup> parse_generating_group(
-      KwargsParser &parser,
+      InputParser<PeriodicMaxLengthClusterSpecs> &parser,
       const std::shared_ptr<const Structure> &shared_prim,
       const SymGroup &super_group) {
 
@@ -161,7 +161,7 @@ namespace CASM {
 
     template<typename SymCompareType>
     std::unique_ptr<SymGroup> parse_local_generating_group(
-      KwargsParser &parser,
+      InputParser<LocalMaxLengthClusterSpecs> &parser,
       const std::shared_ptr<const Structure> &shared_prim,
       const IntegralCluster &phenomenal,
       const SymGroup &super_group,
