@@ -66,20 +66,14 @@ namespace CASM {
       return code;
     }
     catch(po::error &e) {
-      log() << "error 0 what: " << e.what() << std::endl;
-      err_log() << opt.desc() << std::endl;
       err_log() << "ERROR: " << e.what() << std::endl << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(CASM::runtime_error &e) {
-      log() << "error 1 what: " << e.what() << std::endl;
-      err_log() << opt.desc() << std::endl;
       err_log() << "ERROR: " << e.what() << std::endl << std::endl;
       return e.code();
     }
     catch(std::exception &e) {
-      log() << "error 2 what: " << e.what() << std::endl;
-      err_log() << opt.desc() << std::endl;
       err_log() << "ERROR: " << e.what() << std::endl << std::endl;
       return ERR_UNKNOWN;
     }
