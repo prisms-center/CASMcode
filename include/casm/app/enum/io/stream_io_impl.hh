@@ -32,6 +32,9 @@ namespace CASM {
                        PermuteIteratorIt permute_end,
                        bool sym_axes,
                        bool calc_wedges) {
+    log.subsection();
+    log.begin_section();
+    log << std::endl;
     if(!sym_axes) {
       log.begin(std::string("DoF Space Axes: ") + name);
       log << "Note: column and site indexing begin with 1" << std::endl;
@@ -51,10 +54,15 @@ namespace CASM {
                                                                 permute_begin,
                                                                 permute_end,
                                                                 calc_wedges);
+
+      log << "Symmetry report complete" << std::endl;
+
       // TODO: specialized print to stream instead of JSON to stream?
-      log << jsonParser {sym_report} << std::endl << std::endl;
-      log.end_section();
+      jsonParser json;
+      to_json(sym_report, json);
+      log << json << std::endl << std::endl;
     }
+    log.end_section();
   }
 }
 

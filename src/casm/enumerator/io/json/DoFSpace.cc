@@ -44,7 +44,7 @@ namespace CASM {
 
   /// Parse a number or array value and return a vector
   ///
-  /// \param parser Generic KwargsParser
+  /// \param parser AxesCounterParams parser
   /// \param attribute_name std::string containing the name of the attribute to be parsed
   /// \param dimension If a number is given, return a constant vector of this dimension and the
   ///        given value.
@@ -59,42 +59,47 @@ namespace CASM {
   /// - If attribute is an array: return array as a Eigen::VectorXd
   /// - If attribute is any other type: insert error message and return Eigen::VectorXd{}
   Eigen::VectorXd parse_vector_from_number_or_array(
-    KwargsParser &parser,
+    InputParser<AxesCounterParams> &parser,
     std::string attribute_name,
     Index dimension,
     Eigen::VectorXd const *default_value = nullptr) {
 
-    Eigen::VectorXd result;
+    std::string option_type = (default_value != nullptr) ? "(optional)" : "(required)";
+    Eigen::VectorXd no_result;
     if(!parser.self.contains(attribute_name) || parser.self[attribute_name].is_null()) {
       if(default_value != nullptr) {
         return *default_value;
       }
       else {
-        parser.require(result, attribute_name);
-        return result;
+        std::stringstream msg;
+        msg << "Error: missing required option '" << attribute_name << "'. "
+            << "Must be a number or array of numbers of size " << dimension << ".";
+        parser.insert_error(attribute_name, msg.str());
+        return no_result;
       }
     }
     if(parser.self[attribute_name].is_number()) {
       return Eigen::VectorXd::Constant(dimension, parser.self[attribute_name].get<double>());
     }
     else if(parser.self[attribute_name].is_array()) {
-      parser.optional(result, attribute_name);
-      if(result.size() != dimension) {
-        std::stringstream msg;
-        std::string option_type = (default_value != nullptr) ? "(optional)" : "(required)";
-        msg << "Error: \"" << attribute_name << "\" " << option_type
-            << " must be a number or array of number. Expected array of size " << dimension << ".";
-        parser.error.insert(msg.str());
+      auto subparser = parser.subparse<Eigen::VectorXd>(attribute_name);
+      if(subparser->value == nullptr) {
+        return no_result;
       }
-      return result;
+      if(subparser->value->size() != dimension) {
+        std::stringstream msg;
+        msg << "Error: '" << attribute_name << "' " << option_type
+            << " must be a number or array of numbers of size " << dimension << ".";
+        subparser->error.insert(msg.str());
+      }
+      return *subparser->value;
     }
     else {
       std::stringstream msg;
-      std::string option_type = (default_value != nullptr) ? "(optional)" : "(required)";
-      msg << "Error: \"" << attribute_name << "\" " << option_type
-          << " must be a number or array of number.";
-      parser.error.insert(msg.str());
-      return result;
+      msg << "Error: '" << attribute_name << "' " << option_type
+          << " must be a number or array of numbers of size " << dimension << ".";
+      parser.insert_error(attribute_name, msg.str());
+      return no_result;
     }
   }
 
@@ -136,7 +141,7 @@ namespace CASM {
   /// - if total dof_space_dimension is double digit, then use "q01", "q02", ... etc.
   /// - if total dof_space_dimension is triple digit, then use "q001", "q002", ... etc.
   ///
-  void parse_axes_from_object(KwargsParser &parser,
+  void parse_axes_from_object(InputParser<AxesCounterParams> &parser,
                               Eigen::MatrixXd &axes,
                               Index dof_space_dimension) {
 
@@ -145,21 +150,18 @@ namespace CASM {
     std::set<Index> found;
     for(Index i = 0; i < dof_space_dimension; ++i) {
       std::string axis_name = "q" + to_sequential_string(i + 1, dof_space_dimension);
-      fs::path location = fs::path {"axes"} / axis_name;
-      auto value_ptr = parser.optional_at<Eigen::VectorXd>(location);
-
-      if(value_ptr != nullptr) {
+      auto subparser = parser.subparse_if<Eigen::VectorXd>(fs::path {"axes"} / axis_name);
+      if(subparser->value != nullptr) {
         found.insert(i);
-        Eigen::VectorXd const &value = *value_ptr;
-        if(value.size() != dof_space_dimension) {
+        if(subparser->value->size() != dof_space_dimension) {
           std::stringstream msg;
-          msg << "Error reading axis vector \"" << axis_name
-              << "\": expected size=" << dof_space_dimension
-              << " found size=" << value.size();
-          parser.error.insert(msg.str());
+          msg << "Error reading axis vector '" << axis_name
+              << "': expected size=" << dof_space_dimension
+              << " found size=" << subparser->value->size();
+          subparser->error.insert(msg.str());
         }
         else {
-          inaxes.col(found.size()) = value;
+          inaxes.col(found.size()) = *subparser->value;
         }
       }
     }
@@ -170,28 +172,31 @@ namespace CASM {
   }
 
   /// Read "axes" from a row-vector JSON matrix, store in `axes` argument as a column vector matrix
-  void parse_axes_from_array(KwargsParser &parser,
+  void parse_axes_from_array(InputParser<AxesCounterParams> &parser,
                              Eigen::MatrixXd &axes,
                              Index dof_space_dimension) {
-    Eigen::MatrixXd row_vector_axes;
-    parser.require(row_vector_axes, "axes");
-    axes = row_vector_axes.transpose();
+    // Eigen::MatrixXd row_vector_axes;
+    auto subparser = parser.subparse<Eigen::MatrixXd>("axes");
+    if(subparser->value == nullptr) {
+      return;
+    }
+    axes = subparser->value->transpose();
 
     // check axes dimensions:
     if(axes.rows() != dof_space_dimension) {
       // Note: message "columns" refers to JSON input axes, transpose of params.axes
       std::stringstream msg;
-      msg << "Number of columns of \"axes\" must be equal to site DoF space dimension ("
+      msg << "Number of columns of 'axes' must be equal to site DoF space dimension ("
           << dof_space_dimension << "). Size as parsed: " << axes.rows();
-      parser.error.insert(msg.str());
+      subparser->error.insert(msg.str());
     }
     if(axes.cols() > dof_space_dimension) {
       // Note: message "rows" refers to JSON input axes, transpose of params.axes
       std::stringstream msg;
-      msg << "Number of coordinate axes (number of rows of \"axes\") must be less than or equal to "
+      msg << "Number of coordinate axes (number of rows of 'axes') must be less than or equal to "
           "site DoF space dimension (" << dof_space_dimension << "). Number of axes parsed: "
           << axes.cols();
-      parser.error.insert(msg.str());
+      subparser->error.insert(msg.str());
     }
   }
 
@@ -208,7 +213,7 @@ namespace CASM {
   ///
   /// TODO: document "axes" here
   ///
-  void parse_dof_space_axes(KwargsParser &parser,
+  void parse_dof_space_axes(InputParser<AxesCounterParams> &parser,
                             Eigen::MatrixXd &axes,
                             Index dof_space_dimension) {
     // "axes" -> axes
@@ -223,47 +228,50 @@ namespace CASM {
     }
     else {
       std::stringstream msg;
-      msg << "The \"axes\" must be a JSON object of axis vectors (named \"q1\", \"q2\", etc.), or a row-vector matrix";
+      msg << "The 'axes' must be a JSON object of axis vectors (named 'q1', 'q2', etc.), or a row-vector matrix";
       parser.error.insert(msg.str());
     }
   }
 
 
-  /// Parse DoF space "axes" along with "min", "max", and "increment"
-  ///
-  /// Accepts a JSON object of axes or a row vector matrix of axes. May be rank deficient. For JSON
-  /// object format see `parse_axes_from_object`
+  /// Parse DoF space counter values from "min", "max", and "increment"
   ///
   /// \param parser JSON to be parsed
-  /// \param axes Set to be column vector matrix of axes
+  /// \param dof_subspace DoFSpace subspace (column vector matrix)
   /// \param min_val Set to be minimum counter value. Must be same size as axes.cols().
   /// \param max_val Set to be maximum counter value. Must be same size as axes.cols().
   /// \param inc_val Set to be counter increment value. Must be same size as axes.cols().
-  /// \param dof_space_dimension Full DoF space dimension. If no `"axes"` in the JSON, the default
-  ///        axes are identity matrix of size dof_space_dimension. Errors are inserted into parser
-  ///        if axes vectors are not of length equal to dof_space_dimension.
   ///
-  /// TODO: document "axes", "min", "max", "increment" here
+  /// Errors are inserted into parser if counter vector sizes are not equal to dof_subspace.cols().
   ///
-  void parse_dof_space_axes(KwargsParser &parser,
-                            Eigen::MatrixXd &axes,
-                            Eigen::VectorXd &min_val,
-                            Eigen::VectorXd &max_val,
-                            Eigen::VectorXd &inc_val,
-                            Index dof_space_dimension) {
-
-    // "axes" -> axes
-    parse_dof_space_axes(parser, axes, dof_space_dimension);
+  /// TODO: document "min", "max", "increment" here
+  ///
+  void parse_dof_space_counter(InputParser<AxesCounterParams> &parser,
+                               Eigen::MatrixXd const &dof_subspace,
+                               Eigen::VectorXd &min_val,
+                               Eigen::VectorXd &max_val,
+                               Eigen::VectorXd &inc_val) {
 
     // "min" -> min_val  (number or array of number, else zeros vector)
-    Eigen::VectorXd default_value = Eigen::VectorXd::Zero(axes.cols());
-    min_val = parse_vector_from_number_or_array(parser, "min", axes.cols(), &default_value);
+    Eigen::VectorXd default_value = Eigen::VectorXd::Zero(dof_subspace.cols());
+    min_val = parse_vector_from_number_or_array(parser, "min", dof_subspace.cols(), &default_value);
 
     // "max" -> max_val (number or array of number, required)
-    max_val = parse_vector_from_number_or_array(parser, "max", axes.cols());
+    max_val = parse_vector_from_number_or_array(parser, "max", dof_subspace.cols());
 
     // "increment" -> inc_val (number or array of number, required)
-    inc_val = parse_vector_from_number_or_array(parser, "increment", axes.cols());
+    inc_val = parse_vector_from_number_or_array(parser, "increment", dof_subspace.cols());
+  }
+
+  /// Parse DoFSpace subspace from  "axes" and normal coordinate grid counter from "min", "max", and "increment"
+  void parse(InputParser<AxesCounterParams> &parser,
+             Index dof_space_dimension) {
+    AxesCounterParams params;
+    parse_dof_space_axes(parser, params.axes, dof_space_dimension);
+    parse_dof_space_counter(parser, params.axes, params.min_val, params.max_val, params.inc_val);
+    if(parser.valid()) {
+      parser.value = notstd::make_unique<AxesCounterParams>(params);
+    }
   }
 
 }

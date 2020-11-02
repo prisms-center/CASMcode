@@ -62,10 +62,11 @@ TEST_F(DoFSpaceTest, JsonIOTest1) {
   // log() << dof_space_json << std::endl;
 
   // a couple tests to check JSON was constructed successfully, but does not check each value
-  EXPECT_EQ(dof_space_json.size(), 3);
+  EXPECT_EQ(dof_space_json.size(), 4);
   EXPECT_EQ(dof_space_json.contains("dof"), true);
   EXPECT_EQ(dof_space_json.contains("initial_configuration"), true);
   EXPECT_EQ(dof_space_json.contains("glossary"), true);
+  EXPECT_EQ(dof_space_json.contains("dof_subspace"), true);
 }
 
 TEST_F(DoFSpaceTest, JsonIOTest2) {
@@ -82,10 +83,11 @@ TEST_F(DoFSpaceTest, JsonIOTest2) {
   // log() << dof_space_json << std::endl;
 
   // a couple tests to check JSON was constructed successfully, but does not check each value
-  EXPECT_EQ(dof_space_json.size(), 3);
+  EXPECT_EQ(dof_space_json.size(), 4);
   EXPECT_EQ(dof_space_json.contains("dof"), true);
   EXPECT_EQ(dof_space_json.contains("initial_configuration"), true);
   EXPECT_EQ(dof_space_json.contains("glossary"), true);
+  EXPECT_EQ(dof_space_json.contains("dof_subspace"), true);
 }
 
 TEST_F(DoFSpaceTest, VectorSpaceSymReportTest1) {

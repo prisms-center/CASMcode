@@ -245,10 +245,6 @@ namespace CASM {
     InputParser<ConfigEnumSiteDoFsParams> &parser,
     ConfigEnumInput const &initial_state) {
 
-    auto &log = CASM::log();
-    log.increase_indent();
-    log.subsection().begin<Log::debug>("parse ConfigEnumSiteDoFsParams");
-
     parser.value = notstd::make_unique<ConfigEnumSiteDoFsParams>();
     auto &params = *parser.value;
 
@@ -261,10 +257,13 @@ namespace CASM {
                                                         initial_state.sites());
 
     // 2) get axes and normal coordinate grid ------------------------------------------
-
-    log.indent() << "parsing axes and normal coordinate grid..." << std::endl;
-    parse_dof_space_axes(parser, params.axes, params.min_val, params.max_val, params.inc_val, dof_space_dimension);
-    log.indent() << "DONE" << std::endl;
+    auto grid_parser = parser.parse_as<AxesCounterParams>(dof_space_dimension);
+    if(grid_parser->valid()) {
+      params.axes = grid_parser->value->axes;
+      params.min_val = grid_parser->value->min_val;
+      params.max_val = grid_parser->value->max_val;
+      params.inc_val = grid_parser->value->inc_val;
+    }
 
     // 4) get min/max nonzero amplitudes -----------------------------------
 
@@ -275,9 +274,6 @@ namespace CASM {
     // note that help indicates default==axes.rows(), but that is params.axes.cols()
     parser.optional_else(params.min_nonzero, "max_nonzero", Index {params.axes.cols()});
 
-    log.indent() << std::endl;
-    log.decrease_indent();
-    log.end_section();
   }
 
   void require_all_input_have_the_same_number_of_selected_sites(

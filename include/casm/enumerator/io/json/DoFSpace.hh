@@ -9,22 +9,27 @@
 namespace CASM {
 
   struct DoFSpace;
-  struct KwargsParser;
+  template<typename T> class InputParser;
 
   jsonParser &to_json(DoFSpace const &dofspace, jsonParser &json, std::string name);
 
-  /// Parse DoF space "axes"
-  void parse_dof_space_axes(KwargsParser &parser,
-                            Eigen::MatrixXd &axes,
-                            Index dof_space_dimension);
+  /// Data structure used for continuous DoF enumeration IO
+  struct AxesCounterParams {
 
-  /// Parse DoF space "axes" along with "min", "max", and "increment"
-  void parse_dof_space_axes(KwargsParser &parser,
-                            Eigen::MatrixXd &axes,
-                            Eigen::VectorXd &min_val,
-                            Eigen::VectorXd &max_val,
-                            Eigen::VectorXd &inc_val,
-                            Index dof_space_dimension);
+    // DoFSpace axes (column vector matrix, may be a subspace)
+
+    Eigen::MatrixXd axes;
+
+    // Counter min, max, and increment values
+
+    Eigen::VectorXd min_val;
+    Eigen::VectorXd max_val;
+    Eigen::VectorXd inc_val;
+  };
+
+  /// Parse DoFSpace subspace from  "axes" and normal coordinate grid counter from "min", "max", and "increment"
+  void parse(InputParser<AxesCounterParams> &parser,
+             Index dof_space_dimension);
 }
 
 #endif

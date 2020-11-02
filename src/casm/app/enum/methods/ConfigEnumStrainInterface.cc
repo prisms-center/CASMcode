@@ -189,7 +189,13 @@ namespace CASM {
                                                         initial_state.sites());
 
     // 2) get axes and normal coordinate grid ------------------------------------------
-    parse_dof_space_axes(parser, axes, params.min_val, params.max_val, params.inc_val, dof_space_dimension);
+    auto grid_parser = parser.parse_as<AxesCounterParams>(dof_space_dimension);
+    if(grid_parser->valid()) {
+      axes = grid_parser->value->axes;
+      params.min_val = grid_parser->value->min_val;
+      params.max_val = grid_parser->value->max_val;
+      params.inc_val = grid_parser->value->inc_val;
+    }
 
     // 3) set auto_range option  ---------------------------------------
     if(!parser.self.contains("min") && sym_axes_option == true) {
@@ -302,12 +308,6 @@ namespace CASM {
                                 primclex.settings().query_handler<Configuration>().dict());
     report_and_throw_if_invalid(parser, log, error_if_invalid);
     EnumerateConfigurationsOptions const &options = *options_parser_ptr->value;
-
-method:
-primitive_only:
-filter:
-dry_run:
-verbosity:
     log.indent() << "pritive_only: " << options.primitive_only << std::endl;
     log.indent() << "filter: " << static_cast<bool>(options.filter) << std::endl;
     if(options.filter) {
@@ -316,6 +316,7 @@ verbosity:
       log.indent() << "filter expression: " << filter_expression << std::endl;
     }
     log.indent() << "verbosity: " << options.verbosity << std::endl;
+    log.indent() << "dry_run: " << options.dry_run << std::endl;
 
     // 4) Enumerate configurations ------------------
     log << std::endl;
