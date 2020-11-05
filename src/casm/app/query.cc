@@ -208,11 +208,11 @@ namespace CASM {
 
       if(str[0] == 'o') {
         log() << "Available operators for use within queries:" << std::endl;
-        _dict().print_help(log(), BaseDatumFormatter<DataObject>::Operator);
+        _dict().print_help(log(), DatumFormatterClass::Operator);
       }
       else if(str[0] == 'p') {
         log() << "Available property tags are currently:" << std::endl;
-        _dict().print_help(log(), BaseDatumFormatter<DataObject>::Property);
+        _dict().print_help(log(), DatumFormatterClass::Property);
       }
       log() << std::endl;
     }

@@ -5,6 +5,9 @@
 #include <map>
 #include <string>
 
+#include "casm/casm_io/dataformatter/FormattedDataFile.hh"
+#include "casm/clex/Configuration.hh"
+
 namespace CASM {
 
   class Configuration;
@@ -16,9 +19,9 @@ namespace CASM {
   }
 
   /// Options for the `enumerate_configurations` function
-  struct EnumerateConfigurationsOptions {
+  struct ConfigEnumOptions {
 
-    EnumerateConfigurationsOptions(PrimClex const &primclex):
+    ConfigEnumOptions(PrimClex const &primclex):
       primclex_ptr(&primclex) {}
 
     /// Method name, for printing progress
@@ -40,16 +43,57 @@ namespace CASM {
     /// Use while transitioning Supercell to no longer need a `PrimClex const *`
     PrimClex const *primclex_ptr = nullptr;
 
+    /// If true, output a selection file with information about enumerated configurations
+    bool output_configurations = false;
+
+    /// Options for construcing FormattedDataFile object
+    FormattedDataFileOptions output_options;
+
+    /// If true, include output for configurations that were filtered out
+    bool output_filtered_configurations = false;
+
+  };
+
+  /// Collect information during `enumerate_configurations` function for optional output
+  template<typename EnumeratorType, typename InitialStateType>
+  struct ConfigEnumData {
+
+    ConfigEnumData(PrimClex const &_primclex,
+                   Index _initial_state_index,
+                   std::string const &_initial_state_name,
+                   InitialStateType const &_initial_state,
+                   EnumeratorType const &_enumerator,
+                   Configuration const &_configuration):
+      primclex(_primclex),
+      initial_state_index(_initial_state_index),
+      initial_state_name(_initial_state_name),
+      initial_state(_initial_state),
+      enumerator(_enumerator),
+      configuration(_configuration) {}
+
+    PrimClex const &primclex;
+    Index initial_state_index;
+    std::string const &initial_state_name;
+    InitialStateType const &initial_state;
+    EnumeratorType const &enumerator;
+    Configuration const &configuration;
+
+    bool is_excluded_by_filter = false;
+    ConfigInsertResult insert_result;
   };
 
   /// Enumerate configurations
-  template<typename MakeEnumeratorFunctor, typename InputType>
+  template <
+    typename MakeEnumeratorFunction,
+    typename InputNameValuePairIterator,
+    typename ConfigEnumDataType >
   void enumerate_configurations(
-    EnumerateConfigurationsOptions const &options,
-    MakeEnumeratorFunctor make_enumerator_f,
-    std::map<std::string, InputType> input_name_value_map,
-    DB::Database<Supercell> &supercell_db,
-    DB::Database<Configuration> &configuration_db);
+    PrimClex const &primclex,
+    ConfigEnumOptions const &options,
+    MakeEnumeratorFunction make_enumerator_f,
+    InputNameValuePairIterator name_value_pairs_begin,
+    InputNameValuePairIterator name_value_pairs_end,
+    DataFormatter<ConfigEnumDataType> const &formatter);
 
 }
 

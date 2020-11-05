@@ -163,6 +163,26 @@ namespace CASM {
     /// Returns a vector with a list of allowed molecule names at each site
     std::vector<std::vector<std::string> > allowed_molecule_names(BasicStructure const &_struc);
 
+    std::vector<DoFKey> all_local_dof_types(BasicStructure const &_struc);
+
+    std::vector<DoFKey> continuous_local_dof_types(BasicStructure const &_struc);
+
+    std::vector<DoFKey> global_dof_types(BasicStructure const &_struc);
+
+    std::vector<DoFKey> all_dof_types(BasicStructure const &_struc);
+
+    std::map<DoFKey, Index> local_dof_dims(BasicStructure const &_struc);
+
+    std::map<DoFKey, Index> global_dof_dims(BasicStructure const &_struc);
+
+    Index local_dof_dim(DoFKey const &_name, BasicStructure const &_struc);
+
+    bool has_strain_dof(BasicStructure const &structure);
+
+    DoFKey get_strain_dof_key(BasicStructure const &structure);
+
+    std::string get_strain_metric(DoFKey strain_dof_key);
+
     /** @} */
   }
 }

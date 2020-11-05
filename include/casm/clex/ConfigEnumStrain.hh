@@ -15,10 +15,6 @@ namespace CASM {
 
   class ConfigEnumInput;
 
-  bool has_strain_dof(xtal::BasicStructure const &structure);
-
-  DoFKey get_strain_dof_key(xtal::BasicStructure const &structure);
-
   struct ConfigEnumStrainParams {
 
     /// Type of strain
@@ -78,6 +74,10 @@ namespace CASM {
     std::string name() const override;
 
     static const std::string enumerator_name;
+
+    Index subwedge_index() const;
+
+    Eigen::VectorXd normal_coordinate() const;
 
   private:
 

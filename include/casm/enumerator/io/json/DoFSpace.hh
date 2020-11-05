@@ -20,7 +20,7 @@ namespace CASM {
 
     Eigen::MatrixXd axes;
 
-    // Counter min, max, and increment values
+    // Counter min, max, and increment values (size must match axes.cols())
 
     Eigen::VectorXd min_val;
     Eigen::VectorXd max_val;

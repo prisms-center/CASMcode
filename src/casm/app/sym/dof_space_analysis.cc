@@ -209,7 +209,7 @@ namespace CASM {
 
     // parse "dofs" (optional, default = all dof types)
     std::vector<DoFKey> dofs;
-    parse_dofs(parser, dofs, all_dof_types(primclex.prim()));
+    parse_dofs(parser, dofs, all_dof_types(primclex.prim().structure()));
 
     // parse "calc_wedge" (optional, default = false)
     bool calc_wedge;

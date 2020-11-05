@@ -11,26 +11,6 @@
 
 namespace CASM {
 
-  bool has_strain_dof(xtal::BasicStructure const &structure) {
-    std::vector<DoFKey> global_dof_types = CASM::global_dof_types(structure);
-    Index istrain = find_index_if(global_dof_types,
-    [](DoFKey const & other) {
-      return other.find("strain") != std::string::npos;
-    });
-    return istrain != global_dof_types.size();
-  }
-
-  DoFKey get_strain_dof_key(xtal::BasicStructure const &structure) {
-    std::vector<DoFKey> global_dof_types = CASM::global_dof_types(structure);
-    Index istrain = find_index_if(global_dof_types,
-    [](DoFKey const & other) {
-      return other.find("strain") != std::string::npos;
-    });
-    if(istrain == global_dof_types.size()) {
-      throw std::runtime_error("Error in get_strain_dof_key: Structure does not have strain DoF.");
-    }
-    return global_dof_types[istrain];
-  }
 
   ConfigEnumStrain::ConfigEnumStrain(ConfigEnumInput const &initial_state,
                                      ConfigEnumStrainParams const &params) :
@@ -161,6 +141,13 @@ namespace CASM {
 
   const std::string ConfigEnumStrain::enumerator_name = "ConfigEnumStrain";
 
+  Index ConfigEnumStrain::subwedge_index() const {
+    return m_equiv_ind;
+  }
+
+  Eigen::VectorXd ConfigEnumStrain::normal_coordinate() const {
+    return m_counter();
+  }
 
 
 }

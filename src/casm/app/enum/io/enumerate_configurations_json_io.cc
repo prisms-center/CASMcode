@@ -2,6 +2,7 @@
 #include "casm/app/enum/io/enumerate_configurations_json_io.hh"
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
 #include "casm/casm_io/dataformatter/DataFormatterFilter_impl.hh"
+#include "casm/casm_io/dataformatter/FormattedDataFile_impl.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
 
 namespace CASM {
@@ -65,14 +66,14 @@ namespace CASM {
     return json_combined;
   }
 
-  // Enable InputParser<EnumerateConfigurationsOptions>
+  // Enable InputParser<ConfigEnumOptions>
   void parse(
-    InputParser<EnumerateConfigurationsOptions> &parser,
+    InputParser<ConfigEnumOptions> &parser,
     std::string method_name,
     PrimClex const &primclex,
     DataFormatterDictionary<Configuration> const &dict) {
 
-    parser.value = notstd::make_unique<EnumerateConfigurationsOptions>(primclex);
+    parser.value = notstd::make_unique<ConfigEnumOptions>(primclex);
     auto &options = *parser.value;
 
     options.method_name = method_name;
@@ -87,6 +88,34 @@ namespace CASM {
     parser.optional(filter_expression, "filter");
     if(filter_expression.size()) {
       options.filter = make_data_formatter_filter(filter_expression, dict);
+    }
+
+    parser.optional_else(options.output_configurations, "output_configurations", false);
+
+    if(options.output_configurations) {
+
+      // TODO: separate parser for FormattedDataFileOptions
+
+      fs::path base {"output_configurations_options"};
+
+      std::string file_path_str;
+      parser.optional_else<std::string>(file_path_str, base / "path", "enum.out");
+      fs::path file_path {file_path_str};
+
+      bool json_output;
+      parser.optional_else(json_output, base / "json", false);
+
+      bool json_arrays_output;
+      parser.optional_else(json_arrays_output, base / "json_arrays", false);
+
+      bool compress;
+      parser.optional_else(compress, base / "compress", false);
+
+      bool include_filtered_configurations;
+      parser.optional_else(include_filtered_configurations, base / "include_filtered_configurations", false);
+
+      options.output_options = FormattedDataFileOptions {file_path, json_output, json_arrays_output, compress};
+      options.output_filtered_configurations = include_filtered_configurations;
     }
   }
 }

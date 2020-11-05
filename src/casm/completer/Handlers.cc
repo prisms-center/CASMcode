@@ -157,7 +157,7 @@ namespace CASM {
       DataFormatterDictionary<Configuration> dict = make_dictionary<Configuration>();
 
       for(auto it = dict.begin(); it != dict.cend(); ++it) {
-        if(it->type() ==  BaseDatumFormatter<Configuration>::Property) {
+        if(it->type() == DatumFormatterClass::Property) {
           arguments.push_back(it->name());
         }
       }
@@ -168,14 +168,14 @@ namespace CASM {
       DataFormatterDictionary<Configuration> config_dict = make_dictionary<Configuration>();
 
       for(auto it = config_dict.begin(); it != config_dict.cend(); ++it) {
-        if(it->type() ==  BaseDatumFormatter<Configuration>::Property) {
+        if(it->type() == DatumFormatterClass::Property) {
           arguments.push_back("config:" + it->name());
         }
       }
       DataFormatterDictionary<Supercell> scel_dict = make_dictionary<Supercell>();
 
       for(auto it = scel_dict.begin(); it != scel_dict.cend(); ++it) {
-        if(it->type() ==  BaseDatumFormatter<Supercell>::Property) {
+        if(it->type() == DatumFormatterClass::Property) {
           arguments.push_back("scel:" + it->name());
         }
       }

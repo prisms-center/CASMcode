@@ -6,9 +6,12 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/QueryHandler_impl.hh"
 #include "casm/app/enum/standard_ConfigEnumInput_help.hh"
+#include "casm/app/enum/dataformatter/ConfigEnumIO_impl.hh"
 #include "casm/app/enum/io/enumerate_configurations_json_io.hh"
 #include "casm/app/enum/io/stream_io_impl.hh"
+#include "casm/casm_io/dataformatter/DatumFormatterAdapter.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
+#include "casm/clex/ConfigIOStrain.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
 #include "casm/enumerator/DoFSpace.hh"
@@ -18,6 +21,40 @@
 #include "casm/symmetry/io/json/SymRepTools.hh"
 
 namespace CASM {
+
+  // namespace adapter {
+  //
+  //   Configuration const &
+  //   Adapter<Configuration, ConfigEnumData<ConfigEnumStrain, ConfigEnumInput>>::operator()(
+  //     ConfigEnumData<ConfigEnumStrain, ConfigEnumInput> const &adaptable) const {
+  //     return adaptable.configuration;
+  //   }
+  //
+  //   Supercell const &
+  //   Adapter<Supercell, ConfigEnumData<ConfigEnumStrain, ConfigEnumInput>>::operator()(
+  //     ConfigEnumData<ConfigEnumStrain, ConfigEnumInput> const &adaptable) const {
+  //     return adaptable.configuration.supercell();
+  //   }
+  //
+  // }
+
+  namespace ConfigEnumIO {
+    /// Template specialization to get current normal coordinate from enumerator.
+    template<>
+    Eigen::VectorXd get_normal_coordinate(ConfigEnumStrain const &enumerator) {
+      return enumerator.normal_coordinate();
+    }
+
+    template<typename ConfigEnumDataType>
+    GenericDatumFormatter<Index, ConfigEnumDataType> subwedge_index() {
+      return GenericDatumFormatter<Index, ConfigEnumDataType>(
+               "subwedge_index",
+               "Subwedge index (determines axes defining normal coordinate).",
+      [](ConfigEnumDataType const & data) {
+        return data.enumerator.subwedge_index();
+      });
+    }
+  }
 
   std::string ConfigEnumStrainInterface::desc() const {
 
@@ -123,15 +160,11 @@ namespace CASM {
       Eigen::MatrixXd const &axes;
       bool make_symmetry_adapted_axes;
 
-      ConfigEnumStrain operator()(std::string name, ConfigEnumInput const &initial_state) const {
+      ConfigEnumStrain operator()(Index index, std::string name, ConfigEnumInput const &initial_state) const {
 
         if(make_symmetry_adapted_axes) { // if sym_axes==true, make and use symmetry adapted axes
 
-          // std::stringstream msg;
-          // msg << "Symmetry adapted " << params.dof << " enumeration: " << name;
-          // log << std::endl;
-          // log.begin(msg.str());
-
+          log << "Performing DoF analysis" << std::endl;
           DoFSpace dof_space {initial_state, params.dof, axes};
           bool calc_wedges = true;
           std::vector<PermuteIterator> group = initial_state.configuration().factor_group();
@@ -139,8 +172,14 @@ namespace CASM {
                                                                     group.begin(),
                                                                     group.end(),
                                                                     calc_wedges);
-          log << jsonParser {sym_report} << std::endl;
-          log.end_section();
+
+          std::string filename = "dof_analysis_" + params.dof + "." + std::to_string(index) + ".json";
+          log << "Writing DoF analysis: " << filename << std::endl;
+          fs::ofstream file {filename};
+          jsonParser json;
+          to_json(sym_report, json);
+          to_json(dof_space, json, name);
+          file << json << std::endl;
 
           ConfigEnumStrainParams symmetry_adapted_params = params;
           symmetry_adapted_params.wedges = sym_report.irreducible_wedge;
@@ -177,7 +216,7 @@ namespace CASM {
     // 1) get DoF type -------------------------------------------------
     // "dof" -> params.dof
     try {
-      params.dof = get_strain_dof_key(initial_state.configuration().supercell().prim());
+      params.dof = xtal::get_strain_dof_key(initial_state.configuration().supercell().prim());
     }
     catch(std::exception &e) {
       parser.error.insert(e.what());
@@ -301,13 +340,13 @@ namespace CASM {
       return;
     }
 
-    // 3) Parse EnumerateConfigurationsOptions ------------------
-    auto options_parser_ptr = parser.parse_as<EnumerateConfigurationsOptions>(
+    // 3) Parse ConfigEnumOptions ------------------
+    auto options_parser_ptr = parser.parse_as<ConfigEnumOptions>(
                                 ConfigEnumStrain::enumerator_name,
                                 primclex,
                                 primclex.settings().query_handler<Configuration>().dict());
     report_and_throw_if_invalid(parser, log, error_if_invalid);
-    EnumerateConfigurationsOptions const &options = *options_parser_ptr->value;
+    ConfigEnumOptions const &options = *options_parser_ptr->value;
     log.indent() << "pritive_only: " << options.primitive_only << std::endl;
     log.indent() << "filter: " << static_cast<bool>(options.filter) << std::endl;
     if(options.filter) {
@@ -324,13 +363,41 @@ namespace CASM {
 
     ConfigEnumStrainInterface_impl::MakeEnumerator make_enumerator_f {params, axes, sym_axes_option};
 
+    typedef ConfigEnumData<ConfigEnumStrain, ConfigEnumInput> ConfigEnumDataType;
+
+    int sep = 2;
+    int width = 12;
+    std::string comment = "#";
+    DataFormatter<ConfigEnumDataType> formatter {sep, width, comment};
+
+    std::string prim_strain_metric = xtal::get_strain_metric(params.dof);
+    formatter.push_back(
+      ConfigEnumIO::name<ConfigEnumDataType>(),
+      ConfigEnumIO::selected<ConfigEnumDataType>(),
+      ConfigEnumIO::is_new<ConfigEnumDataType>(),
+      ConfigEnumIO::is_existing<ConfigEnumDataType>(),
+      ConfigEnumIO::is_excluded_by_filter<ConfigEnumDataType>(),
+      ConfigEnumIO::initial_state_index<ConfigEnumDataType>(),
+      ConfigEnumIO::initial_state_name<ConfigEnumDataType>(),
+      ConfigEnumIO::initial_state_configname<ConfigEnumDataType>(),
+      ConfigEnumIO::subwedge_index<ConfigEnumDataType>(),
+      ConfigEnumIO::normal_coordinate<ConfigEnumDataType>(),
+      make_datum_formatter_adapter<ConfigEnumDataType, Configuration>(
+        ConfigIO::DoFStrain(prim_strain_metric))
+    );
+    if(prim_strain_metric != "F") { // is this ever not the case?
+      formatter.push_back(
+        make_datum_formatter_adapter<ConfigEnumDataType, Configuration>(ConfigIO::DoFStrain("F"))
+      );
+    }
+
     enumerate_configurations(
+      primclex,
       options,
       make_enumerator_f,
       named_initial_states.begin(),
       named_initial_states.end(),
-      primclex.db<Supercell>(),
-      primclex.db<Configuration>());
+      formatter);
 
     log.indent() << "enumeration complete" << std::endl << std::endl;
     log.end_section();

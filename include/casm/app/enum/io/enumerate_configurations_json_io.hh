@@ -7,7 +7,7 @@
 namespace CASM {
 
   class Configuration;
-  struct EnumerateConfigurationsOptions;
+  struct ConfigEnumOptions;
   template<typename T> class InputParser;
   class PrimClex;
   class jsonParser;
@@ -17,9 +17,9 @@ namespace CASM {
     jsonParser const &json_options,
     jsonParser const &cli_options_as_json);
 
-  // Enable InputParser<EnumerateConfigurationsOptions>
+  // Enable InputParser<ConfigEnumOptions>
   void parse(
-    InputParser<EnumerateConfigurationsOptions> &parser,
+    InputParser<ConfigEnumOptions> &parser,
     std::string method_name,
     PrimClex const &primclex,
     DataFormatterDictionary<Configuration> const &dict);

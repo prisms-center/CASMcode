@@ -6,6 +6,7 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/QueryHandler_impl.hh"
 #include "casm/app/enum/standard_ConfigEnumInput_help.hh"
+#include "casm/app/enum/dataformatter/ConfigEnumIO_impl.hh"
 #include "casm/app/enum/io/enumerate_configurations_json_io.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clex/PrimClex.hh"
@@ -81,7 +82,7 @@ namespace CASM {
                               &primclex,
                               primclex.db<Supercell>(),
                               primclex.db<Configuration>());
-    auto options_parser_ptr = parser.parse_as<EnumerateConfigurationsOptions>(
+    auto options_parser_ptr = parser.parse_as<ConfigEnumOptions>(
                                 ConfigEnumRandomOccupations::enumerator_name,
                                 primclex,
                                 primclex.settings().query_handler<Configuration>().dict());
@@ -91,21 +92,34 @@ namespace CASM {
 
     ConfigEnumRandomOccupationsParams const &random_occ_params = *random_occ_params_parser_ptr->value;
     auto const &input_name_value_pairs = *input_parser_ptr->value;
-    EnumerateConfigurationsOptions const &options = *options_parser_ptr->value;
+    ConfigEnumOptions const &options = *options_parser_ptr->value;
 
-    auto make_enumerator_f = [&](std::string name, ConfigEnumInput const & initial_state) {
+    auto make_enumerator_f = [&](Index index, std::string name, ConfigEnumInput const & initial_state) {
       return ConfigEnumRandomOccupations {
         initial_state,
         random_occ_params};
     };
 
+    typedef ConfigEnumData<ConfigEnumRandomOccupations, ConfigEnumInput> ConfigEnumDataType;
+    DataFormatter<ConfigEnumDataType> formatter {
+      ConfigEnumIO::name<ConfigEnumDataType>(),
+      ConfigEnumIO::selected<ConfigEnumDataType>(),
+      ConfigEnumIO::is_new<ConfigEnumDataType>(),
+      ConfigEnumIO::is_existing<ConfigEnumDataType>(),
+      ConfigEnumIO::is_excluded_by_filter<ConfigEnumDataType>(),
+      ConfigEnumIO::initial_state_index<ConfigEnumDataType>(),
+      ConfigEnumIO::initial_state_name<ConfigEnumDataType>(),
+      ConfigEnumIO::initial_state_configname<ConfigEnumDataType>(),
+      ConfigEnumIO::n_selected_sites<ConfigEnumDataType>()
+    };
+
     enumerate_configurations(
+      primclex,
       options,
       make_enumerator_f,
       input_name_value_pairs.begin(),
       input_name_value_pairs.end(),
-      primclex.db<Supercell>(),
-      primclex.db<Configuration>());
+      formatter);
   }
 
 }

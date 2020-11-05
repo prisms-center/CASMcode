@@ -111,9 +111,23 @@ namespace CASM {
       "  dry_run: bool (optional, default=false, override with --dry-run)\n"
       "    Perform dry run.\n\n"
 
-      "  primitive_only: bool (default=true)\n"
+      "  primitive_only: bool (optional, default=true)\n"
       "    If true, only the primitive form of a configuration is saved in the      \n"
       "    configuration list. Otherwise, both primitive and non-primitive          \n"
-      "    configurations are saved. \n\n";
+      "    configurations are saved. \n\n"
+
+      "  output_configurations: bool (optional, default=false)\n"
+      "    If true, write formatted data for each enumerated configuration. Formatting options are \n"
+      "    given by `output_options`. \n\n"
+
+      "  output_configurations_options: object (optional) \n"
+      "    Set output options for when `output_configurations==true`. \n\n"
+
+      "      path: string (optional, default=\"enum.out\") Output file name.\n"
+      "      json: bool (optional, default=false) If true, write JSON output files. Else CSV style.\n"
+      "      json_arrays: bool (optional, default=false) If true, write data in JSON arrays. \n"
+      "      compress: bool (optional, default=false) If true, compress data using gz. \n"
+      "      include_filtered_configurations: bool (optional, default=false) If true, also include \n"
+      "      output from configurations that excluded by the `filter` option.\n\n";
   };
 }

@@ -90,39 +90,6 @@ TEST(ConfigurationTest, Test1) {
     EXPECT_EQ(config.occ(0), i);
   }
 
-  // set displacement
-  /*
-  typedef Configuration::displacement_matrix_t disp_matrix_t;
-  EXPECT_EQ(config.has_displacement(), false);
-
-  config.init_displacement();
-  EXPECT_EQ(config.has_displacement(), true);
-
-  config.clear_displacement();
-  EXPECT_EQ(config.has_displacement(), false);
-
-  config.set_displacement(disp_matrix_t::Zero(3, 1));
-  EXPECT_EQ(config.has_displacement(), true);
-
-  for(int i = 0; i < 3; ++i) {
-    Eigen::Vector3d d = Eigen::Vector3d::Zero();
-    d(i) = 0.001;
-    config.set_disp(0, d);
-    EXPECT_EQ(almost_equal(config.disp(0), d), true);
-  }
-
-  // set deformation
-  EXPECT_EQ(config.has_deformation(), false);
-
-  config.init_deformation();
-  EXPECT_EQ(config.has_deformation(), true);
-
-  config.clear_deformation();
-  EXPECT_EQ(config.has_deformation(), false);
-
-  config.set_deformation(Eigen::Matrix3d::Zero());
-  EXPECT_EQ(config.has_deformation(), true);
-  */
 }
 
 TEST(ConfigurationTest, Test2) {

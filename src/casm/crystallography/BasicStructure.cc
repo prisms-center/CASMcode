@@ -453,5 +453,102 @@ namespace CASM {
 
       return result;
     }
+
+    //****************************************************************************************************//
+
+    std::vector<DoFKey> all_local_dof_types(BasicStructure const &_struc) {
+      std::set<std::string> tresult;
+
+      for(Site const &site : _struc.basis()) {
+        auto sitetypes = site.dof_types();
+        tresult.insert(sitetypes.begin(), sitetypes.end());
+        if(site.occupant_dof().size() > 1) {
+          tresult.insert("occ");  // TODO: single source for occupation dof name
+        }
+      }
+      return std::vector<std::string>(tresult.begin(), tresult.end());
+    }
+
+    std::vector<DoFKey> continuous_local_dof_types(BasicStructure const &_struc) {
+      std::set<std::string> tresult;
+
+      for(Site const &site : _struc.basis()) {
+        auto sitetypes = site.dof_types();
+        tresult.insert(sitetypes.begin(), sitetypes.end());
+      }
+      return std::vector<std::string>(tresult.begin(), tresult.end());
+    }
+
+    std::vector<DoFKey> global_dof_types(BasicStructure const &_struc) {
+      std::vector<std::string> result;
+      for(auto const &dof :  _struc.global_dofs())
+        result.push_back(dof.first);
+      return result;
+    }
+
+    std::vector<DoFKey> all_dof_types(BasicStructure const &_struc) {
+      std::vector<std::string> result;
+      for(auto const &global_dof_name : global_dof_types(_struc))
+        result.push_back(global_dof_name);
+      for(auto const &local_dof_name : all_local_dof_types(_struc))
+        result.push_back(local_dof_name);
+      return result;
+    }
+
+    std::map<DoFKey, Index> local_dof_dims(BasicStructure const &_struc) {
+      std::map<DoFKey, Index> result;
+      for(DoFKey const &type : continuous_local_dof_types(_struc))
+        result[type] = local_dof_dim(type, _struc);
+
+      return result;
+    }
+
+    std::map<DoFKey, Index> global_dof_dims(BasicStructure const &_struc) {
+      std::map<DoFKey, Index> result;
+      for(auto const &type : _struc.global_dofs())
+        result[type.first] = type.second.dim();
+      return result;
+    }
+
+    Index local_dof_dim(DoFKey const &_name, BasicStructure const &_struc) {
+      Index result = 0;
+      for(Site const &site : _struc.basis()) {
+        if(site.has_dof(_name))
+          result = max(result, site.dof(_name).dim());
+      }
+      return result;
+    }
+
+    bool has_strain_dof(xtal::BasicStructure const &structure) {
+      std::vector<DoFKey> global_dof_types = xtal::global_dof_types(structure);
+      Index istrain = find_index_if(global_dof_types,
+      [](DoFKey const & other) {
+        return other.find("strain") != std::string::npos;
+      });
+      return istrain != global_dof_types.size();
+    }
+
+    DoFKey get_strain_dof_key(xtal::BasicStructure const &structure) {
+      std::vector<DoFKey> global_dof_types = xtal::global_dof_types(structure);
+      Index istrain = find_index_if(global_dof_types,
+      [](DoFKey const & other) {
+        return other.find("strain") != std::string::npos;
+      });
+      if(istrain == global_dof_types.size()) {
+        throw std::runtime_error("Error in get_strain_dof_key: Structure does not have strain DoF.");
+      }
+      return global_dof_types[istrain];
+    }
+
+    DoFKey get_strain_metric(DoFKey strain_dof_key) {
+      auto pos = strain_dof_key.find("strain");
+      if(pos != std::string::npos) {
+        return strain_dof_key.substr(0, pos);
+      }
+      std::stringstream msg;
+      msg << "Error in get_strain_metric: Failed to get metric name from '" << strain_dof_key << "'.";
+      throw std::runtime_error(msg.str());
+    }
+
   }
 }

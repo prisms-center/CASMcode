@@ -568,9 +568,9 @@ ExampleEnumerationSimpleCubicConfigEnumStrain::ExampleEnumerationSimpleCubicConf
 
   std::cout << "SimpleCubicGLstrain:" << std::endl;
   auto const &struc = *shared_prim;
-  std::cout << "all_dof_types: " << all_dof_types(struc) << std::endl;
+  std::cout << "all_dof_types: " << xtal::all_dof_types(struc) << std::endl;
   std::cout << "check types: " << std::endl;
-  for(auto const &dof : all_dof_types(struc)) {
+  for(auto const &dof : xtal::all_dof_types(struc)) {
     std::cout << "dof: " << dof << std::endl;
     auto aniso_val_traits = AnisoValTraits {dof};
     std::cout << "name: " << aniso_val_traits.name() << std::endl;

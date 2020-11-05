@@ -315,7 +315,7 @@ namespace CASM {
     }
 
     Log &indent() {
-      ostream() << indent_str();
+      (*this) << indent_str();
       return *this;
     }
 

@@ -217,7 +217,7 @@ namespace CASM {
         else throw std::runtime_error("In Structure::_generate_basis_symreps(), Sites originally identified as equivalent cannot be mapped by symmetry.");
       }
 
-      for(auto const &dof_dim : local_dof_dims(*this)) {
+      for(auto const &dof_dim : xtal::local_dof_dims(*this)) {
         for(Index from_b = 0; from_b < basis().size(); ++from_b) {
           if(!basis()[from_b].has_dof(dof_dim.first))
             continue;
@@ -358,61 +358,6 @@ namespace CASM {
 
   }
 
-  //****************************************************************************************************//
-
-  std::vector<DoFKey> all_local_dof_types(BasicStructure const &_struc) {
-    std::set<std::string> tresult;
-
-    for(Site const &site : _struc.basis()) {
-      auto sitetypes = site.dof_types();
-      tresult.insert(sitetypes.begin(), sitetypes.end());
-      if(site.occupant_dof().size() > 1) {
-        tresult.insert(DoFType::occupation().name());
-      }
-    }
-    return std::vector<std::string>(tresult.begin(), tresult.end());
-  }
-
-  std::vector<DoFKey> continuous_local_dof_types(BasicStructure const &_struc) {
-    std::set<std::string> tresult;
-
-    for(Site const &site : _struc.basis()) {
-      auto sitetypes = site.dof_types();
-      tresult.insert(sitetypes.begin(), sitetypes.end());
-    }
-    return std::vector<std::string>(tresult.begin(), tresult.end());
-  }
-
-  std::vector<DoFKey> global_dof_types(BasicStructure const &_struc) {
-    std::vector<std::string> result;
-    for(auto const &dof :  _struc.global_dofs())
-      result.push_back(dof.first);
-    return result;
-  }
-
-  std::vector<DoFKey> all_dof_types(BasicStructure const &_struc) {
-    std::vector<std::string> result;
-    for(auto const &global_dof_name : global_dof_types(_struc))
-      result.push_back(global_dof_name);
-    for(auto const &local_dof_name : all_local_dof_types(_struc))
-      result.push_back(local_dof_name);
-    return result;
-  }
-
-  std::map<DoFKey, Index> local_dof_dims(BasicStructure const &_struc) {
-    std::map<DoFKey, Index> result;
-    for(DoFKey const &type : continuous_local_dof_types(_struc))
-      result[type] = local_dof_dim(type, _struc);
-
-    return result;
-  }
-
-  std::map<DoFKey, Index> global_dof_dims(BasicStructure const &_struc) {
-    std::map<DoFKey, Index> result;
-    for(auto const &type : _struc.global_dofs())
-      result[type.first] = type.second.dim();
-    return result;
-  }
 
   std::map<DoFKey, DoFSetInfo> global_dof_info(Structure const &_struc) {
     std::map<DoFKey, DoFSetInfo> result;
@@ -425,7 +370,7 @@ namespace CASM {
   std::map<DoFKey, std::vector<DoFSetInfo> > local_dof_info(Structure const &_struc) {
     std::map<DoFKey, std::vector<DoFSetInfo> > result;
 
-    for(DoFKey const &type : continuous_local_dof_types(_struc)) {
+    for(DoFKey const &type : xtal::continuous_local_dof_types(_struc)) {
       std::vector<CASM::DoFSetInfo> tresult(_struc.basis().size(), CASM::DoFSetInfo(SymGroupRepID(), Eigen::MatrixXd::Zero(DoF::BasicTraits(type).dim(), 0)));
 
       for(Index b = 0; b < _struc.basis().size(); ++b) {
@@ -439,28 +384,19 @@ namespace CASM {
     return result;
   }
 
-  Index local_dof_dim(DoFKey const &_name, BasicStructure const &_struc) {
-    Index result = 0;
-    for(Site const &site : _struc.basis()) {
-      if(site.has_dof(_name))
-        result = max(result, site.dof(_name).dim());
-    }
-    return result;
-  }
-
   SupercellSymInfo make_supercell_sym_info(Structure const &prim, Lattice const &super_lattice) {
 
     // Structure data needs to be reorganized for SupercellSymInfo construction
 
     // map of global DoFKey -> SymGroupRepID
     std::map<DoFKey, SymGroupRepID> global_dof_symrep_IDs;
-    for(auto const &key : global_dof_types(prim)) {
+    for(auto const &key : xtal::global_dof_types(prim)) {
       global_dof_symrep_IDs.emplace(std::make_pair(key, prim.global_dof_symrep_ID(key)));
     }
 
     // map of site DoFKey -> std::vector<SymGroupRepID>
     std::map<DoFKey, std::vector<SymGroupRepID> > local_dof_symrep_IDs;
-    for(auto const &key : continuous_local_dof_types(prim)) {
+    for(auto const &key : xtal::continuous_local_dof_types(prim)) {
       std::vector<SymGroupRepID> treps(prim.basis().size());
       for(Index b = 0; b < prim.basis().size(); ++b) {
         if(prim.basis()[b].has_dof(key))

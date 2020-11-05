@@ -43,9 +43,18 @@ namespace CASM {
 
       CommandType f {args, opt};
 
-      // checks that can be made without getting defaults
       int code;
-      if(!f.vm().count("help") && !f.vm().count("desc")) {
+
+      // help
+      if(f.vm().count("help")) {
+        code = f.help();
+      }
+      // extended command descriptions
+      else if(f.vm().count("desc")) {
+        code = f.desc();
+      }
+      // checks that can be made without getting defaults
+      else {
         code = f.vm_count_check();
         if(code) {
           f.help();
@@ -53,14 +62,6 @@ namespace CASM {
         else {
           code = f.run();
         }
-      }
-      // help
-      else if(f.vm().count("help")) {
-        code = f.help();
-      }
-      // extended command descriptions
-      else if(f.vm().count("desc")) {
-        code = f.desc();
       }
 
       return code;
