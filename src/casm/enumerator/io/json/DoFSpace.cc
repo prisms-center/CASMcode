@@ -152,7 +152,6 @@ namespace CASM {
       std::string axis_name = "q" + to_sequential_string(i + 1, dof_space_dimension);
       auto subparser = parser.subparse_if<Eigen::VectorXd>(fs::path {"axes"} / axis_name);
       if(subparser->value != nullptr) {
-        found.insert(i);
         if(subparser->value->size() != dof_space_dimension) {
           std::stringstream msg;
           msg << "Error reading axis vector '" << axis_name
@@ -163,12 +162,12 @@ namespace CASM {
         else {
           inaxes.col(found.size()) = *subparser->value;
         }
+        found.insert(i);
       }
     }
 
     Index subspace_dimension = found.size();
     axes = inaxes.leftCols(subspace_dimension);
-
   }
 
   /// Read "axes" from a row-vector JSON matrix, store in `axes` argument as a column vector matrix
