@@ -48,13 +48,13 @@ namespace CASM {
     if(vm.count("crystal-point-group")) {
       json["print_crystal_point_group"] = static_cast<bool>(vm.count("crystal-point-group")); //bool
     }
-    if(vm.count("coord")) {
+    if(vm.count("coord") && !vm["coord"].defaulted()) {
       json["coordinate_mode"] = sym_opt.coordtype_str(); //string
     }
     if(vm.count("symmetrize")) {
       json["symmetrize"] = sym_opt.poscar_path().string(); //string
     }
-    if(vm.count("tol")) {
+    if(vm.count("tol") && !vm["tol"].defaulted()) {
       json["tol"] = sym_opt.tol(); //number
     }
     if(vm.count("dof-space-analysis")) {

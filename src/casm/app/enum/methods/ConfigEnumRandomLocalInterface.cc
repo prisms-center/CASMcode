@@ -8,6 +8,7 @@
 #include "casm/app/enum/standard_ConfigEnumInput_help.hh"
 #include "casm/app/enum/dataformatter/ConfigEnumIO_impl.hh"
 #include "casm/app/enum/io/enumerate_configurations_json_io.hh"
+#include "casm/app/enum/io/stream_io_impl.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
@@ -104,32 +105,42 @@ namespace CASM {
 
     Log &log = CASM::log();
 
-    // combine JSON options and CLI options
-    jsonParser json_combined = combine_configuration_enum_json_options(
-                                 json_options,
-                                 cli_options_as_json);
+    log.subsection().begin("ConfigEnumRandomLocal");
+    ParentInputParser parser = make_enum_parent_parser(log, json_options, cli_options_as_json);
+    std::runtime_error error_if_invalid {"Error reading ConfigEnumRandomLocal JSON input"};
 
-    // Read input data from JSON
-    ParentInputParser parser {json_combined};
+    log.custom("Checking input");
 
-    MTRand mtrand;
-    auto random_local_params_parser_ptr = parser.parse_as<ConfigEnumRandomLocalParams>(mtrand);
+    // 1) Parse ConfigEnumOptions ------------------
+
+    auto options_parser_ptr = parser.parse_as<ConfigEnumOptions>(
+                                ConfigEnumRandomLocal::enumerator_name,
+                                primclex,
+                                primclex.settings().query_handler<Configuration>().dict());
+    report_and_throw_if_invalid(parser, log, error_if_invalid);
+    ConfigEnumOptions const &options = *options_parser_ptr->value;
+    print_options(log, options);
+    log.set_verbosity(options.verbosity);
+
+    // 2) Parse initial enumeration states ------------------
+
     auto input_parser_ptr = parser.parse_as<std::vector<std::pair<std::string, ConfigEnumInput>>>(
                               primclex.shared_prim(),
                               &primclex,
                               primclex.db<Supercell>(),
                               primclex.db<Configuration>());
-    auto options_parser_ptr = parser.parse_as<ConfigEnumOptions>(
-                                ConfigEnumRandomLocal::enumerator_name,
-                                primclex,
-                                primclex.settings().query_handler<Configuration>().dict());
-
-    std::runtime_error error_if_invalid {"Error reading ConfigEnumRandomLocal JSON input"};
     report_and_throw_if_invalid(parser, log, error_if_invalid);
+    auto const &named_initial_states = *input_parser_ptr->value;
+    print_initial_states(log, named_initial_states);
 
+    // 3) Parse ConfigEnumRandomLocalParams ------------------
+
+    MTRand mtrand;
+    auto random_local_params_parser_ptr = parser.parse_as<ConfigEnumRandomLocalParams>(mtrand);
+    report_and_throw_if_invalid(parser, log, error_if_invalid);
     ConfigEnumRandomLocalParams const &random_local_params = *random_local_params_parser_ptr->value;
-    auto const &input_name_value_pairs = *input_parser_ptr->value;
-    ConfigEnumOptions const &options = *options_parser_ptr->value;
+
+    // 4) Enumerate configurations ------------------
 
     auto make_enumerator_f = [&](Index index, std::string name, ConfigEnumInput const & initial_state) {
       return ConfigEnumRandomLocal {
@@ -138,25 +149,35 @@ namespace CASM {
     };
 
     typedef ConfigEnumData<ConfigEnumRandomLocal, ConfigEnumInput> ConfigEnumDataType;
-    DataFormatter<ConfigEnumDataType> formatter {
+    DataFormatter<ConfigEnumDataType> formatter;
+    formatter.push_back(
       ConfigEnumIO::name<ConfigEnumDataType>(),
       ConfigEnumIO::selected<ConfigEnumDataType>(),
       ConfigEnumIO::is_new<ConfigEnumDataType>(),
-      ConfigEnumIO::is_existing<ConfigEnumDataType>(),
-      ConfigEnumIO::is_excluded_by_filter<ConfigEnumDataType>(),
+      ConfigEnumIO::is_existing<ConfigEnumDataType>()
+    );
+    if(options.filter) {
+      formatter.push_back(ConfigEnumIO::is_excluded_by_filter<ConfigEnumDataType>());
+    }
+    formatter.push_back(
       ConfigEnumIO::initial_state_index<ConfigEnumDataType>(),
       ConfigEnumIO::initial_state_name<ConfigEnumDataType>(),
       ConfigEnumIO::initial_state_configname<ConfigEnumDataType>(),
       ConfigEnumIO::n_selected_sites<ConfigEnumDataType>()
-    };
+    );
+
+    log << std::endl;
+    log.begin("ConfigEnumRandomLocal enumeration");
 
     enumerate_configurations(
       primclex,
       options,
       make_enumerator_f,
-      input_name_value_pairs.begin(),
-      input_name_value_pairs.end(),
+      named_initial_states.begin(),
+      named_initial_states.end(),
       formatter);
+
+    log.end_section();
   }
 
 }

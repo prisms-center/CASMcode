@@ -29,15 +29,15 @@ namespace CASM {
         ss << "Too many arguments for 'relaxation_strain'.  Received: " << args << "\n";
         throw std::runtime_error(ss.str());
       }
-      if(m_metric_name.size() > 0 && tmetric_name != m_metric_name) {
-        return false;
-      }
+      // if(m_metric_name.size() > 0 && tmetric_name != m_metric_name) {
+      //   return false;
+      // }
       m_metric_name = tmetric_name;
       if(index_expr.size() > 0) {
         _parse_index_expression(index_expr);
       }
 
-      return true;
+      return false;
     }
 
     //****************************************************************************************
@@ -105,15 +105,15 @@ namespace CASM {
         ss << "Too many arguments for 'dof_strain'.  Received: " << args << "\n";
         throw std::runtime_error(ss.str());
       }
-      if(m_metric_name.size() > 0 && tmetric_name != m_metric_name) {
-        return false;
-      }
+      // if(m_metric_name.size() > 0 && tmetric_name != m_metric_name) {
+      //   return false;
+      // }
       m_metric_name = tmetric_name;
       if(index_expr.size() > 0) {
         _parse_index_expression(index_expr);
       }
 
-      return true;
+      return false;
     }
 
     bool DoFStrain::init(const Configuration &_tmplt) const {

@@ -37,12 +37,12 @@ namespace CASM {
     log << std::endl;
     if(!sym_axes) {
       log.begin(std::string("DoF Space Axes: ") + name);
-      log << "Note: column and site indexing begin with 1" << std::endl;
+      log << "Note: in this context element and site indexing begin with 1" << std::endl;
       auto axis_glossary = make_axis_glossary(dof_space.dof_key,
                                               dof_space.config_region.configuration(),
                                               dof_space.config_region.sites());
-      for(Index column_index = 0; column_index != axis_glossary.size(); ++column_index) {
-        log << "column: " << column_index + 1 << " DoF: " << axis_glossary[column_index] << std::endl;
+      for(Index index = 0; index != axis_glossary.size(); ++index) {
+        log << "element: " << index + 1 << " DoF: " << axis_glossary[index] << std::endl;
       }
     }
     else {
@@ -62,6 +62,19 @@ namespace CASM {
       to_json(sym_report, json);
       log << json << std::endl << std::endl;
     }
+    log.end_section();
+  }
+
+  template<typename NamedInitialStatesType>
+  void print_initial_states(Log &log, NamedInitialStatesType const &named_initial_states) {
+    log.indent() << "# of initial enumeration states: " << named_initial_states.size() << std::endl;
+    log.subsection().begin_section<Log::verbose>();
+    log.indent() << "initial enumeration states:" << std::endl;
+    log.increase_indent();
+    for(auto const &named_initial_state : named_initial_states) {
+      log.indent() << named_initial_state.first << std::endl;
+    }
+    log.decrease_indent();
     log.end_section();
   }
 }

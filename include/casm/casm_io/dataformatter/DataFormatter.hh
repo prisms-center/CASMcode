@@ -255,12 +255,12 @@ namespace CASM {
     /// If the previous Formatter matches the new formatter, try to just parse the new args into it
     void push_back(const BaseDatumFormatter<DataObject> &new_formatter, const std::string &args) {
 
-      //If the last formatter matches new_formatter, try to parse the new arguments into it
-      if(m_data_formatters.size() > 0 && m_data_formatters.back()->name() == new_formatter.name()) {
-        if(m_data_formatters.back()->parse_args(args)) {
-          return;
-        }
-      }
+      // //If the last formatter matches new_formatter, try to parse the new arguments into it
+      // if(m_data_formatters.size() > 0 && m_data_formatters.back()->name() == new_formatter.name()) {
+      //   if(m_data_formatters.back()->parse_args(args)) {
+      //     return;
+      //   }
+      // }
 
       m_data_formatters.emplace_back(new_formatter.clone());
       m_col_sep.push_back(0);

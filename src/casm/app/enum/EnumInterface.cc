@@ -1,7 +1,8 @@
 
 #include "casm/app/enum/EnumInterface.hh"
+#include "casm/app/enum/io/enumerate_configurations_json_io.hh"
 #include "casm/casm_io/container/json_io.hh"
-#include "casm/casm_io/json/jsonParser.hh"
+#include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/completer/Handlers.hh"
 
 namespace CASM {
@@ -53,12 +54,12 @@ namespace CASM {
       json["max"] = enum_opt.max_volume(); //int
     }
     if(vm.count("filter")) {
-      json["filter"] = enum_opt.filter_strs(); //vector<std::string>
+      json["filter"] = enum_opt.filter_str(); //std::string
     }
-    if(vm.count("all")) {
+    if(vm.count("all") && !vm["all"].defaulted()) {
       json["all"] = enum_opt.all_existing(); //bool
     }
-    if(vm.count("verbosity")) {
+    if(vm.count("verbosity") && !vm["verbosity"].defaulted()) {
       json["verbosity"] = enum_opt.verbosity_str(); //str
     }
     if(vm.count("scelnames")) {
@@ -71,6 +72,21 @@ namespace CASM {
       json["dry_run"] = enum_opt.dry_run(); //bool
     }
     return json;
+  }
+
+  /// Combine --input / --settings JSON with CLI options
+  ParentInputParser make_enum_parent_parser(Log &log,
+                                            jsonParser const &json_options,
+                                            jsonParser const &cli_options_as_json) {
+
+    log.indent() << "Input from JSON (--input or --setings):\n" << json_options << std::endl << std::endl;
+    log.indent() << "Input from `casm enum` options:\n" << cli_options_as_json << std::endl << std::endl;
+
+    // combine JSON options and CLI options
+    jsonParser json_combined = combine_configuration_enum_json_options(json_options, cli_options_as_json);
+
+    log.indent() << "Combined Input:\n" << json_combined << std::endl << std::endl;
+    return ParentInputParser {json_combined};
   }
 
 }

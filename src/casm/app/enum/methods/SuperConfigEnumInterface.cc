@@ -8,9 +8,11 @@
 #include "casm/app/enum/standard_ConfigEnumInput_help.hh"
 #include "casm/app/enum/dataformatter/ConfigEnumIO_impl.hh"
 #include "casm/app/enum/io/enumerate_configurations_json_io.hh"
+#include "casm/app/enum/io/stream_io_impl.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
-#include "casm/clex/FillSupercell_impl.hh"
 #include "casm/clex/PrimClex.hh"
+
+#include "casm/clex/FillSupercell_impl.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/io/SuperlatticeEnumeratorIO.hh"
@@ -100,22 +102,51 @@ namespace CASM {
     jsonParser const &json_options,
     jsonParser const &cli_options_as_json) const {
 
-    auto shared_prim = primclex.shared_prim();
     Log &log = CASM::log();
 
-    // combine JSON options and CLI options
-    jsonParser json_combined = combine_configuration_enum_json_options(
-                                 json_options,
-                                 cli_options_as_json);
-
-    // Read input data from JSON
-    ParentInputParser parser {json_combined};
+    log.subsection().begin("SuperConfigEnum");
+    ParentInputParser parser = make_enum_parent_parser(log, json_options, cli_options_as_json);
     std::runtime_error error_if_invalid {"Error reading SuperConfigEnum JSON input"};
 
-    // 1) Parse supercells ------------------
-    auto scel_enum_props_subparser = parser.subparse_if<xtal::ScelEnumProps>("supercells");
+    log.custom("Checking input");
 
-    // 2) Parse configurations --------------
+    // 1) Parse ConfigEnumOptions ------------------
+    auto options_parser_ptr = parser.parse_as<ConfigEnumOptions>(
+                                SuperConfigEnum::enumerator_name,
+                                primclex,
+                                primclex.settings().query_handler<Configuration>().dict());
+    report_and_throw_if_invalid(parser, log, error_if_invalid);
+    ConfigEnumOptions const &options = *options_parser_ptr->value;
+    print_options(log, options);
+    log.set_verbosity(options.verbosity);
+
+    // 2) Parse supercells ------------------
+
+    auto shared_prim = primclex.shared_prim();
+    auto scel_enum_props_subparser = parser.subparse_if<xtal::ScelEnumProps>("supercells");
+    report_and_throw_if_invalid(parser, log, error_if_invalid);
+
+    // these parameters define which "target supercells" will be filled by sub-configurations
+    xtal::ScelEnumProps const &scel_enum_props = *scel_enum_props_subparser->value;
+
+    // this is the smallest of the target supercells, the rest are supercells of this
+    auto shared_unit_supercell = std::make_shared<Supercell>(
+                                   shared_prim,
+                                   scel_enum_props.generating_matrix().cast<long>());
+
+    // make target supercells (to be filled by sub-configurations to create super-configurations)
+    typedef std::string SupercellName;
+    std::map<SupercellName, std::shared_ptr<Supercell const>> target_supercells;
+    {
+      ScelEnumByProps enumerator {shared_prim, scel_enum_props};
+      for(auto const &supercell : enumerator) {
+        target_supercells.emplace(supercell.name(), std::make_shared<Supercell const>(supercell));
+      }
+    }
+    print_initial_states(log, target_supercells);
+
+    // 3) Parse sub-configurations --------------
+
     DB::Selection<Configuration> config_selection;
     try {
       config_selection = DB::make_selection<Configuration>(
@@ -127,30 +158,10 @@ namespace CASM {
       parser.error.insert(msg.str());
     }
 
-    // 3) Parse ConfigEnumOptions ------------------
-    auto options_parser_ptr = parser.parse_as<ConfigEnumOptions>(
-                                SuperConfigEnum::enumerator_name,
-                                primclex,
-                                primclex.settings().query_handler<Configuration>().dict());
-
-    // JSON parsing complete
-    report_and_throw_if_invalid(parser, log, error_if_invalid);
-    ConfigEnumOptions const &options = *options_parser_ptr->value;
-
-    // 4) Enumerate configurations ------------------
-
-    // these parameters define which "target supercells" will be filled by sub-configurations
-    xtal::ScelEnumProps const &scel_enum_props = *scel_enum_props_subparser->value;
-
-    // this is the smallest of the target supercells, the rest are supercells of this
-    auto shared_unit_supercell = std::make_shared<Supercell>(
-                                   shared_prim,
-                                   scel_enum_props.generating_matrix().cast<long>());
-
     // logic check: require input configurations can fill the unit supercell
     require_valid_sub_configurations(parser, config_selection, *shared_unit_supercell);
 
-    // if valid at this point, everything should be valid
+    // if valid at this point, everything should be valid to make sub_configs and target_supercells
     report_and_throw_if_invalid(parser, log, error_if_invalid);
 
     // create the sub-configurations that will be building blocks of the super-configurations
@@ -171,15 +182,7 @@ namespace CASM {
       log << "Total sub-configurations, including all equivalents: " << sub_configs.size() << std::flush;
     }
 
-    // make target supercells (to be filled by sub-configurations to create super-configurations)
-    typedef std::string SupercellName;
-    std::map<SupercellName, std::shared_ptr<Supercell const>> target_supercells;
-    {
-      ScelEnumByProps enumerator {shared_prim, scel_enum_props};
-      for(auto const &supercell : enumerator) {
-        target_supercells.emplace(supercell.name(), std::make_shared<Supercell const>(supercell));
-      }
-    }
+    // 4) Enumerate configurations ------------------
 
     // Functor to construct SuperConfigEnum for each target supercell
     auto make_enumerator_f = [&](Index index, std::string name, std::shared_ptr<Supercell const> const & target_supercell) {
@@ -187,15 +190,23 @@ namespace CASM {
     };
 
     typedef ConfigEnumData<SuperConfigEnum, std::shared_ptr<Supercell const>> ConfigEnumDataType;
-    DataFormatter<ConfigEnumDataType> formatter {
+    DataFormatter<ConfigEnumDataType> formatter;
+    formatter.push_back(
       ConfigEnumIO::name<ConfigEnumDataType>(),
       ConfigEnumIO::selected<ConfigEnumDataType>(),
       ConfigEnumIO::is_new<ConfigEnumDataType>(),
-      ConfigEnumIO::is_existing<ConfigEnumDataType>(),
-      ConfigEnumIO::is_excluded_by_filter<ConfigEnumDataType>(),
+      ConfigEnumIO::is_existing<ConfigEnumDataType>()
+    );
+    if(options.filter) {
+      formatter.push_back(ConfigEnumIO::is_excluded_by_filter<ConfigEnumDataType>());
+    }
+    formatter.push_back(
       ConfigEnumIO::initial_state_index<ConfigEnumDataType>(),
       ConfigEnumIO::initial_state_name<ConfigEnumDataType>()
-    };
+    );
+
+    log << std::endl;
+    log.begin("SuperConfigEnum enumeration");
 
     enumerate_configurations(
       primclex,
@@ -204,6 +215,8 @@ namespace CASM {
       target_supercells.begin(),
       target_supercells.end(),
       formatter);
+
+    log.end_section();
   }
 
 }

@@ -919,8 +919,8 @@ namespace CASM {
         return m_method;
       }
 
-      const std::vector<std::string> &filter_strs() const {
-        return m_filter_strs;
+      const std::string &filter_str() const {
+        return m_filter_str;
       }
 
     private:
@@ -930,7 +930,7 @@ namespace CASM {
       std::vector<std::string> m_desc_vec;
 
       std::string m_method;
-      std::vector<std::string> m_filter_strs;
+      std::string m_filter_str;
 
     };
     //*****************************************************************************************************//

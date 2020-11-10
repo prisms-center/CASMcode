@@ -61,9 +61,9 @@ namespace CASM {
     log << dry_run_msg << "  DONE." << std::endl << std::endl;
 
     if(!options.dry_run) {
-      log << "Committing database..." << std::endl;
+      log << "Committing database..." << std::flush;
       supercell_db.commit();
-      log << "  DONE" << std::endl << std::endl;
+      log << "  DONE" << std::endl;
     }
     log.end_section();
   }

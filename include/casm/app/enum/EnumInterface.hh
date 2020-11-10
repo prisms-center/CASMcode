@@ -6,7 +6,9 @@
 
 namespace CASM {
 
+  class Log;
   class PrimClex;
+  class ParentInputParser;
   class jsonParser;
 
   namespace Completer {
@@ -57,6 +59,11 @@ namespace CASM {
 
   /// Convert `casm enum` CLI input to JSON
   jsonParser &to_json(const Completer::EnumOption &enum_opt, jsonParser &json);
+
+  /// Combine --input / --settings JSON with CLI options
+  ParentInputParser make_enum_parent_parser(Log &log,
+                                            jsonParser const &json_options,
+                                            jsonParser const &cli_options_as_json);
 
   /// Standardized string that can prepended to method output to make clear that method results are
   /// not going to be committed

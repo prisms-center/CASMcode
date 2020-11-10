@@ -74,9 +74,8 @@ enum_methods_ConfigEnumStrainInterfaceTest::enum_methods_ConfigEnumStrainInterfa
 
 TEST_F(enum_methods_ConfigEnumStrainInterfaceTest, Test1) {
 
-  std::cout << "begin Test1" << std::endl;
-  // ScopedNullLogging logging;
-  // CASM::log().set_verbosity(Log::debug);
+  ScopedNullLogging logging;
+  CASM::log().set_verbosity(Log::debug);
 
   {
     std::string cli_str = "casm enum --method ConfigEnumStrain";
@@ -87,9 +86,7 @@ TEST_F(enum_methods_ConfigEnumStrainInterfaceTest, Test1) {
     json_options["scelnames"] = std::vector<std::string> {"SCEL1_1_1_1_0_0_0"};
     json_options["output_configurations"] = true;
     test::run_enum_interface<ConfigEnumStrainInterface>(cli_str, primclex, json_options);
-    EXPECT_EQ(primclex.db<Configuration>().size(), 13);
+    EXPECT_EQ(primclex.db<Configuration>().size(), 20);
   }
-
-  std::cout << "end Test1" << std::endl;
 
 }

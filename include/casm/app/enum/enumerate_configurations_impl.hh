@@ -87,8 +87,8 @@ namespace CASM {
 
     Index Ninit = configuration_db.size();
     log.subsection().begin_section<Log::standard>();
-    log << dry_run_msg << "# configurations in this project: " << Ninit << "\n" << std::endl;
-    log << dry_run_msg << "Begin enumeration" << std::endl;
+    log << dry_run_msg << "# configurations in this project: " << Ninit << std::endl;
+    log << dry_run_msg << "Begin enumeration" << std::endl << std::endl;
 
     typedef FormattedDataFile<ConfigEnumDataType> FormattedDataFileType;
     std::unique_ptr<FormattedDataFileType> data_out_ptr;
@@ -123,8 +123,12 @@ namespace CASM {
         }
 
         ++count;
+        if(options.filter) {
+          std::cout << "filter value: " << options.filter(configuration) << std::endl;
+        }
         if(options.filter && !options.filter(configuration)) {
           data.is_excluded_by_filter = true;
+          ++count_filtered;
         }
         else {
           // checks `is_guaranteed_for_database_insert(enumerator)` to see if configuration

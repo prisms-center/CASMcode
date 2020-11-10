@@ -84,10 +84,9 @@ namespace CASM {
 
     options.verbosity = parse_verbosity(parser);
 
-    std::vector<std::string> filter_expression;
-    parser.optional(filter_expression, "filter");
-    if(filter_expression.size()) {
-      options.filter = make_data_formatter_filter(filter_expression, dict);
+    parser.optional(options.filter_expression, "filter");
+    if(!options.filter_expression.empty()) {
+      options.filter = make_data_formatter_filter(options.filter_expression, dict);
     }
 
     parser.optional_else(options.output_configurations, "output_configurations", false);
@@ -111,11 +110,17 @@ namespace CASM {
       bool compress;
       parser.optional_else(compress, base / "compress", false);
 
-      bool include_filtered_configurations;
-      parser.optional_else(include_filtered_configurations, base / "include_filtered_configurations", false);
+      if(compress) {
+        if(file_path.extension() != ".gz" && file_path.extension() != ".GZ") {
+          file_path += ".gz";
+        }
+      }
+
+      bool output_filtered_configurations;
+      parser.optional_else(output_filtered_configurations, base / "output_filtered_configurations", false);
 
       options.output_options = FormattedDataFileOptions {file_path, json_output, json_arrays_output, compress};
-      options.output_filtered_configurations = include_filtered_configurations;
+      options.output_filtered_configurations = output_filtered_configurations;
     }
   }
 }

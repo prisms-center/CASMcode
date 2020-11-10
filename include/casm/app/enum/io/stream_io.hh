@@ -18,6 +18,11 @@ namespace CASM {
                        PermuteIteratorIt permute_end,
                        bool sym_axes,
                        bool calc_wedges);
+
+  template<typename NamedInitialStatesType>
+  void print_initial_states(Log &log, NamedInitialStatesType const &named_initial_states);
+
+  void print_options(Log &log, ConfigEnumOptions const &options);
 }
 
 #endif

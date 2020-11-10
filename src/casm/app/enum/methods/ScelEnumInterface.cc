@@ -1,11 +1,11 @@
 #include "casm/app/enum/enumerate_supercells_impl.hh"
 #include "casm/app/enum/methods/ScelEnumInterface.hh"
-#include "casm/app/enum/io/enumerate_supercells_json_io.hh"
 #include "casm/clex/ScelEnum.hh"
 
 #include "casm/app/APICommand.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/QueryHandler_impl.hh"
+#include "casm/app/enum/io/enumerate_supercells_json_io.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/enumerator/io/json/ConfigEnumInput_json_io.hh"
 
@@ -101,20 +101,19 @@ namespace CASM {
 
     // Read input data from JSON
     ParentInputParser parser {json_combined};
-
-    auto scel_enum_props_parser_ptr = parser.parse_as<xtal::ScelEnumProps>(
-                                        primclex.db<Supercell>());
+    std::runtime_error error_if_invalid {"Error reading ScelEnum JSON input"};
 
     auto options_parser_ptr = parser.parse_as<EnumerateSupercellsOptions>(
                                 ScelEnumByProps::enumerator_name,
                                 primclex,
                                 primclex.settings().query_handler<Supercell>().dict());
-
-    std::runtime_error error_if_invalid {"Error reading ScelEnum JSON input"};
     report_and_throw_if_invalid(parser, log(), error_if_invalid);
-
-    xtal::ScelEnumProps const &scel_enum_props = *scel_enum_props_parser_ptr->value;
     EnumerateSupercellsOptions const &options = *options_parser_ptr->value;
+    log().set_verbosity(options.verbosity);
+
+    auto scel_enum_props_parser_ptr = parser.parse_as<xtal::ScelEnumProps>(
+                                        primclex.db<Supercell>());
+    xtal::ScelEnumProps const &scel_enum_props = *scel_enum_props_parser_ptr->value;
 
     ScelEnumByProps enumerator {primclex.shared_prim(), scel_enum_props};
     enumerate_supercells(options, enumerator, primclex.db<Supercell>());

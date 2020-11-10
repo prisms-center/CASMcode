@@ -31,6 +31,9 @@ namespace CASM {
     /// otherwise non-primitive are also inserted
     bool primitive_only = true;
 
+    /// If not empty, expression used to construct filter
+    std::string filter_expression;
+
     /// If `filter(configuration)==true`, keep configuration, else skip
     std::function<bool (Configuration const &)> filter;
 

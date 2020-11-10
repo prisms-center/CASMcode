@@ -22,9 +22,6 @@ namespace CASM {
       m_ostream = notstd::make_unique<fs::ofstream>(file_path);
     }
     else {
-      if(file_path.extension() != ".gz" && file_path.extension() != ".GZ") {
-        file_path += ".gz";
-      }
       m_ostream = notstd::make_unique<gz::ogzstream>(file_path.string().c_str());
     }
   }

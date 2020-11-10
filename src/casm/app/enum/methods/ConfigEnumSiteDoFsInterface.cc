@@ -8,12 +8,13 @@
 #include "casm/app/enum/standard_ConfigEnumInput_help.hh"
 #include "casm/app/enum/dataformatter/ConfigEnumIO_impl.hh"
 #include "casm/app/enum/io/enumerate_configurations_json_io.hh"
-#include "casm/app/enum/io/stream_io.hh"
+#include "casm/app/enum/io/stream_io_impl.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
-#include "casm/enumerator/DoFSpace.hh"
 #include "casm/enumerator/io/json/ConfigEnumInput_json_io.hh"
+
+#include "casm/enumerator/DoFSpace.hh"
 #include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/symmetry/SymRepTools.hh"
 #include "casm/symmetry/io/json/SymRepTools.hh"
@@ -350,16 +351,24 @@ namespace CASM {
 
     Log &log = CASM::log();
 
-    // combine JSON options and CLI options
-    jsonParser json_combined = combine_configuration_enum_json_options(
-                                 json_options,
-                                 cli_options_as_json);
-
-    // Read input data from JSON
-    ParentInputParser parser {json_combined};
+    log.subsection().begin("ConfigEnumSiteDoFs");
+    ParentInputParser parser = make_enum_parent_parser(log, json_options, cli_options_as_json);
     std::runtime_error error_if_invalid {"Error reading ConfigEnumSiteDoFs JSON input"};
 
-    // 1) Parse initial enumeration states ------------------
+    log.custom("Checking input");
+
+    // 1) Parse ConfigEnumOptions ------------------
+
+    auto options_parser_ptr = parser.parse_as<ConfigEnumOptions>(
+                                ConfigEnumSiteDoFs::enumerator_name,
+                                primclex,
+                                primclex.settings().query_handler<Configuration>().dict());
+    report_and_throw_if_invalid(parser, log, error_if_invalid);
+    ConfigEnumOptions const &options = *options_parser_ptr->value;
+    print_options(log, options);
+    log.set_verbosity(options.verbosity);
+
+    // 2) Parse initial enumeration states ------------------
     typedef std::vector<std::pair<std::string, ConfigEnumInput>> NamedInitialEnumerationStates;
     auto input_parser_ptr = parser.parse_as<NamedInitialEnumerationStates>(
                               primclex.shared_prim(),
@@ -369,17 +378,18 @@ namespace CASM {
     require_all_input_have_the_same_number_of_selected_sites(*input_parser_ptr);
     report_and_throw_if_invalid(parser, log, error_if_invalid);
     auto const &named_initial_states = *input_parser_ptr->value;
+    print_initial_states(log, named_initial_states);
 
-    // 2) Parse ConfigEnumSiteDoFsParams ------------------
+    // 3a) Parse ConfigEnumSiteDoFsParams ------------------
     auto params_parser_ptr = parser.parse_as<ConfigEnumSiteDoFsParams>(named_initial_states[0].second);
     report_and_throw_if_invalid(parser, log, error_if_invalid);
     ConfigEnumSiteDoFsParams const &params = *params_parser_ptr->value;
 
-    // 2b) check for "sym_axes" option:
+    // 3b) check for "sym_axes" option:
     bool sym_axes_option;
     parser.optional_else(sym_axes_option, "sym_axes", false);
 
-    // 2c) check for "print_dof_space_and_quit" option:
+    // 3c) check for "print_dof_space_and_quit" option:
     bool print_dof_space_and_quit_option;
     parser.optional_else(print_dof_space_and_quit_option, "print_dof_space_and_quit", false);
 
@@ -395,30 +405,30 @@ namespace CASM {
       return;
     }
 
-    // 3) Parse ConfigEnumOptions ------------------
-    auto options_parser_ptr = parser.parse_as<ConfigEnumOptions>(
-                                ConfigEnumSiteDoFs::enumerator_name,
-                                primclex,
-                                primclex.settings().query_handler<Configuration>().dict());
-    report_and_throw_if_invalid(parser, log, error_if_invalid);
-    ConfigEnumOptions const &options = *options_parser_ptr->value;
-
     // 4) Enumerate configurations ------------------
 
     ConfigEnumSiteDoFsInterface_impl::MakeEnumerator make_enumerator_f {params, sym_axes_option};
 
     typedef ConfigEnumData<ConfigEnumSiteDoFs, ConfigEnumInput> ConfigEnumDataType;
-    DataFormatter<ConfigEnumDataType> formatter {
+    DataFormatter<ConfigEnumDataType> formatter;
+    formatter.push_back(
       ConfigEnumIO::name<ConfigEnumDataType>(),
       ConfigEnumIO::selected<ConfigEnumDataType>(),
       ConfigEnumIO::is_new<ConfigEnumDataType>(),
-      ConfigEnumIO::is_existing<ConfigEnumDataType>(),
-      ConfigEnumIO::is_excluded_by_filter<ConfigEnumDataType>(),
+      ConfigEnumIO::is_existing<ConfigEnumDataType>()
+    );
+    if(options.filter) {
+      formatter.push_back(ConfigEnumIO::is_excluded_by_filter<ConfigEnumDataType>());
+    }
+    formatter.push_back(
       ConfigEnumIO::initial_state_index<ConfigEnumDataType>(),
       ConfigEnumIO::initial_state_name<ConfigEnumDataType>(),
       ConfigEnumIO::initial_state_configname<ConfigEnumDataType>(),
       ConfigEnumIO::n_selected_sites<ConfigEnumDataType>()
-    };
+    );
+
+    log << std::endl;
+    log.begin("ConfigEnumSiteDoFs enumeration");
 
     enumerate_configurations(
       primclex,
@@ -427,6 +437,8 @@ namespace CASM {
       named_initial_states.begin(),
       named_initial_states.end(),
       formatter);
+
+    log.end_section();
   }
 
 }

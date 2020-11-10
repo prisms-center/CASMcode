@@ -332,7 +332,20 @@ namespace CASM {
 
   /// Use when the JSON document is not associated with a single resulting value but instead is
   /// parsed with multiple subparsers
-  typedef InputParser<std::nullptr_t> ParentInputParser;
+  class ParentInputParser : public InputParser<std::nullptr_t> {
+  public:
+
+    std::shared_ptr<jsonParser const> parent_input;
+
+    /// Construct so that the ParentInputParser owns the jsonParser object
+    ParentInputParser(jsonParser const &input):
+      ParentInputParser(std::make_shared<jsonParser const>(input)) {}
+
+    /// Construct so that the ParentInputParser owns the jsonParser object
+    ParentInputParser(std::shared_ptr<jsonParser const> _parent_input):
+      InputParser<std::nullptr_t>(*_parent_input),
+      parent_input(_parent_input) {}
+  };
 
   /// Parse Log "verbosity" level from JSON
   ///

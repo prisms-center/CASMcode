@@ -126,8 +126,9 @@ namespace CASM {
       "      path: string (optional, default=\"enum.out\") Output file name.\n"
       "      json: bool (optional, default=false) If true, write JSON output files. Else CSV style.\n"
       "      json_arrays: bool (optional, default=false) If true, write data in JSON arrays. \n"
-      "      compress: bool (optional, default=false) If true, compress data using gz. \n"
-      "      include_filtered_configurations: bool (optional, default=false) If true, also include \n"
+      "      compress: bool (optional, default=false) If true, compress data using gz. If `path` \n"
+      "      does not end in '.gz' it will be appended. \n"
+      "      output_filtered_configurations: bool (optional, default=false) If true, also include \n"
       "      output from configurations that excluded by the `filter` option.\n\n";
   };
 }

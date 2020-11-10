@@ -9,16 +9,18 @@
 #include "casm/app/enum/dataformatter/ConfigEnumIO_impl.hh"
 #include "casm/app/enum/io/enumerate_configurations_json_io.hh"
 #include "casm/app/enum/io/stream_io_impl.hh"
-#include "casm/casm_io/dataformatter/DatumFormatterAdapter.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
-#include "casm/clex/ConfigIOStrain.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
-#include "casm/enumerator/DoFSpace.hh"
 #include "casm/enumerator/io/json/ConfigEnumInput_json_io.hh"
+
+#include "casm/enumerator/DoFSpace.hh"
 #include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/symmetry/SymRepTools.hh"
 #include "casm/symmetry/io/json/SymRepTools.hh"
+
+#include "casm/casm_io/dataformatter/DatumFormatterAdapter.hh"
+#include "casm/clex/ConfigIOStrain.hh"
 
 namespace CASM {
 
@@ -258,23 +260,23 @@ namespace CASM {
     Log &log = CASM::log();
 
     log.subsection().begin("ConfigEnumStrain");
-    log.indent() << "Input from JSON (--input or --setings):\n" << json_options << std::endl << std::endl;
-    log.indent() << "Input from `casm enum` options:\n" << cli_options_as_json << std::endl << std::endl;
-
-    // combine JSON options and CLI options
-    jsonParser json_combined = combine_configuration_enum_json_options(
-                                 json_options,
-                                 cli_options_as_json);
-
-    log.indent() << "Combined Input:\n" << json_combined << std::endl << std::endl;
-
-    // Read input data from JSON
-    ParentInputParser parser {json_combined};
+    ParentInputParser parser = make_enum_parent_parser(log, json_options, cli_options_as_json);
     std::runtime_error error_if_invalid {"Error reading ConfigEnumStrain JSON input"};
 
     log.custom("Checking input");
 
-    // 1) Parse initial enumeration states ------------------
+    // 1) Parse ConfigEnumOptions ------------------
+
+    auto options_parser_ptr = parser.parse_as<ConfigEnumOptions>(
+                                ConfigEnumStrain::enumerator_name,
+                                primclex,
+                                primclex.settings().query_handler<Configuration>().dict());
+    report_and_throw_if_invalid(parser, log, error_if_invalid);
+    ConfigEnumOptions const &options = *options_parser_ptr->value;
+    print_options(log, options);
+    log.set_verbosity(options.verbosity);
+
+    // 2) Parse initial enumeration states ------------------
     typedef std::vector<std::pair<std::string, ConfigEnumInput>> NamedInitialEnumerationStates;
     auto input_parser_ptr = parser.parse_as<NamedInitialEnumerationStates>(
                               primclex.shared_prim(),
@@ -283,26 +285,16 @@ namespace CASM {
                               primclex.db<Configuration>());
     report_and_throw_if_invalid(parser, log, error_if_invalid);
     auto const &named_initial_states = *input_parser_ptr->value;
-    log.indent() << "# of initial enumeration states: " << named_initial_states.size() << std::endl;
+    print_initial_states(log, named_initial_states);
 
-    // 1b) If "verbose", print
-    log.subsection().begin_section<Log::verbose>();
-    log.indent() << "initial enumeration states:" << std::endl;
-    log.increase_indent();
-    for(auto const &named_initial_state : named_initial_states) {
-      log.indent() << named_initial_state.first << std::endl;
-    }
-    log.decrease_indent();
-    log.end_section();
+    // 3) Parse ConfigEnumStrainParams ------------------
 
-    // 2) Parse ConfigEnumStrainParams ------------------
-
-    // 2a) check for "sym_axes" option:
+    // 3a) check for "sym_axes" option:
     bool sym_axes_option;
     parser.optional_else(sym_axes_option, "sym_axes", false);
-    log.indent() << "sym_axes: " << sym_axes_option << std::endl;
+    log.indent() << "sym_axes: " << std::boolalpha << sym_axes_option << std::endl;
 
-    // 2b) parse ConfigEnumStrainParams (except parse "axes" instead of "wedges")
+    // 3b) parse ConfigEnumStrainParams (except parse "axes" instead of "wedges")
 
     // axes: column vector matrix (user input, else Identity matrix of dimension == strain space dimension
     // - If sym_axes==false: normal mode coordinates
@@ -313,17 +305,17 @@ namespace CASM {
                                                                      sym_axes_option);
     report_and_throw_if_invalid(parser, log, error_if_invalid);
     ConfigEnumStrainParams const &params = *params_parser_ptr->value;
-    log.indent() << "axes: \n" << axes << std::endl;
+    log.indent() << "axes: (column vectors) \n" << axes << std::endl;
     log.indent() << "min: " << params.min_val.transpose() << std::endl;
     log.indent() << "max: " << params.max_val.transpose() << std::endl;
     log.indent() << "increment: " << params.inc_val.transpose() << std::endl;
-    log.indent() << "auto_range: " << params.auto_range << std::endl;
-    log.indent() << "trim_corners: " << params.trim_corners << std::endl;
+    log.indent() << "auto_range: " << std::boolalpha << params.auto_range << std::endl;
+    log.indent() << "trim_corners: " << std::boolalpha << params.trim_corners << std::endl;
 
-    // 2c) check for "print_dof_space_and_quit" option:
+    // 3c) check for "print_dof_space_and_quit" option:
     bool print_dof_space_and_quit_option;
     parser.optional_else(print_dof_space_and_quit_option, "print_dof_space_and_quit", false);
-    log.indent() << "print_dof_space_and_quit: " << print_dof_space_and_quit_option << std::endl;
+    log.indent() << "print_dof_space_and_quit: " << std::boolalpha << print_dof_space_and_quit_option << std::endl;
 
     if(print_dof_space_and_quit_option) {
       log.begin<Log::debug>("Print DoF Space and Quit Option");
@@ -340,56 +332,41 @@ namespace CASM {
       return;
     }
 
-    // 3) Parse ConfigEnumOptions ------------------
-    auto options_parser_ptr = parser.parse_as<ConfigEnumOptions>(
-                                ConfigEnumStrain::enumerator_name,
-                                primclex,
-                                primclex.settings().query_handler<Configuration>().dict());
-    report_and_throw_if_invalid(parser, log, error_if_invalid);
-    ConfigEnumOptions const &options = *options_parser_ptr->value;
-    log.indent() << "pritive_only: " << options.primitive_only << std::endl;
-    log.indent() << "filter: " << static_cast<bool>(options.filter) << std::endl;
-    if(options.filter) {
-      std::string filter_expression;
-      parser.self.get_if(filter_expression, "filter");
-      log.indent() << "filter expression: " << filter_expression << std::endl;
-    }
-    log.indent() << "verbosity: " << options.verbosity << std::endl;
-    log.indent() << "dry_run: " << options.dry_run << std::endl;
-
     // 4) Enumerate configurations ------------------
-    log << std::endl;
-    log.begin("ConfigEnumStrain enumeration");
-
     ConfigEnumStrainInterface_impl::MakeEnumerator make_enumerator_f {params, axes, sym_axes_option};
 
     typedef ConfigEnumData<ConfigEnumStrain, ConfigEnumInput> ConfigEnumDataType;
-
-    int sep = 2;
-    int width = 12;
-    std::string comment = "#";
-    DataFormatter<ConfigEnumDataType> formatter {sep, width, comment};
-
+    DataFormatter<ConfigEnumDataType> formatter;
     std::string prim_strain_metric = xtal::get_strain_metric(params.dof);
     formatter.push_back(
       ConfigEnumIO::name<ConfigEnumDataType>(),
       ConfigEnumIO::selected<ConfigEnumDataType>(),
       ConfigEnumIO::is_new<ConfigEnumDataType>(),
-      ConfigEnumIO::is_existing<ConfigEnumDataType>(),
-      ConfigEnumIO::is_excluded_by_filter<ConfigEnumDataType>(),
+      ConfigEnumIO::is_existing<ConfigEnumDataType>());
+    if(options.filter) {
+      formatter.push_back(ConfigEnumIO::is_excluded_by_filter<ConfigEnumDataType>());
+    }
+    formatter.push_back(
       ConfigEnumIO::initial_state_index<ConfigEnumDataType>(),
       ConfigEnumIO::initial_state_name<ConfigEnumDataType>(),
-      ConfigEnumIO::initial_state_configname<ConfigEnumDataType>(),
-      ConfigEnumIO::subwedge_index<ConfigEnumDataType>(),
+      ConfigEnumIO::initial_state_configname<ConfigEnumDataType>()
+    );
+    if(sym_axes_option) {
+      formatter.push_back(ConfigEnumIO::subwedge_index<ConfigEnumDataType>());
+    }
+    formatter.push_back(
       ConfigEnumIO::normal_coordinate<ConfigEnumDataType>(),
       make_datum_formatter_adapter<ConfigEnumDataType, Configuration>(
         ConfigIO::DoFStrain(prim_strain_metric))
     );
-    if(prim_strain_metric != "F") { // is this ever not the case?
+    if(prim_strain_metric != "F") { // may not be necessary
       formatter.push_back(
         make_datum_formatter_adapter<ConfigEnumDataType, Configuration>(ConfigIO::DoFStrain("F"))
       );
     }
+
+    log << std::endl;
+    log.begin("ConfigEnumStrain enumeration");
 
     enumerate_configurations(
       primclex,
@@ -399,7 +376,6 @@ namespace CASM {
       named_initial_states.end(),
       formatter);
 
-    log.indent() << "enumeration complete" << std::endl << std::endl;
     log.end_section();
   }
 

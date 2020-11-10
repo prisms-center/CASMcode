@@ -54,7 +54,7 @@ namespace CASM {
       // Options that control enumeration in a generic way: --filter, --verbosity, --dry-run
       m_desc.add_options()
       ("filter",
-       po::value<std::vector<std::string> >(&m_filter_strs)->multitoken()->value_name(ArgHandler::query()),
+       po::value<std::string>(&m_filter_str)->value_name(ArgHandler::query()),
        "Filter configuration enumeration so that only configurations matching a "
        "'casm query'-type expression are recorded");
       add_verbosity_suboption();
