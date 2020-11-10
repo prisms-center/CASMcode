@@ -1,11 +1,11 @@
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/ConfigDoFValues.hh"
+#include "casm/clex/io/json/ConfigDoF_json_io.hh"
 
 #include "casm/global/definitions.hh"
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/symmetry/SymPermutation.hh"
-#include "casm/crystallography/Structure.hh"
 #include "casm/basis_set/Adapter.hh"
 
 
@@ -168,35 +168,8 @@ namespace CASM {
 
   //*******************************************************************************
 
-  ConfigDoF jsonConstructor<ConfigDoF>::from_json(const jsonParser &json, Index NB, std::map<DoFKey, DoFSetInfo> const &global_info, std::map<DoFKey, std::vector<DoFSetInfo> > const &local_info, std::vector<SymGroupRepID> const &_occ_symrep_IDs, double _tol) {
-
-    ConfigDoF result(NB, 0, global_info, local_info,  _occ_symrep_IDs, _tol);
-    result.from_json(json);//, NB);
-
-    return result;
-  }
-
-  //*******************************************************************************
-
-  jsonParser &to_json(const ConfigDoF &value, jsonParser &json) {
-    return value.to_json(json);
-  }
-
-  //*******************************************************************************
-
-  void from_json(ConfigDoF &value, const jsonParser &json) { //, Index NB) {
-    value.from_json(json);
-  }
-
-  //*******************************************************************************
-
   void swap(ConfigDoF &A, ConfigDoF &B) {
     A.swap(B);
   }
 
-  std::vector<SymGroupRepID> occ_symrep_IDs(Structure const &_struc) {
-    return _struc.occupant_symrep_IDs();
-  }
-
 }
-

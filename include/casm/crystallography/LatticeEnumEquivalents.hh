@@ -2,6 +2,7 @@
 #define CASM_LatticeEnumEquivalents
 
 #include "casm/symmetry/EnumEquivalents.hh"
+#include "casm/symmetry/SymOp.hh"
 #include "casm/symmetry/SymOpRepresentation.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/SymTools.hh"
@@ -27,10 +28,10 @@ namespace CASM {
   /// \ingroup LatticeEnum
   ///
   class LatticeEnumEquivalents :
-    public EnumEquivalents<Lattice, std::vector<CASM::SymOp>::const_iterator, CASM::SymOp, SymRepIndexCompare> {
+    public EnumEquivalents<xtal::Lattice, std::vector<CASM::SymOp>::const_iterator, CASM::SymOp, SymRepIndexCompare> {
 
   public:
-    LatticeEnumEquivalents(const Lattice &lat, const SymGroup &super_g);
+    LatticeEnumEquivalents(const xtal::Lattice &lat, const SymGroup &super_g);
 
     std::string name() const override {
       return enumerator_name;

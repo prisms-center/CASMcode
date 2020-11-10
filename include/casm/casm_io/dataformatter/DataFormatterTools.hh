@@ -45,8 +45,8 @@ namespace CASM {
       return std::unique_ptr<DataFormatterOperator>(this->_clone());
     }
 
-    typename BaseDatumFormatter<DataObject>::FormatterType type() const override {
-      return BaseDatumFormatter<DataObject>::Operator;
+    DatumFormatterClass type() const override {
+      return DatumFormatterClass::Operator;
     }
 
     std::string short_header(const DataObject &_template_obj) const override;
@@ -544,8 +544,8 @@ namespace CASM {
       BaseDatumFormatter<DataObject> (_name,  _help.empty() ? "User-specified alias for '" + _rhs.name() + "'" : _help),
       m_formatter(_rhs.clone()) {}
 
-    typename BaseDatumFormatter<DataObject>::FormatterType type() const override {
-      return BaseDatumFormatter<DataObject>::Property;
+    DatumFormatterClass type() const override {
+      return DatumFormatterClass::Property;
     }
 
     std::unique_ptr<DatumFormatterAlias> clone() const {

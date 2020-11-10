@@ -1,16 +1,15 @@
 #ifndef CASM_ConfigEnumAllOccupations
 #define CASM_ConfigEnumAllOccupations
 
+#include "casm/clex/Configuration.hh"
 #include "casm/container/Counter.hh"
 #include "casm/enumerator/InputEnumerator.hh"
-#include "casm/clex/Configuration.hh"
 #include "casm/misc/cloneable_ptr.hh"
 
-extern "C" {
-  CASM::EnumInterfaceBase *make_ConfigEnumAllOccupations_interface();
-}
-
 namespace CASM {
+
+  class ConfigEnumAllOccupations;
+  class ConfigEnumInput;
 
   /** \defgroup ConfigEnumGroup Configuration Enumerators
    *  \ingroup Configuration
@@ -19,7 +18,11 @@ namespace CASM {
    *  @{
   */
 
-  /// \brief Enumerate over all possible occupations in a particular Supercell
+  /// Conditionally true for ConfigEnumAllOccupations (true when enumerating on all sites)
+  template<>
+  bool is_guaranteed_for_database_insert(ConfigEnumAllOccupations const &enumerator);
+
+  /// Enumerate over all possible occupations on particular sites in a Configuration
   ///
   class ConfigEnumAllOccupations : public InputEnumeratorBase<Configuration> {
 
@@ -27,46 +30,52 @@ namespace CASM {
 
   public:
 
-    /// \brief Construct with a Supercell, using all permutations
-    ConfigEnumAllOccupations(const ConfigEnumInput &_input);
+    /// Construct with a ConfigEnumInput, specifying which sites to enumerate on and which to keep fixed
+    ///
+    /// Note:
+    /// - The output configurations are set to fixed occupation matching
+    ///   `config_enum_input.configuration()` on all sites not included in
+    ///   `config_enum_input.sites()`.
+    /// - All allowed occupation values are enumerated on the selected sites
+    ///   (`config_enum_input.sites()`), but Configuration are only output if the are primitive.
+    /// - If all sites are selected, then only canonical Configuration are output. This can be
+    ///   checked with `this->canonical_guarantee()`.
+    ConfigEnumAllOccupations(ConfigEnumInput const &config_enum_input);
 
-    std::string name() const override {
-      return enumerator_name;
-    }
+    std::string name() const override;
 
-    bool canonical_guarantee() const {
-      return !m_subset_mode;
-    }
+    /// Returns true if enumerator is guaranteed to output canonical configurations
+    bool canonical_guarantee() const;
 
     static const std::string enumerator_name;
-    static std::string interface_help();
-
-    static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt, EnumeratorMap const *interface_map);
-
-    template<typename InConfigIterator>
-    static int run(
-      const PrimClex &primclex,
-      InConfigIterator begin,
-      InConfigIterator end,
-      const std::vector<std::string> &filter_expr = {},
-      bool dry_run = false);
 
   private:
-
 
     /// Implements increment
     void increment() override;
 
-
     // -- Unique -------------------
 
-    /// Returns true if current() is primitive and canonical
-    bool _check_current() const;
+    /// Returns true if current() is valid for output
+    ///
+    /// When enumerating on all sites:
+    /// - Require output configurations are primitive and canonical
+    /// When enumerating on a subset of sites:
+    /// - Require output configurations are primitive (but not canonical)
+    ///
+    bool _current_is_valid_for_output() const;
 
-    std::vector<Index> m_selection;
+    /// Site index to enumerate on
+    std::set<Index> m_site_index_selection;
+
+    /// Counter over allowed occupation indices on sites in m_site_index_selection
     Counter<std::vector<int> > m_counter;
+
+    /// The current configuration
     notstd::cloneable_ptr<Configuration> m_current;
-    bool m_subset_mode;
+
+    /// True if enumerating on a subset of supercell sites
+    bool m_enumerate_on_a_subset_of_supercell_sites;
   };
 
   /** @}*/

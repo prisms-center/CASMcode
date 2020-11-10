@@ -1,5 +1,6 @@
 #include <iostream>
 #include "casm/app/casm_functions.hh"
+#include "casm/casm_io/Log.hh"
 
 using namespace CASM;
 
@@ -9,12 +10,12 @@ using namespace CASM;
 int main(int argc, char *argv[]) {
   try {
     PrimClex *_primclex = nullptr;
-    CommandArgs args(argc, argv, _primclex, fs::path(), default_log(), default_err_log());
+    CommandArgs args(argc, argv, _primclex, fs::path());
 
     return casm_api(args);
   }
   catch(std::exception const &e) {
-    default_log() << "Uncaught exception: \n" << e.what();
+    log() << "Uncaught exception: \n" << e.what();
   }
   return 1;
 }

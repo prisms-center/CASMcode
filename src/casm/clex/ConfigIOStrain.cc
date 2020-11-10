@@ -3,6 +3,8 @@
 #include "casm/clex/ConfigIO.hh"
 #include "casm/clex/ConfigIOStrain.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/clex/Supercell.hh"
+#include "casm/crystallography/Structure.hh"
 
 namespace CASM {
 
@@ -27,15 +29,15 @@ namespace CASM {
         ss << "Too many arguments for 'relaxation_strain'.  Received: " << args << "\n";
         throw std::runtime_error(ss.str());
       }
-      if(m_metric_name.size() > 0 && tmetric_name != m_metric_name) {
-        return false;
-      }
+      // if(m_metric_name.size() > 0 && tmetric_name != m_metric_name) {
+      //   return false;
+      // }
       m_metric_name = tmetric_name;
       if(index_expr.size() > 0) {
         _parse_index_expression(index_expr);
       }
 
-      return true;
+      return false;
     }
 
     //****************************************************************************************
@@ -103,18 +105,16 @@ namespace CASM {
         ss << "Too many arguments for 'dof_strain'.  Received: " << args << "\n";
         throw std::runtime_error(ss.str());
       }
-      if(m_metric_name.size() > 0 && tmetric_name != m_metric_name) {
-        return false;
-      }
+      // if(m_metric_name.size() > 0 && tmetric_name != m_metric_name) {
+      //   return false;
+      // }
       m_metric_name = tmetric_name;
       if(index_expr.size() > 0) {
         _parse_index_expression(index_expr);
       }
 
-      return true;
+      return false;
     }
-
-    //****************************************************************************************
 
     bool DoFStrain::init(const Configuration &_tmplt) const {
       if(m_metric_name.size() == 0)
@@ -123,12 +123,11 @@ namespace CASM {
       if(_index_rules().size() > 0)
         return true;
 
-      for(Index i = 0; i < 6; i++)
+      Index size = evaluate(_tmplt).size();
+      for(Index i = 0; i < size; i++)
         _add_rule(std::vector<Index>({i}));
       return true;
     }
-
-    //****************************************************************************************
 
     std::vector<std::string> DoFStrain::col_header(const Configuration &_tmplt) const {
       std::vector<std::string> col;
@@ -142,17 +141,25 @@ namespace CASM {
       return col;
     }
 
-
-    //****************************************************************************************
-
     std::string DoFStrain::short_header(const Configuration &_tmplt) const {
       return name() + "(" + m_metric_name + ")";
     }
 
-    //****************************************************************************************
     Eigen::VectorXd DoFStrain::evaluate(const Configuration &_config) const {
-      throw std::runtime_error("DoFStrain::evaluate() is not implemented!");
-      //return m_straincalc.unrolled_strain_metric(_config.deformation());
+
+      if(!m_prim_straincalc || (_config.supercell().shared_prim() != m_shared_prim)) {
+        m_shared_prim = _config.supercell().shared_prim();
+        if(!has_strain_dof(m_shared_prim->structure())) {
+          std::stringstream msg;
+          msg << "Error in DoFStrain: Prim does not have strain DoF.";
+          throw std::runtime_error(msg.str());
+        }
+        m_dof_key = get_strain_dof_key(m_shared_prim->structure());
+        m_prim_straincalc = notstd::make_unique<StrainConverter>(xtal::get_strain_metric(m_dof_key));
+      }
+      Eigen::VectorXd unrolled_metric = _config.configdof().global_dof(m_dof_key).standard_values();
+      Eigen::Matrix3d F = m_prim_straincalc->unrolled_strain_metric_to_F(unrolled_metric);
+      return m_straincalc.unrolled_strain_metric(F);
     }
 
   }

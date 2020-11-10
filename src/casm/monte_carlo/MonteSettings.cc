@@ -2,6 +2,7 @@
 
 #include <boost/filesystem.hpp>
 #include "casm/casm_io/container/json_io.hh"
+#include "casm/clex/io/json/ConfigDoF_json_io.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
 #include "casm/monte_carlo/MonteCarloEnum.hh"
 #include "casm/crystallography/Structure.hh"
@@ -91,11 +92,7 @@ namespace CASM {
       std::string help = "string\n"
                          "  Path to file containing DoF, such as an \"final_state.json\" file.";
       fs::path configdof_path = _get_setting<fs::path>("driver", "motif", "configdof", help);
-      return jsonParser(configdof_path).get<ConfigDoF>(primclex().n_basis(),
-                                                       global_dof_info(primclex().prim()),
-                                                       local_dof_info(primclex().prim()),
-                                                       occ_symrep_IDs(primclex().prim()),
-                                                       primclex().crystallography_tol());
+      return jsonParser(configdof_path).get<ConfigDoF>(primclex().prim());
     }
 
     /// \brief Path to ConfigDoF file to use as starting motif
@@ -106,11 +103,11 @@ namespace CASM {
 
 
     /// \brief Supercell matrix defining the simulation cell
-    Eigen::Matrix3i MonteSettings::simulation_cell_matrix() const {
+    Eigen::Matrix3l MonteSettings::simulation_cell_matrix() const {
       std::string help = "3x3 transformation matrix, T, such that S = U*T,\n"
                          "  where S, is the supercell lattice vectors,\n"
                          "  and P, is the primitive cell lattice vectors.\n";
-      return _get_setting<Eigen::Matrix3i>("supercell", help);
+      return _get_setting<Eigen::Matrix3l>("supercell", help);
     }
 
 
@@ -400,7 +397,7 @@ namespace CASM {
       }
 
       catch(std::runtime_error &e) {
-        Log &err_log = default_err_log();
+        Log &err_log = CASM::err_log();
         err_log.error<Log::standard>("Reading Monte Carlo settings");
         err_log << "No [\"" << level1 << "\"] setting found.\n" << std::endl;
         throw e;
@@ -414,7 +411,7 @@ namespace CASM {
       }
 
       catch(std::runtime_error &e) {
-        Log &err_log = default_err_log();
+        Log &err_log = CASM::err_log();
         err_log.error<Log::standard>("Reading Monte Carlo settings");
         if(this->contains(level1)) {
           err_log << "No [\"" << level1 << "\"][\"" << level2 << "\"] setting found" << std::endl;
@@ -621,7 +618,7 @@ namespace CASM {
         }
       }
       else {
-        Log &err_log = default_err_log();
+        Log &err_log = CASM::err_log();
         err_log.error<Log::standard>("Reading Monte Carlo settings");
         err_log << "Could not determine max data length.\n";
         err_log << "Please check 'sample_by', 'max_pass' or 'max_step', and 'sample_period' in your input file.\n" << std::endl;

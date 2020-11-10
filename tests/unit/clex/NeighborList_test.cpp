@@ -139,7 +139,8 @@ TEST(NeighborListTest, Proj) {
   test::FCCTernaryProj proj;
   proj.check_init();
 
-  PrimClex primclex(proj.dir, null_log());
+  ScopedNullLogging logging;
+  PrimClex primclex(proj.dir);
   primclex.settings().set_crystallography_tol(TOL);
   auto shared_prim = primclex.shared_prim();
   ProjectSettings const &set = primclex.settings();

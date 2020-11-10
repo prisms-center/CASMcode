@@ -255,12 +255,12 @@ namespace CASM {
     /// If the previous Formatter matches the new formatter, try to just parse the new args into it
     void push_back(const BaseDatumFormatter<DataObject> &new_formatter, const std::string &args) {
 
-      //If the last formatter matches new_formatter, try to parse the new arguments into it
-      if(m_data_formatters.size() > 0 && m_data_formatters.back()->name() == new_formatter.name()) {
-        if(m_data_formatters.back()->parse_args(args)) {
-          return;
-        }
-      }
+      // //If the last formatter matches new_formatter, try to parse the new arguments into it
+      // if(m_data_formatters.size() > 0 && m_data_formatters.back()->name() == new_formatter.name()) {
+      //   if(m_data_formatters.back()->parse_args(args)) {
+      //     return;
+      //   }
+      // }
 
       m_data_formatters.emplace_back(new_formatter.clone());
       m_col_sep.push_back(0);
@@ -314,6 +314,8 @@ namespace CASM {
 
   };
 
+  enum class DatumFormatterClass {Property, Operator};
+
   /// \brief Abstract base class from which all other DatumFormatter<DataObject> classes inherit
   ///
   /// The job of a DatumFormatter is to access and format a particular type of
@@ -326,7 +328,6 @@ namespace CASM {
   public:
 
     typedef _DataObject DataObject;
-    enum FormatterType {Property, Operator};
     typedef long difference_type;
     typedef DataFormatterDictionary<DataObject, BaseDatumFormatter<DataObject> > DictType;
 
@@ -348,8 +349,8 @@ namespace CASM {
       return m_description;
     }
 
-    virtual FormatterType type() const {
-      return Property;
+    virtual DatumFormatterClass type() const {
+      return DatumFormatterClass::Property;
     }
 
     /// \brief const Access the dictionary containing this formatter, set during DictType::lookup
@@ -698,7 +699,7 @@ namespace CASM {
     }
 
     void print_help(std::ostream &_stream,
-                    typename BaseDatumFormatter<DataObject>::FormatterType ftype,
+                    DatumFormatterClass ftype,
                     int width = 60,
                     int separation = 8) const;
 

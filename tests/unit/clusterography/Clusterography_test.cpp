@@ -67,7 +67,9 @@ jsonParser expected_Nclusters(OrbitIterator begin, OrbitIterator end) {
   return nclust;
 }
 
-TEST(BasicStructureSiteTest, ClusterographyTest) {
+TEST(ClusterographyTest, MultiCaseTest) {
+
+  ScopedNullLogging logging;
 
   // read test file
   fs::path test_cases_path(autotools::abs_srcdir() + "/tests/unit/clusterography/test_cases.json");
@@ -132,6 +134,7 @@ TEST(BasicStructureSiteTest, ClusterographyTest) {
       ss << "Error: Invalid cluster_specs JSON";
       report_and_throw_if_invalid(parser, log, std::runtime_error {ss.str()});
 
+      EXPECT_TRUE(parser.value != nullptr);
       ClusterSpecs const &cluster_specs = *(parser.value);
 
       EXPECT_EQ(cluster_specs.periodicity_type(), CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC);

@@ -54,12 +54,12 @@ namespace CASM {
   /// Similar options allow returning parsed values instead of assigning, optionally parsing if
   /// values exists in the JSON, specifying default values if no value exists, etc.
   ///
-  /// The `report`, `print_errors` and `print_warnings` members allow formatted output of error and
-  /// warning messages.
+  /// The `make_report`, `print_errors` and `print_warnings` methods allow formatted output of error
+  /// and warning messages.
   struct KwargsParser : public Validator {
 
     /// Reference to the top of the JSON document being parsed
-    jsonParser &input;
+    jsonParser const &input;
 
     /// Path to the JSON component to be parsed from the opt of the JSON document.
     /// If it exists, `this->self = this->input.at(this->path))`
@@ -71,10 +71,15 @@ namespace CASM {
     /// - if path.empty(), or path not found in input, self = input;
     ///   - else: self = *input.find_at(path)
     /// - Use this->exists() to check if the JSON component exists in the document
-    jsonParser &self;
+    jsonParser const &self;
 
     /// If this->input.at(this->path) is required to exist
     bool required;
+
+    /// Default empty, can be used to differentiate between parsers when multiple values are parsed
+    /// from a single JSON object
+    std::string type_name;
+
 
     /// Construct KwargsParser
     ///
@@ -85,163 +90,12 @@ namespace CASM {
     /// If required to exist, but does not, the KwargsParser will be constructed and the following
     /// error will be inserted:
     /// - "Error: Required property '<_path>' not found."
-    KwargsParser(jsonParser &_input, fs::path _path, bool _required);
+    KwargsParser(jsonParser const &_input, fs::path _path, bool _required);
 
     virtual ~KwargsParser() {}
 
-    /// Formatted print warning messages
-    void print_warnings(Log &log, std::string header = "Warnings") const;
 
-    /// Formatted print error messages
-    void print_errors(Log &log, std::string header = "Errors") const;
-
-
-    /// Require self.find(option) of type RequiredType, returning result in unique_ptr
-    ///
-    /// Failing to parse the component will result in errors of type:
-    /// - "Error: missing required option '<option>'"
-    /// - "Error: could not construct type '<type_name<RequiredType>()>' from option '<option>'. <
-    ///    singleline_help<RequiredType>()>"
-    template<typename RequiredType, typename...Args>
-    std::unique_ptr<RequiredType> require(std::string option, Args &&...args);
-
-    /// Require self.find_at(option) of type RequiredType, returning result in unique_ptr
-    ///
-    /// Failing to parse the component will result in errors of type:
-    /// - "Error: missing required option '<option>'"
-    /// - "Error: could not construct type '<type_name<RequiredType>()>' from option '<option>'. <
-    ///    singleline_help<RequiredType>()>"
-    template<typename RequiredType, typename...Args>
-    std::unique_ptr<RequiredType> require_at(fs::path option, Args &&...args);
-
-
-    /// Require self.find(option) of type RequiredType, assigning result to value
-    ///
-    /// Failing to parse the component will result in errors of type:
-    /// - "Error: missing required option '<option>'"
-    /// - "Error: could not construct type '<type_name<RequiredType>()>' from option '<option>'. <
-    ///    singleline_help<RequiredType>()>"
-    template<typename RequiredType, typename...Args>
-    void require(RequiredType &value, std::string option, Args &&...args);
-
-    /// Require self.find_at(option) of type RequiredType, assigning result to value
-    ///
-    /// Failing to parse the component will result in errors of type:
-    /// - "Error: missing required option '<option>'"
-    /// - "Error: could not construct type '<type_name<RequiredType>()>' from option '<option>'. <
-    ///    singleline_help<RequiredType>()>"
-    template<typename RequiredType, typename...Args>
-    void require_at(RequiredType &value, fs::path option, Args &&...args);
-
-
-    /// Check that if self.find(option) exists it can constructed as type RequiredType, returning result in unique_ptr
-    ///
-    /// Failing to parse the component will result in errors of type:
-    /// - "Error: could not construct type '<type_name<RequiredType>()>' from option '<option>'. <
-    ///    singleline_help<RequiredType>()>"
-    ///
-    /// If self.find(option) does not exist, return empty unique_ptr
-    template<typename RequiredType, typename...Args>
-    std::unique_ptr<RequiredType> optional(std::string option, Args &&...args);
-
-    /// Check that if self.find_at(option) exists it can constructed as type RequiredType, returning result in unique_ptr
-    ///
-    /// Failing to parse the component will result in errors of type:
-    /// - "Error: could not construct type '<type_name<RequiredType>()>' from option '<option>'. <
-    ///    singleline_help<RequiredType>()>"
-    ///
-    /// If self.find_at(option) does not exist, return empty unique_ptr
-    template<typename RequiredType, typename...Args>
-    std::unique_ptr<RequiredType> optional_at(fs::path option, Args &&...args);
-
-
-    /// Check that if self.find(option) exists it can constructed as type RequiredType, assigning result to value
-    ///
-    /// Failing to parse the component will result in errors of type:
-    /// - "Error: could not construct type '<type_name<RequiredType>()>' from option '<option>'. <
-    ///    singleline_help<RequiredType>()>"
-    ///
-    /// If self.find(option) does not exist, do not change `value` and do not insert an error.
-    template<typename RequiredType, typename...Args>
-    void optional(RequiredType &value, std::string option, Args &&...args);
-
-    /// Check that if self.find_at(option) exists it can constructed as type RequiredType, assigning result to value
-    ///
-    /// Failing to parse the component will result in errors of type:
-    /// - "Error: could not construct type '<type_name<RequiredType>()>' from option '<option>'. <
-    ///    singleline_help<RequiredType>()>"
-    ///
-    /// If self.find_at(option) does not exist, do not change `value` and do not insert an error.
-    template<typename RequiredType, typename...Args>
-    void optional_at(RequiredType &value, fs::path option, Args &&...args);
-
-
-    /// Check for self.find(option), return value or default, error if cannot be constructed
-    ///
-    /// Failing to parse the component will result in errors of type:
-    /// - "Error: could not construct type '<type_name<RequiredType>()>' from option '<option>'. <
-    ///    singleline_help<RequiredType>()>"
-    ///
-    /// If self.find(option) does not exist, return `_default` and do not insert an error.
-    template<typename RequiredType, typename...Args>
-    RequiredType optional_else(std::string option, const RequiredType &_default, Args &&...args);
-
-    /// Check for self.find_at(option), return value or default, error if cannot be constructed
-    ///
-    /// Failing to parse the component will result in errors of type:
-    /// - "Error: could not construct type '<type_name<RequiredType>()>' from option '<option>'. <
-    ///    singleline_help<RequiredType>()>"
-    ///
-    /// If self.find_at(option) does not exist, return `_default` and do not insert an error.
-    template<typename RequiredType, typename...Args>
-    RequiredType optional_at_else(fs::path option, const RequiredType &_default, Args &&...args);
-
-    /// Check for self.find(option), assign result or default, error if cannot be constructed
-    ///
-    /// Failing to parse the component will result in errors of type:
-    /// - "Error: could not construct type '<type_name<RequiredType>()>' from option '<option>'. <
-    ///    singleline_help<RequiredType>()>"
-    ///
-    /// If self.find(option) does not exist, assign `_default` to `value` and do not insert an error.
-    template<typename RequiredType, typename...Args>
-    void optional_else(RequiredType &value, std::string option, const RequiredType &_default, Args &&...args);
-
-    /// Check for self.find_at(option), assign result or default, error if cannot be constructed
-    ///
-    /// Failing to parse the component will result in errors of type:
-    /// - "Error: could not construct type '<type_name<RequiredType>()>' from option '<option>'. <
-    ///    singleline_help<RequiredType>()>"
-    ///
-    /// If self.find(option) does not exist, assign `_default` to `value` and do not insert an error.
-    template<typename RequiredType, typename...Args>
-    void optional_at_else(RequiredType &value, fs::path option, const RequiredType &_default, Args &&...args);
-
-
-    /// Insert a warning if any unexpected JSON attributes are found in self
-    bool warn_unnecessary(const std::set<std::string> &expected);
-
-
-    /// Return true if this has no errors (may have warnings)
-    virtual bool valid() const;
-
-    /// Modifies input JSON document to include error and warning messages
-    ///
-    /// If this has any errors, they are inserted as a JSON array at this->parants() with name
-    /// `this->name() + ".ERROR"`.
-    /// If this has any warnings, they are inserted as a JSON array at this->parent() with name
-    /// `this->name() + ".WARNING"`
-    virtual jsonParser &report();
-
-    /// Return warning messages from this (and, for InputParser, all subparsers)
-    virtual std::map<fs::path, std::set<std::string>> all_warnings() const;
-
-    /// Return error messages from this (and, for InputParser, all subparsers)
-    virtual std::map<fs::path, std::set<std::string>> all_errors() const;
-
-    /// Return a reference to the parent JSON object of this->self
-    ///
-    /// If self==input, returns self.
-    jsonParser &parent();
+    // --- Accessing the JSON `input` ---
 
     /// Return a const reference to the parent JSON object of this->self
     ///
@@ -266,6 +120,54 @@ namespace CASM {
       return path.empty() ? val : path / val;
     }
 
+
+    // --- Subparsers ---
+
+    typedef std::multimap<fs::path, std::shared_ptr<KwargsParser>> map_type;
+
+    /// Begin iterator over subparsers
+    map_type::const_iterator begin() const;
+
+    /// End iterator over subparsers
+    map_type::const_iterator end() const;
+
+    /// Return true if this and and all subparsers are valid
+    bool valid() const;
+
+    /// Return warning messages from this and all subparsers
+    std::map<fs::path, std::set<std::string>> all_warnings() const;
+
+    /// Return error messages from this and all subparsers
+    std::map<fs::path, std::set<std::string>> all_errors() const;
+
+    using Validator::insert;
+
+    /// Insert a subparser
+    ///
+    /// Subparsers are stored in a map of path (from this->input) to the subparser. After being
+    /// inserted, the subparser's errors and warnings are included in validation checks
+    /// (`valid`) and in parser output (`make_report`, `print_warnings`, `print_errors`, etc.).
+    void insert(fs::path path, const std::shared_ptr<KwargsParser> &subparser);
+
+    /// Insert a subparser at location `option` with a single error `message`
+    void insert_error(fs::path option, std::string message);
+
+    /// Insert a subparser at location `option` with a single warning `message`
+    void insert_warning(fs::path option, std::string message);
+
+    /// Insert a warning if any unexpected JSON attributes are found in self
+    bool warn_unnecessary(const std::set<std::string> &expected);
+
+
+  private:
+
+    typedef map_type::value_type PairType;
+
+    /// Used to store sub-parsers.
+    /// Allows code re-use w/ storage of all errors & warnings.
+    /// Can use static_cast to get values from InputParser subparsers if they are included.
+    map_type m_subparsers;
+
   };
 
   /// Constructs values from JSON and collects error and warning messages for easy printing, without throwing.
@@ -273,10 +175,10 @@ namespace CASM {
   /// To use InputParser for a type, T, you must write:
   ///    void parse(InputParser<T> &parser, ... any other required input ...);
   ///
-  /// The `parse` function should call methods of parser (i.e. require, optional, make, subparse,
+  /// The `parse` function should call methods of InputParser (i.e. require, optional, subparse,
   /// etc.) to automate the handling of errors and capture of error and warning messages.
   ///
-  /// That function is called when InputParser<T> is constructed from input json:
+  /// The `parse` function is called when InputParser<T> is constructed from input json:
   ///    jsonParser json_input = ...;
   ///    InputParser<T> parser {json_input, ... any other required input ...};
   ///
@@ -288,13 +190,15 @@ namespace CASM {
   /// to the location in the json where the issue occurred, do:
   ///     Log& log = ...;
   ///     if(!parser.valid()) {
-  ///        parser.print_errors(log);
-  ///        log << std::endl << parser.report() << std::endl << std::endl;
+  ///        jsonParser report = make_report(parser);
+  ///        print_errors(parser, log);
+  ///        log << std::endl << report << std::endl << std::endl;
   ///        ... handle error or throw ...
   ///     }
   ///     if(parser.all_warnings().size()) {
-  ///         parser.print_warnings(log);
-  ///         log << std::endl << parser.report() << std::endl << std::endl;
+  ///        jsonParser report = make_report(parser);
+  ///        print_warnings(parser, log);
+  ///        log << std::endl << report << std::endl << std::endl;
   ///     }
   ///
   /// To do the above and throw an exception if the parser has any errors, use:
@@ -316,59 +220,81 @@ namespace CASM {
     /// Store the object being read from JSON, use unique_ptr so default constructor not necessary
     std::unique_ptr<T> value;
 
+    /// Construct parser and use `parse(*this)`
     template<typename...Args>
-    InputParser(jsonParser &_input, Args &&... args);
+    InputParser(jsonParser const &_input, Args &&... args);
 
+    /// Construct parser and use `parse(*this, std::forward<Args>(args)...)` if `_path` exists
     template<typename...Args>
-    InputParser(jsonParser &_input, fs::path _path, bool _required, Args &&... args);
+    InputParser(jsonParser const &_input, fs::path _path, bool _required, Args &&... args);
 
-    /// Return true if this and and all subparsers are valid
-    bool valid() const override;
+    /// Construct parser and use custom parse function, `f_parse(*this)`
+    template<typename CustomParse>
+    InputParser(CustomParse f_parse, jsonParser const &_input);
 
-    /// Modifies input JSON document to include error and warning messages from this and all subparsers
-    jsonParser &report() override;
+    /// Construct parser and use custom parse function, `f_parse(*this)`, if `_path` exists
+    template<typename CustomParse>
+    InputParser(CustomParse f_parse, jsonParser const &_input, fs::path _path, bool _required);
 
-    /// Return warning messages from this and all subparsers
-    std::map<fs::path, std::set<std::string>> all_warnings() const override;
 
-    /// Return error messages from this and all subparsers
-    std::map<fs::path, std::set<std::string>> all_errors() const override;
-
-    /// If exists(), make this->value from JSON; else add error
+    /// Require self.find_at(option) of type RequiredType, returning result in unique_ptr
     ///
-    /// Note:
-    /// - If `this->exists()==false`, will insert an error of type:
-    ///   - "Error: Required input at '<this->path>' does not exist."
-    /// - Otherwise, make from JSON: `this->value = self.make<T>(std::forward<Args>(args)...)`
-    ///   - If make from JSON fails, will insert an error of type:
-    ///     - "Error: could not construct type '<type_name<T>()>' from option '<option>'.
-    ///       <singleline_help<T>()>"
-    template<typename...Args>
-    void make(Args &&...args);
+    /// Failing to parse the component will result in errors of type:
+    /// - "Error: missing required option '<option>'"
+    /// - "Error: could not construct type '<type_name<RequiredType>()>' from option '<option>'. <
+    ///    singleline_help<RequiredType>()>"
+    template<typename RequiredType, typename...Args>
+    std::unique_ptr<RequiredType> require(fs::path option, Args &&...args);
 
-    /// If exists(), make this->value from JSON; else no error
+    /// Require self.find_at(option) of type RequiredType, assigning result to value
     ///
-    /// Note:
-    /// - If `this->exists()==false`: do nothing
-    /// - Otherwise, equivalent to `this->make(std::forward<Args>(args)...)`
-    template<typename...Args>
-    void make_if(Args &&...args);
+    /// Failing to parse the component will result in errors of type:
+    /// - "Error: missing required option '<option>'"
+    /// - "Error: could not construct type '<type_name<RequiredType>()>' from option '<option>'. <
+    ///    singleline_help<RequiredType>()>"
+    template<typename RequiredType, typename...Args>
+    void require(RequiredType &value, fs::path option, Args &&...args);
 
-    /// If exists(), make this->value from JSON; else set this->value to _default
+    /// Check that if self.find_at(option) exists it can constructed as type RequiredType, returning result in unique_ptr
     ///
-    /// Note:
-    /// - If `this->exists()==false`, set this->value to _default: `this->value = std::move(_default)`
-    /// - Otherwise, equivalent to `this->make(std::forward<Args>(args)...)`
-    template<typename...Args>
-    void make_else(std::unique_ptr<T> _default, Args &&...args);
+    /// Failing to parse the component will result in errors of type:
+    /// - "Error: could not construct type '<type_name<RequiredType>()>' from option '<option>'. <
+    ///    singleline_help<RequiredType>()>"
+    ///
+    /// If self.find_at(option) does not exist, return empty unique_ptr
+    template<typename RequiredType, typename...Args>
+    std::unique_ptr<RequiredType> optional(fs::path option, Args &&...args);
 
-    /// If exists(), make this->value from current json; else make with default constructor
+    /// Check that if self.find_at(option) exists it can constructed as type RequiredType, assigning result to value
     ///
-    /// Note:
-    /// - If `this->exists()==false`, construct default value: `this->value = notstd::make_unique<T>()`
-    /// - Otherwise, equivalent to `this->make(std::forward<Args>(args)...)`
-    template<typename...Args>
-    void make_else_construct_default(Args &&...args);
+    /// Failing to parse the component will result in errors of type:
+    /// - "Error: could not construct type '<type_name<RequiredType>()>' from option '<option>'. <
+    ///    singleline_help<RequiredType>()>"
+    ///
+    /// If self.find_at(option) does not exist, do not change `value` and do not insert an error.
+    template<typename RequiredType, typename...Args>
+    void optional(RequiredType &value, fs::path option, Args &&...args);
+
+    /// Check for self.find_at(option), return value or default, error if cannot be constructed
+    ///
+    /// Failing to parse the component will result in errors of type:
+    /// - "Error: could not construct type '<type_name<RequiredType>()>' from option '<option>'. <
+    ///    singleline_help<RequiredType>()>"
+    ///
+    /// If self.find_at(option) does not exist, return `_default` and do not insert an error.
+    template<typename RequiredType, typename...Args>
+    RequiredType optional_else(fs::path option, const RequiredType &_default, Args &&...args);
+
+    /// Check for self.find_at(option), assign result or default, error if cannot be constructed
+    ///
+    /// Failing to parse the component will result in errors of type:
+    /// - "Error: could not construct type '<type_name<RequiredType>()>' from option '<option>'. <
+    ///    singleline_help<RequiredType>()>"
+    ///
+    /// If self.find(option) does not exist, assign `_default` to `value` and do not insert an error.
+    template<typename RequiredType, typename...Args>
+    void optional_else(RequiredType &value, fs::path option, const RequiredType &_default, Args &&...args);
+
 
     /// Run an InputParser on the JSON subobject at this->path / option, collecting errors and warnings
     ///
@@ -391,87 +317,35 @@ namespace CASM {
     template<typename RequiredType, typename...Args>
     std::shared_ptr<InputParser<RequiredType>> subparse_if(fs::path option, Args &&...args);
 
-    /// Subparse, if `this->path / option` exists, the result->value will be copy-constructed with `_default`
+    /// Subparse, if `this->path / option` exists, else the result->value will be copy-constructed from `_default`
     template<typename RequiredType, typename...Args>
     std::shared_ptr<InputParser<RequiredType>> subparse_else(fs::path option, const RequiredType &_default, Args &&...args);
 
-
-    /// Run an InputParser on the JSON subobject at this->path / option, collecting errors and warnings
+    /// Parse `this->self` as RequiredType
     ///
-    /// Will:
-    /// - If the subparser constructs a value, it will be move-assigned to _value
-    /// - Subparser errors and warnings are stored using this->insert
+    /// \param args Arguments forwared to the `parse` method
     ///
-    /// Equivalent to:
-    /// \code
-    /// auto subparser = std::make_shared<InputParser<RequiredType>>(
-    ///   this->input, this->relpath(option), true, std::forward<Args>(args)...);
-    /// this->insert(subparser->path, subparser);
-    /// if(subparser->value) {
-    ///   _value = std::move(*(subparser->value));
-    /// }
-    /// \endcode
     template<typename RequiredType, typename...Args>
-    void subparse(RequiredType &_value, std::string option, Args &&...args);
-
-    /// Subparse, if `this->path / option` exists
-    ///
-    /// If the JSON subobject does not exist, `_value` is unchanged, and no errors or warnings are
-    /// inserted.
-    template<typename RequiredType, typename...Args>
-    void subparse_if(RequiredType &_value, std::string option, Args &&...args);
-
-    /// Subparse, if `this->path / option` exists, else assign `_default`
-    template<typename RequiredType, typename...Args>
-    void subparse_else(RequiredType &_value, std::string option, const RequiredType &_default, Args &&...args);
-
-    /// Parse `this->self` as a type derived from type `T`
-    ///
-    /// This can be used to construct a type derived from type `T` and assign it to `this->value`
-    template<typename RequiredType, typename...Args>
-    void parse_as(std::unique_ptr<RequiredType> &_value, Args &&...args);
-
-    /// Parse a JSON subobject as a type derived from type `T`
-    ///
-    /// This can be used to construct a type derived from type `T` from a JSON subobject and assign
-    /// it to `this->value`.
-    template<typename ParseAsType, typename...Args>
-    void subparse_as(std::string option, Args &&...args);
-
-    using Validator::insert;
-
-    typedef std::map<fs::path, std::shared_ptr<KwargsParser>> map_type;
-
-    /// Insert a subparser
-    ///
-    /// Subparsers are stored in a map of path (from this->input) to the subparser. After being
-    /// inserted, the subparser's errors and warnings are included in validation checks
-    /// (`valid`) and in parser output (`report`, `print_warnings`, `print_errors`, etc.).
-    void insert(fs::path path, const std::shared_ptr<KwargsParser> &subparser);
-
-    /// Begin iterator over subparsers
-    map_type::const_iterator begin() const;
-
-    /// End iterator over subparsers
-    map_type::const_iterator end() const;
-
-    /// Find a subparser by path (from this->input)
-    map_type::const_iterator find(fs::path path) const;
-
-  private:
-
-    typedef map_type::value_type PairType;
-
-    /// Used to store sub-parsers.
-    /// Allows code re-use w/ storage of all errors & warnings.
-    /// Can use static_cast to get values from InputParser subparsers if they are included.
-    map_type kwargs;
+    std::shared_ptr<InputParser<RequiredType>> parse_as(Args &&...args);
 
   };
 
-  /// Print errors and warnings, throwing as specified if any errors exist in parser (and subparsers)
-  template<typename T, typename ErrorType>
-  void report_and_throw_if_invalid(InputParser<T> &parser, Log &log, ErrorType error);
+  /// Use when the JSON document is not associated with a single resulting value but instead is
+  /// parsed with multiple subparsers
+  class ParentInputParser : public InputParser<std::nullptr_t> {
+  public:
+
+    std::shared_ptr<jsonParser const> parent_input;
+
+    /// Construct so that the ParentInputParser owns the jsonParser object
+    ParentInputParser(jsonParser const &input):
+      ParentInputParser(std::make_shared<jsonParser const>(input)) {}
+
+    /// Construct so that the ParentInputParser owns the jsonParser object
+    ParentInputParser(std::shared_ptr<jsonParser const> _parent_input):
+      InputParser<std::nullptr_t>(*_parent_input),
+      parent_input(_parent_input) {}
+  };
 
   /// Parse Log "verbosity" level from JSON
   ///
@@ -486,6 +360,25 @@ namespace CASM {
 
   /// Temporary -- enables compilation of legacy code
   void parse(InputParser<std::nullptr_t> &parser);
+
+  template<typename T>
+  void parse(InputParser<T> &parser);
+
+
+  // --- Methods for formatting error and warning messages ---
+
+  /// Formatted print warning messages, including all subparsers
+  void print_warnings(KwargsParser const &parser, Log &log, std::string header = "Warnings");
+
+  /// Formatted print error messages, including all subparsers
+  void print_errors(KwargsParser const &parser, Log &log, std::string header = "Errors");
+
+  /// Return parser.input with error and warning messages added in place, including all subparsers
+  jsonParser make_report(KwargsParser const &parser);
+
+  /// Print errors and warnings, throwing as specified if any errors exist in parser (and subparsers)
+  template<typename ErrorType>
+  void report_and_throw_if_invalid(KwargsParser const &parser, Log &log, ErrorType error);
 
 }
 

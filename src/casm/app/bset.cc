@@ -5,6 +5,7 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/bset.hh"
 #include "casm/basis_set/DoFTraits.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/clex/ClexBasis_impl.hh"
 #include "casm/clex/ClexBasisSpecs.hh"
 #include "casm/clex/Clexulator.hh"
@@ -54,20 +55,19 @@ namespace CASM {
       }
     }
 
-    /// Check for generated bset files, print messages when found
+    /// Check for generated bset files, print messages when found to CASM::log()
     bool any_existing_files(const std::string &bset, const BsetCommand &cmd) {
       const DirectoryStructure &dir = cmd.primclex().dir();
       const ProjectSettings &set = cmd.primclex().settings();
-      auto &log = cmd.args().log();
 
       bool _any_existing_files = false;
       for(const auto &p : dir.bset_data(set.project_name(), bset)) {
         if(fs::exists(p)) {
           if(!_any_existing_files) {
-            log.custom("Found existing files");
+            log().custom("Found existing files");
             _any_existing_files = true;
           }
-          log << "found: " << p << "\n";
+          log() << "found: " << p << "\n";
         }
       }
       return _any_existing_files;
@@ -75,12 +75,11 @@ namespace CASM {
 
     void check_force(const std::string &bset, const BsetCommand &cmd) {
       const auto &vm = cmd.vm();
-      auto &log = cmd.args().log();
 
       /// check for existing fiels
       if(any_existing_files(bset, cmd)) {
         if(vm.count("force")) {
-          log << "Using --force. Will overwrite existing files.\n" << std::endl;
+          log() << "Using --force. Will overwrite existing files.\n" << std::endl;
         }
         else {
           throw CASM::runtime_error {"Exiting due to existing files.  Use --force to force overwrite.", ERR_EXISTING_FILE};
@@ -154,7 +153,7 @@ namespace CASM {
     /// Implements `casm bset --orbits --clusters --functions` (any combination is allowed)
     void print_bset(const BsetCommand &cmd) {
       auto const &vm = cmd.vm();
-      auto &log = cmd.args().log();
+      Log &log = CASM::log();
       std::string basis_set_name = get_clex_description(cmd).bset;
       auto const &primclex = cmd.primclex();
 

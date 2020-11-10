@@ -8,8 +8,8 @@
 namespace CASM {
   namespace DB {
 
-    Remove<Supercell>::Remove(const PrimClex &_primclex, std::string report_dir, Log &_file_log) :
-      m_primclex(_primclex), m_report_dir(report_dir), m_file_log(_file_log) {}
+    Remove<Supercell>::Remove(const PrimClex &_primclex, std::string report_dir) :
+      m_primclex(_primclex), m_report_dir(report_dir) {}
 
     std::string Remove<Supercell>::desc() {
 
@@ -55,7 +55,8 @@ namespace CASM {
           remaining += boost::distance(remover.primclex().db<T>().scel_range(scelname));
         }
         else {
-          ConfigData data(remover.primclex(), null_log(), TypeTag<T>());
+          ScopedLogging logging {CASM::null_log(), CASM::err_log()};
+          ConfigData data(remover.primclex(), TypeTag<T>());
           auto it = primclex.db<T>().scel_range(scelname).begin();
           auto end = primclex.db<T>().scel_range(scelname).end();
           for(; it != end; ++it) {
@@ -81,7 +82,7 @@ namespace CASM {
 
       template<typename T>
       void eval() {
-        Remove<T> f(primclex, remover.report_dir(), remover.file_log());
+        Remove<T> f(primclex, remover.report_dir());
         DB::Selection<T> selection = make_selection<T>();
         f.erase(selection, dry_run);
         count_remaining<T>();
@@ -95,7 +96,7 @@ namespace CASM {
 
       template<typename T>
       void eval() {
-        Remove<T> f(primclex, remover.report_dir(), remover.file_log());
+        Remove<T> f(primclex, remover.report_dir());
         DB::Selection<T> selection = make_selection<T>();
         f.erase_data(selection, dry_run);
         count_remaining<T>();
@@ -110,7 +111,7 @@ namespace CASM {
 
       template<typename T>
       void eval() {
-        Remove<T> f(primclex, remover.report_dir(), remover.file_log());
+        Remove<T> f(primclex, remover.report_dir());
         DB::Selection<T> selection = make_selection<T>();
         f.erase_all(selection, dry_run);
         count_remaining<T>();
@@ -136,15 +137,15 @@ namespace CASM {
 
         // if no existing data or files, erase Supercell ...
         if(!f.remaining) {
-          primclex().log() << "will erase " << it.name() << "\n";
+          log() << "will erase " << it.name() << "\n";
           if(!dry_run) {
             primclex().db<Supercell>().erase(it.name());
             did_erase = true;
           }
         }
         else {
-          primclex().log() << "skipping " << it.name() << ": has "
-                           << f.remaining << " configurations remaining.\n";
+          log() << "skipping " << it.name() << ": has "
+                << f.remaining << " configurations remaining.\n";
         }
       }
 
@@ -181,15 +182,15 @@ namespace CASM {
 
         // if no existing data or files, erase Supercell ...
         if(!f.remaining) {
-          primclex().log() << "will erase " << it.name() << "\n";
+          log() << "will erase " << it.name() << "\n";
           if(dry_run) {
             primclex().db<Supercell>().erase(it.name());
           }
         }
         else {
-          primclex().log() << "unknown error: erase_all called, but " << it.name()
-                           << " still has " << f.remaining << " configurations.\n";
-          primclex().log() << "stopping..." << std::endl;
+          log() << "unknown error: erase_all called, but " << it.name()
+                << " still has " << f.remaining << " configurations.\n";
+          log() << "stopping..." << std::endl;
           return;
         }
       }
@@ -219,7 +220,7 @@ namespace CASM {
       report_dir = create_report_dir(report_dir.string());
 
       // -- erase --
-      Remove<Supercell> f(primclex, report_dir.string(), primclex.log());
+      Remove<Supercell> f(primclex, report_dir.string());
 
       if(opt.force()) {
         f.erase_all(selection, opt.dry_run());
@@ -239,10 +240,6 @@ namespace CASM {
 
     std::string Remove<Supercell>::report_dir() const {
       return m_report_dir;
-    }
-
-    Log &Remove<Supercell>::file_log() const {
-      return m_file_log;
     }
 
   }

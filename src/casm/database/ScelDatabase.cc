@@ -1,5 +1,4 @@
 #include "casm/database/ScelDatabase.hh"
-#include "casm/clex/PrimClex.hh"
 
 namespace CASM {
   namespace DB {

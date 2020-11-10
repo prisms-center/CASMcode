@@ -131,21 +131,21 @@ namespace CASM {
       /** --help option
        */
       if(vm.count("help")) {
-        args.log() << "\n";
-        args.log() << init_opt.desc() << std::endl;
+        log() << "\n";
+        log() << init_opt.desc() << std::endl;
 
         return 0;
       }
 
       if(vm.count("desc")) {
-        args.log() << "\n";
-        args.log() << init_opt.desc() << std::endl;
+        log() << "\n";
+        log() << init_opt.desc() << std::endl;
 
-        args.log() << "DESCRIPTION                                                \n" <<
-                   "    Initialize a new CASM project in the current directory.\n" <<
-                   "    - Expects a prim.json file in the current directory    \n" <<
-                   "    - If not found, looks for a PRIM file in the current   \n" <<
-                   "      directory and creates prim.json.                     \n\n";
+        log() << "DESCRIPTION                                                \n" <<
+              "    Initialize a new CASM project in the current directory.\n" <<
+              "    - Expects a prim.json file in the current directory    \n" <<
+              "    - If not found, looks for a PRIM file in the current   \n" <<
+              "      directory and creates prim.json.                     \n\n";
 
         return 0;
       }
@@ -154,13 +154,13 @@ namespace CASM {
       // there are any problems
     }
     catch(po::error &e) {
-      args.err_log() << "ERROR: " << e.what() << std::endl << std::endl;
-      args.err_log() << init_opt.desc() << std::endl;
+      err_log() << "ERROR: " << e.what() << std::endl << std::endl;
+      err_log() << init_opt.desc() << std::endl;
       return ERR_INVALID_ARG;
     }
     catch(std::exception &e) {
-      args.err_log() << "Unhandled Exception reached the top of main: "
-                     << e.what() << ", application will now exit" << std::endl;
+      err_log() << "Unhandled Exception reached the top of main: "
+                << e.what() << ", application will now exit" << std::endl;
       return ERR_UNKNOWN;
 
     }
@@ -186,8 +186,8 @@ namespace CASM {
         std::tie(err_msg, extension, prim) = standardize_prim(prim, vm.count("force"));
       }
       catch(std::runtime_error &e) {
-        args.err_log() << e.what() << std::endl;
-        args.err_log() << "To initialize your project anyway, use the --force option." << std::endl;
+        err_log() << e.what() << std::endl;
+        err_log() << "To initialize your project anyway, use the --force option." << std::endl;
         return ERR_INVALID_INPUT_FILE;
       }
 
@@ -212,7 +212,7 @@ namespace CASM {
       // Check error message to see if PRIM did not meet standards; report if so
       if(!err_msg.empty()) {
         if(vm.count("force")) {
-          args.err_log()
+          err_log()
               << "WARNING: " << init_opt.prim_path() << " failed the following check(s): \n"
               << err_msg
               << "Continuing due to usage of '--force' modifier.\n\n";
@@ -222,7 +222,7 @@ namespace CASM {
           std::string tpath = new_path.substr(0, new_path.find(".json"));
           new_path = tpath.substr(0, new_path.find(".JSON"));
           new_path += extension;
-          args.err_log()
+          err_log()
               << "Validation ERROR for " << init_opt.prim_path() << ":\n"
               << err_msg
               << "Standardizing structure and writing to JSON file: " << new_path << "\n";
@@ -233,10 +233,10 @@ namespace CASM {
       if(vm.count(write_prim_opt)) {
         jsonParser json_prim;
         write_prim(prim, json_prim, init_opt.coordtype_enum(), vm.count(include_va_opt));
-        args.log() << json_prim << std::endl;
+        log() << json_prim << std::endl;
       }
       else {
-        args.log() << "\n***************************\n" << std::endl;
+        log() << "\n***************************\n" << std::endl;
         // Actually going to initialize:
         root = fs::current_path();
         if(!init_opt.file_path().empty()) {
@@ -245,20 +245,20 @@ namespace CASM {
         fs::path existing = find_casmroot(root);
         if(vm.count(subproject_opt)) {
           if(existing == root) {
-            args.log() << "Directory '" << root << "' is already the head directory of a casm project." << std::endl;
+            log() << "Directory '" << root << "' is already the head directory of a casm project." << std::endl;
             return ERR_OTHER_PROJ;
           }
           if(existing.empty()) {
-            args.log() << "Cannot create sub-directory project at '" << root
-                       << "' because no existing project was found at a higher level." << std::endl
-                       << "To initialize a top-level project, try again without the --" << subproject_opt << "flag." << std::endl;
+            log() << "Cannot create sub-directory project at '" << root
+                  << "' because no existing project was found at a higher level." << std::endl
+                  << "To initialize a top-level project, try again without the --" << subproject_opt << "flag." << std::endl;
             return ERR_OTHER_PROJ;
 
           }
         }
         else if(!existing.empty()) {
-          args.log() << "Already in a casm project. To create a project at " << root
-                     << ", try again using the --" << subproject_opt << " flag." << std::endl;
+          log() << "Already in a casm project. To create a project at " << root
+                << ", try again using the --" << subproject_opt << " flag." << std::endl;
           return ERR_OTHER_PROJ;
         }//End new control block
 
@@ -266,32 +266,32 @@ namespace CASM {
 
           //std::string orig_prim_title = prim.title;
           if(prim.title().empty() || !is_valid_project_name(prim.title())) {
-            args.log() << "Please enter a short title for this project.\n";
-            args.log() << "  Use something suitable as a prefix for files specific to this project, such as 'ZrO' or 'TiAl'.\n\n";
+            log() << "Please enter a short title for this project.\n";
+            log() << "  Use something suitable as a prefix for files specific to this project, such as 'ZrO' or 'TiAl'.\n\n";
 
             std::string ttitle;
-            args.log() << "Title: ";
+            log() << "Title: ";
             std::cin >> ttitle;
-            args.log() << "\n\n";
+            log() << "\n\n";
             prim.set_title(ttitle);
           }
-          args.log() << "Initializing CASM project '" << prim.title() << "'" << std::endl;
+          log() << "Initializing CASM project '" << prim.title() << "'" << std::endl;
           auto project_settings = make_default_project_settings(prim, prim.title(), root);
           build_project(project_settings, Structure {prim});
         }
         catch(std::runtime_error &e) {
-          args.err_log() << "ERROR: Could not build CASM project.\n";
-          args.err_log() << e.what() << std::endl;
+          err_log() << "ERROR: Could not build CASM project.\n";
+          err_log() << e.what() << std::endl;
           return ERR_INVALID_INPUT_FILE;
         }
 
-        args.log() << "  DONE" << std::endl;
-        args.log() << std::endl;
+        log() << "  DONE" << std::endl;
+        log() << std::endl;
 
       }
     }
     else if(vm.count(write_prim_opt)) {
-      args.log() << "\n***************************\n" << std::endl;
+      log() << "\n***************************\n" << std::endl;
 
       // Start from config in existing project:
       // If 'args.primclex', use that, else construct PrimClex in 'uniq_primclex'
@@ -315,8 +315,8 @@ namespace CASM {
           fs::create_directories(config_dir);
         }
         catch(const fs::filesystem_error &ex) {
-          args.err_log() << "Error making directory " << config_dir << std::endl;
-          args.err_log() << ex.what() << std::endl;
+          err_log() << "Error making directory " << config_dir << std::endl;
+          err_log() << ex.what() << std::endl;
 
         }
 
@@ -335,7 +335,7 @@ namespace CASM {
 
         write_prim(new_prim, config_dir / "prim.json", init_opt.coordtype_enum(), vm.count(include_va_opt));
 
-        args.log() << "Wrote file " << (config_dir / "prim.json") << std::endl;
+        log() << "Wrote file " << (config_dir / "prim.json") << std::endl;
       }
     }
 

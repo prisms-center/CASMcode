@@ -4,7 +4,6 @@
 #include "casm/basis_set/DoFSet.hh"
 #include "casm/crystallography/AnisoValTraits.hh"
 namespace CASM {
-  class jsonParser;
 
   class ConfigDoFValues {
   public:
@@ -71,22 +70,28 @@ namespace CASM {
 
     }
 
+    /// Access occupation values (values are indices into Site::occupant_dof())
     Reference values() {
       return m_vals;
     }
 
+    /// Const access occupation values (values are indices into Site::occupant_dof())
     ConstReference values() const {
       return m_vals;
     }
 
+    /// Access vector block of values for all sites on one sublattice
     SublatReference sublat(Index b) {
       return m_vals.segment(b * n_vol(), n_vol());
     }
 
+    /// Const access vector block of values for all sites on one sublattice
     ConstSublatReference sublat(Index b) const {
       return m_vals.segment(b * n_vol(), n_vol());
     }
 
+    /// Provides the symmetry representations for transforming `values` (i.e. due to molecule
+    /// orientation, not for permuting sites)
     std::vector<SymGroupRepID> const &symrep_IDs() const {
       return m_symrep_IDs;
     }
@@ -101,8 +106,6 @@ namespace CASM {
     std::vector<SymGroupRepID> m_symrep_IDs;
   };
 
-  jsonParser &to_json(LocalDiscreteConfigDoFValues const &_values, jsonParser &_json);
-  void from_json(LocalDiscreteConfigDoFValues &_values, jsonParser const &_json);
 
   class LocalContinuousConfigDoFValues : public ConfigDoFValues {
   public:
@@ -132,20 +135,45 @@ namespace CASM {
 
     }
 
+    /// DoF vector representation size
     Index dim() const {
       return m_vals.rows();
     }
 
+    /// Access site DoF values (prim DoF basis, matrix representing all sites)
+    ///
+    /// Notes:
+    /// - Matrix of size rows=dim(), cols=n_vol()*n_sublat(),
+    /// - Each column represents a site DoF value in the prim DoF basis
+    /// - The prim DoF basis can be accessed by `this->info()[b]`, where `b` is the sublattice index,
+    ///   `b = column_index / this->n_vol()`
     Reference values() {
       return m_vals;
     }
 
+    /// Const access DoF values (prim DoF basis, matrix representing all sites)
+    ///
+    /// Notes:
+    /// - Matrix of size rows=dim(), cols=n_vol()*n_sublat(),
+    /// - Each column represents a site DoF value in the prim DoF basis
+    /// - The prim DoF basis can be accessed by `this->info()[b]`, where `b` is the sublattice index,
+    ///   `b = column_index / this->n_vol()`
     ConstReference values() const {
       return m_vals;
     }
 
-    void from_standard_values(Eigen::Ref<const Eigen::MatrixXd> const &_values);
+    /// Set local DoF values from standard DoF values
+    ///
+    /// Notes:
+    /// - Standard DoF values are those expressed according to the standard DoF basis, i.e.
+    ///   coordinates whose values corrspond to AnisoValTraits::standard_var_names().
+    void from_standard_values(Eigen::Ref<const Eigen::MatrixXd> const &_standard_values);
 
+    /// Get local DoF values as standard DoF values
+    ///
+    /// Notes:
+    /// - Standard DoF values are those expressed according to the standard DoF basis, i.e.
+    ///   coordinates whose values corrspond to AnisoValTraits::standard_var_names().
     Eigen::MatrixXd standard_values() const {
       Index rows = m_info[0].basis().rows();
       Eigen::MatrixXd result(rows, m_vals.cols());
@@ -155,22 +183,27 @@ namespace CASM {
       return result;
     }
 
+    /// Access site DoF value (prim DoF basis, vector associated with a single site)
     SiteReference site_value(Index l) {
       return m_vals.col(l);
     }
 
+    /// Const access site DoF value (prim DoF basis, vector associated with a single site)
     ConstSiteReference site_value(Index l) const {
       return m_vals.col(l);
     }
 
+    /// Access matrix block of values for all sites on one sublattice
     SublatReference sublat(Index b) {
       return m_vals.block(0, b * n_vol(), m_vals.rows(), n_vol());
     }
 
+    /// Const access matrix block of values for all sites on one sublattice
     ConstSublatReference sublat(Index b) const {
       return m_vals.block(0, b * n_vol(), m_vals.rows(), n_vol());
     }
 
+    /// DoFSetInfo provides the basis and symmetry representations for `values`
     std::vector<DoFSetInfo> const &info() const {
       return m_info;
     }
@@ -186,8 +219,13 @@ namespace CASM {
     std::vector<DoFSetInfo> m_info;
   };
 
-  jsonParser &to_json(LocalContinuousConfigDoFValues const &_values, jsonParser &_json);
-  void from_json(LocalContinuousConfigDoFValues &_values, jsonParser const &_json);
+
+  // TODO: It might be confusing that ValueType, Reference, and ConstReference are in terms of
+  // Eigen::VectorXd, but dim(), from_standard_values(), and standard_values() are written using
+  // Eigen::MatrixXd. Since Eigen::VectorXd is a 1 column Eigen::MatrixXd it could be all written
+  // in terms of Eigen::VectorXd or Eigen::MatrixXd. Not sure if it is more useful to express
+  // in terms of Eigen::MatrixXd and match the LocalContinuousConfigDoFValues interface or use
+  // Eigen::VectorXd consistently to express that the value is 1 dimensional.
 
   class GlobalContinuousConfigDoFValues : public ConfigDoFValues {
   public:
@@ -214,25 +252,38 @@ namespace CASM {
 
     }
 
+    /// Global DoF vector representation dimension
     Index dim() const {
       return m_vals.rows();
     }
 
+    /// Access values (coordinates defined by xtal::SiteDoFSet::basis() / DoFSetInfo::basis() )
     Reference values() {
       return m_vals;
     }
 
+    /// Const access values (coordinates defined by xtal::SiteDoFSet::basis() / DoFSetInfo::basis() )
     ConstReference values() const {
       return m_vals;
     }
 
-    void from_standard_values(Eigen::Ref<const Eigen::MatrixXd> const &_values);
+    /// Set global DoF values from standard DoF values
+    ///
+    /// Notes:
+    /// - Standard DoF values are those expressed according to the standard DoF basis, i.e.
+    ///   coordinates whose values corrspond to AnisoValTraits::standard_var_names().
+    void from_standard_values(Eigen::Ref<const Eigen::MatrixXd> const &_standard_values);
 
+    /// Get global DoF values as standard DoF values
+    ///
+    /// Notes:
+    /// - Standard DoF values are those expressed according to the standard DoF basis, i.e.
+    ///   coordinates whose values corrspond to AnisoValTraits::standard_var_names().
     Eigen::MatrixXd standard_values() const {
       return m_info.basis() * m_vals;
     }
 
-
+    /// DoFSetInfo provides the basis and symmetry representations for `values`
     DoFSetInfo const &info() const {
       return m_info;
     }
@@ -244,10 +295,6 @@ namespace CASM {
     ValueType m_vals;
     DoFSetInfo m_info;
   };
-
-  jsonParser &to_json(GlobalContinuousConfigDoFValues const &_values, jsonParser &_json);
-  void from_json(GlobalContinuousConfigDoFValues &_values, jsonParser const &_json);
-
 
 }
 

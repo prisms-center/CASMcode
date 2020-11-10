@@ -130,10 +130,10 @@ namespace CASM {
                                        std::back_inserter(asym_unit),
                                        nullstream);
 
-    for(DoFKey const &dof_type : all_local_dof_types(prim())) {
+    for(DoFKey const &dof_type : xtal::all_local_dof_types(prim())) {
       m_site_bases[dof_type] = lookup_dof_type_traits(dof_type).construct_site_bases(prim(), asym_unit, basis_set_specs().basis_function_specs);
     }
-    for(DoFKey const &dof_type : global_dof_types(prim())) {
+    for(DoFKey const &dof_type : xtal::global_dof_types(prim())) {
       std::vector<BasisSet> tbasis = lookup_dof_type_traits(dof_type).construct_site_bases(prim(), asym_unit, basis_set_specs().basis_function_specs);
       if(tbasis.empty()) {
         throw std::runtime_error("In ClexBasis::_populate_site_bases(), unable to lookup global DoF type " + dof_type);

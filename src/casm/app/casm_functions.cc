@@ -27,6 +27,7 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/APICommand_impl.hh"
 
+#include "casm/casm_io/Log.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/external/gzstream/gzstream.h"
 #include "casm/version/version.hh"
@@ -50,39 +51,35 @@ namespace CASM {
         << "        ':::::'       '::'     '::'   ':::::::::::'     '::'           '::'  \n";
   }
 
-  /// \brief CommandArgs constructor - specify logging
+  /// \brief CommandArgs constructor
   ///
   /// \param _argc int, as from main
   /// \param _argv char*[], as from main
   /// \param _primclex pointer to PrimClex or nullptr
   /// \param _root location of CASM project. If empty path, will use root of the
   ///        CASM project containing current working directory
-  /// \param _logging Logging object to use
   ///
   CommandArgs::CommandArgs(int _argc,
                            char *_argv[],
                            PrimClex *_primclex,
-                           fs::path _root,
-                           const Logging &_logging) :
-    CLIParse(_argc, _argv, _logging),
+                           fs::path _root) :
+    CLIParse(_argc, _argv),
     primclex(_primclex),
     root(_root) {
     _init();
   }
 
-  /// \brief CommandArgs constructor - specify logging
+  /// \brief CommandArgs constructor
   ///
   /// \param _args std::string of form 'casm [subcommand] [opt...]'
   /// \param _primclex pointer to PrimClex or nullptr
   /// \param _root location of CASM project. If empty path, will use root of the
   ///        CASM project containing current working directory
-  /// \param _logging Logging object to use
   ///
   CommandArgs::CommandArgs(std::string _args,
                            PrimClex *_primclex,
-                           fs::path _root,
-                           const Logging &_logging) :
-    CLIParse(_args, _logging),
+                           fs::path _root) :
+    CLIParse(_args),
     primclex(_primclex),
     root(_root) {
     _init();
@@ -201,7 +198,7 @@ namespace CASM {
 
     void write_LOG_end(const CommandArgs &args, int retcode) {
       fs::ofstream log(args.root / "LOG", std::ofstream::out | std::ofstream::app);
-      log << "# return: " << retcode << " runtime(s): " << args.log().time_s() << "\n\n";
+      log << "# return: " << retcode << " runtime(s): " << CASM::log().time_s() << "\n\n";
       log.close();
     }
 
@@ -222,7 +219,7 @@ namespace CASM {
         api_impl::write_LOG_begin(args);
       }
 
-      args.log().restart_clock();
+      CASM::log().restart_clock();
       int retcode = it->second(args);
       if(args.write_log) {
         api_impl::write_LOG_end(args, retcode);
@@ -235,7 +232,6 @@ namespace CASM {
     }
   }
 
-
   /// \brief If !_primclex, construct new PrimClex stored in uniq_primclex, then
   ///        return reference to existing or constructed PrimClex
   ///
@@ -246,22 +242,8 @@ namespace CASM {
   ///          uniq_primclex, or existing pointed at by args.primclex)
   ///
   PrimClex &make_primclex_if_not(const CommandArgs &args, std::unique_ptr<PrimClex> &uniq_primclex) {
-    return make_primclex_if_not(args, uniq_primclex, args.log());
-  }
-
-  /// \brief If !_primclex, construct new PrimClex stored in uniq_primclex, then
-  ///        return reference to existing or constructed PrimClex
-  ///
-  /// \param args CommandArgs reference
-  /// \param uniq_primclex Reference to null std::unique_ptr<PrimClex> to manage PrimClex, if it is constructed
-  /// \param status_log where to print PrimClex construction messages
-  ///
-  /// \returns reference to PrimClex (either newly constructed managed by
-  ///          uniq_primclex, or existing pointed at by args.primclex)
-  ///
-  PrimClex &make_primclex_if_not(const CommandArgs &args, std::unique_ptr<PrimClex> &uniq_primclex, Log &status_log) {
     if(!args.primclex) {
-      uniq_primclex.reset(new PrimClex(args.root, status_log));
+      uniq_primclex.reset(new PrimClex(args.root));
       return *uniq_primclex;
     }
     return *args.primclex;
@@ -300,13 +282,13 @@ namespace CASM {
 
   }
 
-  /// \brief Print CASM help info to args.log()
+  /// \brief Print CASM help info to log()
   int help_command(const CommandArgs &args) {
-    args.log().custom("casm usage");
-    args.log() << "\n";
+    log().custom("casm usage");
+    log() << "\n";
 
-    args.log() << "casm [--version] <command> [options] [args]" << std::endl << std::endl;
-    args.log() << "available commands:" << std::endl;
+    log() << "casm [--version] <command> [options] [args]" << std::endl << std::endl;
+    log() << "available commands:" << std::endl;
 
     std::vector<std::string> subcom;
     for(auto it = command_map().begin(); it != command_map().end(); ++it) {
@@ -319,18 +301,18 @@ namespace CASM {
 
     std::sort(subcom.begin(), subcom.end());
     for(auto it = subcom.begin(); it != subcom.end(); ++it) {
-      args.log() << *it << "\n";
+      log() << *it << "\n";
     }
-    args.log() << "\n";
+    log() << "\n";
 
-    args.log() << "For help using a command: 'casm <command> --help'" << std::endl << std::endl;
-    args.log() << "For step by step help use: 'casm status -n'" << std::endl << std::endl;
+    log() << "For help using a command: 'casm <command> --help'" << std::endl << std::endl;
+    log() << "For step by step help use: 'casm status -n'" << std::endl << std::endl;
 
     return 0;
   };
 
   int version_command(const CommandArgs &args) {
-    args.log() << "casm version: " << version() << std::endl;
+    log() << "casm version: " << version() << std::endl;
     return 0;
   }
 

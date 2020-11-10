@@ -18,7 +18,8 @@ TEST(ScelEnumEquivalentsTest, Test1) {
   test::ZrOProj proj;
   proj.check_init();
 
-  PrimClex primclex(proj.dir, null_log());
+  ScopedNullLogging logging;
+  PrimClex primclex(proj.dir);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
@@ -48,7 +49,8 @@ TEST(ScelEnumEquivalentsTest, Test2) {
   test::FCCTernaryProj proj;
   proj.check_init();
 
-  PrimClex primclex(proj.dir, null_log());
+  ScopedNullLogging logging;
+  PrimClex primclex(proj.dir);
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();

@@ -73,6 +73,7 @@ namespace CASM {
       std::set<Supercell> m_scel_list;
 
     };
+
   }
 }
 

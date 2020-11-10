@@ -5,6 +5,7 @@
 
 #include <set>
 #include <map>
+#include "casm/casm_io/Log.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 
@@ -304,7 +305,7 @@ namespace CASM {
     // NOTE to the wise: # of spanning members = rank-1
     m_rank_of_space = qr.rank();
     if(verbose)
-      std::cout << "Rank of space : " << m_rank_of_space << std::endl;
+      log() << "Rank of space : " << m_rank_of_space << std::endl;
 
     // Count over K-combinations of end members, for each K-combination, select one as origin and the rest as axes
     Index K = m_rank_of_space;
@@ -329,9 +330,9 @@ namespace CASM {
 
       if(verbose) {
         double p = round(1e4 * double(c) / double(ncomb)) / 100.;
-        std::cout << "combo #" << c << ": " << combo << std::endl;
-        std::cout << "Found " << m_allowed_list.size() << std::endl;
-        std::cout << p << "% complete. Considering possible origins for set \n" << tmembers << std::endl;
+        log() << "combo #" << c << ": " << combo << std::endl;
+        log() << "Found " << m_allowed_list.size() << std::endl;
+        log() << p << "% complete. Considering possible origins for set \n" << tmembers << std::endl;
       }
 
       //loop through all the end members and start them off as the origin
@@ -339,7 +340,7 @@ namespace CASM {
         torigin = tmembers.col(i_o);
 
         if(verbose)
-          std::cout << "The origin is: " << torigin.transpose() << "\n---" << std::endl;
+          log() << "The origin is: " << torigin.transpose() << "\n---" << std::endl;
 
         //after picking origin, see if remaining end members span the space
         //end members to span the space. Only keep those combinations
@@ -357,7 +358,7 @@ namespace CASM {
 
         //loop through end members and see what the values of the compositions works out to
         if(verbose)
-          std::cout << "Calculated compositions:" << std::endl;
+          log() << "Calculated compositions:" << std::endl;
 
         //flag to test for positive composition axes
         bool is_positive = true;
@@ -367,7 +368,7 @@ namespace CASM {
           // initialized Composition object
           test_comp = tcomp.calc(m_prim_end_members.row(j), NUMBER_ATOMS);
           if(verbose)
-            std::cout << m_prim_end_members.row(j) << "  :  " << test_comp.transpose() << std::endl;
+            log() << m_prim_end_members.row(j) << "  :  " << test_comp.transpose() << std::endl;
 
           for(Index k = 0; k < test_comp.size(); k++) {
             //if the calculated parametric composition value is either
@@ -388,7 +389,7 @@ namespace CASM {
       }
     }
     if(verbose)
-      std::cout << "                                                                                                                          " << std::endl;
+      log() << "                                                                                                                          " << std::endl;
 
   }
 
@@ -495,10 +496,10 @@ namespace CASM {
       m_allowed_list[i].print_composition_formula(stream, 20);
       stream << std::endl;
     }
-    //        print_end_member_formula(1,std::cout,10);
+    //        print_end_member_formula(1,log(),10);
     // for(Index i=0;i<allowed_list.size();i++){
-    //     allowed_list[i].print_composition_formula(std::cout);
-    //     std::cout<<std::endl;
+    //     allowed_list[i].print_composition_formula(log());
+    //     log()<<std::endl;
     // }
   }
 
@@ -653,8 +654,8 @@ namespace CASM {
   void ParamComposition::select_composition_axes(const Index &choice) {
 
     //printing the data from the 'choice'
-    // std::cout<<"This is the data from choice: "<<std::endl;
-    // allowed_list[choice].print_composition_matrices(std::cout);
+    // log()<<"This is the data from choice: "<<std::endl;
+    // allowed_list[choice].print_composition_matrices(log());
     if(m_allowed_list.size() < choice + 1) {
       std::cerr << "ERROR in ParamComposition::select_composition_axes. Your value of choice is outside the range of allowed_list" << std::endl;
       exit(666);
@@ -664,7 +665,7 @@ namespace CASM {
     m_origin = m_allowed_list[choice].origin();
     m_rank_of_space = m_allowed_list[choice].rank_of_space();
     m_spanning_end_members = m_allowed_list[choice].spanning_end_members();
-    //    print_composition_matrices(std::cout);
+    //    print_composition_matrices(log());
   }
 
 
@@ -679,4 +680,3 @@ namespace CASM {
 
 
 }
-

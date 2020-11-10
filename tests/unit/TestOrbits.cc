@@ -19,14 +19,13 @@ namespace test {
       //   specs,
       //   alloy_sites_filter,
       //   primclex.crystallography_tol(),
-      //   std::back_inserter(orbits),
-      //   primclex.log());
+      //   std::back_inserter(orbits));
     }
     catch(std::exception &e) {
-      default_err_log().error("'make_prim_periodic_orbits' failed in TestPrimPeriodicIntegralClusterOrbits");
-      //default_err_log() << "prim: \n" << primclex.prim() << std::endl;
-      default_err_log() << "specs: \n" << specs << std::endl;
-      default_err_log() << e.what() << std::endl;
+      err_log().error("'make_prim_periodic_orbits' failed in TestPrimPeriodicIntegralClusterOrbits");
+      //err_log() << "prim: \n" << primclex.prim() << std::endl;
+      err_log() << "specs: \n" << specs << std::endl;
+      err_log() << e.what() << std::endl;
       throw e;
     }
   }

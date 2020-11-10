@@ -25,6 +25,7 @@
 #include "casm/app/HamiltonianModules_impl.hh"
 #include "casm/app/QueryHandler_impl.hh"
 
+#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 #include "casm/clex/io/json/ClexBasisSpecs_json_io.hh"
@@ -105,9 +106,7 @@ namespace CASM {
   /// Initial construction of a PrimClex, from a primitive Structure
   PrimClex::PrimClex(
     ProjectSettings const &_project_settings,
-    std::shared_ptr<PrimType const> _shared_prim,
-    const Logging &logging) :
-    Logging(logging),
+    std::shared_ptr<PrimType const> _shared_prim) :
     m_data(new PrimClexData(_project_settings, _shared_prim)) {
 
     m_data->settings.set_crystallography_tol(TOL);
@@ -119,8 +118,7 @@ namespace CASM {
 
   /// Construct PrimClex from existing CASM project directory
   ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
-  PrimClex::PrimClex(const fs::path &_root, const Logging &logging):
-    Logging(logging),
+  PrimClex::PrimClex(const fs::path &_root):
     m_data(new PrimClexData(_root)) {
 
     _init();
@@ -306,7 +304,7 @@ namespace CASM {
     return *(m_data->prim_ptr);
   }
 
-  std::shared_ptr<PrimClex::PrimType const> &PrimClex::shared_prim() const {
+  std::shared_ptr<PrimClex::PrimType const> const &PrimClex::shared_prim() const {
     return this->m_data->prim_ptr;
   }
 
@@ -314,7 +312,7 @@ namespace CASM {
     return prim().basis().size();
   }
 
-  std::shared_ptr<PrimNeighborList> &PrimClex::shared_nlist() const {
+  std::shared_ptr<PrimNeighborList> const &PrimClex::shared_nlist() const {
     // lazy neighbor list generation
     if(!m_data->nlist) {
 
@@ -567,7 +565,6 @@ namespace CASM {
       settings.project_name() + "_Clexulator",
       settings.dir().clexulator_dir(basis_set_name),
       prim_neighbor_list,
-      log(),
       settings.compile_options(),
       settings.so_options()};
   }

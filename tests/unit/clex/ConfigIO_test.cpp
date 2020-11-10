@@ -199,13 +199,15 @@ TEST(ConfigIOTest, Make) {
 
 TEST(ConfigIOTest, AllTest) {
 
+  ScopedNullLogging logging;
+  //ScopedStringStreamLogging logging;
   test::FCCTernaryProj proj;
   proj.check_init();
   proj.check_composition();
   proj.check_enum();
 
-  Log log = null_log();
-  PrimClex primclex(proj.dir, log);
+  Log &log = CASM::log();
+  PrimClex primclex(proj.dir);
 
   log << "---- Comp -------------" << std::endl;
   ConfigIO::Comp comp;

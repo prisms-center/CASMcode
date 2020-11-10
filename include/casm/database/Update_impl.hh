@@ -18,7 +18,7 @@ namespace CASM {
       const PrimClex &primclex,
       const StructureMap<ConfigType> &mapper,
       std::string report_dir) :
-      ConfigData(primclex, null_log(), TypeTag<ConfigType>()),
+      ConfigData(primclex, TypeTag<ConfigType>()),
       m_structure_mapper(mapper),
       m_report_dir(report_dir) {}
 
@@ -27,7 +27,7 @@ namespace CASM {
     template<typename _ConfigType>
     void UpdateT<_ConfigType>::update(const DB::Selection<ConfigType> &selection, bool force) {
 
-      Log &log(this->primclex().log());
+      Log &log = CASM::log();
       auto const &project_settings = this->primclex().settings();
       auto calctype = project_settings.default_clex().calctype;
       auto required_properties = project_settings.required_properties(traits<ConfigType>::name, calctype);
@@ -159,8 +159,8 @@ namespace CASM {
         fs::path p = fs::path(m_report_dir) / (prefix + "_fail");
         fs::ofstream sout(p);
 
-        primclex().log() << "WARNING: Could not map " << fail.size() << " results." << std::endl;
-        primclex().log() << "  See detailed report: " << p  << std::endl << std::endl;
+        log() << "WARNING: Could not map " << fail.size() << " results." << std::endl;
+        log() << "  See detailed report: " << p  << std::endl << std::endl;
 
         sout << formatter(fail.begin(), fail.end());
       }
@@ -170,8 +170,8 @@ namespace CASM {
         fs::path p = fs::path(m_report_dir) / (prefix + "_success");
         fs::ofstream sout(p);
 
-        primclex().log() << "Successfully mapped " << success.size() << " results." << std::endl;
-        primclex().log() << "  See detailed report: " << p  << std::endl << std::endl;
+        log() << "Successfully mapped " << success.size() << " results." << std::endl;
+        log() << "  See detailed report: " << p  << std::endl << std::endl;
 
         sout << formatter(success.begin(), success.end());
       }
@@ -181,8 +181,8 @@ namespace CASM {
         fs::path p = fs::path(m_report_dir) / (prefix + "_conflict");
         fs::ofstream sout(p);
 
-        primclex().log() << "WARNING: Found " << conflict.size() << " conflicting relaxation results." << std::endl;
-        primclex().log() << "  See detailed report: " << p  << std::endl << std::endl;
+        log() << "WARNING: Found " << conflict.size() << " conflicting relaxation results." << std::endl;
+        log() << "  See detailed report: " << p  << std::endl << std::endl;
 
         sout << formatter(conflict.begin(), conflict.end());
       }
@@ -192,8 +192,8 @@ namespace CASM {
         fs::path p = fs::path(m_report_dir) / (prefix + "_unstable");
         fs::ofstream sout(p);
 
-        primclex().log() << "WARNING: Found " << unstable.size() << " unstable relaxations." << std::endl;
-        primclex().log() << "  See detailed report: " << p  << std::endl << std::endl;
+        log() << "WARNING: Found " << unstable.size() << " unstable relaxations." << std::endl;
+        log() << "  See detailed report: " << p  << std::endl << std::endl;
 
         sout << formatter(unstable.begin(), unstable.end());
       }
@@ -203,8 +203,8 @@ namespace CASM {
         fs::path p = fs::path(m_report_dir) / (prefix + "_unselected");
         fs::ofstream sout(p);
 
-        primclex().log() << "WARNING: Found " << unselected.size() << " unstable relaxations to unselected configurations." << std::endl;
-        primclex().log() << "  See detailed report: " << p  << std::endl << std::endl;
+        log() << "WARNING: Found " << unselected.size() << " unstable relaxations to unselected configurations." << std::endl;
+        log() << "  See detailed report: " << p  << std::endl << std::endl;
 
         sout << formatter(unselected.begin(), unselected.end());
       }
@@ -214,9 +214,9 @@ namespace CASM {
         fs::path p = fs::path(m_report_dir) / (prefix + "_new");
         fs::ofstream sout(p);
 
-        primclex().log() << "WARNING: Found " << new_config.size() << " unstable relaxations to new configurations." << std::endl
-                         << "  These configurations have been added to the project." << std::endl;
-        primclex().log() << "  See detailed report: " << p  << std::endl << std::endl;
+        log() << "WARNING: Found " << new_config.size() << " unstable relaxations to new configurations." << std::endl
+              << "  These configurations have been added to the project." << std::endl;
+        log() << "  See detailed report: " << p  << std::endl << std::endl;
 
         sout << formatter(unselected.begin(), unselected.end());
       }

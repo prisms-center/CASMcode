@@ -2,6 +2,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/NeighborList.hh"
+#include "casm/container/Permutation.hh"
 #include "casm/symmetry/SymTools.hh"
 #include "casm/symmetry/SymTools_impl.hh"
 
@@ -31,4 +32,3 @@ namespace CASM {
       MakeInvariantSubgroup()) {}
 
 }
-

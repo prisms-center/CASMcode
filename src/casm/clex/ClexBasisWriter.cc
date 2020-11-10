@@ -28,7 +28,7 @@ namespace CASM {
   void ClexBasisWriter::_initialize(Structure const &_prim, ParamPackMixIn const &_param_pack_mix_in) {
     m_param_pack_mix_in = _param_pack_mix_in.clone();
 
-    auto doftypes = all_local_dof_types(_prim);
+    auto doftypes = xtal::all_local_dof_types(_prim);
     for(auto const &doftype : doftypes) {
       auto cv = DoFType::traits(doftype).clust_function_visitors();
       auto sv = DoFType::traits(doftype).site_function_visitors();
@@ -38,7 +38,7 @@ namespace CASM {
         m_site_visitors.push_back(std::move(e));
     }
 
-    doftypes = global_dof_types(_prim);
+    doftypes = xtal::global_dof_types(_prim);
     for(auto const &doftype : doftypes) {
       auto cv = DoFType::traits(doftype).clust_function_visitors();
       auto sv = DoFType::traits(doftype).site_function_visitors();

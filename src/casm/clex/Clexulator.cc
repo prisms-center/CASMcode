@@ -13,7 +13,6 @@ namespace CASM {
   /// \param dirpath Directory containing the source code and compiled object file.
   /// \param nlist, A PrimNeighborList to be updated to include the neighborhood
   ///        of this Clexulator
-  /// \param logging Print messages to inform users that compilation is occuring
   /// \param compile_options Compilation options
   /// \param so_options Shared library compilation options
   ///
@@ -29,7 +28,6 @@ namespace CASM {
   Clexulator::Clexulator(std::string name,
                          fs::path dirpath,
                          PrimNeighborList &nlist,
-                         const Logging &logging,
                          std::string compile_options,
                          std::string so_options): m_name(name) {
 
@@ -42,7 +40,7 @@ namespace CASM {
                 "compile time depends on how many basis functions are included");
     }
     catch(std::exception &e) {
-      logging.log() << "Clexulator construction failed: could not construct runtime library." << std::endl;
+      log() << "Clexulator construction failed: could not construct runtime library." << std::endl;
       throw;
     }
 

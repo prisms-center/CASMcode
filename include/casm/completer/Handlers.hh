@@ -235,6 +235,9 @@ namespace CASM {
       ///Add --selection suboption (defaults to MASTER)
       void add_selection_suboption(const fs::path &_default = "MASTER");
 
+      ///Add --selection suboption (no default)
+      void add_selection_no_default_suboption();
+
       ///Add --config suboption (defaults to MASTER)
       void add_configlist_suboption(const fs::path &_default = "MASTER");
 
@@ -326,7 +329,7 @@ namespace CASM {
 
       //-------------------------------------------------------------------------------------//
 
-      ///Add a plain --help suboption
+      ///Add a plain --help and --desc suboptions
       void add_help_suboption();
 
       //-------------------------------------------------------------------------------------//
@@ -866,9 +869,10 @@ namespace CASM {
 
     public:
 
-      using OptionHandlerBase::selection_path;
-
+      using OptionHandlerBase::coordtype_str;
+      using OptionHandlerBase::coordtype_enum;
       using OptionHandlerBase::dof_strs;
+      using OptionHandlerBase::selection_path;
 
 
       SymOption();
@@ -915,8 +919,8 @@ namespace CASM {
         return m_method;
       }
 
-      const std::vector<std::string> &filter_strs() const {
-        return m_filter_strs;
+      const std::string &filter_str() const {
+        return m_filter_str;
       }
 
     private:
@@ -926,7 +930,7 @@ namespace CASM {
       std::vector<std::string> m_desc_vec;
 
       std::string m_method;
-      std::vector<std::string> m_filter_strs;
+      std::string m_filter_str;
 
     };
     //*****************************************************************************************************//

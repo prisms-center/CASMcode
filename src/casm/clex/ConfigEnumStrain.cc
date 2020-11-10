@@ -1,314 +1,42 @@
-#include "casm/clex/ConfigEnumStrain.hh"
 #include <algorithm>
-#include "casm/crystallography/Structure.hh"
-#include "casm/symmetry/SymRepTools.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/enumerator/Enumerator_impl.hh"
-#include "casm/database/ConfigDatabase.hh"
-#include "casm/clex/ScelEnum.hh"
-#include "casm/clex/Supercell.hh"
+#include "casm/clex/ConfigEnumStrain.hh"
 #include "casm/clex/ConfigIsEquivalent.hh"
+#include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/enumerator/ConfigEnumInput.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/algorithm.hh"
-#include "casm/crystallography/BasicStructure.hh"
-
-extern "C" {
-  CASM::EnumInterfaceBase *make_ConfigEnumStrain_interface() {
-    return new CASM::EnumInterface<CASM::ConfigEnumStrain>();
-  }
-}
+#include "casm/symmetry/SymRepTools.hh"
 
 namespace CASM {
 
-  struct MakeConfigInvariantSubgroup {
 
-    MakeConfigInvariantSubgroup() {}
+  ConfigEnumStrain::ConfigEnumStrain(ConfigEnumInput const &initial_state,
+                                     ConfigEnumStrainParams const &params) :
+    ConfigEnumStrain(initial_state,
+                     params.wedges,
+                     params.min_val,
+                     params.max_val,
+                     params.inc_val,
+                     params.dof,
+                     params.auto_range,
+                     params.trim_corners) {}
 
-    template<typename PermuteOutputIterator>
-    PermuteOutputIterator operator()(const Configuration &config, PermuteIterator begin, PermuteIterator end, PermuteOutputIterator result) {
-      ConfigIsEquivalent f(config, config.crystallography_tol());
-      return std::copy_if(begin, end, result, f);
-    }
 
-  };
-
-  const std::string ConfigEnumStrain::enumerator_name = "ConfigEnumStrain";
-
-  std::string ConfigEnumStrain::interface_help() {
-    return
-      "ConfigEnumStrain: \n\n"
-
-      "  confignames: Array of strings (optional) \n"
-      "    Names of configurations used as initial states. Strains are enumerated\n"
-      "    as perturbations to specified configurations. \n"
-      "    Ex: \"confignames\" : [\"SCEL2_2_1_1_0_0_0/3\", \"SCEL4_2_2_1_0_0_0/10\"]\n\n"
-
-      "  scelnames: Array of strings (optional) \n"
-      "    Names of supercells used as initial states. Strains are enumerated\n"
-      "    as perturbations of the fully zeroed configuration of the specified"
-      "    supercells.\n"
-      "    Ex: \"scelnames\" : [\"SCEL2_2_1_1_0_0_0\",\"SCEL4_2_3_1_0_0_0\"]\n\n"
-
-      "  filter: string (optional, default=None)\n"
-      "    A query command to use to filter which Configurations are kept.          \n\n"
-
-      "  dry_run: bool (optional, default=false)\n"
-      "    Perform dry run and print symmetry analysis info for chosen configuration.\n\n"
-
-      "  supercells: ScelEnum JSON settings (default='{\"existing_only\"=true}')\n"
-      "    Indicate supercells to use as initial states of enumeration in terms of size\n"
-      "    and unit cell via a JSON object conforming to the format of 'ScelEnum' JSON\n"
-      "    settings. \"scelnames\" will override \"supercells\", but if neither is specified\n"
-      "    all existing supercells are used by default. See 'ScelEnum' description for details.\n\n"
-
-      "  min: array of doubles (optional, default = [0,...,0]) \n"
-      "    Minimum, starting value of grid counter\n"
-      "    Dimension must be either 6, or equal to number of rows of \"axes\"\n"
-      "    Ex: \"min\" : [-0.1, -0.1, -0.1, -0.01, -0.01, -0.01]\n\n"
-
-      "  max: array of doubles (required) \n"
-      "    Maximum, final value of grid counter\n"
-      "    Dimension must be either 6, or equal to number of rows of \"axes\"\n"
-      "    Ex: \"max\" : [0.1, 0.1, 0.1, 0.01, 0.01, 0.01]\n\n"
-
-      "  increment: array of doubles (required) \n"
-      "    Amount by which to increment counter elements\n"
-      "    Dimension must be either 6, or equal to number of rows of \"axes\"\n"
-      "    Ex: \"increment\" : [0.01, 0.01, 0.01, 0.01, 0.01, 0.01]\n\n"
-
-      "  axes: matrix of doubles (optional, default=identity matrix) \n"
-      "    Coordinate axes of strain grid. Rows of matrix specify linear combinations of\n"
-      "    strain basis specified in prim.json. May be rank deficient.\n"
-      "    Ex: \"axes\" : [[1,0,0,0,0,0],\n"
-      "                    [0,1,0,0,0,0],\n"
-      "                    [0,0,1,0,0,0]]\n\n"
-
-      "  sym_axes: bool (optional, default=false)\n"
-      "    If true, overrides \"axes\" field and instead constructs symmetry-adapted grid axes\n"
-      "    as the symmetry-adapted strain order parameters of 'config'. Run with option \n"
-      "    \"dry_run\": true to obtain analysis report including the symmetry-adapted axes\n"
-      "    without adding enumerated configurations to project.\n\n"
-
-      "  trim_corners: bool (optional, default=true) Exclude extreme grid points, if true\n"
-      "    If true, any grid points outside the largest ellipsoid inscribed within the extrema\n"
-      "    of the grid will be discarded\n\n"
-
-      "  Examples:\n"
-      "    To enumerate all strain perturbations of a particular configuration:\n"
-      "      casm enum --method ConfigEnumStrain -i \n"
-      "      '{ \n"
-      "        \"config\" : \"SCEL4_1_4_1_0_0_0/3\",\n"
-      "        \"increment\" : [0.01, 0.01, 0.01, 0., 0., 0.],"
-      "        \"max\" : [0.05, 0.05, 0,05, 0., 0., 0.]"
-      "        } \n"
-      "      }' \n\n";
-  }
-
-  int ConfigEnumStrain::run(
-    const PrimClex &primclex,
-    const jsonParser &_kwargs,
-    const Completer::EnumOption &enum_opt,
-    EnumeratorMap const *interface_map) {
-    //bool analysis = _kwargs.get_if_else<bool>("analysis", false);
-
-    DoFKey strain_dof_key;
-    std::vector<DoFKey> tdof_types = global_dof_types(primclex.prim());
-    Index istrain = find_index_if(tdof_types,
-    [](DoFKey const & other) {
-      return other.find("strain") != std::string::npos;
-    });
-    if(istrain == tdof_types.size())
-      throw std::runtime_error("Cannot enumerate strains for project in which strain has not been specified as a degree of freedom.");
-    strain_dof_key = tdof_types[istrain];
-    Index dim = primclex.prim().structure().global_dof(strain_dof_key).dim();
-
-    Eigen::MatrixXd axes;
-    Eigen::VectorXd min_val, max_val, inc_val;
-    std::vector<std::string> confignames;
-
-    bool auto_range = false;
-    bool trim_corners = true;
-    bool sym_axes = false;
-    try {
-      _kwargs.get_if(trim_corners, "trim_corners");
-      _kwargs.get_if(sym_axes, "sym_axes");
-      if(!(_kwargs.contains("axes"))) {
-        axes.setIdentity(dim, dim);
-      }
-      else {
-        axes = _kwargs["axes"].get<Eigen::MatrixXd>().transpose();
-        if(axes.rows() != dim || axes.cols() > dim) {
-          throw std::runtime_error("In JSON input for ConfigEnumStrain, field \"axes\" must be a matrix having exactly " + std::to_string(dim) +
-                                   " columns and no more than " + std::to_string(dim) + " rows.");
-        }
-      }
-
-      //min
-      if(_kwargs.contains("min")) {
-
-        if(_kwargs["min"].is_number()) {
-          min_val = Eigen::VectorXd::Constant(axes.cols(), _kwargs["min"].get<double>());
-        }
-        else {
-          _kwargs["min"].get(min_val);
-          if(min_val.size() != axes.cols()) {
-            throw std::runtime_error("Array field \"min\" must have dimension equal to number of coordinate axes!");
-          }
-        }
-      }
-      else {
-        auto_range = sym_axes;
-        min_val = Eigen::VectorXd::Constant(axes.cols(), 0);
-      }
-
-      //max
-      if(!_kwargs.contains("max")) {
-        throw std::runtime_error("Field \"max\" is required.\n");
-      }
-      if(_kwargs["max"].is_number()) {
-        max_val = Eigen::VectorXd::Constant(axes.cols(), _kwargs["max"].get<double>());
-      }
-      else {
-        _kwargs["max"].get(max_val);
-        if(max_val.size() != axes.cols()) {
-          throw std::runtime_error("Array field \"max\" must have dimension equal to number of coordinate axes!");
-        }
-      }
-
-      //inc
-      if(!_kwargs.contains("increment")) {
-        throw std::runtime_error("Field \"increment\" is required.\n");
-      }
-      if(_kwargs["increment"].is_number()) {
-        inc_val = Eigen::VectorXd::Constant(axes.cols(), _kwargs["increment"].get<double>());
-      }
-      else {
-        _kwargs["increment"].get(inc_val);
-        if(inc_val.size() != axes.cols()) {
-          throw std::runtime_error("Array field \"increment\" must have dimension equal to number of coordinate axes!");
-        }
-
-      }
-
-    }
-    catch(std::exception &e) {
-      throw std::runtime_error(std::string("Error parsing JSON arguments for ConfigStrain:") + e.what());
-    }
-
-    std::vector<ConfigEnumInput> in_configs = make_enumerator_input_configs(primclex, _kwargs, enum_opt, interface_map);
-
-    std::vector<std::string> filter_expr = make_enumerator_filter_expr(_kwargs, enum_opt);
-
-    for(ConfigEnumInput const &config : in_configs) {
-      Index result = run(primclex,
-                         config,
-                         axes,
-                         min_val,
-                         max_val,
-                         inc_val,
-                         sym_axes,
-                         auto_range,
-                         trim_corners,
-                         //analysis,
-                         filter_expr,
-                         CASM::dry_run(_kwargs, enum_opt));
-      if(result)
-        return result;
-    }
-    return 0;
-
-  }
-
-  int ConfigEnumStrain::run(PrimClex const &_primclex,
-                            ConfigEnumInput const &_config,
-                            Eigen::Ref<const Eigen::MatrixXd> const &_axes,
-                            Eigen::Ref<const Eigen::VectorXd> const &min_val,
-                            Eigen::Ref<const Eigen::VectorXd> const &max_val,
-                            Eigen::Ref<const Eigen::VectorXd> const &inc_val,
-                            bool sym_axes,
-                            bool auto_range,
-                            bool trim_corners,
-                            //bool analysis,
-                            std::vector<std::string> const &_filter_expr,
-                            bool dry_run) {
-    std::vector<SymRepTools::SubWedge> wedges;
-    std::vector<int> dims;
-    SymGroup pg = make_point_group(_config.group(), _config.supercell().sym_info().supercell_lattice());
-    DoFKey strain_dof_key;
-    std::vector<DoFKey> tdof_types = global_dof_types(_primclex.prim());
-    Index istrain = find_index_if(tdof_types,
-    [](DoFKey const & other) {
-      return other.find("strain") != std::string::npos;
-    });
-    if(istrain == tdof_types.size())
-      throw std::runtime_error("Cannot enumerate strains for project in which strain has not been specified as a degree of freedom.");
-    strain_dof_key = tdof_types[istrain];
-    if(!sym_axes) {
-      wedges.push_back(SymRepTools::SubWedge({SymRepTools::IrrepWedge::make_dummy_irrep_wedge(_axes)}));
-    }
-    else
-      /* wedges = SymRepTools::symrep_subwedges(pg, _primclex.prim().structure().global_dof(strain_dof_key).symrep_ID()); */
-      wedges = SymRepTools::symrep_subwedges(pg, _primclex.prim().global_dof_symrep_ID(strain_dof_key));
-
-    //PRINT INFO TO LOG:
-    Log &log = _primclex.log();
-    log << "Strain enumeration summary:\n";
-    if(sym_axes) {
-      log << "  Strains will be enumerated within the " << wedges.size() << " symmetrically distinct sub-wedges\n";
-    }
-    else {
-      log << "  Strains will be enumerated using the user-specified grid\n";
-    }
-    Index l = 1;
-    Eigen::IOFormat tformat(4, 0, 8, " ", "\n", "    ", "", "", "");
-    for(SymRepTools::SubWedge const &wedge : wedges) {
-      if(sym_axes)
-        log << "  Sub-wedge #" << l++ << ": \n";
-      for(auto const &irr : wedge.irrep_wedges()) {
-        log <<  irr.axes.transpose().format(tformat) << "\n   --------------\n";
-
-      }
-      log << "\n";
-    }
-    log << "End of summary.\n\n";
-
-    auto constructor = [&](const ConfigEnumInput & in_config) {
-      return notstd::make_unique<ConfigEnumStrain>(in_config,
-                                                   wedges,
-                                                   min_val,
-                                                   max_val,
-                                                   inc_val,
-                                                   strain_dof_key,
-                                                   auto_range,
-                                                   trim_corners);
-    };
-
-    int returncode = insert_configs(enumerator_name,
-                                    _primclex,
-                                    _config,
-                                    constructor,
-                                    _filter_expr,
-                                    false,
-                                    dry_run);
-
-    return returncode;
-
-  }
-
-  ConfigEnumStrain::ConfigEnumStrain(const ConfigEnumInput &_init,
-                                     const std::vector<SymRepTools::SubWedge> &_wedges,
+  ConfigEnumStrain::ConfigEnumStrain(ConfigEnumInput const &initial_state,
+                                     std::vector<SymRepTools::SubWedge> const &wedges,
                                      Eigen::VectorXd min_val,
                                      Eigen::VectorXd max_val,
                                      Eigen::VectorXd inc_val,
-                                     DoFKey const &_strain_key,
+                                     DoFKey const &strain_key,
                                      bool auto_range,
                                      bool trim_corners) :
-    m_strain_key(_strain_key),
+    m_strain_key(strain_key),
     m_trim_corners(trim_corners),
-    m_current(_init.config()),
+    m_current(initial_state.configuration()),
     m_equiv_ind(0),
-    m_wedges(_wedges),
+    m_wedges(wedges),
     m_shape_factor(Eigen::MatrixXd::Identity(min_val.size(), min_val.size())) {
 
     //Condition range arrays and build shape_factor matrix
@@ -354,6 +82,14 @@ namespace CASM {
     if(!m_counter.valid()) {
       this->_invalidate();
     }
+
+    // auto &log = CASM::log();
+    // log.subsection().begin_section<Log::debug>();
+    // log.indent() << "normal coordinates: " << m_counter().transpose() << std::endl;
+    // log.indent() << "dof value: " << (m_wedges[m_equiv_ind].trans_mat() * m_counter()).transpose() << std::endl;
+    // log.indent() << std::endl;
+    // log.end_section();
+
     m_current.set_source(this->source(step()));
   }
 
@@ -380,6 +116,13 @@ namespace CASM {
 
     if(m_counter.valid()) {
 
+      // auto &log = CASM::log();
+      // log.subsection().begin_section<Log::debug>();
+      // log.indent() << "normal coordinates: " << m_counter().transpose() << std::endl;
+      // log.indent() << "dof value: " << (m_wedges[m_equiv_ind].trans_mat() * m_counter()).transpose() << std::endl;
+      // log.indent() << std::endl;
+      // log.end_section();
+
       m_current.configdof().set_global_dof(m_strain_key, m_wedges[m_equiv_ind].trans_mat() * m_counter());
 
       _increment_step();
@@ -391,5 +134,20 @@ namespace CASM {
     m_current.set_source(this->source(step()));
     return;
   }
+
+  std::string ConfigEnumStrain::name() const {
+    return enumerator_name;
+  }
+
+  const std::string ConfigEnumStrain::enumerator_name = "ConfigEnumStrain";
+
+  Index ConfigEnumStrain::subwedge_index() const {
+    return m_equiv_ind;
+  }
+
+  Eigen::VectorXd ConfigEnumStrain::normal_coordinate() const {
+    return m_counter();
+  }
+
 
 }

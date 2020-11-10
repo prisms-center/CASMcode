@@ -3,7 +3,6 @@
 
 #include <boost/filesystem/path.hpp>
 #include "casm/global/definitions.hh"
-#include "casm/casm_io/Log.hh"
 #include "casm/app/CLIParse.hh"
 #include "casm/app/errors.hh"
 #include "casm/misc/cloneable_ptr.hh"
@@ -54,34 +53,13 @@ namespace CASM {
     /// \brief CommandArgs constructor
     CommandArgs(int _argc,
                 char *_argv[],
-                PrimClex *_primclex,
-                fs::path _root,
-                const Logging &logging);
-
-    /// \brief CommandArgs constructor
-    CommandArgs(int _argc,
-                char *_argv[],
                 PrimClex *_primclex = nullptr,
-                fs::path _root = fs::path(),
-                Log &_log = default_log(),
-                Log &_err_log = default_err_log()) :
-      CommandArgs(_argc, _argv, _primclex, _root, Logging(_log, _log, _err_log)) {
-    }
-
-
-    /// \brief CommandArgs constructor
-    CommandArgs(std::string _args,
-                PrimClex *_primclex,
-                fs::path _root,
-                const Logging &logging);
+                fs::path _root = fs::path());
 
     /// \brief CommandArgs constructor
     CommandArgs(std::string _args,
                 PrimClex *_primclex = nullptr,
-                fs::path _root = fs::path(),
-                Log &_log = default_log(),
-                Log &_err_log = default_err_log()) :
-      CommandArgs(_args, _primclex, _root, Logging(_log, _log, _err_log)) {}
+                fs::path _root = fs::path());
 
     CommandArgs(const CommandArgs &other) = delete;
     CommandArgs(CommandArgs &&other) = delete;
@@ -123,10 +101,6 @@ namespace CASM {
   ///        return reference to existing or constructed PrimClex
   PrimClex &make_primclex_if_not(const CommandArgs &args, std::unique_ptr<PrimClex> &uniq_primclex);
 
-  /// \brief If !_primclex, construct new PrimClex stored in uniq_primclex, then
-  ///        return reference to existing or constructed PrimClex
-  PrimClex &make_primclex_if_not(const CommandArgs &args, std::unique_ptr<PrimClex> &uniq_primclex, Log &status_log);
-
   /// \brief Return a reference to proper std::ostream
   std::ostream &make_ostream_if(
     bool output,
@@ -161,7 +135,7 @@ namespace CASM {
 
     virtual std::string name() const = 0;
 
-    virtual int run(const PrimClex &primclex, const jsonParser &kwargs, const OptionType &opt, InterfaceMap<OptionType> const *interface_map = nullptr) const = 0;
+    virtual int run(PrimClex const &primclex, jsonParser const &json_options) const = 0;
 
     std::unique_ptr<InterfaceBase> clone() const {
       return std::unique_ptr<InterfaceBase>(this->_clone());

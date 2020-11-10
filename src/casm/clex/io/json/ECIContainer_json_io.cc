@@ -54,8 +54,8 @@ namespace CASM {
         double eci_value;
         ECIContainer::size_type linear_function_index;
         fs::path cluster_path = cluster_functions_path / std::to_string(i);
-        parser.require_at(eci_value, cluster_path / "eci");
-        parser.require_at(linear_function_index, cluster_path / "linear_function_index");
+        parser.require(eci_value, cluster_path / "eci");
+        parser.require(linear_function_index, cluster_path / "linear_function_index");
         value.push_back(eci_value);
         index.push_back(linear_function_index);
       }

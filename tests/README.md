@@ -31,8 +31,9 @@ BOOST_AUTO_TEST_CASE(Test1_ZrO) {
 
     test::ZrOProj proj;
     proj.check_init();
-    proj.check_composition(); # if composition axes required
-    PrimClex primclex(proj.dir, null_log());
+    proj.check_composition();    // if composition axes required
+    ScopedNullLogging logging;   // suppress printing
+    PrimClex primclex(proj.dir);
     ...
 }
 

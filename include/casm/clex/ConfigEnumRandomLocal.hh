@@ -1,19 +1,18 @@
 #ifndef CASM_ConfigEnumRandomLocal
 #define CASM_ConfigEnumRandomLocal
 
-#include "casm/container/Counter.hh"
-#include "casm/external/MersenneTwister/MersenneTwister.h"
-#include "casm/enumerator/InputEnumerator.hh"
+#include <functional>
 #include "casm/clex/Configuration.hh"
+#include "casm/container/Counter.hh"
+#include "casm/enumerator/InputEnumerator.hh"
+#include "casm/external/MersenneTwister/MersenneTwister.h"
 #include "casm/misc/cloneable_ptr.hh"
-
-extern "C" {
-  CASM::EnumInterfaceBase *make_ConfigEnumRandomLocal_interface();
-}
 
 class MTRand;
 
 namespace CASM {
+
+  class ConfigEnumInput;
 
   /** \defgroup ConfigEnumGroup Configuration Enumerators
    *  \ingroup Configuration
@@ -22,15 +21,45 @@ namespace CASM {
    *  @{
   */
 
-  /// \brief Enumerate random values for continuous degrees of freedom
-  ///
+  /// Parameters controlling ConfigEnumRandomLocal
+  struct ConfigEnumRandomLocalParams {
+
+    ConfigEnumRandomLocalParams(
+      MTRand &_mtrand,
+      DoFKey _dof_key,
+      Index _n_config,
+      double _mag,
+      bool _normal_distribution);
+
+    /// Random number generator
+    MTRand &mtrand;
+
+    /// Name of site degree of freedom for which normal coordinates are to be generated.
+    ///
+    /// DoFKey is a typedef for std::string
+    DoFKey dof_key;
+
+    /// Number of random configurations to generate
+    Index n_config;
+
+    /// Magnitude used to scale random vector at each site
+    double mag;
+
+    /// True if using "normal" distribution, else using "uniform" distribution
+    bool normal_distribution;
+  };
+
+  /// Enumerate random values for continuous degrees of freedom
   class ConfigEnumRandomLocal : public InputEnumeratorBase<Configuration> {
 
     // -- Required members -------------------
 
   public:
 
-    /// \brief Construct with a Supercell, using all permutations
+    ConfigEnumRandomLocal(
+      ConfigEnumInput const &_in_config,
+      ConfigEnumRandomLocalParams const &params);
+
     ConfigEnumRandomLocal(
       ConfigEnumInput const &_in_config,
       DoFKey const &_dof_key,
@@ -39,13 +68,9 @@ namespace CASM {
       bool _normal,
       MTRand &_mtrand);
 
-    std::string name() const override {
-      return enumerator_name;
-    }
+    std::string name() const override;
 
     static const std::string enumerator_name;
-    static std::string interface_help();
-    static int run(const PrimClex &primclex, const jsonParser &kwargs, const Completer::EnumOption &enum_opt, EnumeratorMap const *interface_map = nullptr);
 
   private:
     /// Implements increment
@@ -63,8 +88,8 @@ namespace CASM {
 
     ConfigDoF::LocalDoFContainerType *m_dof_vals;
 
-    // Pointer to pseudo-random number generator
-    MTRand *m_mtrand;
+    // Pseudo-random number generator
+    MTRand &m_mtrand;
 
     // std deviation of normal distribution
     // max magnitude if uniform distribution

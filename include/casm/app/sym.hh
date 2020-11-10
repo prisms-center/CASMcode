@@ -5,7 +5,14 @@
 #include "casm/completer/Handlers.hh"
 
 namespace CASM {
-  /// 'casm enum' implementation
+
+  /// 'casm sym' implementation
+  ///
+  /// Implements:
+  /// - (default) write / print prim symmetry
+  /// - symmetrize a POSCAR
+  /// - DoF space analysis
+  ///
   class SymCommand : public APICommand<Completer::SymOption> {
 
   public:

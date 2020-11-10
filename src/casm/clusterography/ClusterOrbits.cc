@@ -1,4 +1,5 @@
 #include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/symmetry/PermuteIterator.hh"
 
 namespace CASM {
 

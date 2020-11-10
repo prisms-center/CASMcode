@@ -21,7 +21,7 @@ namespace CASM {
     class Remove<Supercell> {
 
     public:
-      Remove(const PrimClex &primclex, std::string report_dir, Log &_file_log);
+      Remove(const PrimClex &primclex, std::string report_dir);
 
       /// \brief Erase all enumerated configs that have no data; if no data, erase supercell
       void erase(const DB::Selection<Supercell> &selection, bool dry_run);
@@ -39,12 +39,9 @@ namespace CASM {
 
       std::string report_dir() const;
 
-      Log &file_log() const;
-
     private:
       const PrimClex &m_primclex;
       std::string m_report_dir;
-      Log &m_file_log;
     };
 
   }

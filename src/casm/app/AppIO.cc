@@ -304,7 +304,7 @@ namespace CASM {
       from_json(latvec_transpose, json["lattice_vectors"]);
     }
     catch(std::exception &e) {
-      std::cout << e.what() << std::endl;
+      log() << e.what() << std::endl;
       throw std::runtime_error("Error parsing global field \"lattice_vectors\" from prim JSON.");
     }
 
@@ -318,7 +318,7 @@ namespace CASM {
       prim.set_title(json["title"].get<std::string>());
     }
     catch(std::exception &e) {
-      std::cout << e.what() << std::endl;
+      log() << e.what() << std::endl;
       throw std::runtime_error("Error parsing global field \"title\" from prim JSON.");
     }
 
@@ -339,7 +339,7 @@ namespace CASM {
             _dof_map.emplace(std::make_pair(it.name(), it->get<xtal::DoFSet>(_modules->aniso_val_dict().lookup(it.name()))));
           }
           catch(std::exception &e) {
-            std::cout << e.what() << std::endl;
+            log() << e.what() << std::endl;
             throw std::runtime_error("Error parsing global field \"dofs\" from prim JSON. Failure for DoF type " + it.name() + ": " + e.what());
           }
 
@@ -348,7 +348,7 @@ namespace CASM {
       }
     }
     catch(std::exception &e) {
-      std::cout << e.what() << std::endl;
+      log() << e.what() << std::endl;
       throw std::runtime_error("Error parsing global field \"dofs\" from prim JSON.");
     }
 
@@ -358,7 +358,7 @@ namespace CASM {
       from_json(mode, json["coordinate_mode"]);
     }
     catch(std::exception &e) {
-      std::cout << e.what() << std::endl;
+      log() << e.what() << std::endl;
       throw std::runtime_error("Error parsing global field \"coordinate_mode\" from prim JSON.");
     }
 
@@ -377,14 +377,14 @@ namespace CASM {
         for(; it != it_end; ++it) {
           std::string chem_name = it.name();
           it->get_if(chem_name, "name");
-          //std::cout << "chem_name: " << chem_name << "\n";
+          //log() << "chem_name: " << chem_name << "\n";
           auto mol_it = mol_map.emplace(it.name(), Molecule(chem_name)).first;
           from_json(mol_it->second, *it, f2c, *_modules);
         }
       }
     }
     catch(std::exception &e) {
-      std::cout << e.what() << std::endl;
+      log() << e.what() << std::endl;
       throw std::runtime_error("Error parsing global field \"species\" from prim JSON.");
     }
 
@@ -394,7 +394,7 @@ namespace CASM {
         prim.push_back(bjson.get<Site>(prim.lattice(), mode, mol_map, *_modules));
     }
     catch(std::exception &e) {
-      std::cout << e.what() << std::endl;
+      log() << e.what() << std::endl;
       throw std::runtime_error("Error parsing global field \"basis\" from prim JSON.");
     }
     return prim;
@@ -1106,12 +1106,12 @@ namespace CASM {
   ORBIT_VECTOR_INST(LocalIntegralClusterOrbit)
   ORBIT_VECTOR_INST(PrimPeriodicIntegralClusterOrbit)
   ORBIT_VECTOR_INST(ScelPeriodicIntegralClusterOrbit)
-  ORBIT_VECTOR_INST(WithinScelIntegralClusterOrbit)
+  // ORBIT_VECTOR_INST(WithinScelIntegralClusterOrbit)
 
   ORBIT_SET_INST(LocalIntegralClusterOrbit)
   ORBIT_SET_INST(PrimPeriodicIntegralClusterOrbit)
   ORBIT_SET_INST(ScelPeriodicIntegralClusterOrbit)
-  ORBIT_SET_INST(WithinScelIntegralClusterOrbit)
+  // ORBIT_SET_INST(WithinScelIntegralClusterOrbit)
 
 
 }

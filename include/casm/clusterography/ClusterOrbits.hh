@@ -18,6 +18,7 @@ namespace CASM {
     class UnitCellCoord;
   }
   template<typename OrbitType> struct OrbitGenerators;
+  class PermuteIterator;
   class Structure;
   class SymGroup;
 
@@ -146,6 +147,7 @@ namespace CASM {
     IntegralCluster const &phenomenal,
     double cutoff_radius,
     SiteFilterFunction site_filter,
+    bool include_phenomenal_sites,
     OutputIterator result,
     double xtal_tol);
 

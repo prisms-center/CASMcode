@@ -2,6 +2,7 @@
 #define CASM_OrbitGeneration_impl
 
 #include "casm/symmetry/OrbitGeneration.hh"
+#include "casm/symmetry/PermuteIterator.hh"
 
 namespace CASM {
 
@@ -118,6 +119,46 @@ namespace CASM {
   const SymOp &CanonicalGenerator<_OrbitType>::from_canonical() const {
     return to_canonical().inverse();
   }
+
+
+  // // --- template<typename _SymCompareType> class PermuteCanonicalGenerator ---
+  //
+  // template<typename _SymCompareType>
+  // PermuteCanonicalGenerator<_SymCompareType>::PermuteCanonicalGenerator(
+  //   PermuteIterator _permute_begin,
+  //   PermuteIterator _permute_end,
+  //   SymCompareType const &_sym_compare) :
+  //   permute_begin(_permute_begin),
+  //   permute_end(_permute_end),
+  //   sym_compare(_sym_compare),
+  //   m_to_canonical(nullptr) {}
+  //
+  // /// \brief Applies symmetry to return an equivalent Element in a canonical form
+  // template<typename _SymCompareType>
+  // typename PermuteCanonicalGenerator<_SymCompareType>::Element
+  // PermuteCanonicalGenerator<_SymCompareType>::operator()(Element const &e) const {
+  //   Element result = sym_compare.prepare(e);
+  //   for(auto permute_it = permute_begin; permute_it != permute_end; ++permute_it) {
+  //     auto test = sym_compare.prepare(sym_compare.copy_apply(permute_it.sym_op(), e));
+  //     if(sym_compare.compare(result, test)) {
+  //       result = test;
+  //       m_to_canonical = &permute_it;
+  //     }
+  //   }
+  //   return result;
+  // }
+  //
+  // /// \brief After using call operator, this can be checked
+  // template<typename _SymCompareType>
+  // PermuteIterator const &PermuteCanonicalGenerator<_SymCompareType>::to_canonical() const {
+  //   return *m_to_canonical;
+  // }
+  //
+  // /// \brief After using call operator, this can be checked
+  // template<typename _SymCompareType>
+  // PermuteIterator const &PermuteCanonicalGenerator<_SymCompareType>::from_canonical() const {
+  //   return to_canonical().inverse();
+  // }
 
 
   // --- template<typename _OrbitType> class IsCanonical<_OrbitType> ---

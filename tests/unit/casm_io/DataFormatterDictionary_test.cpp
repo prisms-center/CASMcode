@@ -21,7 +21,7 @@
 // #include "casm/app/QueryHandler.hh"
 // #include "casm/app/ProjectSettings.hh"
 
-// #include "casm/enumerator/Enumerator_impl.hh"
+// #include "casm/app/enum/EnumInterface_impl.hh"
 // #include "casm/app/enum.hh"
 
 
@@ -34,7 +34,8 @@ using namespace CASM;
 //   test::FCCTernaryProj proj;
 //   proj.check_init();
 //
-//   PrimClex primclex(proj.dir, null_log());
+//   ScopedNullLogging logging;
+//   PrimClex primclex(proj.dir);
 //   const Structure &prim(primclex.prim());
 //   primclex.settings().set_crystallography_tol(1e-5);
 //
@@ -107,7 +108,8 @@ using namespace CASM;
 //   proj.check_init();
 //   proj.check_composition();
 //
-//   PrimClex primclex(proj.dir, null_log());
+//   ScopedNullLogging logging;
+//   PrimClex primclex(proj.dir);
 //   const Structure &prim(primclex.prim());
 //   primclex.settings().set_crystallography_tol(1e-5);
 //

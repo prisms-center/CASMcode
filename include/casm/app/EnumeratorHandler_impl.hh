@@ -1,20 +1,20 @@
-#include "casm/app/EnumeratorHandler.hh"
-#include "casm/app/ProjectSettings.hh"
-
 #include <boost/filesystem.hpp>
+
 #include "casm/system/RuntimeLibrary.hh"
+#include "casm/app/EnumeratorHandler.hh"
 #include "casm/app/LogRuntimeLibrary.hh"
-#include "casm/enumerator/Enumerator.hh"
-#include "casm/clex/PrimClex.hh"
+#include "casm/app/ProjectSettings.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/app/enum/EnumInterface.hh"
 #include "casm/completer/Handlers.hh"
+#include "casm/enumerator/Enumerator.hh"
 
 namespace CASM {
 
   /// \brief Load enumerator plugins from a CASM project
   ///
   /// \param set CASM project settings to read enumerator plugins from
-  /// \param enum_it Inserter to EnumeratorMap where the plugins should be stored
+  /// \param enum_it Inserter to EnumInterfaceVector where the plugins should be stored
   /// \param lib_it Inserter to container of pair<std::string, std::shared_ptr<RuntimeLibrary> >
   ///        holding the libraries with the enumerator plugins
   ///
@@ -29,11 +29,11 @@ namespace CASM {
   /// \note The lifetime of the RuntimeLibrary must be longer than the lifetime
   /// of the EnumInterface
   ///
-  template<typename EnumeratorMapInserter, typename RuntimeLibInserter>
-  std::pair<EnumeratorMapInserter, RuntimeLibInserter>
+  template<typename EnumInterfaceVectorInserter, typename RuntimeLibInserter>
+  std::pair<EnumInterfaceVectorInserter, RuntimeLibInserter>
   load_enumerator_plugins(
-    const ProjectSettings &set,
-    EnumeratorMapInserter enum_it,
+    ProjectSettings const &set,
+    EnumInterfaceVectorInserter enum_it,
     RuntimeLibInserter lib_it) {
 
     const DirectoryStructure &dir = set.dir();
@@ -69,11 +69,11 @@ namespace CASM {
           auto make_interface = lib_ptr->get_function<EnumInterfaceBase* ()>(
                                   "make_" + f_s.substr(0, f_size - 3) + "_interface");
 
-          std::unique_ptr<EnumInterfaceBase> ptr(make_interface());
+          notstd::cloneable_ptr<EnumInterfaceBase> ptr(make_interface());
 
-          // will clone on insert
-          *enum_it++ = *ptr;
-          *lib_it++ = std::make_pair(ptr->name(), lib_ptr);
+          std::string method_name = ptr->name();
+          *enum_it++ = std::move(ptr);
+          *lib_it++ = std::make_pair(method_name, lib_ptr);
         }
       }
     }

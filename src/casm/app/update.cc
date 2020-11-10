@@ -1,6 +1,7 @@
 #include "casm/app/update.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/app/DBInterface.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/database/Import.hh"
@@ -36,7 +37,7 @@ namespace CASM {
   // -- class UpdateCommandImplBase --------------------------------------------
 
   /// Defaults used if DataObject type doesn't matter or not given
-  class UpdateCommandImplBase : public Logging {
+  class UpdateCommandImplBase {
   public:
 
     UpdateCommandImplBase(const UpdateCommand &cmd);
@@ -56,7 +57,6 @@ namespace CASM {
 
 
   UpdateCommandImplBase::UpdateCommandImplBase(const UpdateCommand &cmd) :
-    Logging(cmd),
     m_cmd(cmd) {}
 
   int UpdateCommandImplBase::help() const {

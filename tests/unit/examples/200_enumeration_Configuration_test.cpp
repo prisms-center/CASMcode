@@ -60,23 +60,55 @@
 //       [<- sublattice 0 "occ" values -> | <- sublattice 1 "occ" values -> | ... ]
 //
 // - the values of the continuous site DoF within the supercell ("local_dofs",
-//   std::map<DoFKey, LocalDoFContainerType>).
+//   std::map<DoFKey, LocalContinuousConfigDoFValues>)
 //
-//   Example: Displacement values, with DoF basis equal to the standard basis (dx, dy, dz),
+//   Example: Displacement values, with prim DoF basis equal to the standard basis (dx, dy, dz),
 //   accessed via `Eigen::MatrixXd const &ConfigDoF::local_dofs("disp").values()`:
 //
 //       [<- sublattice 0 dx values -> | <- sublattice 1 dx values -> | ... ]
 //       [<- sublattice 0 dy values -> | <- sublattice 1 dy values -> | ... ]
 //       [<- sublattice 0 dz values -> | <- sublattice 1 dz values -> | ... ]
 //
+//   Example: Displacement values, with non-standard prim DoF basis:
+//
+//       "basis" : [ {
+//         "coordinate": [c0x, c0y, c0z],
+//         "occupants": [...],
+//         "dofs": {
+//           "disp" : {
+//             "axis_names" : ["dxy", "dz"],
+//             "axes" : [[1.0, 1.0, 0.0],
+//                       [0.0, 0.0, 1.0]]}}
+//         },
+//         {
+//         "coordinate": [c1x, c1y, c1z],
+//         "occupants": [...],
+//         "dofs": {
+//           "disp" : {
+//             "axis_names" : ["d\bar{x}y", "dz"],
+//             "axes" : [[-1.0, 1.0, 0.0],
+//                       [0.0, 0.0, 1.0]]}}
+//         },
+//         ...
+//       }
+//
+//       [<- sublattice 0 dxy values -> | <- sublattice 1 d\bar{x}y values ->| ... ]
+//       [<- sublattice 0 dz values  -> | <- sublattice 1 dz values ->       | ... ]
+//       [<- 0.0 values ->              | <- 0.0 values ->                   | ... ]
+//
 // - the values of the continuous global DoF ("global_dofs",
 //   std::map<DoFKey, GlobalDoFContainerType>).
 //
-//   Example: GLstrain values, with DoF basis equal to the standard basis, accessed via
+//   Example: GLstrain values, with prim DoF basis equal to the standard basis, accessed via
 //   `Eigen::VectorXd const &ConfigDoF::global_dofs("GLstrain").values()`:
 //
 //       [e_xx, e_yy, e_zz, sqrt(2)*e_yz, sqrt(2)*e_xz, sqrt(2)*e_xy]
 //
+// Note: Continuous DoF values stored in memory in ConfigDoF are coordinates in the
+// prim DoF basis (the "axes" given in "prim.json" which set xtal::SiteDoFSet::basis() or
+// xtal::DoFSet::basis()), but when saved to file (i.e. `.casm/config/config_list.json`) they are
+// saved as coordinates in the standard DoF basis (with axes meaning as described by
+// AnisoValTraits::standard_var_names()).
 //
 // MappedProperties
 // ----------------
@@ -120,7 +152,7 @@ TEST(ExampleEnumerationSupercell, SupercellConstructor) {
 
   // The prim to super lattice transformation matrix, T:
   //   super_lattice_column_matrix = T * prim_lattice_column_matrix
-  Eigen::Matrix3i T;
+  Eigen::Matrix3l T;
   T << 2, 0, 0,
   0, 2, 0,
   0, 0, 2;
@@ -138,7 +170,7 @@ TEST(ExampleEnumerationConfiguration, ConfigurationConstructor) {
 
   // The prim to super lattice transformation matrix, T:
   //   super_lattice_column_matrix = T * prim_lattice_column_matrix
-  Eigen::Matrix3i T;
+  Eigen::Matrix3l T;
   T << 2, 0, 0,
   0, 2, 0,
   0, 0, 2;

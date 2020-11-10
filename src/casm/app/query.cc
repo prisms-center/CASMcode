@@ -3,6 +3,7 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/QueryHandler_impl.hh"
 #include "casm/casm_io/FormatFlag.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
@@ -53,7 +54,7 @@ namespace CASM {
   // -- QueryCommandImplBase --------------------------------------------
 
   /// Defaults used if DataObject type doesn't matter or not given
-  class QueryCommandImplBase : public Logging {
+  class QueryCommandImplBase {
   public:
 
     QueryCommandImplBase(const QueryCommand &cmd);
@@ -73,7 +74,6 @@ namespace CASM {
 
 
   QueryCommandImplBase::QueryCommandImplBase(const QueryCommand &cmd) :
-    Logging(cmd),
     m_cmd(cmd) {}
 
   int QueryCommandImplBase::help() const {
@@ -194,12 +194,12 @@ namespace CASM {
       return QueryCommandImplBase::help();
     }
 
-    m_cmd.log() <<
-                "Prints the properties for the objects currently selected in the MASTER\n"
-                "selection or the specifed selection file.\n\n"
+    log() <<
+          "Prints the properties for the objects currently selected in the MASTER\n"
+          "selection or the specifed selection file.\n\n"
 
-                "Property values are output in column-separated (default) or JSON format.  By default, \n"
-                "entries for 'name' and 'selected' values are included in the output. \n\n";
+          "Property values are output in column-separated (default) or JSON format.  By default, \n"
+          "entries for 'name' and 'selected' values are included in the output. \n\n";
 
     for(const std::string &str : m_cmd.opt().help_opt_vec()) {
       if(str.empty()) {
@@ -207,12 +207,12 @@ namespace CASM {
       }
 
       if(str[0] == 'o') {
-        m_cmd.log() << "Available operators for use within queries:" << std::endl;
-        _dict().print_help(log(), BaseDatumFormatter<DataObject>::Operator);
+        log() << "Available operators for use within queries:" << std::endl;
+        _dict().print_help(log(), DatumFormatterClass::Operator);
       }
       else if(str[0] == 'p') {
-        m_cmd.log() << "Available property tags are currently:" << std::endl;
-        _dict().print_help(log(), BaseDatumFormatter<DataObject>::Property);
+        log() << "Available property tags are currently:" << std::endl;
+        _dict().print_help(log(), DatumFormatterClass::Property);
       }
       log() << std::endl;
     }

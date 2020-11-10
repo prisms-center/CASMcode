@@ -13,6 +13,7 @@
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/database/ScelDatabase.hh"
 #include "casm/casm_io/container/stream_io.hh"
+#include "casm/enumerator/ConfigEnumInput.hh"
 
 using namespace CASM;
 
@@ -22,7 +23,8 @@ TEST(jsonConfigDatabase_Test, Test1) {
   test::FCCTernaryProj proj;
   proj.check_init();
 
-  PrimClex primclex(proj.dir, null_log());
+  ScopedNullLogging logging;
+  PrimClex primclex(proj.dir);
   const Structure &prim(primclex.prim());
   primclex.settings().set_crystallography_tol(1e-5);
   EXPECT_EQ(fs::equivalent(proj.dir, primclex.dir().root_dir()), true);

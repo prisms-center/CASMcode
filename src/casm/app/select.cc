@@ -1,6 +1,7 @@
 #include "casm/app/select.hh"
 #include "casm/app/DBInterface_impl.hh"
 #include "casm/app/ProjectSettings.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/database/Database.hh"
@@ -43,7 +44,7 @@ namespace CASM {
   // -- SelectCommandImplBase --------------------------------------------
 
   /// Defaults used if DataObject type doesn't matter or not given
-  class SelectCommandImplBase : public Logging {
+  class SelectCommandImplBase {
   public:
 
     SelectCommandImplBase(const SelectCommand &cmd);
@@ -63,7 +64,6 @@ namespace CASM {
 
 
   SelectCommandImplBase::SelectCommandImplBase(const SelectCommand &cmd) :
-    Logging(cmd),
     m_cmd(cmd) {}
 
   int SelectCommandImplBase::help() const {
@@ -207,11 +207,11 @@ namespace CASM {
 
       if(str[0] == 'o') {
         log() << "Available operators for use within selection criteria:" << std::endl;
-        _dict().print_help(log(), BaseDatumFormatter<DataObject>::Operator);
+        _dict().print_help(log(), DatumFormatterClass::Operator);
       }
       else if(str[0] == 'p') {
         log() << "Available property tags are currently:" << std::endl;
-        _dict().print_help(log(), BaseDatumFormatter<DataObject>::Property);
+        _dict().print_help(log(), DatumFormatterClass::Property);
       }
       log() << std::endl;
     }
