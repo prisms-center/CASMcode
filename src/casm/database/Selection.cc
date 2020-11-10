@@ -2,6 +2,7 @@
 
 #include "casm/clex/PrimClex_impl.hh"
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 #include "casm/casm_io/container/stream_io.hh"
 #include "casm/database/Selected_impl.hh"
@@ -143,7 +144,6 @@ namespace CASM {
 
     template<typename ObjType>
     Selection<ObjType>::Selection(Database<ObjType> &_db, fs::path selection_path) :
-      Logging(_db.primclex()),
       m_db(&_db),
       m_primclex(&m_db->primclex()),
       m_name(selection_path.string()) {

@@ -325,9 +325,9 @@ namespace CASM {
       if(!fs::exists(p)) {
         return;
       }
-      file_log().custom(std::string("Remove calculation files: ") + configname);
-      recurs_rm_files(p, dry_run, file_log());
-      file_log() << std::endl;
+      log().custom(std::string("Remove calculation files: ") + configname);
+      recurs_rm_files(p, dry_run, log());
+      log() << std::endl;
     }
 
     /// \brief Copy files in the same directory as properties.calc.json into the
@@ -363,22 +363,22 @@ namespace CASM {
         return;
       }
 
-      file_log().custom(std::string("Copy calculation files: ") + res.properties.to);
+      log().custom(std::string("Copy calculation files: ") + res.properties.to);
       if(!copy_additional_files) {
-        file_log() << "cp " << origin_props_path << " " << p / "properties.calc.json" << std::endl;
+        log() << "cp " << origin_props_path << " " << p / "properties.calc.json" << std::endl;
         res.import_data.copy_data = true;
         if(!dry_run) {
           fs::copy_file(origin_props_path, p / "properties.calc.json");
         }
       }
       else {
-        Index count = recurs_cp_files(origin_props_path.remove_filename(), p, dry_run, file_log());
+        Index count = recurs_cp_files(origin_props_path.remove_filename(), p, dry_run, log());
         if(count) {
           res.import_data.copy_more = true;
         }
       }
       res.properties.file_data = FileData((p / "properties.calc.json").string());
-      file_log() << std::endl;
+      log() << std::endl;
       return;
     }
 

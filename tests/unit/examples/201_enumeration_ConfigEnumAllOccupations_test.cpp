@@ -4,12 +4,15 @@
 
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/database/ScelDatabase.hh"
-#include "casm/clex/ConfigEnumAllOccupations_impl.hh"
+#include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/Superlattice.hh"
+#include "casm/database/ScelDatabase.hh"
+#include "casm/database/ScelDatabaseTools_impl.hh"
+#include "casm/enumerator/ConfigEnumInput_impl.hh"
+#include "casm/enumerator/DoFSpace_impl.hh"
 
 #include "crystallography/TestStructures.hh" // for test::ZrO_prim
 
@@ -56,20 +59,17 @@ protected:
     std::string dirs {"abc"};
     Eigen::Matrix3i generating_matrix {Eigen::Matrix3i::Identity()};
     CASM::xtal::ScelEnumProps enumeration_params {begin_volume, end_volume, dirs, generating_matrix};
-    bool existing_only = false;
 
-    // The ScelEnumByProps variant that accepts a PrimClex in the constructor inserts Supercells into
-    // the Supercell database available at `primclex.db<Supercell>()` as it constructs them.
-    CASM::ScelEnumByProps enumerator {primclex, enumeration_params, existing_only};
-
-    // Increments the enumerator iterators to construct all Supercell
-    int count = std::distance(enumerator.begin(), enumerator.end());
-    EXPECT_EQ(count, 20);
+    // Enumerate supercells and insert into Supercell database
+    CASM::ScelEnumByProps supercell_enumerator {shared_prim, enumeration_params};
+    for(auto const &supercell : supercell_enumerator) {
+      make_canonical_and_insert(supercell_enumerator, supercell, primclex.db<Supercell>());
+    }
     EXPECT_EQ(primclex.db<Supercell>().size(), 20);
+
   }
 
 };
-
 
 TEST_F(ExampleEnumerationZrOConfigEnumAllOccupations, Example1) {
   // Example enumerating all symmetrically unique occupational orderings in each of the supercells
@@ -83,4 +83,21 @@ TEST_F(ExampleEnumerationZrOConfigEnumAllOccupations, Example1) {
     std::copy(enumerator.begin(), enumerator.end(), std::back_inserter(configurations));
   }
   EXPECT_EQ(configurations.size(), 336);
+}
+
+TEST_F(ExampleEnumerationZrOConfigEnumAllOccupations, Example2) {
+
+  // Enumerate point and pair cluster perturbations of an ordered structure
+
+  // Configuration with composition Zr_{6}O_{1}
+
+  Eigen::Matrix3l T;
+  T << 2, -1, 1,
+  1, 1, 1,
+  0, 0, 1;
+
+  CASM::Supercell const &supercell = *make_canonical_and_insert(shared_prim, T, primclex.db<Supercell>()).first;
+
+  std::cout << "super lattice: \n" << supercell.lattice().lat_column_mat() << std::endl;
+  std::cout << "T:\n" << supercell.sym_info().transformation_matrix_to_super() << std::endl;
 }

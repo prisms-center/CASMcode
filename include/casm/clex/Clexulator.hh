@@ -429,7 +429,6 @@ namespace CASM {
   }
 
   class RuntimeLibrary;
-  class Logging;
 
   /// \brief Evaluates correlations
   ///
@@ -452,7 +451,6 @@ namespace CASM {
     Clexulator(std::string name,
                fs::path dirpath,
                PrimNeighborList &nlist,
-               const Logging &logging,
                std::string compile_options,
                std::string so_options);
 

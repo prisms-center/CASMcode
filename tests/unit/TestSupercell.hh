@@ -17,7 +17,6 @@ namespace test {
     Supercell scel;
     PrimPeriodicSymCompare<IntegralCluster> prim_sym_compare;
     ScelPeriodicSymCompare<IntegralCluster> scel_sym_compare;
-    WithinScelSymCompare<IntegralCluster> within_scel_sym_compare;
     const SymGroup &scel_fg() const;
 
     mutable SymGroup m_scel_fg;

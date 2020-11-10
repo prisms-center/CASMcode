@@ -1,5 +1,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
+#include "casm/clex/io/json/ConfigDoF_json_io.hh"
 #include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/monte_carlo/MonteIO.hh"
 #include "casm/external/gzstream/gzstream.h"
@@ -393,11 +394,7 @@ namespace CASM {
       fs::create_directories(dir.trajectory_dir(cond_index));
 
       // read initial_state.json
-      ConfigDoF config_dof = jsonParser(dir.initial_state_json(cond_index)).get<ConfigDoF>(mc.primclex().prim().basis().size(),
-                             global_dof_info(mc.primclex().prim()),
-                             local_dof_info(mc.primclex().prim()),
-                             occ_symrep_IDs(mc.primclex().prim()),
-                             mc.primclex().crystallography_tol());
+      ConfigDoF config_dof = jsonParser(dir.initial_state_json(cond_index)).get<ConfigDoF>(mc.primclex().prim());
 
       if(!fs::exists(dir.initial_state_json(cond_index))) {
         throw std::runtime_error(
@@ -423,11 +420,7 @@ namespace CASM {
       fs::create_directories(dir.trajectory_dir(cond_index));
 
       // read final_state.json
-      ConfigDoF config_dof = jsonParser(dir.final_state_json(cond_index)).get<ConfigDoF>(mc.primclex().prim().basis().size(),
-                             global_dof_info(mc.primclex().prim()),
-                             local_dof_info(mc.primclex().prim()),
-                             occ_symrep_IDs(mc.primclex().prim()),
-                             mc.primclex().crystallography_tol());
+      ConfigDoF config_dof = jsonParser(dir.final_state_json(cond_index)).get<ConfigDoF>(mc.primclex().prim());
 
 
       if(!fs::exists(dir.final_state_json(cond_index))) {
@@ -479,11 +472,7 @@ namespace CASM {
           step.push_back(it->get<size_type>());
         }
         for(auto it = json["DoF"].cbegin(); it != json["DoF"].cend(); ++it) {
-          trajectory.push_back(it->get<ConfigDoF>(primstruc.basis().size(),
-                                                  global_dof_info(primstruc),
-                                                  local_dof_info(primstruc),
-                                                  occ_symrep_IDs(primstruc),
-                                                  primstruc.lattice().tol()));
+          trajectory.push_back(it->get<ConfigDoF>(primstruc));
         }
 
       }

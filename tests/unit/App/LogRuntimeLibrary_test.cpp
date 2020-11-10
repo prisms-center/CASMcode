@@ -16,6 +16,8 @@ using namespace CASM;
 
 TEST(LogRuntimeLibraryTest, FunctionTest) {
 
+  ScopedStringStreamLogging logging;
+
   EXPECT_EQ(true, true);
   std::string cc_filename_base = autotools::abs_srcdir() + "/tests/unit/system/runtime_lib";
   fs::path cc_filename {cc_filename_base + ".cc"};

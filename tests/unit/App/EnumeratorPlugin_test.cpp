@@ -18,11 +18,12 @@ using namespace CASM;
 
 TEST(EnumeratorPlugin, Test1) {
 
+  // ScopedNullLogging logging;
   test::ZrOProj proj;
   proj.check_init();
   proj.check_composition();
 
-  PrimClex primclex(proj.dir, null_log());
+  PrimClex primclex(proj.dir);
 
   auto cp = [&](std::string _filename) {
 
@@ -39,15 +40,16 @@ TEST(EnumeratorPlugin, Test1) {
 
   };
 
-  cp("TestEnum.hh");
-  cp("TestEnum_impl.hh");
   cp("TestEnum.cc");
 
   // refresh to load plugins
+  primclex.settings().set_cxxflags("-O3 -Wall -fPIC --std=c++11 -DGZSTREAM_NAMESPACE=gz");
+  primclex.settings().set_soflags("-shared -lboost_system -lboost_filesystem -lz");
+  commit(primclex.settings());
   primclex.refresh(true);
 
   auto check = [&](std::string str) {
-    CommandArgs args(str, &primclex, primclex.dir().root_dir(), primclex);
+    CommandArgs args(str, &primclex, primclex.dir().root_dir());
     ASSERT_TRUE(!run_api_command<EnumCommand>(args));
   };
 
@@ -55,7 +57,7 @@ TEST(EnumeratorPlugin, Test1) {
 
   check(R"(enum --desc TestEnum)");
 
-  check(R"(enum --method TestEnum -i '{"supercells": {"max": 4, "existing_only" : false}}')");
+  check(R"(enum --method TestEnum -i '{"supercells": {"max": 4}}')");
 
   ASSERT_EQ(primclex.generic_db<Configuration>().size(), 336);
 }

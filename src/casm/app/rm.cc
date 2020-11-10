@@ -1,5 +1,6 @@
 #include "casm/app/rm.hh"
 #include "casm/app/DBInterface.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/database/Import.hh"
@@ -68,7 +69,7 @@ namespace CASM {
   // -- RmCommandImplBase --------------------------------------------
 
   /// Defaults used if DataObject type doesn't matter or not given
-  class RmCommandImplBase : public Logging {
+  class RmCommandImplBase {
   public:
 
     RmCommandImplBase(const RmCommand &cmd);
@@ -88,7 +89,6 @@ namespace CASM {
 
 
   RmCommandImplBase::RmCommandImplBase(const RmCommand &cmd) :
-    Logging(cmd),
     m_cmd(cmd) {}
 
   int RmCommandImplBase::help() const {

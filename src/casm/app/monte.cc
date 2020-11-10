@@ -124,12 +124,12 @@ namespace CASM {
       /** --help option
       */
       if(vm.count("help")) {
-        print_monte_help(args.log(), monte_opt.desc());
+        print_monte_help(log(), monte_opt.desc());
         return 0;
       }
 
       if(vm.count("desc")) {
-        print_monte_desc(args.log(), monte_opt.desc());
+        print_monte_desc(log(), monte_opt.desc());
         return 0;
       }
 
@@ -142,31 +142,31 @@ namespace CASM {
       if(vm.count("verbosity")) {
         auto res = Log::verbosity_level(verbosity_str);
         if(!res.first) {
-          args.err_log().error("--verbosity");
-          args.err_log() << "Expected: 'none', 'quiet', 'standard', 'verbose', "
-                         "'debug', or an integer 0-100 (0: none, 100: all)" << "\n" << std::endl;
+          err_log().error("--verbosity");
+          err_log() << "Expected: 'none', 'quiet', 'standard', 'verbose', "
+                    "'debug', or an integer 0-100 (0: none, 100: all)" << "\n" << std::endl;
           return ERR_INVALID_ARG;
         }
-        args.log().set_verbosity(res.second);
+        log().set_verbosity(res.second);
       }
 
     }
     catch(po::error &e) {
-      args.err_log() << "ERROR: " << e.what() << std::endl << std::endl;
-      args.err_log() << monte_opt.desc() << std::endl;
+      err_log() << "ERROR: " << e.what() << std::endl << std::endl;
+      err_log() << monte_opt.desc() << std::endl;
       return 1;
     }
     catch(std::exception &e) {
-      args.err_log() << "Unhandled Exception reached the top of main: "
-                     << e.what() << ", application will now exit" << std::endl;
+      err_log() << "Unhandled Exception reached the top of main: "
+                << e.what() << ", application will now exit" << std::endl;
       return 1;
 
     }
 
     const fs::path &root = args.root;
     if(root.empty()) {
-      args.err_log().error("No casm project found");
-      args.err_log() << std::endl;
+      err_log().error("No casm project found");
+      err_log() << std::endl;
       return ERR_NO_PROJ;
     }
 
@@ -174,12 +174,11 @@ namespace CASM {
     // Then whichever exists, store reference in 'primclex'
     std::unique_ptr<PrimClex> uniq_primclex;
     PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
-    Log &log = args.log();
 
     //Get path to settings json file
     settings_path = fs::absolute(settings_path);
 
-    //args.log() << "Example settings so far..." << std::endl;
+    //log() << "Example settings so far..." << std::endl;
     //jsonParser example_settings = Monte::example_testing_json_settings(primclex);
     //std::ofstream outsettings("monte_settings.json");
     //example_settings.print(outsettings);
@@ -187,23 +186,23 @@ namespace CASM {
     Monte::MonteSettings monte_settings;
 
     try {
-      log.read("Monte Carlo settings");
-      log << "from: " << settings_path << "\n";
+      log().read("Monte Carlo settings");
+      log() << "from: " << settings_path << "\n";
       monte_settings = Monte::MonteSettings(primclex, settings_path);
-      log << "ensemble: " << monte_settings.ensemble() << "\n";
-      log << "method: " << monte_settings.method() << "\n";
-      if(args.log().verbosity() == 100) {
+      log() << "ensemble: " << monte_settings.ensemble() << "\n";
+      log() << "method: " << monte_settings.method() << "\n";
+      if(log().verbosity() == 100) {
         monte_settings.set_debug(true);
       }
       if(monte_settings.debug()) {
-        log << "debug: " << monte_settings.debug() << "\n";
+        log() << "debug: " << monte_settings.debug() << "\n";
       }
-      log << std::endl;
+      log() << std::endl;
 
     }
     catch(std::exception &e) {
-      args.err_log() << "ERROR reading Monte Carlo settings.\n\n";
-      args.err_log() << e.what() << std::endl;
+      err_log() << "ERROR reading Monte Carlo settings.\n\n";
+      err_log() << e.what() << std::endl;
       return 1;
     }
 
@@ -222,17 +221,17 @@ namespace CASM {
   int _initial_POSCAR(PrimClex &primclex, const CommandArgs &args, const Completer::MonteOption &monte_opt) {
     try {
       typename MCType::SettingsType mc_settings(primclex, monte_opt.settings_path());
-      const MCType mc(primclex, mc_settings, args.log());
+      const MCType mc(primclex, mc_settings, log());
 
-      args.log().write("Initial POSCAR");
-      write_POSCAR_initial(mc, monte_opt.condition_index(), args.log());
-      args.log() << std::endl;
+      log().write("Initial POSCAR");
+      write_POSCAR_initial(mc, monte_opt.condition_index(), log());
+      log() << std::endl;
       return 0;
     }
     catch(std::exception &e) {
-      args.err_log() << "ERROR printing " << to_string(MCType::ensemble) <<
-                     " Monte Carlo initial snapshot for condition: " << monte_opt.condition_index() << "\n\n";
-      args.err_log() << e.what() << std::endl;
+      err_log() << "ERROR printing " << to_string(MCType::ensemble) <<
+                " Monte Carlo initial snapshot for condition: " << monte_opt.condition_index() << "\n\n";
+      err_log() << e.what() << std::endl;
       return 1;
     }
   }
@@ -241,17 +240,17 @@ namespace CASM {
   int _final_POSCAR(PrimClex &primclex, const CommandArgs &args, const Completer::MonteOption &monte_opt) {
     try {
       typename MCType::SettingsType mc_settings(primclex, monte_opt.settings_path());
-      const MCType mc(primclex, mc_settings, args.log());
+      const MCType mc(primclex, mc_settings, log());
 
-      args.log().write("Final POSCAR");
-      write_POSCAR_final(mc, monte_opt.condition_index(), args.log());
-      args.log() << std::endl;
+      log().write("Final POSCAR");
+      write_POSCAR_final(mc, monte_opt.condition_index(), log());
+      log() << std::endl;
       return 0;
     }
     catch(std::exception &e) {
-      args.err_log() << "ERROR printing " << to_string(MCType::ensemble) <<
-                     " Monte Carlo initial snapshot for condition: " << monte_opt.condition_index() << "\n\n";
-      args.err_log() << e.what() << std::endl;
+      err_log() << "ERROR printing " << to_string(MCType::ensemble) <<
+                " Monte Carlo initial snapshot for condition: " << monte_opt.condition_index() << "\n\n";
+      err_log() << e.what() << std::endl;
       return 1;
     }
   }
@@ -260,17 +259,17 @@ namespace CASM {
   int _traj_POSCAR(PrimClex &primclex, const CommandArgs &args, const Completer::MonteOption &monte_opt) {
     try {
       typename MCType::SettingsType mc_settings(primclex, monte_opt.settings_path());
-      const MCType mc(primclex, mc_settings, args.log());
+      const MCType mc(primclex, mc_settings, log());
 
-      args.log().write("Trajectory POSCAR");
-      write_POSCAR_trajectory(mc, monte_opt.condition_index(), args.log());
-      args.log() << std::endl;
+      log().write("Trajectory POSCAR");
+      write_POSCAR_trajectory(mc, monte_opt.condition_index(), log());
+      log() << std::endl;
       return 0;
     }
     catch(std::exception &e) {
-      args.err_log() << "ERROR printing " << to_string(MCType::ensemble) <<
-                     " Monte Carlo path snapshots for condition: " << monte_opt.condition_index() << "\n\n";
-      args.err_log() << e.what() << std::endl;
+      err_log() << "ERROR printing " << to_string(MCType::ensemble) <<
+                " Monte Carlo path snapshots for condition: " << monte_opt.condition_index() << "\n\n";
+      err_log() << e.what() << std::endl;
       return 1;
     }
   }
@@ -279,13 +278,13 @@ namespace CASM {
   int _driver(PrimClex &primclex, const CommandArgs &args, const Completer::MonteOption &monte_opt) {
     try {
       typename MCType::SettingsType mc_settings(primclex, monte_opt.settings_path());
-      Monte::MonteDriver<MCType> driver(primclex, mc_settings, args.log(), args.err_log());
+      Monte::MonteDriver<MCType> driver(primclex, mc_settings, log(), err_log());
       driver.run();
       return 0;
     }
     catch(std::exception &e) {
-      args.err_log() << "ERROR running " << to_string(MCType::ensemble) << " Monte Carlo.\n\n";
-      args.err_log() << e.what() << std::endl;
+      err_log() << "ERROR running " << to_string(MCType::ensemble) << " Monte Carlo.\n\n";
+      err_log() << e.what() << std::endl;
       return 1;
     }
   }
@@ -334,26 +333,26 @@ namespace CASM {
         Monte::MonteCarloDirectoryStructure dir(gc_settings.output_directory());
         if(gc_settings.write_csv()) {
           if(fs::exists(dir.results_csv())) {
-            args.err_log() << "Existing file at: " << dir.results_csv() << std::endl;
-            args.err_log() << "  Exiting..." << std::endl;
+            err_log() << "Existing file at: " << dir.results_csv() << std::endl;
+            err_log() << "  Exiting..." << std::endl;
             return ERR_EXISTING_FILE;
           }
         }
         if(gc_settings.write_json()) {
           if(fs::exists(dir.results_json())) {
-            args.err_log() << "Existing file at: " << dir.results_json() << std::endl;
-            args.err_log() << "  Exiting..." << std::endl;
+            err_log() << "Existing file at: " << dir.results_json() << std::endl;
+            err_log() << "  Exiting..." << std::endl;
             return ERR_EXISTING_FILE;
           }
         }
 
-        Monte::GrandCanonical gc(primclex, gc_settings, args.log());
+        Monte::GrandCanonical gc(primclex, gc_settings, log());
 
         // config, param_potential, T,
-        args.log().custom("LTE Calculation");
-        args.log() << "Phi_LTE(1) = potential_energy_gs - kT*ln(Z'(1))/N" << std::endl;
-        args.log() << "Z'(1) = sum_i(exp(-dPE_i/kT), summing over ground state and single spin flips" << std::endl;
-        args.log() << "dPE_i: (potential_energy_i - potential_energy_gs)*N" << "\n\n" << std::endl;
+        log().custom("LTE Calculation");
+        log() << "Phi_LTE(1) = potential_energy_gs - kT*ln(Z'(1))/N" << std::endl;
+        log() << "Z'(1) = sum_i(exp(-dPE_i/kT), summing over ground state and single spin flips" << std::endl;
+        log() << "dPE_i: (potential_energy_i - potential_energy_gs)*N" << "\n\n" << std::endl;
 
         auto init = gc_settings.initial_conditions();
         auto incr = init;
@@ -375,30 +374,30 @@ namespace CASM {
 
           if(gc.debug()) {
             const auto &comp_converter = gc.primclex().composition_axes();
-            args.log() << "formation_energy: " << std::setprecision(12) << gc.formation_energy() << std::endl;
-            args.log() << "  components: " << jsonParser(gc.primclex().composition_axes().components()) << std::endl;
-            args.log() << "  comp_n: " << gc.comp_n().transpose() << std::endl;
-            args.log() << "  param_chem_pot: " << gc.conditions().param_chem_pot().transpose() << std::endl;
-            args.log() << "  comp_x: " << comp_converter.param_composition(gc.comp_n()).transpose() << std::endl;
-            args.log() << "potential energy: " << std::setprecision(12) << gc.potential_energy() << std::endl << std::endl;
+            log() << "formation_energy: " << std::setprecision(12) << gc.formation_energy() << std::endl;
+            log() << "  components: " << jsonParser(gc.primclex().composition_axes().components()) << std::endl;
+            log() << "  comp_n: " << gc.comp_n().transpose() << std::endl;
+            log() << "  param_chem_pot: " << gc.conditions().param_chem_pot().transpose() << std::endl;
+            log() << "  comp_x: " << comp_converter.param_composition(gc.comp_n()).transpose() << std::endl;
+            log() << "potential energy: " << std::setprecision(12) << gc.potential_energy() << std::endl << std::endl;
           }
 
           double phi_LTE1 = gc.lte_grand_canonical_free_energy();
 
-          args.log().write("Output files");
-          write_lte_results(gc_settings, gc, phi_LTE1, configname, args.log());
-          args.log() << std::endl;
+          log().write("Output files");
+          write_lte_results(gc_settings, gc, phi_LTE1, configname, log());
+          log() << std::endl;
           cond += incr;
 
-          args.log() << std::endl;
+          log() << std::endl;
         }
 
         return 0;
 
       }
       catch(std::exception &e) {
-        args.err_log() << "ERROR calculating single spin flip LTE grand canonical potential.\n\n";
-        args.err_log() << e.what() << std::endl;
+        err_log() << "ERROR calculating single spin flip LTE grand canonical potential.\n\n";
+        err_log() << e.what() << std::endl;
         return 1;
       }
     }
@@ -406,7 +405,7 @@ namespace CASM {
       return _driver<Monte::GrandCanonical>(primclex, args, monte_opt);
     }
     else {
-      args.err_log() << "ERROR running " << to_string(Monte::GrandCanonical::ensemble) << " Monte Carlo. No valid option given.\n\n";
+      err_log() << "ERROR running " << to_string(Monte::GrandCanonical::ensemble) << " Monte Carlo. No valid option given.\n\n";
       return ERR_INVALID_INPUT_FILE;
     }
   }
@@ -433,7 +432,7 @@ namespace CASM {
       return _driver<MCType>(primclex, args, monte_opt);
     }
     else {
-      args.err_log() << "ERROR running " << to_string(Monte::Canonical::ensemble) << " Monte Carlo. No valid option given.\n\n";
+      err_log() << "ERROR running " << to_string(Monte::Canonical::ensemble) << " Monte Carlo. No valid option given.\n\n";
       return ERR_INVALID_INPUT_FILE;
     }
   }

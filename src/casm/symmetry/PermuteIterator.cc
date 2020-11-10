@@ -50,22 +50,33 @@ namespace CASM {
     return translation_permute() * factor_group_permute();
   }
 
-  /// Return the index into Supercell::factor_group_permute of the factor group op being pointed at
+  /// Reference the SupercellSymInfo containing the operations being pointed at
   SupercellSymInfo const &PermuteIterator::sym_info() const {
     return *m_sym_info;
   }
 
-  /// Return the index into Supercell::factor_group_permute of the factor group op being pointed at
+  /// Reference the supercell factor group (`SupercellSymInfo::factor_group()`)
   SymGroup const &PermuteIterator::factor_group() const {
     return sym_info().factor_group();
   }
 
-  /// Return the index into Supercell::factor_group_permute of the factor group op being pointed at
+  /// Return the supercell factor group index
+  ///
+  /// Index into `SupercellSymInfo::factor_group()` of the factor group op being pointed at
   Index PermuteIterator::factor_group_index() const {
     return m_factor_group_index;
   }
 
-  /// Return the index into Supercell::translation_permute of the translation being pointed at
+  /// Return the prim factor group index
+  ///
+  /// Index into `Structure::factor_group()` of the factor group op being pointed at
+  Index PermuteIterator::prim_factor_group_index() const {
+    return factor_group()[factor_group_index()].master_group_index();
+  }
+
+  /// Return the index into the supercell translation permutations
+  ///
+  /// Index into `SupercellSymInfo::translation_permutations()` of the translation being pointed at
   Index PermuteIterator::translation_index() const {
     return m_translation_index;
   }
@@ -240,6 +251,24 @@ namespace CASM {
     return sym_group;
   }
 
+  /// \brief Returns a std::unique_ptr<SymGroup> generated from a range of PermuteIterator
+  ///
+  /// \param begin,end A range of PermuteIterator
+  ///
+  /// - The result is sorted
+  /// - The result uses the Supercell lattice for periodic comparisons
+  template<typename PermuteIteratorIt>
+  std::unique_ptr<SymGroup> make_unique_sym_group(PermuteIteratorIt begin, PermuteIteratorIt end, const Lattice &supercell_lattice) {
+    auto sym_group_ptr = notstd::make_unique<SymGroup>();
+    sym_group_ptr->set_lattice(supercell_lattice);
+    while(begin != end) {
+      sym_group_ptr->push_back(begin->sym_op());
+      ++begin;
+    }
+    sym_group_ptr->sort();
+    return sym_group_ptr;
+  }
+
   template SymGroup make_sym_group(
     PermuteIterator begin,
     PermuteIterator end, const Lattice &supercell_lattice);
@@ -267,6 +296,22 @@ namespace CASM {
     std::swap(a.m_translation_index, b.m_translation_index);
   }
 
+  /// Return true if the permutation does not given sites and other sites
+  bool site_indices_are_invariant(PermuteIterator const &permute_it,
+                                  std::set<Index> const &site_indices) {
+    // Applying the permutation indicated by `permute_it` moves the value from site index
+    // `permute_it.permute_ind(s)` to site index `s`, for each `s` in the set. Therefore,
+    // if none of `permute_it.permute_ind(s)` are outside the set `site_indices` the sites are
+    // invariant.
+
+    return std::none_of(
+             site_indices.begin(),
+             site_indices.end(),
+    [&](Index s) {
+      return site_indices.count(permute_it.permute_ind(s)) == 0;
+    });
+  }
+
   jsonParser &to_json(const PermuteIterator &it, jsonParser &json) {
     json.put_obj();
     json["factgrp"] = it.factor_group_index();
@@ -278,6 +323,13 @@ namespace CASM {
     const jsonParser &json,
     const SupercellSymInfo &scel_info) {
     return scel_info.permute_it(json["factgrp"].get<Index>(), json["trans"].get<Index>());
+  }
+
+  namespace adapter {
+
+    SymOp Adapter<SymOp, PermuteIterator>::operator()(PermuteIterator const &adaptable) const {
+      return adaptable.sym_op();
+    }
   }
 
 }

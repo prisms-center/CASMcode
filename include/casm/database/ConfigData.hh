@@ -151,14 +151,10 @@ namespace CASM {
       static std::string resolve_struc_path(std::string pos_path, PrimClex const &_pclex);
 
       template<typename ConfigType>
-      ConfigData(const PrimClex &_primclex, Log &_file_log, TypeTag<ConfigType>);
+      ConfigData(const PrimClex &_primclex, TypeTag<ConfigType>);
 
       const PrimClex &primclex() const {
         return m_primclex;
-      }
-
-      Log &file_log() const {
-        return m_file_log;
       }
 
       Database<Supercell> &db_supercell() const;
@@ -197,7 +193,6 @@ namespace CASM {
 
     private:
       const PrimClex &m_primclex;
-      Log &m_file_log;
       std::function<PropertiesDatabase&()> m_db_props_func;
     };
 

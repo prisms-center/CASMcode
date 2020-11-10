@@ -86,6 +86,7 @@ namespace CASM {
     IntegralCluster const &phenomenal,
     double cutoff_radius,
     SiteFilterFunction site_filter,
+    bool include_phenomenal_sites,
     OutputIterator result,
     double xtal_tol) {
 
@@ -124,7 +125,17 @@ namespace CASM {
           continue;
         }
 
-        xtal::Coordinate test(*it + lat_point);
+        xtal::Coordinate test {*it + lat_point};
+
+        if(!include_phenomenal_sites) {
+          auto is_almost_equal = [&](const xtal::UnitCellCoord & uccoord) {
+            return test.dist(uccoord.coordinate(prim)) < xtal_tol;
+          };
+          if(std::any_of(phenomenal.begin(), phenomenal.end(), is_almost_equal)) {
+            continue;
+          }
+        }
+
         auto within_radius = [&](const xtal::UnitCellCoord & uccoord) {
           return test.dist(uccoord.coordinate(prim)) < cutoff_radius;
         };

@@ -6,6 +6,7 @@
 #include <boost/lexical_cast.hpp>
 #include "casm/clex/ChemicalReference.hh"
 #include "casm/crystallography/io/VaspIO.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/container/stream_io.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
@@ -41,12 +42,11 @@ namespace CASM {
     m_primclex(RHS.m_primclex),
     m_shared_prim(RHS.m_shared_prim),
     m_sym_info(make_supercell_sym_info(prim(), RHS.lattice())),
-    m_prim_nlist(RHS.m_prim_nlist),
     m_nlist_size_at_construction(-1) {
 
   }
 
-  Supercell::Supercell(std::shared_ptr<Structure const> const &_shared_prim, const Eigen::Ref<const Eigen::Matrix3i> &transf_mat_init) :
+  Supercell::Supercell(std::shared_ptr<Structure const> const &_shared_prim, Eigen::Matrix3l const &transf_mat_init) :
     m_primclex(nullptr),
     m_shared_prim(_shared_prim),
     m_sym_info(make_supercell_sym_info(prim(), Lattice(prim().lattice().lat_column_mat() * transf_mat_init.cast<double>(), crystallography_tol()))),
@@ -71,11 +71,10 @@ namespace CASM {
     }
   }
 
-  Supercell::Supercell(const PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &transf_mat_init) :
+  Supercell::Supercell(const PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3l> &transf_mat_init) :
     m_primclex(_prim),
     m_shared_prim(_prim->shared_prim()),
     m_sym_info(make_supercell_sym_info(prim(), Lattice(prim().lattice().lat_column_mat() * transf_mat_init.cast<double>(), crystallography_tol()))),
-    m_prim_nlist(_prim->shared_nlist()),
     m_nlist_size_at_construction(-1) {
 
   }
@@ -84,16 +83,15 @@ namespace CASM {
     m_primclex(_prim),
     m_shared_prim(_prim->shared_prim()),
     m_sym_info(make_supercell_sym_info(prim(), superlattice)),
-    m_prim_nlist(_prim->shared_nlist()),
     m_nlist_size_at_construction(-1) {
 
     auto res = xtal::is_superlattice(superlattice, prim().lattice(), crystallography_tol());
     if(!res.first) {
-      _prim->err_log() << "Error in Supercell(PrimClex *_prim, const Lattice &superlattice)" << std::endl
-                       << "  Bad supercell, the transformation matrix is not integer." << std::endl;
-      _prim->err_log() << "superlattice: \n" << superlattice.lat_column_mat() << std::endl;
-      _prim->err_log() << "prim lattice: \n" << prim().lattice().lat_column_mat() << std::endl;
-      _prim->err_log() << "transformation matrix: \n" << res.second << std::endl;
+      err_log() << "Error in Supercell(PrimClex *_prim, const Lattice &superlattice)" << std::endl
+                << "  Bad supercell, the transformation matrix is not integer." << std::endl;
+      err_log() << "superlattice: \n" << superlattice.lat_column_mat() << std::endl;
+      err_log() << "prim lattice: \n" << prim().lattice().lat_column_mat() << std::endl;
+      err_log() << "transformation matrix: \n" << res.second << std::endl;
       throw std::invalid_argument("Error constructing Supercell: the transformation matrix is not integer");
     }
   }
@@ -112,6 +110,33 @@ namespace CASM {
     return prim().lattice().tol();
   }
 
+  /// Use while transitioning Supercell to no longer need a `PrimClex const *`
+  ///
+  /// Note:
+  /// - Prefer not to access PrimClex via Supercell. In future, PrimClex access via Supercell will
+  ///   be removed completely.
+  bool Supercell::has_primclex() const {
+    return m_primclex != nullptr;
+  }
+
+  /// Use while transitioning Supercell to no longer need a `PrimClex const *`
+  ///
+  /// Note:
+  /// - Prefer not to access PrimClex via Supercell. In future, PrimClex access via Supercell will
+  ///   be removed completely.
+  // - The m_primclex pointer is mutable as a temporary workaround
+  void Supercell::set_primclex(PrimClex const *_primclex) const {
+    if(m_primclex != nullptr && m_primclex != _primclex) {
+      throw std::runtime_error("Error in Supercell::set_primclex: primclex should not change");
+    }
+    m_primclex = _primclex;
+  }
+
+  /// Use while transitioning Supercell to no longer need a `PrimClex const *`
+  ///
+  /// Note:
+  /// - Prefer not to access PrimClex via Supercell. In future, PrimClex access via Supercell will
+  ///   be removed completely.
   const PrimClex &Supercell::primclex() const {
     if(!m_primclex) {
       throw CASM::libcasm_runtime_error("Error in Supercell::primclex(): does not exist");
@@ -176,7 +201,7 @@ namespace CASM {
                      volume(),
                      global_dof_info(prim()),
                      local_dof_info(prim()),
-                     occ_symrep_IDs(prim()),
+                     prim().occupant_symrep_IDs(),
                      tol);
   }
 
@@ -218,16 +243,16 @@ namespace CASM {
   const SuperNeighborList &Supercell::nlist() const {
 
     // if any additions to the prim nlist, must update the super nlist
-    if(m_prim_nlist->size() != m_nlist_size_at_construction) {
+    if(primclex().shared_nlist()->size() != m_nlist_size_at_construction) {
       m_nlist.unique().reset();
     }
 
     // lazy construction of neighbor list
     if(!m_nlist) {
-      m_nlist_size_at_construction = m_prim_nlist->size();
+      m_nlist_size_at_construction = primclex().shared_nlist()->size();
       m_nlist = notstd::make_cloneable<SuperNeighborList>(
                   this->sym_info().superlattice(),
-                  *m_prim_nlist);
+                  *primclex().shared_nlist());
     }
     return *m_nlist;
   }
@@ -254,8 +279,9 @@ namespace CASM {
     return lattice() < B.lattice();
   }
 
-  /// \brief Insert the canonical form of this into the database
+  /// \brief Insert the canonical form of this into the database [deprecated]
   ///
+  /// Note: prefer using `make_canonical_and_insert`
   /// Note: does not commit the change in the database
   std::pair<DB::DatabaseIterator<Supercell>, bool> Supercell::insert() const {
     return primclex().db<Supercell>().emplace(
@@ -293,8 +319,8 @@ namespace CASM {
       fs::create_directories(dir.configuration_dir(_scel.name()));
     }
     catch(const fs::filesystem_error &ex) {
-      default_err_log() << "Error in Supercell::write_pos()." << std::endl;
-      default_err_log() << ex.what() << std::endl;
+      err_log() << "Error in Supercell::write_pos()." << std::endl;
+      err_log() << ex.what() << std::endl;
     }
 
     fs::ofstream file(dir.LAT(_scel.name()));
@@ -349,16 +375,16 @@ namespace CASM {
     }
     catch(std::exception &e) {
       std::string format = "SCELV_T00_T11_T22_T12_T02_T01";
-      primclex.err_log().error("In make_supercell");
-      primclex.err_log() << "expected format: " << format << "\n";
-      primclex.err_log() << "name: |" << name << "|" << std::endl;
-      primclex.err_log() << "tokens: " << tokens << std::endl;
-      primclex.err_log() << "tokens.size(): " << tokens.size() << std::endl;
-      primclex.err_log() << e.what() << std::endl;
+      err_log().error("In make_supercell");
+      err_log() << "expected format: " << format << "\n";
+      err_log() << "name: |" << name << "|" << std::endl;
+      err_log() << "tokens: " << tokens << std::endl;
+      err_log() << "tokens.size(): " << tokens.size() << std::endl;
+      err_log() << e.what() << std::endl;
       throw e;
     }
 
-    Eigen::Matrix3i T;
+    Eigen::Matrix3l T;
     try {
       auto cast = [](std::string val) {
         return boost::lexical_cast<Index>(val);
@@ -368,11 +394,11 @@ namespace CASM {
       0, 0, cast(tokens[3]);
     }
     catch(std::exception &e) {
-      primclex.err_log().error("In make_supercell");
-      primclex.err_log() << "Could not construct transformation matrix from supercell name" << std::endl;
-      primclex.err_log() << "  name: " << name << std::endl;
-      primclex.err_log() << "  tokens: " << tokens << std::endl;
-      primclex.err_log() << e.what() << std::endl;
+      err_log().error("In make_supercell");
+      err_log() << "Could not construct transformation matrix from supercell name" << std::endl;
+      err_log() << "  name: " << name << std::endl;
+      err_log() << "  tokens: " << tokens << std::endl;
+      err_log() << e.what() << std::endl;
       throw e;
     }
 
@@ -391,10 +417,10 @@ namespace CASM {
     // validate name
     if(tokens.size() != 2) {
       std::string format = "$CANON_SCEL_NAME.$PRIM_FG_OP";
-      primclex.err_log().error("In make_shared_supercell");
-      primclex.err_log() << "expected format: " << format << "\n";
-      primclex.err_log() << "name: " << name << std::endl;
-      primclex.err_log() << "tokens: " << tokens << std::endl;
+      err_log().error("In make_shared_supercell");
+      err_log() << "expected format: " << format << "\n";
+      err_log() << "name: " << name << std::endl;
+      err_log() << "tokens: " << tokens << std::endl;
       throw std::invalid_argument("Error in make_shared_supercell: supercell name format error");
     }
 
@@ -409,39 +435,6 @@ namespace CASM {
     return std::make_shared<Supercell>(&primclex, niggli_lat);
   }
 
-  SupercellSymInfo make_supercell_sym_info(Structure const &_prim, Lattice const &_slat) {
-    std::map<DoFKey, SymGroupRepID> global_dof_symrep_IDs;
-    for(auto const &key : global_dof_types(_prim)) {
-      /* global_dof_symrep_IDs.emplace(std::make_pair(key, _prim.structure().global_dof(key).symrep_ID())); */
-      global_dof_symrep_IDs.emplace(std::make_pair(key, _prim.global_dof_symrep_ID(key)));
-    }
-
-    std::map<DoFKey, std::vector<SymGroupRepID> > local_dof_symrep_IDs;
-    for(auto const &key : continuous_local_dof_types(_prim)) {
-      std::vector<SymGroupRepID> treps(_prim.basis().size());
-      for(Index b = 0; b < _prim.basis().size(); ++b) {
-        if(_prim.basis()[b].has_dof(key))
-          /* treps[b] = _prim.basis()[b].dof(key).symrep_ID(); */
-          treps[b] = _prim.site_dof_symrep_IDs()[b][key];
-      }
-      local_dof_symrep_IDs.emplace(std::make_pair(key, std::move(treps)));
-    }
-
-
-    return SupercellSymInfo(_prim.lattice(),
-                            _slat,
-                            _prim.basis().size(),
-                            _prim.factor_group(),
-                            _prim.basis_permutation_symrep_ID(),
-                            global_dof_symrep_IDs,
-                            occ_symrep_IDs(_prim),
-                            local_dof_symrep_IDs);
-
-
-  }
-
-
-
   Supercell &apply(const SymOp &op, Supercell &scel) {
     return scel = copy_apply(op, scel);
   }
@@ -450,7 +443,7 @@ namespace CASM {
     return Supercell(&scel.primclex(), sym::copy_apply(op, scel.lattice()));
   }
 
-  Eigen::Matrix3i transf_mat(const Lattice &prim_lat, const Lattice &super_lat, double tol) {
+  Eigen::Matrix3l transf_mat(const Lattice &prim_lat, const Lattice &super_lat, double tol) {
     auto res = xtal::is_superlattice(super_lat, prim_lat, tol);
     if(!res.first) {
       std::stringstream err_msg;
@@ -463,13 +456,13 @@ namespace CASM {
               "transformation matrix: \n" << res.second << "\n";
       throw std::invalid_argument(err_msg.str());
     }
-    return iround(res.second);
+    return lround(res.second);
   }
 
-  std::string generate_name(const Eigen::Matrix3i &transf_mat) {
+  std::string generate_name(const Eigen::Matrix3l &transf_mat) {
     std::string name_str;
 
-    Eigen::Matrix3i H = hermite_normal_form(transf_mat).first;
+    Eigen::Matrix3i H = hermite_normal_form(transf_mat.cast<int>()).first;
     name_str = "SCEL";
     std::stringstream tname;
     //Consider using a for loop with HermiteCounter_impl::_canonical_unroll here

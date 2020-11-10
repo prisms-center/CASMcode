@@ -32,16 +32,6 @@ namespace CASM {
     public:
 
       typedef _ConfigType ConfigType;
-      /*
-      using ConfigData<_ConfigType>::has_existing_files;
-      using ConfigData<_ConfigType>::no_change;
-      using ConfigData<_ConfigType>::db_props;
-      using ConfigData<_ConfigType>::db_config;
-      using ConfigData<_ConfigType>::db_supercell;
-      using ConfigData<_ConfigType>::rm_files;
-      using ConfigData<_ConfigType>::primclex;
-      using Logging::log;
-      */
 
       /// \brief Constructor
       UpdateT(

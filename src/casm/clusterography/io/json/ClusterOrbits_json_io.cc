@@ -60,7 +60,7 @@ namespace CASM {
         if(subparser->valid()) {
           // check if subclusters should be included (yes by default)
           bool include_subclusters;
-          parser.optional_at_else(include_subclusters, relpath / "include_subclusters", true);
+          parser.optional_else(include_subclusters, relpath / "include_subclusters", true);
 
           custom_generators.emplace_back(*(subparser->value), include_subclusters);
         }

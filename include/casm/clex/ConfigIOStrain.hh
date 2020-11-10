@@ -78,7 +78,7 @@ namespace CASM {
     };
 
 
-    /// \brief The strain of the configuration due to relaxation, measured relative to ideal lattice vectors.
+    /// \brief The strain DoF value of the configuration
     ///
     /// Ordered as [E(0,0), E(1,1), E(2,2), E(1,2), E(0,2), E(0,1)].
     ///
@@ -90,17 +90,17 @@ namespace CASM {
     ///
     /// Accepts index as argument on interval [0,5]
     ///
-    /// Ex: 'relxation_strain', 'relaxation_strain(EA,2)'
+    /// Ex: 'dof_strain', 'dof_strain(EA,2)'
     ///
     /// \ingroup ConfigIO
     ///
     class DoFStrain: public VectorXdAttribute<Configuration> {
     public:
-      DoFStrain() :
+      DoFStrain(std::string _metric = "GL") :
         VectorXdAttribute<Configuration>("dof_strain", "The imposed strain of the configuration due to relaxation, measured relative to ideal lattice vectors. Ordered as"
                                          "[E(0,0), E(1,1), E(2,2), E(1,2), E(0,2), E(0,1)]. Accepts strain convention as first argument ('GL' [Green-Lagrange, Default], 'EA' [Euler-Almansi],"
                                          "'B' [Biot], 'H' [Hencky], or 'U' [stretch tensor]). Accepts index as second argument on interval [0,5]."),
-        m_straincalc("GL") {};
+        m_straincalc(_metric), m_metric_name(_metric) {};
 
 
       // --- Required implementations -----------
@@ -131,6 +131,15 @@ namespace CASM {
     protected:
       mutable StrainConverter m_straincalc;
       mutable std::string m_metric_name;
+
+      // Hold a StrainConverter set to the prim's strain metric
+      mutable notstd::cloneable_ptr<StrainConverter> m_prim_straincalc;
+
+      // Hold a shared_ptr to the prim referred to by m_prim_straincalc
+      mutable std::shared_ptr<Structure const> m_shared_prim;
+
+      // Hold the strain dof key for m_shared_prim
+      mutable DoFKey m_dof_key;
 
     private:
       /// \brief Clone

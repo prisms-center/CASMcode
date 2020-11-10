@@ -31,14 +31,8 @@ namespace CASM {
     public:
 
       typedef _ConfigType ConfigType;
-      /*using ConfigData<_ConfigType>::db_config;
-      using ConfigData<_ConfigType>::db_props;
-      using ConfigData<_ConfigType>::has_existing_data_or_files;
-      using ConfigData<_ConfigType>::rm_files;
-      using Logging::log;
-      */
 
-      RemoveT(const PrimClex &primclex, std::string report_dir, Log &_file_log);
+      RemoveT(const PrimClex &primclex, std::string report_dir);
 
       /// \brief Erase Configurations that have no data
       void erase(const DB::Selection<ConfigType> &selection, bool dry_run);
@@ -65,7 +59,7 @@ namespace CASM {
     template<typename ConfigType>
     class Remove : public RemoveT<ConfigType> {
     public:
-      Remove(const PrimClex &primclex, std::string report_dir, Log &_file_log);
+      Remove(const PrimClex &primclex, std::string report_dir);
       static std::string desc();
       static int run(const PrimClex &, const Completer::RmOption &opt);
     };

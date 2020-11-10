@@ -32,10 +32,10 @@ namespace CASM {
         ++count;
         if(!fs::exists(p)) {
           if(!missing_files) {
-            primclex.err_log() << "*** ERROR: Missing file(s):\n";
+            err_log() << "*** ERROR: Missing file(s):\n";
           }
           missing_files = true;
-          primclex.err_log()   << "           " << fs::absolute(p) << "\n";
+          err_log()   << "           " << fs::absolute(p) << "\n";
         }
         *result++ = fs::absolute(p);
         return true;
@@ -48,7 +48,7 @@ namespace CASM {
       if(vm.count("batch")) {
 
         if(!fs::exists(import_opt.batch_path())) {
-          primclex.err_log() << "ERROR: Batch import file does not exist at " << import_opt.batch_path() << "\n";
+          err_log() << "ERROR: Batch import file does not exist at " << import_opt.batch_path() << "\n";
           return std::make_pair(result, ERR_MISSING_INPUT_FILE);
         }
 
@@ -65,9 +65,9 @@ namespace CASM {
       }
 
       if(count == 0) {
-        primclex.err_log() <<   "ERROR: No files specified for import.\n";
+        err_log() <<   "ERROR: No files specified for import.\n";
         if(vm.count("batch")) {
-          primclex.err_log() << "       Check batch file for errors.\n";
+          err_log() << "       Check batch file for errors.\n";
         }
         return std::make_pair(result, ERR_INVALID_INPUT_FILE);
       }
@@ -88,9 +88,8 @@ namespace CASM {
       const PrimClex &primclex,
       const StructureMap<ConfigType> &mapper,
       ImportSettings const  &_set,
-      std::string report_dir,
-      Log &_file_log) :
-      ConfigData(primclex, _file_log, TypeTag<ConfigType>()),
+      std::string report_dir) :
+      ConfigData(primclex, TypeTag<ConfigType>()),
       m_structure_mapper(mapper),
       m_set(_set),
       m_report_dir(report_dir) {}
@@ -111,7 +110,7 @@ namespace CASM {
       auto calctype = project_settings.default_clex().calctype;
       auto required_properties = project_settings.required_properties(traits<ConfigType>::name, calctype);
 
-      Log &log = this->primclex().log();
+      Log &log = CASM::log();
       auto it = begin;
       for(; it != end; ++it) {
         log << "Importing " << resolve_struc_path(it->string(), primclex()) << std::endl;;
@@ -274,8 +273,8 @@ namespace CASM {
         fs::path p = fs::path(m_report_dir) / (prefix + "_fail");
         fs::ofstream sout(p);
 
-        primclex().log() << "WARNING: Could not import " << map_fail.size() << " structures." << std::endl;
-        primclex().log() << "  See detailed report: " << p  << std::endl << std::endl;
+        log() << "WARNING: Could not import " << map_fail.size() << " structures." << std::endl;
+        log() << "  See detailed report: " << p  << std::endl << std::endl;
 
         DataFormatterDictionary<ConfigIO::Result> dict;
         dict.insert(ConfigIO::initial_path(), ConfigIO::fail_msg());
@@ -291,8 +290,8 @@ namespace CASM {
         fs::path p = fs::path(m_report_dir) / (prefix + "_success");
         fs::ofstream sout(p);
 
-        primclex().log() << "Successfully imported " << map_success.size() << " structures." << std::endl;
-        primclex().log() << "  See detailed report: " << p  << std::endl << std::endl;
+        log() << "Successfully imported " << map_success.size() << " structures." << std::endl;
+        log() << "  See detailed report: " << p  << std::endl << std::endl;
 
         sout << formatter(map_success.begin(), map_success.end());
       }
@@ -302,12 +301,12 @@ namespace CASM {
         fs::path p = fs::path(m_report_dir) / (prefix + "_data_fail");
         fs::ofstream sout(p);
 
-        primclex().log() << "WARNING: Did not import data from "
-                         << import_data_fail.size() << " structures which have are a mapping score"
-                         " better than the existing data." << std::endl;
-        primclex().log() << "  You may wish to inspect these structures and allow overwriting "
-                         "or remove existing data manually." << std::endl;
-        primclex().log() << "  See detailed report: " << p  << std::endl << std::endl;
+        log() << "WARNING: Did not import data from "
+              << import_data_fail.size() << " structures which have are a mapping score"
+              " better than the existing data." << std::endl;
+        log() << "  You may wish to inspect these structures and allow overwriting "
+              "or remove existing data manually." << std::endl;
+        log() << "  See detailed report: " << p  << std::endl << std::endl;
 
         sout << formatter(import_data_fail.begin(), import_data_fail.end());
       }
@@ -316,11 +315,11 @@ namespace CASM {
         fs::path p = fs::path(m_report_dir) / (prefix + "_conflict");
         fs::ofstream sout(p);
 
-        primclex().log() << "WARNING: Imported data from structures that mapped to the same configuration." << std::endl
-                         << "  Data can only be imported from one of the conflicting structures." << std::endl
-                         << "  Based on the current conflict resolution method the 'best' result was automatically chosen, " << std::endl
-                         << "  but you may wish to inspect these results and manually select which structures to import." << std::endl;
-        primclex().log() << "  See detailed report: " << p  << std::endl << std::endl;
+        log() << "WARNING: Imported data from structures that mapped to the same configuration." << std::endl
+              << "  Data can only be imported from one of the conflicting structures." << std::endl
+              << "  Based on the current conflict resolution method the 'best' result was automatically chosen, " << std::endl
+              << "  but you may wish to inspect these results and manually select which structures to import." << std::endl;
+        log() << "  See detailed report: " << p  << std::endl << std::endl;
 
         sout << formatter(conflict.begin(), conflict.end());
       }

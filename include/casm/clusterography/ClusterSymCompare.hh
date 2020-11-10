@@ -322,98 +322,98 @@ namespace CASM {
     mutable SymOp m_spatial_transform;
   };
 
-  /// \brief Comparisons of clusters using supercell periodic symmetry, with periodic images
-  ///
-  /// Before doing a comparison, WithinScelSymCompare moves all sites in the cluster within the
-  /// supercell, as opposed to ScelPeriodicSymCompare which only translates the cluster so that the
-  /// first site is within the supercell.
-  ///
-  /// WithinScelSymCompare uses supercell periodic image minimum distance for the orbit
-  /// invariants, while ScelPeriodicSymCompare just uses the direct distance without accounting for
-  /// periodic images.
-  ///
-  /// To implement, traits<WithinScelSymCompare<Element>> is required to have:
-  /// - static IntegralCluster bring_within(
-  ///     IntegralCluster clust,
-  ///     WithinScelSymCompare<IntegralCluster> const& sym_compare);
-  /// - Element& Element::sort();
-  ///
-  /// \ingroup Clusterography
-  /// \ingroup ClusterSymCompare
-  ///
-  template <typename Element>
-  class WithinScelSymCompare<Element>:
-    public ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>>> {
-
-  public:
-    typedef Structure PrimType;
-    typedef std::shared_ptr<PrimType const> PrimType_ptr;
-    typedef Eigen::Matrix3l transf_mat_type;
-
-    /// \brief Constructor
-    ///
-    /// \param prim_ptr Prim structure
-    /// \param transf_mat Prim to supercell transformation matrix
-    /// \param tol Tolerance for invariants_compare of site-to-site distances
-    ///
-    WithinScelSymCompare(
-      PrimType_ptr prim_ptr,
-      transf_mat_type transf_mat,
-      double tol);
-
-    const PrimType &prim() const {
-      return *m_prim;
-    }
-
-    /// Prim to supercell transformation matrix
-    transf_mat_type const &transf_mat() const {
-      return m_transf_mat;
-    }
-
-    /// \brief Return tolerance
-    double tol() const {
-      return this->m_tol;
-    }
-
-  private:
-    typedef ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>>> Base;
-    friend traits<WithinScelSymCompare<Element>>;
-    friend SymCompare<CRTPBase<WithinScelSymCompare<Element>>>;
-    friend Base;
-
-    /// \brief Returns transformation that takes 'obj' to its prepared (canonical) form
-    ///
-    std::unique_ptr<SymOpRepresentation> canonical_transform_impl(Element const &obj) const;
-
-    /// \brief Prepare an element for comparison via an isometric affine transformation
-    ///
-    /// - Applies superlattice translation such that first site of cluster is within supercell
-    Element spatial_prepare_impl(Element obj) const;
-
-    /// \brief Access spatial transform that was used during most recent spatial preparation of an element
-    /// - Always identity
-    SymOp const &spatial_transform_impl() const;
-
-    /// \brief Prepare an element for comparison via transformation of its internal representation
-    ///
-    /// - Returns sorted
-    Element representation_prepare_impl(Element obj) const;
-
-    /// Pointer to the primitive structure, necessary to apply symmetry to the Element
-    PrimType_ptr m_prim;
-
-    /// Prim to supercell transformation matrix
-    transf_mat_type m_transf_mat;
-
-    /// Bring UnitCellCoord within the supercell
-    xtal::IntegralCoordinateWithin_f m_bring_within_f;
-
-    double m_tol;
-
-    /// \brief Spatial transform that reproduces most recent application of SymCompare::spatial_prepare()
-    /// - Default SymOp constructor initializes to identity
-    mutable SymOp m_spatial_transform;
-  };
+  // /// \brief Comparisons of clusters using supercell periodic symmetry, with periodic images
+  // ///
+  // /// Before doing a comparison, WithinScelSymCompare moves all sites in the cluster within the
+  // /// supercell, as opposed to ScelPeriodicSymCompare which only translates the cluster so that the
+  // /// first site is within the supercell.
+  // ///
+  // /// WithinScelSymCompare uses supercell periodic image minimum distance for the orbit
+  // /// invariants, while ScelPeriodicSymCompare just uses the direct distance without accounting for
+  // /// periodic images.
+  // ///
+  // /// To implement, traits<WithinScelSymCompare<Element>> is required to have:
+  // /// - static IntegralCluster bring_within(
+  // ///     IntegralCluster clust,
+  // ///     WithinScelSymCompare<IntegralCluster> const& sym_compare);
+  // /// - Element& Element::sort();
+  // ///
+  // /// \ingroup Clusterography
+  // /// \ingroup ClusterSymCompare
+  // ///
+  // template <typename Element>
+  // class WithinScelSymCompare<Element>:
+  //   public ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>>> {
+  //
+  // public:
+  //   typedef Structure PrimType;
+  //   typedef std::shared_ptr<PrimType const> PrimType_ptr;
+  //   typedef Eigen::Matrix3l transf_mat_type;
+  //
+  //   /// \brief Constructor
+  //   ///
+  //   /// \param prim_ptr Prim structure
+  //   /// \param transf_mat Prim to supercell transformation matrix
+  //   /// \param tol Tolerance for invariants_compare of site-to-site distances
+  //   ///
+  //   WithinScelSymCompare(
+  //     PrimType_ptr prim_ptr,
+  //     transf_mat_type transf_mat,
+  //     double tol);
+  //
+  //   const PrimType &prim() const {
+  //     return *m_prim;
+  //   }
+  //
+  //   /// Prim to supercell transformation matrix
+  //   transf_mat_type const &transf_mat() const {
+  //     return m_transf_mat;
+  //   }
+  //
+  //   /// \brief Return tolerance
+  //   double tol() const {
+  //     return this->m_tol;
+  //   }
+  //
+  // private:
+  //   typedef ClusterSymCompare<SymCompare<CRTPBase<WithinScelSymCompare<Element>>>> Base;
+  //   friend traits<WithinScelSymCompare<Element>>;
+  //   friend SymCompare<CRTPBase<WithinScelSymCompare<Element>>>;
+  //   friend Base;
+  //
+  //   /// \brief Returns transformation that takes 'obj' to its prepared (canonical) form
+  //   ///
+  //   std::unique_ptr<SymOpRepresentation> canonical_transform_impl(Element const &obj) const;
+  //
+  //   /// \brief Prepare an element for comparison via an isometric affine transformation
+  //   ///
+  //   /// - Applies superlattice translation such that first site of cluster is within supercell
+  //   Element spatial_prepare_impl(Element obj) const;
+  //
+  //   /// \brief Access spatial transform that was used during most recent spatial preparation of an element
+  //   /// - Always identity
+  //   SymOp const &spatial_transform_impl() const;
+  //
+  //   /// \brief Prepare an element for comparison via transformation of its internal representation
+  //   ///
+  //   /// - Returns sorted
+  //   Element representation_prepare_impl(Element obj) const;
+  //
+  //   /// Pointer to the primitive structure, necessary to apply symmetry to the Element
+  //   PrimType_ptr m_prim;
+  //
+  //   /// Prim to supercell transformation matrix
+  //   transf_mat_type m_transf_mat;
+  //
+  //   /// Bring UnitCellCoord within the supercell
+  //   xtal::IntegralCoordinateWithin_f m_bring_within_f;
+  //
+  //   double m_tol;
+  //
+  //   /// \brief Spatial transform that reproduces most recent application of SymCompare::spatial_prepare()
+  //   /// - Default SymOp constructor initializes to identity
+  //   mutable SymOp m_spatial_transform;
+  // };
 
 } // namespace CASM
 

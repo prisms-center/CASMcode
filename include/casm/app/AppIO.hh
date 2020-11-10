@@ -461,22 +461,6 @@ namespace CASM {
     Printer printer,
     const jsonParser &bspecs);
 
-
-  // --- Read Selections & Object names ----------------------------------------
-
-  namespace DB {
-    template<typename T> class Selection;
-  }
-
-  /// \brief Make a DB::Selection from JSON input
-  template<typename DataObject>
-  DB::Selection<DataObject> make_selection(
-    const PrimClex &primclex,
-    const jsonParser &kwargs,
-    std::string name_key,
-    std::string sel_key,
-    std::string method_name,
-    OnError on_error);
 }
 
 #endif

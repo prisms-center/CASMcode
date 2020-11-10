@@ -65,10 +65,10 @@ namespace CASM {
     Supercell(const Supercell &RHS);
 
     Supercell(std::shared_ptr<Structure const> const &_shared_prim, const Lattice &superlattice);
-    Supercell(std::shared_ptr<Structure const> const &_shared_prim, const Eigen::Ref<const Eigen::Matrix3i> &superlattice_matrix);
+    Supercell(std::shared_ptr<Structure const> const &_shared_prim, Eigen::Matrix3l const &superlattice_matrix);
 
     Supercell(const PrimClex *_prim, const Lattice &superlattice);
-    Supercell(const PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3i> &superlattice_matrix);
+    Supercell(const PrimClex *_prim, const Eigen::Ref<const Eigen::Matrix3l> &superlattice_matrix);
 
     ~Supercell();
 
@@ -104,6 +104,13 @@ namespace CASM {
 
     double crystallography_tol() const;
 
+    /// Use while transitioning Supercell to no longer need a `PrimClex const *`
+    bool has_primclex() const;
+
+    /// Use while transitioning Supercell to no longer need a `PrimClex const *`
+    void set_primclex(PrimClex const *primclex_ptr) const;
+
+    /// Use while transitioning Supercell to no longer need a `PrimClex const *`
     const PrimClex &primclex() const;
 
     ///Return number of primitive cells that fit inside of *this
@@ -120,17 +127,11 @@ namespace CASM {
     /// \brief The super lattice
     const Lattice &lattice() const;
 
-    /// Set the PrimNeighborList directly
-    ///
-    /// Note:
-    /// - If this Supercell was constructed with a PrimClex const *, PrimNeighborList is already set
-    void set_prim_nlist(std::shared_ptr<PrimNeighborList> const &shared_prim_nlist);
-
     /// \brief Returns the SuperNeighborList
     ///
     /// Requires that the prim_nlist has been set by one of:
     /// - constructing Supercell with a PrimClex const *
-    /// - setting the PrimNeighborList directly with `set_prim_nlist`
+    /// - using set_primclex to set a PrimClex const *
     ///
     /// At each access, the underlying PrimNeighborList will be checked and if it has been expanded
     /// then the SuperNeighborList will be extended also. References obtained from this function
@@ -160,15 +161,17 @@ namespace CASM {
 
     std::string generate_name_impl() const;
 
-    // May be nullptr, in which case, some features will throw
-    const PrimClex *m_primclex;
+    // Note:
+    // - Prefer not to access PrimClex via Supercell. In future, PrimClex access via Supercell will
+    //   be removed completely.
+    // - Until this is removed, it may be nullptr, in which case, some features will throw. Only
+    //   access via this->primclex() so that an error will be thrown if m_primclex is nullptr.
+    // - Mutable as a temporary workaround
+    mutable PrimClex const *m_primclex;
 
     std::shared_ptr<Structure const> m_shared_prim;
 
     SupercellSymInfo m_sym_info;
-
-    /// shared PrimNeighborList
-    std::shared_ptr<PrimNeighborList> m_prim_nlist;
 
     /// SuperNeighborList, mutable for lazy construction
     mutable notstd::cloneable_ptr<SuperNeighborList> m_nlist;
@@ -186,8 +189,6 @@ namespace CASM {
   /// \brief Get canonical supercell from name. If not yet in database, construct and insert.
   const Supercell &make_supercell(const PrimClex &primclex, std::string name);
 
-  SupercellSymInfo make_supercell_sym_info(Structure const &_prim, Lattice const &_slat);
-
   /// \brief Construct non-canonical supercell from name. Uses equivalent niggli lattice.
   std::shared_ptr<Supercell> make_shared_supercell(const PrimClex &primclex, std::string name);
 
@@ -195,9 +196,9 @@ namespace CASM {
 
   Supercell copy_apply(const SymOp &op, const Supercell &scel);
 
-  Eigen::Matrix3i transf_mat(const Lattice &prim_lat, const Lattice &super_lat);
+  Eigen::Matrix3l transf_mat(const Lattice &prim_lat, const Lattice &super_lat);
 
-  std::string generate_name(const Eigen::Matrix3i &transf_mat);
+  std::string generate_name(const Eigen::Matrix3l &transf_mat);
 
   std::string scelname(const Structure &prim, const Lattice &superlat);
 

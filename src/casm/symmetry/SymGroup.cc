@@ -777,8 +777,8 @@ namespace CASM {
       }
     }
     if(broken_check && m_rep_array.size()) {
-      //default_err_log() << "WARNING: Order of symmetry operations has been altered by MasterSymGroup::sort_by_class(). Attempting to repair "
-      //                << m_rep_array.size() << " symmetry representations.\n";
+      //err_log() << "WARNING: Order of symmetry operations has been altered by MasterSymGroup::sort_by_class(). Attempting to repair "
+      //          << m_rep_array.size() << " symmetry representations.\n";
       for(Index i = 0; i < m_rep_array.size(); i++) {
         std::vector<SymOpRepresentation *> new_rep;
         std::transform(perm_array.begin(), perm_array.end(), std::back_inserter(new_rep), [&](Index & idx) {
@@ -874,7 +874,16 @@ namespace CASM {
   }
 
   //*****************************************************************
+
+  /// Return the MasterSymGroup indices of the operations in this SymGroup (equivalent to master_group_indices)
   std::vector<Index> SymGroup::op_indices() const {
+    return master_group_indices();
+  }
+
+  //*****************************************************************
+
+  /// Return the MasterSymGroup indices of the operations in this SymGroup
+  std::vector<Index> SymGroup::master_group_indices() const {
     std::vector<Index> ind_array(size());
     for(Index i = 0; i < size(); i++) {
       if(!valid_index(at(i).index()) && at(i).has_valid_master()) {
@@ -1576,7 +1585,7 @@ namespace CASM {
        || !valid_index(j) || j >= size()) {
 
 
-      //default_err_log() << "WARNING: SymGroup::ind_prod() failed for " << i << ", " << j << std::endl;// and multi_table\n" << get_multi_table() << "\n\n";
+      //err_log() << "WARNING: SymGroup::ind_prod() failed for " << i << ", " << j << std::endl;// and multi_table\n" << get_multi_table() << "\n\n";
       //assert(0);
       return -1;
     }
@@ -1615,8 +1624,8 @@ namespace CASM {
 
   SymGroupRepID SymGroup::coord_rep_ID() const {
     if(!size() || !at(0).has_valid_master()) {
-      default_err_log() << "CRITICAL ERROR: In SymGroup::get_coord_rep_ID(), SymGroup is improperly initialized.\n"
-                        << "                Exiting...\n";
+      err_log() << "CRITICAL ERROR: In SymGroup::get_coord_rep_ID(), SymGroup is improperly initialized.\n"
+                << "                Exiting...\n";
       exit(1);
     }
 
@@ -1626,8 +1635,8 @@ namespace CASM {
 
   SymGroupRepID SymGroup::allocate_representation() const {
     if(!size() || !at(0).has_valid_master()) {
-      default_err_log() << "CRITICAL ERROR: In SymGroup::allocate_representation(), SymGroup is improperly initialized.\n"
-                        << "                Exiting...\n";
+      err_log() << "CRITICAL ERROR: In SymGroup::allocate_representation(), SymGroup is improperly initialized.\n"
+                << "                Exiting...\n";
       exit(1);
     }
 
@@ -1697,8 +1706,8 @@ namespace CASM {
       latex_name = info["latex_name"];
       if(!name.size()) {
 
-        default_err_log() << "WARNING: In SymGroup::get_name(), unable to get symgroup type.\n";
-        default_err_log() << "group size is " << size() << '\n';
+        err_log() << "WARNING: In SymGroup::get_name(), unable to get symgroup type.\n";
+        err_log() << "group size is " << size() << '\n';
         name = "unknown";
         latex_name = "unknown";
       }
@@ -1743,14 +1752,14 @@ namespace CASM {
             //std::cout << "This SymGroup is not a group because the combination of at least two of its elements is not contained in the set.\n";
 
             //ing a table of all 1's seems to make the most sense. This will prevent weird recursion from happening.
-            default_err_log() << "Failed to construc multiplication table!  Table in progress:\n";
+            err_log() << "Failed to construc multiplication table!  Table in progress:\n";
             for(Index m = 0; m < multi_table.size(); m++) {
               for(Index n = 0; n < multi_table[m].size(); n++) {
-                default_err_log() << multi_table[m][n] << "   ";
+                err_log() << multi_table[m][n] << "   ";
               }
-              default_err_log() << std::endl;
+              err_log() << std::endl;
             }
-            default_err_log() << std::endl;
+            err_log() << std::endl;
             multi_table.resize(size(), std::vector<Index>(size(), -1));
             //multi_table.clear();
             return false;
@@ -1871,7 +1880,7 @@ namespace CASM {
       }
     }
     if(size() >= max_size - 1) {
-      default_err_log() << "In SymGroup::enforce_group() -- you have reached the maximum allowed size you specified for your group (the default is 200). Unless you are generating a factor group in a large supercell, you probably need to adjust your tolerances.\n";
+      err_log() << "In SymGroup::enforce_group() -- you have reached the maximum allowed size you specified for your group (the default is 200). Unless you are generating a factor group in a large supercell, you probably need to adjust your tolerances.\n";
       assert(0);
     }
     return;

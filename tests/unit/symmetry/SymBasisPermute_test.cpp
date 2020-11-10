@@ -20,7 +20,7 @@ namespace {
     TestConfig0(const PrimClex &primclex) :
       TestConfiguration(
         primclex,
-        Eigen::Vector3i(2, 1, 1).asDiagonal(), {
+        Eigen::Vector3l(2, 1, 1).asDiagonal(), {
       0, 0,  0, 0,  1, 1,  0, 0
     }) {
 
@@ -37,8 +37,8 @@ TEST(SymBasisPermuteTest, Test0) {
   test::ZrOProj proj;
   proj.check_init();
 
-  Logging logging = Logging::null();
-  PrimClex primclex(proj.dir, logging);
+  ScopedNullLogging logging;
+  PrimClex primclex(proj.dir);
 
   TestConfig0 td(primclex);
 

@@ -1,4 +1,5 @@
 
+#include "casm/clex/FillSupercell.hh"
 #include "casm/monte_carlo/canonical/Canonical.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/monte_carlo/MonteCarlo_impl.hh"
@@ -523,8 +524,7 @@ namespace CASM {
       _log() << "using configation: " << configname << "\n" << std::endl;
 
       Configuration config = *primclex().db<Configuration>().find(configname);
-      const SymGroup &g = primclex().prim().factor_group();
-      return config.fill_supercell(_supercell(), g).configdof();
+      return fill_supercell(config, _supercell()).configdof();
     }
 
     /// \brief Find a grand canonical OccSwap to help enforce composition

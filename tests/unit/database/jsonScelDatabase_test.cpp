@@ -22,7 +22,8 @@ TEST(jsonScelDatabase_Test, Test1) {
   test::FCCTernaryProj proj;
   proj.check_init();
 
-  PrimClex primclex(proj.dir, null_log());
+  ScopedNullLogging logging;
+  PrimClex primclex(proj.dir);
   const Structure &prim(primclex.prim());
   primclex.settings().set_crystallography_tol(1e-5);
   EXPECT_EQ(fs::equivalent(proj.dir, primclex.dir().root_dir()), true);
@@ -53,4 +54,3 @@ TEST(jsonScelDatabase_Test, Test1) {
   EXPECT_EQ(db_scel.size(), 87);
 
 }
-

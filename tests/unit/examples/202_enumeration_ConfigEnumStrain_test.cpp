@@ -4,13 +4,16 @@
 
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/database/ScelDatabase.hh"
+#include "casm/casm_io/container/stream_io.hh"
 #include "casm/clex/ConfigEnumStrain.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/Superlattice.hh"
-#include "casm/enumerator/DoFSpace.hh"
+#include "casm/database/ScelDatabase.hh"
+#include "casm/database/ScelDatabaseTools_impl.hh"
+#include "casm/enumerator/ConfigEnumInput_impl.hh"
+#include "casm/enumerator/DoFSpace_impl.hh"
 #include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/symmetry/SymRepTools.hh"
 #include "casm/symmetry/io/json/SymRepTools.hh"
@@ -181,24 +184,36 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, VectorSpaceSymReport) {
   // - TODO: more description ...
 
   // Construct the SimpleCubic GLstrain DoF space.
+  std::cout << "here 0" << std::endl;
   Supercell const &supercell = *primclex.db<Supercell>().begin();
+  std::cout << "here 1" << std::endl;
   ConfigEnumInput config_input {supercell};
+  std::cout << "here 2" << std::endl;
+  std::vector<PermuteIterator> group = make_invariant_subgroup(config_input);
+  std::cout << "here 3" << std::endl;
   DoFKey dof_key = "GLstrain";
+  std::cout << "here 4" << std::endl;
   DoFSpace dof_space {config_input, dof_key};
 
   // Construct the VectorSpaceSymReport for the SimpleCubic GLstrain space.
+  std::cout << "here 5" << std::endl;
   bool calc_wedges = true;  // explanation TODO
-  VectorSpaceSymReport sym_report = vector_space_sym_report(dof_space, calc_wedges);
+  VectorSpaceSymReport sym_report = vector_space_sym_report(dof_space,
+                                                            group.begin(),
+                                                            group.end(),
+                                                            calc_wedges);
+  std::cout << "here 6" << std::endl;
+
 
   // Uncomment to print dof_space:
-  // jsonParser dof_space_json;
-  // to_json(dof_space, dof_space_json);
-  // std::cout << "DoFSpace:\n" << dof_space_json << std::endl;
+  jsonParser dof_space_json;
+  to_json(dof_space, dof_space_json, supercell.name() + "/zeros");
+  std::cout << "DoFSpace:\n" << dof_space_json << std::endl;
 
   // Uncomment to print sym_report:
-  // jsonParser sym_report_json;
-  // to_json(sym_report, sym_report_json);
-  // std::cout << "VectorSpaceSymReport:\n" << sym_report_json << std::endl;
+  jsonParser sym_report_json;
+  to_json(sym_report, sym_report_json);
+  std::cout << "VectorSpaceSymReport:\n" << sym_report_json << std::endl;
 
   // Expect three irreducible representations
   EXPECT_EQ(sym_report.irreps.size(), 3);
@@ -491,7 +506,7 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, FullSpaceDirectGridStrainE
   // We'll "trick" the enumerator by creating a "dummy subwedge" which defines the axes of the space
   //   we want to sample.
   std::vector<SymRepTools::SubWedge> subwedges;
-  subwedges.push_back(SymRepTools::SubWedge({SymRepTools::IrrepWedge::make_dummy_irrep_wedge(axes)}));
+  subwedges.push_back(SymRepTools::SubWedge::make_dummy(axes));
 
   EXPECT_EQ(almost_equal(subwedges[0].trans_mat(), axes, tol), true);
   EXPECT_EQ(subwedges.size(), 1);
@@ -529,13 +544,13 @@ namespace enumeration_test_impl {
   }
 
   SymGroupRep const &global_dof_symrep(ConfigEnumInput const &config_input, DoFKey global_dof_key) {
-    return global_dof_symrep(config_input.supercell().prim(), global_dof_key);
+    return global_dof_symrep(config_input.configuration().supercell().prim(), global_dof_key);
   }
 
   SymGroup make_point_group(ConfigEnumInput const &config_input) {
     return make_point_group(
-             config_input.group(),
-             config_input.supercell().sym_info().supercell_lattice());
+             make_invariant_subgroup(config_input),
+             config_input.configuration().supercell().sym_info().supercell_lattice());
   }
 
   // check if there is a solution X, for:  B = A * X
@@ -547,24 +562,32 @@ namespace enumeration_test_impl {
 
 ExampleEnumerationSimpleCubicConfigEnumStrain::ExampleEnumerationSimpleCubicConfigEnumStrain():
   title("ExampleEnumerationSimpleCubicConfigEnumStrain"),
-  shared_prim(std::make_shared<CASM::Structure const>(test::SimpleCubicGLstrain())),
+  shared_prim(std::make_shared<CASM::Structure const>(test::SimpleCubic_GLstrain_prim())),
   project_settings(make_default_project_settings(*shared_prim, title)),
   primclex(project_settings, shared_prim) {
+
+  std::cout << "SimpleCubicGLstrain:" << std::endl;
+  auto const &struc = *shared_prim;
+  std::cout << "all_dof_types: " << xtal::all_dof_types(struc) << std::endl;
+  std::cout << "check types: " << std::endl;
+  for(auto const &dof : xtal::all_dof_types(struc)) {
+    std::cout << "dof: " << dof << std::endl;
+    auto aniso_val_traits = AnisoValTraits {dof};
+    std::cout << "name: " << aniso_val_traits.name() << std::endl;
+  }
+  std::cout << "check types: done" << std::endl;
 
   int begin_volume {1};
   int end_volume {2};
   std::string dirs {"abc"};
   Eigen::Matrix3i generating_matrix {Eigen::Matrix3i::Identity()};
   CASM::xtal::ScelEnumProps enumeration_params {begin_volume, end_volume, dirs, generating_matrix};
-  bool existing_only = false;
 
-  // The ScelEnumByProps variant that accepts a PrimClex in the constructor inserts Supercells into
-  // the Supercell database available at `primclex.db<Supercell>()` as it constructs them.
-  CASM::ScelEnumByProps enumerator {primclex, enumeration_params, existing_only};
-
-  // Increments the enumerator iterators to construct all Supercell
-  int count = std::distance(enumerator.begin(), enumerator.end());
-  EXPECT_EQ(count, 1);
+  // Enumerate supercells
+  CASM::ScelEnumByProps enumerator {shared_prim, enumeration_params};
+  for(Supercell const &supercell : enumerator) {
+    make_canonical_and_insert(enumerator, supercell, primclex.db<Supercell>());
+  }
   EXPECT_EQ(primclex.db<Supercell>().size(), 1);
 
   // Expected symmetry adapted GLstrain axes for a simple cubic structure

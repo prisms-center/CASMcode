@@ -3,18 +3,17 @@
 
 #include <wordexp.h>
 #include <string>
-#include "casm/casm_io/Log.hh"
 
 namespace CASM {
 
-  class CLIParse : public Logging {
+  class CLIParse {
   public:
 
     /// Non-owning
-    CLIParse(int _argc, char **_argv, const Logging &_logging = Logging());
+    CLIParse(int _argc, char **_argv);
 
     /// Owning
-    CLIParse(std::string _args, const Logging &_logging = Logging());
+    CLIParse(std::string _args);
 
     ~CLIParse();
 
@@ -47,7 +46,7 @@ namespace CASM {
   }
 
   /// Take CLI args string, 'casm X ...', and use boost::program_options to parse into Options
-  void parse_args(Completer::OptionHandlerBase &opt, std::string args, const Logging &_logging = Logging());
+  void parse_args(Completer::OptionHandlerBase &opt, std::string args);
 }
 
 #endif

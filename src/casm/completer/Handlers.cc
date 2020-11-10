@@ -1,22 +1,22 @@
 #ifndef HANDLERS_CC
 #define HANDLERS_CC
 
-#include "casm/completer/Handlers.hh"
-#include "casm/global/enum/io_traits.hh"
+#include "casm/app/APICommand.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/app/enum/EnumInterface.hh"
+#include "casm/app/enum/standard_enumerator_interfaces.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/dataformatter/DataFormatter.hh"
 #include "casm/casm_io/enum/stream_io.hh"
 #include "casm/clex/Configuration.hh"
-#include "casm/clex/Supercell.hh"
-#include "casm/app/DirectoryStructure.hh"
-#include "casm/database/DatabaseTypes.hh"
-#include "casm/enumerator/Enumerator.hh"
-#include "casm/app/EnumeratorHandler.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/app/APICommand.hh"
-#include "casm/database/ScelDatabase.hh"
+#include "casm/clex/Supercell.hh"
+#include "casm/completer/Handlers.hh"
 #include "casm/database/ConfigDatabase.hh"
-#include "casm/casm_io/Log.hh"
-#include "casm/app/ProjectSettings.hh"
+#include "casm/database/DatabaseTypes.hh"
+#include "casm/database/ScelDatabase.hh"
+#include "casm/global/enum/io_traits.hh"
 
 namespace CASM {
   namespace Completer {
@@ -133,7 +133,8 @@ namespace CASM {
 
     void ArgHandler::scelname_to_bash(std::vector<std::string> &arguments) {
       if(!find_casmroot(boost::filesystem::current_path()).empty()) {
-        const PrimClex &pclex = PrimClex(find_casmroot(boost::filesystem::current_path()), null_log());
+        ScopedNullLogging logging;
+        const PrimClex &pclex = PrimClex(find_casmroot(boost::filesystem::current_path()));
         for(const auto &scel : pclex.const_db<Supercell>()) {
           arguments.push_back(scel.name());
         }
@@ -143,7 +144,8 @@ namespace CASM {
 
     void ArgHandler::configname_to_bash(std::vector<std::string> &arguments) {
       if(!find_casmroot(boost::filesystem::current_path()).empty()) {
-        const PrimClex &pclex = PrimClex(find_casmroot(boost::filesystem::current_path()), null_log());
+        ScopedNullLogging logging;
+        const PrimClex &pclex = PrimClex(find_casmroot(boost::filesystem::current_path()));
         for(const auto &config : pclex.const_db<Configuration>()) {
           arguments.push_back(config.name());
         }
@@ -155,7 +157,7 @@ namespace CASM {
       DataFormatterDictionary<Configuration> dict = make_dictionary<Configuration>();
 
       for(auto it = dict.begin(); it != dict.cend(); ++it) {
-        if(it->type() ==  BaseDatumFormatter<Configuration>::Property) {
+        if(it->type() == DatumFormatterClass::Property) {
           arguments.push_back(it->name());
         }
       }
@@ -166,14 +168,14 @@ namespace CASM {
       DataFormatterDictionary<Configuration> config_dict = make_dictionary<Configuration>();
 
       for(auto it = config_dict.begin(); it != config_dict.cend(); ++it) {
-        if(it->type() ==  BaseDatumFormatter<Configuration>::Property) {
+        if(it->type() == DatumFormatterClass::Property) {
           arguments.push_back("config:" + it->name());
         }
       }
       DataFormatterDictionary<Supercell> scel_dict = make_dictionary<Supercell>();
 
       for(auto it = scel_dict.begin(); it != scel_dict.cend(); ++it) {
-        if(it->type() ==  BaseDatumFormatter<Supercell>::Property) {
+        if(it->type() == DatumFormatterClass::Property) {
           arguments.push_back("scel:" + it->name());
         }
       }
@@ -189,9 +191,9 @@ namespace CASM {
     }
 
     void ArgHandler::enummethod_to_bash(std::vector<std::string> &arguments) {
-      const EnumeratorMap map = *(make_standard_enumerator_map().get());
-      for(const auto &e : map) {
-        arguments.push_back(e.name());
+      auto enumerator_interfaces = make_standard_enumerator_interfaces();
+      for(auto const &e : enumerator_interfaces) {
+        arguments.push_back(e->name());
       }
       return;
     }
@@ -440,6 +442,16 @@ namespace CASM {
       m_desc.add_options()
       ("selection,c",
        po::value<fs::path>(&m_selection_path)->default_value(_default)->value_name(ArgHandler::path()),
+       (std::string("Only consider the selected objects from the given selection file. ") +
+        singleline_help<DB::SELECTION_TYPE>()).c_str());
+      return;
+    }
+
+    ///Add --selection suboption (no default)
+    void OptionHandlerBase::add_selection_no_default_suboption() {
+      m_desc.add_options()
+      ("selection,c",
+       po::value<fs::path>(&m_selection_path)->value_name(ArgHandler::path()),
        (std::string("Only consider the selected objects from the given selection file. ") +
         singleline_help<DB::SELECTION_TYPE>()).c_str());
       return;

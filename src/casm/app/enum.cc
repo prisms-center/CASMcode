@@ -5,10 +5,13 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/EnumeratorHandler.hh"
-#include "casm/enumerator/Enumerator.hh"
+#include "casm/app/enum/EnumInterface.hh"
+#include "casm/app/enum/standard_enumerator_interfaces.hh"
+#include "casm/app/io/json_io_impl.hh"
+#include "casm/casm_io/Log.hh"
+#include "casm/casm_io/container/stream_io.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/completer/Handlers.hh"
-#include "casm/casm_io/container/stream_io.hh"
 
 namespace CASM {
   namespace Completer {
@@ -20,29 +23,41 @@ namespace CASM {
     void EnumOption::initialize() {
       bool required = false;
 
+      // Standard options: --help, --desc, --settings, --input
       m_desc.add_options()
-      ("help,h", "Print help message.")
+      ("help,h", "Print help message including a list of all available methods.")
       ("desc",
        po::value<std::vector<std::string> >(&m_desc_vec)->multitoken()->zero_tokens()->value_name(ArgHandler::enummethod()),
        "Print extended usage description. "
-       "Use '--desc MethodName [MethodName2...]' for detailed option description. "
-       "Partial matches of method names will be included.")
-      ("method,m", po::value<std::string>(&m_method)->value_name(ArgHandler::enummethod()), "Method to use: Can use number shortcuts in this option.")
-      ("min", po::value<int>(&m_min_volume)/*->default_value(1)*/, "Min volume")
-      ("max", po::value<int>(&m_max_volume), "Max volume")
-      ("filter",
-       po::value<std::vector<std::string> >(&m_filter_strs)->multitoken()->value_name(ArgHandler::query()),
-       "Filter configuration enumeration so that only configurations matching a "
-       "'casm query'-type expression are recorded")
+       "Use '--desc [MethodName [MethodName2...]]' for detailed method descriptions. "
+       "Partial matches of method names are acceptable.");
+      add_settings_suboption(required);
+      add_input_suboption(required);
+
+      // `enum` method and method specific options:
+      //    --method, --min, --max, --all, --scelnames, --confignames
+      //
+      // It is up to individual methods how to use these input, but prefer that CLI options take
+      //    precendence in collisions with JSON input provided by --settings or --input
+      m_desc.add_options()
+      ("method,m",
+       po::value<std::string>(&m_method)->value_name(ArgHandler::enummethod()),
+       "Method to use: Can use method name (including partial matches) or index.")
+      ("min", po::value<int>(&m_min_volume), "Minimum volume supercell (integer, multiple of the prim volume)")
+      ("max", po::value<int>(&m_max_volume), "Maximum volume supercell (integer, multiple of the prim volume)")
       ("all,a",
        po::bool_switch(&m_all_existing)->default_value(false),
        "Enumerate configurations for all existing supercells");
-
-      add_verbosity_suboption();
-      add_settings_suboption(required);
-      add_input_suboption(required);
       add_scelnames_suboption();
       add_confignames_suboption();
+
+      // Options that control enumeration in a generic way: --filter, --verbosity, --dry-run
+      m_desc.add_options()
+      ("filter",
+       po::value<std::string>(&m_filter_str)->value_name(ArgHandler::query()),
+       "Filter configuration enumeration so that only configurations matching a "
+       "'casm query'-type expression are recorded");
+      add_verbosity_suboption();
       add_dry_run_suboption();
 
       return;
@@ -54,7 +69,7 @@ namespace CASM {
 
   EnumCommand::EnumCommand(const CommandArgs &_args, Completer::EnumOption &_opt) :
     APICommand<Completer::EnumOption>(_args, _opt),
-    m_enumerator_map(nullptr) {}
+    m_enumerator_vector(nullptr) {}
 
   int EnumCommand::vm_count_check() const {
     if(!in_project()) {
@@ -91,9 +106,9 @@ namespace CASM {
 
       bool match = false;
       for(const auto &in_name : opt().desc_vec()) {
-        for(const auto &e : enumerators()) {
-          if(e.name().substr(0, in_name.size()) == in_name) {
-            log() << e.help() << std::endl;
+        for(const auto &interface_ptr : enumerators()) {
+          if(interface_ptr->name().substr(0, in_name.size()) == in_name) {
+            log() << interface_ptr->desc() << std::endl;
             match = true;
             break;
           }
@@ -113,19 +128,10 @@ namespace CASM {
 
       log() << "DESCRIPTION\n" << std::endl;
 
-      log() << "  casm enum --settings input.json                                      \n"
+      log() <<
+            "  casm enum --settings input.json                                      \n"
             "  casm enum --input '{...JSON...}'                                     \n"
-            "  - Input settings in JSON format to run an enumeration. The expected  \n"
-            "    format is:                                                         \n"
-            "\n"
-            "    {\n"
-            "      \"MethodName\": {\n"
-            "        \"option1\" : ...,\n"
-            "        \"option2\" : ...,\n"
-            "         ...\n"
-            "      }\n"
-            "    }\n"
-            "\n";
+            "  - Input settings in JSON format to run an enumeration.               \n\n";
 
       print_names(log(), enumerators());
 
@@ -141,41 +147,48 @@ namespace CASM {
   }
 
   int EnumCommand::run() const {
-    jsonParser input;
-    if(vm().count("settings")) {
-      input = jsonParser {opt().settings_path()};
-    }
-    else if(vm().count("input")) {
-      input = jsonParser::parse(opt().input_str());
-    }
 
-    auto lambda = [&](const EnumInterfaceBase & e) {
-      return e.name().substr(0, opt().method().size()) == opt().method();
+    // Select and execute an enumeration method from this->enumerators() based on --method value
+    // - accepts partial name matches if only one partial match
+    // - if no name match, attempt to interpret --method as index into this->enumerators()
+    // - otherwise provide a useful error message
+
+    jsonParser json_options = make_json_input(opt()); // JSON from --input string or --settings file
+    jsonParser cli_options_as_json {opt()};           // All CLI options as JSON object
+
+    // find how many method names match the --method input value
+    auto enumeration_method_name_matches = [&](notstd::cloneable_ptr<EnumInterfaceBase> const & interface_ptr) {
+      return interface_ptr->name().substr(0, opt().method().size()) == opt().method();
     };
-    int count = std::count_if(enumerators().begin(), enumerators().end(), lambda);
+    int count = std::count_if(enumerators().begin(), enumerators().end(), enumeration_method_name_matches);
 
     if(count == 1) {
-      auto it = std::find_if(enumerators().begin(), enumerators().end(), lambda);
-      return it->run(primclex(), input, opt(), m_enumerator_map);
+      auto it = std::find_if(enumerators().begin(), enumerators().end(), enumeration_method_name_matches);
+      (*it)->run(primclex(), json_options, cli_options_as_json);
+      return 0;
     }
     else if(count < 1) {
-      // allows for number aliasing
+      // Attempt to understand --method input as index into method list
+      int method_index = -1;
       try {
-        int m = stoi(opt().method());
-        if(m < std::distance(enumerators().begin(), enumerators().end()) &&
-           m >= 0) {
-          auto it = enumerators().begin();
-          for(int k = 0; k < m; ++k) {
-            ++it;
-          }
-          return it->run(primclex(), input, opt(), m_enumerator_map);
-        }
+        method_index = stoi(opt().method());
       }
       catch(...) {
         err_log() << "No match found for --method " << opt().method() << std::endl;
         print_names(err_log(), enumerators());
         return ERR_INVALID_ARG;
       }
+
+      if(method_index < 0 || method_index >= enumerators().size()) {
+        err_log() << "No match found for --method " << opt().method() << std::endl;
+        print_names(err_log(), enumerators());
+        return ERR_INVALID_ARG;
+      }
+
+      auto it = enumerators().begin();
+      std::advance(it, method_index);
+      (*it)->run(primclex(), json_options, cli_options_as_json);
+      return 0;
     }
     else if(count > 1) {
       err_log() << "Multiple matches found for --method " << opt().method() << std::endl;
@@ -185,24 +198,26 @@ namespace CASM {
     throw std::runtime_error("Unknown error in EnumCommand::run");
   }
 
-  const EnumeratorMap &EnumCommand::enumerators() const {
-    if(!m_enumerator_map) {
+  EnumInterfaceVector const &EnumCommand::enumerators() const {
+    if(m_enumerator_vector == nullptr) {
       if(in_project()) {
-        m_enumerator_map = &primclex().settings().enumerator_handler().map();
+        // include plugins and standard enumerator methods
+        m_enumerator_vector = &primclex().settings().enumerator_handler().get();
       }
       else {
-        m_standard_enumerators = make_standard_enumerator_map();
-        m_enumerator_map = m_standard_enumerators.get();
+        // only show standard enumerator methods (can't run if not in a project, but can see help messages)
+        m_standard_enumerators = make_standard_enumerator_interfaces();
+        m_enumerator_vector = &m_standard_enumerators;
       }
     }
-    return *m_enumerator_map;
+    return *m_enumerator_vector;
   }
 
-  void EnumCommand::print_names(std::ostream &sout, const EnumeratorMap &enumerators) const {
+  void EnumCommand::print_names(std::ostream &sout, EnumInterfaceVector const &enumerators) const {
     sout << "The enumeration methods are:\n";
     int counter = 0;
-    for(const auto &e : enumerators) {
-      sout << "  " << counter << ") " << e.name() << std::endl;
+    for(auto const &interface_ptr : enumerators) {
+      sout << "  " << counter << ") " << interface_ptr->name() << std::endl;
       ++counter;
     }
   }

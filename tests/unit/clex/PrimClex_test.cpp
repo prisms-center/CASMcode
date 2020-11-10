@@ -63,7 +63,7 @@ TEST_F(FCCTernaryPrimClexTest, Basics) {
   EXPECT_EQ(shared_prim->basis().size(), 1);
 
   // Construct PrimClex from project settings & prim
-  PrimClex primclex {*project_settings_ptr, shared_prim, log()};
+  PrimClex primclex {*project_settings_ptr, shared_prim};
   EXPECT_EQ(primclex.prim().basis().size(), 1);
 
 }
@@ -71,7 +71,7 @@ TEST_F(FCCTernaryPrimClexTest, Basics) {
 TEST_F(FCCTernaryProjectTest, ReadNewProject) {
 
   // Construct PrimClex from existing project directory
-  PrimClex primclex {project_settings_ptr->root_dir(), log()};
+  PrimClex primclex {project_settings_ptr->root_dir()};
   EXPECT_EQ(primclex.prim().basis().size(), 1);
 
 }
@@ -130,7 +130,7 @@ protected:
 TEST_F(FCCTernaryProjectClexBasisTest, ReadClexBasisSpecs) {
 
   // Construct PrimClex from existing project directory
-  PrimClex primclex {project_settings_ptr->root_dir(), log()};
+  PrimClex primclex {project_settings_ptr->root_dir()};
 
   // Assert bspecs.json file exists and is read correctly
   EXPECT_TRUE(primclex.has_basis_set_specs(basis_set_name));
@@ -156,7 +156,7 @@ TEST_F(FCCTernaryProjectClexBasisTest, ReadClexBasisSpecs) {
 TEST_F(FCCTernaryProjectClexBasisTest, WriteClexBasisSetData) {
 
   // Construct PrimClex from existing project directory
-  PrimClex primclex {project_settings_ptr->root_dir(), log()};
+  PrimClex primclex {project_settings_ptr->root_dir()};
 
   // Write basis set data files
   this->write_basis_set_data(primclex);
@@ -173,7 +173,7 @@ TEST_F(FCCTernaryProjectClexBasisTest, WriteClexBasisSetData) {
 TEST_F(FCCTernaryProjectClexBasisTest, MakeClexulator) {
 
   // Construct PrimClex from existing project directory
-  PrimClex primclex {project_settings_ptr->root_dir(), log()};
+  PrimClex primclex {project_settings_ptr->root_dir()};
 
   // Write basis set data files
   this->write_basis_set_data(primclex);

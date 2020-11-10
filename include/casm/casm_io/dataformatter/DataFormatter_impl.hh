@@ -298,7 +298,7 @@ namespace CASM {
   template<typename DataObject, typename DatumFormatterType>
   void DataFormatterDictionary<DataObject, DatumFormatterType>::print_help(
     std::ostream &_stream,
-    typename BaseDatumFormatter<DataObject>::FormatterType ftype,
+    DatumFormatterClass ftype,
     int width, int separation) const {
 
     const_iterator it_begin(this->cbegin()), it_end(this->cend());

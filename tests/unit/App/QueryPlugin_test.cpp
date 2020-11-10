@@ -14,12 +14,13 @@ using namespace CASM;
 
 TEST(QueryPlugin, Test1) {
 
+  ScopedNullLogging logging;
   test::ZrOProj proj;
   proj.check_init();
   proj.check_composition();
   proj.check_enum();
 
-  PrimClex primclex(proj.dir, Logging(null_log(), null_log(), null_log()));
+  PrimClex primclex(proj.dir);
 
   //TODO: This is more code duplication
   auto cp = [&](std::string _filename) {
@@ -49,7 +50,7 @@ TEST(QueryPlugin, Test1) {
   primclex.refresh(true);
 
   auto check = [&](std::string str) {
-    CommandArgs args(str, &primclex, primclex.dir().root_dir(), Logging::null());
+    CommandArgs args(str, &primclex, primclex.dir().root_dir());
     return !casm_api(args);
   };
 

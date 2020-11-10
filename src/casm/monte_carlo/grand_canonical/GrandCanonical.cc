@@ -1,6 +1,7 @@
 
 #include "casm/basis_set/DoF.hh"
 #include "casm/crystallography/SymTools.hh"
+#include "casm/clex/FillSupercell.hh"
 #include "casm/clex/Norm.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/database/ConfigDatabase.hh"
@@ -367,7 +368,7 @@ namespace CASM {
           //save the result
           double dpot_nrg = event.dEpot();
           if(dpot_nrg < 0.0) {
-            Log &err_log = default_err_log();
+            Log &err_log = CASM::err_log();
             err_log.error<Log::standard>("Calculating low temperature expansion");
             err_log << "  Defect lowered the potential energy. Your motif configuration "
                     << "is not the 0K ground state.\n" << std::endl;
@@ -731,7 +732,7 @@ namespace CASM {
       }
 
       return std::make_pair(
-               min_config.fill_supercell(_supercell(), primclex().prim().factor_group()).configdof(),
+               fill_supercell(min_config, _supercell()).configdof(),
                min_config.name());
     }
 
@@ -810,7 +811,7 @@ namespace CASM {
 
       Configuration min_config = *db.find(allowed[0]->second);
       return std::make_pair(
-               min_config.fill_supercell(_supercell(), g).configdof(),
+               fill_supercell(min_config, _supercell()).configdof(),
                min_config.name());
     }
 
@@ -822,8 +823,7 @@ namespace CASM {
       _log() << "using configation: " << configname << "\n" << std::endl;
 
       Configuration config = *primclex().db<Configuration>().find(configname);
-      const SymGroup &g = primclex().prim().factor_group();
-      return config.fill_supercell(_supercell(), g).configdof();
+      return fill_supercell(config, _supercell()).configdof();
     }
 
   }

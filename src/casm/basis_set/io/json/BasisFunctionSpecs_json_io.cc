@@ -78,7 +78,7 @@ namespace CASM {
     auto &basis_function_specs = *parser.value;
 
     // parse "dofs", using all dof types in prim as default value
-    auto all_dof_keys = all_dof_types(prim);
+    auto all_dof_keys = all_dof_types(prim.structure());
     parser.optional_else(basis_function_specs.dof_keys, "dofs", all_dof_keys);
 
     // parse "global_max_poly_order"
@@ -143,7 +143,7 @@ namespace CASM {
     }
 
     // parse & validate specialized DoFType specs from JSON here...
-    auto all_dof_keys = all_dof_types(prim);
+    auto all_dof_keys = all_dof_types(prim.structure());
     for(const auto &key : all_dof_keys) {
       dof_dict->lookup(key).dof_specs_to_json(basis_function_specs, json, prim);
     }

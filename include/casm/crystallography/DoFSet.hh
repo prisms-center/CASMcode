@@ -65,14 +65,16 @@ namespace CASM {
       }
 
     private:
-      /// AnisoValTraits. Describes the type of DoF, and can convert Cartesian symmetry representations into the appropriate representation
+      /// AnisoValTraits. Describes the type of DoF, and can convert Cartesian symmetry
+      /// representations into the appropriate representation
       BasicTraits m_traits;
 
-      /// Names for each axis of the basis, for example "x". "y", "z" for displacement
+      /// Names for each axis of the basis, for example "dx", "dy", "dz" for displacement
       std::vector<std::string> m_component_names;
 
-      /// The basis defines the space of the DoF, which should be a linear combination of the AnisoValTraits conventional coordinates.
-      /// For example, you may want to define displacements that only happen along a particular direction
+      /// The basis defines the space of the DoF, which should be a linear combination of the
+      /// AnisoValTraits conventional coordinates. For example, you may want to define displacements
+      /// that only happen along a particular direction
       Eigen::MatrixXd m_basis;
       Eigen::MatrixXd m_basis_inverse;
     };

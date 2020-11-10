@@ -21,11 +21,11 @@ TEST(InvariantSubgroupTest, Test0) {
   test::ZrOProj proj;
   proj.check_init();
 
-  Logging logging = Logging::null();
-  PrimClex primclex(proj.dir, logging);
+  ScopedNullLogging logging;
+  PrimClex primclex(proj.dir);
   const Structure &prim = primclex.prim();
   const SymGroup &prim_fg = primclex.prim().factor_group();
-  Supercell prim_scel(&primclex, Eigen::Matrix3i::Identity());
+  Supercell prim_scel(&primclex, Eigen::Matrix3l::Identity());
 
   EXPECT_EQ(true, true);
 
@@ -39,13 +39,12 @@ TEST(InvariantSubgroupTest, Test0) {
   //   bspecs,
   //   alloy_sites_filter,
   //   primclex.crystallography_tol(),
-  //   std::back_inserter(orbits),
-  //   primclex.log());
+  //   std::back_inserter(orbits));
   EXPECT_EQ(true, true);
 
   PrototypePrinter<IntegralCluster> printer;
   printer.opt.coord_type = INTEGRAL;
-  // print_clust(orbits.begin(), orbits.end(), primclex.log(), printer);
+  // print_clust(orbits.begin(), orbits.end(), log(), printer);
 
   // Make cluster groups & check size, based on prim.factor_group symmetry
   {
@@ -59,7 +58,8 @@ TEST(InvariantSubgroupTest, Test0) {
       EXPECT_EQ(cluster_group_a.size(), cluster_group_b.size());
 
       // Test make_invariant_subgroup using Supercell
-      std::vector<PermuteIterator> cluster_group_c = make_invariant_subgroup(orbit.prototype(), prim_scel);
+      SymGroup cluster_group_c = make_invariant_subgroup(
+                                   orbit.prototype(), prim_scel.sym_info().factor_group(), orbit.sym_compare());
       EXPECT_EQ(cluster_group_a.size(), cluster_group_c.size());
 
     }
@@ -172,7 +172,8 @@ TEST(InvariantSubgroupTest, Test0) {
         EXPECT_EQ(cluster_group_a.size(), cluster_group_b.size());
 
         // Test make_invariant_subgroup using Supercell
-        std::vector<PermuteIterator> cluster_group_c = make_invariant_subgroup(el, scel_vol2);
+        SymGroup cluster_group_c = make_invariant_subgroup(
+                                     el, scel_vol2.sym_info().factor_group(), scel_sym_compare);
         EXPECT_EQ(cluster_group_a.size(), cluster_group_c.size());
       }
 

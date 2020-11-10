@@ -13,10 +13,10 @@
 namespace CASM {
   void status_unitialized(const CommandArgs &args) {
 
-    args.log() << "NEXT STEPS:\n\n";
+    log() << "NEXT STEPS:\n\n";
 
-    args.log() <<
-               "Initialize a CASM project\n\
+    log() <<
+          "Initialize a CASM project\n\
 - Create and cd to the directory where you want the project to be located.\n\
   This will be called the 'project root directory' or project's 'location'.\n\
 - Add a 'prim.json' file to the directory describing the primitive cell.  \n\
@@ -81,10 +81,10 @@ namespace CASM {
 
   void composition_unselected(const CommandArgs &args) {
 
-    args.log() << "NEXT STEPS:\n\n";
+    log() << "NEXT STEPS:\n\n";
 
-    args.log() <<
-               "Select composition axes\n\
+    log() <<
+          "Select composition axes\n\
 - Execute: 'casm composition -d' to display standard composition axes.    \n\
 - Then execute 'casm composition -s <#>' to select one of the listed axes.\n\
 - If no standard composition axis is satisfactory, edit the file          \n\
@@ -97,10 +97,10 @@ namespace CASM {
 
   void supercells_ungenerated(const CommandArgs &args) {
 
-    args.log() << "NEXT STEPS:\n\n";
+    log() << "NEXT STEPS:\n\n";
 
-    args.log() <<
-               "Enumerate supercells\n\
+    log() <<
+          "Enumerate supercells\n\
 - Execute: 'casm enum --method ScelEnum --max V' to enumerate supercells up to \n\
   volume V (units: number of primitive cells).                            \n\
 - Supercells are listed in the SCEL file as well as scel_list.json        \n\
@@ -115,10 +115,10 @@ namespace CASM {
 
   void configs_ungenerated(const CommandArgs &args) {
 
-    args.log() << "NEXT STEPS:\n\n";
+    log() << "NEXT STEPS:\n\n";
 
-    args.log() <<
-               "Enumerate configurations\n\
+    log() <<
+          "Enumerate configurations\n\
 - Several options are possible:                                        \n\
 - Execute: 'casm enum --method ConfigEnumAllOccupations --all' to      \n\
   enumerate configurations for all supercells.                         \n\
@@ -141,10 +141,10 @@ namespace CASM {
   }
 
   void configs_uncalculated(const CommandArgs &args) {
-    args.log() << "NEXT STEPS:\n\n";
+    log() << "NEXT STEPS:\n\n";
 
-    args.log() <<
-               "Calculate configuration properties\n\
+    log() <<
+          "Calculate configuration properties\n\
                                                                        \n\
 Instructions for volume relaxed VASP energies:                         \n\n\
 - Create INCAR, KPOINTS, POSCAR, SPECIES, and 'relax.json' files for   \n\
@@ -193,43 +193,43 @@ For either of the choices above do the following:             \n\n\
 
   void references_unset(const CommandArgs &args) {
 
-    args.log() << "NEXT STEPS:\n\n";
+    log() << "NEXT STEPS:\n\n";
 
-    args.log() <<
-               "Set chemical reference\n"
-               "                                                                       \n"
-               "- The chemical reference determines the value of the formation energy  \n"
-               "  and chemical potentials calculated by CASM.                          \n\n"
+    log() <<
+          "Set chemical reference\n"
+          "                                                                       \n"
+          "- The chemical reference determines the value of the formation energy  \n"
+          "  and chemical potentials calculated by CASM.                          \n\n"
 
-               "- Chemical references states are set by specifying a hyperplane in     \n"
-               "  energy/atom - composition (as atom_frac) space. This may be done by  \n"
-               "  specifying the hyperplane explicitly, or by specifying several       \n"
-               "  reference states with energy/atom and composition (as atom_frac) for \n"
-               "  enough states to span the composition space of the allowed occupants \n"
-               "  specified in the prim. For consistency with other CASM projects,     \n"
-               "  additional reference states extending to other compositional         \n"
-               "  dimensions may be included also.                                     \n\n"
+          "- Chemical references states are set by specifying a hyperplane in     \n"
+          "  energy/atom - composition (as atom_frac) space. This may be done by  \n"
+          "  specifying the hyperplane explicitly, or by specifying several       \n"
+          "  reference states with energy/atom and composition (as atom_frac) for \n"
+          "  enough states to span the composition space of the allowed occupants \n"
+          "  specified in the prim. For consistency with other CASM projects,     \n"
+          "  additional reference states extending to other compositional         \n"
+          "  dimensions may be included also.                                     \n\n"
 
-               "- Execute 'casm ref --set-auto' to automatically set project level     \n"
-               "  references using DFT calculated energies from configurations with    \n"
-               "  extreme parametric compositions.\n\n"
+          "- Execute 'casm ref --set-auto' to automatically set project level     \n"
+          "  references using DFT calculated energies from configurations with    \n"
+          "  extreme parametric compositions.\n\n"
 
-               "- Execute 'casm ref --set '...JSON...'' to manually set the project    \n"
-               "  level reference energies. See 'casm ref --help' for more information.\n\n"
+          "- Execute 'casm ref --set '...JSON...'' to manually set the project    \n"
+          "  level reference energies. See 'casm ref --help' for more information.\n\n"
 
-               "- It is also possible to specialize the chemical reference at the      \n"
-               "  supercell or configuration level.                                    \n\n"
+          "- It is also possible to specialize the chemical reference at the      \n"
+          "  supercell or configuration level.                                    \n\n"
 
-               "- See 'casm format' for a description and location of the              \n"
-               "  'chemical_reference.json' file.                                      \n\n";
+          "- See 'casm format' for a description and location of the              \n"
+          "  'chemical_reference.json' file.                                      \n\n";
 
   }
 
   void bset_uncalculated(const CommandArgs &args) {
-    args.log() << "NEXT STEPS:\n\n";
+    log() << "NEXT STEPS:\n\n";
 
-    args.log() <<
-               "Generate basis functions \n\
+    log() <<
+          "Generate basis functions \n\
                                                                        \n\
 Instructions for generating basis functions:                           \n\n\
 - Write a '$ROOT/basis_sets/$CURR_BSET/bspecs.json' file containing    \n\
@@ -244,10 +244,10 @@ Instructions for generating basis functions:                           \n\n\
   }
 
   void eci_uncalculated(const CommandArgs &args) {
-    args.log() << "NEXT STEPS:\n\n";
+    log() << "NEXT STEPS:\n\n";
 
-    args.log() <<
-               "Fit effective cluster interactions (ECI)\n\
+    log() <<
+          "Fit effective cluster interactions (ECI)\n\
                                                                        \n\
 Instructions for fitting ECI:                                          \n\n\
 - Create a new directory within the CASM project, for example:         \n\
@@ -283,10 +283,10 @@ Instructions for fitting ECI:                                          \n\n\
 
   void montecarlo(const CommandArgs &args) {
 
-    args.log() << "NEXT STEPS:\n\n";
+    log() << "NEXT STEPS:\n\n";
 
-    args.log() <<
-               "Monte Carlo calculations\n\
+    log() <<
+          "Monte Carlo calculations\n\
                                                                        \n\
 - Use 'casm monte' to run Monte Carlo calculations.                    \n\
 - See 'casm monte --format' and 'casm monte -h' for help.              \n\n";
@@ -321,9 +321,9 @@ Instructions for fitting ECI:                                          \n\n\
       int tot_calc = 0;
       int tot_sel = 0;
 
-      args.log() << traits<ConfigType>::name << ":" << std::endl;
-      args.log() << std::setw(6) << "INDEX" << " " << std::setw(30) << "SUPERCELL" << "     " << "#CONFIGS G / C / S" << std::endl;
-      args.log() << "---------------------------------------------------------------------------" << std::endl;
+      log() << traits<ConfigType>::name << ":" << std::endl;
+      log() << std::setw(6) << "INDEX" << " " << std::setw(30) << "SUPERCELL" << "     " << "#CONFIGS G / C / S" << std::endl;
+      log() << "---------------------------------------------------------------------------" << std::endl;
       Index i = 0;
       DB::Selection<ConfigType> master_selection(primclex);
       for(const Supercell &scel : primclex.db<Supercell>()) {
@@ -340,12 +340,12 @@ Instructions for fitting ECI:                                          \n\n\
         tot_gen += gen;
         tot_calc += calc;
         tot_sel += sel;
-        args.log() << std::setw(6) << i << " " << std::setw(30) << scel.name() << "     " << gen << " / " << calc << " / " << sel << std::endl;
+        log() << std::setw(6) << i << " " << std::setw(30) << scel.name() << "     " << gen << " / " << calc << " / " << sel << std::endl;
         ++i;
       }
-      args.log() << "---------------------------------------------------------------------------" << std::endl;
-      args.log() << std::setw(6) << " " << " " << std::setw(30) << "TOTAL" << "     " << tot_gen << " / " << tot_calc << " / " << tot_sel << std::endl;
-      args.log() << "\nG:Generated, C:Calculated, S:Selected" << std::endl << std::endl;
+      log() << "---------------------------------------------------------------------------" << std::endl;
+      log() << std::setw(6) << " " << " " << std::setw(30) << "TOTAL" << "     " << tot_gen << " / " << tot_calc << " / " << tot_sel << std::endl;
+      log() << "\nG:Generated, C:Calculated, S:Selected" << std::endl << std::endl;
     }
   };
 
@@ -361,17 +361,17 @@ Instructions for fitting ECI:                                          \n\n\
       /** --help option
       */
       if(vm.count("help")) {
-        args.log() << "\n";
-        args.log() << status_opt.desc() << std::endl;
+        log() << "\n";
+        log() << status_opt.desc() << std::endl;
 
         return 0;
       }
 
       if(vm.count("desc")) {
-        args.log() << "\n";
-        args.log() << status_opt.desc() << std::endl;
-        args.log() << "DESCRIPTION" << std::endl;
-        args.log() << "    Get status information for the current CASM project.\n\n";
+        log() << "\n";
+        log() << status_opt.desc() << std::endl;
+        log() << "DESCRIPTION" << std::endl;
+        log() << "    Get status information for the current CASM project.\n\n";
 
         return 0;
       }
@@ -380,25 +380,25 @@ Instructions for fitting ECI:                                          \n\n\
       // there are any problems
     }
     catch(po::error &e) {
-      args.err_log() << "ERROR: " << e.what() << std::endl << std::endl;
-      args.err_log() << status_opt.desc() << std::endl;
+      err_log() << "ERROR: " << e.what() << std::endl << std::endl;
+      err_log() << status_opt.desc() << std::endl;
       return 1;
     }
     catch(std::exception &e) {
-      args.err_log() << "Unhandled Exception reached the top of main: "
-                     << e.what() << ", application will now exit" << std::endl;
+      err_log() << "Unhandled Exception reached the top of main: "
+                << e.what() << ", application will now exit" << std::endl;
       return 1;
 
     }
 
     /// 1) Check if a project exists
 
-    args.log() << "\n#################################\n\n";
+    log() << "\n#################################\n\n";
 
-    args.log() << "CASM status:\n\n";
+    log() << "CASM status:\n\n";
 
     if(vm.count("all")) {
-      args.log() << "\n#################################\n\n";
+      log() << "\n#################################\n\n";
       status_unitialized(args);
     }
 
@@ -406,15 +406,15 @@ Instructions for fitting ECI:                                          \n\n\
     const fs::path &root = args.root;
 
     if(root.empty()) {
-      args.log() << "1) Project initialized: FALSE\n\n";
+      log() << "1) Project initialized: FALSE\n\n";
 
       if(vm.count("next")) {
-        args.log() << "\n#################################\n\n";
+        log() << "\n#################################\n\n";
 
         status_unitialized(args);
       }
       else {
-        args.log() << "For next steps, run 'casm status -n'\n\n";
+        log() << "For next steps, run 'casm status -n'\n\n";
       }
 
       return 0;
@@ -424,11 +424,11 @@ Instructions for fitting ECI:                                          \n\n\
       DirectoryStructure dir(root);
 
       if(!fs::exists(dir.prim())) {
-        args.log() << " ERROR\n\n";
+        log() << " ERROR\n\n";
 
-        args.log() << "- Found a CASM project, but no " << dir.prim() << " file." << std::endl;
-        args.log() << "- CASM project location: " << root << std::endl;
-        args.log() << "Please add a prim.json file, or rm the '.casm' directory." << std::endl << std::endl;
+        log() << "- Found a CASM project, but no " << dir.prim() << " file." << std::endl;
+        log() << "- CASM project location: " << root << std::endl;
+        log() << "Please add a prim.json file, or rm the '.casm' directory." << std::endl << std::endl;
 
         return 1;
       }
@@ -450,69 +450,69 @@ Instructions for fitting ECI:                                          \n\n\
     std::string eci = desc.eci;
 
 
-    args.log() << "1) Project initialized: TRUE\n\n";
-    args.log() << "- Project name: " << primclex.settings().project_name() << std::endl;
-    args.log() << "- Project location: " << primclex.dir().root_dir().string() << std::endl;
+    log() << "1) Project initialized: TRUE\n\n";
+    log() << "- Project name: " << primclex.settings().project_name() << std::endl;
+    log() << "- Project location: " << primclex.dir().root_dir().string() << std::endl;
 
     // it'd be nice to just read this...
     SymGroup prim_pg(SymGroup::lattice_point_group(primclex.prim().lattice()));
-    args.log() << "- Lattice point group size: " << prim_pg.size() << std::endl;
-    args.log() << "- Lattice point group is " << prim_pg.get_name() << std::endl;
-    args.log() << "- Factor group size: " << primclex.prim().factor_group().size() << std::endl;
-    args.log() << "- Crystal point group is: " << primclex.prim().point_group().get_name() << std::endl;
+    log() << "- Lattice point group size: " << prim_pg.size() << std::endl;
+    log() << "- Lattice point group is " << prim_pg.get_name() << std::endl;
+    log() << "- Factor group size: " << primclex.prim().factor_group().size() << std::endl;
+    log() << "- Crystal point group is: " << primclex.prim().point_group().get_name() << std::endl;
     if(!vm.count("warning")) {
       if(primclex.prim().factor_group().size() > prim_pg.size()) {
-        args.log() << "*** Warning: Finding a factor group that is larger than the lattice \n"
-                   << "             point group implies that your structure is not primitive." << std::endl;
+        log() << "*** Warning: Finding a factor group that is larger than the lattice \n"
+              << "             point group implies that your structure is not primitive." << std::endl;
       }
     }
-    args.log() << std::endl << std::endl;
+    log() << std::endl << std::endl;
 
     /// 2) Composition axes
 
     if(vm.count("all")) {
-      args.log() << "\n#################################\n\n";
-      args.log() << "\n2) Composition axes \n\n";
+      log() << "\n#################################\n\n";
+      log() << "\n2) Composition axes \n\n";
       composition_unselected(args);
 
     }
 
-    args.log() << "2) Composition axes \n";
+    log() << "2) Composition axes \n";
 
-    args.log() << "- Composition axes selected: ";
+    log() << "- Composition axes selected: ";
 
     if(!primclex.has_composition_axes()) {
-      args.log() << "FALSE\n\n";
+      log() << "FALSE\n\n";
 
       if(vm.count("next")) {
-        args.log() << "\n#################################\n\n";
+        log() << "\n#################################\n\n";
 
         composition_unselected(args);
       }
       else {
-        args.log() << "For next steps, run 'casm status -n'\n\n";
+        log() << "For next steps, run 'casm status -n'\n\n";
       }
 
       return 0;
     }
 
-    args.log() << "TRUE\n\n\n";
+    log() << "TRUE\n\n\n";
     /*
         // It'd be nice to note standard vs. custom axes, and just '*' the current composition axes
-        args.log() << "- Standard & custom composition axes: " << std::endl << std::endl;
-        primclex.get_param_comp().print_composition_axes(args.log());
-        args.log() << std::endl;
-        args.log() << "- Current composition axes: " << std::endl << std::endl;
-        primclex.get_param_comp().print_curr_composition_axes(args.log());
-        args.log() << std::endl << std::endl;
+        log() << "- Standard & custom composition axes: " << std::endl << std::endl;
+        primclex.get_param_comp().print_composition_axes(log());
+        log() << std::endl;
+        log() << "- Current composition axes: " << std::endl << std::endl;
+        primclex.get_param_comp().print_curr_composition_axes(log());
+        log() << std::endl << std::endl;
     */
 
     /// 3) Configuration generation
 
 
     if(vm.count("all")) {
-      args.log() << "\n#################################\n\n";
-      args.log() << "3) Generate configurations \n\n";
+      log() << "\n#################################\n\n";
+      log() << "3) Generate configurations \n\n";
 
       supercells_ungenerated(args);
 
@@ -520,7 +520,7 @@ Instructions for fitting ECI:                                          \n\n\
 
     }
 
-    args.log() << "\n3) Generate configurations \n";
+    log() << "\n3) Generate configurations \n";
 
 
     DB::Selection<Configuration> master_selection(primclex.db<Configuration>());
@@ -531,19 +531,19 @@ Instructions for fitting ECI:                                          \n\n\
       tot_calc += is_calculated(config);
     }
 
-    args.log() << "- Number of supercells generated: " << primclex.db<Supercell>().size() << "\n";
-    args.log() << "- Number of configurations generated: " << tot_gen << "\n";
-    args.log() << "- Number of configurations currently selected: " << tot_sel << "\n";
+    log() << "- Number of supercells generated: " << primclex.db<Supercell>().size() << "\n";
+    log() << "- Number of configurations generated: " << tot_gen << "\n";
+    log() << "- Number of configurations currently selected: " << tot_sel << "\n";
 
     if(primclex.db<Supercell>().size() == 0) {
 
       if(vm.count("next")) {
-        args.log() << "\n#################################\n\n";
+        log() << "\n#################################\n\n";
 
         supercells_ungenerated(args);
       }
       else {
-        args.log() << "For next steps, run 'casm status -n'\n\n";
+        log() << "For next steps, run 'casm status -n'\n\n";
       }
 
       return 0;
@@ -552,171 +552,171 @@ Instructions for fitting ECI:                                          \n\n\
     if(tot_gen == 0) {
 
       if(vm.count("next")) {
-        args.log() << "\n#################################\n\n";
+        log() << "\n#################################\n\n";
 
         configs_ungenerated(args);
       }
       else {
-        args.log() << "For next steps, run 'casm status -n'\n\n";
+        log() << "For next steps, run 'casm status -n'\n\n";
       }
 
       if(vm.count("details")) {
         DB::for_each_config_type(PrintDetails(args, primclex));
       }
       else {
-        args.log() << "For the number of configurations generated, calculated,\n and selected by supercell, run 'casm status -d'\n\n";
+        log() << "For the number of configurations generated, calculated,\n and selected by supercell, run 'casm status -d'\n\n";
       }
 
       return 0;
     }
 
-    args.log() << std::endl << std::endl;
+    log() << std::endl << std::endl;
 
     /// 4) Calculate configuration properties
 
 
     if(vm.count("all")) {
-      args.log() << "\n#################################\n\n";
-      args.log() << "4) Calculate configuration properties\n\n";
+      log() << "\n#################################\n\n";
+      log() << "4) Calculate configuration properties\n\n";
       configs_uncalculated(args);
 
     }
 
-    args.log() << "4) Calculate configuration properties\n";
-    args.log() << "- Current calctype: " << calctype << "\n";
-    args.log() << "- Current cluster expansion: " << desc.name << "\n";
-    args.log() << "- Number of configurations calculated: " << tot_calc << " / " << tot_gen << " generated (Update with 'casm update')\n\n";
+    log() << "4) Calculate configuration properties\n";
+    log() << "- Current calctype: " << calctype << "\n";
+    log() << "- Current cluster expansion: " << desc.name << "\n";
+    log() << "- Number of configurations calculated: " << tot_calc << " / " << tot_gen << " generated (Update with 'casm update')\n\n";
 
     if(vm.count("details")) {
       DB::for_each_config_type(PrintDetails(args, primclex));
     }
     else {
-      args.log() << "For the number of configurations generated, calculated,\n and selected by supercell, run 'casm status -d'\n\n";
+      log() << "For the number of configurations generated, calculated,\n and selected by supercell, run 'casm status -d'\n\n";
     }
 
     if(tot_calc == 0) {
       if(vm.count("next")) {
-        args.log() << "\n#################################\n\n";
+        log() << "\n#################################\n\n";
 
         configs_uncalculated(args);
       }
       else {
-        args.log() << "For next steps, run 'casm status -n'\n\n";
+        log() << "For next steps, run 'casm status -n'\n\n";
       }
 
       return 0;
     }
 
-    args.log() << std::endl;
+    log() << std::endl;
 
 
     /// 5) Choose chemical reference
 
 
     if(vm.count("all")) {
-      args.log() << "\n#################################\n\n";
-      args.log() << "5) Choose chemical reference\n\n";
+      log() << "\n#################################\n\n";
+      log() << "5) Choose chemical reference\n\n";
       references_unset(args);
     }
 
-    args.log() << "5) Choose chemical reference\n";
+    log() << "5) Choose chemical reference\n";
 
-    args.log() << "- Chemical reference set: ";
+    log() << "- Chemical reference set: ";
     if(primclex.has_chemical_reference()) {
-      args.log() << "TRUE" << "\n";
+      log() << "TRUE" << "\n";
     }
     else {
-      args.log() << "FALSE" << "\n";
+      log() << "FALSE" << "\n";
     }
-    args.log() << "\n";
+    log() << "\n";
 
     if(primclex.has_chemical_reference()) {
-      args.log() << "To show the chemical reference, run 'casm ref -d'\n\n";
+      log() << "To show the chemical reference, run 'casm ref -d'\n\n";
     }
     else {
 
-      args.log() << "No chemical reference set." << std::endl << std::endl;
+      log() << "No chemical reference set." << std::endl << std::endl;
 
       if(vm.count("next")) {
-        args.log() << "\n#################################\n\n";
+        log() << "\n#################################\n\n";
 
         references_unset(args);
       }
       else {
-        args.log() << "For next steps, run 'casm status -n'\n\n";
+        log() << "For next steps, run 'casm status -n'\n\n";
       }
 
       return 0;
     }
 
-    args.log() << std::endl;
+    log() << std::endl;
 
 
     /// 6) Generate basis functions:
 
 
     if(vm.count("all")) {
-      args.log() << "\n#################################\n\n";
-      args.log() << "6) Generate basis functions: \n\n";
+      log() << "\n#################################\n\n";
+      log() << "6) Generate basis functions: \n\n";
       bset_uncalculated(args);
     }
 
-    args.log() << "6) Generate basis functions: ";
+    log() << "6) Generate basis functions: ";
 
     if(!fs::exists(dir.clexulator_src(settings.project_name(), bset))) {
-      args.log() << "FALSE\n\n";
+      log() << "FALSE\n\n";
 
       if(vm.count("next")) {
-        args.log() << "\n#################################\n\n";
+        log() << "\n#################################\n\n";
 
         bset_uncalculated(args);
       }
       else {
-        args.log() << "For next steps, run 'casm status -n'\n\n";
+        log() << "For next steps, run 'casm status -n'\n\n";
       }
 
       return 0;
     }
-    args.log() << "TRUE\n\n\n";
+    log() << "TRUE\n\n\n";
 
     /// 7) Fit effective cluster interactions (ECI):
 
 
     if(vm.count("all")) {
-      args.log() << "\n#################################\n\n";
-      args.log() << "7) Fit effective cluster interactions (ECI): \n\n";
+      log() << "\n#################################\n\n";
+      log() << "7) Fit effective cluster interactions (ECI): \n\n";
       eci_uncalculated(args);
     }
 
-    args.log() << "7) Fit effective cluster interactions (ECI): ";
+    log() << "7) Fit effective cluster interactions (ECI): ";
 
     if(!fs::exists(dir.eci(property, calctype, ref, bset, eci))) {
-      args.log() << "FALSE\n\n";
+      log() << "FALSE\n\n";
 
       if(vm.count("next")) {
-        args.log() << "\n#################################\n\n";
+        log() << "\n#################################\n\n";
 
         eci_uncalculated(args);
       }
       else {
-        args.log() << "For next steps, run 'casm status -n'\n\n";
+        log() << "For next steps, run 'casm status -n'\n\n";
       }
 
       return 0;
     }
-    args.log() << "TRUE\n\n\n";
+    log() << "TRUE\n\n\n";
 
     /// 7) Monte Carlo
 
-    args.log() << std::endl;
+    log() << std::endl;
 
     if(vm.count("next") || vm.count("all")) {
-      args.log() << "\n#################################\n\n";
-      args.log() << "8) Monte Carlo Calculations: \n\n";
+      log() << "\n#################################\n\n";
+      log() << "8) Monte Carlo Calculations: \n\n";
       montecarlo(args);
     }
     else {
-      args.log() << "For next steps, run 'casm status -n'\n\n";
+      log() << "For next steps, run 'casm status -n'\n\n";
     }
 
     return 0;

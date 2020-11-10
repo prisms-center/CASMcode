@@ -19,12 +19,14 @@ using xtal::SuperlatticeEnumerator;
 
 TEST(ScelDatabase_Test, Test1) {
 
+  ScopedNullLogging logging;
+
   EXPECT_EQ(1, 1);
   test::FCCTernaryProj proj;
   proj.check_init();
   EXPECT_EQ(1, 1);
 
-  PrimClex primclex(proj.dir, null_log());
+  PrimClex primclex(proj.dir);
   const Structure &prim(primclex.prim());
   primclex.settings().set_crystallography_tol(1e-5);
   EXPECT_EQ(fs::equivalent(proj.dir, primclex.dir().root_dir()), true);
@@ -36,20 +38,20 @@ TEST(ScelDatabase_Test, Test1) {
   EXPECT_EQ(1, 1);
   EXPECT_EQ(db_scel.size(), 0);
 
-  Supercell scel(&primclex, Eigen::Matrix3i::Identity());
+  Supercell scel(&primclex, Eigen::Matrix3l::Identity());
   db_scel.insert(scel);
   EXPECT_EQ(db_scel.size(), 1);
 
   db_scel.erase(scel.name());
   EXPECT_EQ(db_scel.size(), 0);
 
-  db_scel.emplace(&primclex, Eigen::Matrix3i::Identity());
+  db_scel.emplace(&primclex, Eigen::Matrix3l::Identity());
   EXPECT_EQ(db_scel.size(), 1);
 
   db_scel.insert(scel);
   EXPECT_EQ(db_scel.size(), 1);
 
-  db_scel.emplace(&primclex, Eigen::Matrix3i::Identity());
+  db_scel.emplace(&primclex, Eigen::Matrix3l::Identity());
   EXPECT_EQ(db_scel.size(), 1);
 
   EXPECT_EQ(db_scel.name(scel.name()), scel.name());

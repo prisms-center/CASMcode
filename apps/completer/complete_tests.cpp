@@ -202,7 +202,7 @@ namespace CASM {
     DataFormatterDictionary<Configuration> dict = make_dictionary<Configuration>();
 
     for(auto it = dict.begin(); it != dict.cend(); ++it) {
-      if(it->type() ==  BaseDatumFormatter<Configuration>::Property)
+      if(it->type() == DatumFormatterClass::Property)
         std::cout << it->name() << "    ";
     }
 

@@ -13,7 +13,7 @@ namespace CASM {
   class ClusterInvariants;
   class IntegralCluster;
   class SymOp;
-  class WithinScelClusterInvariants;
+  // class WithinScelClusterInvariants;
 
 
   /** \defgroup Clusterography
@@ -68,28 +68,28 @@ namespace CASM {
   typedef ScelPeriodicOrbit<IntegralCluster> ScelPeriodicIntegralClusterOrbit;
 
 
-  /// Traits used for WithinScelSymCompare<IntegralCluster>
-  template <>
-  struct traits<WithinScelSymCompare<IntegralCluster>> {
-
-    using Element = IntegralCluster;
-    using InvariantsType = WithinScelClusterInvariants;
-
-    static IntegralCluster bring_within(
-      IntegralCluster clust,
-      WithinScelSymCompare<IntegralCluster> const &sym_compare);
-
-    static Element copy_apply(
-      SymOp const &op,
-      IntegralCluster const &clust,
-      WithinScelSymCompare<IntegralCluster> const &sym_compare);
-
-    static WithinScelClusterInvariants make_invariants(
-      IntegralCluster clust,
-      WithinScelSymCompare<IntegralCluster> const &sym_compare);
-  };
-
-  typedef WithinScelOrbit<IntegralCluster> WithinScelIntegralClusterOrbit;
+  // /// Traits used for WithinScelSymCompare<IntegralCluster>
+  // template <>
+  // struct traits<WithinScelSymCompare<IntegralCluster>> {
+  //
+  //   using Element = IntegralCluster;
+  //   using InvariantsType = WithinScelClusterInvariants;
+  //
+  //   static IntegralCluster bring_within(
+  //     IntegralCluster clust,
+  //     WithinScelSymCompare<IntegralCluster> const &sym_compare);
+  //
+  //   static Element copy_apply(
+  //     SymOp const &op,
+  //     IntegralCluster const &clust,
+  //     WithinScelSymCompare<IntegralCluster> const &sym_compare);
+  //
+  //   static WithinScelClusterInvariants make_invariants(
+  //     IntegralCluster clust,
+  //     WithinScelSymCompare<IntegralCluster> const &sym_compare);
+  // };
+  //
+  // typedef WithinScelOrbit<IntegralCluster> WithinScelIntegralClusterOrbit;
 
 }
 

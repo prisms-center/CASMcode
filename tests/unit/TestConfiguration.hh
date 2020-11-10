@@ -15,7 +15,7 @@ namespace test {
 
     TestConfiguration(
       const PrimClex &primclex,
-      const Eigen::Matrix3i &T,
+      const Eigen::Matrix3l &T,
       const std::vector<int> &_occupation);
 
     TestConfiguration(
@@ -26,7 +26,7 @@ namespace test {
     TestConfiguration(
       const PrimClex &primclex,
       const Configuration &unit,
-      const Eigen::Matrix3i &T,
+      const Eigen::Matrix3l &T,
       double tol = TOL);
 
     Configuration config;

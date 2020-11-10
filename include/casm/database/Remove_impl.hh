@@ -18,8 +18,8 @@ namespace CASM {
     // --- RemoveT ---
 
     template<typename _ConfigType>
-    RemoveT<_ConfigType>::RemoveT(const PrimClex &primclex, std::string report_dir, Log &_file_log) :
-      ConfigData(primclex, _file_log, TypeTag<ConfigType>()),
+    RemoveT<_ConfigType>::RemoveT(const PrimClex &primclex, std::string report_dir) :
+      ConfigData(primclex, TypeTag<ConfigType>()),
       m_report_dir(report_dir) {}
 
 
@@ -32,15 +32,15 @@ namespace CASM {
           db_config<ConfigType>().erase(val.first);
         }
         else {
-          primclex().log() << "skipping " << val.first << ": has existing data or files" << std::endl;
+          log() << "skipping " << val.first << ": has existing data or files" << std::endl;
           fail.push_back(val.first);
         }
       }
 
       if(fail.size()) {
         _erase_report(fail);
-        primclex().log() << "Skipped " << fail.size() << " " << traits<ConfigType>::name << std::endl;
-        primclex().log() << "  See " << fs::path(m_report_dir) / "remove_fail" << std::endl;
+        log() << "Skipped " << fail.size() << " " << traits<ConfigType>::name << std::endl;
+        log() << "  See " << fs::path(m_report_dir) / "remove_fail" << std::endl;
       }
       db_config<ConfigType>().commit();
     }
@@ -95,9 +95,8 @@ namespace CASM {
     template<typename ConfigType>
     Remove<ConfigType>::Remove(
       const PrimClex &primclex,
-      std::string report_dir,
-      Log &_file_log) :
-      RemoveT<ConfigType>(primclex, report_dir, _file_log) {}
+      std::string report_dir) :
+      RemoveT<ConfigType>(primclex, report_dir) {}
 
     template<typename ConfigType>
     std::string Remove<ConfigType>::desc() {
@@ -145,7 +144,7 @@ namespace CASM {
       report_dir = create_report_dir(report_dir);
 
       // -- erase --
-      Remove<ConfigType> f(primclex, report_dir, primclex.log());
+      Remove<ConfigType> f(primclex, report_dir);
 
       if(opt.force()) {
         f.erase_all(selection, opt.dry_run());

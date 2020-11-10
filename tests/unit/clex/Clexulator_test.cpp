@@ -40,12 +40,10 @@ TEST(ClexulatorTest, MakeClexulatorTest) {
 
   PrimNeighborList nlist(W, sublat_indices.begin(), sublat_indices.end());
 
-  Log dumblog = null_log();
-
+  ScopedNullLogging logging;
   Clexulator clexulator("test_Clexulator",
                         "tests/unit/clex",
                         nlist,
-                        dumblog,
                         compile_opt,
                         so_opt);
 

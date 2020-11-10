@@ -491,14 +491,13 @@ namespace CASM {
 
   /// Write ProjectSettings to JSON file
   ///
-  /// \param project_settings_path Location of ProjectSettings JSON file
-  /// \param logging For showing errors and warnings
+  /// \param set ProjectSettings
+  /// \param project_settings_path Location to write ProjectSettings JSON file
   void write_project_settings(ProjectSettings const &set, fs::path project_settings_path);
 
   /// Read ProjectSettings from JSON file
   ///
   /// \param project_settings_path Location of ProjectSettings JSON file
-  /// \param logging For showing errors and warnings
   ///
   /// Note:
   /// - After construction, root dir is not set (`ProjectSettings::has_dir() == false`)
