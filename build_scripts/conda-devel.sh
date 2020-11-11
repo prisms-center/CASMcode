@@ -28,10 +28,6 @@ export CASM_WRITE_BC_SHORTCUT=$CONDA_PREFIX/.bash_completion
 bash $CASM_BUILD_DIR/build_scripts/install-bash-completion.sh \
   || { echo "setup bash-completion failed"; exit 1; }
 
-# download test projects if able
-bash $CASM_BUILD_DIR/build_scripts/install-test-projects.sh \
-  || { echo "download test projects failed"; exit 1; }
-
 echo ""
 echo "The casm conda development environment has been created."
 echo "To activate it do:"

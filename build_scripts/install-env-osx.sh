@@ -24,5 +24,7 @@ else
     pkg-config \
     wget \
     bzip2 \
-    six
+    six \
+    gitpython \
+    jq
 fi

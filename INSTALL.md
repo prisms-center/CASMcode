@@ -15,14 +15,6 @@ export CASM_CONDA_DIR=${_CONDA_ROOT:-"$HOME/.local/conda"}
 # Conda environment name
 export CASM_ENV_NAME="casm"
 
-# Set location  for CASM test projects to be downloaded from Materials Commons
-#  - This is optional, but required for some tests to run
-#  - Contact the CASM developers for access and the project ID. You will need
-#    to create an account on Materials Commons before we can give you access.
-# export CASM_TEST_PROJECTS_DIR="$HOME/.local/CASM_test_projects"
-# export CASM_TEST_PROJECTS_ID="<... id here ...>"
-# export MC_API_KEY="<... your API key ...>"
-
 bash build_scripts/conda-devel.sh
 ```
 
@@ -41,7 +33,7 @@ CASM must be compiled with a compiler that supports the C++11 standard. Testing 
 
 ### Boost
 
-The CASM conda development environment includes the subset of the boost library currently used by CASM. Contact the CASM developers if a new feature requires additional boost libraries.
+The CASM conda development environment includes the subset of the boost library currently used by CASM. We are aiming to remove the boost dependency in a future version.
 
 *Important: Boost should be compiled using the same compiler that you will use to compile CASM.*
 
@@ -52,6 +44,8 @@ CASM is distributed with the following dependencies:
 
 - **Eigen, v3.1.3**: [http://eigen.tuxfamily.org](http://eigen.tuxfamily.org)
 
+  - Eigen is included with CASM as a git submodule.
+
 - **JSON Spirit, v4.06**: [http://www.codeproject.com/Articles/20027/JSON-Spirit-A-C-JSON-Parser-Generator-Implemented](http://www.codeproject.com/Articles/20027/JSON-Spirit-A-C-JSON-Parser-Generator-Implemented)
 
 - **Mersenne Twister random number generator -- a C++ class MTRand, v1.1**,  28 September 2009, by Richard J. Wagner, wagnerr@umich.edu, based on code by Makoto Matsumoto, Takuji Nishimura, and Shawn Cokus. For more information, see the inventors' web page at [http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html](http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html).
@@ -60,9 +54,29 @@ CASM is distributed with the following dependencies:
 
 - **gzstream, v1.5**: [http://www.cs.unc.edu/Research/compgeom/gzstream/](http://www.cs.unc.edu/Research/compgeom/gzstream/)
 
+For testing:
+
+- **googletest**: [https://github.com/google/googletest](https://github.com/google/googletest)
+
+  - googletest is included with CASM as a git submodule
+
+
+### Not included with CASM ###
+
+- 
+
+- **jq**: [https://stedolan.github.io/jq/](https://stedolan.github.io/jq/)
+
 
 Build CASM from source
 ----------------------
+
+Clone CASM, then init and fetch submodules with:
+
+```
+git submodule init
+git submodule update
+```
 
 With the CASM conda development environment activated, from the "CASMcode" directory, do:
 

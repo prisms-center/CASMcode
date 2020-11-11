@@ -14,7 +14,6 @@ export CASM_PREFIX=$CONDA_PREFIX
 ### variables - Control how CASM is built and what is tested ###
 
 # For C++ and Python
-check_var "CASM_TEST_PROJECTS_DIR" "Location of CASM_test_projects" ""
 check_var "CASM_SKIP_MAKE" "Set to non-zero length to skip initialize make" ""
 
 # For C++ tests
