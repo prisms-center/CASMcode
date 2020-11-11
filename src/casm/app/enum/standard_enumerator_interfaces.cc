@@ -20,7 +20,7 @@ namespace CASM {
     vec.emplace_back(notstd::make_cloneable<ConfigEnumAllOccupationsInterface>());
     vec.emplace_back(notstd::make_cloneable<ConfigEnumRandomLocalInterface>());
     vec.emplace_back(notstd::make_cloneable<ConfigEnumRandomOccupationsInterface>());
-    vec.emplace_back(notstd::make_cloneable<ConfigEnumSiteDoFsInterface>());
+    // vec.emplace_back(notstd::make_cloneable<ConfigEnumSiteDoFsInterface>()); // still testing & adding features
     vec.emplace_back(notstd::make_cloneable<ConfigEnumStrainInterface>());
     vec.emplace_back(notstd::make_cloneable<ScelEnumInterface>());
     vec.emplace_back(notstd::make_cloneable<SuperConfigEnumInterface>());
