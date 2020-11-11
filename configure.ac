@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.69])
 AC_INIT([CASM],
-        m4_esyscmd([tr -d '\n' < ./build-aux/casm_version.txt]),
+        m4_esyscmd([tr -d '\n' < ./casm_version.txt]),
         [casm-developers@lists.engr.ucsb.edu],
         [],
         [https://github.com/prisms-center/CASMcode])

@@ -17,8 +17,7 @@ TESTS=
 
 #===========================================================#
 #Define flags for everything ever
-# TXT_VERSION:=$(shell cat $(top_srcdir)/build-aux/casm_version.txt)
-TXT_VERSION=tmp
+TXT_VERSION:=$(shell cat $(top_srcdir)/casm_version.txt)
 
 AM_CXXFLAGS = -DTXT_VERSION='"$(TXT_VERSION)"'\
 			  -DEIGEN_DEFAULT_DENSE_INDEX_TYPE=long\
@@ -44,7 +43,7 @@ BUILT_SOURCES=
 #also be included.
 EXTRA_DIST=
 
-EXTRA_DIST+=./build-aux/casm_version.txt\
+EXTRA_DIST+=./casm_version.txt\
 			./man\
 			./sample_input_files\
       LICENSE

@@ -42,47 +42,6 @@ else
   echo "'configure' already exists; continuing... (delete it to re-configure)"
 fi
 
-bash version.sh
-if grep dirty build-aux/casm_version.txt; then
-
-  echo "version: $(git describe --abbrev=6 --dirty --always --tags)"
-
-  DIFF=$(git --no-pager diff --name-only)
-  DIFF_CACHED=$(git --no-pager diff --cached --name-only)
-  if [[ -n "$DIFF" || -n "$DIFF_CACHED" ]]; then
-    echo "git status:"
-    git status
-
-    echo "git --no-pager diff --name-only:"
-    git --no-pager diff --name-only
-
-    echo "git --no-pager diff:"
-    git --no-pager diff
-
-    echo "git --no-pager diff --cached --name-only:"
-    git --no-pager diff --cached --name-only
-
-    echo "git --no-pager diff --cached:"
-    git --no-pager diff --cached
-
-    echo "git is dirty"
-
-    if [ -n "$CASM_DIRTY_IS_OK" ]; then
-      echo "CASM_DIRTY_IS_OK=$CASM_DIRTY_IS_OK # (Unset to stop if dirty)"
-    else
-      echo "CASM_DIRTY_IS_OK=$CASM_DIRTY_IS_OK # (Set to non-zero length to continue anyway)"
-      exit 1
-    fi
-  else
-    echo "files touched, but git is clean"
-    git reset --hard
-
-    bash version.sh
-  fi
-else
-  echo "git is clean"
-fi
-
 echo "make ${CASM_MAKE_OPTIONS:+$CASM_MAKE_OPTIONS} -j $CASM_NCPU"
 make ${CASM_MAKE_OPTIONS:+$CASM_MAKE_OPTIONS} -j $CASM_NCPU \
   || { echo "'make ${CASM_MAKE_OPTIONS:+$CASM_MAKE_OPTIONS} -j $CASM_NCPU' failed"; exit 1; }
