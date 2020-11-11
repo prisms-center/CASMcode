@@ -8,7 +8,7 @@
 #include <type_traits>
 #include <boost/math/special_functions/round.hpp>
 
-#include "casm/external/Eigen/CASM_AddOns"
+#include "./KroneckerTensorProduct.h"
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
 #include "casm/misc/CASM_math.hh"
@@ -31,6 +31,20 @@ namespace Local {
     }
     return false;
   }
+
+  //Lambda functions to replace std::ptr_fun, which is deprecated
+  template<typename T>
+  auto round_l = [](T val) {
+    return boost::math::round<T>(val);
+  };
+  template<typename T>
+  auto iround_l = [](T val) {
+    return boost::math::iround<T>(val);
+  };
+  template<typename T>
+  auto lround_l = [](T val) {
+    return boost::math::lround<T>(val);
+  };
 }
 namespace CASM {
 
@@ -177,9 +191,9 @@ namespace CASM {
   /// For each coefficient, sets \code M(i,j) = boost::math::round(Mdouble(i, j)) \endcode
   ///
   template<typename Derived>
-  Eigen::CwiseUnaryOp< decltype(std::ptr_fun(boost::math::round<typename Derived::Scalar>)), const Derived >
+  Eigen::CwiseUnaryOp< decltype(Local::round_l<typename Derived::Scalar>), const Derived >
   round(const Eigen::MatrixBase<Derived> &val) {
-    return val.unaryExpr(std::ptr_fun(boost::math::round<typename Derived::Scalar>));
+    return val.unaryExpr(Local::round_l<typename Derived::Scalar>);
   }
 
   /// \brief Round Eigen::MatrixXd to Eigen::MatrixXi
@@ -191,9 +205,9 @@ namespace CASM {
   /// For each coefficient, sets \code Mint(i,j) = boost::math::iround(Mdouble(i, j)) \endcode
   ///
   template<typename Derived>
-  Eigen::CwiseUnaryOp< decltype(std::ptr_fun(boost::math::iround<typename Derived::Scalar>)), const Derived >
+  Eigen::CwiseUnaryOp< decltype(Local::iround_l<typename Derived::Scalar>), const Derived >
   iround(const Eigen::MatrixBase<Derived> &val) {
-    return val.unaryExpr(std::ptr_fun(boost::math::iround<typename Derived::Scalar>));
+    return val.unaryExpr(Local::iround_l<typename Derived::Scalar>);
   }
 
   /// \brief Round Eigen::MatrixXd to Eigen::MatrixXl
@@ -205,9 +219,9 @@ namespace CASM {
   /// For each coefficient, sets \code Mint(i,j) = std::lround(Mdouble(i, j)) \endcode
   ///
   template<typename Derived>
-  Eigen::CwiseUnaryOp< decltype(std::ptr_fun(boost::math::lround<typename Derived::Scalar>)), const Derived >
+  Eigen::CwiseUnaryOp< decltype(Local::lround_l<typename Derived::Scalar>), const Derived >
   lround(const Eigen::MatrixBase<Derived> &val) {
-    return val.unaryExpr(std::ptr_fun(boost::math::lround<typename Derived::Scalar>));
+    return val.unaryExpr(Local::lround_l<typename Derived::Scalar>);
   }
 
   /// \brief Return the minor of integer Matrix M element row, col
@@ -517,19 +531,19 @@ namespace Eigen {
   ///
   /// For each coefficient, sets \code M(i,j) = boost::math::floor(Mdouble(i, j)) \endcode
   ///
-  namespace Local {
-    template<typename T>
-    struct _Floor {
-      T operator()(T val)const {
-        return floor(val);
-      }
-    };
-  }
-  template<typename Derived>
-  CwiseUnaryOp<Local::_Floor<typename Derived::Scalar>, const Derived >
-  floor(const MatrixBase<Derived> &val) {
-    return val.unaryExpr(Local::_Floor<typename Derived::Scalar>());
-  }
+  /* namespace Local { */
+  /*   template<typename T> */
+  /*   struct _Floor { */
+  /*     T operator()(T val)const { */
+  /*       return floor(val); */
+  /*     } */
+  /*   }; */
+  /* } */
+  /* template<typename Derived> */
+  /* CwiseUnaryOp<Local::_Floor<typename Derived::Scalar>, const Derived > */
+  /* floor(const MatrixBase<Derived> &val) { */
+  /*   return val.unaryExpr(Local::_Floor<typename Derived::Scalar>()); */
+  /* } */
 
 
   /// \brief Equivalent to almost_zero(double(val.norm()), tol);
@@ -682,6 +696,19 @@ namespace Eigen {
     subspace_dims.push_back(value.size() - last_i);
     return subspace_dims;
 
+  }
+
+  template<typename Derived, typename Index = typename Derived::Index>
+  Index print_matrix_width(std::ostream &s, const Derived &m, Index width) {
+    for(Index j = 0; j < m.cols(); ++j) {
+      for(Index i = 0; i < m.rows(); ++i) {
+        std::stringstream sstr;
+        sstr.copyfmt(s);
+        sstr << m.coeff(i, j);
+        width = std::max<Index>(width, Index(sstr.str().length()));
+      }
+    }
+    return width;
   }
 
 

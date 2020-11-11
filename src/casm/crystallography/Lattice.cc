@@ -834,7 +834,7 @@ namespace CASM {
 
       Eigen::Matrix3d diff = unit.lat_column_mat() - scel.lat_column_mat() * result.second.inverse();
 
-      result.first = almost_zero((diff.transpose() * diff).diagonal(), 2 * tol) && !almost_zero(result.second, tol);
+      result.first = almost_zero((diff.transpose() * diff).diagonal().eval(), 2 * tol) && !almost_zero(result.second, tol);
 
       return result;
     }

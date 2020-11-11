@@ -1,5 +1,4 @@
 #include "casm/symmetry/SymGroup.hh"
-#include "casm/external/Eigen/CASM_AddOns"
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/misc/CASM_Eigen_math.hh"

@@ -89,7 +89,7 @@ namespace CASM {
   /// - Default is equivalent to \code Object result(obj); apply(f, obj, args...) \endcode
   template<typename Object, typename Transform, typename...Args>
   Object copy_apply(const Transform &f, Object obj, Args &&...args) {
-    return apply(f, obj, std::forward<Args>(args)...);
+    return CASM::apply(f, obj, std::forward<Args>(args)...);
   }
 
 }

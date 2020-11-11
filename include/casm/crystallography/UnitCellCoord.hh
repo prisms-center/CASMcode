@@ -4,7 +4,6 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "casm/external/Eigen/Core"
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
 #include "casm/misc/Comparisons.hh"

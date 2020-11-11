@@ -1,5 +1,5 @@
 #include "casm/crystallography/SymRepBuilder.hh"
-#include "casm/external/Eigen/src/unsupported/KroneckerTensorProduct.h"
+#include "casm/misc/KroneckerTensorProduct.h"
 #include "casm/global/eigen.hh"
 #include "gtest/gtest.h"
 #include <ostream>

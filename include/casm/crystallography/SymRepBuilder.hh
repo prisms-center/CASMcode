@@ -5,7 +5,7 @@
 #include <memory>
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
-#include "casm/external/Eigen/src/unsupported/KroneckerTensorProduct.h"
+#include "casm/misc/KroneckerTensorProduct.h"
 #include "casm/misc/CASM_Eigen_math.hh"
 
 namespace CASM {

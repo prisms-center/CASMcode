@@ -1,7 +1,6 @@
 # configure && make && make check, with helpful messages
 #
 # Some tests are only run if certains conditions exist:
-# - Tests against test projects are run if CASM_TEST_PROJECTS_DIR exists
 # - Some vasp tests are run if a 'vasp' executable is found
 
 set -e
