@@ -25,14 +25,6 @@ export CASM_XCODE_BUILD_STR="xcode_"$CASM_BUILD_NUMBER
 export CASM_BOOST_CONDAGCC_BUILD_STR="condagcc_"$CASM_BOOST_BUILD_NUMBER
 export CASM_CONDAGCC_BUILD_STR="condagcc_"$CASM_BUILD_NUMBER
 
-# linux condagcc (use conda dist compilers)
-export CASM_BOOST_CONDAGCC_CENTOS6_BUILD_STR="condagcc_centos6_"$CASM_BOOST_BUILD_NUMBER
-export CASM_CONDAGCC_CENTOS6_BUILD_STR="condagcc_centos6_"$CASM_BUILD_NUMBER
-
-# linux devtoolset (use system compilers)
-export CASM_BOOST_DEVTOOLSET_BUILD_STR="devtoolset_"$CASM_BOOST_BUILD_NUMBER
-export CASM_DEVTOOLSET_BUILD_STR="devtoolset_"$CASM_BUILD_NUMBER
-
 # get development version tag, uses latest tag (i.e. "v0.3.1") as a reference
 conda_dev_version () {
   S=$(git describe --abbrev=6 --dirty --always --tags )

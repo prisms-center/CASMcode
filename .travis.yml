@@ -14,8 +14,8 @@ cache:
 #    (tags should be vX.Y.dev, vX.Y.0, vX.Y.1, ...)
 branches:
   only:
-    - 0.2.X
     - 0.3.X
+    - 1.0.X
     - /^v\d+\.\w+(\.\w+)?(-\S*)?$/
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
     # test on linux
     - stage: test_it
       os: linux
-      dist: trusty
+      dist: focal
       compiler: gcc
       addons:
         apt:
@@ -59,7 +59,7 @@ jobs:
     - stage: package_it
       if: repo IN (prisms-center/CASMcode, bpuchala/CASMcode) AND type = push
       os: linux
-      dist: trusty
+      dist: focal
       compiler: gcc
       addons:
         apt:
@@ -69,21 +69,6 @@ jobs:
       script:
         - echo "package_it on $TRAVIS_OS_NAME"
         - bash $TRAVIS_BUILD_DIR/build_scripts/travis-build-conda.sh
-
-    # centos:6 linux package, for old OS
-    - stage: package_it
-      if: repo IN (prisms-center/CASMcode, bpuchala/CASMcode) AND type = push
-      sudo: required
-      os: linux
-      dist: trusty
-      compiler: gcc
-      env:
-        - CASM_DOCKER_CONTAINER="centos:6"
-        - CASM_DOCKER_CMD="yum install curl git -y && bash /CASMcode/build_conda.sh"
-        - CASM_CONDA_FEATURE="condagcc_centos6"
-      script:
-        - echo "package_it w/docker on $TRAVIS_OS_NAME"
-        - bash $TRAVIS_BUILD_DIR/build_scripts/travis-build-conda-docker.sh
 
     # osx package
     - stage: package_it

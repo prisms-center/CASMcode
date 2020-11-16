@@ -50,7 +50,6 @@ echo "using: "
 echo "  c/c++/fortran:"
 echo "    "$CASM_XCODE_BUILD_STR" (xcode"$CASM_XCODE_VERSION")"
 echo "    "$CASM_CONDAGCC_BUILD_STR" (g[cc|xx|fortran]_linux-64 "$CASM_CONDAGCC_VERSION"*)"
-echo "    "$CASM_DEVTOOLSET_BUILD_STR" (devtoolset-"$CASM_DEVTOOLSET_VERSION")"
 echo
 echo "  python:"
 echo "    python"$CASM_PYTHON_VERSION"*"
@@ -71,10 +70,6 @@ build_docker "casm-build" "condagcc" \
 "--build-arg PYTHON_VERSION=$CASM_PYTHON_VERSION "\
 "--build-arg CONDAGCC_VERSION=$CASM_CONDAGCC_VERSION"
 
-build_docker "casm-build" "devtoolset" \
-"--build-arg PYTHON_VERSION=$CASM_PYTHON_VERSION "\
-"--build-arg DEVTOOLSET_VERSION=$CASM_DEVTOOLSET_VERSION"
-
 ### Build osx conda packages
 if [[ "$OSTYPE" == "darwin"* ]]; then
   osx_build_casm_python
@@ -91,5 +86,4 @@ build_docker "casm" "condagcc" \
 "--build-arg CONDAGCC_VERSION=$CASM_CONDAGCC_VERSION"
 
 build_docker "casm" "devtoolset" \
-"--build-arg PYTHON_VERSION=$CASM_PYTHON_VERSION "\
-"--build-arg DEVTOOLSET_VERSION=$CASM_DEVTOOLSET_VERSION"
+"--build-arg PYTHON_VERSION=$CASM_PYTHON_VERSION "
