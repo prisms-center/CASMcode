@@ -17,10 +17,10 @@ namespace CASM {
   /// Return true if a configuration (in any equivalent orientation) can be tiled into a supercell
   ///
   /// Note:
-  /// - This will return true if, any SymOp in the prim factor group, `apply(symop, configuration)`
+  /// - This will return true if, for any SymOp in the prim factor group, `apply(symop, sub_configuration_lattice)`
   ///   can be used used to fill the Supercell. Otherwise it will return false.
   bool is_valid_sub_configuration(
-    Configuration const &configuration,
+    xtal::Lattice const &sub_configuration_lattice,
     Supercell const &supercell);
 
   /// Create a super configuration by tiling the motif Configuration into the supercell.

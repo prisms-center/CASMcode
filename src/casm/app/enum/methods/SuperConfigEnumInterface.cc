@@ -89,7 +89,7 @@ namespace CASM {
     auto it = config_selection.selected().begin();
     auto end = config_selection.selected().end();
     for(; it != end; ++it) {
-      if(!is_valid_sub_configuration(*it, supercell)) {
+      if(!is_valid_sub_configuration(it->ideal_lattice(), supercell)) {
         std::stringstream msg;
         msg << it.name() << " is not a valid sub configuration.";
         parser.error.insert(msg.str());

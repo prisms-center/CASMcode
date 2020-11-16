@@ -81,7 +81,7 @@ namespace CASM {
     // element into the equivalent elements. Then, for any particular group_op, the product with
     // subgroup_op generates all the operations that transform element into a particular sub-orbit.
     // ways that element transforms into a particular sub-orbit.
-    typedef typename std::remove_reference<decltype(*std::declval<GroupOpIterator &>())>::type OpType;
+    typedef typename std::remove_cv<typename std::remove_reference<decltype(*std::declval<GroupOpIterator &>())>::type>::type OpType;
     std::vector<std::set<OpType, OpCompare>> transform_to_suborbit_sets;
 
     // For all operations in [group_begin, group_end)
@@ -131,7 +131,7 @@ namespace CASM {
     ElementOutputIterator result) {
     MakeSubOrbitGenerators<GroupOpIterator, SubgroupOpIterator> f {
       group_begin, group_end, subgroup_begin, subgroup_end};
-    typedef typename std::remove_reference<decltype(*std::declval<GroupOpIterator &>())>::type OpType;
+    typedef typename std::remove_cv<typename std::remove_reference<decltype(*std::declval<GroupOpIterator &>())>::type>::type OpType;
     auto copy_apply_f = [&](SymOp const & op, typename SymCompareType::Element obj) {
       return sym_compare.copy_apply(op, obj);
     };
