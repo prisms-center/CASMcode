@@ -387,7 +387,7 @@ namespace CASM {
                 "        1) User specified by 'casm settings --set-cxxflags' \n"
                 "           (use '' to clear) \n"
                 "        2) $CASM_CXXFLAGS \n"
-                "        3) \"-O3 -Wall -fPIC --std=c++11\" \n\n"
+                "        3) \"-O3 -Wall -fPIC --std=c++17\" \n\n"
 
                 "      casm settings --set-soflags 'soflags' \n"
                 "      - Specifies shared object construction flags. In order \n"

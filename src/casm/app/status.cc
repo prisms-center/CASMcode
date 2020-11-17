@@ -39,7 +39,7 @@ namespace CASM {
       Compiler flags. In order of priority: \n\
         1) User specified by 'casm settings --set-cxxflags' \n\
         2) $CASM_CXXFLAGS \n\
-        3) \"-O3 -Wall -fPIC --std=c++11\" \n\
+        3) \"-O3 -Wall -fPIC --std=c++17\" \n\
 \n\
     'soflags': \n\
       Shared object construction flags. In order of priority: \n\

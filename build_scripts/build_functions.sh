@@ -10,6 +10,7 @@
 # $1=package name, $2=feature name, $3=version, $4=buildnumber
 build_conda_package () {
   RECIPE_DIR=$CASM_BUILD_DIR/conda-recipes/$1/$2
+  echo "RECIPE_DIR: $RECIPE_DIR"
 
   conda create -n casm-anaconda-upload "python =$CASM_PYTHON_VERSION" anaconda-client conda-verify -y \
     || echo "casm-anaconda-upload already exists"
@@ -22,10 +23,14 @@ build_conda_package () {
   BUILD_FLAGS="--override-channels -c $CASM_CONDA_CHANNEL "
   BUILD_FLAGS+="-c defaults -c conda-forge -c prisms-center "
   BUILD_FLAGS+="--python $CASM_PYTHON_VERSION "
+  echo "BUILD_FLAGS: $BUILD_FLAGS"
 
   UPLOAD_FLAGS="--user $CASM_CONDA_ID_USER --label $CASM_CONDA_LABEL "
+  echo "UPLOAD_FLAGS: $UPLOAD_FLAGS"
 
   LOCATION=$(conda build $BUILD_FLAGS $RECIPE_DIR --output)
+  echo "LOCATION: $LOCATION"
+
   conda build $BUILD_FLAGS $RECIPE_DIR
   anaconda -t $CASM_CONDA_TOKEN upload $UPLOAD_FLAGS $LOCATION
 
