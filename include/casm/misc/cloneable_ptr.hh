@@ -87,7 +87,7 @@ public:\
 /// \brief Non-std smart pointer classes and functions
 namespace notstd {
 
-  /// \brief c++11 does not include 'make_unique'
+  /// \brief c++17 does not include 'make_unique'
   template<typename T, typename ...Args>
   std::unique_ptr<T> make_unique(Args &&...args) {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));

@@ -27,6 +27,6 @@ VERS_NUM=${CASM_BOOST_VERSION//./_} \
   && ./bootstrap.sh \
     --prefix=$PREFIX \
     --with-libraries=system,filesystem,program_options,regex,chrono,timer,test \
-  && ./b2 cxxflags="-std=c++11 -O3" -j $NCPUS \
+  && ./b2 cxxflags="-std=c++17 -O3" -j $NCPUS \
   && ./b2 install -j $NCPUS \
   && rm -rf $BUILD_DIR/boost_"$VERS_NUM".tar.bz2 $BUILD_DIR/boost_"$VERS_NUM"

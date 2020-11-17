@@ -41,7 +41,7 @@ bash $CASM_BUILD_DIR/build_scripts/install-miniconda.sh
 
 # only build casm-boost occasionally
 if [ -n "$CASM_BUILD_BOOST" ]; then
-  build_conda_package "casm-boost" $CASM_CONDA_FEATURE $CASM_BOOST_VERSION $CASM_BOOST_BUILD_NUMBER
+  build_conda_package "casm-boost-cpp17" $CASM_CONDA_FEATURE $CASM_BOOST_VERSION $CASM_BOOST_BUILD_NUMBER
 else
   build_conda_package "casm-cpp" $CASM_CONDA_FEATURE $CASM_CONDA_VERSION $CASM_BUILD_NUMBER
   build_conda_package "casm" $CASM_CONDA_FEATURE $CASM_CONDA_VERSION $CASM_BUILD_NUMBER

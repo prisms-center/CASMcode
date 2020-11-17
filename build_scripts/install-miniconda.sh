@@ -3,7 +3,7 @@ set -e
 
 detect_os
 check_var "CASM_CONDA_DIR" "Location to install conda and conda environments" "$HOME/.local/conda"
-check_var "CASM_PYTHON_VERSION" "Default Python version" "3.6"
+check_var "CASM_PYTHON_VERSION" "Default Python version" "3"
 check_var "CASM_CONDA_BUILD_DIR" "Temporary build directory" "/tmp"
 
 # optionally (if CASM_CONDA_DIST is non-zero length)

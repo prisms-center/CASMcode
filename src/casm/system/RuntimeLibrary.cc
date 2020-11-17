@@ -267,9 +267,9 @@ namespace CASM {
 
   /// \brief Default c++ compiler options
   ///
-  /// \returns "-O3 -Wall -fPIC --std=c++11"
+  /// \returns "-O3 -Wall -fPIC --std=c++17"
   std::pair<std::string, std::string> RuntimeLibrary::default_cxxflags() {
-    return _use_env(_cxxflags_env(), "-O3 -Wall -fPIC --std=c++11");
+    return _use_env(_cxxflags_env(), "-O3 -Wall -fPIC --std=c++17");
   }
 
   /// \brief Default c++ shared library options

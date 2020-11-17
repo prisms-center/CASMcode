@@ -43,7 +43,7 @@ TEST(EnumeratorPlugin, Test1) {
   cp("TestEnum.cc");
 
   // refresh to load plugins
-  primclex.settings().set_cxxflags("-O3 -Wall -fPIC --std=c++11 -DGZSTREAM_NAMESPACE=gz");
+  primclex.settings().set_cxxflags("-O3 -Wall -fPIC --std=c++17 -DGZSTREAM_NAMESPACE=gz");
   primclex.settings().set_soflags("-shared -lboost_system -lboost_filesystem -lz");
   commit(primclex.settings());
   primclex.refresh(true);

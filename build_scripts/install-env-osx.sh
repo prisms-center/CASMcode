@@ -15,7 +15,7 @@ else
   # install conda packages into CASM_ENV_NAME environment
   conda create -c prisms-center -c bpuchala/label/dev -c defaults -c conda-forge -y -n $CASM_ENV_NAME \
     "python =$CASM_PYTHON_VERSION" \
-    "casm-boost =$CASM_BOOST_VERSION $CASM_BOOST_XCODE_BUILD_STR" \
+    "casm-boost-cpp17 =$CASM_BOOST_VERSION $CASM_BOOST_XCODE_BUILD_STR" \
     "m4 >=1.4.18" \
     autoconf \
     automake \

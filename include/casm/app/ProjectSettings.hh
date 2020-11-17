@@ -80,7 +80,7 @@ namespace CASM {
   /// or it could be a default value.
   /// - The environment variables checked and default values are: (using implementation in RuntimeLibrary.cc)
   ///   - cxx: default="g++", check for environment variables: `CASM_CXX`, `CXX`
-  ///   - cxxflags: default="-O3 -Wall -fPIC --std=c++11", check for environment variable: `CASM_CXXFLAGS`
+  ///   - cxxflags: default="-O3 -Wall -fPIC --std=c++17", check for environment variable: `CASM_CXXFLAGS`
   ///   - soflags: default="-shared -lboost_system", check for environment variable: `CASM_SOFLAGS`
   ///   - casm_includedir: (where to find the "casm" headers directory tree)
   ///     - default=(attempts to find in standard locations relative to the `ccasm` executable),

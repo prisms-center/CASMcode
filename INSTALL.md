@@ -25,9 +25,9 @@ This will download and install conda if it doesn't currently exist, and create a
 Dependencies
 ------------
 
-### C++11
+### C++17
 
-CASM must be compiled with a compiler that supports the C++11 standard. Testing is done with gcc-7 and Xcode-9.4.
+CASM must be compiled with a compiler that supports the C++17 standard. Testing is done with gcc-8 and Xcode-11.6.
 
 *Note: On Mac OS X it is necessary to have the Xcode command line tools installed. To install, run ``xcode-select --install`` from the Terminal.*
 
@@ -63,8 +63,6 @@ For testing:
 
 ### Not included with CASM ###
 
-- 
-
 - **jq**: [https://stedolan.github.io/jq/](https://stedolan.github.io/jq/)
 
 
@@ -96,7 +94,7 @@ Options:
 
 - Set `CASM_NCPU=4` to set the `-j` option and compile in parallel
 - Set `CASM_CXXFLAGS` for compiler options. The default is:
-  - `-O3 -Wall -fPIC --std=c++11 -DNDEBUG -Wno-deprecated-register -Wno-ignored-attributes -Wno-deprecated-declarations`
+  - `-O3 -Wall -fPIC --std=c++17 -DNDEBUG -Wno-deprecated-register -Wno-ignored-attributes -Wno-deprecated-declarations`
 - See other options in:
   - For OSX: `build_scripts/travis-variables-osx`
   - For Linux: `build_scripts/travis-variables-linux`

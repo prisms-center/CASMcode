@@ -6,4 +6,4 @@ Lastly, the bash completer script makes use of functions in the "bash-completion
 so be sure to install that via brew or apt-get.
 
 example compilation command:
-g++ -o casm-complete -I../../include -L/home/jgg/.local/lib -std=c++11 complete.cpp -lcasm -lboost_program_options -lboost_system -lboost_regex
+g++ -o casm-complete -I../../include -L/home/jgg/.local/lib -std=c++17 complete.cpp -lcasm -lboost_program_options -lboost_system -lboost_regex
