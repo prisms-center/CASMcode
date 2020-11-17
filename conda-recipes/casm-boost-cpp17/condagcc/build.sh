@@ -8,8 +8,8 @@ WD=`pwd`
 echo "wd: "$WD
 
 # give location of conda-provided g++
-ln -s $GCC $WD/../_build_env/bin/gcc
-ln -s $GXX $WD/../_build_env/bin/g++
+ln -s $GCC $PREFIX/bin/gcc
+ln -s $GXX $PREFIX/bin/g++
 echo "using gcc : : $GXX ;" > tools/build/src/user-config.jam \
   && ./bootstrap.sh \
     --prefix=$PREFIX \
