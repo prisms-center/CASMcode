@@ -10,13 +10,11 @@ cache:
 
 # Build on pull request or push to:
 #  - branches explicitly listed
-#  - tags matching regex (of form: "vX.Y(.<alphanumeric>)?(-<anything>)?")
-#    (tags should be vX.Y.dev, vX.Y.0, vX.Y.1, ...)
+
 branches:
   only:
     - 0.3.X
     - 1.0.X
-    - /^v\d+\.\w+(\.\w+)?(-\S*)?$/
 
 jobs:
   include:
@@ -53,11 +51,10 @@ jobs:
     # stage 2:
     #  If tests pass, and this is a merge or push to primary development branches, then we will
     #    upload updated conda packages
-    #  If this commit is tagged, push to "main"; else push to "dev"
 
     # primary linux package
     - stage: package_it
-      if: repo IN (prisms-center/CASMcode, bpuchala/CASMcode) AND type = push
+      if: repo IN (prisms-center/CASMcode) AND type = push
       os: linux
       dist: focal
       compiler: gcc
@@ -72,7 +69,7 @@ jobs:
 
     # osx package
     - stage: package_it
-      if: repo IN (prisms-center/CASMcode, bpuchala/CASMcode) AND type = push
+      if: repo IN (prisms-center/CASMcode) AND type = push
       os: osx
       compiler: clang
       script:
