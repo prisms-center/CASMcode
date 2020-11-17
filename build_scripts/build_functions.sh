@@ -28,9 +28,7 @@ build_conda_package () {
   UPLOAD_FLAGS="--user $CASM_CONDA_ID_USER --label $CASM_CONDA_LABEL "
   echo "UPLOAD_FLAGS: $UPLOAD_FLAGS"
 
-  echo "CASM_BOOST_VERSION=$CASM_BOOST_VERSION"
-
-  LOCATION=$(conda build --output $BUILD_FLAGS $RECIPE_DIR)
+  LOCATION=$(conda build $BUILD_FLAGS $RECIPE_DIR --output)
   echo "LOCATION: $LOCATION"
 
   conda build $BUILD_FLAGS $RECIPE_DIR
