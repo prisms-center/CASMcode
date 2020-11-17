@@ -41,6 +41,7 @@ jobs:
     # test on osx
     - stage: test_it
       os: osx
+      osx_image: xcode11.6
       compiler: clang
       install:
         - bash $TRAVIS_BUILD_DIR/build_scripts/travis-install.sh
@@ -54,7 +55,7 @@ jobs:
 
     # primary linux package
     - stage: package_it
-      if: repo IN (prisms-center/CASMcode) AND type = push
+      if: env(CASM_CONDA_ID_USER) IS present AND type = push
       os: linux
       dist: focal
       compiler: gcc
@@ -69,8 +70,9 @@ jobs:
 
     # osx package
     - stage: package_it
-      if: repo IN (prisms-center/CASMcode) AND type = push
+      if: env(CASM_CONDA_ID_USER) IS present AND type = push
       os: osx
+      osx_image: xcode11.6
       compiler: clang
       script:
         - echo "package_it on $TRAVIS_OS_NAME"
