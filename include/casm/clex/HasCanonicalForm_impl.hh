@@ -314,7 +314,29 @@ namespace CASM {
   template<typename Base>
   template<typename PermuteIteratorIt>
   PermuteIterator ConfigCanonicalForm<Base>::from_canonical(PermuteIteratorIt begin, PermuteIteratorIt end) const {
-    return to_canonical(begin, end).inverse();
+
+    // simplest version: use the inverse of the first element that results in the canonical form
+    // return to_canonical(begin, end).inverse();
+
+    // alternate version: the lowest index element that transforms canonical form to this
+    auto less = derived().less();
+    auto _to_canonical = begin;
+    auto _from_canonical = _to_canonical.inverse();
+    for(auto it = begin; it < end; ++it) {
+      if(less(_to_canonical, it)) {
+        _to_canonical = it;
+        _from_canonical = _to_canonical.inverse();
+      }
+      // other permutations that result in canonical config may have a lower index inverse
+      else if(!less(it, _to_canonical)) {
+        auto it_inv = it.inverse();
+        if(it_inv < _from_canonical) {
+          _from_canonical = it_inv;
+        }
+      }
+    }
+    return _from_canonical;
+
   }
 
   template<typename Base>

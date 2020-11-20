@@ -2,12 +2,15 @@
 #include "casm/app/DBInterface.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/QueryHandler_impl.hh"
+#include "casm/app/query/QueryIO_impl.hh"
 #include "casm/casm_io/FormatFlag.hh"
 #include "casm/casm_io/Log.hh"
-#include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
+#include "casm/clex/ConfigEnumByPermutation.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
 #include "casm/database/Selection.hh"
+
+#include "casm/clex/io/json/ConfigDoF_json_io.hh"
 
 namespace CASM {
 
@@ -31,7 +34,8 @@ namespace CASM {
       ("alias", po::value<std::vector<std::string> >(&m_new_alias_vec)->multitoken(),
        "Create an alias for a query that will persist within this project. "
        "Ex: 'casm query --alias is_Ni_dilute = lt(atom_frac(Ni),0.10001)'")
-      ("write-pos", "Write POS file for each configuration");
+      ("write-pos", "Write POS file for each configuration")
+      ("include-equivalents", "Include an entry for all distinct configurations equivalent by supercell symmetry");
 
       return;
     }
@@ -294,20 +298,128 @@ namespace CASM {
   }
 
   template<typename DataObject>
+  void _update_query_dict(DataFormatterDictionary<QueryData<DataObject>> &query_dict) {
+  }
+
+  template<>
+  void _update_query_dict<Configuration>(DataFormatterDictionary<QueryData<Configuration>> &query_dict) {
+    typedef Configuration DataObject;
+    query_dict.insert(QueryIO::equivalent_index<QueryData<DataObject>>());
+    query_dict.insert(QueryIO::permute_scel_factor_group_op<QueryData<DataObject>>());
+    query_dict.insert(QueryIO::permute_factor_group_op<QueryData<DataObject>>());
+    query_dict.insert(QueryIO::permute_factor_group_op_desc<QueryData<DataObject>>());
+    query_dict.insert(QueryIO::permute_translation<QueryData<DataObject>>());
+  }
+
+  template<typename DataObject>
+  void _query_equivalents(DataFormatter<QueryData<DataObject>> &formatter,
+                          jsonParser &json,
+                          PrimClex const &primclex,
+                          DataObject const &object) {
+    std::stringstream msg;
+    msg << "Error in `casm query`: --include-equivalents not valid for type '"
+        << traits<DataObject>::short_name << "'";
+    throw std::runtime_error(msg.str());
+  }
+
+  template<>
+  void _query_equivalents(DataFormatter<QueryData<Configuration>> &formatter,
+                          jsonParser &json,
+                          PrimClex const &primclex,
+                          Configuration const &object) {
+    bool include_equivalents = true;
+    ConfigEnumByPermutation enumerator {object};
+    Index equivalent_index = 0;
+    for(auto const &configuration : enumerator) {
+      QueryData<Configuration> data {
+        primclex,
+        configuration,
+        include_equivalents,
+        equivalent_index,
+        &enumerator.sym_op()};
+      json.push_back(formatter(data));
+      ++equivalent_index;
+    }
+  }
+
+  template<typename DataObject>
+  void _query_equivalents(DataFormatter<QueryData<DataObject>> &formatter,
+                          std::ostream &stream,
+                          PrimClex const &primclex,
+                          DataObject const &object) {
+    std::stringstream msg;
+    msg << "Error in `casm query`: --include-equivalents not valid for type '"
+        << traits<DataObject>::short_name << "'";
+    throw std::runtime_error(msg.str());
+  }
+
+  template<>
+  void _query_equivalents(DataFormatter<QueryData<Configuration>> &formatter,
+                          std::ostream &stream,
+                          PrimClex const &primclex,
+                          Configuration const &object) {
+
+    // {
+    //   bool include_equivalents = true;
+    //   Index equivalent_index = 0;
+    //   auto permute_it = object.supercell().sym_info().permute_begin();
+    //   auto permute_end = object.supercell().sym_info().permute_end();
+    //   for(; permute_it != permute_end; ++permute_it) {
+    //     Configuration tconfig = copy_apply(permute_it, object);
+    //
+    //     // std::cout << "\n\nbefore:" << std::endl;
+    //     // jsonParser tjson;
+    //     // std::cout << to_json(object.configdof(), tjson) << std::endl;
+    //     // std::cout << "after:" << std::endl;
+    //     // tjson = jsonParser::object();
+    //     // std::cout << to_json(tconfig.configdof(), tjson) << std::endl;
+    //
+    //     // std::cout << "\n\npermute_scel_factor_group_op: " << permute_it.factor_group_index() << std::endl;
+    //     // std::cout << "permute_factor_group_op: " << permute_it.prim_factor_group_index() << std::endl;
+    //
+    //     // QueryData<Configuration> data {
+    //     //   primclex,
+    //     //   tconfig,
+    //     //   include_equivalents,
+    //     //   equivalent_index,
+    //     //   &permute_it};
+    //     // std::cout << formatter(data);
+    //     ++equivalent_index;
+    //   }
+    // }
+
+    bool include_equivalents = true;
+    Index equivalent_index = 0;
+    ConfigEnumByPermutation enumerator {object};
+    for(auto const &configuration : enumerator) {
+      QueryData<Configuration> data {
+        primclex,
+        configuration,
+        include_equivalents,
+        equivalent_index,
+        &enumerator.sym_op()};
+      stream << formatter(data);
+      ++equivalent_index;
+    }
+  }
+
+
+  template<typename DataObject>
   int QueryCommandImpl<DataObject>::_query() const {
     // WARNING: Valgrind has found some initialization/read errors in this block, but unable to diagnose exact problem
+
+    bool include_equivalents = _count("include-equivalents");
 
     // set output_stream: where the query results are written
     std::unique_ptr<std::ostream> uniq_fout;
     std::ostream &output_stream = make_ostream_if(_count("output"), log(), uniq_fout, _output_path(), _write_gz());
     output_stream << FormatFlag(output_stream).print_header(!_count("no-header"));
-    // set status_stream: where query settings and PrimClex initialization messages are sent
+
+    // set status_log: where query settings and PrimClex initialization messages are sent
     Log *status_log_ptr = (_output_path().string() == "STDOUT") ? &err_log() : &log();
     if(!status_log_ptr)
       throw std::runtime_error("Unable to resolve default status log.");
-
     Log &status_log(*status_log_ptr);
-
     if(_output_path().string() == "STDOUT") {
       log().set_verbosity(0);
     }
@@ -326,19 +438,42 @@ namespace CASM {
       }
     }
     status_log << std::endl;
-    // construct formatter
-    DataFormatter<DataObject> formatter = _dict().parse(_all_columns());
+
+    // construct query data formatter
+    DataFormatterDictionary<QueryData<DataObject>> query_dict;
+    for(auto const &formatter : _dict()) {
+      query_dict.insert(make_datum_formatter_adapter<QueryData<DataObject>, DataObject>(formatter));
+    }
+    _update_query_dict(query_dict);
+
+    DataFormatter<QueryData<DataObject>> formatter = query_dict.parse(_all_columns());
 
     auto begin = _count("all") ? _sel().all().begin() : _sel().selected().begin();
     auto end = _count("all") ? _sel().all().end() : _sel().selected().end();
 
     if(_write_json()) {
-      jsonParser json;
-      json = formatter(begin, end);
+      jsonParser json = jsonParser::array();
+      for(auto it = begin; it != end; ++it) {
+        if(include_equivalents) {
+          _query_equivalents(formatter, json, m_cmd.primclex(), *it);
+        }
+        else {
+          QueryData<DataObject> data {m_cmd.primclex(), *it};
+          json = formatter(data);
+        }
+      }
       output_stream << json;
     }
     else { // write CSV
-      output_stream << formatter(begin, end);
+      for(auto it = begin; it != end; ++it) {
+        if(include_equivalents) {
+          _query_equivalents(formatter, output_stream, m_cmd.primclex(), *it);
+        }
+        else {
+          QueryData<DataObject> data {m_cmd.primclex(), *it};
+          output_stream << formatter(data);
+        }
+      }
     }
 
     if(!uniq_fout) {
@@ -356,6 +491,13 @@ namespace CASM {
       all_columns.push_back("name");
       /*all_columns.push_back("alias_or_name");*/
       all_columns.push_back("selected");
+    }
+    if(_count("include-equivalents")) {
+      all_columns.push_back("equivalent_index");
+      all_columns.push_back("permute_scel_factor_group_op");
+      all_columns.push_back("permute_factor_group_op");
+      all_columns.push_back("permute_factor_group_op_desc");
+      all_columns.push_back("permute_translation");
     }
     all_columns.insert(all_columns.end(), _columns_vec().begin(), _columns_vec().end());
     return all_columns;

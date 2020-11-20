@@ -1169,7 +1169,8 @@ namespace CASM {
       make_scalar_dictionary<DataObject>(),
       make_vectorxi_dictionary<DataObject>(),
       make_vectorxd_dictionary<DataObject>(),
-      make_matrixxd_dictionary<DataObject>()
+      make_matrixxd_dictionary<DataObject>(),
+      make_json_dictionary<DataObject>()
     );
 
     return dict;
