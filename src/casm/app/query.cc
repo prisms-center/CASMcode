@@ -155,12 +155,12 @@ namespace CASM {
 
     bool _write_gz() const;
 
-    DataFormatterDictionary<DataObject> &_dict() {
-      return m_data.dict();
+    DataFormatterDictionary<QueryData<DataObject>> &_dict() {
+      return m_query_dict;
     }
 
-    const DataFormatterDictionary<DataObject> &_dict() const {
-      return m_data.dict();
+    const DataFormatterDictionary<QueryData<DataObject>> &_dict() const {
+      return m_query_dict;
     }
 
     std::string _sel_str() const {
@@ -181,15 +181,39 @@ namespace CASM {
 
   private:
 
-    // access dictionary and selections
+    // access default dictionary and selections
     DB::InterfaceData<DataObject> m_data;
+
+    DataFormatterDictionary<QueryData<DataObject>> m_query_dict;
   };
+
+
+  template<typename DataObject>
+  void _update_query_dict(DataFormatterDictionary<QueryData<DataObject>> &query_dict) {
+  }
+
+  template<>
+  void _update_query_dict<Configuration>(DataFormatterDictionary<QueryData<Configuration>> &query_dict) {
+    typedef Configuration DataObject;
+    query_dict.insert(QueryIO::equivalent_index<QueryData<DataObject>>());
+    //query_dict.insert(QueryIO::permute_scel_factor_group_op<QueryData<DataObject>>());
+    query_dict.insert(QueryIO::permute_factor_group_op<QueryData<DataObject>>());
+    query_dict.insert(QueryIO::permute_factor_group_op_desc<QueryData<DataObject>>());
+    query_dict.insert(QueryIO::permute_translation<QueryData<DataObject>>());
+  }
 
 
   template<typename DataObject>
   QueryCommandImpl<DataObject>::QueryCommandImpl(const QueryCommand &cmd) :
     QueryCommandImplBase(cmd),
-    m_data(cmd) {}
+    m_data(cmd) {
+
+    // construct query data formatter
+    for(auto const &formatter : m_data.dict()) {
+      m_query_dict.insert(make_datum_formatter_adapter<QueryData<DataObject>, DataObject>(formatter));
+    }
+    _update_query_dict(m_query_dict);
+  }
 
   template<typename DataObject>
   int QueryCommandImpl<DataObject>::help() const {
@@ -298,20 +322,6 @@ namespace CASM {
   }
 
   template<typename DataObject>
-  void _update_query_dict(DataFormatterDictionary<QueryData<DataObject>> &query_dict) {
-  }
-
-  template<>
-  void _update_query_dict<Configuration>(DataFormatterDictionary<QueryData<Configuration>> &query_dict) {
-    typedef Configuration DataObject;
-    query_dict.insert(QueryIO::equivalent_index<QueryData<DataObject>>());
-    query_dict.insert(QueryIO::permute_scel_factor_group_op<QueryData<DataObject>>());
-    query_dict.insert(QueryIO::permute_factor_group_op<QueryData<DataObject>>());
-    query_dict.insert(QueryIO::permute_factor_group_op_desc<QueryData<DataObject>>());
-    query_dict.insert(QueryIO::permute_translation<QueryData<DataObject>>());
-  }
-
-  template<typename DataObject>
   void _query_equivalents(DataFormatter<QueryData<DataObject>> &formatter,
                           jsonParser &json,
                           PrimClex const &primclex,
@@ -358,35 +368,6 @@ namespace CASM {
                           std::ostream &stream,
                           PrimClex const &primclex,
                           Configuration const &object) {
-
-    // {
-    //   bool include_equivalents = true;
-    //   Index equivalent_index = 0;
-    //   auto permute_it = object.supercell().sym_info().permute_begin();
-    //   auto permute_end = object.supercell().sym_info().permute_end();
-    //   for(; permute_it != permute_end; ++permute_it) {
-    //     Configuration tconfig = copy_apply(permute_it, object);
-    //
-    //     // std::cout << "\n\nbefore:" << std::endl;
-    //     // jsonParser tjson;
-    //     // std::cout << to_json(object.configdof(), tjson) << std::endl;
-    //     // std::cout << "after:" << std::endl;
-    //     // tjson = jsonParser::object();
-    //     // std::cout << to_json(tconfig.configdof(), tjson) << std::endl;
-    //
-    //     // std::cout << "\n\npermute_scel_factor_group_op: " << permute_it.factor_group_index() << std::endl;
-    //     // std::cout << "permute_factor_group_op: " << permute_it.prim_factor_group_index() << std::endl;
-    //
-    //     // QueryData<Configuration> data {
-    //     //   primclex,
-    //     //   tconfig,
-    //     //   include_equivalents,
-    //     //   equivalent_index,
-    //     //   &permute_it};
-    //     // std::cout << formatter(data);
-    //     ++equivalent_index;
-    //   }
-    // }
 
     bool include_equivalents = true;
     Index equivalent_index = 0;
@@ -439,14 +420,7 @@ namespace CASM {
     }
     status_log << std::endl;
 
-    // construct query data formatter
-    DataFormatterDictionary<QueryData<DataObject>> query_dict;
-    for(auto const &formatter : _dict()) {
-      query_dict.insert(make_datum_formatter_adapter<QueryData<DataObject>, DataObject>(formatter));
-    }
-    _update_query_dict(query_dict);
-
-    DataFormatter<QueryData<DataObject>> formatter = query_dict.parse(_all_columns());
+    DataFormatter<QueryData<DataObject>> formatter = _dict().parse(_all_columns());
 
     auto begin = _count("all") ? _sel().all().begin() : _sel().selected().begin();
     auto end = _count("all") ? _sel().all().end() : _sel().selected().end();
@@ -494,7 +468,7 @@ namespace CASM {
     }
     if(_count("include-equivalents")) {
       all_columns.push_back("equivalent_index");
-      all_columns.push_back("permute_scel_factor_group_op");
+      // all_columns.push_back("permute_scel_factor_group_op");
       all_columns.push_back("permute_factor_group_op");
       all_columns.push_back("permute_factor_group_op_desc");
       all_columns.push_back("permute_translation");
