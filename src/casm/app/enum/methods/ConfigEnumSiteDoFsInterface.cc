@@ -15,6 +15,7 @@
 #include "casm/enumerator/io/json/ConfigEnumInput_json_io.hh"
 
 #include "casm/enumerator/DoFSpace.hh"
+#include "casm/enumerator/io/dof_space_analysis.hh"
 #include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/symmetry/SymRepTools.hh"
 #include "casm/symmetry/io/json/SymRepTools.hh"
@@ -187,7 +188,10 @@ namespace CASM {
 
       "  max_nonzero: integer (optional, default = axes.rows()) \n"
       "    Maximum number of coordinate amplitudes that are allowed\n"
-      "    to be nonzero. Must be less than or equal to the \"axes\" dimension.\n\n";
+      "    to be nonzero. Must be less than or equal to the \"axes\" dimension.\n\n"
+
+      "  output_dir: string (optional, default=current path) \n"
+      "    Selects where output files are written. \n\n";
 
     std::string examples =
       "  Examples:\n"
@@ -254,9 +258,12 @@ namespace CASM {
     // "dof" -> params.dof
     parser.require(params.dof, "dof");
 
-    Index dof_space_dimension = get_dof_space_dimension(params.dof,
-                                                        initial_state.configuration(),
-                                                        initial_state.sites());
+    Supercell const &supercell = initial_state.configuration().supercell();
+    Index dof_space_dimension = get_dof_space_dimension(
+                                  params.dof,
+                                  supercell.prim(),
+                                  supercell.sym_info().transformation_matrix_to_super(),
+                                  initial_state.sites());
 
     // 2) get axes and normal coordinate grid ------------------------------------------
     auto grid_parser = parser.parse_as<AxesCounterParams>(dof_space_dimension);
@@ -305,41 +312,36 @@ namespace CASM {
 
       MakeEnumerator(
         ConfigEnumSiteDoFsParams const &_params,
-        bool _make_symmetry_adapted_axes):
+        bool _make_symmetry_adapted_axes,
+        DoFSpaceIO::SequentialDirectoryOutput &_dof_space_output):
         log(CASM::log()),
         params(_params),
-        make_symmetry_adapted_axes(_make_symmetry_adapted_axes) {}
+        make_symmetry_adapted_axes(_make_symmetry_adapted_axes),
+        dof_space_output(_dof_space_output) {}
 
       Log &log;
       ConfigEnumSiteDoFsParams const &params;
       bool make_symmetry_adapted_axes;
+      DoFSpaceIO::SequentialDirectoryOutput &dof_space_output;
 
       ConfigEnumSiteDoFs operator()(Index index, std::string name, ConfigEnumInput const &initial_state) const {
 
+        DoFSpace dof_space = make_dof_space(params.dof, initial_state, params.axes);
+        std::optional<VectorSpaceSymReport> sym_report;
+        ConfigEnumSiteDoFsParams params_copy = params;
         if(make_symmetry_adapted_axes) { // if sym_axes==true, make and use symmetry adapted axes
-
-          log.begin(std::string("DoF Vector Space Symmetry Report: ") + name);
+          log << "Performing DoF space analysis: " << name << std::endl;
           log << "For large spaces this may be slow..." << std::endl;
-
-          DoFSpace dof_space {initial_state, params.dof, params.axes};
           bool calc_wedges = false;
-          std::vector<PermuteIterator> group = initial_state.configuration().factor_group();
-          VectorSpaceSymReport sym_report = vector_space_sym_report(dof_space,
-                                                                    group.begin(),
-                                                                    group.end(),
-                                                                    calc_wedges);
-          log << jsonParser {sym_report} << std::endl;
-          log.end_section();
-
-          ConfigEnumSiteDoFsParams symmetry_adapted_params = params;
-          symmetry_adapted_params.axes = sym_report.symmetry_adapted_dof_subspace;
-
-          return ConfigEnumSiteDoFs {initial_state, symmetry_adapted_params};
+          std::vector<PermuteIterator> group = make_invariant_subgroup(initial_state);
+          dof_space_output.write_symmetry(index, name, initial_state, group);
+          dof_space = make_symmetry_adapted_dof_space(dof_space, initial_state, group, calc_wedges, sym_report);
+          params_copy.axes = dof_space.basis();
         }
-        else { // if sym_axes==false, use input or default axes
 
-          return ConfigEnumSiteDoFs {initial_state, params};
-        }
+        dof_space_output.write_dof_space(index, dof_space, name, initial_state, sym_report);
+
+        return ConfigEnumSiteDoFs {initial_state, params_copy};
       }
     };
   }
@@ -393,21 +395,32 @@ namespace CASM {
     bool print_dof_space_and_quit_option;
     parser.optional_else(print_dof_space_and_quit_option, "print_dof_space_and_quit", false);
 
+    // parse "output_dir" (optional, default = current_path)
+    fs::path output_dir;
+    parser.optional_else(output_dir, "output_dir", fs::current_path());
+    report_and_throw_if_invalid(parser, log, error_if_invalid);
+
     if(print_dof_space_and_quit_option) {
-      for(auto const &named_initial_state : named_initial_states) {
-        auto const &name = named_initial_state.first;
-        auto const &initial_state = named_initial_state.second;
-        DoFSpace dof_space {initial_state, params.dof, params.axes};
-        bool calc_wedges = false;
-        std::vector<PermuteIterator> group = initial_state.configuration().factor_group();
-        print_dof_space(log, name, dof_space, group.begin(), group.end(), sym_axes_option, calc_wedges);
-      }
+      log.begin<Log::debug>("Print DoF Space and Quit Option");
+      log << "For large spaces this may be slow..." << std::endl;
+      using namespace DoFSpaceIO;
+      SequentialDirectoryOutput dof_space_output {output_dir};
+      DoFSpaceAnalysisOptions options;
+      options.dofs = std::vector<DoFKey>({params.dof});
+      options.sym_axes = true;
+      options.write_symmetry = true;
+      options.calc_wedge = false;
+      dof_space_analysis(named_initial_states, options, dof_space_output);
+      log.end_section();
       return;
     }
 
     // 4) Enumerate configurations ------------------
 
-    ConfigEnumSiteDoFsInterface_impl::MakeEnumerator make_enumerator_f {params, sym_axes_option};
+    DoFSpaceIO::SequentialDirectoryOutput dof_space_output {output_dir};
+    ConfigEnumSiteDoFsInterface_impl::MakeEnumerator make_enumerator_f {params,
+                                                                        sym_axes_option,
+                                                                        dof_space_output};
 
     typedef ConfigEnumData<ConfigEnumSiteDoFs, ConfigEnumInput> ConfigEnumDataType;
     DataFormatter<ConfigEnumDataType> formatter;

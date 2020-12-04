@@ -1,46 +1,112 @@
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
+#include "casm/casm_io/json/optional.hh"
 #include "casm/crystallography/SimpleStructure.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/io/SimpleStructureIO.hh"
 #include "casm/clex/SimpleStructureTools.hh"
+#include "casm/clex/Supercell.hh"
+#include "casm/clex/io/json/Configuration_json_io.hh"
+#include "casm/clex/io/json/ConfigDoF_json_io.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/enumerator/DoFSpace.hh"
+#include "casm/enumerator/io/json/ConfigEnumInput_json_io.hh"
 #include "casm/enumerator/io/json/DoFSpace.hh"
+#include "casm/symmetry/SupercellSymInfo_impl.hh"
+#include "casm/symmetry/io/json/SymRepTools.hh"
 
 
 namespace CASM {
 
-  jsonParser &to_json(DoFSpace const &dofspace, jsonParser &json, std::string name) {
-    json["dof"] = dofspace.dof_key;
-    {
-      jsonParser &cjson = json["initial_configuration"];
+  // jsonParser &to_json(DoFSpace const &dofspace, jsonParser &json) {
+  //
+  //   json["dof"] = dofspace.dof_key();
+  //   json["transformation_matrix_to_supercell"] = dofspace.transformation_matrix_to_super();
+  //   json["sites"] = dofspace.sites();
+  //   json["basis"] = dofspace.basis();
+  //   json["glossary"] = dofspace.axis_glossary();
+  //   json["axis_site_index"] = dofspace.axis_site_index();
+  //   json["axis_dof_component"] = dofspace.axis_site_index();
+  //
+  //   return json;
+  // }
 
-      cjson["identifier"] = name;
+  void from_json(DoFSpace &dofspace,
+                 jsonParser const &json,
+                 std::shared_ptr<Structure const> const &shared_prim) {
+    dofspace = jsonConstructor<DoFSpace>::from_json(json, shared_prim);
+  }
 
-      SimpleStructure sstruc = make_simple_structure(dofspace.config_region.configuration());
+  jsonParser &to_json(DoFSpace const &dofspace,
+                      jsonParser &json,
+                      std::optional<std::string> const &identifier,
+                      std::optional<ConfigEnumInput> const &input_state,
+                      std::optional<VectorSpaceSymReport> const &sym_report) {
+    json["dof"] = dofspace.dof_key();
+    json["transformation_matrix_to_supercell"] = dofspace.transformation_matrix_to_super();
+    json["sites"] = dofspace.sites();
+    json["basis"] = dofspace.basis();
+    json["glossary"] = dofspace.axis_glossary();
+    json["axis_site_index"] = dofspace.axis_site_index();
+    json["axis_dof_component"] = dofspace.axis_dof_component();
 
-      cjson["lattice_vectors"] = sstruc.lat_column_mat.transpose();
-
-      jsonParser &sjson = cjson["sites"];
-
-      for(Index i = 0; i < sstruc.mol_info.size(); ++i) {
-        to_json_array(sstruc.mol_info.cart_coord(i), sjson[to_sequential_string(i + 1, sstruc.mol_info.size())][sstruc.mol_info.names[i]]);
-      }
-
-      cjson["selected_sites"].put_array();
-      for(Index s : dofspace.config_region.sites()) {
-        cjson["selected_sites"].push_back(s + 1);
-      }
-
+    if(identifier.has_value()) {
+      json["identifier"] = identifier;
     }
-
-    json["glossary"] = make_axis_glossary(dofspace.dof_key,
-                                          dofspace.config_region.configuration(),
-                                          dofspace.config_region.sites());
-
-    json["dof_subspace"] = dofspace.dof_subspace.transpose();
-
+    if(input_state.has_value()) {
+      json["state"] = input_state;
+    }
+    if(sym_report.has_value()) {
+      to_json(sym_report, json);
+    }
     return json;
   }
+
+  DoFSpace jsonConstructor<DoFSpace>::from_json(jsonParser const &json,
+                                                std::shared_ptr<Structure const> const &shared_prim) {
+
+    InputParser<DoFSpace> parser {json, shared_prim};
+
+    std::runtime_error error_if_invalid {"Error reading DoFSpace from JSON"};
+    report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
+
+    return std::move(*parser.value);
+  }
+
+  std::unique_ptr<DoFSpace> jsonMake<DoFSpace>::make_from_json(
+    jsonParser const &json,
+    std::shared_ptr<Structure const> const &shared_prim) {
+
+    InputParser<DoFSpace> parser {json, shared_prim};
+
+    std::runtime_error error_if_invalid {"Error reading DoFSpace from JSON"};
+    report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
+
+    return std::move(parser.value);
+  }
+
+  void parse(InputParser<DoFSpace> &parser, std::shared_ptr<Structure const> const &shared_prim) {
+    DoFKey dof_key;
+    parser.require(dof_key, "dof");
+
+    std::optional<Eigen::Matrix3l> transformation_matrix_to_super;
+    parser.optional(transformation_matrix_to_super, "transformation_matrix_to_supercell");
+
+    std::optional<std::set<Index>> sites;
+    parser.optional(sites, "sites");
+
+    std::optional<Eigen::MatrixXd> basis;
+    parser.optional(basis, "basis");
+
+    if(parser.valid()) {
+      parser.value = notstd::make_unique<DoFSpace>(shared_prim,
+                                                   dof_key,
+                                                   transformation_matrix_to_super,
+                                                   sites,
+                                                   basis);
+    }
+  }
+
 
   /// Parse a number or array value and return a vector
   ///

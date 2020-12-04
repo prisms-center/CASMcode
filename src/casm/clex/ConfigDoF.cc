@@ -122,48 +122,16 @@ namespace CASM {
 
   //*******************************************************************************
 
+  /// This function is deprecated in favor of the standalone `to_json`
   jsonParser &ConfigDoF::to_json(jsonParser &json) const {
-    json = jsonParser::object();
-    if(occupation().size())
-      json["occ"] = m_occupation;
-    if(!m_local_dofs.empty()) {
-      json["local_dofs"] = m_local_dofs;
-    }
-    if(!m_global_dofs.empty()) {
-      json["global_dofs"] = m_global_dofs;
-    }
-
-    return json;
+    return CASM::to_json(*this, json);
   }
 
   //*******************************************************************************
-  void ConfigDoF::from_json(const jsonParser &json) { //, Index NB) {
-    if(json.contains("occupation")) {
-      //For Backwards compatibility
-      CASM::from_json(m_occupation, json["occupation"]);
-    }
-    else if(json.contains("occ")) {
-      CASM::from_json(m_occupation, json["occ"]);
-    }
-    else {
-      throw std::runtime_error("JSON serialization of ConfigDoF must contain field \"occ\"\n");
-    }
 
-
-    if(json.contains("local_dofs")) {
-      auto end_it = json["local_dofs"].end();
-      for(auto it = json["local_dofs"].begin(); it != end_it; ++it)
-        CASM::from_json(m_local_dofs[it.name()], *it);
-      //.emplace(it.name(), LocalValueType(DoF::traits(it.name()), NB, m_occupation.size() / NB, (*it)["values"].get<Eigen::MatrixXd>()));
-    }
-
-    if(json.contains("global_dofs")) {
-      auto end_it = json["global_dofs"].end();
-      for(auto it = json["global_dofs"].begin(); it != end_it; ++it)
-        CASM::from_json(m_global_dofs[it.name()], *it);
-      //m_global_dofs.emplace(it.name(), GlobalValueType(DoF::traits(it.name()), NB, m_occupation.size() / NB, (*it)["values"].get<Eigen::VectorXd>()));
-    }
-
+  /// This function is deprecated in favor of the standalone `from_json`
+  void ConfigDoF::from_json(const jsonParser &json) {
+    CASM::from_json(*this, json);
   }
 
   //*******************************************************************************

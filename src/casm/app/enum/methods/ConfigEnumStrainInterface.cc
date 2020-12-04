@@ -15,6 +15,7 @@
 #include "casm/enumerator/io/json/ConfigEnumInput_json_io.hh"
 
 #include "casm/enumerator/DoFSpace.hh"
+#include "casm/enumerator/io/dof_space_analysis.hh"
 #include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/symmetry/SymRepTools.hh"
 #include "casm/symmetry/io/json/SymRepTools.hh"
@@ -123,7 +124,10 @@ namespace CASM {
 
       "  trim_corners: bool (optional, default=true)\n"
       "    If true, any grid points outside the largest ellipsoid inscribed within the extrema\n"
-      "    of the grid will be discarded.\n\n";
+      "    of the grid will be discarded.\n\n"
+
+      "  output_dir: string (optional, default=current path) \n"
+      "    Selects where output files are written. \n\n";
 
 
     std::string examples =
@@ -151,50 +155,41 @@ namespace CASM {
       MakeEnumerator(
         ConfigEnumStrainParams const &_params,
         Eigen::MatrixXd const &_axes,
-        bool _make_symmetry_adapted_axes):
+        bool _make_symmetry_adapted_axes,
+        DoFSpaceIO::SequentialDirectoryOutput &_dof_space_output):
         log(CASM::log()),
         params(_params),
         axes(_axes),
-        make_symmetry_adapted_axes(_make_symmetry_adapted_axes) {}
+        make_symmetry_adapted_axes(_make_symmetry_adapted_axes),
+        dof_space_output(_dof_space_output) {}
 
       Log &log;
       ConfigEnumStrainParams const &params;
       Eigen::MatrixXd const &axes;
       bool make_symmetry_adapted_axes;
+      DoFSpaceIO::SequentialDirectoryOutput &dof_space_output;
 
       ConfigEnumStrain operator()(Index index, std::string name, ConfigEnumInput const &initial_state) const {
 
+        DoFSpace dof_space = make_dof_space(params.dof, initial_state, axes);
+        std::optional<VectorSpaceSymReport> sym_report;
+        ConfigEnumStrainParams params_copy = params;
         if(make_symmetry_adapted_axes) { // if sym_axes==true, make and use symmetry adapted axes
-
-          log << "Performing DoF analysis" << std::endl;
-          DoFSpace dof_space {initial_state, params.dof, axes};
-          bool calc_wedges = true;
-          std::vector<PermuteIterator> group = initial_state.configuration().factor_group();
-          VectorSpaceSymReport sym_report = vector_space_sym_report(dof_space,
-                                                                    group.begin(),
-                                                                    group.end(),
-                                                                    calc_wedges);
-
-          std::string filename = "dof_analysis_" + params.dof + "." + std::to_string(index) + ".json";
-          log << "Writing DoF analysis: " << filename << std::endl;
-          fs::ofstream file {filename};
-          jsonParser json;
-          to_json(sym_report, json);
-          to_json(dof_space, json, name);
-          file << json << std::endl;
-
-          ConfigEnumStrainParams symmetry_adapted_params = params;
-          symmetry_adapted_params.wedges = sym_report.irreducible_wedge;
-
-          return ConfigEnumStrain {initial_state, symmetry_adapted_params};
+          log << "Performing DoF space analysis: " << name << std::endl;
+          bool calc_wedges = false;
+          std::vector<PermuteIterator> group = make_invariant_subgroup(initial_state);
+          dof_space_output.write_symmetry(index, name, initial_state, group);
+          dof_space = make_symmetry_adapted_dof_space(dof_space, initial_state, group, calc_wedges, sym_report);
+          params_copy.wedges = sym_report->irreducible_wedge;
         }
         else {
-          ConfigEnumStrainParams tmp_params = params;
-          tmp_params.wedges.clear();
-          tmp_params.wedges.push_back(SymRepTools::SubWedge::make_dummy(axes));
-
-          return ConfigEnumStrain {initial_state, tmp_params};
+          params_copy.wedges.clear();
+          params_copy.wedges.push_back(SymRepTools::SubWedge::make_dummy(axes));
         }
+
+        dof_space_output.write_dof_space(index, dof_space, name, initial_state, sym_report);
+
+        return ConfigEnumStrain {initial_state, params_copy};
       }
     };
   }
@@ -215,19 +210,23 @@ namespace CASM {
     parser.value = notstd::make_unique<ConfigEnumStrainParams>();
     auto &params = *parser.value;
 
+    Supercell const &supercell = initial_state.configuration().supercell();
+
     // 1) get DoF type -------------------------------------------------
     // "dof" -> params.dof
     try {
-      params.dof = xtal::get_strain_dof_key(initial_state.configuration().supercell().prim());
+      params.dof = xtal::get_strain_dof_key(supercell.prim());
     }
     catch(std::exception &e) {
       parser.error.insert(e.what());
       return;
     }
 
-    Index dof_space_dimension = get_dof_space_dimension(params.dof,
-                                                        initial_state.configuration(),
-                                                        initial_state.sites());
+    Index dof_space_dimension = get_dof_space_dimension(
+                                  params.dof,
+                                  supercell.prim(),
+                                  supercell.sym_info().transformation_matrix_to_super(),
+                                  initial_state.sites());
 
     // 2) get axes and normal coordinate grid ------------------------------------------
     auto grid_parser = parser.parse_as<AxesCounterParams>(dof_space_dimension);
@@ -317,23 +316,31 @@ namespace CASM {
     parser.optional_else(print_dof_space_and_quit_option, "print_dof_space_and_quit", false);
     log.indent() << "print_dof_space_and_quit: " << std::boolalpha << print_dof_space_and_quit_option << std::endl;
 
+    // parse "output_dir" (optional, default = current_path)
+    fs::path output_dir;
+    parser.optional_else(output_dir, "output_dir", fs::current_path());
+    report_and_throw_if_invalid(parser, log, error_if_invalid);
+
     if(print_dof_space_and_quit_option) {
       log.begin<Log::debug>("Print DoF Space and Quit Option");
-      for(auto const &named_initial_state : named_initial_states) {
-        auto const &name = named_initial_state.first;
-        auto const &initial_state = named_initial_state.second;
-        DoFSpace dof_space {initial_state, params.dof, axes};
-        bool calc_wedges = true;
-        std::vector<PermuteIterator> group = initial_state.configuration().factor_group();
-        print_dof_space(log, name, dof_space, group.begin(), group.end(), sym_axes_option, calc_wedges);
-      }
-
+      using namespace DoFSpaceIO;
+      SequentialDirectoryOutput dof_space_output {output_dir};
+      DoFSpaceAnalysisOptions options;
+      options.dofs = std::vector<DoFKey>({params.dof});
+      options.sym_axes = true;
+      options.write_symmetry = true;
+      options.calc_wedge = true;
+      dof_space_analysis(named_initial_states, options, dof_space_output);
       log.end_section();
       return;
     }
 
     // 4) Enumerate configurations ------------------
-    ConfigEnumStrainInterface_impl::MakeEnumerator make_enumerator_f {params, axes, sym_axes_option};
+    DoFSpaceIO::SequentialDirectoryOutput dof_space_output {output_dir};
+    ConfigEnumStrainInterface_impl::MakeEnumerator make_enumerator_f {params,
+                                                                      axes,
+                                                                      sym_axes_option,
+                                                                      dof_space_output};
 
     typedef ConfigEnumData<ConfigEnumStrain, ConfigEnumInput> ConfigEnumDataType;
     DataFormatter<ConfigEnumDataType> formatter;

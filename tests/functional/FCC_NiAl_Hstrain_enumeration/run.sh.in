@@ -91,7 +91,7 @@ casm query -k "scel_size comp_n point_group_name multiplicity"
 casm sym --dof-space-analysis --dofs Hstrain --confignames SCEL4_2_2_1_1_1_0/0 > /dev/null
 
 # Check: There should be a strain analysis file now
-STRAIN_ANALYIS=symmetry/analysis/SCEL4_2_2_1_1_1_0/0/dof_analysis_Hstrain.json
+STRAIN_ANALYIS=symmetry/analysis/SCEL4_2_2_1_1_1_0/0/dof_space_Hstrain.json
 if [ ! -e $STRAIN_ANALYIS ]; then
     echo "Expected to find $STRAIN_ANALYIS"
     exit 2

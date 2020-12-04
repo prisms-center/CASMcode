@@ -4,14 +4,39 @@
 #include <string>
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
-
+#include "casm/symmetry/SymRepTools.hh"
 
 namespace CASM {
 
-  struct DoFSpace;
+  class DoFSpace;
+  struct VectorSpaceSymReport;
   template<typename T> class InputParser;
+  template<typename T> struct jsonConstructor;
+  template<typename T> struct jsonMake;
 
-  jsonParser &to_json(DoFSpace const &dofspace, jsonParser &json, std::string name);
+  // jsonParser &to_json(DoFSpace const &dofspace, jsonParser &json);
+
+  void from_json(DoFSpace &dofspace,
+                 jsonParser const &json,
+                 std::shared_ptr<Structure const> const &shared_prim);
+
+  jsonParser &to_json(DoFSpace const &dofspace,
+                      jsonParser &json,
+                      std::optional<std::string> const &identifier = std::nullopt,
+                      std::optional<ConfigEnumInput> const &input_state = std::nullopt,
+                      std::optional<VectorSpaceSymReport> const &sym_report = std::nullopt);
+
+  template <>
+  struct jsonConstructor<DoFSpace> {
+    static DoFSpace from_json(jsonParser const &json, std::shared_ptr<Structure const> const &shared_prim);
+  };
+
+  template <>
+  struct jsonMake<DoFSpace> {
+    static std::unique_ptr<DoFSpace> make_from_json(jsonParser const &json,
+                                                    std::shared_ptr<Structure const> const &shared_prim);
+  };
+
 
   /// Data structure used for continuous DoF enumeration IO
   struct AxesCounterParams {

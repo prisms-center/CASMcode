@@ -15,6 +15,7 @@
 #include "casm/clex/MappedProperties.hh"
 #include "casm/clex/SimpleStructureTools.hh"
 #include "casm/clex/io/json/ConfigDoF_json_io.hh"
+#include "casm/clex/io/stream/Configuration_stream_io.hh"
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/casm_io/Log.hh"
@@ -611,7 +612,9 @@ namespace CASM {
                "poscar",
                "Structure resulting from application of DoF, formatted as VASP POSCAR",
       [](Configuration const & configuration) {
-        return pos_string(configuration);
+        std::stringstream ss;
+        print_poscar(configuration, ss);
+        return ss.str();
       });
 
     }

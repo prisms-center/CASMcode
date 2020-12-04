@@ -2,15 +2,16 @@
 #include "casm/app/DBInterface.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/QueryHandler_impl.hh"
+#include "casm/app/io/file/clex_io.hh"
 #include "casm/app/query/QueryIO_impl.hh"
 #include "casm/casm_io/FormatFlag.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/ConfigEnumByPermutation.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/io/json/ConfigDoF_json_io.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
 #include "casm/database/Selection.hh"
 
-#include "casm/clex/io/json/ConfigDoF_json_io.hh"
 
 namespace CASM {
 
@@ -54,6 +55,15 @@ namespace CASM {
 
   }
 
+
+  namespace query_impl {
+
+    /// For 'write_pos' with Supercell use 'write_lat'
+    void write_pos(Supercell const &supercell, DirectoryStructure const &dir) {
+      write_lat(supercell, dir);
+    }
+
+  }
 
   // -- QueryCommandImplBase --------------------------------------------
 
@@ -299,8 +309,9 @@ namespace CASM {
 
   template<typename DataObject>
   int QueryCommandImpl<DataObject>::_write_pos() const {
+    using namespace query_impl;
     for(const auto &obj : _sel().selected()) {
-      write_pos(obj);
+      write_pos(obj, m_cmd.primclex().dir());
     }
     return 0;
   }

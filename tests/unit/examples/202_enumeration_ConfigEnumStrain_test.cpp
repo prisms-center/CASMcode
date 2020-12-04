@@ -193,12 +193,13 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, VectorSpaceSymReport) {
   std::cout << "here 3" << std::endl;
   DoFKey dof_key = "GLstrain";
   std::cout << "here 4" << std::endl;
-  DoFSpace dof_space {config_input, dof_key};
+  DoFSpace dof_space = make_dof_space(dof_key, config_input);
 
   // Construct the VectorSpaceSymReport for the SimpleCubic GLstrain space.
   std::cout << "here 5" << std::endl;
   bool calc_wedges = true;  // explanation TODO
   VectorSpaceSymReport sym_report = vector_space_sym_report(dof_space,
+                                                            config_input,
                                                             group.begin(),
                                                             group.end(),
                                                             calc_wedges);

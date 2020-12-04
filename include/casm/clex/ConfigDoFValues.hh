@@ -135,18 +135,21 @@ namespace CASM {
 
     }
 
-    /// DoF vector representation size
-    Index dim() const {
-      return m_vals.rows();
-    }
+    // /// DoF vector representation size
+    // Index dim() const {
+    //   return m_vals.rows(); // this is the standard basis dimension, not the prim basis dimension
+    // }
 
     /// Access site DoF values (prim DoF basis, matrix representing all sites)
     ///
     /// Notes:
-    /// - Matrix of size rows=dim(), cols=n_vol()*n_sublat(),
+    /// - Matrix of size rows=standard basis dimension (this->info()[b].basis().rows()), cols=n_vol()*n_sublat(),
     /// - Each column represents a site DoF value in the prim DoF basis
-    /// - The prim DoF basis can be accessed by `this->info()[b]`, where `b` is the sublattice index,
+    /// - The prim DoF basis can be accessed by `this->info()[b].basis()`, where `b` is the sublattice index,
     ///   `b = column_index / this->n_vol()`
+    /// - If the prim DoF basis dimension (this->info()[b].basis().cols()) is less than the standard
+    ///   DoF basis dimension, the matrix includes blocks of zeros for the corresponding
+    ///   sublattice.
     Reference values() {
       return m_vals;
     }
@@ -184,11 +187,18 @@ namespace CASM {
     }
 
     /// Access site DoF value (prim DoF basis, vector associated with a single site)
+    ///
+    /// Note:
+    /// - If the prim DoF basis dimension < standard DoF basis dimension, this includes a tail of
+    ///   zeros (for rows >= this->info()[b].dim()) that should not be modified.
     SiteReference site_value(Index l) {
       return m_vals.col(l);
     }
 
     /// Const access site DoF value (prim DoF basis, vector associated with a single site)
+    /// Note:
+    /// - If the prim DoF basis dimension < standard DoF basis dimension, this includes a tail of
+    ///   zeros (for rows >= this->info()[b].dim()).
     ConstSiteReference site_value(Index l) const {
       return m_vals.col(l);
     }

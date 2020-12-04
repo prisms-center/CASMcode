@@ -12,10 +12,12 @@ namespace CASM {
 
   template<typename T> class InputParser;
   class jsonParser;
-  class Structure;
-  class Supercell;
+  template<typename T> struct jsonConstructor;
   class Configuration;
   class ConfigEnumInput;
+  class PrimClex;
+  class Structure;
+  class Supercell;
 
   namespace DB {
     template<typename T> class Database;
@@ -30,15 +32,13 @@ namespace CASM {
 
     static ConfigEnumInput from_json(
       const jsonParser &json,
-      std::shared_ptr<Structure const> const &shared_prim,
-      DB::Database<Supercell> &supercell_db);
+      std::shared_ptr<Structure const> const &shared_prim);
   };
 
   /// Read ConfigEnumInput from JSON
   void parse(
     InputParser<ConfigEnumInput> &parser,
-    std::shared_ptr<Structure const> const &shared_prim,
-    DB::Database<Supercell> &supercell_db);
+    std::shared_ptr<Structure const> const &shared_prim);
 
   /// Read std::map<std::string, ConfigEnumInput> from JSON input, allowing queries from databases
   void from_json(
@@ -53,6 +53,9 @@ namespace CASM {
   void parse(
     InputParser<xtal::ScelEnumProps> &parser,
     DB::Database<Supercell> &supercell_db);
+
+  /// A string describing the JSON format for parsing named ConfigEnumInput
+  std::string parse_ConfigEnumInput_desc();
 
   /// Parse JSON to construct initial states for enumeration (as std::map<std::string, ConfigEnumInput>)
   void parse(
