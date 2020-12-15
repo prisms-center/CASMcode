@@ -11,12 +11,21 @@ namespace CASM {
   class DoFSpace;
   class SymGroup;
   struct VectorSpaceSymReport;
-  class jsonParser;
 
   namespace DoFSpaceIO {
 
     class OutputImpl {
     public:
+
+      /// Provide state_index, indentifier, and dof_key for any errors
+      struct Error {
+        Error(Index _state_index, std::string _identifier, DoFKey _dof_key, std::string _what, jsonParser _data);
+        Index state_index;
+        std::string identifier;
+        DoFKey dof_key;
+        std::string what;
+        jsonParser data;
+      };
 
       /// Write symmetry groups (lattice point group, factor_group, crystal_point_group)
       void write_symmetry(
@@ -59,6 +68,27 @@ namespace CASM {
         ConfigEnumInput const &config_enum_input,
         std::optional<VectorSpaceSymReport> const &sym_report) = 0;
 
+      /// Write dof space analysis error information
+      void write_dof_space_error(
+        make_symmetry_adapted_dof_space_error const &e,
+        Index state_index,
+        DoFSpace const &dof_space,
+        std::string const &identifier,
+        ConfigEnumInput const &config_enum_input,
+        std::optional<VectorSpaceSymReport> const &sym_report);
+
+      std::vector<Error> const &errors() const {
+        return m_errors;
+      }
+      std::vector<Error> &errors() {
+        return m_errors;
+      }
+
+      /// Write dof space analysis error information to <current_path>/dof_space_errors.json
+      void write_errors() const;
+
+    private:
+      std::vector<Error> m_errors;
     };
 
     class DirectoryOutput : public OutputImpl {

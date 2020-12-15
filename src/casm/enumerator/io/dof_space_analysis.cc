@@ -16,6 +16,9 @@ namespace CASM {
 
   namespace DoFSpaceIO {
 
+    OutputImpl::Error::Error(Index _state_index, std::string _identifier, DoFKey _dof_key, std::string _what, jsonParser _data):
+      state_index(_state_index), identifier(_identifier), dof_key(_dof_key), what(_what), data(_data) {}
+
     /// Write symmetry groups (lattice point group, factor_group, crystal_point_group)
     void OutputImpl::write_symmetry(
       Index state_index,
@@ -34,6 +37,50 @@ namespace CASM {
         factor_group,
         crystal_point_group);
     }
+
+    void OutputImpl::write_dof_space_error(
+      make_symmetry_adapted_dof_space_error const &e,
+      Index state_index,
+      DoFSpace const &dof_space,
+      std::string const &identifier,
+      ConfigEnumInput const &config_enum_input,
+      std::optional<VectorSpaceSymReport> const &sym_report) {
+
+      jsonParser json;
+      to_json(dof_space, json, identifier, config_enum_input, sym_report);
+      errors().emplace_back(state_index, identifier, dof_space.dof_key(), e.what(), json);
+    }
+
+    /// Write dof space analysis error information to <current_path>/dof_space_errors.json
+    void OutputImpl::write_errors() const {
+      if(!errors().size()) {
+        return;
+      }
+
+      fs::path output_path = fs::current_path() / "dof_space_errors.json";
+      Index i = 1;
+      while(fs::exists(output_path)) {
+        output_path = fs::current_path() / (std::string("dof_space_errors.") + std::to_string(i) + ".json");
+        ++i;
+      }
+
+      jsonParser json = jsonParser::array();
+      for(auto const e : errors()) {
+        jsonParser tjson;
+        tjson["state_index"] = e.state_index;
+        tjson["identifier"] = e.identifier;
+        tjson["dof"] = e.dof_key;
+        tjson["what"] = e.what;
+        tjson["data"] = e.data;
+        json.push_back(tjson);
+      }
+      CASM::log() << "Encountered " << errors().size() << " errors" << std::endl;
+
+      fs::ofstream outfile {output_path};
+      json.print(outfile);
+      CASM::log() << "Writing: " << output_path << std::endl;
+    }
+
 
     void DirectoryOutput::write_symmetry(
       Index state_index,
@@ -309,13 +356,9 @@ namespace CASM {
           }
         }
         catch(make_symmetry_adapted_dof_space_error &e) {
-          log << e.what() << std::endl;
-          if(report.has_value()) {
-            jsonParser json;
-            to_json(*report, json);
-            log << json << std::endl;
-          }
+          log << "Error: " << e.what() << std::endl;
           log << "skipping: " << identifier << " " << dof << std::endl << std::endl;
+          output.write_dof_space_error(e, state_index, dof_space, identifier, input_state, report);
           continue;
         }
         output.write_dof_space(state_index, dof_space, identifier, input_state, report);
@@ -341,6 +384,7 @@ namespace CASM {
 
         ++state_index;
       }
+      output.write_errors();
     }
 
   }

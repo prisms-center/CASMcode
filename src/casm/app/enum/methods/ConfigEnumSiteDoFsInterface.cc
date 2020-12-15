@@ -400,8 +400,10 @@ namespace CASM {
     parser.optional_else(output_dir, "output_dir", fs::current_path());
     report_and_throw_if_invalid(parser, log, error_if_invalid);
 
+    log << std::endl;
+
     if(print_dof_space_and_quit_option) {
-      log.begin<Log::debug>("Print DoF Space and Quit Option");
+      log.begin("Print DoF Space and Quit Option");
       log << "For large spaces this may be slow..." << std::endl;
       using namespace DoFSpaceIO;
       SequentialDirectoryOutput dof_space_output {output_dir};
