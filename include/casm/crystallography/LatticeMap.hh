@@ -45,6 +45,13 @@ public:
   double strain_cost(Eigen::Matrix3d const &_deformation_gradient,
                      double _vol_factor) const;
 
+  //\brief Symmetrized strain cost; Utilizes the parent point group symmetry to
+  // calculate only the symmetry breaking lattice cost
+  double
+  strain_cost(Eigen::Matrix3d const &_deformation_gradient,
+              Eigen::Matrix3d const &parent_lattice,
+              std::vector<Eigen::Matrix3i> const &parent_fsym_mats) const;
+
 private:
   Eigen::MatrixXd m_gram_mat;
   bool m_sym_cost;
@@ -81,7 +88,8 @@ public:
              SymOpVector const &_child_point_group,
              Eigen::Ref<const Eigen::MatrixXd> const &strain_gram_mat =
                  Eigen::MatrixXd::Identity(9, 9),
-             double _init_better_than = 1e20, double _xtal_tol = TOL);
+             double _init_better_than = 1e20,
+             bool _symmetrize_strain_cost = false, double _xtal_tol = TOL);
 
   LatticeMap(Eigen::Ref<const DMatType> const &_parent,
              Eigen::Ref<const DMatType> const &_child, Index _num_atoms,
@@ -89,7 +97,8 @@ public:
              SymOpVector const &_child_point_group,
              Eigen::Ref<const Eigen::MatrixXd> const &strain_gram_mat =
                  Eigen::MatrixXd::Identity(9, 9),
-             double _init_better_than = 1e20, double _xtal_tol = TOL);
+             double _init_better_than = 1e20,
+             bool _symmetrize_strain_cost = false, double _xtal_tol = TOL);
 
   void reset(double _better_than = 1e20);
 
@@ -100,6 +109,8 @@ public:
   LatticeMap const &next_mapping_better_than(double max_cost) const;
 
   double strain_cost() const { return m_cost; }
+
+  double calc_strain_cost(const Eigen::Matrix3d &deformation_gradient) const;
 
   const DMatType &matrixN() const { return m_N; }
 
@@ -112,6 +123,7 @@ public:
   const DMatType &child_matrix() const { return m_child; }
 
   double xtal_tol() const { return m_xtal_tol; }
+  bool symmetrize_strain_cost() const { return m_symmetrize_strain_cost; }
 
 private:
   DMatType m_parent, m_child;
@@ -136,6 +148,9 @@ private:
   // child point group matrices, in fractional coordinates
   std::vector<Eigen::Matrix3i> m_child_fsym_mats;
 
+  // flag indicating if the symmetrized strain cost should be used while
+  // searching for the best lattice maps
+  bool m_symmetrize_strain_cost;
   double m_xtal_tol;
 
   mutable double m_cost;

@@ -1,6 +1,7 @@
 #include "casm/crystallography/LatticeMap.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/LatticeIsEquivalent.hh"
+#include "casm/crystallography/Strain.hh"
 #include "casm/crystallography/SymType.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 
@@ -112,15 +113,42 @@ double StrainCostCalculator::strain_cost(
 
 //*******************************************************************************************
 
+double StrainCostCalculator::strain_cost(
+    Eigen::Matrix3d const &_deformation_gradient,
+    Eigen::Matrix3d const &parent_lattice,
+    std::vector<Eigen::Matrix3i> const &parent_fsym_mats) const {
+  // Convert the fractional sym ops back into cartesian symops
+  std::vector<Eigen::Matrix3d> parent_sym_mats;
+  parent_sym_mats.reserve(parent_fsym_mats.size());
+  Eigen::Matrix3d tmp_op;
+  for (auto const &op : parent_fsym_mats) {
+    tmp_op = parent_lattice * op.cast<double>() * parent_lattice.inverse();
+    parent_sym_mats.push_back(tmp_op);
+  }
+  // Apply the sym op to the deformation gradient and average
+  Eigen::Matrix3d stretch_aggregate = Eigen::Matrix3d::Zero();
+  Eigen::Matrix3d stretch = strain::right_stretch_tensor(_deformation_gradient);
+
+  for (auto const &op : parent_sym_mats) {
+    stretch_aggregate += op * stretch * op.inverse();
+  }
+  stretch_aggregate = stretch_aggregate / double(parent_sym_mats.size());
+  return strain_cost(stretch - stretch_aggregate);
+}
+
+//*******************************************************************************************
+
 LatticeMap::LatticeMap(const Lattice &_parent, const Lattice &_child,
                        Index num_atoms, int _range,
                        SymOpVector const &_parent_point_group,
                        SymOpVector const &_child_point_group,
                        Eigen::Ref<const Eigen::MatrixXd> const &strain_gram_mat,
-                       double _init_better_than /* = 1e20 */, double _xtal_tol)
+                       double _init_better_than /* = 1e20 */,
+                       bool _symmetrize_strain_cost, double _xtal_tol)
     : m_calc(strain_gram_mat),
       m_vol_factor(pow(std::abs(volume(_child) / volume(_parent)), 1. / 3.)),
-      m_range(_range), m_cost(1e20), m_currmat(0), m_xtal_tol(_xtal_tol) {
+      m_range(_range), m_cost(1e20), m_currmat(0),
+      m_symmetrize_strain_cost(_symmetrize_strain_cost), m_xtal_tol(_xtal_tol) {
 
   Lattice reduced_parent = _parent.reduced_cell();
   m_parent = reduced_parent.lat_column_mat();
@@ -196,10 +224,11 @@ LatticeMap::LatticeMap(Eigen::Ref<const LatticeMap::DMatType> const &_parent,
                        SymOpVector const &_parent_point_group,
                        SymOpVector const &_child_point_group,
                        Eigen::Ref<const Eigen::MatrixXd> const &strain_gram_mat,
-                       double _init_better_than /* = 1e20 */, double _xtal_tol)
+                       double _init_better_than /* = 1e20 */,
+                       bool _symmetrize_strain_cost, double _xtal_tol)
     : LatticeMap(Lattice(_parent), Lattice(_child), _num_atoms, _range,
                  _parent_point_group, _child_point_group, strain_gram_mat,
-                 _init_better_than, _xtal_tol) {}
+                 _init_better_than, _symmetrize_strain_cost, _xtal_tol) {}
 
 //*******************************************************************************************
 void LatticeMap::reset(double _better_than) {
@@ -209,7 +238,7 @@ void LatticeMap::reset(double _better_than) {
   m_deformation_gradient = m_child * inv_mat().cast<double>() *
                            m_parent.inverse(); // -> _deformation_gradient
 
-  double tcost = m_calc.strain_cost(m_deformation_gradient, m_vol_factor);
+  double tcost = calc_strain_cost(m_deformation_gradient);
 
   // Initialize to first valid mapping
   if (tcost <= _better_than && _check_canonical()) {
@@ -269,7 +298,7 @@ const LatticeMap &LatticeMap::best_strain_mapping() const {
   m_dcache = m_V_inv * m_U;
   m_deformation_gradient = m_child * m_dcache * m_parent.inverse();
 
-  double best_cost = m_calc.strain_cost(m_deformation_gradient, m_vol_factor);
+  double best_cost = calc_strain_cost(m_deformation_gradient);
 
   while (next_mapping_better_than(best_cost).strain_cost() < best_cost) {
     best_cost = strain_cost();
@@ -278,6 +307,17 @@ const LatticeMap &LatticeMap::best_strain_mapping() const {
   m_cost = best_cost;
   return *this;
 }
+
+//*******************************************************************************************
+double LatticeMap::calc_strain_cost(
+    const Eigen::Matrix3d &deformation_gradient) const {
+  if (symmetrize_strain_cost())
+    return m_calc.strain_cost(deformation_gradient, m_parent,
+                              m_parent_fsym_mats);
+  else
+    return m_calc.strain_cost(deformation_gradient, m_vol_factor);
+}
+
 //*******************************************************************************************
 
 const LatticeMap &LatticeMap::next_mapping_better_than(double max_cost) const {
@@ -303,7 +343,7 @@ const LatticeMap &LatticeMap::_next_mapping_better_than(double max_cost) const {
     // From relation _deformation_gradient * parent * inv_mat.inverse() = child
     m_deformation_gradient = m_child * inv_mat().cast<double>() *
                              m_parent.inverse(); // -> _deformation_gradient
-    tcost = m_calc.strain_cost(m_deformation_gradient, m_vol_factor);
+    tcost = calc_strain_cost(m_deformation_gradient);
     if (std::abs(tcost) < (std::abs(max_cost) + std::abs(xtal_tol()))) {
       m_cost = tcost;
 
