@@ -862,10 +862,10 @@ std::set<MappingNode> StrucMapper::_seed_k_best_from_super_lats(
     for (Lattice const &p_lat : _parent_scels) {
       int n_child_atom = round(std::abs(volume(c_lat) / volume(c_prim_lat))) *
                          _n_species(child_struc);
-      LatticeMap lattice_map(p_lat, c_lat, n_child_atom,
-                             this->lattice_transformation_range(),
-                             calculator().point_group(), c_lat_factor_group,
-                             m_strain_gram_mat, max_lattice_cost);
+      LatticeMap lattice_map(
+          p_lat, c_lat, n_child_atom, this->lattice_transformation_range(),
+          calculator().point_group(), c_lat_factor_group, m_strain_gram_mat,
+          max_lattice_cost, symmetrize_lattice_cost());
 
       // lattice_map is initialized to first mapping better than
       // 'max_lattice_cost', if such a mapping exists We will continue checking

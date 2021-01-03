@@ -133,6 +133,15 @@ double StrainCostCalculator::strain_cost(
     stretch_aggregate += op * stretch * op.inverse();
   }
   stretch_aggregate = stretch_aggregate / double(parent_sym_mats.size());
+  double tmp_strain_cost = strain_cost(stretch - stretch_aggregate);
+  if (tmp_strain_cost <= 0.15) {
+    std::cout << "deformation tensor : " << std::endl
+              << _deformation_gradient << std::endl;
+    std::cout << "stretch tensor : " << std::endl << stretch << std::endl;
+    std::cout << "stretch aggregate : " << std::endl
+              << stretch_aggregate << std::endl;
+    std::cout << "----------------------------" << std::endl;
+  }
   return strain_cost(stretch - stretch_aggregate);
 }
 
@@ -337,6 +346,8 @@ const LatticeMap &LatticeMap::_next_mapping_better_than(double max_cost) const {
 
   while (++m_currmat < n_mat()) {
     if (!_check_canonical()) {
+      if (inv_mat().isIdentity())
+        std::cout << "Looping past identity" << std::endl;
       continue;
     }
 
@@ -344,6 +355,14 @@ const LatticeMap &LatticeMap::_next_mapping_better_than(double max_cost) const {
     m_deformation_gradient = m_child * inv_mat().cast<double>() *
                              m_parent.inverse(); // -> _deformation_gradient
     tcost = calc_strain_cost(m_deformation_gradient);
+    if (inv_mat().isIdentity()) {
+      std::cout << "In LatticeMap::_next_mapping_better_than. The deformation "
+                   "gradient for an identity transfmat is:"
+                << std::endl;
+      std::cout << m_deformation_gradient << std::endl;
+      std::cout << "The cost : " << tcost << std::endl;
+    }
+
     if (std::abs(tcost) < (std::abs(max_cost) + std::abs(xtal_tol()))) {
       m_cost = tcost;
 
@@ -394,7 +413,15 @@ bool LatticeMap::_check_canonical() const {
           std::abs(m_icache(2, 1)) > m_range ||
           std::abs(m_icache(2, 2)) > m_range)
         continue;
-
+      if (inv_mat().isIdentity()) {
+        std::cout << " In LatticeMap::_check_canonical, m_icache : \n"
+                  << m_icache << std::endl;
+        std::cout << "m_range : " << m_range << std::endl;
+        std::cout << "m_parent_fsym_mats.size() " << m_parent_fsym_mats.size()
+                  << std::endl;
+        std::cout << "m_child_fsym_mats.size() " << m_child_fsym_mats.size()
+                  << std::endl;
+      }
       if (std::lexicographical_compare(m_icache.data(), m_icache.data() + 9,
                                        inv_mat().data(), inv_mat().data() + 9))
         return false;
