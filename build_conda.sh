@@ -5,6 +5,7 @@
 #     CASM_CONDA_ID_USER
 #     CASM_GIT_ID_USER
 #     CASM_BRANCH
+#     CASM_CONDA_VERSION (for pre-releases, use X.Y.0-beta.I -> X.Y.devI)
 #
 #   notable optional env variable:
 #     CASM_CONDA_FEATURE (typically xcode/condagcc/condagcc_centos6)
@@ -18,6 +19,7 @@ detect_os
 
 # where to pull CASMcode repo from (https://github.com/$GIT_ID_USER/CASMcode)
 check_var "CASM_BRANCH" "Branch to build"
+check_var "CASM_CONDA_VERSION" "Version number for conda package"
 check_var "CASM_GIT_ID_USER" "Where to pull CASMcode from (https://github.com/\$GIT_ID_USER/CASMcode)"
 check_var "CASM_CONDA_ID_USER" "Where to push conda packages (https://anaconda.org/\$CONDA_ID_USER)"
 check_secret_var "CASM_CONDA_TOKEN" "Token required to upload conda packages"
@@ -44,5 +46,5 @@ if [ -n "$CASM_BUILD_BOOST" ]; then
   build_conda_package "casm-boost-cpp17" $CASM_CONDA_FEATURE $CASM_BOOST_VERSION $CASM_BOOST_BUILD_NUMBER
 else
   build_conda_package "casm-cpp" $CASM_CONDA_FEATURE $CASM_CONDA_VERSION $CASM_BUILD_NUMBER
-  build_conda_package "casm" $CASM_CONDA_FEATURE $CASM_CONDA_VERSION $CASM_BUILD_NUMBER
+  # build_conda_package "casm" $CASM_CONDA_FEATURE $CASM_CONDA_VERSION $CASM_BUILD_NUMBER
 fi

@@ -25,21 +25,8 @@ export CASM_XCODE_BUILD_STR="xcode_"$CASM_BUILD_NUMBER
 export CASM_BOOST_CONDAGCC_BUILD_STR="condagcc_"$CASM_BOOST_BUILD_NUMBER
 export CASM_CONDAGCC_BUILD_STR="condagcc_"$CASM_BUILD_NUMBER
 
-# get development version tag, uses latest tag (i.e. "v0.3.1") as a reference
-conda_dev_version () {
-  S=$(git describe --abbrev=6 --dirty --always --tags )
-  if [ ${S:0:1} == "v" ]; then
-    S=${S:1}
-  fi
-  S=${S/-/}
-  S=${S//-/+}
-  echo $S
-}
-export -f conda_dev_version
-
-# choose $(conda_dev_version) or "X.Y.Z"
-check_var "CASM_CONDA_VERSION" "Version number for conda package" "$(cd $CASM_BUILD_DIR && conda_dev_version)"
-
+# choose $(conda_version) or "X.Y.Z"
+check_var "CASM_CONDA_VERSION" "Version number for conda package"
 check_var "CASM_CONDA_LABEL" "Conda channel label (\"dev\" or \"main\")" "dev"
 check_var "CASM_CONDA_ID_USER" "Where to push conda packages (https://anaconda.org/\$CONDA_ID_USER)"
 check_var "CASM_CONDA_CHANNEL" "Conda channel to push package to" "$CASM_CONDA_ID_USER/label/$CASM_CONDA_LABEL"

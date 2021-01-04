@@ -29,6 +29,7 @@ requirements:
     - wget
     - bzip2
     - six
+    - gitpython
 
   run:
     - casm-boost {{ CASM_BOOST_VERSION }} {{ CASM_BOOST_XCODE_BUILD_STR }}
