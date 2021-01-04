@@ -1,7 +1,9 @@
 #include "casm/clex/ConfigIO.hh"
 
 #include <functional>
+#include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/io/SimpleStructureIO.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Norm.hh"
 #include "casm/clex/Calculable.hh"
@@ -10,6 +12,11 @@
 #include "casm/clex/ConfigIOStrucScore.hh"
 #include "casm/clex/ConfigIOStrain.hh"
 #include "casm/clex/ConfigMapping.hh"
+#include "casm/clex/MappedProperties.hh"
+#include "casm/clex/SimpleStructureTools.hh"
+#include "casm/clex/io/json/ConfigDoF_json_io.hh"
+#include "casm/casm_io/container/json_io.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
 #include "casm/casm_io/dataformatter/DataFormatterTools_impl.hh"
@@ -570,7 +577,44 @@ namespace CASM {
                                             has_relaxed_magmom);
     }
 
+    ConfigIO::GenericConfigFormatter<jsonParser> config() {
+      return GenericConfigFormatter<jsonParser>(
+               "config",
+               "Structure resulting from application of DoF, formatted as JSON",
+      [](Configuration const & configuration) {
+        jsonParser json = jsonParser::object();
+        to_json(make_simple_structure(configuration), json);
+        return json;
+      });
+    }
 
+    ConfigIO::GenericConfigFormatter<jsonParser> dof() {
+      return GenericConfigFormatter<jsonParser>(
+               "dof",
+               "All degrees of freedom (DoF), formatted as JSON",
+      [](Configuration const & configuration) {
+        return jsonParser {configuration.configdof()};
+      });
+    }
+
+    ConfigIO::GenericConfigFormatter<jsonParser> properties() {
+      return GenericConfigFormatter<jsonParser>(
+               "properties",
+               "All mapped properties, by calctype, formatted as JSON",
+      [](Configuration const & configuration) {
+        return jsonParser {configuration.calc_properties_map()};
+      });
+    }
+
+    ConfigIO::GenericConfigFormatter<std::string> poscar() {
+      return GenericConfigFormatter<std::string>(
+               "poscar",
+               "Structure resulting from application of DoF, formatted as VASP POSCAR",
+      [](Configuration const & configuration) {
+        return pos_string(configuration);
+      });
+
+    }
 
     /*End ConfigIO*/
   }
@@ -589,7 +633,8 @@ namespace CASM {
       scelname(),
       calc_status(),
       failure_type(),
-      point_group_name()
+      point_group_name(),
+      poscar()
     );
 
     return dict;
@@ -690,6 +735,21 @@ namespace CASM {
 
     dict.insert(
       GradCorr()
+    );
+
+    return dict;
+  }
+
+  template<>
+  DataFormatterDictionary<Configuration, BaseValueFormatter<jsonParser, Configuration>> make_json_dictionary<Configuration>() {
+
+    using namespace ConfigIO;
+    DataFormatterDictionary<Configuration, BaseValueFormatter<jsonParser, Configuration>> dict;
+
+    dict.insert(
+      config(),
+      dof(),
+      properties()
     );
 
     return dict;
