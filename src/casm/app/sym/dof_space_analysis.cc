@@ -89,7 +89,9 @@ namespace CASM {
       "      supercell lattice and the configuration DoF values invariant) is used   \n"
       "      for symmetry analysis.                                                  \n"
       "  - The analysis finds irreducible representations of the DoF vector space and\n"
-      "    optionally calculates the symmetrically unique wedges in that space.      \n\n"
+      "    optionally calculates the symmetrically unique wedges in that space.      \n\n";
+
+    std::string custom_options =
 
       "  JSON options (--input or --settings):                                       \n\n"
 
@@ -132,12 +134,12 @@ namespace CASM {
       "        analysis, including \"scelnames\", \"supercell_selection\", \"supercells\",\n"
       "        \"sublats\", \"sites\", and \"cluster_specs\", and the results are stored\n"
       "        in a single JSON file \"<output_dir>/dof_space_analysis.json\" instead \n"
-      "        of being written separately.                                             \n"
+      "        of being written separately.                                             \n\n"
 
       "    output_dir: string (optional, default=current path)                          \n"
       "      Selects where output files are written.                                    \n\n";
 
-    return description;
+    return description + custom_options + parse_ConfigEnumInput_desc();
   }
 
   /// Perform DoF space analysis
