@@ -178,11 +178,14 @@ namespace CASM {
     /// \brief Return configuration directory path
     fs::path configuration_dir(std::string configname) const;
 
-    /// \brief Return path to POS file
+    /// \brief Return path to standard POS file location
     fs::path POS(std::string configname) const;
 
-    /// \brief Return path to config.json file
+    /// \brief Return path to standard config.json file location
     fs::path config_json(std::string configname) const;
+
+    /// \brief Return path to standard structure.json file location
+    fs::path structure_json(std::string configname) const;
 
     /// \brief Return calculation settings directory path, for global settings
     fs::path calc_settings_dir(std::string calctype) const;

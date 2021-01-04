@@ -182,19 +182,34 @@ namespace CASM {
 
   };
 
-  void write_pos(Supercell const &_scel);
+  /// Make the supercell name from a Superlattice
+  std::string make_supercell_name(
+    Structure const &prim,
+    xtal::Superlattice const &superlattice);
 
-  std::string pos_string(Supercell const &_scel);
+  /// Make the canonical supercell name from a Superlattice
+  std::string make_canonical_supercell_name(
+    Structure const &prim,
+    xtal::Superlattice const &superlattice);
 
-  /// \brief Get canonical supercell from name. If not yet in database, construct and insert.
-  const Supercell &make_supercell(const PrimClex &primclex, std::string name);
+  /// Construct a Superlattice from the supercell name
+  xtal::Superlattice make_superlattice_from_supercell_name(
+    Structure const &prim,
+    std::string supercell_name);
 
-  /// \brief Construct non-canonical supercell from name. Uses equivalent niggli lattice.
-  std::shared_ptr<Supercell> make_shared_supercell(const PrimClex &primclex, std::string name);
-
+  /// Apply symmetry operation to Supercell
   Supercell &apply(const SymOp &op, Supercell &scel);
 
+  /// Copy and apply symmetry operation to Supercell
   Supercell copy_apply(const SymOp &op, const Supercell &scel);
+
+
+
+  // --- The following are deprecated ----
+
+  const Supercell &make_supercell(const PrimClex &primclex, std::string name);
+
+  std::shared_ptr<Supercell> make_shared_supercell(const PrimClex &primclex, std::string name);
 
   Eigen::Matrix3l transf_mat(const Lattice &prim_lat, const Lattice &super_lat);
 

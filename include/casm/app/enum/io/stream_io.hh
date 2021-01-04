@@ -6,14 +6,16 @@
 
 namespace CASM {
 
-  struct DoFSpace;
+  class ConfigEnumInput;
+  class DoFSpace;
   class Log;
 
   /// Print DoFSpace information
   template<typename PermuteIteratorIt>
   void print_dof_space(Log &log,
-                       std::string const &name,
                        DoFSpace const &dof_space,
+                       std::string const &identifier,
+                       ConfigEnumInput const &input_state,
                        PermuteIteratorIt permute_begin,
                        PermuteIteratorIt permute_end,
                        bool sym_axes,

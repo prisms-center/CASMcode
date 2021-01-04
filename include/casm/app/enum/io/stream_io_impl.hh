@@ -5,6 +5,7 @@
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/enumerator/DoFSpace.hh"
+#include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/symmetry/SymRepTools.hh"
 #include "casm/symmetry/io/json/SymRepTools.hh"
 
@@ -26,8 +27,9 @@ namespace CASM {
   ///     specialized for nicer formatting.
   template<typename PermuteIteratorIt>
   void print_dof_space(Log &log,
-                       std::string const &name,
                        DoFSpace const &dof_space,
+                       std::string const &identifier,
+                       ConfigEnumInput const &input_state,
                        PermuteIteratorIt permute_begin,
                        PermuteIteratorIt permute_end,
                        bool sym_axes,
@@ -36,21 +38,19 @@ namespace CASM {
     log.begin_section();
     log << std::endl;
     if(!sym_axes) {
-      log.begin(std::string("DoF Space Axes: ") + name);
-      log << "Note: in this context element and site indexing begin with 1" << std::endl;
-      auto axis_glossary = make_axis_glossary(dof_space.dof_key,
-                                              dof_space.config_region.configuration(),
-                                              dof_space.config_region.sites());
-      for(Index index = 0; index != axis_glossary.size(); ++index) {
-        log << "element: " << index + 1 << " DoF: " << axis_glossary[index] << std::endl;
-      }
+      log.begin(std::string("DoF space: ") + identifier);
+      jsonParser json;
+      to_json(dof_space, json);
+      log << json << std::endl << std::endl;
     }
     else {
-      log.begin(std::string("DoF Vector Space Symmetry Report: ") + name);
-      log << "For large spaces this may be slow... total dimension = "
-          << dof_space.dof_subspace.cols() << std::endl;
+      log.begin(std::string("DoF space and symmetry report: ") + identifier);
+      log << "For large spaces this may be slow... basis shape = ["
+          << dof_space.basis().rows() << ", "
+          << dof_space.basis().cols() << "]" << std::endl;
 
       VectorSpaceSymReport sym_report = vector_space_sym_report(dof_space,
+                                                                input_state,
                                                                 permute_begin,
                                                                 permute_end,
                                                                 calc_wedges);
@@ -59,7 +59,7 @@ namespace CASM {
 
       // TODO: specialized print to stream instead of JSON to stream?
       jsonParser json;
-      to_json(sym_report, json);
+      to_json(dof_space, json, identifier, input_state, sym_report);
       log << json << std::endl << std::endl;
     }
     log.end_section();

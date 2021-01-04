@@ -33,26 +33,19 @@ namespace CASM {
   struct jsonMake<ConfigDoF> {
 
     static std::unique_ptr<ConfigDoF> make_from_json(const jsonParser &json,
-                                                     Structure const &structure);
+                                                     Structure const &prim);
   };
 
   template<>
   struct jsonConstructor<ConfigDoF> {
 
-    // static ConfigDoF from_json(const jsonParser &json,
-    //                            Index NB,
-    //                            std::map<DoFKey, DoFSetInfo> const &global_info,
-    //                            std::map<DoFKey, std::vector<DoFSetInfo> > const &local_info,
-    //                            std::vector<SymGroupRepID> const &_occ_symrep_IDs,
-    //                            double _tol);
-
-    static ConfigDoF from_json(jsonParser const &json, Structure const &structure);
+    static ConfigDoF from_json(jsonParser const &json, Structure const &prim);
 
   };
 
-  jsonParser &to_json(const ConfigDoF &value, jsonParser &json);
+  jsonParser &to_json(const ConfigDoF &configdof, jsonParser &json);
 
-  void from_json(ConfigDoF &value, const jsonParser &json);
+  void from_json(ConfigDoF &configdof, const jsonParser &json);
 
 }
 

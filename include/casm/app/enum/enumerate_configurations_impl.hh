@@ -105,6 +105,7 @@ namespace CASM {
       Index count_filtered = 0;
       Index num_before = configuration_db.size();
       log << dry_run_msg << "Enumerate configurations for: " << input_name_value_pair.first << std::endl;
+
       auto enumerator = make_enumerator_f(initial_state_index, input_name_value_pair.first, input_name_value_pair.second);
 
       for(Configuration const &configuration : enumerator) {
@@ -123,9 +124,6 @@ namespace CASM {
         }
 
         ++count;
-        if(options.filter) {
-          std::cout << "filter value: " << options.filter(configuration) << std::endl;
-        }
         if(options.filter && !options.filter(configuration)) {
           data.is_excluded_by_filter = true;
           ++count_filtered;

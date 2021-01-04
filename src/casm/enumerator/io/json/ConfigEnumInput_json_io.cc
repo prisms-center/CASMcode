@@ -2,6 +2,7 @@
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/clex/io/json/ConfigDoF_json_io.hh"
+#include "casm/clex/io/json/Configuration_json_io.hh"
 #include "casm/clusterography/ClusterSpecs_impl.hh"
 #include "casm/clusterography/io/json/ClusterSpecs_json_io.hh"
 #include "casm/crystallography/io/SuperlatticeEnumeratorIO.hh"
@@ -16,8 +17,7 @@ namespace CASM {
 
   /// Output ConfigEnumInput to JSON
   jsonParser &to_json(ConfigEnumInput const &config_enum_input, jsonParser &json) {
-    json["supercell"] = config_enum_input.configuration().supercell().transf_mat();
-    json["configdof"] = config_enum_input.configuration().configdof();
+    json["configuration"] = config_enum_input.configuration();
     json["sites"] = config_enum_input.sites();
     return json;
   }
@@ -25,11 +25,10 @@ namespace CASM {
   /// Read ConfigEnumInput from JSON
   ConfigEnumInput jsonConstructor<ConfigEnumInput>::from_json(
     const jsonParser &json,
-    std::shared_ptr<Structure const> const &shared_prim,
-    DB::Database<Supercell> &supercell_db) {
+    std::shared_ptr<Structure const> const &shared_prim) {
 
     jsonParser tjson {json};
-    InputParser<ConfigEnumInput> parser {tjson, shared_prim, supercell_db};
+    InputParser<ConfigEnumInput> parser {tjson, shared_prim};
 
     std::runtime_error error_if_invalid {"Error reading ConfigEnumInput from JSON"};
     report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
@@ -40,18 +39,13 @@ namespace CASM {
   /// Read ConfigEnumInput from JSON
   void parse(
     InputParser<ConfigEnumInput> &parser,
-    std::shared_ptr<Structure const> const &shared_prim,
-    DB::Database<Supercell> &supercell_db) {
+    std::shared_ptr<Structure const> const &shared_prim) {
 
-    Eigen::Matrix3l T;
-    parser.require(T, "supercell");
-    auto configdof_ptr = parser.require<ConfigDoF>("configdof", *shared_prim);
-    auto sites_ptr = parser.require<std::set<Index>>("site");
+    auto configuration_ptr = parser.require<Configuration>("configuration", shared_prim);
+    auto sites_ptr = parser.require<std::set<Index>>("sites");
 
     if(parser.valid()) {
-      auto supercell_it = make_canonical_and_insert(shared_prim, T, supercell_db).first;
-      Configuration configuration {*supercell_it, jsonParser {}, *configdof_ptr};
-      parser.value = notstd::make_unique<ConfigEnumInput>(configuration, *sites_ptr);
+      parser.value = notstd::make_unique<ConfigEnumInput>(*configuration_ptr, *sites_ptr);
     }
   }
 
@@ -121,6 +115,138 @@ namespace CASM {
     if(parser.valid()) {
       parser.value = notstd::make_unique<xtal::ScelEnumProps>(min, max + 1, dirs, generating_matrix);
     }
+  }
+
+  /// A string describing the JSON format for parsing named ConfigEnumInput
+  std::string parse_ConfigEnumInput_desc() {
+    return
+      "  scelnames: array of strings (optional, override with --scelnames)                 \n"
+      "    Names of supercells used as input states. All sites will be set to the first    \n"
+      "    listed occupant, and all other DoFs will be set to zero. Ex:                    \n\n"
+
+      "        \"scelnames\": [\"SCEL1_1_1_1_0_0_0\", \"SCEL2_2_1_1_0_0_0\"]              \n\n"
+
+      "  supercell_selection: string (optional)                                            \n"
+      "    Name of a selection of supercells to use as input states.                       \n\n"
+
+      "  supercells: object, ScelEnum JSON settings (optional, override with --min, --max) \n"
+      "    Indicate supercells to use as input states in terms of size and unit cell via   \n"
+      "    a JSON object conforming to the format of 'ScelEnum' JSON settings \"min\",     \n"
+      "    \"max\", \"dirs\", and \"unit_cell\". See 'ScelEnum' description for more       \n"
+      "    details.                                                                        \n\n"
+
+      "  confignames: array of strings (optional, override with --confignames)             \n"
+      "    Names of configurations to be used as input states. All specified sublattices or\n"
+      "    sites will be enumerated on and all other DoFs will                             \n"
+      "    maintain the values of the initial state. Ex:                                   \n\n"
+
+      "        \"confignames\": [\"SCEL1_1_1_1_0_0_0/1\", \"SCEL2_2_1_1_0_0_0/3\"]        \n\n"
+
+      "  config_selection: string (optional)                                               \n"
+      "    Name of a selection of configurations to use as initial states.                 \n\n"
+
+      "  config_list: array (optional)                                                     \n"
+      "    Allows direct input of configurations that may not already exist in the project \n"
+      "    database via a JSON array of objects conforming to the \"config.json\" format.  \n"
+      "    If the \"dof\" component is not included all sites will be set to the first     \n"
+      "    listed occupant, and all other DoFs will be set to zero, as if specifying a     \n"
+      "    a supercell. Ex:                                                                \n\n"
+
+      "        \"configs\" : [                                                             \n"
+      "          {                                                                         \n"
+      "            \"transformation_matrix_to_supercell\": [                               \n"
+      "              [ 0, -1, -1 ],                                                        \n"
+      "              [ 0, 1, -1 ],                                                         \n"
+      "              [ 1, 0, 1 ]                                                           \n"
+      "            ],                                                                      \n"
+      "            \"identifier\": \"custom_strain.1\",                                    \n"
+      "            \"dof\": {                                                              \n"
+      "              \"global_dofs\" : {                                                   \n"
+      "                \"Hstrain\" : {                                                     \n"
+      "                  \"values\" : [ 0.100000000000, 0.100000000000, 0.100000000000, 0.000000000000, 0.000000000000, 0.000000000000 ]\n"
+      "                }                                                                   \n"
+      "              },                                                                    \n"
+      "              \"occ\" : [ 0, 0 ]                                                    \n"
+      "            }                                                                       \n"
+      "          }                                                                         \n"
+      "        ]                                                                           \n\n"
+
+      "  sublats: array of integers (optional, default none)                               \n"
+      "    Selects sites by specifying sublattices. Each sublattice index corresponds to a \n"
+      "    basis site in prim.json, indexed from 0. Ex:                                    \n\n"
+
+      "        \"sublats\" : [0, 2]                                                        \n\n"
+
+      "  sites: array of 4-entry integer arrays (optional, default none) \n"
+      "    Selects sites by [b,i,j,k] convention, where 'b' is sublattice index and [i,j,k]\n"
+      "    specifies linear combinations of primitive-cell lattice vectors. Ex:            \n\n"
+
+      "        \"sites\" : [[0,0,0,0],                                                     \n"
+      "                     [2,0,0,0]]                                                     \n\n"
+
+      "  cluster_specs: object (optional)                                                  \n"
+      "    JSON object specifying orbits of clusters to generate. Each orbit prototype is  \n"
+      "    used to select sites on each input supercell or configuration. If there are 4   \n"
+      "    supercells or configurations selected, and there are 10 orbits generated, then  \n"
+      "    there will be 4*10=40 initial states generated. The \"cluster_specs\" option    \n"
+      "    cannot be used with the \"sublats\" or \"sites\" options. Expect format is:     \n\n"
+
+      "    method: string (required)                                                       \n"
+      "      Specify which cluster orbit generating method will be used. Supported:        \n\n"
+
+      "      - \"periodic_max_length\": Clusters differing by a lattice translation are    \n"
+      "        considered equivalent. Cluster generation is truncated by specifying the    \n"
+      "        maximum distance between sites in a cluster for 2-point, 3-point, etc.      \n"
+      "        clusters. The point clusters comprising the asymmetric unit of the prim     \n"
+      "        structure are always included. After the cluster orbits are generated using \n"
+      "        the prim factor group symmetry, the orbits are broken into sub-orbits       \n"
+      "        reflecting the configuration factor group symmetry of the input state. Any  \n"
+      "        orbits that are duplicated under periodic boundary conditions are removed.  \n\n"
+
+      "    params: object (required) \n"
+      "      Specifies parameters for the method selected by `method`. Options depend on the \n"
+      "      `method` chosen: \n\n"
+
+      "      For method==\"periodic_max_length\": \n"
+      "        orbit_branch_specs: object (optional)\n"
+      "          Cluster generation is truncated by specifying the maximum distance\n"
+      "          between sites in a cluster for each orbit branch (i.e. 2-point, 3-point, etc.\n"
+      "          clusters). The 1-point clusters comprising the asymmetric unit of the prim\n"
+      "          structure are always included. \n\n"
+
+      "            Example: \n"
+      "              \"orbit_branch_specs\": {\n"
+      "                \"2\": { \"max_length\": 10.0 },\n"
+      "                \"3\": { \"max_length\": 8.0 },\n"
+      "                       ...\n"
+      "              }\n\n"
+
+      "        orbit_specs: array (optional) \n"
+      "          An array of clusters which are used to generate and include orbits of clusters \n"
+      "          whether or not they meet the `max_length` truncation criteria. See the \n"
+      "          cluster input format below. Use the \"include_subclusters\" option to force \n"
+      "          generation of orbits for all subclusters of the specified cluster. \n"
+
+      "            Example cluster, with \"Direct\" coordinates: \n"
+      "              { \n"
+      "                \"coordinate_mode\" : \"Direct\", \n"
+      "                \"sites\" : [ \n"
+      "                  [ 0.000000000000, 0.000000000000, 0.000000000000 ], \n"
+      "                  [ 1.000000000000, 0.000000000000, 0.000000000000 ], \n"
+      "                  [ 2.000000000000, 0.000000000000, 0.000000000000 ], \n"
+      "                  [ 3.000000000000, 0.000000000000, 0.000000000000 ]], \n"
+      "                \"include_subclusters\" : true \n"
+      "              } \n\n"
+
+      "            Example cluster, with \"Integral\" coordinates: \n"
+      "              { \n"
+      "                \"coordinate_mode\" : \"Integral\", \n"
+      "                \"sites\" : [ \n"
+      "                  [ 0, 0, 0, 0 ], \n"
+      "                  [ 0, 1, 0, 0 ], \n"
+      "                  [ 1, 0, 0, 0 ]], \n"
+      "                \"include_subclusters\" : true \n"
+      "              } \n\n";
   }
 
   /// Parse JSON to construct initial states for enumeration (as std::vector<std::pair<std::string, ConfigEnumInput>>)
@@ -204,8 +330,37 @@ namespace CASM {
     }
     catch(std::exception &e) {
       std::stringstream msg;
-      msg << "Error creating enumerator initial states from configurations: " << e.what();
+      msg << "Error creating input states from configurations: " << e.what();
       parser.error.insert(msg.str());
+    }
+
+    // make_and_insert_canonical_supercell
+
+    // option 1: create and use possibly non-canonical standalone supercell (default)
+    // option 2: make_and_insert_canonical_supercell: bool (optional, default = false)
+    //           - make & insert canonical supercell, do not insert configuration
+    // option 3: make_and_insert_canonical_configuration: true (optional, default = false)
+    //           - make & insert canonical supercell, and insert configuration
+
+    // check for "config_list"
+    typedef std::vector<std::pair<std::string, Configuration>> NamedConfiguration;
+    NamedConfiguration config_list;
+
+    if(parser.self.contains("config_list")) {
+      try {
+        auto it = parser.self.find("config_list");
+        auto end = parser.self.end();
+        for(; it != end; ++it) {
+          auto config_ptr = it->make<Configuration>(shared_prim);
+          std::string identifier = it->get_if_else("identifier", config_ptr->name());
+          config_list.emplace_back(identifier, std::move(*config_ptr));
+        }
+      }
+      catch(std::exception &e) {
+        std::stringstream msg;
+        msg << "Error creating input states from config_list: " << e.what();
+        parser.error.insert(msg.str());
+      }
     }
 
     // check for "supercell_selection" and "scelnames"
@@ -216,7 +371,7 @@ namespace CASM {
     }
     catch(std::exception &e) {
       std::stringstream msg;
-      msg << "Error creating enumerator initial states from supercells: " << e.what();
+      msg << "Error creating input states from supercells: " << e.what();
       parser.error.insert(msg.str());
     }
 
@@ -253,7 +408,7 @@ namespace CASM {
     //  (when would this be useful? which order to apply?)
     if((sublats.size() || sites.size()) && parser.self.contains("cluster_specs")) {
       std::stringstream msg;
-      msg << "Error creating enumerator initial states: "
+      msg << "Error creating input states: "
           << "cannot include \"cluster_specs\" with \"sublats\" or \"sites\"";
       parser.error.insert(msg.str());
     }
@@ -266,7 +421,7 @@ namespace CASM {
     if(cluster_specs_subparser->value) {
       if(cluster_specs_subparser->value->periodicity_type() != CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC) {
         std::stringstream msg;
-        msg << "Error creating enumerator initial states: "
+        msg << "Error creating input states: "
             << "\"cluster_specs\" method must be \"periodic_max_length\"";
         cluster_specs_subparser->error.insert(msg.str());
       }
@@ -283,6 +438,9 @@ namespace CASM {
     std::vector<std::pair<std::string, ConfigEnumInput>> config_enum_input;
     for(const auto &config : config_selection.selected()) {
       config_enum_input.emplace_back(config.name(), config);
+    }
+    for(const auto &named_config : config_list) {
+      config_enum_input.emplace_back(named_config.first, named_config.second);
     }
     for(const auto &scel : supercell_selection.selected()) {
       config_enum_input.emplace_back(scel.name(), scel);
@@ -343,7 +501,7 @@ namespace CASM {
 
     if(parser.value->size() == 0) {
       std::stringstream msg;
-      msg << "Error creating enumerator initial states: No supercells or configurations.";
+      msg << "Error creating input states: No supercells or configurations.";
       parser.error.insert(msg.str());
     }
   }

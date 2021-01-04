@@ -30,8 +30,6 @@
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SymTools.hh"
-#include "casm/crystallography/io/VaspIO.hh"
-#include "casm/crystallography/io/SimpleStructureIO.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/ConfigDatabaseTools.hh"
 #include "casm/database/Named_impl.hh"
@@ -779,78 +777,6 @@ namespace CASM {
     }
     ConfigIsEquivalent f(*this, crystallography_tol());
     return f(B);
-  }
-
-  Configuration jsonConstructor<Configuration>::from_json(
-    const jsonParser &json,
-    const PrimClex &primclex,
-    const std::string &configname) {
-
-    return Configuration(primclex, configname, json);
-  }
-
-  Configuration jsonConstructor<Configuration>::from_json(
-    const jsonParser &json,
-    const Supercell &scel,
-    const std::string &id) {
-
-    return Configuration(scel, id, json);
-  }
-
-  //*********************************************************************************
-
-  std::string pos_string(Configuration const  &_config) {
-    std::stringstream ss;
-    VaspIO::PrintPOSCAR p(make_simple_structure(_config), _config.name());
-    p.sort();
-    p.print(ss);
-    return ss.str();
-  }
-
-  //*********************************************************************************
-
-  void write_pos(Configuration const &_config) {
-
-    try {
-      fs::create_directories(_config.primclex().dir().configuration_dir(_config.name()));
-    }
-    catch(const fs::filesystem_error &ex) {
-      std::cerr << "Error in Configuration::write_pos()." << std::endl;
-      std::cerr << ex.what() << std::endl;
-    }
-
-    fs::ofstream(_config.primclex().dir().POS(_config.name()))
-        << pos_string(_config);
-    return;
-  }
-
-
-  //*********************************************************************************
-
-  std::string config_json_string(Configuration const  &_config) {
-    std::stringstream ss;
-
-    jsonParser tjson;
-    to_json(make_simple_structure(_config), tjson);
-    tjson.print(ss);
-    return ss.str();
-  }
-
-  //*********************************************************************************
-
-  void write_config_json(Configuration const &_config) {
-
-    try {
-      fs::create_directories(_config.primclex().dir().configuration_dir(_config.name()));
-    }
-    catch(const fs::filesystem_error &ex) {
-      std::cerr << "Error in Configuration::write_pos()." << std::endl;
-      std::cerr << ex.what() << std::endl;
-    }
-
-    fs::ofstream(_config.primclex().dir().config_json(_config.name()))
-        << config_json_string(_config);
-    return;
   }
 
 

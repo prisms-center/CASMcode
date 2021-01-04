@@ -36,16 +36,16 @@ TEST_F(DoFSpaceTest, ConstructorTest1) {
   // Construct the GLstrain DoF space.
   ConfigEnumInput config_input {*shared_supercell};
   DoFKey dof_key = "GLstrain";
-  DoFSpace dof_space {config_input, dof_key};
-  EXPECT_EQ(dof_space.dof_subspace.rows(), 6);
+  DoFSpace dof_space = make_dof_space(dof_key, config_input);
+  EXPECT_EQ(dof_space.basis().rows(), 6);
 }
 
 TEST_F(DoFSpaceTest, ConstructorTest2) {
   // Construct the disp DoF space.
   ConfigEnumInput config_input {*shared_supercell};
   DoFKey dof_key = "disp";
-  DoFSpace dof_space {config_input, dof_key};
-  EXPECT_EQ(dof_space.dof_subspace.rows(), 4 * 3);
+  DoFSpace dof_space = make_dof_space(dof_key, config_input);
+  EXPECT_EQ(dof_space.basis().rows(), 4 * 3);
 }
 
 TEST_F(DoFSpaceTest, JsonIOTest1) {
@@ -53,7 +53,7 @@ TEST_F(DoFSpaceTest, JsonIOTest1) {
   // Construct the GLstrain DoF space.
   ConfigEnumInput config_input {*shared_supercell};
   DoFKey dof_key = "GLstrain";
-  DoFSpace dof_space {config_input, dof_key};
+  DoFSpace dof_space = make_dof_space(dof_key, config_input);
 
   jsonParser dof_space_json;
   to_json(dof_space, dof_space_json, shared_supercell->name() + "/0");
@@ -62,11 +62,16 @@ TEST_F(DoFSpaceTest, JsonIOTest1) {
   // log() << dof_space_json << std::endl;
 
   // a couple tests to check JSON was constructed successfully, but does not check each value
-  EXPECT_EQ(dof_space_json.size(), 4);
+  EXPECT_EQ(dof_space_json.size(), 8);
   EXPECT_EQ(dof_space_json.contains("dof"), true);
-  EXPECT_EQ(dof_space_json.contains("initial_configuration"), true);
+  EXPECT_EQ(dof_space_json["transformation_matrix_to_supercell"].is_null(), true);
+  EXPECT_EQ(dof_space_json["sites"].is_null(), true);
+  EXPECT_EQ(dof_space_json.contains("basis"), true);
   EXPECT_EQ(dof_space_json.contains("glossary"), true);
-  EXPECT_EQ(dof_space_json.contains("dof_subspace"), true);
+  EXPECT_EQ(dof_space_json["axis_site_index"].is_null(), true);
+  EXPECT_EQ(dof_space_json["axis_dof_component"].is_null(), true);
+  EXPECT_EQ(dof_space_json.contains("identifier"), true);
+  EXPECT_EQ(dof_space_json.contains("state"), false);
 }
 
 TEST_F(DoFSpaceTest, JsonIOTest2) {
@@ -74,20 +79,26 @@ TEST_F(DoFSpaceTest, JsonIOTest2) {
   // Construct the disp DoF space.
   ConfigEnumInput config_input {*shared_supercell};
   DoFKey dof_key = "disp";
-  DoFSpace dof_space {config_input, dof_key};
+  DoFSpace dof_space = make_dof_space(dof_key, config_input);
 
   jsonParser dof_space_json;
   to_json(dof_space, dof_space_json, shared_supercell->name() + "/0");
 
-  // // Uncomment to print dof_space:
-  // log() << dof_space_json << std::endl;
+  // Uncomment to print dof_space:
+  log() << dof_space_json << std::endl;
 
   // a couple tests to check JSON was constructed successfully, but does not check each value
-  EXPECT_EQ(dof_space_json.size(), 4);
+  EXPECT_EQ(dof_space_json.size(), 8);
   EXPECT_EQ(dof_space_json.contains("dof"), true);
-  EXPECT_EQ(dof_space_json.contains("initial_configuration"), true);
+  EXPECT_EQ(dof_space_json["transformation_matrix_to_supercell"].is_null(), false);
+  EXPECT_EQ(dof_space_json["sites"].is_null(), false);
+  EXPECT_EQ(dof_space_json.contains("basis"), true);
   EXPECT_EQ(dof_space_json.contains("glossary"), true);
-  EXPECT_EQ(dof_space_json.contains("dof_subspace"), true);
+  EXPECT_EQ(dof_space_json["axis_site_index"].is_null(), false);
+  EXPECT_EQ(dof_space_json["axis_dof_component"].is_null(), false);
+  EXPECT_EQ(dof_space_json.contains("identifier"), true);
+  EXPECT_EQ(dof_space_json.contains("state"), false);
+
 }
 
 TEST_F(DoFSpaceTest, VectorSpaceSymReportTest1) {
@@ -95,12 +106,13 @@ TEST_F(DoFSpaceTest, VectorSpaceSymReportTest1) {
   // Construct the GLstrain DoF space.
   ConfigEnumInput config_input {*shared_supercell};
   DoFKey dof_key = "GLstrain";
-  DoFSpace dof_space {config_input, dof_key};
+  DoFSpace dof_space = make_dof_space(dof_key, config_input);
 
   // Construct the VectorSpaceSymReport (calc_wedges==false)
   std::vector<PermuteIterator> invariant_group = make_invariant_subgroup(config_input);
   bool calc_wedges = false;
   VectorSpaceSymReport report = vector_space_sym_report(dof_space,
+                                                        config_input,
                                                         invariant_group.begin(),
                                                         invariant_group.end(),
                                                         calc_wedges);
@@ -124,12 +136,13 @@ TEST_F(DoFSpaceTest, VectorSpaceSymReportTest2) {
   // Construct the GLstrain DoF space.
   ConfigEnumInput config_input {*shared_supercell};
   DoFKey dof_key = "GLstrain";
-  DoFSpace dof_space {config_input, dof_key};
+  DoFSpace dof_space = make_dof_space(dof_key, config_input);
 
   // Construct the VectorSpaceSymReport (calc_wedges==true)
   std::vector<PermuteIterator> invariant_group = make_invariant_subgroup(config_input);
   bool calc_wedges = true;
   VectorSpaceSymReport report = vector_space_sym_report(dof_space,
+                                                        config_input,
                                                         invariant_group.begin(),
                                                         invariant_group.end(),
                                                         calc_wedges);
@@ -152,12 +165,13 @@ TEST_F(DoFSpaceTest, VectorSpaceSymReportTest3) {
   // Construct the GLstrain DoF space.
   ConfigEnumInput config_input {*shared_supercell};
   DoFKey dof_key = "disp";
-  DoFSpace dof_space {config_input, dof_key};
+  DoFSpace dof_space = make_dof_space(dof_key, config_input);
 
   // Construct the VectorSpaceSymReport (calc_wedges==false)
   std::vector<PermuteIterator> invariant_group = make_invariant_subgroup(config_input);
   bool calc_wedges = false;
   VectorSpaceSymReport report = vector_space_sym_report(dof_space,
+                                                        config_input,
                                                         invariant_group.begin(),
                                                         invariant_group.end(),
                                                         calc_wedges);
@@ -181,12 +195,13 @@ TEST_F(DoFSpaceTest, VectorSpaceSymReportTest4) {
   // Construct the GLstrain DoF space.
   ConfigEnumInput config_input {*shared_supercell};
   DoFKey dof_key = "disp";
-  DoFSpace dof_space {config_input, dof_key};
+  DoFSpace dof_space = make_dof_space(dof_key, config_input);
 
   // Construct the VectorSpaceSymReport (calc_wedges==true)
   std::vector<PermuteIterator> invariant_group = make_invariant_subgroup(config_input);
   bool calc_wedges = true;
   VectorSpaceSymReport report = vector_space_sym_report(dof_space,
+                                                        config_input,
                                                         invariant_group.begin(),
                                                         invariant_group.end(),
                                                         calc_wedges);
