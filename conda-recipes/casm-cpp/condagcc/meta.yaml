@@ -29,6 +29,7 @@ requirements:
     - wget
     - bzip2
     - six
+    - gitpython
     - gcc_linux-64 {{ CASM_CONDAGCC_VERSION }}*
     - gxx_linux-64 {{ CASM_CONDAGCC_VERSION }}*
     - gfortran_linux-64 {{ CASM_CONDAGCC_VERSION }}*
