@@ -44,6 +44,36 @@ namespace CASM {
         // mean square displacement distance in deformed coordinate system
         return (atomic_cost_child(mapped_result, Nsites) + atomic_cost_parent(mapped_result, Nsites)) / 2.;
       }
+
+      MappingNode symmetry_preserving_node(const MappingNode &basic_mapping_node,
+                                           SymOpVector &factor_group,
+                                           PermuteOpVector &permutation_group) {
+        const auto disp_matrix = basic_mapping_node.atom_displacement;
+        auto symmetry_preserving_displacement = disp_matrix;
+        auto symmetry_preserving_stretch = basic_mapping_node.lattice_node.stretch;
+        symmetry_preserving_displacement.setZero();
+        symmetry_preserving_stretch.setZero();
+        for(int i = 0; i < factor_group.size(); ++i) {
+          auto transformed_disp = factor_group[i].matrix * disp_matrix;
+          Eigen::MatrixXd transformed_and_permuted_disp = transformed_disp;
+          transformed_and_permuted_disp.setZero();
+          int ind = 0;
+          for(const auto &j : permutation_group[i]) {
+            transformed_and_permuted_disp.col(j) += transformed_disp.col(ind);
+            ind++;
+          }
+          symmetry_preserving_displacement += transformed_and_permuted_disp / factor_group.size();
+          Eigen::MatrixXd transformed_stretch =
+            factor_group[i].matrix.transpose() * basic_mapping_node.lattice_node.stretch * factor_group[i].matrix;
+          symmetry_preserving_stretch += transformed_stretch / factor_group.size();
+        }
+        auto new_report = basic_mapping_node;
+        new_report.lattice_node.stretch = symmetry_preserving_stretch;
+        new_report.atom_displacement = symmetry_preserving_displacement;
+        return new_report;
+
+      };
+
     }
 
     //*******************************************************************************************
