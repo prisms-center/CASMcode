@@ -123,7 +123,7 @@ double StrainCostCalculator::strain_cost(
   Eigen::Matrix3d tmp_op;
   for (auto const &op : parent_fsym_mats) {
     tmp_op = parent_lattice * op.cast<double>() * parent_lattice.inverse();
-    parent_sym_mats.push_back(tmp_op);
+    parent_sym_mats.push_back(tmp_op.transpose());
   }
   // Apply the sym op to the deformation gradient and average
   Eigen::Matrix3d stretch_aggregate = Eigen::Matrix3d::Zero();
