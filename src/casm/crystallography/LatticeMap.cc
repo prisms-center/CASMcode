@@ -4,6 +4,7 @@
 #include "casm/crystallography/Strain.hh"
 #include "casm/crystallography/SymType.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
+#include "submodules/eigen/Eigen/src/Core/Matrix.h"
 
 namespace CASM {
 namespace xtal {
@@ -132,17 +133,26 @@ double StrainCostCalculator::strain_cost(
   for (auto const &op : parent_sym_mats) {
     stretch_aggregate += op * stretch * op.inverse();
   }
+  // std::cout << "In StrainCostCalculator::strain_cost Stretch aggregate : \n"
+  //           << stretch_aggregate << std::endl;
   stretch_aggregate = stretch_aggregate / double(parent_sym_mats.size());
-  double tmp_strain_cost = strain_cost(stretch - stretch_aggregate);
-  if (tmp_strain_cost <= 0.15) {
-    std::cout << "deformation tensor : " << std::endl
-              << _deformation_gradient << std::endl;
-    std::cout << "stretch tensor : " << std::endl << stretch << std::endl;
-    std::cout << "stretch aggregate : " << std::endl
-              << stretch_aggregate << std::endl;
-    std::cout << "----------------------------" << std::endl;
-  }
-  return strain_cost(stretch - stretch_aggregate);
+  std::cout << "In StrainCostCalculator::strain_cost Stretch aggregate : \n"
+            << stretch_aggregate << std::endl;
+  std::cout << "In StrainCostCalculator::strain_cost, symmetry removed "
+               "deformation : \n"
+            << (stretch - stretch_aggregate) << std::endl;
+  double tmp_strain_cost =
+      strain_cost(stretch - stretch_aggregate + Eigen::Matrix3d::Identity());
+  std::cout << "cost : " << tmp_strain_cost << std::endl;
+  // if (tmp_strain_cost <= 0.15) {
+  //   std::cout << "deformation tensor : " << std::endl
+  //             << _deformation_gradient << std::endl;
+  //   std::cout << "stretch tensor : " << std::endl << stretch << std::endl;
+  //   std::cout << "stretch aggregate : " << std::endl
+  //             << stretch_aggregate << std::endl;
+  //   std::cout << "----------------------------" << std::endl;
+  // }
+  return strain_cost(stretch - stretch_aggregate + Eigen::Matrix3d::Identity());
 }
 
 //*******************************************************************************************
@@ -165,6 +175,12 @@ LatticeMap::LatticeMap(const Lattice &_parent, const Lattice &_child,
   Lattice reduced_child = _child.reduced_cell();
   m_child = reduced_child.lat_column_mat();
 
+  std::cout << "In LatticeMap::LatticeMap. " << std::endl;
+  std::cout << "Child lattice is : \n" << _child.lat_column_mat() << std::endl;
+  std::cout << "Reduced child lattice is : \n" << m_child << std::endl;
+  std::cout << "Transformation matrix is : \n"
+            << xtal::is_superlattice(_child, reduced_child, 0.001).second
+            << std::endl;
   m_U = _parent.inv_lat_column_mat() * m_parent;
   m_V_inv = m_child.inverse() * _child.lat_column_mat();
 
@@ -346,8 +362,6 @@ const LatticeMap &LatticeMap::_next_mapping_better_than(double max_cost) const {
 
   while (++m_currmat < n_mat()) {
     if (!_check_canonical()) {
-      if (inv_mat().isIdentity())
-        std::cout << "Looping past identity" << std::endl;
       continue;
     }
 
@@ -355,12 +369,16 @@ const LatticeMap &LatticeMap::_next_mapping_better_than(double max_cost) const {
     m_deformation_gradient = m_child * inv_mat().cast<double>() *
                              m_parent.inverse(); // -> _deformation_gradient
     tcost = calc_strain_cost(m_deformation_gradient);
-    if (inv_mat().isIdentity()) {
+    Eigen::Matrix3i test_mat;
+    test_mat << 0, 0, 1, 1, 0, 0, 0, 1, 0;
+    if ((inv_mat() - test_mat).isZero()) {
       std::cout << "In LatticeMap::_next_mapping_better_than. The deformation "
                    "gradient for an identity transfmat is:"
                 << std::endl;
       std::cout << m_deformation_gradient << std::endl;
       std::cout << "The cost : " << tcost << std::endl;
+      std::cout << "The parent matrix is : \n" << m_parent << std::endl;
+      std::cout << "The child matrix is : \n" << m_child << std::endl;
     }
 
     if (std::abs(tcost) < (std::abs(max_cost) + std::abs(xtal_tol()))) {
@@ -394,6 +412,16 @@ const LatticeMap &LatticeMap::_next_mapping_better_than(double max_cost) const {
 //*******************************************************************************************
 
 bool LatticeMap::_check_canonical() const {
+  Eigen::Matrix3i test_mat;
+  // test_mat << -1, 0, 0, 0, 0, -1, 0, 1, -1;
+  // test_mat << -1, 0, 0, 0, -1, 0, 0, -1, 1;
+  // test_mat << 0, 1, 0, 0, 0, 1, 1, 0, 0;
+  test_mat << 0, 0, 1, 1, 0, 0, 0, 1, 0;
+  if ((inv_mat() - test_mat).isZero()) {
+    std::cout << "In LatticeMap::_check_canonical()" << std::endl;
+    std::cout << "Testing the canonical equivalent of the identity"
+              << std::endl;
+  }
   // Purpose of jmin is to exclude (i,j)=(0,0) element
   // jmin is set to 0 at end of i=0 pass;
   Index jmin = 1;
@@ -413,7 +441,7 @@ bool LatticeMap::_check_canonical() const {
           std::abs(m_icache(2, 1)) > m_range ||
           std::abs(m_icache(2, 2)) > m_range)
         continue;
-      if (inv_mat().isIdentity()) {
+      if ((inv_mat() - test_mat).isZero()) {
         std::cout << " In LatticeMap::_check_canonical, m_icache : \n"
                   << m_icache << std::endl;
         std::cout << "m_range : " << m_range << std::endl;
@@ -423,9 +451,19 @@ bool LatticeMap::_check_canonical() const {
                   << std::endl;
       }
       if (std::lexicographical_compare(m_icache.data(), m_icache.data() + 9,
-                                       inv_mat().data(), inv_mat().data() + 9))
+                                       inv_mat().data(),
+                                       inv_mat().data() + 9)) {
+        if ((inv_mat() - test_mat).isZero()) {
+          std::cout << " Not canonical" << std::endl;
+          return true;
+        }
         return false;
+      }
     }
+  }
+  if ((inv_mat() - test_mat).isZero()) {
+    std::cout << "In LatticeMap::_check_canonical()" << std::endl;
+    std::cout << "Finished testing the test_mat, it is canonical" << std::endl;
   }
   return true;
 }
