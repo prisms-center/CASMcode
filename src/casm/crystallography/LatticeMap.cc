@@ -134,21 +134,7 @@ namespace CASM {
       for(auto const &op : parent_sym_mats) {
         stretch_aggregate += op * stretch * op.inverse();
       }
-      // std::cout << "In StrainCostCalculator::strain_cost Stretch aggregate : \n"
-      //           << stretch_aggregate << std::endl;
       stretch_aggregate = stretch_aggregate / double(parent_sym_mats.size());
-      // double tmp_strain_cost =
-      //     strain_cost(stretch - stretch_aggregate + Eigen::Matrix3d::Identity());
-      // if (tmp_strain_cost <= 0.15) {
-      //   std::cout << "----------------------------" << std::endl;
-      //   std::cout << "deformation tensor : " << std::endl
-      //             << _deformation_gradient << std::endl;
-      //   std::cout << "stretch tensor : " << std::endl << stretch << std::endl;
-      //   std::cout << "stretch aggregate : " << std::endl
-      //             << stretch_aggregate << std::endl;
-      //   std::cout << "strain_cost : " << tmp_strain_cost << std::endl;
-      //   std::cout << "----------------------------" << std::endl;
-      // }
       return strain_cost(stretch - stretch_aggregate + Eigen::Matrix3d::Identity());
     }
 
@@ -172,15 +158,6 @@ namespace CASM {
       Lattice reduced_child = _child.reduced_cell();
       m_child = reduced_child.lat_column_mat();
 
-      // std::cout << "Constructing a LatticeMap" << std::endl;
-      // std::cout << "reduced parent : \n" << m_parent << std::endl;
-      // std::cout << "reduced child : \n" << m_child << std::endl;
-
-      // std::cout << "Supercell transformation : \n"
-      //           << is_superlattice(_child, reduced_child, 0.001).second
-      //           << std::endl;
-      // ;
-
       m_U = _parent.inv_lat_column_mat() * m_parent;
       m_V_inv = m_child.inverse() * _child.lat_column_mat();
 
@@ -203,9 +180,6 @@ namespace CASM {
         for(auto const &op : _parent_point_group) {
           if(!symcheck(op))
             continue;
-          // if(symcheck.U().isIdentity())
-          // continue;
-          // std::cout << "Testing point op:\n" << get_matrix(op) << "\n";
           m_parent_fsym_mats.push_back(
             iround(reduced_parent.inv_lat_column_mat() * op.matrix.transpose() *
                    reduced_parent.lat_column_mat()));
@@ -225,9 +199,6 @@ namespace CASM {
         for(auto const &op : _child_point_group) {
           if(!symcheck(op))
             continue;
-          // if(symcheck.U().isIdentity())
-          // continue;
-          // std::cout << "Testing point op:\n" << get_matrix(op) << "\n";
           m_child_fsym_mats.push_back(
             iround(reduced_child.inv_lat_column_mat() * op.matrix *
                    reduced_child.lat_column_mat()));
@@ -370,22 +341,6 @@ namespace CASM {
         m_deformation_gradient = m_child * inv_mat().cast<double>() *
                                  m_parent.inverse(); // -> _deformation_gradient
         tcost = calc_strain_cost(m_deformation_gradient);
-        // Eigen::Matrix3i test_mat;
-        // // test_mat << 0, 0, 1, 1, 0, 0, 0, 1, 0;
-        // test_mat << -1, 0, 0, -1, 1, 0, 0, 0, -1;
-        // if ((inv_mat() - test_mat).isZero()) {
-        //   std::cout << "In LatticeMap::_next_mapping_better_than. The deformation
-        //   "
-        //                "gradient for an identity transfmat is:"
-        //             << std::endl;
-        //   std::cout << m_deformation_gradient << std::endl;
-        //   std::cout << "The cost : " << tcost << std::endl;
-        //   std::cout << "The parent matrix is : \n" << m_parent << std::endl;
-        //   std::cout << "The child matrix is : \n" << m_child << std::endl;
-        //   std::cout << "The child supercell is : \n"
-        //             << m_child * inv_mat().cast<double>() << std::endl;
-        // }
-
         if(std::abs(tcost) < (std::abs(max_cost) + std::abs(xtal_tol()))) {
           m_cost = tcost;
 
@@ -417,20 +372,6 @@ namespace CASM {
     //*******************************************************************************************
 
     bool LatticeMap::_check_canonical() const {
-      // Eigen::Matrix3i test_mat;
-      // // // test_mat << -1, 0, 0, 0, 0, -1, 0, 1, -1;
-      // // // test_mat << -1, 0, 0, 0, -1, 0, 0, -1, 1;
-      // // // test_mat << 0, 1, 0, 0, 0, 1, 1, 0, 0;
-      // // test_mat << 0, 0, 1, 1, 0, 0, 0, 1, 0;
-      // // test_mat << 1, 0, 0, 0, 1, 0, 0, 0, 1;
-      // // test_mat << 0, -1, 0, 1, -1, 0, 0, 0, -1;
-      // // test_mat << -1, 1, 0, -1, 0, 0, 0, 0, 1;
-      // test_mat << -1, 0, 0, -1, 1, 0, 0, 0, -1;
-      // if ((inv_mat() - test_mat).isZero()) {
-      //   std::cout << "In LatticeMap::_check_canonical()" << std::endl;
-      //   std::cout << "Testing the canonical equivalent of the identity"
-      //             << std::endl;
-      // }
       // Purpose of jmin is to exclude (i,j)=(0,0) element
       // jmin is set to 0 at end of i=0 pass;
       Index jmin = 1;
@@ -450,31 +391,13 @@ namespace CASM {
              std::abs(m_icache(2, 1)) > m_range ||
              std::abs(m_icache(2, 2)) > m_range)
             continue;
-          // if ((inv_mat() - test_mat).isZero()) {
-          //   std::cout << " In LatticeMap::_check_canonical, m_icache : \n"
-          //             << m_icache << std::endl;
-          //   std::cout << "m_range : " << m_range << std::endl;
-          //   std::cout << "m_parent_fsym_mats.size() " <<
-          //   m_parent_fsym_mats.size()
-          //             << std::endl;
-          //   std::cout << "m_child_fsym_mats.size() " << m_child_fsym_mats.size()
-          //             << std::endl;
-          // }
           if(std::lexicographical_compare(m_icache.data(), m_icache.data() + 9,
                                           inv_mat().data(),
                                           inv_mat().data() + 9)) {
-            // if ((inv_mat() - test_mat).isZero()) {
-            //   std::cout << " Not canonical" << std::endl;
-            // }
             return false;
           }
         }
       }
-      // if ((inv_mat() - test_mat).isZero()) {
-      //   std::cout << "In LatticeMap::_check_canonical()" << std::endl;
-      //   std::cout << "Finished testing the test_mat, it is canonical" <<
-      //   std::endl;
-      // }
       return true;
     }
   } // namespace xtal

@@ -74,7 +74,6 @@ namespace CASM {
 
         // Then undeform by inverse of right stretch
         child_struc.deform_coords(seed.stretch());
-        // VaspIO::PrintPOSCAR printer(child_struc);
 
         // We want to get rid of translations.
         // define translation such that:
@@ -107,15 +106,7 @@ namespace CASM {
           if(node.cost < max_cost) {
             *it = node;
           }
-          // std::cout << "   ************INIT_ATOMIC_MAPS************" << std::endl
-          //           << "   node.cost : " << node.cost << std::endl
-          //           << "   node.atomic_cost : " << node.atomic_node.cost <<
-          //           std::endl
-          //           << "   node.strain_cost : " << node.lattice_node.cost
-          //           << std::endl;
         }
-        // std::cout << "   child struc\n";
-        // printer.print(std::cout);
         return true;
       }
 
@@ -755,22 +746,12 @@ namespace CASM {
       int nfound = 0;
       // Track pairs of supercell volumes that are chemically incompatible
       std::set<std::pair<Index, Index>> vol_mismatch;
-      // VaspIO::PrintPOSCAR parent_printer(parent()), child_printer(child_struc);
-      // std::cout << "Parent structure : \n";
-      // parent_printer.print(std::cout);
-
-      // std::cout << "Child structure : \n";
-      // child_printer.print(std::cout);
 
       if(k == 0) {
         // If k==0, then we only keep values less than min_cost
         // However, max_cost controls search loop, so we set max_cost to min_cost
         max_cost = min_cost;
       }
-      // std::cout << " In StrucMapper::k_best_maps_better_than " << std::endl;
-      // std::cout << " Max cost : " << max_cost << std::endl;
-      // std::cout << " tol : " << this->cost_tol() << std::endl;
-      // std::cout << " init queue size : " << queue.size() << std::endl;
       auto it = queue.begin();
       while(it != queue.end()) {
         bool erase = true;
@@ -795,21 +776,7 @@ namespace CASM {
                 // If no basis maps are viable, it indicates volume mismatch; add to
                 // vol_mismatch
                 vol_mismatch.insert(current->vol_pair());
-                // std::cout << "Basis maps are not viable for this node" <<
-                // std::endl;
               }
-              // std::cout << "------------------------------" << std::endl
-              //           << "strain cost of lattice node : "
-              //           << current->lattice_node.cost << std::endl
-              //           << "total cost : " << current->cost << std::endl
-              //           << "atomic node is empty : " <<
-              //           current->atomic_node.empty()
-              //           << std::endl
-              //           << "Initial atomic map is " << current->atomic_node.cost
-              //           << std::endl
-              //           << "viable : " << current->is_viable << std::endl
-              //           << "queue size : " << queue.size() << std::endl
-              //           << "------------------------------" << std::endl;
             }
             else if(current->is_viable) {
               // Case 2: Current node is a complete mapping and is viable
@@ -817,16 +784,6 @@ namespace CASM {
               //         set, or it is invalid, but we must add its partition to the
               //         queue because it may have a suboptimal derivative mapping
               //         that is valid and is part of the solution set
-
-              // std::cout << "------------VIABLE------------" << std::endl
-              //           << "strain cost of lattice node : "
-              //           << current->lattice_node.cost << std::endl
-              //           << "total cost : " << current->cost << std::endl
-              //           << "Initial atomic map is " << current->atomic_node.cost
-              //           << std::endl
-              //           << "min_cost : " << min_cost << std::endl
-              //           << "nfound : " << k << std::endl
-              //           << "------------------------------" << std::endl;
 
               if(current->is_valid && current->cost > min_cost && nfound < k) {
                 // current node is part of solution set
@@ -870,9 +827,6 @@ namespace CASM {
         //  3) Everything that needs to be inserted has been inserted
         ++it;
 
-        // std::cout << "Erase is : " << erase << std::endl;
-        // std::cout << "The current node has a total cost : " << current->cost
-        //           << std::endl;
         // Erase current if no longer needed
         if(erase)
           queue.erase(current);
@@ -933,10 +887,7 @@ namespace CASM {
                 k--;
               }
             }
-            // std::cout << "In StrucMapper::_seed_k_best_from_super_latcs. Adding a
-            // "
-            //              "lattice map with cost : "
-            //           << lattice_map.strain_cost() << std::endl;
+
             result.emplace(LatticeNode(lattice_map, p_prim_lat, c_prim_lat),
                            this->lattice_weight());
 
