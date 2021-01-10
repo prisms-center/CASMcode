@@ -6,6 +6,8 @@
 #include <functional>
 namespace CASM {
 
+  class jsonParser;
+
   /// \ingroup DataFormatter
   ///
   class DataStream {
@@ -52,6 +54,10 @@ namespace CASM {
       return *this;
     }
     */
+
+    virtual DataStream &operator<<(jsonParser const &) {
+      throw std::runtime_error("Error in DataStream input: JSON may not be input to DataStream");
+    }
 
     DataStream &operator<<(DataStream & (*F)(DataStream &)) {
       return F(*this);

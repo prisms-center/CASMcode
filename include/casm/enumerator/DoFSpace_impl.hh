@@ -1,6 +1,7 @@
 #ifndef CASM_DoFSpace_impl
 #define CASM_DoFSpace_impl
 
+#include "casm/crystallography/Structure.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/enumerator/ConfigEnumInput_impl.hh"
 #include "casm/enumerator/DoFSpace.hh"
@@ -9,22 +10,41 @@
 
 namespace CASM {
 
+  /// Make VectorSpaceSymReport
+  ///
+  /// \param dof_space DoFSpace to make VectorSpaceSymReport for
+  /// \param input_state ConfigEnumInput, whose invariant group w.r.t. [group_begin, group_end) is
+  ///        is used to specify the symmetry of the vector space to be analyzed
+  /// \param group_begin, group_end Range of PermuteIterator
+  /// \param calc_wedges If true, calculate the irreducible wedges for the vector space. This may
+  ///        take a long time.
   template<typename PermuteIteratorIt>
   VectorSpaceSymReport vector_space_sym_report(DoFSpace const &dof_space,
+                                               ConfigEnumInput const &input_state,
                                                PermuteIteratorIt group_begin,
                                                PermuteIteratorIt group_end,
                                                bool calc_wedges) {
 
+    if(!is_valid_dof_space(input_state.configuration(), dof_space)) {
+      std::stringstream msg;
+      msg << "Error in vector_space_sym_report: DoFSpace is not valid for given input state.";
+      throw std::runtime_error(msg.str());
+    }
+    if(!AnisoValTraits(dof_space.dof_key()).global()) {
+      if(input_state.sites() != dof_space.sites()) {
+        std::stringstream msg;
+        msg << "Error in vector_space_sym_report: Mismatch between input state sites and dof_space sites.";
+        throw std::runtime_error(msg.str());
+      }
+    }
+
     // We need a temporary mastersymgroup to manage the symmetry representation for the DoF
     MasterSymGroup g;
     SymGroupRepID id;
-    DoFKey dof_key = dof_space.dof_key;
-
-    ConfigEnumInput const &config_region = dof_space.config_region;
-    SupercellSymInfo const &sym_info = config_region.configuration().supercell().sym_info();
-    xtal::BasicStructure const &prim_struc = config_region.configuration().prim().structure();
-
-    std::vector<PermuteIterator> invariant_subgroup = make_invariant_subgroup(config_region,
+    DoFKey dof_key = dof_space.dof_key();
+    SupercellSymInfo const &sym_info = input_state.configuration().supercell().sym_info();
+    xtal::BasicStructure const &prim_struc = input_state.configuration().prim().structure();
+    std::vector<PermuteIterator> invariant_subgroup = make_invariant_subgroup(input_state,
                                                                               group_begin,
                                                                               group_end);
 
@@ -47,8 +67,8 @@ namespace CASM {
     }
     // CASE 2: DoF is local
     else {
-      auto group_and_ID = collective_dof_symrep(config_region.sites().begin(),
-                                                config_region.sites().end(),
+      auto group_and_ID = collective_dof_symrep(input_state.sites().begin(),
+                                                input_state.sites().end(),
                                                 sym_info,
                                                 dof_key,
                                                 invariant_subgroup);
@@ -62,12 +82,9 @@ namespace CASM {
     // Generate report, based on constructed inputs
     VectorSpaceSymReport result = vector_space_sym_report(rep,
                                                           g,
-                                                          dof_space.dof_subspace,
+                                                          dof_space.basis(),
                                                           calc_wedges);
-    result.axis_glossary = make_axis_glossary(
-                             dof_key,
-                             config_region.configuration(),
-                             config_region.sites());
+    result.axis_glossary = dof_space.axis_glossary();
 
     return result;
   }

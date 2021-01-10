@@ -21,6 +21,7 @@ check_program git
 check_program make
 check_program "$CASM_CC"
 check_program "$CASM_CXX"
+$CASM_CXX --version
 
 
 ### CASM C++ build and test #######################

@@ -9,6 +9,8 @@ export CASM_PREFIX=$PREFIX
 export CASM_ZLIB_PREFIX=$CONDA_PREFIX
 export CASM_BOOST_PREFIX=$CONDA_PREFIX
 
+export MACOSX_DEPLOYMENT_TARGET="10.15"
+
 . $CASM_BUILD_DIR/build_scripts/install-functions.sh
 bash $CASM_BUILD_DIR/build_scripts/install-bash-completion.sh
 bash $CASM_BUILD_DIR/build.sh

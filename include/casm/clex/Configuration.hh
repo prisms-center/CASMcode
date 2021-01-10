@@ -445,21 +445,6 @@ namespace CASM {
   };
 
 
-  template<>
-  struct jsonConstructor<Configuration> {
-
-    Configuration from_json(
-      const jsonParser &json,
-      const PrimClex &primclex,
-      const std::string &configname);
-
-    Configuration from_json(
-      const jsonParser &json,
-      const Supercell &scel,
-      const std::string &id);
-  };
-
-
   /// \brief Holds results of Configuration::insert
   ///
   /// - 'canonical' refers to the canonical form of the Configuration in it's
@@ -506,19 +491,6 @@ namespace CASM {
     Eigen::Matrix3i transf_mat;
   };
 
-
-
-  /// \brief Write the POS file to string
-  std::string pos_string(Configuration const &_config);
-
-  /// Write the POS file to pos_path
-  void write_pos(Configuration const &_config);
-
-  /// \brief Write the config.json file to string
-  std::string config_json_string(Configuration const &_config);
-
-  /// Write the config.json file to config_json_path
-  void write_config_json(Configuration const &_config);
 
   /// \brief Returns the sub-configuration that fills a particular Supercell
   ///
@@ -648,8 +620,6 @@ namespace CASM {
 
   bool has_relaxed_mag_basis(const Configuration &_config);
 
-
-  std::ostream &operator<<(std::ostream &sout, const Configuration &c);
 
   /// \brief Returns correlations using 'clexulator'. Supercell needs a correctly populated neighbor list.
   Eigen::VectorXd correlations(const ConfigDoF &configdof, const Supercell &scel, Clexulator const &clexulator);

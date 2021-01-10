@@ -212,6 +212,15 @@ namespace CASM {
   template<typename DataObject>
   MatrixXdAttributeDictionary<DataObject> make_matrixxd_dictionary();
 
+
+  class jsonParser;
+  /// \brief Template to be specialized for constructing dictionaries for particular DataObject
+  ///
+  /// \ingroup DataFormatter
+  ///
+  template<typename DataObject>
+  DataFormatterDictionary<DataObject, BaseValueFormatter<jsonParser, DataObject>> make_json_dictionary();
+
 }
 
 #endif

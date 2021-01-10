@@ -473,4 +473,10 @@ namespace CASM {
     return dict;
   }
 
+  template<>
+  DataFormatterDictionary<Supercell, BaseValueFormatter<jsonParser, Supercell>> make_json_dictionary<Supercell>() {
+    return DataFormatterDictionary<Supercell, BaseValueFormatter<jsonParser, Supercell>>();
+  }
+
+
 }

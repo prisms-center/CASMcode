@@ -48,6 +48,9 @@ namespace CASM {
 
     template<typename ObjType>
     bool Selected<ObjType>::evaluate(const ObjType &_obj) const {
+      if(_obj.name().find("equiv") != std::string::npos) {
+        return false;
+      }
       return m_selection->is_selected(_obj.name());
     }
 

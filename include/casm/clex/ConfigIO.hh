@@ -20,6 +20,7 @@ namespace CASM {
   class Configuration;
   template<typename DataObject>
   class Norm;
+  class jsonParser;
 
   /**  \addtogroup ConfigIO
        @{
@@ -447,6 +448,13 @@ namespace CASM {
 
     ConfigIO::GenericConfigFormatter<double> relaxed_magmom_per_species();
 
+    ConfigIO::GenericConfigFormatter<jsonParser> config();
+
+    ConfigIO::GenericConfigFormatter<jsonParser> configdof();
+
+    ConfigIO::GenericConfigFormatter<jsonParser> properties();
+
+    ConfigIO::GenericConfigFormatter<std::string> poscar();
   }
 
   template<>

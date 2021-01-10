@@ -3,6 +3,7 @@
 
 #include "casm/app/casm_functions.hh"
 #include "casm/app/DirectoryStructure.hh"
+#include "casm/app/io/file/clex_io.hh"
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/database/Selection.hh"
 #include "casm/completer/Handlers.hh"
@@ -108,8 +109,8 @@ namespace CASM {
 
       DB::Selection<Configuration> config_select(primclex.db<Configuration>(), selection);
       for(const auto &config : config_select.selected()) {
-        write_pos(config);
-        write_config_json(config);
+        write_pos(config, primclex.dir());
+        write_config_json(config, primclex.dir());
 
         Popen process;
 
@@ -135,5 +136,3 @@ namespace CASM {
   };
 
 }
-
-

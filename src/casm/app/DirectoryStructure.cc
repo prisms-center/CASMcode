@@ -328,9 +328,14 @@ namespace CASM {
     return configuration_dir(configname) / "POS";
   }
 
-  /// \brief Return path to config.json file
+  /// \brief Return path to standard config.json file location
   fs::path DirectoryStructure::config_json(std::string configname) const {
     return configuration_dir(configname) / "config.json";
+  }
+
+  /// \brief Return path to standard structure.json file location
+  fs::path DirectoryStructure::structure_json(std::string configname) const {
+    return configuration_dir(configname) / "structure.json";
   }
 
   /// \brief Return calculation settings directory path, for global settings

@@ -10,11 +10,12 @@
 #include "casm/casm_io/container/stream_io.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/crystallography/CanonicalForm.hh"
-#include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/CanonicalForm.hh"
+#include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/crystallography/Niggli.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/NeighborList.hh"
@@ -304,31 +305,6 @@ namespace CASM {
     return transf_mat() == B.transf_mat();
   }
 
-
-
-  std::string pos_string(Supercell const &_scel) {
-    std::stringstream ss;
-    ss << _scel.lattice().lat_column_mat() << std::endl;
-    return ss.str();
-  }
-
-
-  void write_pos(Supercell const &_scel) {
-    const auto &dir = _scel.primclex().dir();
-    try {
-      fs::create_directories(dir.configuration_dir(_scel.name()));
-    }
-    catch(const fs::filesystem_error &ex) {
-      err_log() << "Error in Supercell::write_pos()." << std::endl;
-      err_log() << ex.what() << std::endl;
-    }
-
-    fs::ofstream file(dir.LAT(_scel.name()));
-    file << pos_string(_scel);
-    return;
-  }
-
-
   /// \brief Return supercell name
   ///
   /// For supercells that are equivalent to the canonical supercell:
@@ -347,7 +323,160 @@ namespace CASM {
     return scelname(prim(), lattice());
   }
 
-  /// \brief Get canonical supercell from name. If not yet in database, construct and insert.
+
+  namespace Supercell_impl {
+
+    std::string hermite_normal_form_name(const Eigen::Matrix3l &matrix) {
+      std::string name_str;
+
+      Eigen::Matrix3i H = hermite_normal_form(matrix.cast<int>()).first;
+      name_str = "SCEL";
+      std::stringstream tname;
+      //Consider using a for loop with HermiteCounter_impl::_canonical_unroll here
+      tname << H(0, 0)*H(1, 1)*H(2, 2)
+            << "_" << H(0, 0) << "_" << H(1, 1) << "_" << H(2, 2)
+            << "_" << H(1, 2) << "_" << H(0, 2) << "_" << H(0, 1);
+      name_str.append(tname.str());
+
+      return name_str;
+    }
+
+    Eigen::Matrix3l make_hermite_normal_form(std::string hermite_normal_form_name) {
+      std::vector<std::string> tmp, tokens;
+      try {
+        // else construct transf_mat from name (make sure to remove any empty tokens)
+        boost::split(tmp, hermite_normal_form_name, boost::is_any_of("SCEL_"), boost::token_compress_on);
+        std::copy_if(tmp.begin(), tmp.end(), std::back_inserter(tokens),
+        [](const std::string & val) {
+          return !val.empty();
+        });
+        if(tokens.size() != 7) {
+          throw std::invalid_argument("Error in make_supercell: supercell name format error");
+        }
+        Eigen::Matrix3l T;
+        auto cast = [](std::string val) {
+          return boost::lexical_cast<Index>(val);
+        };
+        T << cast(tokens[1]), cast(tokens[6]), cast(tokens[5]),
+        0, cast(tokens[2]), cast(tokens[4]),
+        0, 0, cast(tokens[3]);
+        return T;
+      }
+      catch(std::exception &e) {
+        std::string format = "SCELV_T00_T11_T22_T12_T02_T01";
+        err_log().error("In make_hermite_normal_form");
+        err_log() << "expected format: " << format << "\n";
+        err_log() << "name: |" << hermite_normal_form_name << "|" << std::endl;
+        err_log() << "tokens: " << tokens << std::endl;
+        err_log() << "tokens.size(): " << tokens.size() << std::endl;
+        err_log() << e.what() << std::endl;
+        throw e;
+      }
+    }
+
+  }
+
+
+  /// Make the supercell name from a Superlattice
+  ///
+  /// For supercells that are equivalent to the canonical supercell:
+  /// - The supercell name is `SCELV_A_B_C_D_E_F`, where 'V' is supercell volume (number of unit
+  ///   cells), and 'A-F' are the six non-zero elements of the hermite normal form of the
+  ///   supercell transformation matrix (T00, T11, T22, T12, T02, T01)
+  ///
+  /// For supercells that are not equivalent to the canonical supercell:
+  /// - The supercell name is `$CANON_SCELNAME.$FG_INDEX` where CANON_SCELNAME is the supercell
+  ///   name for the canonical equivalent supercell and FG_INDEX is the index of the prim
+  ///   factor group operation which is applied to the canonical supercell to construct the
+  ///   non-canonical supercell.
+  ///
+  std::string make_supercell_name(
+    Structure const &prim,
+    xtal::Superlattice const &superlattice) {
+
+    using namespace Supercell_impl;
+    const SymGroup &pg = prim.point_group();
+    xtal::Superlattice canon_superlattice {prim.lattice(),
+                                           xtal::canonical::equivalent(superlattice.superlattice(), pg)};
+    std::string supercell_name = hermite_normal_form_name(canon_superlattice.transformation_matrix_to_super());
+    if(!xtal::is_equivalent(superlattice.superlattice(), canon_superlattice.superlattice())) {
+      auto to_canonical_ix = xtal::canonical::operation_index(superlattice.superlattice(), pg);
+      supercell_name += ("." + std::to_string(pg[to_canonical_ix].inverse().index()));
+    }
+    return supercell_name;
+  }
+
+  /// Make the canonical supercell name from a Superlattice
+  std::string make_canonical_supercell_name(
+    Structure const &prim,
+    xtal::Superlattice const &superlattice) {
+
+    using namespace Supercell_impl;
+    const SymGroup &pg = prim.point_group();
+    xtal::Superlattice canon_superlattice {prim.lattice(),
+                                           xtal::canonical::equivalent(superlattice.superlattice(), pg)};
+    return hermite_normal_form_name(canon_superlattice.transformation_matrix_to_super());
+  }
+
+  /// Construct a Superlattice from the supercell name
+  xtal::Superlattice make_superlattice_from_supercell_name(
+    Structure const &prim,
+    std::string supercell_name) {
+
+    using namespace Supercell_impl;
+    try {
+
+      // tokenize name: check if non-canonical
+      std::vector<std::string> tokens;
+      boost::split(tokens, supercell_name, boost::is_any_of("."), boost::token_compress_on);
+
+      // validate name
+      if(tokens.size() == 0 || tokens.size() > 2) {
+        throw std::invalid_argument("supercell_name format error");
+      }
+
+      Eigen::Matrix3l T = make_hermite_normal_form(tokens[0]);
+      xtal::Lattice super_lattice = make_superlattice(prim.lattice(), T);
+
+      if(tokens.size() == 2) {
+        Index fg_op_index = boost::lexical_cast<Index>(tokens[1]);
+        super_lattice = sym::copy_apply(prim.factor_group()[fg_op_index], super_lattice);
+      }
+      else {
+        super_lattice = xtal::canonical::equivalent(super_lattice, prim.point_group());
+      }
+      return xtal::Superlattice {prim.lattice(), super_lattice};
+
+    }
+    catch(std::exception &e) {
+      std::string format = "$CANON_SCEL_NAME[.$PRIM_FG_OP]";
+      err_log().error("In make_superlattice_from_supercell_name");
+      err_log() << "expected format: " << format << "\n";
+      err_log() << "name: " << supercell_name << std::endl;
+      throw e;
+    }
+  }
+
+  /// Apply symmetry operation to Supercell
+  Supercell &apply(const SymOp &op, Supercell &supercell) {
+    return supercell = copy_apply(op, supercell);
+  }
+
+  /// Copy and apply symmetry operation to Supercell
+  Supercell copy_apply(const SymOp &op, const Supercell &supercell) {
+    Supercell result {supercell.shared_prim(), sym::copy_apply(op, supercell.lattice())};
+    /// Use while transitioning Supercell to no longer need a `PrimClex const *`
+    if(supercell.has_primclex()) {
+      result.set_primclex(&supercell.primclex());
+    }
+    return result;
+  }
+
+
+
+  // --- The following are deprecated ----
+
+  /// Get canonical supercell from name. If not yet in database, construct and insert. [deprecated]
   ///
   /// Note: does not commit the change in the database
   const Supercell &make_supercell(const PrimClex &primclex, std::string name) {
@@ -407,7 +536,7 @@ namespace CASM {
     return *(scel.insert().first);
   }
 
-  /// \brief Construct non-canonical supercell from name. Uses equivalent niggli lattice.
+  /// Construct non-canonical supercell from name. Uses equivalent niggli lattice. [deprecated]
   std::shared_ptr<Supercell> make_shared_supercell(const PrimClex &primclex, std::string name) {
 
     // tokenize name
@@ -435,14 +564,7 @@ namespace CASM {
     return std::make_shared<Supercell>(&primclex, niggli_lat);
   }
 
-  Supercell &apply(const SymOp &op, Supercell &scel) {
-    return scel = copy_apply(op, scel);
-  }
-
-  Supercell copy_apply(const SymOp &op, const Supercell &scel) {
-    return Supercell(&scel.primclex(), sym::copy_apply(op, scel.lattice()));
-  }
-
+  /// Make superlattice transformation matrix [deprecated]
   Eigen::Matrix3l transf_mat(const Lattice &prim_lat, const Lattice &super_lat, double tol) {
     auto res = xtal::is_superlattice(super_lat, prim_lat, tol);
     if(!res.first) {
@@ -459,6 +581,7 @@ namespace CASM {
     return lround(res.second);
   }
 
+  /// Make hermite normal form name [deprecated]
   std::string generate_name(const Eigen::Matrix3l &transf_mat) {
     std::string name_str;
 
@@ -474,6 +597,7 @@ namespace CASM {
     return name_str;
   }
 
+  /// Make supercell name name [deprecated]
   std::string scelname(const Structure &prim, const Lattice &superlat) {
     const SymGroup &pg = prim.point_group();
     Lattice canon_lat = xtal::canonical::equivalent(superlat, pg);
@@ -485,12 +609,15 @@ namespace CASM {
     return result;
   }
 
+  /// Make canonical supercell name name [deprecated]
   std::string canonical_scelname(const Structure &prim, const Lattice &superlat) {
     const SymGroup &pg = prim.point_group();
     return CASM::generate_name(transf_mat(prim.lattice(), xtal::canonical::equivalent(superlat, pg), prim.lattice().tol()));
   }
 
   namespace xtal {
+
+    /// Make IntegralCoordinateWithin_f for Supercell [deprecated]
     IntegralCoordinateWithin_f make_bring_within_f(const Supercell &scel) {
       IntegralCoordinateWithin_f bring_within_f(scel.transf_mat());
       return bring_within_f;

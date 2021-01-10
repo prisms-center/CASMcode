@@ -1,122 +1,75 @@
-#include <map>
-#include "casm/app/APICommand.hh"
-#include "casm/app/AppIO.hh"
-#include "casm/app/DirectoryStructure.hh"
 #include "casm/app/io/json_io.hh"
 #include "casm/app/sym/dof_space_analysis.hh"
-#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
 #include "casm/enumerator/DoFSpace_impl.hh"
+#include "casm/enumerator/io/dof_space_analysis.hh"
 #include "casm/enumerator/io/json/ConfigEnumInput_json_io.hh"
-#include "casm/enumerator/io/json/DoFSpace.hh"
-#include "casm/symmetry/SymRepTools.hh"
-#include "casm/symmetry/io/json/SymRepTools.hh"
-
-namespace dof_space_analysis_impl {
-
-  using namespace CASM;
-
-  jsonParser combine_dof_space_analysis_json_options(jsonParser const &json_options,
-                                                     jsonParser const &cli_options_as_json) {
-
-    std::map<std::string, std::string> cli_to_combined_keys {
-      {"scelnames", "scelnames"},         // --scelnames
-      {"confignames", "confignames"},     // --confignames
-      {"selection", "config_selection"},  // --selection
-      {"dofs", "dofs"},                   // --dofs
-      {"calc_wedge", "calc_wedge"}        // --calc-wedge
-    };
-
-    jsonParser json_combined {json_options};
-    return combine_json_options(cli_to_combined_keys,
-                                cli_options_as_json,
-                                json_combined);
-  }
-
-  template<typename PermuteIteratorIt>
-  void write_config_symmetry_files(ConfigEnumInput const &config,
-                                   PermuteIteratorIt group_begin,
-                                   PermuteIteratorIt group_end,
-                                   fs::path sym_dir) {
-
-    Lattice config_lattice = config.configuration().ideal_lattice();
-
-    SymGroup config_factor_group = make_sym_group(group_begin, group_end, config_lattice);
-
-    // Write lattice point group
-    {
-      SymGroup config_lattice_pg(SymGroup::lattice_point_group(config_lattice));
-      jsonParser json;
-      write_symgroup(config_lattice_pg, json);
-      fs::ofstream outfile {sym_dir / "lattice_point_group.json"};
-      json.print(outfile);
-    }
-
-    // Write factor group
-    {
-      jsonParser json;
-      write_symgroup(config_factor_group, json);
-      fs::ofstream outfile {sym_dir / "factor_group.json"};
-      json.print(outfile);
-    }
-
-    // Write crystal point group
-    {
-      SymGroup config_point_group = make_point_group(group_begin, group_end, config_lattice);
-      jsonParser json;
-      write_symgroup(config_point_group, json);
-      fs::ofstream outfile {sym_dir / "crystal_point_group.json"};
-      json.print(outfile);
-    }
-  }
-
-  /// For now, only support "confignames" and "config_selection" for reading ConfigEnumInput
-  ///
-  /// Later, could support other ConfigEnumInput JSON options (supercells, selecting sites, clusters,
-  /// etc.), but need to determine how to write / print the data
-  void require_database_configurations(ParentInputParser &parser) {
-    std::set<std::string> do_not_allow {
-      "scelnames",
-      "supercell_selection",
-      "supercells",
-      "sublats",
-      "sites",
-      "cluster_specs"};
-
-    for(auto key : do_not_allow) {
-      if(parser.self.contains(key)) {
-        std::stringstream msg;
-        msg << "Error in dof_space_analysis: \"" << key << "\" is not an allowed option.";
-        parser.error.insert(msg.str());
-      }
-    }
-  }
-
-  /// Parser "dofs" value for dof space analysis
-  ///
-  /// dofs: array of string (optional, default=all_dof_types)
-  ///     Entries must exist in "all_dof_types" else an error is inserted.
-  ///
-  void parse_dofs(ParentInputParser &parser,
-                  std::vector<DoFKey> &dofs,
-                  std::vector<DoFKey> const &all_dof_types) {
-    parser.optional_else(dofs, "dofs", all_dof_types);
-    for(DoFKey const &dof : dofs) {
-      if(std::find(all_dof_types.begin(), all_dof_types.end(), dof) == all_dof_types.end()) {
-        std::stringstream msg;
-        msg << "Error parsing \"dofs\": \"" << dof << "\" is invalid.";
-        parser.error.insert(msg.str());
-      }
-    }
-  }
-
-}
 
 namespace CASM {
+  namespace DoFSpaceIO {
+
+    jsonParser combine_dof_space_analysis_json_options(jsonParser const &json_options,
+                                                       jsonParser const &cli_options_as_json) {
+
+      std::map<std::string, std::string> cli_to_combined_keys {
+        {"scelnames", "scelnames"},         // --scelnames
+        {"confignames", "confignames"},     // --confignames
+        {"selection", "config_selection"},  // --selection
+        {"dofs", "dofs"},                   // --dofs
+        {"calc_wedge", "calc_wedge"}        // --calc-wedge
+      };
+
+      jsonParser json_combined {json_options};
+      return combine_json_options(cli_to_combined_keys,
+                                  cli_options_as_json,
+                                  json_combined);
+    }
+
+    /// For now, only support "confignames" and "config_selection" for reading ConfigEnumInput
+    ///
+    /// Later, could support other ConfigEnumInput JSON options (supercells, selecting sites, clusters,
+    /// etc.), but need to determine how to write / print the data
+    void require_database_configurations(ParentInputParser &parser) {
+      std::set<std::string> do_not_allow {
+        "scelnames",
+        "supercell_selection",
+        "supercells",
+        "sublats",
+        "sites",
+        "cluster_specs"};
+
+      for(auto key : do_not_allow) {
+        if(parser.self.contains(key)) {
+          std::stringstream msg;
+          msg << "Error in dof_space_analysis: \"" << key << "\" is not an allowed option.";
+          parser.error.insert(msg.str());
+        }
+      }
+    }
+
+    /// Parser "dofs" value for dof space analysis
+    ///
+    /// dofs: array of string (optional, default=all_dof_types)
+    ///     Entries must exist in "all_dof_types" else an error is inserted.
+    ///
+    void parse_dofs(ParentInputParser &parser,
+                    std::vector<DoFKey> &dofs,
+                    std::vector<DoFKey> const &all_dof_types) {
+      parser.optional_else(dofs, "dofs", all_dof_types);
+      for(DoFKey const &dof : dofs) {
+        if(std::find(all_dof_types.begin(), all_dof_types.end(), dof) == all_dof_types.end()) {
+          std::stringstream msg;
+          msg << "Error parsing \"dofs\": \"" << dof << "\" is invalid.";
+          parser.error.insert(msg.str());
+        }
+      }
+    }
+
+  } // end namespace DoFSpaceIO
 
   /// Describe DoF space analysis
   std::string dof_space_analysis_desc() {
@@ -136,7 +89,9 @@ namespace CASM {
       "      supercell lattice and the configuration DoF values invariant) is used   \n"
       "      for symmetry analysis.                                                  \n"
       "  - The analysis finds irreducible representations of the DoF vector space and\n"
-      "    optionally calculates the symmetrically unique wedges in that space.      \n\n"
+      "    optionally calculates the symmetrically unique wedges in that space.      \n\n";
+
+    std::string custom_options =
 
       "  JSON options (--input or --settings):                                       \n\n"
 
@@ -145,20 +100,46 @@ namespace CASM {
       "      for each input configuration. The default includes all DoF types in the    \n"
       "      prim.                                                                      \n\n"
 
-      "    confignames: Array of strings (optional, override with --confignames)        \n"
-      "      Names of configurations to be used as initial states for enumeration. All  \n"
-      "      specified sublattices or sites will be enumerated on and all other DoFs    \n"
-      "      will maintain the values of the initial state.                             \n"
-      "      Ex: \"confignames\" : [\"SCEL1_1_1_1_0_0_0/1\",\"SCEL2_2_1_1_0_0_0/3\"]    \n\n"
-
-      "    config_selection: string (optional, override with --selection)               \n"
-      "      Name of a selection of configurations to perform analysis on.              \n\n"
-
       "    calc_wedge: bool (optional, default=false, override with --calc-wedge)       \n"
       "      Perform calculation of irreducible wedge (may significantly slow down      \n"
-      "      analysis).                                                                 \n\n";
+      "      analysis).                                                                 \n\n"
 
-    return description;
+      "    write_symmetry: bool (optional, default=true)                                \n"
+      "      If true (default), write the lattice point group, factor group (operations \n"
+      "      leave the configuration and selected sites invariant), and crystal point   \n"
+      "      group (factor group operations excluding translations) of the initial state\n"
+      "      for analysis.                                                              \n\n"
+
+      "    write_structure: bool (optional, default=true)                               \n"
+      "      If true (default), write a \"structure.json\" file containing the structure\n"
+      "      generated from the configuration DoF.                                      \n\n"
+
+      "    output_type: string (optional, default=\"symmetry_directory\")               \n"
+      "      Selects how output files are written. Options are:                         \n\n"
+
+      "      \"symmetry_directory\": (default)                                          \n"
+      "        If selected, only accepts \"confignames\" and \"config_selection\"       \n"
+      "        to specify the initial state for analysis and the results are stored in  \n"
+      "        dedicated folders in the CASM project symmetry directory:                \n"
+      "            \"<project_path>/symmetry/analysis/<configname>\".                   \n\n"
+
+      "      \"sequential\":                                                            \n"
+      "        If selected, accept any input for specifying the initial state for       \n"
+      "        analysis, including \"scelnames\", \"supercell_selection\", \"supercells\"\n"
+      "        \"sublats\", \"sites\", and \"cluster_specs\", and the results are stored\n"
+      "        in indexed folders \"<output_dir>/dof_space_analysis/state.<index>\".  \n\n"
+
+      "      \"combined_json\":                                                         \n"
+      "        If selected, accept any input for specifying the initial state for       \n"
+      "        analysis, including \"scelnames\", \"supercell_selection\", \"supercells\",\n"
+      "        \"sublats\", \"sites\", and \"cluster_specs\", and the results are stored\n"
+      "        in a single JSON file \"<output_dir>/dof_space_analysis.json\" instead \n"
+      "        of being written separately.                                             \n\n"
+
+      "    output_dir: string (optional, default=current path)                          \n"
+      "      Selects where output files are written.                                    \n\n";
+
+    return description + custom_options + parse_ConfigEnumInput_desc();
   }
 
   /// Perform DoF space analysis
@@ -176,10 +157,9 @@ namespace CASM {
                           jsonParser const &json_options,
                           jsonParser const &cli_options_as_json) {
 
-    using namespace dof_space_analysis_impl;
+    using namespace DoFSpaceIO;
 
     Log &log = CASM::log();
-    DirectoryStructure const &dir = primclex.dir();
 
     log.subsection().begin<Log::debug>("dof_space_analysis");
     log.indent() << "json_options:\n" << json_options << std::endl << std::endl;
@@ -197,8 +177,32 @@ namespace CASM {
     ParentInputParser parser {json_combined};
     std::runtime_error error_if_invalid {"Error reading `casm sym --dof-space-analysis` input"};
 
-    // For now, only allow input that is configurations already existing in the database
-    require_database_configurations(parser);
+
+    // 1) parse options
+
+    DoFSpaceAnalysisOptions options;
+
+    // parse "dofs" (optional, default = all dof types)
+    parse_dofs(parser, options.dofs, all_dof_types(primclex.prim().structure()));
+
+    // parse "calc_wedge" (optional, default = false)
+    parser.optional_else(options.calc_wedge, "calc_wedge", false);
+
+    // parse "write_symmetry" (optional, default = true)
+    parser.optional_else(options.write_symmetry, "write_symmetry", true);
+
+    // parse "write_structure" (optional, default = true)
+    parser.optional_else(options.write_structure, "write_structure", true);
+
+    // parse "output_type"= "symmetry_directory" (default), "sequential", or "combined_json"
+    std::string output_type;
+    parser.optional_else(output_type, "output_type", std::string("symmetry_directory"));
+
+    // parse "output_dir" (optional, default = current_path)
+    fs::path output_dir;
+    parser.optional_else(output_dir, "output_dir", fs::current_path());
+
+    // 2) parse input states
 
     typedef std::vector<std::pair<std::string, ConfigEnumInput>> NamedConfigEnumInput;
     auto input_parser_ptr = parser.parse_as<NamedConfigEnumInput>(
@@ -206,65 +210,35 @@ namespace CASM {
                               &primclex,
                               primclex.db<Supercell>(),
                               primclex.db<Configuration>());
-
-    // parse "dofs" (optional, default = all dof types)
-    std::vector<DoFKey> dofs;
-    parse_dofs(parser, dofs, all_dof_types(primclex.prim().structure()));
-
-    // parse "calc_wedge" (optional, default = false)
-    bool calc_wedge;
-    parser.optional_else(calc_wedge, "calc_wedge", false);
-
     report_and_throw_if_invalid(parser, log, error_if_invalid);
-
-    // For each enumeration envrionment, for each DoF type specified, perform analysis and write files.
     auto const &named_inputs = *input_parser_ptr->value;
-    for(auto const &named_input : named_inputs) {
 
-      std::string name = named_input.first;
-      log.begin(name);
-      log.increase_indent();
 
-      ConfigEnumInput const &config_enum_input = named_input.second;
-      Configuration const &configuration = config_enum_input.configuration();
-      std::vector<PermuteIterator> group = make_invariant_subgroup(configuration);
+    // 3) Construct output method implementation and run dof space analysis
 
-      // These should not occur for now. They should be prevented by require_database_configurations.
-      // TODO: add support for other dof space analyses
-      if(configuration.id() == "none") {
-        throw std::runtime_error("Error in dof_space_analysis: configuration does not exist in database.");
-      }
-      if(name != configuration.name()) {
-        throw std::runtime_error("Error in dof_space_analysis: name error.");
-      }
-      if(config_enum_input.sites().size() != configuration.size()) {
-        throw std::runtime_error("Error in dof_space_analysis: incomplete site selection error.");
-      }
+    if(output_type == "combined_json") {
+      // write all output to one large JSON file: <output_dir>/dof_space_analysis.json
+      CombinedJsonOutput output {output_dir};
+      dof_space_analysis(named_inputs, options, output);
+    }
+    else if(output_type == "sequential") {
+      // write output sequentially indexed directories: <output_dir>/dof_space_analysis/state.<index>/
+      SequentialDirectoryOutput output {output_dir};
+      dof_space_analysis(named_inputs, options, output);
+    }
+    else if(output_type == "symmetry_directory") {
+      require_database_configurations(parser);
+      report_and_throw_if_invalid(parser, log, error_if_invalid);
 
-      fs::path sym_dir = dir.symmetry_dir(configuration.name());
-      fs::create_directories(sym_dir);
-
-      // for configuration, write lattice_point_group.json, factor_group.json, crystal_point_group.json
-      write_config_symmetry_files(config_enum_input, group.begin(), group.end(), sym_dir);
-
-      // write "dof_analysis_<dof>.json" for each specified DoF type
-      for(DoFKey const &dof : dofs) {
-        log << "Working on: " << name << " " << dof << std::endl;
-        DoFSpace dof_space {config_enum_input, dof};
-        auto report = vector_space_sym_report(dof_space, group.begin(), group.end(), calc_wedge);
-
-        jsonParser json;
-        to_json(report, json);
-        to_json(dof_space, json, name);
-
-        std::string filename = "dof_analysis_" + dof + ".json";
-        json.write(sym_dir / filename);
-        log << "Writing: " << (sym_dir / filename) << std::endl << std::endl;
-
-      }
-
-      log.decrease_indent();
-      log << std::endl;
+      // write output to CASM project symmetry directory: <project_path>/symmetry/analysis/<configname>/
+      SymmetryDirectoryOutput output {primclex.dir()};
+      dof_space_analysis(named_inputs, options, output);
+    }
+    else {
+      std::string msg = "Error: 'output_type' must be one of \"symmetry_directory\" (default), "
+                        "\"sequential\", or \"combined_json\"";
+      parser.insert_error("output_type", msg);
+      report_and_throw_if_invalid(parser, log, error_if_invalid);
     }
   }
 }
