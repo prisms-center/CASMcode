@@ -27,6 +27,7 @@ namespace CASM {
 
     namespace StrucMapping {
 
+      typedef std::vector<std::vector<Index>> PermuteOpVector;
       /// \brief Very large value used to denote invalid or impossible mapping
       inline double big_inf() {
         return 10E20;
@@ -65,7 +66,12 @@ namespace CASM {
       /// \brief Calculate the basis cost function of a MappingNode as the average of
       /// atomic_cost_child and atomic_cost_parent
       double atomic_cost(const MappingNode &mapped_config, Index Nsites);
-    } // namespace StrucMapping
+
+      /// \brief Calculate the symmetry preserving part of a MappingNode given the provided group as cartesian operations and permutation operations.
+      MappingNode symmetry_preserving_node(const MappingNode &basic_mapping_node,
+                                           SymOpVector &factor_group,
+                                           PermuteOpVector &permutation_group);
+    }
 
     /// \brief Class describing the lattice-mapping portion of a particular mapping
     /// A general map for child_struc onto parent_struc may require forming a
