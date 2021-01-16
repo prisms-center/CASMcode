@@ -64,20 +64,18 @@ double atomic_cost(const MappingNode &mapped_result, Index Nsites) {
 }
 
 //*******************************************************************************************
-double atomic_cost(const MappingNode &basic_mapping_node,
-                   SymOpVector &factor_group,
-                   PermuteOpVector &permutation_group, Index Nsites) {
+double atomic_cost(
+    const MappingNode &basic_mapping_node, SymOpVector &factor_group,
+    const std::vector<Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic,
+                                               Index>> &permutation_group,
+    Index Nsites) {
   const auto disp_matrix = basic_mapping_node.atom_displacement;
   Eigen::MatrixXd symmetry_preserving_displacement =
       Eigen::MatrixXd::Zero(disp_matrix.rows(), disp_matrix.cols());
   for (int i = 0; i < factor_group.size(); ++i) {
     auto transformed_disp = factor_group[i].matrix * disp_matrix;
-    Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic> permute_matrix;
-    Eigen::Map<Eigen::Matrix<Index, Eigen::Dynamic, 1>> index_matrix(
-        permutation_group[i].data(), permutation_group[i].size());
-    permute_matrix.indices() = index_matrix.cast<int>();
     Eigen::MatrixXd transformed_and_permuted_disp =
-        transformed_disp * permute_matrix;
+        transformed_disp * permutation_group[i];
     symmetry_preserving_displacement += transformed_and_permuted_disp;
   }
   symmetry_preserving_displacement =
@@ -85,37 +83,6 @@ double atomic_cost(const MappingNode &basic_mapping_node,
   auto new_report = basic_mapping_node;
   new_report.atom_displacement = symmetry_preserving_displacement;
   return atomic_cost(new_report, Nsites);
-};
-
-//*******************************************************************************************
-MappingNode symmetry_preserving_node(const MappingNode &basic_mapping_node,
-                                     SymOpVector &factor_group,
-                                     PermuteOpVector &permutation_group) {
-  const auto disp_matrix = basic_mapping_node.atom_displacement;
-  auto symmetry_preserving_displacement = disp_matrix;
-  auto symmetry_preserving_stretch = basic_mapping_node.lattice_node.stretch;
-  symmetry_preserving_displacement.setZero();
-  symmetry_preserving_stretch.setZero();
-  for (int i = 0; i < factor_group.size(); ++i) {
-    auto transformed_disp = factor_group[i].matrix * disp_matrix;
-    Eigen::MatrixXd transformed_and_permuted_disp = transformed_disp;
-    transformed_and_permuted_disp.setZero();
-    int ind = 0;
-    for (const auto &j : permutation_group[i]) {
-      transformed_and_permuted_disp.col(j) += transformed_disp.col(ind);
-      ind++;
-    }
-    symmetry_preserving_displacement +=
-        transformed_and_permuted_disp / factor_group.size();
-    Eigen::MatrixXd transformed_stretch =
-        factor_group[i].matrix.transpose() *
-        basic_mapping_node.lattice_node.stretch * factor_group[i].matrix;
-    symmetry_preserving_stretch += transformed_stretch / factor_group.size();
-  }
-  auto new_report = basic_mapping_node;
-  new_report.lattice_node.stretch = symmetry_preserving_stretch;
-  new_report.atom_displacement = symmetry_preserving_displacement;
-  return new_report;
 };
 
 } // namespace StrucMapping

@@ -62,15 +62,12 @@ double atomic_cost_parent(const MappingNode &mapped_result, Index Nsites);
 double atomic_cost(const MappingNode &mapped_config, Index Nsites);
 
 /// \brief Calculate the symmetry breaking atomic cost of a MappingNode
-double atomic_cost(const MappingNode &basic_mapping_node,
-                   SymOpVector &factor_group,
-                   PermuteOpVector &permutation_group, Index Nsites);
+double atomic_cost(
+    const MappingNode &basic_mapping_node, SymOpVector &factor_group,
+    const std::vector<Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic,
+                                               Index>> &permutation_group,
+    Index Nsites);
 
-/// \brief Calculate the symmetry preserving part of a MappingNode given the
-/// provided group as cartesian operations and permutation operations.
-MappingNode symmetry_preserving_node(const MappingNode &basic_mapping_node,
-                                     SymOpVector &factor_group,
-                                     PermuteOpVector &permutation_group);
 } // namespace StrucMapping
 
 /// \brief Class describing the lattice-mapping portion of a particular mapping
