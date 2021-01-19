@@ -81,7 +81,7 @@ double atomic_cost(
   symmetry_preserving_displacement =
       symmetry_preserving_displacement / factor_group.size();
   auto new_report = basic_mapping_node;
-  new_report.atom_displacement = symmetry_preserving_displacement;
+  new_report.atom_displacement = disp_matrix - symmetry_preserving_displacement;
   return atomic_cost_parent(new_report, Nsites);
 };
 
@@ -96,7 +96,6 @@ initial_atomic_maps(SimpleStructure child_struc, MappingNode const &seed,
                     StrucMapCalculatorInterface const &calculator,
                     double max_cost, bool const &symmetrize_atomic_cost,
                     OutputIterator it) {
-
   // derotate first
   child_struc.rotate_coords(seed.isometry());
 

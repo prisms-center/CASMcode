@@ -378,7 +378,6 @@ make_permutation_representation(const xtal::BasicStructure &struc,
     std::cout << "Factor group is empty." << std::endl;
     exit(1);
   }
-
   std::vector<xtal::UnitCellCoord> sitemap;
 
   Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic, Index> init_perm_mat;

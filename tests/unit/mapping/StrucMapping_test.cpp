@@ -8,6 +8,7 @@
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/StrucMapping.hh"
+#include "casm/crystallography/io/VaspIO.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "crystallography/TestStructures.hh"
 #include "gtest/gtest.h"
@@ -386,6 +387,98 @@ TEST(SymInvariantMappingTest, Hcp) {
   double max_map_cost = *(std::max_element(map_cost.begin(), map_cost.end()));
   double min_map_cost = *(std::min_element(map_cost.begin(), map_cost.end()));
   double MAP_TOL = 0.0001;
+  EXPECT_LE(std::abs(max_map_cost), MAP_TOL)
+      << "Expected the max mapping cost to be less than " << MAP_TOL
+      << ". The maximum mapping cost obtained was " << max_map_cost;
+  EXPECT_LE(std::abs(min_map_cost), MAP_TOL)
+      << "Expected the min mapping cost to be less than " << MAP_TOL
+      << ". The minimum mapping cost obtained was " << max_map_cost;
+}
+
+/// \brief Test to ensure that the symmetry invariant mapping costs are
+/// identically zero for all values of c/a in an hcp structure
+TEST(SymInvariantMappingTest, shuffle) {
+
+  // Setup the initial structure
+  std::string orthorhombic_string("");
+  orthorhombic_string += "title\n";
+  orthorhombic_string += "1.0\n";
+  orthorhombic_string += "0.000000000000 1.643000006700 -2.323552846900\n";
+  orthorhombic_string += "0.000000000000 1.643000006700  2.323552846900\n";
+  orthorhombic_string += "4.647105693800 0.000000000000  0.000000000000\n";
+  orthorhombic_string += "H\n";
+  orthorhombic_string += "2\n";
+  orthorhombic_string += "direct\n";
+  orthorhombic_string += "0.000000000000 0.000000000000 0.000000000000\n";
+  orthorhombic_string += "0.416666985000 0.583333015000 0.500000000000\n";
+
+  // Convert the structure to a SimpleStructure and a BasicStructure
+  std::stringstream ortho_string_stream;
+  ortho_string_stream << orthorhombic_string;
+  xtal::BasicStructure basic_struc =
+      xtal::BasicStructure::from_poscar_stream(ortho_string_stream);
+  xtal::SimpleStructure simple_struc = xtal::make_simple_structure(basic_struc);
+
+  // Initial testing values and ranges:
+  int num_points = 20;
+  double max_shuffle_amplitude(-1.0);
+  Eigen::Vector3d unit_shuffle =
+      simple_struc.lat_column_mat.col(1) - simple_struc.lat_column_mat.col(0);
+  unit_shuffle = unit_shuffle / unit_shuffle.norm();
+  Index shuffle_atom_idx = 1;
+  double shuffle_inc = max_shuffle_amplitude / num_points;
+  std::vector<double> map_cost;
+
+  // Get the factor group of the structure
+  auto parent_fg = xtal::make_factor_group(basic_struc, 0.0001);
+  EXPECT_EQ(parent_fg.size(), 8)
+      << "Expected the factor group size to be 8, instead " << parent_fg.size()
+      << " operations were found" << std::endl;
+
+  // Initialize the defaults for structure mapping
+  double lattice_weight(0.5), max_vol_change(2), cost_tol(0.00001),
+      min_va_frac(0.0), max_va_frac(0.0);
+  Index k_best = 1;
+  double max_cost(1e10), min_cost(-1);
+  bool use_child_sym = true;
+  int options(xtal::StrucMapper::robust);
+
+  // Initialize a symmetrized  strucmapper
+  xtal::StrucMapper sym_struc_map(
+      xtal::SimpleStrucMapCalculator(simple_struc, parent_fg,
+                                     xtal::SimpleStructure::SpeciesMode::ATOM,
+                                     allowed_molecule_names(basic_struc)),
+      lattice_weight, max_vol_change, options, cost_tol, min_va_frac,
+      max_va_frac);
+  sym_struc_map.set_symmetrize_atomic_cost(true);
+
+  auto child_fg = xtal::make_factor_group(basic_struc);
+
+  // Loop through all shuffles and calculate the mapping cost
+  for (double shuffle = 0.0; shuffle >= max_shuffle_amplitude;) {
+    // Strain the structure and prepare it for the mapping routines
+    xtal::SimpleStructure shuffled_struc =
+        xtal::make_simple_structure(basic_struc);
+    shuffled_struc.atom_info.cart_coord(shuffle_atom_idx) =
+        shuffled_struc.atom_info.cart_coord(shuffle_atom_idx) +
+        shuffle * unit_shuffle;
+
+    // Calculate the symmetric map cost
+    auto sym_tresult = sym_struc_map.map_deformed_struc(
+        shuffled_struc, k_best, max_cost, min_cost, false,
+        use_child_sym ? child_fg : decltype(child_fg){child_fg[0]});
+
+    for (auto result_itr = sym_tresult.begin(); result_itr != sym_tresult.end();
+         ++result_itr) {
+      map_cost.push_back(result_itr->atomic_node.cost);
+    }
+    shuffle += shuffle_inc;
+  }
+
+  // Ensure that the range of maps are within a numerical tolerance
+  double max_map_cost = *(std::max_element(map_cost.begin(), map_cost.end()));
+  double min_map_cost = *(std::min_element(map_cost.begin(), map_cost.end()));
+  double MAP_TOL = 0.00001;
   EXPECT_LE(std::abs(max_map_cost), MAP_TOL)
       << "Expected the max mapping cost to be less than " << MAP_TOL
       << ". The maximum mapping cost obtained was " << max_map_cost;

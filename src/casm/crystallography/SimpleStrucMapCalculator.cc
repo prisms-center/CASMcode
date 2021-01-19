@@ -9,6 +9,7 @@
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/StrucMapping.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/crystallography/io/VaspIO.hh"
 #include "casm/misc/algorithm.hh"
 
 namespace CASM {
@@ -230,9 +231,11 @@ SimpleStructure SimpleStrucMapCalculator::resolve_setting(
 void SimpleStrucMapCalculator::finalize(
     MappingNode &node, SimpleStructure const &_child_struc,
     bool const &symmetrize_atomic_cost) const {
-
+  // std::cout << " In SimpleStrucMapCalculator::finalize" << std::endl;
+  // std::cout << " symmetrize_atomic_cost : " << symmetrize_atomic_cost
+  //           << std::endl;
   populate_displacement(node, _child_struc);
-
+  node.is_valid = this->_assign_molecules(node, _child_struc);
   if (!symmetrize_atomic_cost)
     node.atomic_node.cost =
         StrucMapping::atomic_cost(node, this->struc_info(_child_struc).size());
@@ -245,20 +248,23 @@ void SimpleStrucMapCalculator::finalize(
     for (Index idx = 0; idx < node.mol_labels.size(); ++idx)
       _names[idx] = node.mol_labels[idx].first;
     super_pstruc.atom_info.names = _names;
+    // std::cout << " constructed simple structure : " << std::endl;
+    // VaspIO::PrintPOSCAR printer(super_pstruc);
+    // printer.print(std::cout);
     xtal::BasicStructure decorated_pstruc =
         xtal::make_basic_structure(super_pstruc, std::vector<DoFKey>({}),
                                    SimpleStructureTools::SpeciesMode::ATOM);
     auto factor_group = xtal::make_factor_group(decorated_pstruc);
+
     auto permute_group =
         xtal::make_permutation_representation(decorated_pstruc, factor_group);
+
     node.atomic_node.cost =
         StrucMapping::atomic_cost(node, factor_group, permute_group,
                                   this->struc_info(_child_struc).size());
   }
   node.cost = node.atomic_weight * node.atomic_node.cost +
               node.lattice_weight * node.lattice_node.cost;
-
-  node.is_valid = this->_assign_molecules(node, _child_struc);
 
   return;
 }

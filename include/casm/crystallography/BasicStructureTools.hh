@@ -4,8 +4,8 @@
 #include "casm/external/Eigen/Core"
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
-#include "submodules/eigen/Eigen/src/Core/PermutationMatrix.h"
-#include "submodules/eigen/Eigen/src/Core/util/Constants.h"
+// #include "submodules/eigen/Eigen/src/Core/PermutationMatrix.h"
+// #include "submodules/eigen/Eigen/src/Core/util/Constants.h"
 #include <vector>
 
 namespace CASM {
