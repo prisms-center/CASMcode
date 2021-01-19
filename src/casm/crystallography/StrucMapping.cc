@@ -82,7 +82,7 @@ double atomic_cost(
       symmetry_preserving_displacement / factor_group.size();
   auto new_report = basic_mapping_node;
   new_report.atom_displacement = symmetry_preserving_displacement;
-  return atomic_cost(new_report, Nsites);
+  return atomic_cost_parent(new_report, Nsites);
 };
 
 } // namespace StrucMapping
@@ -91,10 +91,11 @@ double atomic_cost(
 namespace Local {
 // Local helper function for StrucMapper::k_best_maps_better_than
 template <typename OutputIterator>
-static bool initial_atomic_maps(SimpleStructure child_struc,
-                                MappingNode const &seed,
-                                StrucMapCalculatorInterface const &calculator,
-                                double max_cost, OutputIterator it) {
+static bool
+initial_atomic_maps(SimpleStructure child_struc, MappingNode const &seed,
+                    StrucMapCalculatorInterface const &calculator,
+                    double max_cost, bool const &symmetrize_atomic_cost,
+                    OutputIterator it) {
 
   // derotate first
   child_struc.rotate_coords(seed.isometry());
@@ -128,7 +129,7 @@ static bool initial_atomic_maps(SimpleStructure child_struc,
       return false;
     }
     // Now we are filling up displacements
-    calculator.finalize(node, child_struc);
+    calculator.finalize(node, child_struc, symmetrize_atomic_cost);
 
     if (node.cost < max_cost) {
       *it = node;
@@ -142,7 +143,9 @@ static bool initial_atomic_maps(SimpleStructure child_struc,
 template <typename OutputIterator>
 static void partition_node(MappingNode const &_node,
                            StrucMapCalculatorInterface const &_calculator,
-                           SimpleStructure child_struc, OutputIterator it) {
+                           SimpleStructure child_struc,
+                           bool const &symmetrize_atomic_cost,
+                           OutputIterator it) {
   // derotate first
   child_struc.rotate_coords(_node.isometry());
 
@@ -233,7 +236,7 @@ static void partition_node(MappingNode const &_node,
     p1->calc();
     if (p1->is_viable) {
       // even if p1 is unviable, p2 may still be viable, so we continue
-      _calculator.finalize(*p1, child_struc);
+      _calculator.finalize(*p1, child_struc, symmetrize_atomic_cost);
       it = *p1;
     }
     std::swap(p1, p2);
@@ -412,7 +415,7 @@ StrucMapper::StrucMapper(
     : m_calc_ptr(calculator.clone()), m_max_volume_change(_max_volume_change),
       m_options(_options), m_cost_tol(max(1e-10, _cost_tol)), m_xtal_tol(TOL),
       m_lattice_transformation_range(1), m_filtered(false),
-      m_symmetrize_lattice_cost(false) {
+      m_symmetrize_lattice_cost(false), m_symmetrize_atomic_cost(false) {
 
   set_min_va_frac(_min_va_frac);
   set_max_va_frac(_max_va_frac);
@@ -796,7 +799,7 @@ Index StrucMapper::k_best_maps_better_than(
           //         node, so will
           //          appear later in the queue)
           if (!Local::initial_atomic_maps(child_struc, *current, calculator(),
-                                          max_cost,
+                                          max_cost, symmetrize_atomic_cost(),
                                           std::inserter(queue, current))) {
             // If no basis maps are viable, it indicates volume mismatch; add to
             // vol_mismatch
@@ -829,6 +832,7 @@ Index StrucMapper::k_best_maps_better_than(
           if (nfound < k || current->cost <= min_cost) {
             if (!(no_partition || current->is_partitioned)) {
               Local::partition_node(*current, calculator(), child_struc,
+                                    symmetrize_atomic_cost(),
                                     std::inserter(queue, current));
             }
 

@@ -503,7 +503,16 @@ public:
     m_symmetrize_lattice_cost = _sym_lat_cost;
   }
 
+  /// \brief Flag that enables the calculation of a symmetrized atomic cost
+  /// when performing the atomic maps. This cost only accounts for that part of
+  /// the displacement field that breaks the symmetry of the parent crystal
+  /// structure
+  void set_symmetrize_atomic_cost(bool _sym_atomic_cost) {
+    m_symmetrize_atomic_cost = _sym_atomic_cost;
+  }
+
   bool symmetrize_lattice_cost() const { return m_symmetrize_lattice_cost; }
+  bool symmetrize_atomic_cost() const { return m_symmetrize_atomic_cost; }
 
   /// \brief Returns the minimum fraction of sites allowed to be vacant in the
   /// mapping relation Vacancy fraction is used to constrain the mapping
@@ -773,6 +782,7 @@ private:
   Index m_lattice_transformation_range;
 
   bool m_symmetrize_lattice_cost;
+  bool m_symmetrize_atomic_cost;
 
   bool m_filtered;
   std::function<bool(Lattice const &, Lattice const &)> m_filter_f;

@@ -41,7 +41,7 @@ std::vector<SymOp> make_factor_group(const BasicStructure &struc,
 /// under the application of a symmetry operation.
 std::vector<Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic, Index>>
 make_permutation_representation(const xtal::BasicStructure &struc,
-                                const std::vector<SymOp> factor_group);
+                                const std::vector<SymOp> &factor_group);
 
 // TODO: Rename to symmetrize_basis and have it take vector<Site> and Lattice?
 // seems like a symmetrize routine that takes a structure should also symmetrize
