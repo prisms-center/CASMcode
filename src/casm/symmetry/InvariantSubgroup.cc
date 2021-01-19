@@ -1,6 +1,6 @@
 /*
-#include "casm/symmetry/InvariantSubgroup_impl.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/symmetry/InvariantSubgroup_impl.hh"
 
 namespace CASM {
   template std::vector<PermuteIterator>

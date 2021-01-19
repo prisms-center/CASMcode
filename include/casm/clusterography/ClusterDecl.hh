@@ -2,7 +2,7 @@
 #define CASM_ClusterDecl
 
 namespace CASM {
-  // TODO: remove file
+// TODO: remove file
 }
 
 #endif

@@ -6,7 +6,7 @@
 
 namespace CASM {
 
-  ENUM_IO_DECL(PARAM_PACK_TYPE)
+ENUM_IO_DECL(PARAM_PACK_TYPE)
 
 }
 

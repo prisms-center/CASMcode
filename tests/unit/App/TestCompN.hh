@@ -4,50 +4,41 @@
 #include "casm/clex/ConfigIO.hh"
 
 extern "C" {
-  CASM::BaseDatumFormatter<CASM::Configuration> *make_TestCompN_formatter();
+CASM::BaseDatumFormatter<CASM::Configuration> *make_TestCompN_formatter();
 }
 
 namespace CASM {
 
-  namespace ConfigIO {
+namespace ConfigIO {
 
-    /// \brief Calculate number of each species per unit cell
-    ///
-    /// \ingroup ConfigIO
-    class TestCompN : public ConfigIO_impl::MolDependent {
+/// \brief Calculate number of each species per unit cell
+///
+/// \ingroup ConfigIO
+class TestCompN : public ConfigIO_impl::MolDependent {
+ public:
+  static const std::string Name;
 
-    public:
+  static const std::string Desc;
 
-      static const std::string Name;
+  TestCompN() : MolDependent(Name, Desc) {}
 
-      static const std::string Desc;
+  // --- Required implementations -----------
 
+  /// \brief Returns the parametric composition
+  Eigen::VectorXd evaluate(const Configuration &config) const override;
 
-      TestCompN() :
-        MolDependent(Name, Desc) {}
-
-
-      // --- Required implementations -----------
-
-      /// \brief Returns the parametric composition
-      Eigen::VectorXd evaluate(const Configuration &config) const override;
-
-      /// \brief Clone using copy constructor
-      std::unique_ptr<TestCompN> clone() const {
-        return std::unique_ptr<TestCompN>(this->_clone());
-      }
-
-    private:
-
-      /// \brief Clone using copy constructor
-      TestCompN *_clone() const override {
-        return new TestCompN(*this);
-      }
-
-    };
-
+  /// \brief Clone using copy constructor
+  std::unique_ptr<TestCompN> clone() const {
+    return std::unique_ptr<TestCompN>(this->_clone());
   }
 
-}
+ private:
+  /// \brief Clone using copy constructor
+  TestCompN *_clone() const override { return new TestCompN(*this); }
+};
+
+}  // namespace ConfigIO
+
+}  // namespace CASM
 
 #endif

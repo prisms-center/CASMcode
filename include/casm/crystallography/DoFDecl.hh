@@ -4,7 +4,7 @@
 #include <string>
 
 namespace CASM {
-  typedef std::string DoFKey;
+typedef std::string DoFKey;
 }
 
 #endif

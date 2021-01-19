@@ -1,68 +1,64 @@
-#include "casm/clex/PrimClex_impl.hh"
+#include <memory>
 
+#include "casm/app/AppIO.hh"
+#include "casm/app/ClexDescription.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/app/EnumeratorHandler_impl.hh"
+#include "casm/app/ProjectSettings.hh"
+#include "casm/app/QueryHandler_impl.hh"
 #include "casm/casm_io/SafeOfstream.hh"
-#include "casm/crystallography/Coordinate.hh"
-#include "casm/crystallography/Structure.hh"
-#include "casm/clex/CompositionConverter.hh"
-#include "casm/clex/Clexulator.hh"
 #include "casm/clex/ChemicalReference.hh"
+#include "casm/clex/ClexBasis.hh"
+#include "casm/clex/Clexulator.hh"
+#include "casm/clex/CompositionConverter.hh"
+#include "casm/clex/ECIContainer.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/clex/NeighborListHandler.hh"
-#include "casm/clex/ClexBasis.hh"
-#include "casm/clex/ECIContainer.hh"
+#include "casm/clex/PrimClex_impl.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/Structure.hh"
 #include "casm/database/DatabaseHandler_impl.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
 
-#include "casm/app/AppIO.hh"
-#include "casm/app/DirectoryStructure.hh"
-#include "casm/app/ClexDescription.hh"
-#include "casm/app/ProjectSettings.hh"
-#include "casm/app/EnumeratorHandler_impl.hh"
-#include "casm/app/QueryHandler_impl.hh"
-#include <memory>
-
 namespace CASM {
 
-  namespace {
-    void _throw_if_no_dir(const std::string &funcname, const PrimClex &primclex) {
-      if(!primclex.has_dir()) {
-        throw std::runtime_error("Error in " + funcname + ": No root directory set for project.");
-      }
-    }
+namespace {
+void _throw_if_no_dir(const std::string &funcname, const PrimClex &primclex) {
+  if (!primclex.has_dir()) {
+    throw std::runtime_error("Error in " + funcname +
+                             ": No root directory set for project.");
   }
+}
+}  // namespace
 
-  BasicStructure read_prim(ProjectSettings const &project_settings) {
-    return read_prim(
-             project_settings.dir().prim(),
-             project_settings.crystallography_tol(),
-             &project_settings.hamiltonian_modules());
+BasicStructure read_prim(ProjectSettings const &project_settings) {
+  return read_prim(project_settings.dir().prim(),
+                   project_settings.crystallography_tol(),
+                   &project_settings.hamiltonian_modules());
+}
+
+std::shared_ptr<Structure const> read_shared_prim(
+    ProjectSettings const &project_settings) {
+  return std::make_shared<Structure const>(read_prim(project_settings));
+}
+
+struct PrimClex::PrimClexData {
+  typedef PrimClex::PrimType PrimType;
+
+  PrimClexData(ProjectSettings const &_project_settings,
+               std::shared_ptr<const PrimType> _shared_prim)
+      : settings(_project_settings), shared_prim(_shared_prim) {
+    // Guarantee presence of symmetry info;
+    shared_prim->factor_group();
   }
-
-  std::shared_ptr<Structure const> read_shared_prim(ProjectSettings const &project_settings) {
-    return std::make_shared<Structure const>(read_prim(project_settings));
-  }
-
-
-  struct PrimClex::PrimClexData {
-
-    typedef PrimClex::PrimType PrimType;
-
-    PrimClexData(
-      ProjectSettings const &_project_settings,
-      std::shared_ptr<const PrimType> _shared_prim) :
-      settings(_project_settings),
-      shared_prim(_shared_prim) {
-      //Guarantee presence of symmetry info;
-      shared_prim->factor_group();
-    }
 
     PrimClexData(const fs::path &_root) :
       PrimClexData(
         settings(open_project_settings(_root)),
         shared_prim(read_shared_prim(settings)) {
-      //Guarantee presence of symmetry info;
-      shared_prim->factor_group();
+    // Guarantee presence of symmetry info;
+    shared_prim->factor_group();
     }
 
     ~PrimClexData() {}
@@ -118,253 +114,238 @@ namespace CASM {
     /// which data was fit (which property was fit, which calculation method as used, which
     /// reference was used, which configurations included, etc.) and which fitting method used.
     std::map<ClexDescription, ECIContainer> eci;
+};
 
-  };
+//  **** Constructors ****
 
-  //  **** Constructors ****
+/// Initial construction of a PrimClex, from a primitive Structure
+PrimClex::PrimClex(ProjectSettings const &_project_settings,
+                   std::shared_ptr<const PrimType> _shared_prim,
+                   const Logging &logging)
+    : Logging(logging),
+      m_data(new PrimClexData(_project_settings, _shared_prim)) {
+  _init();
 
-  /// Initial construction of a PrimClex, from a primitive Structure
-  PrimClex::PrimClex(
-    ProjectSettings const &_project_settings,
-    std::shared_ptr<const PrimType> _shared_prim,
-    const Logging &logging) :
-    Logging(logging),
-    m_data(new PrimClexData(_project_settings, _shared_prim)) {
+  return;
+}
 
-    _init();
+/// Construct PrimClex from existing CASM project directory
+///  - read PrimClex and directory structure to generate all its Supercells and
+///  Configurations, etc.
+PrimClex::PrimClex(const fs::path &_root, const Logging &logging)
+    : Logging(logging), m_data(new PrimClexData(_root)) {
+  _init();
+}
 
+/// Necessary for "pointer to implementation"
+PrimClex::~PrimClex() {}
+
+// ** Prim structure **
+
+/// const Access to primitive Structure
+const PrimClex::PrimType &PrimClex::prim() const { return *shared_prim(); }
+
+std::shared_ptr<const PrimClex::PrimType> &PrimClex::shared_prim() const {
+  return this->m_data->shared_prim;
+}
+
+/// Read prim from file (must exist)
+void PrimClex::refresh_prim() const {
+  m_data->shared_prim = read_shared_prim(settings());
+}
+
+// ** Project settings **
+
+const ProjectSettings &PrimClex::settings() const { return m_data->settings; }
+
+void PrimClex::refresh_settings() const {
+  if (!has_dir()) {
+    throw std::runtime_error(
+        "Error in PrimClex::refresh_settings: Cannot refresh, no root dir.");
+  }
+  try {
+    m_data->settings = open_project_settings(dir().root_dir());
+  } catch (std::exception &e) {
+    err_log().error("reading project_settings.json");
+    err_log() << "file: " << dir().project_settings() << "\n" << std::endl;
+  }
+}
+
+bool PrimClex::has_dir() const { return settings().has_dir(); }
+
+const DirectoryStructure &PrimClex::dir() const { return settings().dir(); }
+
+// ** Composition accessors **
+
+/// const Access CompositionConverter object
+bool PrimClex::has_composition_axes() const {
+  return bool{m_data->composition_converter};
+}
+
+/// const Access CompositionConverter object
+const CompositionConverter &PrimClex::composition_axes() const {
+  return m_data->composition_converter;
+}
+
+/// Read current CompositionConverter object from file (if exists)
+void PrimClex::refresh_composition_axes() const {
+  m_data->composition_converter.reset();
+  if (!has_dir()) {
     return;
   }
-
-  /// Construct PrimClex from existing CASM project directory
-  ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
-  PrimClex::PrimClex(const fs::path &_root, const Logging &logging):
-    Logging(logging),
-    m_data(new PrimClexData(_root)) {
-
-    _init();
-
-  }
-
-  /// Necessary for "pointer to implementation"
-  PrimClex::~PrimClex() {}
-
-
-  // ** Prim structure **
-
-  /// const Access to primitive Structure
-  const PrimClex::PrimType &PrimClex::prim() const {
-    return *shared_prim();
-  }
-
-  std::shared_ptr<const PrimClex::PrimType> &PrimClex::shared_prim() const {
-    return this->m_data->shared_prim;
-  }
-
-  /// Read prim from file (must exist)
-  void PrimClex::refresh_prim() const {
-    m_data->shared_prim = read_shared_prim(settings());
-  }
-
-
-  // ** Project settings **
-
-  const ProjectSettings &PrimClex::settings() const {
-    return m_data->settings;
-  }
-
-  void PrimClex::refresh_settings() const {
-    if(!has_dir()) {
-      throw std::runtime_error("Error in PrimClex::refresh_settings: Cannot refresh, no root dir.");
-    }
-    try {
-      m_data->settings = open_project_settings(dir().root_dir());
-    }
-    catch(std::exception &e) {
-      err_log().error("reading project_settings.json");
-      err_log() << "file: " << dir().project_settings() << "\n" << std::endl;
+  if (project_composition_axes_exist(dir)) {
+    auto axes = read_project_composition_axes(dir);
+    if (axes.has_current_axes()) {
+      m_data->composition_converter = notstd::clone(axes.current_axes());
     }
   }
+}
 
-  bool PrimClex::has_dir() const {
-    return settings().has_dir();
+/// Read current CompositionConverter object from file (if exists)
+void PrimClex::refresh_composition_axes() const {
+  m_data->composition_converter.reset();
+  if (!has_dir()) {
+    return;
   }
+  try {
+    fs::path composition_axes_path = dir().composition_axes();
+    if (fs::is_regular_file(composition_axes_path)) {
+      ProjectCompositionAxes opt =
+          read_project_composition_axes(composition_axes_path);
 
-  const DirectoryStructure &PrimClex::dir() const {
-    return settings().dir();
-  }
-
-
-  // ** Composition accessors **
-
-  /// const Access CompositionConverter object
-  bool PrimClex::has_composition_axes() const {
-    return bool {m_data->composition_converter};
-  }
-
-  /// const Access CompositionConverter object
-  const CompositionConverter &PrimClex::composition_axes() const {
-    return m_data->composition_converter;
-  }
-
-  /// Read current CompositionConverter object from file (if exists)
-  void PrimClex::refresh_composition_axes() const {
-    m_data->composition_converter.reset();
-    if(!has_dir()) {
-      return;
-    }
-    if(project_composition_axes_exist(dir)) {
-      auto axes = read_project_composition_axes(dir);
-      if(axes.has_current_axes()) {
-        m_data->composition_converter = notstd::clone(axes.current_axes());
+      if (opt.has_current_axes()) {
+        m_data->composition_converter = notstd::clone(opt.curr);
       }
     }
+  } catch (std::exception &e) {
+    err_log().error("reading composition_axes.json");
+    err_log() << "file: " << composition_axes_path << "\n" << std::endl;
+    throw e;
   }
+}
 
+// ** Chemical reference **
 
-  /// Read current CompositionConverter object from file (if exists)
-  void PrimClex::refresh_composition_axes() const {
-    m_data->composition_converter.reset();
-    if(!has_dir()) {
-      return;
-    }
-    try {
-      fs::path composition_axes_path = dir().composition_axes();
-      if(fs::is_regular_file(composition_axes_path)) {
-        ProjectCompositionAxes opt = read_project_composition_axes(composition_axes_path);
+/// check if ChemicalReference object initialized
+bool PrimClex::has_chemical_reference() const {
+  return bool{m_data->chemical_reference};
+}
 
-        if(opt.has_current_axes()) {
-          m_data->composition_converter = notstd::clone(opt.curr);
-        }
-      }
-    }
-    catch(std::exception &e) {
-      err_log().error("reading composition_axes.json");
-      err_log() << "file: " << composition_axes_path << "\n" << std::endl;
-      throw e;
-    }
+/// const Access ChemicalReference object
+const ChemicalReference &PrimClex::chemical_reference() const {
+  return *m_data->chemical_reference;
+}
+
+/// Read ChemicalReference object from file (if exists, else delete it)
+void refresh_chemical_reference() const {
+  m_data->chemical_reference.reset();
+  if (!has_dir()) {
+    return;
   }
-
-
-  // ** Chemical reference **
-
-  /// check if ChemicalReference object initialized
-  bool PrimClex::has_chemical_reference() const {
-    return bool {m_data->chemical_reference};
-  }
-
-  /// const Access ChemicalReference object
-  const ChemicalReference &PrimClex::chemical_reference() const {
-    return *m_data->chemical_reference;
-  }
-
-  /// Read ChemicalReference object from file (if exists, else delete it)
-  void refresh_chemical_reference() const {
-    m_data->chemical_reference.reset();
-    if(!has_dir()) {
-      return;
+  try {
+    auto calctype = m_data->settings.default_clex().calctype;
+    auto ref = m_data->settings.default_clex().ref;
+    auto chem_ref_path = dir().chemical_reference(calctype, ref);
+    if (fs::is_regular_file(chem_ref_path)) {
+      m_data->chemical_reference = notstd::clone(read_chemical_reference(
+          chem_ref_path, prim(), settings().lin_alg_tol()));
     }
-    try {
-      auto calctype = m_data->settings.default_clex().calctype;
-      auto ref = m_data->settings.default_clex().ref;
-      auto chem_ref_path = dir().chemical_reference(calctype, ref);
-      if(fs::is_regular_file(chem_ref_path)) {
-        m_data->chemical_reference = notstd::clone(
-                                       read_chemical_reference(chem_ref_path, prim(), settings().lin_alg_tol()));
-      }
-    }
-    catch(std::exception &e) {
-      err_log().error("reading chemical_reference.json");
-      err_log() << "file: " << chem_ref_path << "\n" << std::endl;
-    }
+  } catch (std::exception &e) {
+    err_log().error("reading chemical_reference.json");
+    err_log() << "file: " << chem_ref_path << "\n" << std::endl;
   }
+}
 
+// ** Enumeration and calculated property databases ** ------------------
 
-  // ** Enumeration and calculated property databases ** ------------------
+DB::DatabaseHandler &PrimClex::has_database_handler() const {
+  return bool{m_data->database_handler};
+}
 
-  DB::DatabaseHandler &PrimClex::has_database_handler() const {
-    return bool {m_data->database_handler};
+template <typename T>
+DB::Database<T> &PrimClex::database() const {
+  return m_data->database_handler->template db<T>();
+}
+
+template <typename T>
+DB::PropertiesDatabase &PrimClex::properties_database(
+    std::string calc_type) const {
+  return m_data->database_handler->template db_props<T>(calc_type);
+}
+
+DB::DatabaseHandler &PrimClex::database_handler() const {
+  return m_data->database_handler;
+}
+
+void PrimClex::refresh_database_handler() const {
+  if (m_data->database_handler) {
+    m_data->database_handler->close();
+    m_data->database_handler.reset();
   }
-
-  template<typename T>
-  DB::Database<T> &PrimClex::database() const {
-    return m_data->database_handler->template db<T>();
+  if (!has_dir()) {
+    return;
   }
-
-  template<typename T>
-  DB::PropertiesDatabase &PrimClex::properties_database(std::string calc_type) const {
-    return m_data->database_handler->template db_props<T>(calc_type);
+  try {
+    // TODO: DatabaseHandler constructor must change
+    m_data->database_handler = notstd::make_unique<DB::DatabaseHandler>(*this);
+  } catch (std::exception &e) {
+    err_log().error("reading databases");
+    err_log() << "default database name: " << settings().default_database_name()
+              << "\n"
+              << std::endl;
+    throw e;
   }
+}
 
-  DB::DatabaseHandler &PrimClex::database_handler() const {
-    return m_data->database_handler;
-  }
+// ** Basis set specs, neighbor lists, Clexulators ** ------------------
 
-  void PrimClex::refresh_database_handler() const {
-    if(m_data->database_handler) {
-      m_data->database_handler->close();
-      m_data->database_handler.reset();
-    }
-    if(!has_dir()) {
-      return;
-    }
-    try {
-      // TODO: DatabaseHandler constructor must change
-      m_data->database_handler = notstd::make_unique<DB::DatabaseHandler>(*this);
-    }
-    catch(std::exception &e) {
-      err_log().error("reading databases");
-      err_log() << "default database name: " << settings().default_database_name() << "\n" << std::endl;
-      throw e;
+bool PrimClex::has_basis_set_specs(std::string const &basis_set_name) const {
+  auto it = m_data->basis_set_specs.find(key);
+  if (it == m_data->basis_set_specs.end()) {
+    if (!fs::exists(dir().bspecs(basis_set_name))) {
+      return false;
     }
   }
+  return true;
+}
 
-
-  // ** Basis set specs, neighbor lists, Clexulators ** ------------------
-
-  bool PrimClex::has_basis_set_specs(std::string const &basis_set_name) const {
-    auto it = m_data->basis_set_specs.find(key);
-    if(it == m_data->basis_set_specs.end()) {
-      if(!fs::exists(dir().bspecs(basis_set_name))) {
-        return false;
-      }
+jsonParser const &PrimClex::basis_set_specs(
+    std::string const &basis_set_name) const {
+  auto it = m_data->basis_set_specs.find(key);
+  if (it == m_data->basis_set_specs.end()) {
+    if (!fs::exists(dir().bspecs(basis_set_name))) {
+      return false;
     }
-    return true;
   }
+  return it->second;
+}
 
-  jsonParser const &PrimClex::basis_set_specs(std::string const &basis_set_name) const {
-    auto it = m_data->basis_set_specs.find(key);
-    if(it == m_data->basis_set_specs.end()) {
-      if(!fs::exists(dir().bspecs(basis_set_name))) {
-        return false;
-      }
-    }
-    return it->second;
-  }
-
-  bool PrimClex::has_neighbor_list_handler() const {
+bool PrimClex::has_neighbor_list_handler() const {
     return (bool {m_data->neighbor_list_handler} ||
             (settings().has_nlist_weight_matrix() && settings().has_nlist_sublat_indices());
-  }
+}
 
-  NeighborListHandler &PrimClex::neighbor_list_handler() const {
-    if(!m_data->neighbor_list_handler) {
-      if(!settings().has_nlist_weight_matrix() || !settings().has_nlist_sublat_indices())) {
-        throw std::runtime_error("Error in PrimClex::neighbor_list_handler(): Missing neighbor list "
-                                 "parameters from project settings.");
+NeighborListHandler &PrimClex::neighbor_list_handler() const {
+  if (!m_data->neighbor_list_handler) {
+    if (!settings().has_nlist_weight_matrix() ||
+        !settings().has_nlist_sublat_indices())) {
+        throw std::runtime_error(
+            "Error in PrimClex::neighbor_list_handler(): Missing neighbor list "
+            "parameters from project settings.");
       }
       m_data->neighbor_list_handler = notstd::make_unique<NeighborListHandler>(
                                         settings().nlist_weight_matrix(),
                                         settings().nlist_sublat_indices()
-    }
   }
-  return m_data->neighbor_list_handler;
 }
+return m_data->neighbor_list_handler;
+}  // namespace CASM
 
 bool PrimClex::has_clexulator(std::string const &basis_set_name) const {
   auto it = m_data->clexulator.find(key);
-  if(it == m_data->clexulator.end()) {
-    if(!fs::exists(dir().clexulator_src(settings().project_name(), key.bset))) {
+  if (it == m_data->clexulator.end()) {
+    if (!fs::exists(
+            dir().clexulator_src(settings().project_name(), key.bset))) {
       return false;
     }
   }
@@ -372,20 +353,20 @@ bool PrimClex::has_clexulator(std::string const &basis_set_name) const {
 }
 
 Clexulator PrimClex::clexulator(std::string const &basis_set_name) const {
-
   auto it = m_data->clexulator.find(basis_set_name);
-  if(it == m_data->clexulator.end()) {
+  if (it == m_data->clexulator.end()) {
     try {
-      clexulator = read_clexulator(
-                     basis_set_name, settings(), neighbor_list_handler().prim_neighbor_list());
+      clexulator =
+          read_clexulator(basis_set_name, settings(),
+                          neighbor_list_handler().prim_neighbor_list());
       it = m_data->clexulator.emplace(basis_set_name, clexulator).first;
-    }
-    catch(std::exception &e) {
+    } catch (std::exception &e) {
       // TODO: not sure why this fails...
-      // log() << "Error constructing Clexulator. Current settings: \n" << std::endl;
-      // settings().print_compiler_settings_summary(log());
+      // log() << "Error constructing Clexulator. Current settings: \n" <<
+      // std::endl; settings().print_compiler_settings_summary(log());
 
-      std::cout << "Error constructing Clexulator. Current settings: \n" << std::endl;
+      std::cout << "Error constructing Clexulator. Current settings: \n"
+                << std::endl;
       Log tlog(std::cout);
       print_compiler_settings_summary(settings(), tlog);
       throw e;
@@ -401,21 +382,20 @@ void PrimClex::refresh_basis_sets() const {
   m_data->clexulator.clear();
 }
 
-
 // ** ECI ** -----------------------------------------------------------
 
 bool PrimClex::has_eci(const ClexDescription &key) const {
   auto it = m_data->eci.find(key);
-  if(it == m_data->eci.end()) {
-    return fs::exists(dir().eci(key.property, key.calctype, key.ref, key.bset, key.eci));
+  if (it == m_data->eci.end()) {
+    return fs::exists(
+        dir().eci(key.property, key.calctype, key.ref, key.bset, key.eci));
   }
   return true;
 }
 
 const ECIContainer &PrimClex::eci(ClexDescription const &key) const {
-
   auto it = m_data->eci.find(key);
-  if(it == m_data->eci.end()) {
+  if (it == m_data->eci.end()) {
     ECIContainer eci = read_eci(key, dir());
     it = m_data->eci.emplace(key, eci).first;
   }
@@ -429,8 +409,7 @@ void PrimClex::refresh_eci() const {
 
 /// Initialization routines
 void PrimClex::_init() {
-
-  if(!has_dir()) {
+  if (!has_dir()) {
     return;
   }
 
@@ -440,8 +419,8 @@ void PrimClex::_init() {
   // TODO: move this
   auto struc_mol_name = xtal::struc_molecule_name(prim());
   m_data->vacancy_allowed = false;
-  for(int i = 0; i < struc_mol_name.size(); ++i) {
-    if(xtal::is_vacancy(struc_mol_name[i])) {
+  for (int i = 0; i < struc_mol_name.size(); ++i) {
+    if (xtal::is_vacancy(struc_mol_name[i])) {
       m_data->vacancy_allowed = true;
       m_data->vacancy_index = i;
     }
@@ -450,7 +429,6 @@ void PrimClex::_init() {
   refresh_composition_axes();
   refresh_chemical_reference();
   refresh_database_handler();
-
 }
 
 // ** deprecated members ** -----
@@ -466,31 +444,28 @@ void PrimClex::_init() {
 /// - This does not check if what you request will cause problems.
 /// - ToDo: refactor into separate functions
 ///
-void PrimClex::refresh(bool read_settings,
-                       bool read_composition,
-                       bool read_chem_ref,
-                       bool read_configs,
+void PrimClex::refresh(bool read_settings, bool read_composition,
+                       bool read_chem_ref, bool read_configs,
                        bool clear_clex) const {
-
   log().custom("Load project data");
 
-  if(read_settings) {
+  if (read_settings) {
     refresh_settings();
   }
 
-  if(read_composition) {
+  if (read_composition) {
     refresh_composition_axes();
   }
 
-  if(read_chem_ref) {
+  if (read_chem_ref) {
     refresh_chemical_reference();
   }
 
-  if(read_configs) {
+  if (read_configs) {
     refresh_database_handler();
   }
 
-  if(clear_clex) {
+  if (clear_clex) {
     refresh_basis_sets();
     refresh_eci();
   }
@@ -498,56 +473,49 @@ void PrimClex::refresh(bool read_settings,
   log() << std::endl;
 }
 
-Index PrimClex::n_basis() const {
-  return prim().basis().size();
-}
+Index PrimClex::n_basis() const { return prim().basis().size(); }
 
 PrimNeighborList &PrimClex::nlist() const {
   return neighbor_list_handler().prim_neighbor_list();
 }
 
 /// \brief Get the crystallography_tol
-double PrimClex::crystallography_tol() const {
-  return prim().lattice().tol();
-}
+double PrimClex::crystallography_tol() const { return prim().lattice().tol(); }
 
 /// returns true if vacancy are an allowed species
-bool PrimClex::vacancy_allowed() const {
-  return m_data->vacancy_allowed;
-}
+bool PrimClex::vacancy_allowed() const { return m_data->vacancy_allowed; }
 
 /// returns the index of vacancies in composition vectors
-Index PrimClex::vacancy_index() const {
-  return m_data->vacancy_index;
-}
+Index PrimClex::vacancy_index() const { return m_data->vacancy_index; }
 
-template<typename T>
+template <typename T>
 DB::ValDatabase<T> &PrimClex::generic_db() const {
   return m_data->database_handler->template generic_db<T>();
 }
 
-template<typename T>
+template <typename T>
 const DB::ValDatabase<T> &PrimClex::const_generic_db() const {
   return m_data->database_handler->template const_generic_db<T>();
 }
 
-template<typename T>
+template <typename T>
 DB::Database<T> &PrimClex::db() const {
   return m_data->database_handler->template db<T>();
 }
 
-template<typename T>
+template <typename T>
 const DB::Database<T> &PrimClex::const_db() const {
   return m_data->database_handler->template const_db<T>();
 }
 
-template<typename T>
+template <typename T>
 DB::PropertiesDatabase &PrimClex::db_props(std::string calc_type) const {
   return m_data->database_handler->template db_props<T>(calc_type);
 }
 
-template<typename T>
-const DB::PropertiesDatabase &PrimClex::const_db_props(std::string calc_type) const {
+template <typename T>
+const DB::PropertiesDatabase &PrimClex::const_db_props(
+    std::string calc_type) const {
   return m_data->database_handler->template const_db_props<T>(calc_type);
 }
 
@@ -587,7 +555,8 @@ const DB::DatabaseHandler &PrimClex::const_db_handler() const {
 //     jsonParser bspecs_json;
 //     bspecs_json.read(dir().bspecs(key.bset));
 //
-//     it = m_data->clex_basis.insert(std::make_pair(key, ClexBasis(this->shared_prim(), bspecs_json))).first;
+//     it = m_data->clex_basis.insert(std::make_pair(key,
+//     ClexBasis(this->shared_prim(), bspecs_json))).first;
 //
 //     std::vector<PrimPeriodicOrbit<IntegralCluster>> orbits;
 //
@@ -612,44 +581,39 @@ const DB::DatabaseHandler &PrimClex::const_db_handler() const {
 // }
 
 // "possible_axes": {
-"name":
-<CompositionConverter>
-...
-},
-"enumerated":
-[<name>, ...],
-"current_axes"
+"name" : <CompositionConverter>...
+}
+, "enumerated" : [<name>, ... ],
+                 "current_axes"
 
-
-Clexulator read_clexulator(
-  std::string const &basis_set_name,
-  ProjectSettings const &settings,
-  PrimNeighborList const &prim_neighbor_list) {
-  if(!fs::exists(settings.dir().clexulator_src(settings().project_name(), basis_set_name))) {
-    throw std::runtime_error(
-      std::string("Error loading clexulator ") + basis_set_name + ". No clexulator source files.");
+                 Clexulator
+                 read_clexulator(std::string const &basis_set_name,
+                                 ProjectSettings const &settings,
+                                 PrimNeighborList const &prim_neighbor_list) {
+  if (!fs::exists(settings.dir().clexulator_src(settings().project_name(),
+                                                basis_set_name))) {
+    throw std::runtime_error(std::string("Error loading clexulator ") +
+                             basis_set_name + ". No clexulator source files.");
   }
-  return Clexulator {
-    settings.project_name() + "_Clexulator",
-    settings.dir().clexulator_dir(basis_set_name),
-    prim_neighbor_list,
-    log(),
-    settings.compile_options(),
-    settings.so_options() };
+  return Clexulator{settings.project_name() + "_Clexulator",
+                    settings.dir().clexulator_dir(basis_set_name),
+                    prim_neighbor_list,
+                    log(),
+                    settings.compile_options(),
+                    settings.so_options()};
 }
 
-ECIContainer read_eci(ClexDescription const &clex_desc, DirectoryStructure const &dir) {
+ECIContainer read_eci(ClexDescription const &clex_desc,
+                      DirectoryStructure const &dir) {
   fs::path eci_path = dir.eci(clex_desc.property, clex_desc.calctype,
                               clex_desc.ref, clex_desc.bset, clex_desc.eci);
-  if(!fs::exists(eci_path)) {
+  if (!fs::exists(eci_path)) {
     throw std::runtime_error(
-      std::string("Error loading ECI. eci.json does not exist.\n")
-      + "  Expected at: " + eci_path.string());
+        std::string("Error loading ECI. eci.json does not exist.\n") +
+        "  Expected at: " + eci_path.string());
   }
   return read_eci(eci_path);
 }
-
-
 }
 
 // #define INST_PrimClex_orbits_vec(OrbitType, SymCompareType) \
@@ -659,24 +623,28 @@ ECIContainer read_eci(ClexDescription const &clex_desc, DirectoryStructure const
 //     const SymCompareType&) const;
 //
 // namespace CASM {
-//   INST_PrimClex_orbits_vec(PrimPeriodicOrbit<IntegralCluster>, PrimPeriodicSymCompare<IntegralCluster>);
+//   INST_PrimClex_orbits_vec(PrimPeriodicOrbit<IntegralCluster>,
+//   PrimPeriodicSymCompare<IntegralCluster>);
 // }
 
 #include "casm/database/DatabaseTypes.hh"
 
 // explicit template instantiations
-#define INST_PrimClex(r, data, type) \
-template DB::Database<type> &PrimClex::db<type>() const; \
-template const DB::Database<type> &PrimClex::const_db<type>() const; \
-template DB::ValDatabase<type> &PrimClex::generic_db<type>() const; \
-template const DB::ValDatabase<type> &PrimClex::const_generic_db<type>() const; \
+#define INST_PrimClex(r, data, type)                                       \
+  template DB::Database<type> &PrimClex::db<type>() const;                 \
+  template const DB::Database<type> &PrimClex::const_db<type>() const;     \
+  template DB::ValDatabase<type> &PrimClex::generic_db<type>() const;      \
+  template const DB::ValDatabase<type> &PrimClex::const_generic_db<type>() \
+      const;
 
 // explicit template instantiations
-#define INST_PrimClexProps(r, data, type) \
-template DB::PropertiesDatabase &PrimClex::db_props<type>(std::string calc_type) const; \
-template const DB::PropertiesDatabase &PrimClex::const_db_props<type>(std::string calc_type) const; \
+#define INST_PrimClexProps(r, data, type)                                \
+  template DB::PropertiesDatabase &PrimClex::db_props<type>(             \
+      std::string calc_type) const;                                      \
+  template const DB::PropertiesDatabase &PrimClex::const_db_props<type>( \
+      std::string calc_type) const;
 
 namespace CASM {
-  BOOST_PP_SEQ_FOR_EACH(INST_PrimClex, _, CASM_DB_TYPES)
-  BOOST_PP_SEQ_FOR_EACH(INST_PrimClexProps, _, CASM_DB_CONFIG_TYPES)
-}
+BOOST_PP_SEQ_FOR_EACH(INST_PrimClex, _, CASM_DB_TYPES)
+BOOST_PP_SEQ_FOR_EACH(INST_PrimClexProps, _, CASM_DB_CONFIG_TYPES)
+}  // namespace CASM

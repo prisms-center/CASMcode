@@ -12,7 +12,6 @@
 using namespace CASM;
 
 TEST(settingsTest, Basics) {
-
   // in case you want to see what's happening
   ScopedStringStreamLogging logging;
 
@@ -23,7 +22,7 @@ TEST(settingsTest, Basics) {
   // construct PrimClex
   PrimClex primclex(proj.dir);
 
-  auto exec = [&](const std::string & args) {
+  auto exec = [&](const std::string& args) {
     CommandArgs cmdargs(args, &primclex, proj.dir);
     return casm_api(cmdargs);
   };
@@ -39,7 +38,6 @@ TEST(settingsTest, Basics) {
   EXPECT_EQ(exec("casm settings --set-bset test1"), 0);
   EXPECT_EQ(exec("casm settings --set-bset default"), 0);
 
-  //std::cout << logging.ss().str() << std::endl;
-  //std::cout << logging.err_ss().str() << std::endl;
-
+  // std::cout << logging.ss().str() << std::endl;
+  // std::cout << logging.err_ss().str() << std::endl;
 }

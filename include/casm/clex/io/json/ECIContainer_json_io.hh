@@ -3,11 +3,12 @@
 
 namespace CASM {
 
-  template<typename T> class InputParser;
-  class ECIContainer;
+template <typename T>
+class InputParser;
+class ECIContainer;
 
-  ///  Make ECIContainer from JSON (eci.json file)
-  void parse(InputParser<ECIContainer> &parser);
-}
+///  Make ECIContainer from JSON (eci.json file)
+void parse(InputParser<ECIContainer> &parser);
+}  // namespace CASM
 
 #endif

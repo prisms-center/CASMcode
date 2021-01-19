@@ -5,12 +5,12 @@
 
 namespace CASM {
 
-  class ConfigDoF;
-  class Structure;
+class ConfigDoF;
+class Structure;
 
-  /// Construct zero-valued ConfigDoF
-  ConfigDoF make_configdof(Structure const &prim, Index volume);
+/// Construct zero-valued ConfigDoF
+ConfigDoF make_configdof(Structure const &prim, Index volume);
 
-}
+}  // namespace CASM
 
 #endif

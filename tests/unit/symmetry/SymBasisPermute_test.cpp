@@ -6,8 +6,8 @@
 /// What is being used to test it:
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
-#include "ZrOProj.hh"
 #include "TestConfiguration.hh"
+#include "ZrOProj.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/symmetry/SymTools.hh"
@@ -15,25 +15,17 @@
 using namespace CASM;
 
 namespace {
-  struct TestConfig0 : test::TestConfiguration {
-
-    TestConfig0(const PrimClex &primclex) :
-      TestConfiguration(
-        primclex,
-        Eigen::Vector3l(2, 1, 1).asDiagonal(), {
-      0, 0,  0, 0,  1, 1,  0, 0
-    }) {
-
-      EXPECT_EQ(this->scel_fg().size(), 16);
-      EXPECT_EQ(this->config_sym_fg().size(), 8);
-    }
-
-  };
-}
-
+struct TestConfig0 : test::TestConfiguration {
+  TestConfig0(const PrimClex &primclex)
+      : TestConfiguration(primclex, Eigen::Vector3l(2, 1, 1).asDiagonal(),
+                          {0, 0, 0, 0, 1, 1, 0, 0}) {
+    EXPECT_EQ(this->scel_fg().size(), 16);
+    EXPECT_EQ(this->config_sym_fg().size(), 8);
+  }
+};
+}  // namespace
 
 TEST(SymBasisPermuteTest, Test0) {
-
   test::ZrOProj proj;
   proj.check_init();
 
@@ -44,23 +36,23 @@ TEST(SymBasisPermuteTest, Test0) {
 
   UnitCellCoord u(2, 0, 0, 0);
 
-  for(Index l = 0; l < td.config.size(); ++l) {
-
+  for (Index l = 0; l < td.config.size(); ++l) {
     UnitCellCoord u = td.config.uccoord(l);
 
-    //std::cout << "coord: " << u.coordinate().const_cart().transpose() << std::endl;
+    // std::cout << "coord: " << u.coordinate().const_cart().transpose() <<
+    // std::endl;
     const SymGroup &g = td.config_sym_fg();
     EXPECT_EQ(true, true);
-    for(Index op_i = 0; op_i < g.size(); ++op_i) {
-
-      // check that applying symmetry via UnitCellCoord and via Coordinate give same result
-      EXPECT_EQ(
-        true,
-        almost_equal(
-          sym::copy_apply(g[op_i], u.coordinate(primclex.prim())).const_cart(),
-          sym::copy_apply(g[op_i], u, primclex.prim()).coordinate(primclex.prim()).const_cart(),
-          primclex.crystallography_tol()));
+    for (Index op_i = 0; op_i < g.size(); ++op_i) {
+      // check that applying symmetry via UnitCellCoord and via Coordinate give
+      // same result
+      EXPECT_EQ(true, almost_equal(sym::copy_apply(
+                                       g[op_i], u.coordinate(primclex.prim()))
+                                       .const_cart(),
+                                   sym::copy_apply(g[op_i], u, primclex.prim())
+                                       .coordinate(primclex.prim())
+                                       .const_cart(),
+                                   primclex.crystallography_tol()));
     }
   }
-
 }

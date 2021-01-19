@@ -4,15 +4,14 @@
 #include "casm/database/ConfigData.hh"
 
 namespace CASM {
-  namespace Completer {
-    class UpdateOption;
-  }
+namespace Completer {
+class UpdateOption;
 }
+}  // namespace CASM
 
 // To be specialized for calculable 'ConfigType' classes:
-//   StructureMap<ConfigType>::map(fs::path, DatabaseIterator<ConfigType> hint, inserter result)
-//   Import<ConfigType>::desc
-//   Import<ConfigType>::run
+//   StructureMap<ConfigType>::map(fs::path, DatabaseIterator<ConfigType> hint,
+//   inserter result) Import<ConfigType>::desc Import<ConfigType>::run
 //   Import<ConfigType>::_import_formatter
 //   Update<ConfigType>::desc
 //   Update<ConfigType>::run
@@ -21,56 +20,52 @@ namespace CASM {
 //   Remove<ConfigType>::run
 
 namespace CASM {
-  namespace DB {
+namespace DB {
 
-    template<typename T> class Selection;
+template <typename T>
+class Selection;
 
-    /// Generic ConfigType-dependent part of Import
-    template<typename _ConfigType>
-    class UpdateT : protected ConfigData {
+/// Generic ConfigType-dependent part of Import
+template <typename _ConfigType>
+class UpdateT : protected ConfigData {
+ public:
+  typedef _ConfigType ConfigType;
 
-    public:
+  /// \brief Constructor
+  UpdateT(const PrimClex &primclex, const StructureMap<ConfigType> &mapper,
+          std::string report_dir);
 
-      typedef _ConfigType ConfigType;
+  /// \brief Re-parse calculations 'from' all selected configurations
+  void update(const DB::Selection<ConfigType> &selection, bool force);
 
-      /// \brief Constructor
-      UpdateT(
-        const PrimClex &primclex,
-        const StructureMap<ConfigType> &mapper,
-        std::string report_dir);
+ protected:
+  // Allow ConfigType to specialize the report formatting for 'update'
+  virtual DataFormatter<ConfigIO::Result> _update_formatter() const = 0;
 
-      /// \brief Re-parse calculations 'from' all selected configurations
-      void update(const DB::Selection<ConfigType> &selection, bool force);
+  void _update_report(std::vector<ConfigIO::Result> &results,
+                      const DB::Selection<ConfigType> &selection) const;
 
-    protected:
+ private:
+  const StructureMap<ConfigType> &m_structure_mapper;
 
-      // Allow ConfigType to specialize the report formatting for 'update'
-      virtual DataFormatter<ConfigIO::Result> _update_formatter() const = 0;
+  std::string m_report_dir;
+};
 
-      void _update_report(std::vector<ConfigIO::Result> &results, const DB::Selection<ConfigType> &selection) const;
+// To be specialized for ConfigType (no default implemenation exists)
+template <typename ConfigType>
+class Update;
+/*: public UpdateT<ConfigType> {
+public:
+  static const std::string desc;
+  int run(const PrimClex &, const jsonParser &input, const
+Completer::UpdateOption &opt);
 
-    private:
+private:
+  // Allow ConfigType to specialize the report formatting for 'update'
+  DataFormatter<ConfigIO::Result> _update_formatter() const override;
+  };*/
 
-      const StructureMap<ConfigType> &m_structure_mapper;
-
-      std::string m_report_dir;
-    };
-
-
-    // To be specialized for ConfigType (no default implemenation exists)
-    template<typename ConfigType>
-    class Update;
-    /*: public UpdateT<ConfigType> {
-    public:
-      static const std::string desc;
-      int run(const PrimClex &, const jsonParser &input, const Completer::UpdateOption &opt);
-
-    private:
-      // Allow ConfigType to specialize the report formatting for 'update'
-      DataFormatter<ConfigIO::Result> _update_formatter() const override;
-      };*/
-
-  }
-}
+}  // namespace DB
+}  // namespace CASM
 
 #endif

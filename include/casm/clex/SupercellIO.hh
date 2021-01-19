@@ -4,232 +4,216 @@
 #include "casm/casm_io/dataformatter/DataFormatter.hh"
 #include "casm/casm_io/dataformatter/DataFormatterTools.hh"
 
-
 namespace CASM {
-  class Supercell;
-  class SymOp;
+class Supercell;
+class SymOp;
 
-  namespace ScelIO {
+namespace ScelIO {
 
-    // --- BaseDatumFormatter-derived classes ---
+// --- BaseDatumFormatter-derived classes ---
 
-    template<typename Base>
-    class SupercellCheckBase : public Base {
-    public:
+template <typename Base>
+class SupercellCheckBase : public Base {
+ public:
+  typedef std::tuple<bool, SymOp, Eigen::MatrixXi> result_type;
 
-      typedef std::tuple<bool, SymOp, Eigen::MatrixXi> result_type;
+  SupercellCheckBase(std::string name, std::string desc);
 
-      SupercellCheckBase(std::string name, std::string desc);
+  // --- Specialized implementation -----------
 
-      // --- Specialized implementation -----------
+  /// \brief Expects arguments of the form 'is_supercell_of(scelname)'
+  bool parse_args(const std::string &args) override;
 
-      /// \brief Expects arguments of the form 'is_supercell_of(scelname)'
-      bool parse_args(const std::string &args) override;
+  /// \brief Set pointer to ref supercell
+  bool init(const Supercell &_tmplt) const override;
 
-      /// \brief Set pointer to ref supercell
-      bool init(const Supercell &_tmplt) const override;
+  /// \brief col_header returns: {'short_name(refcell_name)'}
+  std::vector<std::string> col_header(const Supercell &_tmplt) const override;
 
-      /// \brief col_header returns: {'short_name(refcell_name)'}
-      std::vector<std::string> col_header(const Supercell &_tmplt) const override;
+  // --- Shared logic -----------
 
-      // --- Shared logic -----------
+  /// Call is_supercell using prim.factor_group() to try possible orientations
+  ///
+  /// Returns (bool, SymOp op, Eigen::MatrixXi T) with:
+  /// - scel is supercell of unit?
+  /// - If true: scel.lattice() == apply(op, unit.lattice()) * T
+  ///
+  const result_type &_evaluate(const Supercell &scel,
+                               const Supercell &unit) const;
 
-      /// Call is_supercell using prim.factor_group() to try possible orientations
-      ///
-      /// Returns (bool, SymOp op, Eigen::MatrixXi T) with:
-      /// - scel is supercell of unit?
-      /// - If true: scel.lattice() == apply(op, unit.lattice()) * T
-      ///
-      const result_type &_evaluate(const Supercell &scel, const Supercell &unit) const;
+ protected:
+  /// Reference supercell name, given meaning by derived class
+  std::string m_refcell_name;
 
-    protected:
+  /// Reference supercell, given meaning by derived class
+  mutable const Supercell *m_refcell;
 
-      /// Reference supercell name, given meaning by derived class
-      std::string m_refcell_name;
+ private:
+  mutable notstd::cloneable_ptr<result_type> m_last_result;
+  mutable const Supercell *m_last_scel;
+  mutable const Supercell *m_last_unit;
+};
 
-      /// Reference supercell, given meaning by derived class
-      mutable const Supercell *m_refcell;
+class IsSupercellOf : public SupercellCheckBase<BooleanAttribute<Supercell> > {
+ public:
+  static const std::string Name;
+  static const std::string Desc;
 
-    private:
-      mutable notstd::cloneable_ptr<result_type> m_last_result;
-      mutable const Supercell *m_last_scel;
-      mutable const Supercell *m_last_unit;
-    };
+  IsSupercellOf();
 
-    class IsSupercellOf : public SupercellCheckBase<BooleanAttribute<Supercell> > {
-    public:
-      static const std::string Name;
-      static const std::string Desc;
+  bool evaluate(const Supercell &scel) const override;
 
-      IsSupercellOf();
+  /// \brief Clone using copy constructor
+  std::unique_ptr<IsSupercellOf> clone() const;
 
-      bool evaluate(const Supercell &scel) const override;
+ private:
+  /// \brief Clone using copy constructor
+  IsSupercellOf *_clone() const override;
+};
 
-      /// \brief Clone using copy constructor
-      std::unique_ptr<IsSupercellOf> clone() const;
+class IsUnitcellOf : public SupercellCheckBase<BooleanAttribute<Supercell> > {
+ public:
+  static const std::string Name;
+  static const std::string Desc;
 
-    private:
+  IsUnitcellOf();
 
-      /// \brief Clone using copy constructor
-      IsSupercellOf *_clone() const override;
+  bool evaluate(const Supercell &unit) const override;
 
-    };
+  /// \brief Clone using copy constructor
+  std::unique_ptr<IsUnitcellOf> clone() const;
 
-    class IsUnitcellOf : public SupercellCheckBase<BooleanAttribute<Supercell> > {
-    public:
-      static const std::string Name;
-      static const std::string Desc;
+ private:
+  /// \brief Clone using copy constructor
+  IsUnitcellOf *_clone() const override;
+};
 
-      IsUnitcellOf();
+class TransfMat : public SupercellCheckBase<VectorXiAttribute<Supercell> > {
+ public:
+  static const std::string Name;
+  static const std::string Desc;
 
-      bool evaluate(const Supercell &unit) const override;
+  TransfMat();
 
-      /// \brief Clone using copy constructor
-      std::unique_ptr<IsUnitcellOf> clone() const;
+  Eigen::VectorXi evaluate(const Supercell &scel) const override;
 
-    private:
+  bool validate(const Supercell &scel) const override;
 
-      /// \brief Clone using copy constructor
-      IsUnitcellOf *_clone() const override;
+  /// \brief Clone using copy constructor
+  std::unique_ptr<TransfMat> clone() const;
 
-    };
+  /// \brief Expects arguments of the form 'transf_mat(unitcell_name)'
+  bool parse_args(const std::string &args) override;
 
-    class TransfMat : public SupercellCheckBase<VectorXiAttribute<Supercell> > {
-    public:
-      static const std::string Name;
-      static const std::string Desc;
+ private:
+  /// \brief Clone using copy constructor
+  TransfMat *_clone() const override;
+};
 
-      TransfMat();
+class ConfigCountBase : public IntegerAttribute<Supercell> {
+ public:
+  ConfigCountBase(std::string name, std::string desc);
 
-      Eigen::VectorXi evaluate(const Supercell &scel) const override;
+  // --- Specialized implementation -----------
 
-      bool validate(const Supercell &scel) const override;
+  /// \brief Expects arguments of the form 'is_supercell_of(scelname)'
+  bool parse_args(const std::string &args) override;
 
-      /// \brief Clone using copy constructor
-      std::unique_ptr<TransfMat> clone() const;
+  /// \brief col_header returns: {'short_name(refcell_name)'}
+  std::vector<std::string> col_header(const Supercell &_tmplt) const override;
 
-      /// \brief Expects arguments of the form 'transf_mat(unitcell_name)'
-      bool parse_args(const std::string &args) override;
+ protected:
+  /// Reference supercell name, given meaning by derived class
+  std::string m_type;
+};
 
-    private:
+class Nconfig : public ConfigCountBase {
+ public:
+  static const std::string Name;
+  static const std::string Desc;
 
-      /// \brief Clone using copy constructor
-      TransfMat *_clone() const override;
+  Nconfig();
 
-    };
+  Index evaluate(const Supercell &scel) const override;
 
-    class ConfigCountBase : public IntegerAttribute<Supercell> {
-    public:
+  /// \brief Clone using copy constructor
+  std::unique_ptr<Nconfig> clone() const;
 
-      ConfigCountBase(std::string name, std::string desc);
+ private:
+  /// \brief Clone using copy constructor
+  Nconfig *_clone() const override;
+};
 
-      // --- Specialized implementation -----------
+class Ncalc : public ConfigCountBase {
+ public:
+  static const std::string Name;
+  static const std::string Desc;
 
-      /// \brief Expects arguments of the form 'is_supercell_of(scelname)'
-      bool parse_args(const std::string &args) override;
+  Ncalc();
 
-      /// \brief col_header returns: {'short_name(refcell_name)'}
-      std::vector<std::string> col_header(const Supercell &_tmplt) const override;
+  Index evaluate(const Supercell &scel) const override;
 
-    protected:
+  /// \brief Clone using copy constructor
+  std::unique_ptr<Ncalc> clone() const;
 
-      /// Reference supercell name, given meaning by derived class
-      std::string m_type;
+ private:
+  /// \brief Clone using copy constructor
+  Ncalc *_clone() const override;
+};
 
-    };
+class Ndata : public ConfigCountBase {
+ public:
+  static const std::string Name;
+  static const std::string Desc;
 
-    class Nconfig : public ConfigCountBase {
-    public:
-      static const std::string Name;
-      static const std::string Desc;
+  Ndata();
 
-      Nconfig();
+  Index evaluate(const Supercell &scel) const override;
 
-      Index evaluate(const Supercell &scel) const override;
+  /// \brief Clone using copy constructor
+  std::unique_ptr<Ndata> clone() const;
 
-      /// \brief Clone using copy constructor
-      std::unique_ptr<Nconfig> clone() const;
+ private:
+  /// \brief Clone using copy constructor
+  Ndata *_clone() const override;
+};
 
-    private:
+// --- GenericDatumFormatter generating functions ---
 
-      /// \brief Clone using copy constructor
-      Nconfig *_clone() const override;
+template <typename ValueType>
+using GenericScelFormatter = GenericDatumFormatter<ValueType, Supercell>;
 
-    };
+typedef Generic1DDatumFormatter<Eigen::VectorXd, Supercell>
+    GenericVectorXdScelFormatter;
 
-    class Ncalc : public ConfigCountBase {
-    public:
-      static const std::string Name;
-      static const std::string Desc;
+GenericScelFormatter<std::string> pointgroup_name();
+GenericScelFormatter<Index> scel_size();
+GenericScelFormatter<Index> multiplicity();
+GenericScelFormatter<Index> factorgroup_size();
+GenericScelFormatter<double> volume();
+GenericVectorXdScelFormatter lattice();
+GenericVectorXdScelFormatter lattice_params();
 
-      Ncalc();
+}  // namespace ScelIO
 
-      Index evaluate(const Supercell &scel) const override;
+template <>
+StringAttributeDictionary<Supercell> make_string_dictionary<Supercell>();
 
-      /// \brief Clone using copy constructor
-      std::unique_ptr<Ncalc> clone() const;
+template <>
+BooleanAttributeDictionary<Supercell> make_boolean_dictionary<Supercell>();
 
-    private:
+template <>
+IntegerAttributeDictionary<Supercell> make_integer_dictionary<Supercell>();
 
-      /// \brief Clone using copy constructor
-      Ncalc *_clone() const override;
+template <>
+ScalarAttributeDictionary<Supercell> make_scalar_dictionary<Supercell>();
 
-    };
+template <>
+VectorXiAttributeDictionary<Supercell> make_vectorxi_dictionary<Supercell>();
 
-    class Ndata : public ConfigCountBase {
-    public:
-      static const std::string Name;
-      static const std::string Desc;
+template <>
+VectorXdAttributeDictionary<Supercell> make_vectorxd_dictionary<Supercell>();
 
-      Ndata();
-
-      Index evaluate(const Supercell &scel) const override;
-
-      /// \brief Clone using copy constructor
-      std::unique_ptr<Ndata> clone() const;
-
-    private:
-
-      /// \brief Clone using copy constructor
-      Ndata *_clone() const override;
-
-    };
-
-    // --- GenericDatumFormatter generating functions ---
-
-    template<typename ValueType>
-    using GenericScelFormatter = GenericDatumFormatter<ValueType, Supercell>;
-
-    typedef Generic1DDatumFormatter<Eigen::VectorXd, Supercell> GenericVectorXdScelFormatter;
-
-    GenericScelFormatter<std::string> pointgroup_name();
-    GenericScelFormatter<Index> scel_size();
-    GenericScelFormatter<Index> multiplicity();
-    GenericScelFormatter<Index> factorgroup_size();
-    GenericScelFormatter<double> volume();
-    GenericVectorXdScelFormatter lattice();
-    GenericVectorXdScelFormatter lattice_params();
-
-  }
-
-  template<>
-  StringAttributeDictionary<Supercell> make_string_dictionary<Supercell>();
-
-  template<>
-  BooleanAttributeDictionary<Supercell> make_boolean_dictionary<Supercell>();
-
-  template<>
-  IntegerAttributeDictionary<Supercell> make_integer_dictionary<Supercell>();
-
-  template<>
-  ScalarAttributeDictionary<Supercell> make_scalar_dictionary<Supercell>();
-
-  template<>
-  VectorXiAttributeDictionary<Supercell> make_vectorxi_dictionary<Supercell>();
-
-  template<>
-  VectorXdAttributeDictionary<Supercell> make_vectorxd_dictionary<Supercell>();
-
-}
+}  // namespace CASM
 
 #endif

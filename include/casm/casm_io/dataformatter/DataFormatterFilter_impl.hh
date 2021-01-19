@@ -7,31 +7,33 @@
 
 namespace CASM {
 
-  template<typename DataObject>
-  DataFormatterFilter<DataObject>::DataFormatterFilter(DataFormatter<DataObject> const &_filter):
-    m_filter(_filter) {}
+template <typename DataObject>
+DataFormatterFilter<DataObject>::DataFormatterFilter(
+    DataFormatter<DataObject> const &_filter)
+    : m_filter(_filter) {}
 
-  template<typename DataObject>
-  bool DataFormatterFilter<DataObject>::operator()(DataObject const &object) const {
-    ValueDataStream<bool> _stream;
-    _stream << m_filter(object);
-    return _stream.value();
-  }
+template <typename DataObject>
+bool DataFormatterFilter<DataObject>::operator()(
+    DataObject const &object) const {
+  ValueDataStream<bool> _stream;
+  _stream << m_filter(object);
+  return _stream.value();
+}
 
-  template<typename DataObject>
-  DataFormatterFilter<DataObject> make_data_formatter_filter(
+template <typename DataObject>
+DataFormatterFilter<DataObject> make_data_formatter_filter(
     std::string const &filter_expr,
     DataFormatterDictionary<DataObject> const &_dict) {
-    return DataFormatterFilter<DataObject> {_dict.parse(filter_expr)};
-  }
+  return DataFormatterFilter<DataObject>{_dict.parse(filter_expr)};
+}
 
-  template<typename DataObject>
-  DataFormatterFilter<DataObject> make_data_formatter_filter(
+template <typename DataObject>
+DataFormatterFilter<DataObject> make_data_formatter_filter(
     std::vector<std::string> const &filter_expr,
     DataFormatterDictionary<DataObject> const &_dict) {
-    return DataFormatterFilter<DataObject> {_dict.parse(filter_expr)};
-  }
-
+  return DataFormatterFilter<DataObject>{_dict.parse(filter_expr)};
 }
+
+}  // namespace CASM
 
 #endif

@@ -5,7 +5,7 @@
 
 namespace CASM {
 
-  std::string standard_ConfigEnumInput_help();
+std::string standard_ConfigEnumInput_help();
 
 }
 

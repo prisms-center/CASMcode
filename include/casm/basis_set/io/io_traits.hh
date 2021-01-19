@@ -5,10 +5,10 @@
 
 namespace CASM {
 
-  enum class PARAM_PACK_TYPE;
+enum class PARAM_PACK_TYPE;
 
-  ENUM_TRAITS(PARAM_PACK_TYPE)
+ENUM_TRAITS(PARAM_PACK_TYPE)
 
-}
+}  // namespace CASM
 
 #endif

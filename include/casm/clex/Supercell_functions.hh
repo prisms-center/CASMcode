@@ -2,7 +2,7 @@
 #define Supercell_functions
 
 namespace CASM {
-  class Supercell;
+class Supercell;
 
 }
 

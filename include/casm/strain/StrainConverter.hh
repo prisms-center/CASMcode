@@ -2,11 +2,11 @@
 #define STRAINCONVERTER_HH
 
 #include <vector>
+
+#include "casm/crystallography/Strain.hh"
 #include "casm/external/Eigen/Dense"
 #include "casm/global/definitions.hh"
 #include "casm/symmetry/SymGroupRepID.hh"
-#include "casm/crystallography/Strain.hh"
-
 
 //--------------------------------------------------
 // STRAIN CLASS
@@ -21,134 +21,135 @@
 //       - sop: strain order parameter (sop = sop_transf_mat * unrolled_E)
 
 namespace CASM {
-  class SymGroup;
-  namespace SymRepTools {
-    struct IrrepWedge;
+class SymGroup;
+namespace SymRepTools {
+struct IrrepWedge;
+}
+
+typedef Eigen::VectorXd VectorXd;
+typedef Eigen::MatrixXd MatrixXd;
+typedef Eigen::Matrix3d Matrix3d;
+
+// Enum type that will define how the strain metrics used to
+// calculate strain order parameters are going to be calculated
+typedef strain::METRIC STRAIN_METRIC;
+/* enum STRAIN_METRIC {GREEN_LAGRANGE = 0, BIOT = 1, HENCKY = 2, EULER_ALMANSI =
+ * 3, STRETCH = 4, DISP_GRAD = 5}; */
+
+class StrainConverter {
+ public:
+  // Static methods for conversion from F to various strain metrics
+
+  /// GREEN_LAGRANGE = (C-I)/2
+  static Matrix3d green_lagrange(Eigen::Ref<const Matrix3d> const &F);
+  static Matrix3d green_lagrange_to_F(Eigen::Ref<const Matrix3d> const &E);
+
+  /// BIOT = (U-I)
+  static Matrix3d biot(Eigen::Ref<const Matrix3d> const &F);
+  static Matrix3d biot_to_F(Eigen::Ref<const Matrix3d> const &B);
+
+  /// HENCKY = log(C)/2
+  static Matrix3d hencky(Eigen::Ref<const Matrix3d> const &F);
+  static Matrix3d hencky_to_F(Eigen::Ref<const Matrix3d> const &H);
+
+  /// EULER_ALMANSI = (I-(F F^{T})^(-1))/2
+  static Matrix3d euler_almansi(Eigen::Ref<const Matrix3d> const &F);
+  static Matrix3d euler_almansi_to_F(Eigen::Ref<const Matrix3d> const &A);
+
+  /// DISP_GRAD = F
+  static Matrix3d disp_grad(Eigen::Ref<const Matrix3d> const &F);
+  static Matrix3d disp_grad_to_F(Eigen::Ref<const Matrix3d> const &F) {
+    return F;
   }
 
-  typedef Eigen::VectorXd VectorXd;
-  typedef Eigen::MatrixXd MatrixXd;
-  typedef Eigen::Matrix3d Matrix3d;
+  //-------------------------------------------------
+  // Routines that calculate derived quantities given the
+  // deformation tensor
+  static Matrix3d metric_tensor(Eigen::Ref<const Matrix3d> const &F);
+  static Matrix3d right_stretch_tensor(Matrix3d &C,
+                                       Eigen::Ref<const Matrix3d> const &F);
+  static Matrix3d right_stretch_tensor(Eigen::Ref<const Matrix3d> const &F);
 
-  //Enum type that will define how the strain metrics used to
-  //calculate strain order parameters are going to be calculated
-  typedef strain::METRIC STRAIN_METRIC;
-  /* enum STRAIN_METRIC {GREEN_LAGRANGE = 0, BIOT = 1, HENCKY = 2, EULER_ALMANSI = 3, STRETCH = 4, DISP_GRAD = 5}; */
+  static Matrix3d strain_metric(Eigen::Ref<const Matrix3d> const &F,
+                                STRAIN_METRIC MODE);
+  //-------------------------------------------------
 
+  StrainConverter(const STRAIN_METRIC &_MODE, const MatrixXd &_sop_transf_mat,
+                  const std::vector<std::vector<Index> > &_order_strain)
+      : STRAIN_METRIC_MODE(_MODE),
+        m_sop_transf_mat(_sop_transf_mat),
+        m_order_strain(_order_strain) {
+    if (_MODE == STRAIN_METRIC::GREEN_LAGRANGE)
+      curr_metric_func = &StrainConverter::green_lagrange;
+    else if (_MODE == STRAIN_METRIC::BIOT)
+      curr_metric_func = &StrainConverter::biot;
+    else if (_MODE == STRAIN_METRIC::HENCKY)
+      curr_metric_func = &StrainConverter::hencky;
+    else if (_MODE == STRAIN_METRIC::EULER_ALMANSI)
+      curr_metric_func = &StrainConverter::euler_almansi;
+    else if (_MODE == STRAIN_METRIC::STRETCH)
+      curr_metric_func = &StrainConverter::right_stretch_tensor;
+    else if (_MODE == STRAIN_METRIC::DISP_GRAD)
+      curr_metric_func = &StrainConverter::disp_grad;
+  }
 
-  class StrainConverter {
-  public:
-    // Static methods for conversion from F to various strain metrics
+  StrainConverter(const std::string &mode_name) { set_mode(mode_name); }
 
-    /// GREEN_LAGRANGE = (C-I)/2
-    static Matrix3d green_lagrange(Eigen::Ref<const Matrix3d> const &F);
-    static Matrix3d green_lagrange_to_F(Eigen::Ref<const Matrix3d> const &E);
+  Index dim() const { return m_order_strain.size(); }
 
-    /// BIOT = (U-I)
-    static Matrix3d biot(Eigen::Ref<const Matrix3d> const &F);
-    static Matrix3d biot_to_F(Eigen::Ref<const Matrix3d> const &B);
+  //-------------------------------------------------
+  /// Get the strain metric in the current mode
+  Matrix3d strain_metric(Eigen::Ref<const Matrix3d> const &F) const;
+  Matrix3d strain_metric_to_F(Eigen::Ref<const Matrix3d> const &E) const;
 
-    /// HENCKY = log(C)/2
-    static Matrix3d hencky(Eigen::Ref<const Matrix3d> const &F);
-    static Matrix3d hencky_to_F(Eigen::Ref<const Matrix3d> const &H);
+  /// Unrolls the green-lagrange metric ( or any symmetric metric)
+  VectorXd unroll_E(Eigen::Ref<const Matrix3d> const &E) const;
+  Matrix3d rollup_E(Eigen::Ref<const VectorXd> const &_unrolled_E) const;
 
-    /// EULER_ALMANSI = (I-(F F^{T})^(-1))/2
-    static Matrix3d euler_almansi(Eigen::Ref<const Matrix3d> const &F);
-    static Matrix3d euler_almansi_to_F(Eigen::Ref<const Matrix3d> const &A);
+  VectorXd unrolled_strain_metric(Eigen::Ref<const Matrix3d> const &F) const;
+  Matrix3d unrolled_strain_metric_to_F(
+      Eigen::Ref<const VectorXd> const &E) const;
 
-    /// DISP_GRAD = F
-    static Matrix3d disp_grad(Eigen::Ref<const Matrix3d> const &F);
-    static Matrix3d disp_grad_to_F(Eigen::Ref<const Matrix3d> const &F) {
-      return F;
-    }
+  VectorXd sop(Matrix3d &E, Matrix3d &C, Matrix3d &U,
+               Eigen::Ref<const Matrix3d> const &F) const;
+  VectorXd sop(Matrix3d &E, Matrix3d &C, Matrix3d &U,
+               Eigen::Ref<const Matrix3d> const &F, STRAIN_METRIC MODE) const;
 
-    //-------------------------------------------------
-    // Routines that calculate derived quantities given the
-    // deformation tensor
-    static Matrix3d metric_tensor(Eigen::Ref<const Matrix3d> const &F);
-    static Matrix3d right_stretch_tensor(Matrix3d &C, Eigen::Ref<const Matrix3d> const &F);
-    static Matrix3d right_stretch_tensor(Eigen::Ref<const Matrix3d> const &F);
+  //--------------------------------------------------
+  // Routines that set the internal parameters of the
+  // class
+  void set_mode(const std::string &mode_name);
 
-    static Matrix3d strain_metric(Eigen::Ref<const Matrix3d> const &F, STRAIN_METRIC MODE);
-    //-------------------------------------------------
+  const Eigen::MatrixXd &sop_transf_mat() const { return m_sop_transf_mat; }
 
-    StrainConverter(const STRAIN_METRIC &_MODE, const MatrixXd &_sop_transf_mat,
-                    const std::vector<std::vector<Index> >  &_order_strain) :
-      STRAIN_METRIC_MODE(_MODE), m_sop_transf_mat(_sop_transf_mat),
-      m_order_strain(_order_strain) {
-      if(_MODE == STRAIN_METRIC::GREEN_LAGRANGE)
-        curr_metric_func = &StrainConverter::green_lagrange;
-      else if(_MODE == STRAIN_METRIC::BIOT)
-        curr_metric_func = &StrainConverter::biot;
-      else if(_MODE == STRAIN_METRIC::HENCKY)
-        curr_metric_func = &StrainConverter::hencky;
-      else if(_MODE == STRAIN_METRIC::EULER_ALMANSI)
-        curr_metric_func = &StrainConverter::euler_almansi;
-      else if(_MODE == STRAIN_METRIC::STRETCH)
-        curr_metric_func = &StrainConverter::right_stretch_tensor;
-      else if(_MODE == STRAIN_METRIC::DISP_GRAD)
-        curr_metric_func = &StrainConverter::disp_grad;
-    }
+  SymGroupRepID symrep_ID() const { return m_symrep_ID; }
 
-    StrainConverter(const std::string &mode_name) {
-      set_mode(mode_name);
-    }
+  void set_symmetrized_sop(const SymGroup &pg);
 
-    Index dim() const {
-      return m_order_strain.size();
-    }
+  void set_conventional_sop_transf_mat();
+  void set_conventional_order_symmetric();
+  void set_conventional_order_unsymmetric();
 
-    //-------------------------------------------------
-    /// Get the strain metric in the current mode
-    Matrix3d strain_metric(Eigen::Ref<const Matrix3d> const &F) const;
-    Matrix3d strain_metric_to_F(Eigen::Ref<const Matrix3d> const &E) const;
+  // Need to rewrite these routines to write out only the settings
+  // jsonParser &to_json(const StrainConverter &strain, jsonParser &json);
+  // void from_json(StrainConverter &strain, const jsonParser &json);
 
-    /// Unrolls the green-lagrange metric ( or any symmetric metric)
-    VectorXd unroll_E(Eigen::Ref<const Matrix3d> const &E) const;
-    Matrix3d rollup_E(Eigen::Ref<const VectorXd> const &_unrolled_E) const;
+ private:
+  STRAIN_METRIC
+      STRAIN_METRIC_MODE;     // set the mode when you initialize your PRIM
+  MatrixXd m_sop_transf_mat;  // Use as sop = sop_transf_mat * unrolled_E
+  // unrolled_E[i]= m_weight_strain[i]*strain(m_order_strain[i][0],
+  // m_order_strain[i][1])
+  std::vector<std::vector<Index> >
+      m_order_strain;  // lists the order of strains to list unrolled_E
+  Eigen::VectorXd m_weight_strain;  // weights for the elements of unrolled_E
 
-    VectorXd unrolled_strain_metric(Eigen::Ref<const Matrix3d> const &F) const;
-    Matrix3d unrolled_strain_metric_to_F(Eigen::Ref<const VectorXd> const &E) const;
-
-    VectorXd sop(Matrix3d &E, Matrix3d &C, Matrix3d &U, Eigen::Ref<const Matrix3d> const &F) const;
-    VectorXd sop(Matrix3d &E, Matrix3d &C, Matrix3d &U, Eigen::Ref<const Matrix3d> const &F, STRAIN_METRIC MODE) const;
-
-    //--------------------------------------------------
-    // Routines that set the internal parameters of the
-    // class
-    void set_mode(const std::string &mode_name);
-
-    const Eigen::MatrixXd &sop_transf_mat() const {
-      return m_sop_transf_mat;
-    }
-
-    SymGroupRepID symrep_ID() const {
-      return m_symrep_ID;
-    }
-
-    void set_symmetrized_sop(const SymGroup &pg);
-
-    void set_conventional_sop_transf_mat();
-    void set_conventional_order_symmetric();
-    void set_conventional_order_unsymmetric();
-
-    // Need to rewrite these routines to write out only the settings
-    // jsonParser &to_json(const StrainConverter &strain, jsonParser &json);
-    // void from_json(StrainConverter &strain, const jsonParser &json);
-
-  private:
-    STRAIN_METRIC STRAIN_METRIC_MODE; //set the mode when you initialize your PRIM
-    MatrixXd m_sop_transf_mat; //Use as sop = sop_transf_mat * unrolled_E
-    // unrolled_E[i]= m_weight_strain[i]*strain(m_order_strain[i][0], m_order_strain[i][1])
-    std::vector<std::vector<Index> > m_order_strain; //lists the order of strains to list unrolled_E
-    Eigen::VectorXd m_weight_strain; // weights for the elements of unrolled_E
-
-    SymGroupRepID m_symrep_ID;
-    // typedef MetricFuncPtr for method pointers that take displacement gradient tensor as argument
-    typedef Matrix3d(*MetricFuncPtr)(Eigen::Ref<const Matrix3d> const &);
-    MetricFuncPtr curr_metric_func;
-    MetricFuncPtr curr_inv_metric_func;
-
-  };
-}
+  SymGroupRepID m_symrep_ID;
+  // typedef MetricFuncPtr for method pointers that take displacement gradient
+  // tensor as argument
+  typedef Matrix3d (*MetricFuncPtr)(Eigen::Ref<const Matrix3d> const &);
+  MetricFuncPtr curr_metric_func;
+  MetricFuncPtr curr_inv_metric_func;
+};
+}  // namespace CASM
 #endif

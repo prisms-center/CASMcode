@@ -1,5 +1,6 @@
-#include "gtest/gtest.h"
 #include "casm/crystallography/AnisoValTraits.hh"
+
+#include "gtest/gtest.h"
 
 using namespace CASM;
 

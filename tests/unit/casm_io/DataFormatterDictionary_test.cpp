@@ -1,15 +1,15 @@
 #include "gtest/gtest.h"
 
 /// What is being tested:
-#include "casm/casm_io/dataformatter/DataFormatter.hh"
-
 #include <sstream>
-#include "autotools.hh"
+
 #include "Common.hh"
+#include "autotools.hh"
+#include "casm/casm_io/dataformatter/DataFormatter.hh"
 #include "casm/casm_io/json/jsonFile.hh"
-#include "casm/database/Selection.hh"
-#include "casm/database/Selected.hh"
 #include "casm/database/Database.hh"
+#include "casm/database/Selected.hh"
+#include "casm/database/Selection.hh"
 
 // #include "FCCTernaryProj.hh"
 
@@ -24,12 +24,12 @@
 // #include "casm/app/enum/EnumInterface_impl.hh"
 // #include "casm/app/enum.hh"
 
-
 using namespace CASM;
 
 // TEST(DataFormatterDictionaryTest, Test0) {
 //   DataFormatterDictionary<Configuration> dict;
-//   dict.insert(ConfigIO::configname(), ConfigIO::scel_size(), alias_or_name<Configuration>());
+//   dict.insert(ConfigIO::configname(), ConfigIO::scel_size(),
+//   alias_or_name<Configuration>());
 //
 //   test::FCCTernaryProj proj;
 //   proj.check_init();
@@ -51,7 +51,8 @@ using namespace CASM;
 //       config_vec.back().init_occupation();
 //     }
 //
-//     DataFormatter<Configuration> formatter {dict.parse("configname scel_size alias_or_name")};
+//     DataFormatter<Configuration> formatter {dict.parse("configname scel_size
+//     alias_or_name")};
 //
 //     {
 //       std::stringstream ss;
@@ -59,7 +60,7 @@ using namespace CASM;
 //
 //       std::string result =
 //         "#               configname    scel_size             alias_or_name\n"
-//         "    SCEL1_1_1_1_0_0_0/none            1    SCEL1_1_1_1_0_0_0/none\n";
+//         "    SCEL1_1_1_1_0_0_0/none            1 SCEL1_1_1_1_0_0_0/none\n";
 //       ASSERT_EQ(ss.str(), result);
 //     }
 //
@@ -71,7 +72,7 @@ using namespace CASM;
 //         "#               configname    scel_size             alias_or_name\n"
 //         "    SCEL1_1_1_1_0_0_0/none            1    SCEL1_1_1_1_0_0_0/none\n"
 //         "    SCEL1_1_1_1_0_0_0/none            1    SCEL1_1_1_1_0_0_0/none\n"
-//         "    SCEL1_1_1_1_0_0_0/none            1    SCEL1_1_1_1_0_0_0/none\n";
+//         "    SCEL1_1_1_1_0_0_0/none            1 SCEL1_1_1_1_0_0_0/none\n";
 //       ASSERT_EQ(ss.str(), result);
 //     }
 //
@@ -124,8 +125,8 @@ using namespace CASM;
 //   ScelEnumByProps enum_scel(primclex, ScelEnumProps(1, 5));
 //   ASSERT_EQ(true, true);
 //
-//   ConfigEnumAllOccupations::run(primclex, enum_scel.begin(), enum_scel.end());
-//   ASSERT_EQ(true, true);
+//   ConfigEnumAllOccupations::run(primclex, enum_scel.begin(),
+//   enum_scel.end()); ASSERT_EQ(true, true);
 //
 //   // -- Check Supercell --
 //
@@ -141,8 +142,8 @@ using namespace CASM;
 //     auto formatter = dict.parse(all_col);
 //
 //     std::stringstream ss;
-//     ss << formatter(selection.all().begin(), selection.all().end()) << std::endl;
-//     ASSERT_EQ(true, true);
+//     ss << formatter(selection.all().begin(), selection.all().end()) <<
+//     std::endl; ASSERT_EQ(true, true);
 //   }
 //
 //   // -- Check Configuration --
@@ -160,7 +161,7 @@ using namespace CASM;
 //     auto formatter = dict.parse(all_col);
 //
 //     std::stringstream ss;
-//     ss << formatter(selection.all().begin(), selection.all().end()) << std::endl;
-//     ASSERT_EQ(true, true);
+//     ss << formatter(selection.all().begin(), selection.all().end()) <<
+//     std::endl; ASSERT_EQ(true, true);
 //   }
 // }

@@ -1,44 +1,53 @@
-#include "gtest/gtest.h"
 #include <vector>
+
 #include "autotools.hh"
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/StrucMapping.hh"
 
 /// What is being used to test it:
-#include "crystallography/TestStructures.hh"
 #include "casm/casm_io/container/stream_io.hh"
-#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/crystallography/Adapter.hh"
-#include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/SimpleStrucMapCalculator.hh"
+#include "casm/crystallography/SimpleStructureTools.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
+#include "crystallography/TestStructures.hh"
 
 using namespace CASM;
 
 void print_mapping_nodes(std::set<xtal::MappingNode> const &set) {
   int i = 0;
-  for(auto const &el : set) {
+  for (auto const &el : set) {
     std::cout << "ELEMENT " << ++i << ":\n";
-    std::cout << "   cost: " << el.cost << "  bcost: " << el.atomic_node.cost << "  lcost: " << el.lattice_node.cost << "\n"
-              << "   translation: " << el.atomic_node.translation.transpose() << "\n"
-              << "   isometry: \n" << el.lattice_node.isometry << "\n"
-              << "   stretch: \n" << el.lattice_node.stretch << "\n"
-              << "   parent: \n" << el.lattice_node.parent.superlattice().lat_column_mat() << "\n"
-              << "   cost_mat: \n" << el.atomic_node.cost_mat << "\n"
+    std::cout << "   cost: " << el.cost << "  bcost: " << el.atomic_node.cost
+              << "  lcost: " << el.lattice_node.cost << "\n"
+              << "   translation: " << el.atomic_node.translation.transpose()
+              << "\n"
+              << "   isometry: \n"
+              << el.lattice_node.isometry << "\n"
+              << "   stretch: \n"
+              << el.lattice_node.stretch << "\n"
+              << "   parent: \n"
+              << el.lattice_node.parent.superlattice().lat_column_mat() << "\n"
+              << "   cost_mat: \n"
+              << el.atomic_node.cost_mat << "\n"
               << "   partitioned: " << el.is_partitioned << "\n"
               << "   forced_on: \n";
-    for(auto const &pr : el.atomic_node.forced_on)
+    for (auto const &pr : el.atomic_node.forced_on)
       std::cout << "     (" << pr.first << ", " << pr.second << ")\n";
     std::cout << "   irow: " << el.atomic_node.irow << "\n"
               << "   icol: " << el.atomic_node.icol << "\n"
               << "   assignment: " << el.atomic_node.assignment << "\n"
-              << "   displacement: \n" << el.atom_displacement << "\n"
-              << "   tot assignment: " << el.atom_permutation << "\n\n-----\n\n";
+              << "   displacement: \n"
+              << el.atom_displacement << "\n"
+              << "   tot assignment: " << el.atom_permutation
+              << "\n\n-----\n\n";
   }
 }
-// Generate cubic cell with lat param a and two atoms of species "A" separated by d along [111]
-// when d=sqrt(3)a/2, describes BCC
+// Generate cubic cell with lat param a and two atoms of species "A" separated
+// by d along [111] when d=sqrt(3)a/2, describes BCC
 xtal::SimpleStructure map_struc1(double a, double d) {
   xtal::SimpleStructure result;
   result.lat_column_mat.setIdentity();
@@ -52,33 +61,38 @@ xtal::SimpleStructure map_struc1(double a, double d) {
 }
 
 void k_best_mapping_test(xtal::SimpleStructure const &sstruc, double d) {
-
   // Store result as factor group of structure
   xtal::SymOpVector fgroup;
   {
-    std::string comment("Check for perfect mappings using the best-0 calling convention, without symmetry and with a positive min_cost");
+    std::string comment(
+        "Check for perfect mappings using the best-0 calling convention, "
+        "without symmetry and with a positive min_cost");
     xtal::StrucMapper mapper((xtal::SimpleStrucMapCalculator(sstruc)));
-    auto sym_set = mapper.map_deformed_struc_impose_lattice(sstruc, xtal::Lattice(sstruc.lat_column_mat), 0, xtal::StrucMapping::big_inf(), 1e-3);
+    auto sym_set = mapper.map_deformed_struc_impose_lattice(
+        sstruc, xtal::Lattice(sstruc.lat_column_mat), 0,
+        xtal::StrucMapping::big_inf(), 1e-3);
 
     EXPECT_EQ(sym_set.size(), 12) << comment;
     fgroup = adapter::Adapter<xtal::SymOpVector, decltype(sym_set)>()(sym_set);
 
-    //std::cout << "BASE MAPPINGS:\n";
-
+    // std::cout << "BASE MAPPINGS:\n";
   }
 
   {
-    std::string comment("Check for all mappings better than the pure swap mapping, which has a cost of 0.5*d^2. Without considering symmetry of child structure there are 8.");
+    std::string comment(
+        "Check for all mappings better than the pure swap mapping, which has a "
+        "cost of 0.5*d^2. Without considering symmetry of child structure "
+        "there are 8.");
     xtal::StrucMapper mapper(xtal::SimpleStrucMapCalculator(sstruc, fgroup),
-                             0.5,
-                             0.5,
-                             xtal::StrucMapper::robust);
-    auto sym_set = mapper.map_deformed_struc_impose_lattice(sstruc, xtal::Lattice(sstruc.lat_column_mat), 0, xtal::StrucMapping::big_inf(), 0.5 * d * d + 1e-6);
+                             0.5, 0.5, xtal::StrucMapper::robust);
+    auto sym_set = mapper.map_deformed_struc_impose_lattice(
+        sstruc, xtal::Lattice(sstruc.lat_column_mat), 0,
+        xtal::StrucMapping::big_inf(), 0.5 * d * d + 1e-6);
 
     EXPECT_EQ(sym_set.size(), 8) << comment;
 
-    //std::cout << "SUB MAPPINGS:\n";
-    //print_mapping_nodes(sym_set);
+    // std::cout << "SUB MAPPINGS:\n";
+    // print_mapping_nodes(sym_set);
 
     EXPECT_NEAR(sym_set.begin()->cost, 0, 1e-6) << comment;
 
@@ -86,51 +100,48 @@ void k_best_mapping_test(xtal::SimpleStructure const &sstruc, double d) {
   }
 
   {
-    std::string comment("Check for all mappings better than the pure swap mapping, which has a cost of 0.5 * d^2. Considering symmetry of child structure, there are 4.");
+    std::string comment(
+        "Check for all mappings better than the pure swap mapping, which has a "
+        "cost of 0.5 * d^2. Considering symmetry of child structure, there are "
+        "4.");
     xtal::StrucMapper mapper(xtal::SimpleStrucMapCalculator(sstruc, fgroup),
-                             0.5,
-                             0.5,
-                             xtal::StrucMapper::robust);
-    auto sym_set = mapper.map_deformed_struc_impose_lattice(sstruc,
-                                                            xtal::Lattice(sstruc.lat_column_mat),
-                                                            0,
-                                                            xtal::StrucMapping::big_inf(),
-                                                            0.5 * d * d + 1e-6,
-                                                            false,
-                                                            fgroup);
+                             0.5, 0.5, xtal::StrucMapper::robust);
+    auto sym_set = mapper.map_deformed_struc_impose_lattice(
+        sstruc, xtal::Lattice(sstruc.lat_column_mat), 0,
+        xtal::StrucMapping::big_inf(), 0.5 * d * d + 1e-6, false, fgroup);
 
     EXPECT_EQ(sym_set.size(), 4) << comment;
 
-    //std::cout << "SUB MAPPINGS:\n";
-    //print_mapping_nodes(sym_set);
+    // std::cout << "SUB MAPPINGS:\n";
+    // print_mapping_nodes(sym_set);
 
     EXPECT_NEAR(sym_set.begin()->cost, 0, 1e-6) << comment;
 
     EXPECT_NEAR(sym_set.rbegin()->cost, 0.5 * d * d, 1e-6) << comment;
   }
-
 }
 
 void sym_mapping_test(xtal::BasicStructure struc, Index N) {
   xtal::SimpleStructure sstruc = xtal::make_simple_structure(struc);
 
-  for(std::string &sp : sstruc.mol_info.names) {
-    if(sp == "Va") {
+  for (std::string &sp : sstruc.mol_info.names) {
+    if (sp == "Va") {
       sp = "A";
     }
   }
 
-  for(std::string &sp : sstruc.atom_info.names) {
-    if(sp == "Va") {
+  for (std::string &sp : sstruc.atom_info.names) {
+    if (sp == "Va") {
       sp = "A";
     }
   }
 
-  //std::cout << "species:  ";
-  //for(Index i=0; i<sstruc.atom_info.size(); ++i){
-  //std::cout << sstruc.atom_info.coords.col(i).transpose() << "  " << sstruc.atom_info.names[i] << "\n";
+  // std::cout << "species:  ";
+  // for(Index i=0; i<sstruc.atom_info.size(); ++i){
+  // std::cout << sstruc.atom_info.coords.col(i).transpose() << "  " <<
+  // sstruc.atom_info.names[i] << "\n";
   //}
-  //std::cout << "\n";
+  // std::cout << "\n";
 
   Eigen::Matrix3i T;
   T.setIdentity();
@@ -139,7 +150,9 @@ void sym_mapping_test(xtal::BasicStructure struc, Index N) {
   xtal::SimpleStructure sstruc2 = make_superstructure(T, sstruc);
 
   {
-    std::string comment("Check that we find 8 perfect mapping for a Vol8 non-primitive structure");
+    std::string comment(
+        "Check that we find 8 perfect mapping for a Vol8 non-primitive "
+        "structure");
     xtal::StrucMapper mapper((xtal::SimpleStrucMapCalculator(sstruc2)));
     xtal::LatticeNode tnode((xtal::Lattice(sstruc2.lat_column_mat)),
                             (xtal::Lattice(sstruc2.lat_column_mat)),
@@ -147,72 +160,93 @@ void sym_mapping_test(xtal::BasicStructure struc, Index N) {
                             (xtal::Lattice(sstruc2.lat_column_mat)),
                             sstruc2.atom_info.size());
 
-    auto trans_set = mapper.map_deformed_struc_impose_lattice_node(sstruc2, tnode, 0, xtal::StrucMapping::big_inf(), 1e-3);
+    auto trans_set = mapper.map_deformed_struc_impose_lattice_node(
+        sstruc2, tnode, 0, xtal::StrucMapping::big_inf(), 1e-3);
     EXPECT_EQ(trans_set.size(), 8) << comment;
   }
 
   {
-    std::string comment("Check for perfect mappings using the best-1 calling convention, without symmetry");
+    std::string comment(
+        "Check for perfect mappings using the best-1 calling convention, "
+        "without symmetry");
     xtal::StrucMapper mapper((xtal::SimpleStrucMapCalculator(sstruc)));
-    auto sym_set = mapper.map_deformed_struc_impose_lattice(sstruc, xtal::Lattice(sstruc.lat_column_mat), 1, xtal::StrucMapping::big_inf(), -1e-3);
+    auto sym_set = mapper.map_deformed_struc_impose_lattice(
+        sstruc, xtal::Lattice(sstruc.lat_column_mat), 1,
+        xtal::StrucMapping::big_inf(), -1e-3);
     EXPECT_EQ(sym_set.size(), N) << comment;
   }
 
   {
-    std::string comment("Check for perfect mappings using the best-1000 calling convention, without symmetry");
+    std::string comment(
+        "Check for perfect mappings using the best-1000 calling convention, "
+        "without symmetry");
     xtal::StrucMapper mapper((xtal::SimpleStrucMapCalculator(sstruc)));
-    auto sym_set = mapper.map_deformed_struc_impose_lattice(sstruc, xtal::Lattice(sstruc.lat_column_mat), 1000, 1e-3, -1e-3);
+    auto sym_set = mapper.map_deformed_struc_impose_lattice(
+        sstruc, xtal::Lattice(sstruc.lat_column_mat), 1000, 1e-3, -1e-3);
     EXPECT_EQ(sym_set.size(), N) << comment;
   }
 
   // Store result as factor group of structure
   xtal::SymOpVector fgroup;
   {
-    std::string comment("Check for perfect mappings using the best-0 calling convention, without symmetry and with a positive min_cost");
+    std::string comment(
+        "Check for perfect mappings using the best-0 calling convention, "
+        "without symmetry and with a positive min_cost");
     xtal::StrucMapper mapper((xtal::SimpleStrucMapCalculator(sstruc)));
-    auto sym_set = mapper.map_deformed_struc_impose_lattice(sstruc, xtal::Lattice(sstruc.lat_column_mat), 0, xtal::StrucMapping::big_inf(), 1e-3);
+    auto sym_set = mapper.map_deformed_struc_impose_lattice(
+        sstruc, xtal::Lattice(sstruc.lat_column_mat), 0,
+        xtal::StrucMapping::big_inf(), 1e-3);
 
     EXPECT_EQ(sym_set.size(), N) << comment;
     fgroup = adapter::Adapter<xtal::SymOpVector, decltype(sym_set)>()(sym_set);
   }
 
   {
-    std::string comment("Check for perfect mappings of primitive structure onto itself, using symmetry reduction of factor group from previous step.");
+    std::string comment(
+        "Check for perfect mappings of primitive structure onto itself, using "
+        "symmetry reduction of factor group from previous step.");
     xtal::StrucMapper mapper((xtal::SimpleStrucMapCalculator(sstruc, fgroup)));
-    auto sym_set = mapper.map_deformed_struc_impose_lattice(sstruc, xtal::Lattice(sstruc.lat_column_mat), 0, xtal::StrucMapping::big_inf(), 1e-3);
+    auto sym_set = mapper.map_deformed_struc_impose_lattice(
+        sstruc, xtal::Lattice(sstruc.lat_column_mat), 0,
+        xtal::StrucMapping::big_inf(), 1e-3);
 
     EXPECT_EQ(sym_set.size(), 1) << comment;
   }
 
   {
-    std::string comment("Check for perfect mappings of non-primitive structure onto primitive, using symmetry reduction of factor group from previous step.");
+    std::string comment(
+        "Check for perfect mappings of non-primitive structure onto primitive, "
+        "using symmetry reduction of factor group from previous step.");
     xtal::StrucMapper mapper((xtal::SimpleStrucMapCalculator(sstruc, fgroup)));
-    auto sym_set = mapper.map_deformed_struc_impose_lattice(sstruc2, xtal::Lattice(sstruc2.lat_column_mat), 0, xtal::StrucMapping::big_inf(), 1e-3);
+    auto sym_set = mapper.map_deformed_struc_impose_lattice(
+        sstruc2, xtal::Lattice(sstruc2.lat_column_mat), 0,
+        xtal::StrucMapping::big_inf(), 1e-3);
     EXPECT_EQ(sym_set.size(), 1) << comment;
   }
 
   {
-    std::string comment("Check for perfect mappings of vol-8 non-primitive structure onto itself, using symmetry reduction of factor group from previous step.");
+    std::string comment(
+        "Check for perfect mappings of vol-8 non-primitive structure onto "
+        "itself, using symmetry reduction of factor group from previous step.");
     xtal::StrucMapper mapper((xtal::SimpleStrucMapCalculator(sstruc2, fgroup)));
-    auto sym_set = mapper.map_deformed_struc_impose_lattice(sstruc2, xtal::Lattice(sstruc2.lat_column_mat), 0, xtal::StrucMapping::big_inf(), 1e-3);
+    auto sym_set = mapper.map_deformed_struc_impose_lattice(
+        sstruc2, xtal::Lattice(sstruc2.lat_column_mat), 0,
+        xtal::StrucMapping::big_inf(), 1e-3);
     EXPECT_EQ(sym_set.size(), 8) << comment;
   }
-
-
-
 }
 
-xtal::BasicStructure select_first_allowed_occupant_for_basis(const xtal::BasicStructure &ambiguous_structure) {
+xtal::BasicStructure select_first_allowed_occupant_for_basis(
+    const xtal::BasicStructure &ambiguous_structure) {
   xtal::BasicStructure struc_in_state = ambiguous_structure;
   std::vector<xtal::Site> new_basis;
-  for(const xtal::Site &s : struc_in_state.basis()) {
+  for (const xtal::Site &s : struc_in_state.basis()) {
     new_basis.emplace_back(s, s.allowed_occupants()[0]);
   }
 
   struc_in_state.set_basis(new_basis);
   return struc_in_state;
 }
-
 
 TEST(SymMappingTest, FCCTernaryPrim) {
   // Read in test PRIM and run tests
@@ -236,7 +270,7 @@ TEST(SelfMappingTest, MultipleAllowedOccupants) {
   Eigen::Matrix3d fcc_lat_vecs;
   fcc_lat_vecs << 0, 2, 2, 0, 2, 0, 2, 2, 0;
 
-  auto make_fcc = [ = ](const std::string & occupant) {
+  auto make_fcc = [=](const std::string &occupant) {
     xtal::SimpleStructure fcc;
     fcc.lat_column_mat = fcc_lat_vecs;
     fcc.atom_info.resize(1);
@@ -249,15 +283,16 @@ TEST(SelfMappingTest, MultipleAllowedOccupants) {
   auto fcc_Y = make_fcc("Y");
 
   xtal::SimpleStrucMapCalculator iface(
-  parent, {CASM::xtal::SymOp::identity()}, CASM::xtal::SimpleStructure::SpeciesMode::ATOM, {{"Y", "X"}});
+      parent, {CASM::xtal::SymOp::identity()},
+      CASM::xtal::SimpleStructure::SpeciesMode::ATOM, {{"Y", "X"}});
   xtal::StrucMapper mapper(iface);
 
   auto X_results = mapper.map_deformed_struc(fcc_X);
   auto Y_results = mapper.map_deformed_struc(fcc_Y);
   auto Z_results = mapper.map_deformed_struc(parent);
 
-  EXPECT_EQ(Z_results.size(), Index{0}); //Z is not an allowed occupant in the mapper
+  EXPECT_EQ(Z_results.size(),
+            Index{0});  // Z is not an allowed occupant in the mapper
   EXPECT_EQ(X_results.size(), Index{48});
   EXPECT_EQ(X_results.size(), Y_results.size());
 }
-

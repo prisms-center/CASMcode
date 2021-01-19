@@ -3,14 +3,15 @@
 
 namespace CASM {
 
-  template<typename Derived> struct traits;
+template <typename Derived>
+struct traits;
 
-  template<typename Derived>
-  class SymCompare;
+template <typename Derived>
+class SymCompare;
 
-  template<typename _SymCompareType>
-  class Orbit;
+template <typename _SymCompareType>
+class Orbit;
 
-}
+}  // namespace CASM
 
 #endif

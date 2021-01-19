@@ -60,7 +60,8 @@
 //       orbit,
 //       m_prim_config.prim().factor_group(),
 //       m_prim_config.supercell().factor_group(),
-//       typename traits<Element>::copy_apply_f_type(this->m_config.supercell().primclex().shared_prim()),
+//       typename
+//       traits<Element>::copy_apply_f_type(this->m_config.supercell().primclex().shared_prim()),
 //       std::back_inserter(scel_suborbit_generators));
 //
 //     // get generating elements for supercell->config orbit splitting
@@ -76,7 +77,8 @@
 //     return result;
 //   }
 //
-//   /// \brief Output the orbit generators necessary to construct the sub-orbits
+//   /// \brief Output the orbit generators necessary to construct the
+//   sub-orbits
 //   /// corresponding to Prim Structure -> Configuration symmetry breaking
 //   template<typename OrbitType, typename ElementOutputIterator>
 //   ElementOutputIterator make_suborbit_generators(
@@ -87,7 +89,8 @@
 //     return MakeConfigSubOrbitGenerators{config}(orbit, result);
 //   }
 //
-//   /// \brief Output the orbit generators necessary to construct the sub-orbits
+//   /// \brief Output the orbit generators necessary to construct the
+//   sub-orbits
 //   /// corresponding to Prim Structure -> Configuration symmetry breaking
 //   template<typename OrbitIterator, typename ElementOutputIterator>
 //   ElementOutputIterator make_suborbit_generators(

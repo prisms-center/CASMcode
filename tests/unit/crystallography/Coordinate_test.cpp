@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
 
 /// What is being tested:
-#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/container/Counter.hh"
 #include "casm/crystallography/Coordinate.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 
 using namespace CASM;
 using namespace xtal;
@@ -25,28 +25,32 @@ void coordinate_constructor_test() {
   {
     Coordinate tcoord(tvec, lat, CART);
     EXPECT_TRUE(almost_equal(tcoord.const_cart(), tvec, tol));
-    EXPECT_TRUE(almost_equal(tcoord.const_frac(), lat.inv_lat_column_mat()*tvec, tol));
+    EXPECT_TRUE(almost_equal(tcoord.const_frac(),
+                             lat.inv_lat_column_mat() * tvec, tol));
     EXPECT_EQ(&(tcoord.home()), &lat);
   }
 
   {
     Coordinate tcoord(tvec, lat, FRAC);
     EXPECT_TRUE(almost_equal(tcoord.const_frac(), tvec, tol));
-    EXPECT_TRUE(almost_equal(tcoord.const_cart(), lat.lat_column_mat()*tvec, tol));
+    EXPECT_TRUE(
+        almost_equal(tcoord.const_cart(), lat.lat_column_mat() * tvec, tol));
     EXPECT_EQ(&(tcoord.home()), &lat);
   }
 
   {
     Coordinate tcoord(0.1, 0.2, 0.3, lat, CART);
     EXPECT_TRUE(almost_equal(tcoord.const_cart(), tvec, tol));
-    EXPECT_TRUE(almost_equal(tcoord.const_frac(), lat.inv_lat_column_mat()*tvec, tol));
+    EXPECT_TRUE(almost_equal(tcoord.const_frac(),
+                             lat.inv_lat_column_mat() * tvec, tol));
     EXPECT_EQ(&(tcoord.home()), &lat);
   }
 
   {
     Coordinate tcoord(0.1, 0.2, 0.3, lat, FRAC);
     EXPECT_TRUE(almost_equal(tcoord.const_frac(), tvec, tol));
-    EXPECT_TRUE(almost_equal(tcoord.const_cart(), lat.lat_column_mat()*tvec, tol));
+    EXPECT_TRUE(
+        almost_equal(tcoord.const_cart(), lat.lat_column_mat() * tvec, tol));
     EXPECT_EQ(&(tcoord.home()), &lat);
   }
 }
@@ -62,7 +66,8 @@ void coordinate_operation_test() {
     Coordinate coord1(lat);
     coord1.frac() = vec2;
     EXPECT_TRUE(almost_equal(coord1.const_frac(), vec2, tol));
-    EXPECT_TRUE(almost_equal(coord1.const_cart(), lat.lat_column_mat()*vec2, tol));
+    EXPECT_TRUE(
+        almost_equal(coord1.const_cart(), lat.lat_column_mat() * vec2, tol));
   }
 
   /// non-const frac access
@@ -72,7 +77,8 @@ void coordinate_operation_test() {
     coord1.frac(1) = vec2[1];
     coord1.frac(2) = vec2[2];
     EXPECT_TRUE(almost_equal(coord1.const_frac(), vec2, tol));
-    EXPECT_TRUE(almost_equal(coord1.const_cart(), lat.lat_column_mat()*vec2, tol));
+    EXPECT_TRUE(
+        almost_equal(coord1.const_cart(), lat.lat_column_mat() * vec2, tol));
   }
 
   /// non-const cart access
@@ -81,7 +87,8 @@ void coordinate_operation_test() {
     coord1.cart() = vec2;
 
     EXPECT_TRUE(almost_equal(coord1.const_cart(), vec2, tol));
-    EXPECT_TRUE(almost_equal(coord1.const_frac(), lat.inv_lat_column_mat()*vec2, tol));
+    EXPECT_TRUE(almost_equal(coord1.const_frac(),
+                             lat.inv_lat_column_mat() * vec2, tol));
   }
 
   /// non-const cart access
@@ -92,7 +99,8 @@ void coordinate_operation_test() {
     coord1.cart(2) = vec2[2];
 
     EXPECT_TRUE(almost_equal(coord1.const_cart(), vec2, tol));
-    EXPECT_TRUE(almost_equal(coord1.const_frac(), lat.inv_lat_column_mat()*vec2, tol));
+    EXPECT_TRUE(almost_equal(coord1.const_frac(),
+                             lat.inv_lat_column_mat() * vec2, tol));
   }
 
   Coordinate coord1(vec1, lat, CART);
@@ -140,7 +148,8 @@ void coordinate_operation_test() {
     Coordinate tcoord(coord1);
     tcoord += coord2;
     EXPECT_TRUE(almost_equal(tcoord.const_cart(), vec1 + vec2, tol));
-    EXPECT_TRUE(almost_equal(tcoord.const_frac(), lat.inv_lat_column_mat() * (vec1 + vec2), tol));
+    EXPECT_TRUE(almost_equal(tcoord.const_frac(),
+                             lat.inv_lat_column_mat() * (vec1 + vec2), tol));
   }
 
   /// subtract-assignment
@@ -148,7 +157,8 @@ void coordinate_operation_test() {
     Coordinate tcoord(coord1);
     tcoord -= coord2;
     EXPECT_TRUE(almost_equal(tcoord.const_cart(), vec1 - vec2, tol));
-    EXPECT_TRUE(almost_equal(tcoord.const_frac(), lat.inv_lat_column_mat() * (vec1 - vec2), tol));
+    EXPECT_TRUE(almost_equal(tcoord.const_frac(),
+                             lat.inv_lat_column_mat() * (vec1 - vec2), tol));
   }
 
   /// equality
@@ -178,14 +188,16 @@ void coordinate_periodicity_test() {
                                               Eigen::Vector3i(2, 2, 2));
     Coordinate transcoord1(lat);
     Coordinate nearest_trans(lat);
-    for(; trans_count.valid(); ++trans_count) {
+    for (; trans_count.valid(); ++trans_count) {
       transcoord1.frac() = trans_count().cast<double>() + coord1.const_frac();
 
       // commutativity of min_dist from transcoord1 to coord2
-      EXPECT_TRUE(almost_equal(transcoord1.min_dist(coord2), coord2.min_dist(transcoord1), tol));
+      EXPECT_TRUE(almost_equal(transcoord1.min_dist(coord2),
+                               coord2.min_dist(transcoord1), tol));
 
       // minimality of min_dist
-      EXPECT_TRUE((transcoord1.min_dist(coord2) - (coord1.const_cart() - coord2.const_cart()).norm()) < tol);
+      EXPECT_TRUE((transcoord1.min_dist(coord2) -
+                   (coord1.const_cart() - coord2.const_cart()).norm()) < tol);
 
       // min_dist transcoord1 to coord1
       EXPECT_TRUE(almost_zero(transcoord1.min_dist(coord1), tol));
@@ -200,7 +212,6 @@ void coordinate_periodicity_test() {
       nearest_trans = coord1.min_translation(transcoord1);
       EXPECT_TRUE(almost_zero(coord1.min_dist(transcoord1), tol));
       EXPECT_TRUE(almost_zero(nearest_trans.const_frac(), tol));
-
     }
   }
 
@@ -213,45 +224,48 @@ void coordinate_periodicity_test() {
     EigenCounter<Eigen::Vector3d> point_count(Eigen::Vector3d(0., 0., 0.),
                                               Eigen::Vector3d(1., 1., 1.),
                                               Eigen::Vector3d(0.2, 0.2, 0.25));
-    for(; point_count.valid(); ++point_count) {
+    for (; point_count.valid(); ++point_count) {
       Coordinate coord2(point_count(), lat, FRAC);
       // optimality of robust_min_dist
-      EXPECT_TRUE(coord1.robust_min_dist(coord2) < (coord1.min_dist(coord2) + tol));
+      EXPECT_TRUE(coord1.robust_min_dist(coord2) <
+                  (coord1.min_dist(coord2) + tol));
 
       // commutativity of robust_min_dist
-      EXPECT_TRUE(almost_equal(coord2.robust_min_dist(coord1), coord1.robust_min_dist(coord2), tol));
+      EXPECT_TRUE(almost_equal(coord2.robust_min_dist(coord1),
+                               coord1.robust_min_dist(coord2), tol));
 
       // equivalence of both versions of robust_min_dist
-      EXPECT_TRUE(almost_equal(coord2.robust_min_dist(coord1), coord1.robust_min_dist(coord2), tol));
-      EXPECT_TRUE(almost_equal(coord2.robust_min_dist(coord1), coord1.robust_min_dist(coord2), tol));
-
+      EXPECT_TRUE(almost_equal(coord2.robust_min_dist(coord1),
+                               coord1.robust_min_dist(coord2), tol));
+      EXPECT_TRUE(almost_equal(coord2.robust_min_dist(coord1),
+                               coord1.robust_min_dist(coord2), tol));
     }
 
     Eigen::MatrixXd const &vtable = lat.voronoi_table();
     Coordinate zero_coord(Eigen::Vector3d::Zero(), lat, FRAC);
 
     // check robustness of edge cases
-    for(Index i = 0; i < vtable.rows(); i++) {
+    for (Index i = 0; i < vtable.rows(); i++) {
       {
-        Coordinate coord2((1 + tol / 2.)*vtable.row(i).transpose() / vtable.row(i).squaredNorm(), lat, CART);
-        EXPECT_TRUE(coord2.robust_min_dist(zero_coord) <= coord2.const_cart().norm());
+        Coordinate coord2((1 + tol / 2.) * vtable.row(i).transpose() /
+                              vtable.row(i).squaredNorm(),
+                          lat, CART);
+        EXPECT_TRUE(coord2.robust_min_dist(zero_coord) <=
+                    coord2.const_cart().norm());
       }
       {
-        Coordinate coord2((1 - tol / 2.)*vtable.row(i).transpose() / vtable.row(i).squaredNorm(), lat, CART);
-        EXPECT_TRUE(almost_equal(coord2.robust_min_dist(zero_coord), coord2.const_cart().norm(), tol / 2));
+        Coordinate coord2((1 - tol / 2.) * vtable.row(i).transpose() /
+                              vtable.row(i).squaredNorm(),
+                          lat, CART);
+        EXPECT_TRUE(almost_equal(coord2.robust_min_dist(zero_coord),
+                                 coord2.const_cart().norm(), tol / 2));
       }
     }
   }
 }
 
-TEST(CoordinateTest, ConstructorTest) {
-  coordinate_constructor_test();
-}
+TEST(CoordinateTest, ConstructorTest) { coordinate_constructor_test(); }
 
-TEST(CoordinateTest, OperationTest) {
-  coordinate_operation_test();
-}
+TEST(CoordinateTest, OperationTest) { coordinate_operation_test(); }
 
-TEST(CoordinateTest, PeriodicityTest) {
-  coordinate_periodicity_test();
-}
+TEST(CoordinateTest, PeriodicityTest) { coordinate_periodicity_test(); }

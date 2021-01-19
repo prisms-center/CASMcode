@@ -4,7 +4,7 @@
 #include "casm/clusterography/IntegralCluster.hh"
 
 namespace CASM {
-  // TODO: remove file
+// TODO: remove file
 }
 
 #endif

@@ -2,9 +2,10 @@
 #define CASM_FUNCTIONS_HH
 
 #include <boost/filesystem/path.hpp>
-#include "casm/global/definitions.hh"
+
 #include "casm/app/CLIParse.hh"
 #include "casm/app/errors.hh"
+#include "casm/global/definitions.hh"
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/misc/unique_cloneable_map.hh"
 
@@ -34,133 +35,122 @@
 /// \brief Main CASM namespace
 namespace CASM {
 
-  void print_splash(std::ostream &out);
+void print_splash(std::ostream &out);
 
-  class PrimClex;
-  class jsonParser;
+class PrimClex;
+class jsonParser;
 
-  /**
-   *  \defgroup API
-   *
-   *  \brief Relates to the CASM API
-   *
-   *  @{
-   */
+/**
+ *  \defgroup API
+ *
+ *  \brief Relates to the CASM API
+ *
+ *  @{
+ */
 
-  /// \brief Data structure holding basic CASM command info
-  struct CommandArgs : public CLIParse {
+/// \brief Data structure holding basic CASM command info
+struct CommandArgs : public CLIParse {
+  /// \brief CommandArgs constructor
+  CommandArgs(int _argc, char *_argv[], PrimClex *_primclex = nullptr,
+              fs::path _root = fs::path());
 
-    /// \brief CommandArgs constructor
-    CommandArgs(int _argc,
-                char *_argv[],
-                PrimClex *_primclex = nullptr,
-                fs::path _root = fs::path());
+  /// \brief CommandArgs constructor
+  CommandArgs(std::string _args, PrimClex *_primclex = nullptr,
+              fs::path _root = fs::path());
 
-    /// \brief CommandArgs constructor
-    CommandArgs(std::string _args,
-                PrimClex *_primclex = nullptr,
-                fs::path _root = fs::path());
+  CommandArgs(const CommandArgs &other) = delete;
+  CommandArgs(CommandArgs &&other) = delete;
+  CommandArgs &operator=(const CommandArgs &) = delete;
+  CommandArgs &operator=(CommandArgs &&) = delete;
 
-    CommandArgs(const CommandArgs &other) = delete;
-    CommandArgs(CommandArgs &&other) = delete;
-    CommandArgs &operator=(const CommandArgs &) = delete;
-    CommandArgs &operator=(CommandArgs &&) = delete;
+  /// \brief CommandArgs destructor
+  ~CommandArgs();
 
-    /// \brief CommandArgs destructor
-    ~CommandArgs();
+  PrimClex *primclex;
 
+  fs::path root;
 
-    PrimClex *primclex;
+  bool is_help;
 
-    fs::path root;
+  // if LOG should be written
+  bool write_log;
 
-    bool is_help;
+  // which casm sub-command ('init', 'enum', etc.)
+  std::string command;
 
-    // if LOG should be written
-    bool write_log;
+ private:
+  void _init();
+};
 
-    // which casm sub-command ('init', 'enum', etc.)
-    std::string command;
+typedef std::function<int(const CommandArgs &)> Command;
+typedef std::map<std::string, Command> CommandMap;
 
-  private:
+/// \brief Return static CommandMap containing all CASM API commands
+CommandMap &command_map();
 
-    void _init();
+/// \brief Executes CASM commands specified by args
+int casm_api(const CommandArgs &args);
 
-  };
+/// \brief If !_primclex, construct new PrimClex stored in uniq_primclex, then
+///        return reference to existing or constructed PrimClex
+PrimClex &make_primclex_if_not(const CommandArgs &args,
+                               std::unique_ptr<PrimClex> &uniq_primclex);
 
-  typedef std::function<int (const CommandArgs &)> Command;
-  typedef std::map<std::string, Command> CommandMap;
+/// \brief Return a reference to proper std::ostream
+std::ostream &make_ostream_if(bool output, std::ostream &sout,
+                              std::unique_ptr<std::ostream> &fout,
+                              fs::path out_path, bool gzip);
 
-  /// \brief Return static CommandMap containing all CASM API commands
-  CommandMap &command_map();
+int help_command(const CommandArgs &args);
 
-  /// \brief Executes CASM commands specified by args
-  int casm_api(const CommandArgs &args);
+int version_command(const CommandArgs &args);
 
-  /// \brief If !_primclex, construct new PrimClex stored in uniq_primclex, then
-  ///        return reference to existing or constructed PrimClex
-  PrimClex &make_primclex_if_not(const CommandArgs &args, std::unique_ptr<PrimClex> &uniq_primclex);
+template <typename OptionType>
+class InterfaceBase;
 
-  /// \brief Return a reference to proper std::ostream
-  std::ostream &make_ostream_if(
-    bool output,
-    std::ostream &sout,
-    std::unique_ptr<std::ostream> &fout,
-    fs::path out_path,
-    bool gzip);
+/// \brief Used to hold a list of all algorithms that may be accessed via the
+/// API
+template <typename OptionType>
+using InterfaceMap =
+    notstd::unique_cloneable_map<std::string, InterfaceBase<OptionType> >;
 
+/// \brief Base class for generic use of algorithms through the API
+template <typename OptionType>
+class InterfaceBase {
+ public:
+  InterfaceBase() {}
 
-  int help_command(const CommandArgs &args);
+  virtual ~InterfaceBase() {}
 
-  int version_command(const CommandArgs &args);
+  virtual std::string help() const = 0;
 
-  template<typename OptionType>
-  class InterfaceBase;
+  virtual std::string name() const = 0;
 
-  /// \brief Used to hold a list of all algorithms that may be accessed via the API
-  template<typename OptionType>
-  using InterfaceMap = notstd::unique_cloneable_map<std::string, InterfaceBase<OptionType> >;
+  virtual int run(PrimClex const &primclex,
+                  jsonParser const &json_options) const = 0;
 
-  /// \brief Base class for generic use of algorithms through the API
-  template<typename OptionType>
-  class InterfaceBase {
-
-  public:
-
-    InterfaceBase() {}
-
-    virtual ~InterfaceBase() {}
-
-    virtual std::string help() const = 0;
-
-    virtual std::string name() const = 0;
-
-    virtual int run(PrimClex const &primclex, jsonParser const &json_options) const = 0;
-
-    std::unique_ptr<InterfaceBase> clone() const {
-      return std::unique_ptr<InterfaceBase>(this->_clone());
-    }
-
-  private:
-
-    virtual InterfaceBase *_clone() const = 0;
-
-  };
-
-  /// \brief Use to construct an InterfaceMap
-  template<typename OptionType>
-  std::unique_ptr<InterfaceMap<OptionType> > make_interface_map() {
-
-    return notstd::make_unique<InterfaceMap<OptionType> >(
-    [](const InterfaceBase<OptionType> &e) -> std::string {
-      return e.name();
-    },
-    [](const InterfaceBase<OptionType> &e) -> notstd::cloneable_ptr<InterfaceBase<OptionType> > {
-      return notstd::clone(e);
-    });
+  std::unique_ptr<InterfaceBase> clone() const {
+    return std::unique_ptr<InterfaceBase>(this->_clone());
   }
 
-  /** @} */
+ private:
+  virtual InterfaceBase *_clone() const = 0;
+};
+
+/// \brief Use to construct an InterfaceMap
+template <typename OptionType>
+std::unique_ptr<InterfaceMap<OptionType> > make_interface_map() {
+  return notstd::make_unique<InterfaceMap<OptionType> >(
+      [](const InterfaceBase<OptionType> &e) -> std::string {
+        return e.name();
+      },
+      [](const InterfaceBase<OptionType> &e)
+          -> notstd::cloneable_ptr<InterfaceBase<OptionType> > {
+        return notstd::clone(e);
+      });
 }
+
+/** @} */
+}  // namespace CASM
 
 #endif

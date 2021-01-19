@@ -1,181 +1,183 @@
 #ifndef CASM_ConfigEnumSiteDoFs
 #define CASM_ConfigEnumSiteDoFs
 
-#include "casm/enumerator/InputEnumerator.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/container/Counter.hh"
+#include "casm/enumerator/InputEnumerator.hh"
 
 namespace CASM {
 
-  class ConfigEnumInput;
+class ConfigEnumInput;
 
-  /// Parameters controlling ConfigEnumSiteDoFs
+/// Parameters controlling ConfigEnumSiteDoFs
+///
+/// ConfigEnumSiteDoFs is a method to generate Configurations that represent a
+/// sampling of a combination of subspaces of site (local, continuous) DoF.
+///
+struct ConfigEnumSiteDoFsParams {
+  /// Name of site degree of freedom which will be sampled
   ///
-  /// ConfigEnumSiteDoFs is a method to generate Configurations that represent a sampling of a
-  /// combination of subspaces of site (local, continuous) DoF.
+  /// DoFKey is a typedef for std::string
+  DoFKey dof;
+
+  /// Axes defining normal coordinates used to sample the site DoF space:
   ///
-  struct ConfigEnumSiteDoFsParams {
-
-    /// Name of site degree of freedom which will be sampled
-    ///
-    /// DoFKey is a typedef for std::string
-    DoFKey dof;
-
-    /// Axes defining normal coordinates used to sample the site DoF space:
-    ///
-    ///     site_DoF_values = axes * normal_coordinates
-    ///
-    /// Note:
-    /// - Number of rows equals the total dimensionality of the space
-    ///   - If the dimensionality of the site DoF is the same on every site, then the total
-    ///     dimensionality is (number of sites in the configuration / supercell) x (dimension of
-    ///     the site DoF value vector representation).
-    ///   - DoF values are unrolled in row-major order, such that values from a particular site are
-    ///     listed in contiguous rows.
-    /// - Each column represents a normal mode (collective excitation) which will be applied to the
-    ///   initial enumeration state in linear combinations to construct configurations
-    /// - The axes may be rank deficient, indicating the subspace of the total site DoF that will
-    ///   be sampled.
-    ///   - The number of columns equals the dimensionality of the subspace being sampled
-    ///
-    ///   Example:
-    ///     [[1,  1,  1]
-    ///      [1, -1, -1]
-    ///      [1,  0,  0]
-    ///      [1, -1,  1]
-    ///      [1,  1, -1]
-    ///      [1,  0,  0]]
-    ///
-    /// NOTE:
-    /// - This "axes" is the transpose of the JSON input value used with `casm enum -m ConfigEnumSiteDoFs`
-    /// - Use VectorSpaceSymReport to generate symmetry adapted axes and an "axis_glossary" which
-    ///   describes which site DoF correspond to each row for a particular choice of DoFSpace
-    ///   (choice of dof type and ConfigEnumInput).
-    Eigen::MatrixXd axes;
-
-
-    // The following specify min / increment / max amplitude of normal modes (columns of axes)
-    // applied to the initial enumeration state
-
-    /// Normal mode amplitude minimum values.
-    /// Dimension must be equal to number of columns of "axes".
-    ///
-    ///     min_val[i]: the minimum amplitude for axes.col(i)
-    ///
-    Eigen::VectorXd min_val;
-
-    /// Normal mode amplitude maximum values.
-    /// Dimension must be equal to number of columns of "axes".
-    ///
-    ///     max_val[i]: the maximum amplitude for axes.col(i)
-    ///
-    Eigen::VectorXd max_val;
-
-    /// Normal mode amplitude increment values.
-    /// Dimension must be equal to number of columns of "axes".
-    ///
-    ///     inv_val[i]: the amplitude spacing for axes.col(i)
-    ///
-    Eigen::VectorXd inc_val;
-
-
-    // Even if "axes" are rank deficient, the site DoF space defined by axes may quickly become
-    // very high dimensional (number of sites x mean site DoF dimension), so rather than sample the
-    // entire space, ConfigEnumSiteDoFs perturbs the input configuration by applying a linear
-    // combination of normal modes (collective excitations represented by columns of axes).
-
-    // The parameters "min_nonzero" and "max_nonzero" specifies how many normal mode amplitudes
-    // should be nonzero (inclusive range [min_nonzero, max_nonzero]). The method generates
-    // all n choose k (n=site DoF space dimension, k iterates through [min_nonzer, max_nonzero])
-    // combinations of normal modes in that range, and for each combination applies all the
-    // k chosen normal modes with amplitudes specified by "min" / "increment" / "max". Note that
-    // this may quickly become very large, depending on n, k, and the range specified by "min" /
-    // "increment" / "max".;
-
-    /// Minimum number of number modes included in the linear combination applied to the initial state
-    Index min_nonzero;
-
-    /// Maximum number of number modes included in the linear combination applied to the initial state
-    Index max_nonzero;
-
-  };
-
-  /// Enumerate site (continuous local) DoFs
+  ///     site_DoF_values = axes * normal_coordinates
   ///
-  /// Note: See ConfigEnumSiteDoFsParams for method and parameter details
+  /// Note:
+  /// - Number of rows equals the total dimensionality of the space
+  ///   - If the dimensionality of the site DoF is the same on every site, then
+  ///   the total
+  ///     dimensionality is (number of sites in the configuration / supercell) x
+  ///     (dimension of the site DoF value vector representation).
+  ///   - DoF values are unrolled in row-major order, such that values from a
+  ///   particular site are
+  ///     listed in contiguous rows.
+  /// - Each column represents a normal mode (collective excitation) which will
+  /// be applied to the
+  ///   initial enumeration state in linear combinations to construct
+  ///   configurations
+  /// - The axes may be rank deficient, indicating the subspace of the total
+  /// site DoF that will
+  ///   be sampled.
+  ///   - The number of columns equals the dimensionality of the subspace being
+  ///   sampled
   ///
-  class ConfigEnumSiteDoFs : public InputEnumeratorBase<Configuration> {
+  ///   Example:
+  ///     [[1,  1,  1]
+  ///      [1, -1, -1]
+  ///      [1,  0,  0]
+  ///      [1, -1,  1]
+  ///      [1,  1, -1]
+  ///      [1,  0,  0]]
+  ///
+  /// NOTE:
+  /// - This "axes" is the transpose of the JSON input value used with `casm
+  /// enum -m ConfigEnumSiteDoFs`
+  /// - Use VectorSpaceSymReport to generate symmetry adapted axes and an
+  /// "axis_glossary" which
+  ///   describes which site DoF correspond to each row for a particular choice
+  ///   of DoFSpace (choice of dof type and ConfigEnumInput).
+  Eigen::MatrixXd axes;
 
-    // -- Required members -------------------
+  // The following specify min / increment / max amplitude of normal modes
+  // (columns of axes) applied to the initial enumeration state
 
-  public:
+  /// Normal mode amplitude minimum values.
+  /// Dimension must be equal to number of columns of "axes".
+  ///
+  ///     min_val[i]: the minimum amplitude for axes.col(i)
+  ///
+  Eigen::VectorXd min_val;
 
-    /// See `ConfigEnumSiteDoFsParams` for method and parameter details
-    ConfigEnumSiteDoFs(
-      ConfigEnumInput const &_in_config,
-      ConfigEnumSiteDoFsParams const &params);
+  /// Normal mode amplitude maximum values.
+  /// Dimension must be equal to number of columns of "axes".
+  ///
+  ///     max_val[i]: the maximum amplitude for axes.col(i)
+  ///
+  Eigen::VectorXd max_val;
 
-    /// See `ConfigEnumSiteDoFsParams` for method and parameter details
-    ConfigEnumSiteDoFs(ConfigEnumInput const &_init,
-                       DoFKey const &_dof,
-                       Eigen::Ref<const Eigen::MatrixXd> const &_axes,
-                       Eigen::Ref<const Eigen::VectorXd> const &min_val,
-                       Eigen::Ref<const Eigen::VectorXd> const &max_val,
-                       Eigen::Ref<const Eigen::VectorXd> const &inc_val,
-                       Index _min_nonzero,
-                       Index _max_nonzero);
+  /// Normal mode amplitude increment values.
+  /// Dimension must be equal to number of columns of "axes".
+  ///
+  ///     inv_val[i]: the amplitude spacing for axes.col(i)
+  ///
+  Eigen::VectorXd inc_val;
 
-    std::string name() const override;
+  // Even if "axes" are rank deficient, the site DoF space defined by axes may
+  // quickly become very high dimensional (number of sites x mean site DoF
+  // dimension), so rather than sample the entire space, ConfigEnumSiteDoFs
+  // perturbs the input configuration by applying a linear combination of normal
+  // modes (collective excitations represented by columns of axes).
 
-    static const std::string enumerator_name;
+  // The parameters "min_nonzero" and "max_nonzero" specifies how many normal
+  // mode amplitudes should be nonzero (inclusive range [min_nonzero,
+  // max_nonzero]). The method generates all n choose k (n=site DoF space
+  // dimension, k iterates through [min_nonzer, max_nonzero]) combinations of
+  // normal modes in that range, and for each combination applies all the k
+  // chosen normal modes with amplitudes specified by "min" / "increment" /
+  // "max". Note that this may quickly become very large, depending on n, k, and
+  // the range specified by "min" / "increment" / "max".;
 
-    /// Implements increment over all strain states
-    void increment() override;
+  /// Minimum number of number modes included in the linear combination applied
+  /// to the initial state
+  Index min_nonzero;
 
-  private:
-    void _set_dof();
+  /// Maximum number of number modes included in the linear combination applied
+  /// to the initial state
+  Index max_nonzero;
+};
 
-    bool _increment_combo();
+/// Enumerate site (continuous local) DoFs
+///
+/// Note: See ConfigEnumSiteDoFsParams for method and parameter details
+///
+class ConfigEnumSiteDoFs : public InputEnumeratorBase<Configuration> {
+  // -- Required members -------------------
 
-    bool _check_sparsity() const;
+ public:
+  /// See `ConfigEnumSiteDoFsParams` for method and parameter details
+  ConfigEnumSiteDoFs(ConfigEnumInput const &_in_config,
+                     ConfigEnumSiteDoFsParams const &params);
 
-    bool _check_current() const;
+  /// See `ConfigEnumSiteDoFsParams` for method and parameter details
+  ConfigEnumSiteDoFs(ConfigEnumInput const &_init, DoFKey const &_dof,
+                     Eigen::Ref<const Eigen::MatrixXd> const &_axes,
+                     Eigen::Ref<const Eigen::VectorXd> const &min_val,
+                     Eigen::Ref<const Eigen::VectorXd> const &max_val,
+                     Eigen::Ref<const Eigen::VectorXd> const &inc_val,
+                     Index _min_nonzero, Index _max_nonzero);
 
-    // -- Unique -------------------
-    notstd::cloneable_ptr<Configuration> m_current;
+  std::string name() const override;
 
-    ConfigDoF::LocalDoFContainerType *m_dof_vals;
+  static const std::string enumerator_name;
 
-    DoFKey m_dof_key;
+  /// Implements increment over all strain states
+  void increment() override;
 
-    Index m_min_nonzero;
+ private:
+  void _set_dof();
 
-    Index m_max_nonzero;
+  bool _increment_combo();
 
-    Eigen::MatrixXd m_axes;
+  bool _check_sparsity() const;
 
-    Eigen::VectorXd m_min;
+  bool _check_current() const;
 
-    Eigen::VectorXd m_max;
+  // -- Unique -------------------
+  notstd::cloneable_ptr<Configuration> m_current;
 
-    Eigen::VectorXd m_inc;
+  ConfigDoF::LocalDoFContainerType *m_dof_vals;
 
-    bool m_unit_length;
+  DoFKey m_dof_key;
 
-    std::vector<Index> m_sites;
+  Index m_min_nonzero;
 
-    std::vector<Index> m_dof_dims;
+  Index m_max_nonzero;
 
-    bool m_subset_mode;
+  Eigen::MatrixXd m_axes;
 
-    Index m_combo_index;
+  Eigen::VectorXd m_min;
 
-    std::vector<Index> m_combo;
+  Eigen::VectorXd m_max;
 
-    EigenCounter<Eigen::VectorXd> m_counter;
+  Eigen::VectorXd m_inc;
 
-  };
+  bool m_unit_length;
 
-}
+  std::vector<Index> m_sites;
+
+  std::vector<Index> m_dof_dims;
+
+  bool m_subset_mode;
+
+  Index m_combo_index;
+
+  std::vector<Index> m_combo;
+
+  EigenCounter<Eigen::VectorXd> m_counter;
+};
+
+}  // namespace CASM
 
 #endif

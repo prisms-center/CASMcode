@@ -5,18 +5,18 @@
 
 namespace CASM {
 
-  class jsonParser;
+class jsonParser;
 
-  /// Check for --settings, then --input and return JSON input. Else return empty JSON object.
-  template<typename OptionType>
-  jsonParser make_json_input(const OptionType &opt);
+/// Check for --settings, then --input and return JSON input. Else return empty
+/// JSON object.
+template <typename OptionType>
+jsonParser make_json_input(const OptionType &opt);
 
-  /// Copy from `json_source` to `json_combined`
-  jsonParser &combine_json_options(
+/// Copy from `json_source` to `json_combined`
+jsonParser &combine_json_options(
     std::map<std::string, std::string> const &source_to_combined_keys,
-    jsonParser const &json_source,
-    jsonParser &json_combined);
+    jsonParser const &json_source, jsonParser &json_combined);
 
-}
+}  // namespace CASM
 
 #endif

@@ -2,7 +2,5 @@
 
 namespace CASM {
 
-  bool valid_index(Index i) {
-    return 0 <= i;
-  }
-}
+bool valid_index(Index i) { return 0 <= i; }
+}  // namespace CASM

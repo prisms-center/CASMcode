@@ -4,15 +4,14 @@
 #include "casm/database/ConfigData.hh"
 
 namespace CASM {
-  namespace Completer {
-    class ImportOption;
-  }
+namespace Completer {
+class ImportOption;
 }
+}  // namespace CASM
 
 // To be specialized for calculable 'ConfigType' classes:
-//   StructureMap<ConfigType>::map(fs::path, DatabaseIterator<ConfigType> hint, inserter result)
-//   Import<ConfigType>::desc
-//   Import<ConfigType>::run
+//   StructureMap<ConfigType>::map(fs::path, DatabaseIterator<ConfigType> hint,
+//   inserter result) Import<ConfigType>::desc Import<ConfigType>::run
 //   Import<ConfigType>::_import_formatter
 //   Update<ConfigType>::desc
 //   Update<ConfigType>::run
@@ -21,108 +20,95 @@ namespace CASM {
 //   Remove<ConfigType>::run
 
 namespace CASM {
-  namespace DB {
+namespace DB {
 
-    /// Construct pos_paths from input args --pos && --batch
-    template<typename OutputIterator>
-    std::pair<OutputIterator, int> construct_pos_paths(
-      const PrimClex &primclex,
-      const Completer::ImportOption &import_opt,
-      OutputIterator result);
+/// Construct pos_paths from input args --pos && --batch
+template <typename OutputIterator>
+std::pair<OutputIterator, int> construct_pos_paths(
+    const PrimClex &primclex, const Completer::ImportOption &import_opt,
+    OutputIterator result);
 
-
-    /// \brief Struct with optional parameters for Config/Data Import
-    /// Specifies default parameters for all values, in order to simplify
-    /// parsing from JSON
-    struct ImportSettings {
-      ImportSettings(bool _import = false,
-                     bool _copy_files = false,
-                     bool _additional_files = false,
-                     bool _overwrite = false) :
-        import(_import),
+/// \brief Struct with optional parameters for Config/Data Import
+/// Specifies default parameters for all values, in order to simplify
+/// parsing from JSON
+struct ImportSettings {
+  ImportSettings(bool _import = false, bool _copy_files = false,
+                 bool _additional_files = false, bool _overwrite = false)
+      : import(_import),
         copy_files(_copy_files),
         additional_files(_additional_files),
         overwrite(_overwrite) {}
 
-      void set_default() {
-        *this = ImportSettings();
-      }
+  void set_default() { *this = ImportSettings(); }
 
-      // attempt to import calculation results into database, else just insert
-      // configurations w/out data
-      bool import;
+  // attempt to import calculation results into database, else just insert
+  // configurations w/out data
+  bool import;
 
-      // attempt to copy properties.calc.json file to training directory of best configuration
-      // else just import data
-      bool copy_files;
+  // attempt to copy properties.calc.json file to training directory of best
+  // configuration else just import data
+  bool copy_files;
 
-      // attempt to copy extra files from the directory where the structure is
-      // being imported from to the training_data directory
-      bool additional_files;
+  // attempt to copy extra files from the directory where the structure is
+  // being imported from to the training_data directory
+  bool additional_files;
 
-      // Allow overwriting of existing data by 'casm import'
-      bool overwrite;
-    };
+  // Allow overwriting of existing data by 'casm import'
+  bool overwrite;
+};
 
-    jsonParser &to_json(ImportSettings const &_set, jsonParser &_json);
+jsonParser &to_json(ImportSettings const &_set, jsonParser &_json);
 
-    jsonParser const &from_json(ImportSettings &_set, jsonParser const &_json);
+jsonParser const &from_json(ImportSettings &_set, jsonParser const &_json);
 
-    /// Generic ConfigType-dependent part of Import
-    template<typename _ConfigType>
-    class ImportT : protected ConfigData {
+/// Generic ConfigType-dependent part of Import
+template <typename _ConfigType>
+class ImportT : protected ConfigData {
+ public:
+  using ConfigType = _ConfigType;
 
-    public:
+  /// \brief Constructor
+  ImportT(const PrimClex &primclex, const StructureMap<ConfigType> &mapper,
+          ImportSettings const &_set, std::string report_dir);
 
-      using ConfigType = _ConfigType;
+  template <typename PathIterator>
+  void import(PathIterator begin, PathIterator end);
 
-      /// \brief Constructor
-      ImportT(
-        const PrimClex &primclex,
-        const StructureMap<ConfigType> &mapper,
-        ImportSettings const  &_set,
-        std::string report_dir);
+  ImportSettings const &settings() const { return m_set; }
 
-      template<typename PathIterator>
-      void import(PathIterator begin, PathIterator end);
+ protected:
+  /// Allow ConfigType to specialize the report formatting for 'import'
+  virtual DataFormatter<ConfigIO::Result> _import_formatter() const = 0;
 
-      ImportSettings const &settings() const {
-        return m_set;
-      }
+ private:
+  void _import_report(std::vector<ConfigIO::Result> &results) const;
 
-    protected:
-      /// Allow ConfigType to specialize the report formatting for 'import'
-      virtual DataFormatter<ConfigIO::Result> _import_formatter() const = 0;
+  // Copies file for each element of results that corresponds to a succesful
+  // optimal mapping
+  void _copy_files(std::vector<ConfigIO::Result> &results) const;
 
-    private:
-      void _import_report(
-        std::vector<ConfigIO::Result> &results)const;
+  const StructureMap<ConfigType> &m_structure_mapper;
 
-      // Copies file for each element of results that corresponds to a succesful optimal mapping
-      void _copy_files(std::vector<ConfigIO::Result> &results) const;
+  ImportSettings m_set;
 
-      const StructureMap<ConfigType> &m_structure_mapper;
+  std::string m_report_dir;
+};
 
-      ImportSettings m_set;
+// To be specialized for ConfigType (no default implemenation exists)
+template <typename ConfigType>
+class Import;  // : public ImportT<ConfigType>;
+/*{
+public:
+  static const std::string desc;
+  int run(const PrimClex &, const jsonParser &input, const
+Completer::ImportOption &opt);
 
-      std::string m_report_dir;
-    };
+private:
+  // Allow ConfigType to specialize the report formatting for 'import'
+  DataFormatter<ConfigIO::Result> _import_formatter() const override;
+    };*/
 
-
-    // To be specialized for ConfigType (no default implemenation exists)
-    template<typename ConfigType>
-    class Import;// : public ImportT<ConfigType>;
-    /*{
-    public:
-      static const std::string desc;
-      int run(const PrimClex &, const jsonParser &input, const Completer::ImportOption &opt);
-
-    private:
-      // Allow ConfigType to specialize the report formatting for 'import'
-      DataFormatter<ConfigIO::Result> _import_formatter() const override;
-        };*/
-
-  }
-}
+}  // namespace DB
+}  // namespace CASM
 
 #endif

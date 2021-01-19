@@ -5,12 +5,13 @@
 
 namespace CASM {
 
-  /// Print Configuration as a VASP POSCAR
-  ///
-  /// Note: This makes use of VaspIO::PrintPOSCAR, which can be used directly for additional
-  ///       formatting options.
-  void print_poscar(Configuration const &configuration, std::ostream &sout);
+/// Print Configuration as a VASP POSCAR
+///
+/// Note: This makes use of VaspIO::PrintPOSCAR, which can be used directly for
+/// additional
+///       formatting options.
+void print_poscar(Configuration const &configuration, std::ostream &sout);
 
-}
+}  // namespace CASM
 
 #endif

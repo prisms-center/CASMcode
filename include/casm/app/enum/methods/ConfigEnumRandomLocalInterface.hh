@@ -5,19 +5,18 @@
 
 namespace CASM {
 
-  /// Interface for ConfigEnumRandomLocal
-  class ConfigEnumRandomLocalInterface : public EnumInterfaceBase {
-    CLONEABLE(ConfigEnumRandomLocalInterface)
-  public:
+/// Interface for ConfigEnumRandomLocal
+class ConfigEnumRandomLocalInterface : public EnumInterfaceBase {
+  CLONEABLE(ConfigEnumRandomLocalInterface)
+ public:
+  std::string desc() const override;
 
-    std::string desc() const override;
+  std::string name() const override;
 
-    std::string name() const override;
+  void run(PrimClex &primclex, jsonParser const &json_options,
+           jsonParser const &cli_options_as_json) const override;
+};
 
-    void run(PrimClex &primclex, jsonParser const &json_options, jsonParser const &cli_options_as_json) const override;
-
-  };
-
-}
+}  // namespace CASM
 
 #endif

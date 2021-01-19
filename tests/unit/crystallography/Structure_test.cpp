@@ -1,15 +1,16 @@
-#include "gtest/gtest.h"
 #include "autotools.hh"
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/crystallography/Structure.hh"
 
 /// What is being used to test it:
-#include "casm/crystallography/SimpleStructureTools.hh"
 #include <boost/filesystem/fstream.hpp>
-#include "casm/misc/CASM_Eigen_math.hh"
+
 #include "casm/app/AppIO.hh"
+#include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/io/VaspIO.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 
 using namespace CASM;
 
@@ -25,12 +26,17 @@ D
 ***************************************/
 
 void prim1_read_test(Structure &struc) {
-
   double tol = 1e-5;
 
-  EXPECT_EQ(almost_equal(struc.lattice()[0], Eigen::Vector3d(0.0, 2.0, 2.0), tol), true);
-  EXPECT_EQ(almost_equal(struc.lattice()[1], Eigen::Vector3d(2.0, 0.0, 2.0), tol), true);
-  EXPECT_EQ(almost_equal(struc.lattice()[2], Eigen::Vector3d(2.0, 2.0, 0.0), tol), true);
+  EXPECT_EQ(
+      almost_equal(struc.lattice()[0], Eigen::Vector3d(0.0, 2.0, 2.0), tol),
+      true);
+  EXPECT_EQ(
+      almost_equal(struc.lattice()[1], Eigen::Vector3d(2.0, 0.0, 2.0), tol),
+      true);
+  EXPECT_EQ(
+      almost_equal(struc.lattice()[2], Eigen::Vector3d(2.0, 2.0, 0.0), tol),
+      true);
   EXPECT_EQ(struc.basis().size(), 1);
 
   // basis site 0 has three possible occupants
@@ -38,12 +44,14 @@ void prim1_read_test(Structure &struc) {
 
   std::string check_name[3] = {"A", "B", "C"};
 
-  for(int i = 0; i < 3; i++) {
+  for (int i = 0; i < 3; i++) {
     // occupants are Molecule with name "A", etc.
     // Molecule are composed of AtomPosition
     // An AtomPosition 'is' a Coordinate with a Specie
     EXPECT_EQ(struc.basis()[0].occupant_dof()[i].name(), check_name[i]);
-    EXPECT_EQ(almost_equal(struc.basis()[0].occupant_dof()[i].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
+    EXPECT_EQ(almost_equal(struc.basis()[0].occupant_dof()[i].atom(0).cart(),
+                           Eigen::Vector3d(0.0, 0.0, 0.0), tol),
+              true);
     EXPECT_EQ(struc.basis()[0].occupant_dof()[i].atom(0).name(), check_name[i]);
   }
 
@@ -66,12 +74,17 @@ D
 ***************************************/
 
 void prim2_read_test(Structure &struc) {
-
   double tol = 1e-5;
 
-  EXPECT_EQ(almost_equal(struc.lattice()[0], Eigen::Vector3d(4.0, 0.0, 0.0), tol), true);
-  EXPECT_EQ(almost_equal(struc.lattice()[1], Eigen::Vector3d(0.0, 4.0, 0.0), tol), true);
-  EXPECT_EQ(almost_equal(struc.lattice()[2], Eigen::Vector3d(0.0, 0.0, 4.0), tol), true);
+  EXPECT_EQ(
+      almost_equal(struc.lattice()[0], Eigen::Vector3d(4.0, 0.0, 0.0), tol),
+      true);
+  EXPECT_EQ(
+      almost_equal(struc.lattice()[1], Eigen::Vector3d(0.0, 4.0, 0.0), tol),
+      true);
+  EXPECT_EQ(
+      almost_equal(struc.lattice()[2], Eigen::Vector3d(0.0, 0.0, 4.0), tol),
+      true);
   EXPECT_EQ(struc.basis().size(), 4);
 
   // basis site 0 has three possible occupants
@@ -80,18 +93,21 @@ void prim2_read_test(Structure &struc) {
   std::string check_name[3] = {"A", "B", "C"};
   int check_value[4] = {0, 0, 1, 2};
 
-  for(int i = 0; i < 4; i++) {
-    for(int j = 0; j < 3; j++) {
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 3; j++) {
       // occupants are Molecule with name "A", etc.
       // Molecule are composed of AtomPosition
       // An AtomPosition 'is' a Coordinate with a Specie
       EXPECT_EQ(struc.basis()[i].occupant_dof()[j].name(), check_name[j]);
-      EXPECT_EQ(almost_equal(struc.basis()[0].occupant_dof()[j].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
-      EXPECT_EQ(struc.basis()[i].occupant_dof()[j].atom(0).name(), check_name[j]);
+      EXPECT_EQ(almost_equal(struc.basis()[0].occupant_dof()[j].atom(0).cart(),
+                             Eigen::Vector3d(0.0, 0.0, 0.0), tol),
+                true);
+      EXPECT_EQ(struc.basis()[i].occupant_dof()[j].atom(0).name(),
+                check_name[j]);
     }
   }
 
-  //Modify the structure that there's different occupants at each site
+  // Modify the structure that there's different occupants at each site
   std::vector<Site> new_basis;
   new_basis.emplace_back(struc.basis()[0], "A");
   new_basis.emplace_back(struc.basis()[1], "A");
@@ -105,7 +121,6 @@ void prim2_read_test(Structure &struc) {
   // ordering on FCC motif
   EXPECT_EQ(16, struc.factor_group().size());
 }
-
 
 /** POS1 *****************************
 Face-centered Cubic (FCC, cF)
@@ -122,7 +137,6 @@ D
 0.0 0.5 0.5 C
 ***************************************/
 
-
 /** POS1_vasp5_out ********************
 Face-centered Cubic (FCC, cF)
  1.00000000
@@ -138,19 +152,23 @@ Direct
    0.0000000   0.5000000   0.5000000
 ***************************************/
 
-
 void pos1_read_test(Structure &struc) {
-
   double tol = 1e-5;
 
-  EXPECT_EQ(almost_equal(struc.lattice()[0], Eigen::Vector3d(4.0, 0.0, 0.0), tol), true);
-  EXPECT_EQ(almost_equal(struc.lattice()[1], Eigen::Vector3d(0.0, 4.0, 0.0), tol), true);
-  EXPECT_EQ(almost_equal(struc.lattice()[2], Eigen::Vector3d(0.0, 0.0, 4.0), tol), true);
+  EXPECT_EQ(
+      almost_equal(struc.lattice()[0], Eigen::Vector3d(4.0, 0.0, 0.0), tol),
+      true);
+  EXPECT_EQ(
+      almost_equal(struc.lattice()[1], Eigen::Vector3d(0.0, 4.0, 0.0), tol),
+      true);
+  EXPECT_EQ(
+      almost_equal(struc.lattice()[2], Eigen::Vector3d(0.0, 0.0, 4.0), tol),
+      true);
   EXPECT_EQ(struc.basis().size(), 4);
 
   std::string check_name[4] = {"A", "A", "B", "C"};
 
-  for(int i = 0; i < 4; i++) {
+  for (int i = 0; i < 4; i++) {
     // basis site 0 and 1 have one possible occupant
     EXPECT_EQ(struc.basis()[i].occupant_dof().size(), 1);
 
@@ -158,7 +176,9 @@ void pos1_read_test(Structure &struc) {
     // Molecule are composed of AtomPosition
     // An AtomPosition 'is' a Coordinate with a Specie
     EXPECT_EQ(struc.basis()[i].occupant_dof()[0].name(), check_name[i]);
-    EXPECT_EQ(almost_equal(struc.basis()[i].occupant_dof()[0].atom(0).cart(), Eigen::Vector3d(0.0, 0.0, 0.0), tol), true);
+    EXPECT_EQ(almost_equal(struc.basis()[i].occupant_dof()[0].atom(0).cart(),
+                           Eigen::Vector3d(0.0, 0.0, 0.0), tol),
+              true);
     EXPECT_EQ(struc.basis()[i].occupant_dof()[0].atom(0).name(), check_name[i]);
   }
 
@@ -167,13 +187,12 @@ void pos1_read_test(Structure &struc) {
 }
 
 namespace {
-  fs::path crystallography_test_directory() {
-    return autotools::abs_srcdir() + "/tests/unit/crystallography";
-  }
+fs::path crystallography_test_directory() {
+  return autotools::abs_srcdir() + "/tests/unit/crystallography";
 }
+}  // namespace
 
 TEST(StructureTest, PRIM1Test) {
-
   fs::path testdir = ::crystallography_test_directory();
 
   // Read in test PRIM and run tests
@@ -187,11 +206,9 @@ TEST(StructureTest, PRIM1Test) {
   // Read new file and run tests again
   Structure struc2(read_prim(tmp_file, TOL));
   prim1_read_test(struc2);
-
 }
 
 TEST(StructureTest, PRIM2Test) {
-
   fs::path testdir = ::crystallography_test_directory();
 
   // Read in test PRIM and run tests
@@ -200,7 +217,6 @@ TEST(StructureTest, PRIM2Test) {
 }
 
 TEST(StructureTest, POS1Test) {
-
   fs::path testdir = ::crystallography_test_directory();
 
   // Read in test PRIM and run tests
@@ -210,7 +226,8 @@ TEST(StructureTest, POS1Test) {
   // Write test PRIM back out
   fs::path tmp_file = testdir / "POS1_out.txt";
   fs::ofstream sout(tmp_file);
-  VaspIO::PrintPOSCAR printer(xtal::make_simple_structure(struc), struc.structure().title());
+  VaspIO::PrintPOSCAR printer(xtal::make_simple_structure(struc),
+                              struc.structure().title());
   printer.set_append_atom_names_off();
   printer.print(sout);
   sout.close();
@@ -218,11 +235,9 @@ TEST(StructureTest, POS1Test) {
   // Read new file and run tests again
   Structure struc2(fs::path(testdir / "POS1_out.txt"));
   pos1_read_test(struc2);
-
 }
 
 TEST(StructureTest, POS1Vasp5Test) {
-
   fs::path testdir = ::crystallography_test_directory();
 
   // Read in test PRIM and run tests
@@ -232,17 +247,17 @@ TEST(StructureTest, POS1Vasp5Test) {
   // Write test PRIM back out
   fs::path tmp_file = testdir / "POS1_vasp5_out.txt";
   fs::ofstream sout(tmp_file);
-  VaspIO::PrintPOSCAR(xtal::make_simple_structure(struc), struc.structure().title()).print(sout);
+  VaspIO::PrintPOSCAR(xtal::make_simple_structure(struc),
+                      struc.structure().title())
+      .print(sout);
   sout.close();
 
   // Read new file and run tests again
   Structure struc2(fs::path(testdir / "POS1_vasp5_out.txt"));
   pos1_read_test(struc2);
-
 }
 
 TEST(StructureTest, POS1jsonPrimTest) {
-
   fs::path testdir = ::crystallography_test_directory();
 
   // Read in test PRIM and run tests
@@ -260,5 +275,4 @@ TEST(StructureTest, POS1jsonPrimTest) {
   // Read new file and run tests again
   struc = Structure(read_prim(tmp_file, TOL));
   pos1_read_test(struc);
-
 }

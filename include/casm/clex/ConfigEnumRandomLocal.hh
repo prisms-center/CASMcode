@@ -2,6 +2,7 @@
 #define CASM_ConfigEnumRandomLocal
 
 #include <functional>
+
 #include "casm/clex/Configuration.hh"
 #include "casm/container/Counter.hh"
 #include "casm/enumerator/InputEnumerator.hh"
@@ -12,107 +13,96 @@ class MTRand;
 
 namespace CASM {
 
-  class ConfigEnumInput;
+class ConfigEnumInput;
 
-  /** \defgroup ConfigEnumGroup Configuration Enumerators
-   *  \ingroup Configuration
-   *  \ingroup Enumerator
-   *  \brief Enumerates Configuration
-   *  @{
-  */
+/** \defgroup ConfigEnumGroup Configuration Enumerators
+ *  \ingroup Configuration
+ *  \ingroup Enumerator
+ *  \brief Enumerates Configuration
+ *  @{
+ */
 
-  /// Parameters controlling ConfigEnumRandomLocal
-  struct ConfigEnumRandomLocalParams {
+/// Parameters controlling ConfigEnumRandomLocal
+struct ConfigEnumRandomLocalParams {
+  ConfigEnumRandomLocalParams(MTRand &_mtrand, DoFKey _dof_key, Index _n_config,
+                              double _mag, bool _normal_distribution);
 
-    ConfigEnumRandomLocalParams(
-      MTRand &_mtrand,
-      DoFKey _dof_key,
-      Index _n_config,
-      double _mag,
-      bool _normal_distribution);
+  /// Random number generator
+  MTRand &mtrand;
 
-    /// Random number generator
-    MTRand &mtrand;
+  /// Name of site degree of freedom for which normal coordinates are to be
+  /// generated.
+  ///
+  /// DoFKey is a typedef for std::string
+  DoFKey dof_key;
 
-    /// Name of site degree of freedom for which normal coordinates are to be generated.
-    ///
-    /// DoFKey is a typedef for std::string
-    DoFKey dof_key;
+  /// Number of random configurations to generate
+  Index n_config;
 
-    /// Number of random configurations to generate
-    Index n_config;
+  /// Magnitude used to scale random vector at each site
+  double mag;
 
-    /// Magnitude used to scale random vector at each site
-    double mag;
+  /// True if using "normal" distribution, else using "uniform" distribution
+  bool normal_distribution;
+};
 
-    /// True if using "normal" distribution, else using "uniform" distribution
-    bool normal_distribution;
-  };
+/// Enumerate random values for continuous degrees of freedom
+class ConfigEnumRandomLocal : public InputEnumeratorBase<Configuration> {
+  // -- Required members -------------------
 
-  /// Enumerate random values for continuous degrees of freedom
-  class ConfigEnumRandomLocal : public InputEnumeratorBase<Configuration> {
+ public:
+  ConfigEnumRandomLocal(ConfigEnumInput const &_in_config,
+                        ConfigEnumRandomLocalParams const &params);
 
-    // -- Required members -------------------
+  ConfigEnumRandomLocal(ConfigEnumInput const &_in_config,
+                        DoFKey const &_dof_key, Index _n_config, double _mag,
+                        bool _normal, MTRand &_mtrand);
 
-  public:
+  std::string name() const override;
 
-    ConfigEnumRandomLocal(
-      ConfigEnumInput const &_in_config,
-      ConfigEnumRandomLocalParams const &params);
+  static const std::string enumerator_name;
 
-    ConfigEnumRandomLocal(
-      ConfigEnumInput const &_in_config,
-      DoFKey const &_dof_key,
-      Index _n_config,
-      double _mag,
-      bool _normal,
-      MTRand &_mtrand);
+ private:
+  /// Implements increment
+  void increment() override;
 
-    std::string name() const override;
+  // -- Unique -------------------
 
-    static const std::string enumerator_name;
+  void randomize();
 
-  private:
-    /// Implements increment
-    void increment() override;
+  // Key of DoF being perturbed
+  DoFKey m_dof_key;
 
-    // -- Unique -------------------
+  // Number of configurations to be enumerated
+  Index m_n_config;
 
-    void randomize();
+  ConfigDoF::LocalDoFContainerType *m_dof_vals;
 
-    // Key of DoF being perturbed
-    DoFKey m_dof_key;
+  // Pseudo-random number generator
+  MTRand &m_mtrand;
 
-    // Number of configurations to be enumerated
-    Index m_n_config;
+  // std deviation of normal distribution
+  // max magnitude if uniform distribution
+  double m_mag;
 
-    ConfigDoF::LocalDoFContainerType *m_dof_vals;
+  // true if normally distributed
+  // false if uniformly distributed
+  bool m_normal;
 
-    // Pseudo-random number generator
-    MTRand &m_mtrand;
+  // true if dof is unit vector
+  // false otherwise
+  bool m_unit_length;
 
-    // std deviation of normal distribution
-    // max magnitude if uniform distribution
-    double m_mag;
+  // Sites on which enumeration is being performed
+  std::vector<Index> m_site_selection;
 
-    // true if normally distributed
-    // false if uniformly distributed
-    bool m_normal;
+  // Dimension of DoF at each selected site
+  std::vector<Index> m_dof_dims;
 
-    // true if dof is unit vector
-    // false otherwise
-    bool m_unit_length;
+  notstd::cloneable_ptr<Configuration> m_current;
+};
 
-    // Sites on which enumeration is being performed
-    std::vector<Index> m_site_selection;
-
-    // Dimension of DoF at each selected site
-    std::vector<Index> m_dof_dims;
-
-    notstd::cloneable_ptr<Configuration> m_current;
-  };
-
-  /** @}*/
-}
+/** @}*/
+}  // namespace CASM
 
 #endif

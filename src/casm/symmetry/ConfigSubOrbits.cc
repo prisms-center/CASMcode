@@ -3,7 +3,8 @@
 //
 // namespace CASM {
 //
-//   MakeConfigSubOrbitGenerators::MakeConfigSubOrbitGenerators(const Configuration &_config) :
+//   MakeConfigSubOrbitGenerators::MakeConfigSubOrbitGenerators(const
+//   Configuration &_config) :
 //     m_config(_config),
 //     m_prim_config(m_config.primitive().in_canonical_supercell()),
 //     m_prim_config_fg(m_prim_config.factor_group()),

@@ -1,83 +1,67 @@
 #ifndef CASM_Norm
 #define CASM_Norm
 
-#include "casm/misc/cloneable_ptr.hh"
-#include "casm/clex/Supercell.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/clex/Supercell.hh"
+#include "casm/misc/cloneable_ptr.hh"
 
 namespace CASM {
 
-  /** \ingroup Reference
-   *  @{
-   */
+/** \ingroup Reference
+ *  @{
+ */
 
-  template<typename DataObject>
-  class Norm {
+template <typename DataObject>
+class Norm {
+ public:
+  virtual ~Norm() {}
 
-  public:
+  /// \brief Default normalization is 1.0
+  virtual double operator()(const DataObject &obj) const { return 1.0; }
 
-    virtual ~Norm() {}
+  std::unique_ptr<Norm> clone() const {
+    return std::unique_ptr<Norm>(this->_clone());
+  }
 
-    /// \brief Default normalization is 1.0
-    virtual double operator()(const DataObject &obj) const {
-      return 1.0;
-    }
+ private:
+  virtual Norm *_clone() const { return new Norm(*this); }
+};
 
-    std::unique_ptr<Norm> clone() const {
-      return std::unique_ptr<Norm>(this->_clone());
-    }
+class NormPerUnitCell : public Norm<Configuration> {
+ public:
+  /// \brief Return configuration supercell size
+  double operator()(const Configuration &config) const override {
+    return config.supercell().volume();
+  }
 
-  private:
+  /// \brief Clone
+  std::unique_ptr<NormPerUnitCell> clone() const {
+    return notstd::make_unique<NormPerUnitCell>(*this);
+  }
 
-    virtual Norm *_clone() const {
-      return new Norm(*this);
-    }
-  };
+ private:
+  NormPerUnitCell *_clone() const override {
+    return new NormPerUnitCell(*this);
+  }
+};
 
-  class NormPerUnitCell : public Norm<Configuration> {
+class NormPerSpecies : public Norm<Configuration> {
+ public:
+  /// \brief Return number of non-Va species in configuration per unitcell
+  double operator()(const Configuration &config) const override {
+    return n_species(config);
+  }
 
-  public:
+  /// \brief Clone
+  std::unique_ptr<NormPerSpecies> clone() const {
+    return notstd::make_unique<NormPerSpecies>(*this);
+  }
 
-    /// \brief Return configuration supercell size
-    double operator()(const Configuration &config) const override {
-      return config.supercell().volume();
-    }
+ private:
+  NormPerSpecies *_clone() const override { return new NormPerSpecies(*this); }
+};
 
-    /// \brief Clone
-    std::unique_ptr<NormPerUnitCell> clone() const {
-      return notstd::make_unique<NormPerUnitCell>(*this);
-    }
-
-  private:
-
-    NormPerUnitCell *_clone() const override {
-      return new NormPerUnitCell(*this);
-    }
-  };
-
-  class NormPerSpecies : public Norm<Configuration> {
-
-  public:
-
-    /// \brief Return number of non-Va species in configuration per unitcell
-    double operator()(const Configuration &config) const override {
-      return n_species(config);
-    }
-
-    /// \brief Clone
-    std::unique_ptr<NormPerSpecies> clone() const {
-      return notstd::make_unique<NormPerSpecies>(*this);
-    }
-
-  private:
-
-    NormPerSpecies *_clone() const override {
-      return new NormPerSpecies(*this);
-    }
-  };
-
-  /** @} */
-}
+/** @} */
+}  // namespace CASM
 
 #endif
-

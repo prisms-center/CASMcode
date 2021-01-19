@@ -3,8 +3,8 @@
 
 #include <vector>
 
-#include "casm/container/Permutation.hh"
 #include "casm/clusterography/ClusterOrbits.hh"
+#include "casm/container/Permutation.hh"
 #include "casm/crystallography/DoFDecl.hh"
 #include "casm/global/enum.hh"
 #include "casm/misc/cloneable_ptr.hh"
@@ -13,493 +13,532 @@
 
 namespace CASM {
 
-  class SupercellSymInfo;
-  class SymGroup;
+class SupercellSymInfo;
+class SymGroup;
 
-  /** \defgroup ClusterSpecs
+/** \defgroup ClusterSpecs
 
-      \brief ClusterSpecs Generate IntegralCluster orbits of specific types
-      \ingroup Clusterography
-      \ingroup IntegralCluster
+    \brief ClusterSpecs Generate IntegralCluster orbits of specific types
+    \ingroup Clusterography
+    \ingroup IntegralCluster
 
-  */
+*/
 
-  /// Base class, enables runtime choice of which orbit type is generated via input file parameters
-  ///
-  /// Note:
-  /// - Most users will not use this class directly
-  /// - Use `for_all_orbits` template functions to implement methods that are independent of orbit type
-  class ClusterSpecs : public notstd::Cloneable {
-    ABSTRACT_CLONEABLE(ClusterSpecs)
-  public:
+/// Base class, enables runtime choice of which orbit type is generated via
+/// input file parameters
+///
+/// Note:
+/// - Most users will not use this class directly
+/// - Use `for_all_orbits` template functions to implement methods that are
+/// independent of orbit type
+class ClusterSpecs : public notstd::Cloneable {
+  ABSTRACT_CLONEABLE(ClusterSpecs)
+ public:
+  typedef std::vector<IntegralCluster> IntegralClusterVec;
+  typedef std::vector<PrimPeriodicOrbit<IntegralCluster>> PeriodicOrbitVec;
+  typedef std::vector<LocalOrbit<IntegralCluster>> LocalOrbitVec;
+  // typedef std::vector<WithinScelOrbit<IntegralCluster>> WithinScelOrbitVec;
 
-    typedef std::vector<IntegralCluster> IntegralClusterVec;
-    typedef std::vector<PrimPeriodicOrbit<IntegralCluster>> PeriodicOrbitVec;
-    typedef std::vector<LocalOrbit<IntegralCluster>> LocalOrbitVec;
-    // typedef std::vector<WithinScelOrbit<IntegralCluster>> WithinScelOrbitVec;
+  /// This is the orbit generation method name
+  std::string name() const;
+  CLUSTER_PERIODICITY_TYPE periodicity_type() const;
 
-    /// This is the orbit generation method name
-    std::string name() const;
-    CLUSTER_PERIODICITY_TYPE periodicity_type() const;
+  PeriodicOrbitVec make_periodic_orbits(
+      IntegralClusterVec const &generating_elements) const;
+  PeriodicOrbitVec make_periodic_orbits(std::ostream &status) const;
 
-    PeriodicOrbitVec make_periodic_orbits(IntegralClusterVec const &generating_elements) const;
-    PeriodicOrbitVec make_periodic_orbits(std::ostream &status) const;
+  LocalOrbitVec make_local_orbits(
+      IntegralClusterVec const &generating_elements) const;
+  LocalOrbitVec make_local_orbits(std::ostream &status) const;
 
-    LocalOrbitVec make_local_orbits(IntegralClusterVec const &generating_elements) const;
-    LocalOrbitVec make_local_orbits(std::ostream &status) const;
+  // WithinScelOrbitVec make_within_scel_orbits(IntegralClusterVec const
+  // &generating_elements) const; WithinScelOrbitVec
+  // make_within_scel_orbits(std::ostream &status) const;
+  // std::set<std::set<Index>> make_within_scel_orbit_generators(std::ostream
+  // &status) const;
 
-    // WithinScelOrbitVec make_within_scel_orbits(IntegralClusterVec const &generating_elements) const;
-    // WithinScelOrbitVec make_within_scel_orbits(std::ostream &status) const;
-    // std::set<std::set<Index>> make_within_scel_orbit_generators(std::ostream &status) const;
+ private:
+  virtual std::string _name() const = 0;
+  virtual CLUSTER_PERIODICITY_TYPE _periodicity_type() const = 0;
 
-  private:
-    virtual std::string _name() const = 0;
-    virtual CLUSTER_PERIODICITY_TYPE _periodicity_type() const = 0;
+  virtual PeriodicOrbitVec _make_periodic_orbits(
+      IntegralClusterVec const &generating_elements) const;
+  virtual PeriodicOrbitVec _make_periodic_orbits(std::ostream &status) const;
 
-    virtual PeriodicOrbitVec _make_periodic_orbits(IntegralClusterVec const &generating_elements) const;
-    virtual PeriodicOrbitVec _make_periodic_orbits(std::ostream &status) const;
+  virtual LocalOrbitVec _make_local_orbits(
+      IntegralClusterVec const &generating_elements) const;
+  virtual LocalOrbitVec _make_local_orbits(std::ostream &status) const;
 
-    virtual LocalOrbitVec _make_local_orbits(IntegralClusterVec const &generating_elements) const;
-    virtual LocalOrbitVec _make_local_orbits(std::ostream &status) const;
+  // virtual WithinScelOrbitVec _make_within_scel_orbits(IntegralClusterVec
+  // const &generating_elements) const; virtual WithinScelOrbitVec
+  // _make_within_scel_orbits(std::ostream &status) const; virtual
+  // std::set<std::set<Index>> _make_within_scel_orbit_generators(std::ostream
+  // &status) const;
+};
 
-    // virtual WithinScelOrbitVec _make_within_scel_orbits(IntegralClusterVec const &generating_elements) const;
-    // virtual WithinScelOrbitVec _make_within_scel_orbits(std::ostream &status) const;
-    // virtual std::set<std::set<Index>> _make_within_scel_orbit_generators(std::ostream &status) const;
+/// Call functor for orbits generated by ClusterSpecs
+///
+/// Selects the correct make_X_orbits method and then calls f for all orbits, as
+/// with: \code auto orbits = cluster_specs.make_X_orbits(generating_elements);
+/// f(orbits);
+/// \endcode
+///
+/// The FunctorType should have the template method:
+/// \code
+/// template<typename OrbitVecType>
+/// void FunctorType::operator()(OrbitVecType const &orbits) const;
+/// \endcode
+template <typename FunctorType>
+void for_all_orbits(ClusterSpecs const &cluster_specs,
+                    std::vector<IntegralCluster> const &generating_elements,
+                    FunctorType const &f);
 
-  };
+/// Call functor for orbits generated by ClusterSpecs
+///
+/// Selects the correct make_X_orbits method and then calls f for all orbits, as
+/// with: \code auto orbits = cluster_specs.make_X_orbits(status); f(orbits);
+/// \endcode
+///
+/// The FunctorType should have the template method:
+/// \code
+/// template<typename OrbitVecType>
+/// void FunctorType::operator()(OrbitVecType const &orbits) const;
+/// \endcode
+template <typename FunctorType>
+void for_all_orbits(ClusterSpecs const &cluster_specs, std::ostream &status,
+                    FunctorType const &f);
 
-  /// Call functor for orbits generated by ClusterSpecs
-  ///
-  /// Selects the correct make_X_orbits method and then calls f for all orbits, as with:
-  /// \code
-  /// auto orbits = cluster_specs.make_X_orbits(generating_elements);
-  /// f(orbits);
-  /// \endcode
-  ///
-  /// The FunctorType should have the template method:
-  /// \code
-  /// template<typename OrbitVecType>
-  /// void FunctorType::operator()(OrbitVecType const &orbits) const;
-  /// \endcode
-  template<typename FunctorType>
-  void for_all_orbits(ClusterSpecs const &cluster_specs,
-                      std::vector<IntegralCluster> const &generating_elements,
-                      FunctorType const &f);
+/// Parameters most commonly used for periodic orbit generation
+class PeriodicMaxLengthClusterSpecs : public ClusterSpecs {
+  CLONEABLE(PeriodicMaxLengthClusterSpecs)
+ public:
+  static std::string const method_name; /*periodic_max_length*/
 
-  /// Call functor for orbits generated by ClusterSpecs
-  ///
-  /// Selects the correct make_X_orbits method and then calls f for all orbits, as with:
-  /// \code
-  /// auto orbits = cluster_specs.make_X_orbits(status);
-  /// f(orbits);
-  /// \endcode
-  ///
-  /// The FunctorType should have the template method:
-  /// \code
-  /// template<typename OrbitVecType>
-  /// void FunctorType::operator()(OrbitVecType const &orbits) const;
-  /// \endcode
-  template<typename FunctorType>
-  void for_all_orbits(ClusterSpecs const &cluster_specs, std::ostream &status, FunctorType const &f);
+  /// Constructor
+  PeriodicMaxLengthClusterSpecs(std::shared_ptr<Structure const> _shared_prim,
+                                SymGroup const &_generating_group,
+                                SiteFilterFunction const &_site_filter,
+                                std::vector<double> const &_max_length,
+                                std::vector<IntegralClusterOrbitGenerator> const
+                                    &_custom_generators = {});
 
+  /// The prim
+  std::shared_ptr<Structure const> shared_prim;
 
-  /// Parameters most commonly used for periodic orbit generation
-  class PeriodicMaxLengthClusterSpecs : public ClusterSpecs {
-    CLONEABLE(PeriodicMaxLengthClusterSpecs)
-  public:
+  /// The group used to generate orbits, most commonly
+  /// shared_prim->factor_group()
+  SymGroup generating_group;
 
-    static std::string const method_name; /*periodic_max_length*/
+  /// The comparisons used for orbit generation
+  PrimPeriodicSymCompare<IntegralCluster> sym_compare;
 
-    /// Constructor
-    PeriodicMaxLengthClusterSpecs(
-      std::shared_ptr<Structure const> _shared_prim,
-      SymGroup const &_generating_group,
-      SiteFilterFunction const &_site_filter,
-      std::vector<double> const &_max_length,
-      std::vector<IntegralClusterOrbitGenerator> const &_custom_generators = {});
+  /// A filter which excludes sites that are part of the unit cell neighborhood
+  /// from being included in orbits. If `site_filter(site)==true`, then the site
+  /// is included, else excluded.
+  SiteFilterFunction site_filter;
 
-    /// The prim
-    std::shared_ptr<Structure const> shared_prim;
+  /// Specifies filter for truncating orbits, by orbit branch. The value
+  /// max_length[b], is the max site-to-site distance for clusters to be
+  /// included in branch b. The b==0 and b==1 values are ignored.
+  std::vector<double> max_length;
 
-    /// The group used to generate orbits, most commonly shared_prim->factor_group()
-    SymGroup generating_group;
+  /// Specifies particular clusters that should be used to generate orbits.
+  std::vector<IntegralClusterOrbitGenerator> custom_generators;
 
-    /// The comparisons used for orbit generation
-    PrimPeriodicSymCompare<IntegralCluster> sym_compare;
+ private:
+  std::string _name() const override;
+  CLUSTER_PERIODICITY_TYPE _periodicity_type() const override;
 
-    /// A filter which excludes sites that are part of the unit cell neighborhood from being
-    /// included in orbits. If `site_filter(site)==true`, then the site is included, else excluded.
-    SiteFilterFunction site_filter;
+  PeriodicOrbitVec _make_periodic_orbits(
+      IntegralClusterVec const &generating_elements) const override;
+  PeriodicOrbitVec _make_periodic_orbits(std::ostream &status) const override;
+};
 
-    /// Specifies filter for truncating orbits, by orbit branch. The value max_length[b], is the
-    /// max site-to-site distance for clusters to be included in branch b. The b==0 and b==1 values
-    /// are ignored.
-    std::vector<double> max_length;
+/// Parameters most commonly used for local orbit generation
+class LocalMaxLengthClusterSpecs : public ClusterSpecs {
+  CLONEABLE(LocalMaxLengthClusterSpecs)
+ public:
+  static std::string const method_name; /*local_max_length*/
 
-    /// Specifies particular clusters that should be used to generate orbits.
-    std::vector<IntegralClusterOrbitGenerator> custom_generators;
+  LocalMaxLengthClusterSpecs(std::shared_ptr<Structure const> _shared_prim,
+                             SymGroup const &_generating_group,
+                             IntegralCluster const &_phenomenal,
+                             SiteFilterFunction const &_site_filter,
+                             std::vector<double> const &_max_length,
+                             std::vector<double> const &_cutoff_radius,
+                             bool _include_phenomenal_sites,
+                             std::vector<IntegralClusterOrbitGenerator> const
+                                 &_custom_generators = {});
 
+  /// The prim
+  std::shared_ptr<Structure const> shared_prim;
 
-  private:
-    std::string _name() const override;
-    CLUSTER_PERIODICITY_TYPE _periodicity_type() const override;
+  /// The invariant group of the phenomenal object, used to generate local
+  /// orbits
+  SymGroup generating_group;
 
-    PeriodicOrbitVec _make_periodic_orbits(IntegralClusterVec const &generating_elements) const override;
-    PeriodicOrbitVec _make_periodic_orbits(std::ostream &status) const override;
-  };
+  /// The comparisons used for orbit generation
+  LocalSymCompare<IntegralCluster> sym_compare;
 
+  /// Phenomenal cluster, used to find local neighborhood
+  IntegralCluster phenomenal;
 
-  /// Parameters most commonly used for local orbit generation
-  class LocalMaxLengthClusterSpecs : public ClusterSpecs {
-    CLONEABLE(LocalMaxLengthClusterSpecs)
-  public:
+  /// A filter which excludes sites that are part of the local neighborhood from
+  /// being included in orbits. If `site_filter(site)==true`, then the site is
+  /// included, else excluded.
+  SiteFilterFunction site_filter;
 
-    static std::string const method_name; /*local_max_length*/
+  /// Specifies filter for truncating orbits, by orbit branch. The value
+  /// max_length[b], is the max site-to-site distance within a cluster for that
+  /// cluster to be included in branch b. The b==0 value is ignored.
+  std::vector<double> max_length;
 
-    LocalMaxLengthClusterSpecs(
-      std::shared_ptr<Structure const> _shared_prim,
-      SymGroup const &_generating_group,
-      IntegralCluster const &_phenomenal,
-      SiteFilterFunction const &_site_filter,
-      std::vector<double> const &_max_length,
-      std::vector<double> const &_cutoff_radius,
-      bool _include_phenomenal_sites,
-      std::vector<IntegralClusterOrbitGenerator> const &_custom_generators = {});
+  /// Specifies the site-to-site cutoff radius for sites to be considered part
+  /// of the local neighborhood, by orbit branch. For a site to be added to
+  /// clusters in branch b it must be a distance less than cutoff_radius[b] to
+  /// any site in the phenomenal cluster. The b==0 value is ignored.
+  std::vector<double> cutoff_radius;
 
-    /// The prim
-    std::shared_ptr<Structure const> shared_prim;
+  /// If true, local clusters include phenomenal_cluster sites; otherwise they
+  /// do not
+  bool include_phenomenal_sites;
 
-    /// The invariant group of the phenomenal object, used to generate local orbits
-    SymGroup generating_group;
+  /// Specifies particular clusters that should be used to generate orbits.
+  std::vector<IntegralClusterOrbitGenerator> custom_generators;
 
-    /// The comparisons used for orbit generation
-    LocalSymCompare<IntegralCluster> sym_compare;
+ private:
+  std::string _name() const override;
+  CLUSTER_PERIODICITY_TYPE _periodicity_type() const override;
 
-    /// Phenomenal cluster, used to find local neighborhood
-    IntegralCluster phenomenal;
+  LocalOrbitVec _make_local_orbits(
+      IntegralClusterVec const &generating_elements) const override;
+  LocalOrbitVec _make_local_orbits(std::ostream &status) const override;
+};
 
-    /// A filter which excludes sites that are part of the local neighborhood from being included in
-    /// orbits. If `site_filter(site)==true`, then the site is included, else excluded.
-    SiteFilterFunction site_filter;
+// /// Parameters most commonly used for orbit generation with supercell
+// periodicity class WithinScelMaxLengthClusterSpecs : public ClusterSpecs {
+//   CLONEABLE(WithinScelMaxLengthClusterSpecs)
+// public:
+//
+//   static std::string const method_name; /*within_scel_max_length*/
+//
+//   /// Constructor
+//   ///
+//   /// Note:
+//   /// - Parameter _phenomenal is optional. If present, local orbits will be
+//   generated using
+//   ///   the cutoff_radius. Otherwise, all sites will be used to generate
+//   orbits. In both cases,
+//   ///   the cluster cutoff is based on max_length compared to cluster sites
+//   distances calculated
+//   ///   using the minimum distance between any periodic images of cluster
+//   sites in the supercell
+//   ///   defined by the _shared_prim and _superlattice_matrix
+//   (Coordinate::robust_min_dist).
+//   /// - Parameter _cutoff_radius is optional, required if _phenomenal is
+//   present. If present, it
+//   ///   must be the same size as _max_length or the constructor will throw.
+//   /// - Parameter _generating_group should include within Supercell
+//   translations (i.e. it could
+//   ///   be constructed from a Configuration factor group)
+//   WithinScelMaxLengthClusterSpecs(
+//     std::shared_ptr<Structure const> _shared_prim,
+//     SupercellSymInfo const *_sym_info,
+//     std::vector<PermuteIterator> const &_generating_group,
+//     SiteFilterFunction const &_site_filter,
+//     std::vector<double> const &_max_length,
+//     std::vector<IntegralClusterOrbitGenerator> const &_custom_generators =
+//     {}, notstd::cloneable_ptr<IntegralCluster> _phenomenal =
+//     notstd::cloneable_ptr<IntegralCluster>(), std::vector<double> const
+//     &_cutoff_radius = {});
+//
+//   /// The prim
+//   std::shared_ptr<Structure const> shared_prim;
+//
+//   /// Pointer to supercell symmetry information // TODO: make this safer w/
+//   shared_ptr SupercellSymInfo const *sym_info;
+//
+//   /// The group used to generate orbits
+//   std::vector<PermuteIterator> generating_group;
+//
+//   /// Inverse permutations allow fast permutation of cluster site indices
+//   /// (see `permute_cluster_site_indices`) (is there a better way?)
+//   std::vector<Permutation> inverse_permutations;
+//
+//   /// The comparisons used for orbit generation
+//   WithinScelSymCompare<IntegralCluster> sym_compare;
+//
+//   /// Phenomenal cluster (optional). If not empty, use with cutoff_radius to
+//   find local neighborhood notstd::cloneable_ptr<IntegralCluster> phenomenal;
+//
+//   /// A filter which excludes sites that are part of the local neighborhood
+//   from being included in
+//   /// orbits. If `site_filter(site)==true`, then the site is included, else
+//   excluded. SiteFilterFunction site_filter;
+//
+//   /// Specifies filter for truncating orbits, by orbit branch. The value
+//   max_length[b], is the
+//   /// max site-to-site distance for clusters to be included in branch b. The
+//   b==0 value is
+//   /// ignored.
+//   std::vector<double> max_length;
+//
+//   /// Specifies the diff_trans-to-site cutoff radius for sites to be
+//   considered part of the local
+//   /// neighborhood, by orbit branch. The value cutoff_radius[b], is the max
+//   distance from any
+//   /// linearly interpolated path between phenomenal cluster sites to the site
+//   under
+//   /// consideration for that site to be included in clusters for branch b.
+//   The b==0 value
+//   /// is ignored.
+//   std::vector<double> cutoff_radius;
+//
+//   /// For each orbit branch, a function implementing 'bool
+//   filter(ClusterType)', which returns
+//   /// false for clusters that should not be used to construct an Orbit (i.e.
+//   pair distance too
+//   /// large). The null orbit filter, cluster_filter[0], is ignored.
+//   std::vector<ClusterFilterFunction> cluster_filter;
+//
+//   /// For each orbit branch, a function that generates
+//   `std::vector<xtal::UnitCellCoord>`, a
+//   /// vector of all the sites which will be considered for inclusion in the
+//   orbit branch. The
+//   /// null orbit function, candidate_sites[0], is ignored.
+//   std::vector<CandidateSitesFunction> candidate_sites;
+//
+//   /// Specifies particular clusters that should be used to generate orbits.
+//   std::vector<IntegralClusterOrbitGenerator> custom_generators;
+//
+//
+// private:
+//   std::string _name() const override;
+//   CLUSTER_PERIODICITY_TYPE _periodicity_type() const override;
+//
+//   WithinScelOrbitVec _make_within_scel_orbits(IntegralClusterVec const
+//   &generating_elements) const override; WithinScelOrbitVec
+//   _make_within_scel_orbits(std::ostream &status) const override;
+//   std::set<std::set<Index>> _make_within_scel_orbit_generators(std::ostream
+//   &status) const override;
+// };
 
-    /// Specifies filter for truncating orbits, by orbit branch. The value max_length[b], is the
-    /// max site-to-site distance within a cluster for that cluster to be included in branch b. The
-    /// b==0 value is ignored.
-    std::vector<double> max_length;
+/// Parameters for the most generic orbit generation method currently
+/// implemented
+class GenericPeriodicClusterSpecs : public ClusterSpecs {
+  CLONEABLE(GenericPeriodicClusterSpecs)
 
-    /// Specifies the site-to-site cutoff radius for sites to be considered part of the local
-    /// neighborhood, by orbit branch. For a site to be added to clusters in branch b it must be
-    /// a distance less than cutoff_radius[b] to any site in the phenomenal cluster. The b==0
-    /// value is ignored.
-    std::vector<double> cutoff_radius;
+  typedef PrimPeriodicSymCompare<IntegralCluster> SymCompareType;
 
-    /// If true, local clusters include phenomenal_cluster sites; otherwise they do not
-    bool include_phenomenal_sites;
-
-    /// Specifies particular clusters that should be used to generate orbits.
-    std::vector<IntegralClusterOrbitGenerator> custom_generators;
-
-
-  private:
-    std::string _name() const override;
-    CLUSTER_PERIODICITY_TYPE _periodicity_type() const override;
-
-    LocalOrbitVec _make_local_orbits(IntegralClusterVec const &generating_elements) const override;
-    LocalOrbitVec _make_local_orbits(std::ostream &status) const override;
-  };
-
-  // /// Parameters most commonly used for orbit generation with supercell periodicity
-  // class WithinScelMaxLengthClusterSpecs : public ClusterSpecs {
-  //   CLONEABLE(WithinScelMaxLengthClusterSpecs)
-  // public:
-  //
-  //   static std::string const method_name; /*within_scel_max_length*/
-  //
-  //   /// Constructor
-  //   ///
-  //   /// Note:
-  //   /// - Parameter _phenomenal is optional. If present, local orbits will be generated using
-  //   ///   the cutoff_radius. Otherwise, all sites will be used to generate orbits. In both cases,
-  //   ///   the cluster cutoff is based on max_length compared to cluster sites distances calculated
-  //   ///   using the minimum distance between any periodic images of cluster sites in the supercell
-  //   ///   defined by the _shared_prim and _superlattice_matrix (Coordinate::robust_min_dist).
-  //   /// - Parameter _cutoff_radius is optional, required if _phenomenal is present. If present, it
-  //   ///   must be the same size as _max_length or the constructor will throw.
-  //   /// - Parameter _generating_group should include within Supercell translations (i.e. it could
-  //   ///   be constructed from a Configuration factor group)
-  //   WithinScelMaxLengthClusterSpecs(
-  //     std::shared_ptr<Structure const> _shared_prim,
-  //     SupercellSymInfo const *_sym_info,
-  //     std::vector<PermuteIterator> const &_generating_group,
-  //     SiteFilterFunction const &_site_filter,
-  //     std::vector<double> const &_max_length,
-  //     std::vector<IntegralClusterOrbitGenerator> const &_custom_generators = {},
-  //     notstd::cloneable_ptr<IntegralCluster> _phenomenal = notstd::cloneable_ptr<IntegralCluster>(),
-  //     std::vector<double> const &_cutoff_radius = {});
-  //
-  //   /// The prim
-  //   std::shared_ptr<Structure const> shared_prim;
-  //
-  //   /// Pointer to supercell symmetry information // TODO: make this safer w/ shared_ptr
-  //   SupercellSymInfo const *sym_info;
-  //
-  //   /// The group used to generate orbits
-  //   std::vector<PermuteIterator> generating_group;
-  //
-  //   /// Inverse permutations allow fast permutation of cluster site indices
-  //   /// (see `permute_cluster_site_indices`) (is there a better way?)
-  //   std::vector<Permutation> inverse_permutations;
-  //
-  //   /// The comparisons used for orbit generation
-  //   WithinScelSymCompare<IntegralCluster> sym_compare;
-  //
-  //   /// Phenomenal cluster (optional). If not empty, use with cutoff_radius to find local neighborhood
-  //   notstd::cloneable_ptr<IntegralCluster> phenomenal;
-  //
-  //   /// A filter which excludes sites that are part of the local neighborhood from being included in
-  //   /// orbits. If `site_filter(site)==true`, then the site is included, else excluded.
-  //   SiteFilterFunction site_filter;
-  //
-  //   /// Specifies filter for truncating orbits, by orbit branch. The value max_length[b], is the
-  //   /// max site-to-site distance for clusters to be included in branch b. The b==0 value is
-  //   /// ignored.
-  //   std::vector<double> max_length;
-  //
-  //   /// Specifies the diff_trans-to-site cutoff radius for sites to be considered part of the local
-  //   /// neighborhood, by orbit branch. The value cutoff_radius[b], is the max distance from any
-  //   /// linearly interpolated path between phenomenal cluster sites to the site under
-  //   /// consideration for that site to be included in clusters for branch b. The b==0 value
-  //   /// is ignored.
-  //   std::vector<double> cutoff_radius;
-  //
-  //   /// For each orbit branch, a function implementing 'bool filter(ClusterType)', which returns
-  //   /// false for clusters that should not be used to construct an Orbit (i.e. pair distance too
-  //   /// large). The null orbit filter, cluster_filter[0], is ignored.
-  //   std::vector<ClusterFilterFunction> cluster_filter;
-  //
-  //   /// For each orbit branch, a function that generates `std::vector<xtal::UnitCellCoord>`, a
-  //   /// vector of all the sites which will be considered for inclusion in the orbit branch. The
-  //   /// null orbit function, candidate_sites[0], is ignored.
-  //   std::vector<CandidateSitesFunction> candidate_sites;
-  //
-  //   /// Specifies particular clusters that should be used to generate orbits.
-  //   std::vector<IntegralClusterOrbitGenerator> custom_generators;
-  //
-  //
-  // private:
-  //   std::string _name() const override;
-  //   CLUSTER_PERIODICITY_TYPE _periodicity_type() const override;
-  //
-  //   WithinScelOrbitVec _make_within_scel_orbits(IntegralClusterVec const &generating_elements) const override;
-  //   WithinScelOrbitVec _make_within_scel_orbits(std::ostream &status) const override;
-  //   std::set<std::set<Index>> _make_within_scel_orbit_generators(std::ostream &status) const override;
-  // };
-
-  /// Parameters for the most generic orbit generation method currently implemented
-  class GenericPeriodicClusterSpecs : public ClusterSpecs {
-    CLONEABLE(GenericPeriodicClusterSpecs)
-
-    typedef PrimPeriodicSymCompare<IntegralCluster> SymCompareType;
-
-    GenericPeriodicClusterSpecs(
-      std::string _method_name,
-      std::shared_ptr<Structure const> _shared_prim,
-      SymGroup const &_generating_group,
-      SymCompareType const &_sym_compare,
+  GenericPeriodicClusterSpecs(
+      std::string _method_name, std::shared_ptr<Structure const> _shared_prim,
+      SymGroup const &_generating_group, SymCompareType const &_sym_compare,
       SiteFilterFunction _site_filter,
       std::vector<ClusterFilterFunction> _cluster_filter,
       std::vector<CandidateSitesFunction> _candidate_sites,
       std::vector<IntegralClusterOrbitGenerator> _custom_generators);
 
+  /// The prim
+  std::shared_ptr<Structure const> shared_prim;
 
-    /// The prim
-    std::shared_ptr<Structure const> shared_prim;
+  /// The orbit generating group
+  SymGroup generating_group;
 
-    /// The orbit generating group
-    SymGroup generating_group;
+  /// The comparisons used for orbit generation
+  SymCompareType sym_compare;
 
-    /// The comparisons used for orbit generation
-    SymCompareType sym_compare;
+  /// A filter which excludes sites that are part of the neighborhood from being
+  /// included in orbits. If `site_filter(site)==true`, then the site is
+  /// included, else excluded.
+  SiteFilterFunction site_filter;
 
-    /// A filter which excludes sites that are part of the neighborhood from being included in
-    /// orbits. If `site_filter(site)==true`, then the site is included, else excluded.
-    SiteFilterFunction site_filter;
+  /// For each orbit branch, a function implementing 'bool filter(ClusterType)',
+  /// which returns false for clusters that should not be used to construct an
+  /// Orbit (i.e. pair distance too large). The null orbit filter,
+  /// cluster_filter[0], is ignored.
+  std::vector<ClusterFilterFunction> cluster_filter;
 
-    /// For each orbit branch, a function implementing 'bool filter(ClusterType)', which returns
-    /// false for clusters that should not be used to construct an Orbit (i.e. pair distance too
-    /// large). The null orbit filter, cluster_filter[0], is ignored.
-    std::vector<ClusterFilterFunction> cluster_filter;
+  /// For each orbit branch, a function that generates
+  /// `std::vector<xtal::UnitCellCoord>`, a vector of all the sites which will
+  /// be considered for inclusion in the orbit branch. The null orbit function,
+  /// candidate_sites[0], is ignored.
+  std::vector<CandidateSitesFunction> candidate_sites;
 
-    /// For each orbit branch, a function that generates `std::vector<xtal::UnitCellCoord>`, a
-    /// vector of all the sites which will be considered for inclusion in the orbit branch. The
-    /// null orbit function, candidate_sites[0], is ignored.
-    std::vector<CandidateSitesFunction> candidate_sites;
+  /// Specifies particular clusters that should be used to generate orbits.
+  std::vector<IntegralClusterOrbitGenerator> custom_generators;
 
-    /// Specifies particular clusters that should be used to generate orbits.
-    std::vector<IntegralClusterOrbitGenerator> custom_generators;
+ private:
+  std::string m_method_name;
 
-  private:
-    std::string m_method_name;
+  std::string _name() const override;
+  CLUSTER_PERIODICITY_TYPE _periodicity_type() const override;
 
-    std::string _name() const override;
-    CLUSTER_PERIODICITY_TYPE _periodicity_type() const override;
+  PeriodicOrbitVec _make_periodic_orbits(
+      IntegralClusterVec const &generating_elements) const override;
+  PeriodicOrbitVec _make_periodic_orbits(std::ostream &status) const override;
+};
 
-    PeriodicOrbitVec _make_periodic_orbits(IntegralClusterVec const &generating_elements) const override;
-    PeriodicOrbitVec _make_periodic_orbits(std::ostream &status) const override;
-  };
+/// Parameters for the most generic orbit generation method currently
+/// implemented
+class GenericLocalClusterSpecs : public ClusterSpecs {
+  CLONEABLE(GenericLocalClusterSpecs)
 
-  /// Parameters for the most generic orbit generation method currently implemented
-  class GenericLocalClusterSpecs : public ClusterSpecs {
-    CLONEABLE(GenericLocalClusterSpecs)
+  typedef LocalSymCompare<IntegralCluster> SymCompareType;
 
-    typedef LocalSymCompare<IntegralCluster> SymCompareType;
-
-    GenericLocalClusterSpecs(
-      std::string _method_name,
-      std::shared_ptr<Structure const> _shared_prim,
-      SymGroup const &_generating_group,
-      SymCompareType const &_sym_compare,
+  GenericLocalClusterSpecs(
+      std::string _method_name, std::shared_ptr<Structure const> _shared_prim,
+      SymGroup const &_generating_group, SymCompareType const &_sym_compare,
       SiteFilterFunction _site_filter,
       std::vector<ClusterFilterFunction> _cluster_filter,
       std::vector<CandidateSitesFunction> _candidate_sites,
       std::vector<IntegralClusterOrbitGenerator> _custom_generators);
 
+  /// The prim
+  std::shared_ptr<Structure const> shared_prim;
 
-    /// The prim
-    std::shared_ptr<Structure const> shared_prim;
+  /// The orbit generating group
+  SymGroup generating_group;
 
-    /// The orbit generating group
-    SymGroup generating_group;
+  /// The comparisons used for orbit generation
+  SymCompareType sym_compare;
 
-    /// The comparisons used for orbit generation
-    SymCompareType sym_compare;
+  /// A filter which excludes sites that are part of the local neighborhood from
+  /// being included in orbits. If `site_filter(site)==true`, then the site is
+  /// included, else excluded.
+  SiteFilterFunction site_filter;
 
-    /// A filter which excludes sites that are part of the local neighborhood from being included in
-    /// orbits. If `site_filter(site)==true`, then the site is included, else excluded.
-    SiteFilterFunction site_filter;
+  /// For each orbit branch, a function implementing 'bool filter(ClusterType)',
+  /// which returns false for clusters that should not be used to construct an
+  /// Orbit (i.e. pair distance too large). The null orbit filter,
+  /// cluster_filter[0], is ignored.
+  std::vector<ClusterFilterFunction> cluster_filter;
 
-    /// For each orbit branch, a function implementing 'bool filter(ClusterType)', which returns
-    /// false for clusters that should not be used to construct an Orbit (i.e. pair distance too
-    /// large). The null orbit filter, cluster_filter[0], is ignored.
-    std::vector<ClusterFilterFunction> cluster_filter;
+  /// For each orbit branch, a function that generates
+  /// `std::vector<xtal::UnitCellCoord>`, a vector of all the sites which will
+  /// be considered for inclusion in the orbit branch. The null orbit function,
+  /// candidate_sites[0], is ignored.
+  std::vector<CandidateSitesFunction> candidate_sites;
 
-    /// For each orbit branch, a function that generates `std::vector<xtal::UnitCellCoord>`, a
-    /// vector of all the sites which will be considered for inclusion in the orbit branch. The
-    /// null orbit function, candidate_sites[0], is ignored.
-    std::vector<CandidateSitesFunction> candidate_sites;
+  /// Specifies particular clusters that should be used to generate orbits.
+  std::vector<IntegralClusterOrbitGenerator> custom_generators;
 
-    /// Specifies particular clusters that should be used to generate orbits.
-    std::vector<IntegralClusterOrbitGenerator> custom_generators;
+ private:
+  std::string m_method_name;
 
-  private:
-    std::string m_method_name;
+  std::string _name() const override;
+  CLUSTER_PERIODICITY_TYPE _periodicity_type() const override;
 
-    std::string _name() const override;
-    CLUSTER_PERIODICITY_TYPE _periodicity_type() const override;
+  LocalOrbitVec _make_local_orbits(
+      IntegralClusterVec const &generating_elements) const override;
+  LocalOrbitVec _make_local_orbits(std::ostream &status) const override;
+};
 
-    LocalOrbitVec _make_local_orbits(IntegralClusterVec const &generating_elements) const override;
-    LocalOrbitVec _make_local_orbits(std::ostream &status) const override;
-  };
+// /// Parameters for the most generic orbit generation method currently
+// implemented class GenericWithinScelClusterSpecs : public ClusterSpecs {
+//   CLONEABLE(GenericWithinScelClusterSpecs)
+//
+//   typedef WithinScelSymCompare<IntegralCluster> SymCompareType;
+//
+//   GenericWithinScelClusterSpecs(
+//     std::string _method_name,
+//     std::shared_ptr<Structure const> _shared_prim,
+//     SymGroup const &_generating_group,
+//     SymCompareType const &_sym_compare,
+//     SiteFilterFunction _site_filter,
+//     std::vector<ClusterFilterFunction> _cluster_filter,
+//     std::vector<CandidateSitesFunction> _candidate_sites,
+//     std::vector<IntegralClusterOrbitGenerator> _custom_generators);
+//
+//
+//   /// The prim
+//   std::shared_ptr<Structure const> shared_prim;
+//
+//   /// The orbit generating group
+//   SymGroup generating_group;
+//
+//   /// The comparisons used for orbit generation
+//   SymCompareType sym_compare;
+//
+//   /// A filter which excludes sites that are part of the neighborhood from
+//   being included in
+//   /// orbits. If `site_filter(site)==true`, then the site is included, else
+//   excluded. SiteFilterFunction site_filter;
+//
+//   /// For each orbit branch, a function implementing 'bool
+//   filter(ClusterType)', which returns
+//   /// false for clusters that should not be used to construct an Orbit (i.e.
+//   pair distance too
+//   /// large). The null orbit filter, cluster_filter[0], is ignored.
+//   std::vector<ClusterFilterFunction> cluster_filter;
+//
+//   /// For each orbit branch, a function that generates
+//   `std::vector<xtal::UnitCellCoord>`, a
+//   /// vector of all the sites which will be considered for inclusion in the
+//   orbit branch. The
+//   /// null orbit function, candidate_sites[0], is ignored.
+//   std::vector<CandidateSitesFunction> candidate_sites;
+//
+//   /// Specifies particular clusters that should be used to generate orbits.
+//   std::vector<IntegralClusterOrbitGenerator> custom_generators;
+//
+// private:
+//   std::string m_method_name;
+//
+//   std::string _name() const override;
+//   CLUSTER_PERIODICITY_TYPE _periodicity_type() const override;
+//
+//   WithinScelOrbitVec _make_within_scel_orbits(IntegralClusterVec const
+//   &generating_elements) const override; WithinScelOrbitVec
+//   _make_within_scel_orbits(std::ostream &status) const override;
+// };
 
+// ** Filter functions **
 
-  // /// Parameters for the most generic orbit generation method currently implemented
-  // class GenericWithinScelClusterSpecs : public ClusterSpecs {
-  //   CLONEABLE(GenericWithinScelClusterSpecs)
-  //
-  //   typedef WithinScelSymCompare<IntegralCluster> SymCompareType;
-  //
-  //   GenericWithinScelClusterSpecs(
-  //     std::string _method_name,
-  //     std::shared_ptr<Structure const> _shared_prim,
-  //     SymGroup const &_generating_group,
-  //     SymCompareType const &_sym_compare,
-  //     SiteFilterFunction _site_filter,
-  //     std::vector<ClusterFilterFunction> _cluster_filter,
-  //     std::vector<CandidateSitesFunction> _candidate_sites,
-  //     std::vector<IntegralClusterOrbitGenerator> _custom_generators);
-  //
-  //
-  //   /// The prim
-  //   std::shared_ptr<Structure const> shared_prim;
-  //
-  //   /// The orbit generating group
-  //   SymGroup generating_group;
-  //
-  //   /// The comparisons used for orbit generation
-  //   SymCompareType sym_compare;
-  //
-  //   /// A filter which excludes sites that are part of the neighborhood from being included in
-  //   /// orbits. If `site_filter(site)==true`, then the site is included, else excluded.
-  //   SiteFilterFunction site_filter;
-  //
-  //   /// For each orbit branch, a function implementing 'bool filter(ClusterType)', which returns
-  //   /// false for clusters that should not be used to construct an Orbit (i.e. pair distance too
-  //   /// large). The null orbit filter, cluster_filter[0], is ignored.
-  //   std::vector<ClusterFilterFunction> cluster_filter;
-  //
-  //   /// For each orbit branch, a function that generates `std::vector<xtal::UnitCellCoord>`, a
-  //   /// vector of all the sites which will be considered for inclusion in the orbit branch. The
-  //   /// null orbit function, candidate_sites[0], is ignored.
-  //   std::vector<CandidateSitesFunction> candidate_sites;
-  //
-  //   /// Specifies particular clusters that should be used to generate orbits.
-  //   std::vector<IntegralClusterOrbitGenerator> custom_generators;
-  //
-  // private:
-  //   std::string m_method_name;
-  //
-  //   std::string _name() const override;
-  //   CLUSTER_PERIODICITY_TYPE _periodicity_type() const override;
-  //
-  //   WithinScelOrbitVec _make_within_scel_orbits(IntegralClusterVec const &generating_elements) const override;
-  //   WithinScelOrbitVec _make_within_scel_orbits(std::ostream &status) const override;
-  // };
+/// \brief Generate clusters using all Site
+bool all_sites_filter(const xtal::Site &site);
 
+/// \brief Generate clusters using Site with site_occupant.size() > 1
+bool alloy_sites_filter(const xtal::Site &site);
 
-  // ** Filter functions **
+/// \brief Generate clusters using Site with specified DoF
+SiteFilterFunction dof_sites_filter(const std::vector<DoFKey> &dofs = {});
 
-  /// \brief Generate clusters using all Site
-  bool all_sites_filter(const xtal::Site &site);
+/// Accept all clusters
+ClusterFilterFunction all_clusters_filter();
 
-  /// \brief Generate clusters using Site with site_occupant.size() > 1
-  bool alloy_sites_filter(const xtal::Site &site);
+/// Accept clusters with max pair distance less than max_length
+ClusterFilterFunction max_length_cluster_filter(double max_length);
 
-  /// \brief Generate clusters using Site with specified DoF
-  SiteFilterFunction dof_sites_filter(const std::vector<DoFKey> &dofs = {});
+// /// Accept clusters with max pair distance (using closest images) less than
+// max_length ClusterFilterFunction within_scel_max_length_cluster_filter(
+//   double max_length,
+//   Eigen::Matrix3l const &superlattice_matrix);
 
-  /// Accept all clusters
-  ClusterFilterFunction all_clusters_filter();
+/// No sites (for null orbit, or global dof only)
+CandidateSitesFunction empty_neighborhood();
 
-  /// Accept clusters with max pair distance less than max_length
-  ClusterFilterFunction max_length_cluster_filter(double max_length);
+/// Only sites in the origin unit cell {b, 0, 0, 0}
+CandidateSitesFunction origin_neighborhood();
 
-  // /// Accept clusters with max pair distance (using closest images) less than max_length
-  // ClusterFilterFunction within_scel_max_length_cluster_filter(
-  //   double max_length,
-  //   Eigen::Matrix3l const &superlattice_matrix);
+// /// Sites in the supercell defined by the superlattice_matrix
+// CandidateSitesFunction scel_neighborhood(Eigen::Matrix3l const
+// &superlattice_matrix);
 
-  /// No sites (for null orbit, or global dof only)
-  CandidateSitesFunction empty_neighborhood();
+/// Sites within max_length distance to any site in the origin unit cell {b, 0,
+/// 0, 0}
+CandidateSitesFunction max_length_neighborhood(double max_length);
 
-  /// Only sites in the origin unit cell {b, 0, 0, 0}
-  CandidateSitesFunction origin_neighborhood();
+/// Sites within cutoff_radius distance to any site in the phenomenal cluster
+CandidateSitesFunction cutoff_radius_neighborhood(
+    IntegralCluster const &phenomenal, double cutoff_radius,
+    bool include_phenomenal_sites = false);
 
-  // /// Sites in the supercell defined by the superlattice_matrix
-  // CandidateSitesFunction scel_neighborhood(Eigen::Matrix3l const &superlattice_matrix);
+// /// Sites within cutoff_radius distance (using closest images) to any site in
+// the phenomenal cluster CandidateSitesFunction
+// within_scel_cutoff_radius_neighborhood(
+//   IntegralCluster const &phenomenal,
+//   double cutoff_radius,
+//   Eigen::Matrix3l const &superlattice_matrix);
 
-  /// Sites within max_length distance to any site in the origin unit cell {b, 0, 0, 0}
-  CandidateSitesFunction max_length_neighborhood(double max_length);
-
-  /// Sites within cutoff_radius distance to any site in the phenomenal cluster
-  CandidateSitesFunction cutoff_radius_neighborhood(IntegralCluster const &phenomenal,
-                                                    double cutoff_radius,
-                                                    bool include_phenomenal_sites = false);
-
-  // /// Sites within cutoff_radius distance (using closest images) to any site in the phenomenal cluster
-  // CandidateSitesFunction within_scel_cutoff_radius_neighborhood(
-  //   IntegralCluster const &phenomenal,
-  //   double cutoff_radius,
-  //   Eigen::Matrix3l const &superlattice_matrix);
-
-}
+}  // namespace CASM
 #endif

@@ -13,7 +13,6 @@
 using namespace CASM;
 
 TEST(EnumeratorTest, Test1) {
-
   test::ZrOProj proj;
   proj.check_init();
 
@@ -36,9 +35,9 @@ TEST(EnumeratorTest, Test1) {
     auto end = e.end();
 
     Index count = 0;
-    for(; it != end; ++it, ++count) {
+    for (; it != end; ++it, ++count) {
       m_names.push_back(it->name());
-      //std::cout << it->name() << std::endl;
+      // std::cout << it->name() << std::endl;
     }
     EXPECT_EQ(count, 20);
     EXPECT_TRUE(it == end);
@@ -108,5 +107,4 @@ TEST(EnumeratorTest, Test1) {
   //   EXPECT_EQ(std::distance(e.rbegin(), e.rend()), e.size());
   //   EXPECT_EQ(std::distance(e.rbegin(), e.rend()), e.size());
   // }
-
 }

@@ -8,77 +8,81 @@
 
 namespace CASM {
 
-  class ConfigEnumAllOccupations;
-  class ConfigEnumInput;
+class ConfigEnumAllOccupations;
+class ConfigEnumInput;
 
-  /** \defgroup ConfigEnumGroup Configuration Enumerators
-   *  \ingroup Configuration
-   *  \ingroup Enumerator
-   *  \brief Enumerates Configuration
-   *  @{
-  */
+/** \defgroup ConfigEnumGroup Configuration Enumerators
+ *  \ingroup Configuration
+ *  \ingroup Enumerator
+ *  \brief Enumerates Configuration
+ *  @{
+ */
 
-  /// Conditionally true for ConfigEnumAllOccupations (true when enumerating on all sites)
-  template<>
-  bool is_guaranteed_for_database_insert(ConfigEnumAllOccupations const &enumerator);
+/// Conditionally true for ConfigEnumAllOccupations (true when enumerating on
+/// all sites)
+template <>
+bool is_guaranteed_for_database_insert(
+    ConfigEnumAllOccupations const &enumerator);
 
-  /// Enumerate over all possible occupations on particular sites in a Configuration
+/// Enumerate over all possible occupations on particular sites in a
+/// Configuration
+///
+class ConfigEnumAllOccupations : public InputEnumeratorBase<Configuration> {
+  // -- Required members -------------------
+
+ public:
+  /// Construct with a ConfigEnumInput, specifying which sites to enumerate on
+  /// and which to keep fixed
   ///
-  class ConfigEnumAllOccupations : public InputEnumeratorBase<Configuration> {
+  /// Note:
+  /// - The output configurations are set to fixed occupation matching
+  ///   `config_enum_input.configuration()` on all sites not included in
+  ///   `config_enum_input.sites()`.
+  /// - All allowed occupation values are enumerated on the selected sites
+  ///   (`config_enum_input.sites()`), but Configuration are only output if the
+  ///   are primitive.
+  /// - If all sites are selected, then only canonical Configuration are output.
+  /// This can be
+  ///   checked with `this->canonical_guarantee()`.
+  ConfigEnumAllOccupations(ConfigEnumInput const &config_enum_input);
 
-    // -- Required members -------------------
+  std::string name() const override;
 
-  public:
+  /// Returns true if enumerator is guaranteed to output canonical
+  /// configurations
+  bool canonical_guarantee() const;
 
-    /// Construct with a ConfigEnumInput, specifying which sites to enumerate on and which to keep fixed
-    ///
-    /// Note:
-    /// - The output configurations are set to fixed occupation matching
-    ///   `config_enum_input.configuration()` on all sites not included in
-    ///   `config_enum_input.sites()`.
-    /// - All allowed occupation values are enumerated on the selected sites
-    ///   (`config_enum_input.sites()`), but Configuration are only output if the are primitive.
-    /// - If all sites are selected, then only canonical Configuration are output. This can be
-    ///   checked with `this->canonical_guarantee()`.
-    ConfigEnumAllOccupations(ConfigEnumInput const &config_enum_input);
+  static const std::string enumerator_name;
 
-    std::string name() const override;
+ private:
+  /// Implements increment
+  void increment() override;
 
-    /// Returns true if enumerator is guaranteed to output canonical configurations
-    bool canonical_guarantee() const;
+  // -- Unique -------------------
 
-    static const std::string enumerator_name;
+  /// Returns true if current() is valid for output
+  ///
+  /// When enumerating on all sites:
+  /// - Require output configurations are primitive and canonical
+  /// When enumerating on a subset of sites:
+  /// - Require output configurations are primitive (but not canonical)
+  ///
+  bool _current_is_valid_for_output() const;
 
-  private:
+  /// Site index to enumerate on
+  std::set<Index> m_site_index_selection;
 
-    /// Implements increment
-    void increment() override;
+  /// Counter over allowed occupation indices on sites in m_site_index_selection
+  Counter<std::vector<int> > m_counter;
 
-    // -- Unique -------------------
+  /// The current configuration
+  notstd::cloneable_ptr<Configuration> m_current;
 
-    /// Returns true if current() is valid for output
-    ///
-    /// When enumerating on all sites:
-    /// - Require output configurations are primitive and canonical
-    /// When enumerating on a subset of sites:
-    /// - Require output configurations are primitive (but not canonical)
-    ///
-    bool _current_is_valid_for_output() const;
+  /// True if enumerating on a subset of supercell sites
+  bool m_enumerate_on_a_subset_of_supercell_sites;
+};
 
-    /// Site index to enumerate on
-    std::set<Index> m_site_index_selection;
-
-    /// Counter over allowed occupation indices on sites in m_site_index_selection
-    Counter<std::vector<int> > m_counter;
-
-    /// The current configuration
-    notstd::cloneable_ptr<Configuration> m_current;
-
-    /// True if enumerating on a subset of supercell sites
-    bool m_enumerate_on_a_subset_of_supercell_sites;
-  };
-
-  /** @}*/
-}
+/** @}*/
+}  // namespace CASM
 
 #endif

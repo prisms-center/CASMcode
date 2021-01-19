@@ -13,13 +13,12 @@ using namespace test;
 
 void generate_master_lat_pt_grp(MasterSymGroup *master, const Lattice &lat) {
   master->set_lattice(lat);
-  for(const auto &op : SymGroup::lattice_point_group(lat)) {
+  for (const auto &op : SymGroup::lattice_point_group(lat)) {
     master->push_back(op);
   }
 }
 
 TEST(LatticeEnumEquivalentsTest, Test1) {
-
   Structure ZrO(ZrO_prim());
 
   LatticeEnumEquivalents enumerator(ZrO.lattice(), ZrO.factor_group());
@@ -39,30 +38,26 @@ TEST(LatticeEnumEquivalentsTest, Test1) {
 
   // LatticeEnumEquivalents is an InputEnum and allows only a single pass
   EXPECT_EQ(0, std::distance(enumerator.begin(), enumerator.end()));
-
 }
 
 TEST(LatticeEnumEquivalentsTest, Test2) {
-
   Structure ZrO(ZrO_prim());
 
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = ZrO.lattice().vectors();
 
   {
-    LatticeEnumEquivalents e(Lattice(2.*a, b, c), ZrO.factor_group());
+    LatticeEnumEquivalents e(Lattice(2. * a, b, c), ZrO.factor_group());
     EXPECT_EQ(3, std::distance(e.begin(), e.end()));
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(2.*a, 2 * b, c), ZrO.factor_group());
+    LatticeEnumEquivalents e(Lattice(2. * a, 2 * b, c), ZrO.factor_group());
     EXPECT_EQ(1, std::distance(e.begin(), e.end()));
   }
-
 }
 
 TEST(LatticeEnumEquivalentsTest, Test3) {
-
   Lattice lat = Lattice::hexagonal();
   MasterSymGroup pg;
   generate_master_lat_pt_grp(&pg, lat);
@@ -76,19 +71,17 @@ TEST(LatticeEnumEquivalentsTest, Test3) {
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(2.*a, b, c), pg);
+    LatticeEnumEquivalents e(Lattice(2. * a, b, c), pg);
     EXPECT_EQ(3, std::distance(e.begin(), e.end()));
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(2.*a, 2 * b, c), pg);
+    LatticeEnumEquivalents e(Lattice(2. * a, 2 * b, c), pg);
     EXPECT_EQ(1, std::distance(e.begin(), e.end()));
   }
-
 }
 
 TEST(LatticeEnumEquivalentsTest, Test4) {
-
   Lattice lat = Lattice::cubic();
   MasterSymGroup pg;
   generate_master_lat_pt_grp(&pg, lat);
@@ -102,29 +95,27 @@ TEST(LatticeEnumEquivalentsTest, Test4) {
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(2.*a, b, c), pg);
+    LatticeEnumEquivalents e(Lattice(2. * a, b, c), pg);
     EXPECT_EQ(3, std::distance(e.begin(), e.end()));
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(2.*a, 2.*b, c), pg);
+    LatticeEnumEquivalents e(Lattice(2. * a, 2. * b, c), pg);
     EXPECT_EQ(3, std::distance(e.begin(), e.end()));
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(2.*a, 2.*b, 2.*c), pg);
+    LatticeEnumEquivalents e(Lattice(2. * a, 2. * b, 2. * c), pg);
     EXPECT_EQ(1, std::distance(e.begin(), e.end()));
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(4.*a, 2.*b, 1.*c), pg);
+    LatticeEnumEquivalents e(Lattice(4. * a, 2. * b, 1. * c), pg);
     EXPECT_EQ(6, std::distance(e.begin(), e.end()));
   }
-
 }
 
 TEST(LatticeEnumEquivalentsTest, Test5) {
-
   Lattice lat = Lattice::fcc();
   MasterSymGroup pg;
   generate_master_lat_pt_grp(&pg, lat);
@@ -138,7 +129,7 @@ TEST(LatticeEnumEquivalentsTest, Test5) {
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(2.*a, b, c), pg);
+    LatticeEnumEquivalents e(Lattice(2. * a, b, c), pg);
     EXPECT_EQ(4, std::distance(e.begin(), e.end()));
   }
 
@@ -148,19 +139,17 @@ TEST(LatticeEnumEquivalentsTest, Test5) {
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(2.*a, 2.*b, c), pg);
+    LatticeEnumEquivalents e(Lattice(2. * a, 2. * b, c), pg);
     EXPECT_EQ(6, std::distance(e.begin(), e.end()));
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(2.*a, 2.*b, 2.*c), pg);
+    LatticeEnumEquivalents e(Lattice(2. * a, 2. * b, 2. * c), pg);
     EXPECT_EQ(1, std::distance(e.begin(), e.end()));
   }
 
   {
-    LatticeEnumEquivalents e(Lattice(4.*a, 2.*b, 1.*c), pg);
+    LatticeEnumEquivalents e(Lattice(4. * a, 2. * b, 1. * c), pg);
     EXPECT_EQ(12, std::distance(e.begin(), e.end()));
   }
-
 }
-
