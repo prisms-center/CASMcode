@@ -10,6 +10,8 @@ struct IntegralClusterOrbitGenerator;
 class Structure;
 template <typename T>
 class InputParser;
+template <typename T>
+struct jsonConstructor;
 class jsonParser;
 
 /// \brief Write IntegralCluster to JSON object

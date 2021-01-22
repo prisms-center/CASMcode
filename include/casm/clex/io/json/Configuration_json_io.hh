@@ -5,12 +5,15 @@
 
 namespace CASM {
 
+class Configuration;
 class PrimClex;
+class Structure;
 class Supercell;
-class jsonParser;
-
 template <typename T>
 struct jsonConstructor;
+template <typename T>
+struct jsonMake;
+class jsonParser;
 
 template <>
 struct jsonConstructor<Configuration> {

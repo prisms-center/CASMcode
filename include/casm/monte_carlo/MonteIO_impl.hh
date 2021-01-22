@@ -4,10 +4,14 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 
+#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/dataformatter/DataFormatterTools.hh"
+#include "casm/clex/PrimClex.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/monte_carlo/MonteCarlo.hh"
 #include "casm/monte_carlo/MonteIO.hh"
+#include "casm/monte_carlo/MonteSettings.hh"
 
 namespace CASM {
 namespace Monte {

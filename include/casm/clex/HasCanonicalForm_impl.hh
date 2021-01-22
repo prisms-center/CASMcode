@@ -2,6 +2,7 @@
 #define CASM_HasCanonicalForm_impl
 
 #include "casm/clex/HasCanonicalForm.hh"
+#include "casm/clex/Supercell.hh"
 #include "casm/crystallography/CanonicalForm.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "casm/symmetry/InvariantSubgroup_impl.hh"

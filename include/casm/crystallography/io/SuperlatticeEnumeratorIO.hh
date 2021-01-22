@@ -7,6 +7,8 @@ class ScelEnumProps;
 }
 template <typename T>
 class InputParser;
+template <typename T>
+struct jsonConstructor;
 class jsonParser;
 
 jsonParser &to_json(const xtal::ScelEnumProps &props, jsonParser &json);

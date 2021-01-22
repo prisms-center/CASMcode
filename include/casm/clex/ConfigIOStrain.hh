@@ -1,8 +1,9 @@
 #ifndef CONFIGIOSTRAIN_HH
 #define CONFIGIOSTRAIN_HH
 
-#include "casm/casm_io/dataformatter/DataFormatter.hh"
+#include "casm/casm_io/dataformatter/DataFormatterTools.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/crystallography/DoFDecl.hh"
 #include "casm/strain/StrainConverter.hh"
 
 namespace CASM {

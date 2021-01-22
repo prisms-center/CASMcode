@@ -1,8 +1,12 @@
 #ifndef CASM_enumerator_io_json_dof_space_analysis
 #define CASM_enumerator_io_json_dof_space_analysis
 
+#include <boost/filesystem/path.hpp>
+
 #include "casm/casm_io/json/jsonParser.hh"
+#include "casm/crystallography/DoFDecl.hh"
 #include "casm/global/definitions.hh"
+#include "casm/symmetry/PermuteIterator.hh"
 
 namespace CASM {
 
@@ -11,6 +15,7 @@ class DirectoryStructure;
 class DoFSpace;
 class SymGroup;
 struct VectorSpaceSymReport;
+class make_symmetry_adapted_dof_space_error;
 
 namespace DoFSpaceIO {
 

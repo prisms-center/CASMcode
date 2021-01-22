@@ -10,6 +10,8 @@ namespace CASM {
 template <typename T>
 class InputParser;
 struct EnumerateSupercellsOptions;
+class PrimClex;
+class Supercell;
 class jsonParser;
 
 /// A standard approach to combine CLI options with user JSON options into one
