@@ -75,8 +75,6 @@ class Configuration : public ConfigurationBase {
  public:
   //********* CONSTRUCTORS *********
 
-  // Configuration() {};
-
   /// Construct a default Configuration, with a shared Supercell
   ///
   /// Note:
@@ -114,15 +112,10 @@ class Configuration : public ConfigurationBase {
       const std::shared_ptr<Supercell const> &_supercell_ptr, double _tol);
 
   // *** The following constructors should be avoided in new code, if possible
-  // ***
   //
-  //     They are currently still required in enumerators and similar code when
-  //     the Configuration uses a Supercell from a Database<Supercell> and/or
-  //     Configuration "source" information is required and cannot be stored
-  //     another way. In the future:
+  //     They are currently still required in some code. In the future:
   //     - Configuration will make exclusive use of std::shared_ptr<Supercell
   //     const>
-  //     - The "source" information will be stored outside of Configuration
   //     - The jsonConstructor<Configuration>::from_json method will be used to
   //       construct Configuration from JSON
 
@@ -133,10 +126,7 @@ class Configuration : public ConfigurationBase {
   /// - This constructor keeps a pointer to _supercell, whose lifetime must
   /// exceed the lifetime
   ///   of this Configuration
-  /// - In the future, "source" information will be stored outside of
-  /// Configuration.
-  explicit Configuration(Supercell const &_supercell,
-                         jsonParser const &source = jsonParser());
+  explicit Configuration(Supercell const &_supercell);
 
   /// Construct a default Configuration
   ///
@@ -145,63 +135,7 @@ class Configuration : public ConfigurationBase {
   /// - This constructor keeps a pointer to _supercell, whose lifetime must
   /// exceed the lifetime
   ///   of this Configuration
-  /// - In the future, "source" information will be stored outside of
-  /// Configuration.
-  explicit Configuration(const Supercell &_supercell, const jsonParser &source,
-                         const ConfigDoF &_dof);
-
-  /// Construct a default Configuration that owns its Supercell
-  ///
-  /// Note:
-  /// - Whenever possible, this constructor should not be used in new code .
-  /// - This Configuration does own its own Supercell, so the lifetime of the
-  /// Supercell is
-  ///   guaranteed to exceed the lifetime of this Configuration
-  /// - In the future, "source" information will be stored outside of
-  /// Configuration.
-  explicit Configuration(const std::shared_ptr<Supercell const> &_supercell,
-                         const jsonParser &source);
-
-  /// Construct a default Configuration that owns its Supercell
-  ///
-  /// Note:
-  /// - Whenever possible, this constructor should not be used in new code .
-  /// - This Configuration does own its own Supercell, so the lifetime of the
-  /// Supercell is
-  ///   guaranteed to exceed the lifetime of this Configuration
-  /// - In the future, "source" information will be stored outside of
-  /// Configuration.
-  explicit Configuration(const std::shared_ptr<Supercell const> &_supercell,
-                         const jsonParser &source, const ConfigDoF &_dof);
-
-  /// Construct a Configuration from JSON data
-  ///
-  /// Note:
-  /// - Whenever possible, this constructor should not be used in new code .
-  /// - This constructor keeps a pointer to _supercell, whose lifetime must
-  /// exceed the lifetime
-  ///   of this Configuration
-  /// - This constructor sets the "id" of this Configuration.
-  /// - In the future, a Configuration will not be constructed directly from
-  /// JSON in favor of
-  ///   using the "from_json" method.
-  Configuration(const Supercell &_supercell, const std::string &_id,
-                const jsonParser &_data);
-
-  /// Construct a Configuration from JSON data
-  ///
-  /// Note:
-  /// - Whenever possible, this constructor should not be used in new code .
-  /// - This constructor uses "_configname" to lookup the correct Supercell from
-  /// the
-  ///   Database<Supercell> and uses that to construct this Configuration.
-  ///  - This constructor also uses the "_configname" to set the "id" of this
-  ///  Configuration.
-  /// - In the future, a Configuration will not be constructed directly from
-  /// JSON in favor of
-  ///   using the "from_json" method.
-  Configuration(const PrimClex &_primclex, const std::string &_configname,
-                const jsonParser &_data);
+  explicit Configuration(const Supercell &_supercell, const ConfigDoF &_dof);
 
   /// Build a Configuration sized to _scel with all fields initialized and set
   /// to zero
@@ -283,8 +217,7 @@ class Configuration : public ConfigurationBase {
   /// set_occupation ensures that ConfigDoF::size() is compatible with
   /// _occupation.size() or if ConfigDoF::size()==0, sets ConfigDoF::size() to
   /// _occupation.size()
-  template <typename OtherOccContainerType>
-  void set_occupation(const OtherOccContainerType &_occupation) {
+  void set_occupation(Eigen::Ref<const Eigen::VectorXi> const &_occupation) {
     configdof().set_occupation(_occupation);
   }
 
@@ -300,9 +233,7 @@ class Configuration : public ConfigurationBase {
   /// to the occupant DoF in a "prim.json" file. This means that for the
   /// background structure, 'occupation' is all 0
   ///
-  ConfigDoF::OccValueType const &occupation() const {
-    return configdof().occupation();
-  }
+  Eigen::VectorXi const &occupation() const { return configdof().occupation(); }
 
   /// \brief Set occupant variable on site l
   ///
@@ -438,16 +369,16 @@ class Configuration : public ConfigurationBase {
   /// database
   ConfigInsertResult insert(bool primitive_only = false) const;
 
-  /// Writes the Configuration to JSON
-  jsonParser &to_json(jsonParser &json) const;
-
-  /// Reads the Configuration from JSON
-  void from_json(const jsonParser &json, const Supercell &scel,
-                 std::string _id);
-
-  /// Reads the Configuration from JSON
-  void from_json(const jsonParser &json, const PrimClex &primclex,
-                 std::string _configname);
+  // /// Writes the Configuration to JSON
+  // jsonParser &to_json(jsonParser &json) const;
+  //
+  // /// Reads the Configuration from JSON
+  // void from_json(const jsonParser &json, const Supercell &scel,
+  //                std::string _id);
+  //
+  // /// Reads the Configuration from JSON
+  // void from_json(const jsonParser &json, const PrimClex &primclex,
+  //                std::string _configname);
 
   /// \brief Split configuration name string into scelname and config id
   static std::pair<std::string, std::string> split_name(std::string configname);

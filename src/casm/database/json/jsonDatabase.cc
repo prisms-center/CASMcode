@@ -271,7 +271,23 @@ jsonDatabase<Configuration> &jsonDatabase<Configuration>::open() {
                                  .find(scel_it.name());
 
     for (; config_it != config_end; ++config_it) {
-      auto result = m_config_list.emplace(scel, config_it.name(), *config_it);
+      Configuration configuration{scel};
+      from_json(configuration.configdof(), (*config_it)["dof"]);
+
+      auto source_it = config_it->find("source");
+      if (source_it != config_it->end()) {
+        configuration.set_source(*source_it);
+      }
+      auto cache_it = config_it->find("cache");
+      if (cache_it != config_it->end()) {
+        configuration.set_initial_cache(*cache_it);
+      }
+
+      this->clear_name(configuration);
+      // config_it.name() is the JSON attribute name, which is the config ID
+      this->set_id(configuration, config_it.name());
+
+      auto result = m_config_list.emplace(configuration);
       _on_insert_or_emplace(result, is_new);
     }
   }
@@ -312,7 +328,14 @@ void jsonDatabase<Configuration>::commit() {
   json["version"] = traits<jsonDB>::version;
 
   for (const auto &config : m_config_list) {
-    config.to_json(json["supercells"][config.supercell().name()][config.id()]);
+    jsonParser &configjson =
+        json["supercells"][config.supercell().name()][config.id()];
+    to_json(config.configdof(), configjson["dof"]);
+    to_json(config.source(), configjson["source"]);
+    configjson["cache"].put_obj();
+    if (config.cache_updated()) {
+      to_json(config.cache(), configjson["cache"]);
+    }
   }
 
   json["config_id"] = m_config_id;
@@ -320,12 +343,11 @@ void jsonDatabase<Configuration>::commit() {
   SafeOfstream file;
   fs::create_directories(config_list_path.parent_path());
   file.open(config_list_path);
-  // json.print(file.ofstream());
   int indent = 0;
   int prec = 12;
   json_spirit::write_stream((json_spirit::mValue &)json, file.ofstream(),
-                            indent, prec),
-      file.close();
+                            indent, prec);
+  file.close();
 
   this->write_aliases();
   auto handler = primclex().settings().query_handler<Configuration>();
