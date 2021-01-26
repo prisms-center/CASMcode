@@ -119,7 +119,7 @@
 //       ... ]
 //
 // - the values of the continuous global DoF ("global_dofs",
-//   std::map<DoFKey, GlobalDoFContainerType>).
+//   std::map<DoFKey, GlobalContinuousConfigDoFValues>).
 //
 //   Example: GLstrain values, with prim DoF basis equal to the standard basis,
 //   accessed via `Eigen::VectorXd const

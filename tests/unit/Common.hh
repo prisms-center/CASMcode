@@ -6,6 +6,7 @@
 
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/json/jsonParser.hh"
+#include "casm/global/eigen.hh"
 // #include "FCCTernaryProj.hh"
 // #include "ZrOProj.hh"
 
@@ -35,6 +36,17 @@ void print_computed_result(std::ostream &sout, std::string name,
     }
   }
   sout << "};" << std::endl;
+}
+
+template <typename T>
+Eigen::Matrix<T, Eigen::Dynamic, 1> eigen_vector(std::initializer_list<T> v) {
+  Eigen::Matrix<T, Eigen::Dynamic, 1> eigen_v =
+      Eigen::Matrix<T, Eigen::Dynamic, 1>::Zero(v.size());
+  int i = 0;
+  for (int value : v) {
+    eigen_v[i++] = value;
+  }
+  return eigen_v;
 }
 
 }  // namespace test
