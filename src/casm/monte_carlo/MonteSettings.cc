@@ -82,13 +82,14 @@ bool MonteSettings::is_motif_configdof() const {
 }
 
 /// \brief ConfigDoF to use as starting motif
-ConfigDoF MonteSettings::motif_configdof() const {
+ConfigDoF MonteSettings::motif_configdof(Index supercell_volume) const {
   std::string help =
       "string\n"
       "  Path to file containing DoF, such as an \"final_state.json\" file.";
   fs::path configdof_path =
       _get_setting<fs::path>("driver", "motif", "configdof", help);
-  return jsonParser(configdof_path).get<ConfigDoF>(primclex().prim());
+  return jsonParser(configdof_path)
+      .get<ConfigDoF>(primclex().prim(), supercell_volume);
 }
 
 /// \brief Path to ConfigDoF file to use as starting motif

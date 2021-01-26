@@ -155,7 +155,7 @@ std::pair<ConfigDoF, std::string> GrandCanonical::set_state(
     _log() << "motif configdof: " << settings.motif_configdof_path() << "\n";
     _log() << "using configdof: " << settings.motif_configdof_path() << "\n"
            << std::endl;
-    configdof = settings.motif_configdof();
+    configdof = settings.motif_configdof(supercell().volume());
     configname = settings.motif_configdof_path().string();
   } else {
     throw std::runtime_error(

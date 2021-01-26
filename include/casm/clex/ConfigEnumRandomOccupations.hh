@@ -64,7 +64,7 @@ class ConfigEnumRandomOccupations : public InputEnumeratorBase<Configuration> {
 
   Index m_n_config;
   MTRand &m_mtrand;
-  std::vector<int> m_max_allowed;
+  Eigen::VectorXi m_max_allowed;
   std::vector<Index> m_site_selection;
   notstd::cloneable_ptr<Configuration> m_current;
 };

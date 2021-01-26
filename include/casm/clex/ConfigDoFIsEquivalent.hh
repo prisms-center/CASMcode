@@ -63,8 +63,7 @@ class Base {
   virtual Base *_clone() const = 0;
 };
 
-/// \brief Abstract base class specialization of Base for
-/// integral Do.F types
+/// Compare isotropic occupation values
 ///
 /// - The protected '_check' method provides for both checking equality and if
 ///   not equivalent, storing the 'less than' result
@@ -138,15 +137,23 @@ class Occupation : public Base {
   ConfigDoF const *m_configdof_ptr;
 };
 
-/// \brief Abstract base class specialization of Base for
-/// integral DoF types
+/// Compare anisotropic occupation values
 ///
 /// - The protected '_check' method provides for both checking equality and if
 ///   not equivalent, storing the 'less than' result
+///
+/// Method:
+/// - To improve efficiency when comparisons are being made repeatedly under
+///   transformation by the same factor group operation but different
+///   translations, temporary vectors 'm_new_occ_A' and 'm_new_occ_B' store the
+///   occupation values under transformation by factor group operation only,
+///   not site permutation. The factor group operation used last is stored in
+///   'm_fg_index_A' and 'm_fg_index_B'. The 'm_tmp_valid' is set to false if
+///   comparison is made against an "other" ConfigDoF to force update of the
+///   transformed variables in the temporary vectors the next time the functor
+///   is called because it cannot be guaranteed that the "other" is the same.
 class AnisoOccupation : public Base {
  public:
-  using DoFValuesType = ConfigDoF::OccDoFContainerType;
-
   AnisoOccupation(ConfigDoF const &_configdof)
       : m_configdof_ptr(&_configdof),
         m_tmp_valid(true),
@@ -259,15 +266,20 @@ class AnisoOccupation : public Base {
     return false;
   }
 
+  // Points to ConfigDoF this was constructed with
   ConfigDoF const *m_configdof_ptr;
 
+  // Set to false when comparison is made to "other" ConfigDoF, to force update
+  // of temporary dof during the next comparison
   mutable bool m_tmp_valid;
 
+  // Store temporary DoFValues under fg operation only:
+
   mutable Index m_fg_index_A;
-  mutable DoFValuesType::ValueType m_new_occ_A;
+  mutable Eigen::VectorXi m_new_occ_A;
 
   mutable Index m_fg_index_B;
-  mutable DoFValuesType::ValueType m_new_occ_B;
+  mutable Eigen::VectorXi m_new_occ_B;
 };
 
 /// \brief Abstract base class specialization of Base for
@@ -307,32 +319,42 @@ class Float : public Base {
   const DoFKey m_key;
 };
 
-/// Compare displacement DoF
+/// Compare continuous site DoF values
+///
+/// Method:
+/// - To improve efficiency when comparisons are being made repeatedly under
+///   transformation by the same factor group operation but different
+///   translations, temporary vectors 'm_new_dof_A' and 'm_new_dof_B' store the
+///   DoF values under transformation by factor group operation only,
+///   not site permutation. The factor group operation used last is stored in
+///   'm_fg_index_A' and 'm_fg_index_B'. The 'm_tmp_valid' is set to false if
+///   comparison is made against an "other" ConfigDoF to force update of the
+///   transformed variables in the temporary vectors the next time the functor
+///   is called because it cannot be guaranteed that the "other" is the same.
 class Local : public Float {
  public:
-  using DoFValuesType = LocalContinuousConfigDoFValues;
-
   Local(ConfigDoF const &_configdof, DoFKey const &_key, double _tol)
       : Float(_tol, _key),
         m_values_ptr(&(_configdof.local_dof(_key))),
         m_tmp_valid(true),
+        m_zeros(*m_values_ptr),
         m_fg_index_A(0),
         m_new_dof_A(*m_values_ptr),
         m_fg_index_B(0),
-        m_new_dof_B(*m_values_ptr) {}
+        m_new_dof_B(*m_values_ptr) {
+    m_zeros.setZero();
+  }
 
   Local(Configuration const &_config, DoFKey const &_key, double _tol)
       : Local(_config.configdof(), _key, _tol) {}
 
   /// \brief Return config == other, store config < other
   bool operator()(ConfigDoF const &other) const override {
-    DoFValuesType tmp;
-    DoFValuesType const *other_ptr = &tmp;
+    LocalContinuousConfigDoFValues const *other_ptr;
     if (other.has_local_dof(key())) {
       other_ptr = &(other.local_dof(key()));
     } else {
-      tmp.values().setZero(_values().values().rows(),
-                           _values().values().cols());
+      other_ptr = &m_zeros;
     }
 
     return _for_each(
@@ -364,13 +386,11 @@ class Local : public Float {
   /// \brief Return config == B*other, store config < B*other
   bool operator()(PermuteIterator const &B,
                   ConfigDoF const &other) const override {
-    DoFValuesType tmp;
-    DoFValuesType const *other_ptr = &tmp;
+    LocalContinuousConfigDoFValues const *other_ptr;
     if (other.has_local_dof(key())) {
       other_ptr = &(other.local_dof(key()));
     } else {
-      tmp.values().setZero(_values().values().rows(),
-                           _values().values().cols());
+      other_ptr = &m_zeros;
     }
 
     _update_B(B, *other_ptr);
@@ -384,13 +404,11 @@ class Local : public Float {
   /// \brief Return A*config == B*other, store A*config < B*other
   bool operator()(PermuteIterator const &A, PermuteIterator const &B,
                   ConfigDoF const &other) const override {
-    DoFValuesType tmp;
-    DoFValuesType const *other_ptr = &tmp;
+    LocalContinuousConfigDoFValues const *other_ptr;
     if (other.has_local_dof(key())) {
       other_ptr = &(other.local_dof(key()));
     } else {
-      tmp.values().setZero(_values().values().rows(),
-                           _values().values().cols());
+      other_ptr = &m_zeros;
     }
     _update_A(A, _values());
     _update_B(B, *other_ptr);
@@ -402,9 +420,12 @@ class Local : public Float {
   }
 
  private:
-  DoFValuesType const &_values() const { return *m_values_ptr; }
+  LocalContinuousConfigDoFValues const &_values() const {
+    return *m_values_ptr;
+  }
 
-  void _update_A(PermuteIterator const &A, DoFValuesType const &before) const {
+  void _update_A(PermuteIterator const &A,
+                 LocalContinuousConfigDoFValues const &before) const {
     if (A.factor_group_index() != m_fg_index_A || !m_tmp_valid) {
       for (Index b = 0; b < m_values_ptr->n_sublat(); ++b) {
         m_fg_index_A = A.factor_group_index();
@@ -416,7 +437,8 @@ class Local : public Float {
     }
   }
 
-  void _update_B(PermuteIterator const &B, DoFValuesType const &before) const {
+  void _update_B(PermuteIterator const &B,
+                 LocalContinuousConfigDoFValues const &before) const {
     if (B.factor_group_index() != m_fg_index_B || !m_tmp_valid) {
       for (Index b = 0; b < m_values_ptr->n_sublat(); ++b) {
         m_fg_index_B = B.factor_group_index();
@@ -452,46 +474,53 @@ class Local : public Float {
 
   Base *_clone() const override { return new Local(*this); }
 
-  DoFValuesType const *m_values_ptr;
+  // Points to LocalContinuousConfigDoFValues of ConfigDoF this was constructed
+  // with
+  LocalContinuousConfigDoFValues const *m_values_ptr;
 
+  // Set to false when comparison is made to "other" ConfigDoF, to force update
+  // of temporary dof during the next comparison
   mutable bool m_tmp_valid;
 
+  // Used when "other" ConfigDoF does not have local DoF==this->key()
+  mutable LocalContinuousConfigDoFValues m_zeros;
+
+  // Store temporary DoFValues under fg operation only:
+
   mutable Index m_fg_index_A;
-  mutable DoFValuesType m_new_dof_A;
+  mutable LocalContinuousConfigDoFValues m_new_dof_A;
 
   mutable Index m_fg_index_B;
-  mutable DoFValuesType m_new_dof_B;
+  mutable LocalContinuousConfigDoFValues m_new_dof_B;
 };
 
-/// Compare strain DoF
+/// Compare continuous global DoF values
 ///
-/// - Compares F.t * F, unrolled, lexicographically
+/// - Compares global DoF values lexicographically
 class Global : public Float {
  public:
-  using DoFValuesType = GlobalContinuousConfigDoFValues;
-
   Global(ConfigDoF const &_configdof, DoFKey const &_key, double _tol)
       : Float(_tol, _key),
         m_values_ptr(&_configdof.global_dof(_key)),
         m_tmp_valid(true),
+        m_zeros(*m_values_ptr),
         m_fg_index_A(0),
         m_new_dof_A(*m_values_ptr),
         m_fg_index_B(true),
-        m_new_dof_B(*m_values_ptr) {}
+        m_new_dof_B(*m_values_ptr) {
+    m_zeros.setZero();
+  }
 
   Global(Configuration const &_config, DoFKey const &_key, double _tol)
       : Global(_config.configdof(), _key, _tol) {}
 
   /// \brief Return config == other, store config < other
   bool operator()(ConfigDoF const &other) const override {
-    DoFValuesType tmp;
-    DoFValuesType const *other_ptr = &tmp;
+    GlobalContinuousConfigDoFValues const *other_ptr;
     if (other.has_global_dof(key())) {
       other_ptr = &(other.global_dof(key()));
     } else {
-      // std::cout << "Junk initialization\n";
-      tmp.values().setZero(_values().values().rows(),
-                           _values().values().cols());
+      other_ptr = &m_zeros;
     }
 
     return _for_each([&](Index i) { return this->_values(i); },
@@ -519,13 +548,11 @@ class Global : public Float {
   /// \brief Return config == B*other, store config < B*other
   bool operator()(PermuteIterator const &B,
                   ConfigDoF const &other) const override {
-    DoFValuesType tmp;
-    DoFValuesType const *other_ptr = &tmp;
+    GlobalContinuousConfigDoFValues const *other_ptr;
     if (other.has_global_dof(key())) {
       other_ptr = &(other.global_dof(key()));
     } else {
-      tmp.values().setZero(_values().values().rows(),
-                           _values().values().cols());
+      other_ptr = &m_zeros;
     }
     _update_B(B, *other_ptr);
     m_tmp_valid = false;
@@ -536,13 +563,11 @@ class Global : public Float {
   /// \brief Return A*config == B*other, store A*config < B*other
   bool operator()(PermuteIterator const &A, PermuteIterator const &B,
                   ConfigDoF const &other) const override {
-    DoFValuesType tmp;
-    DoFValuesType const *other_ptr = &tmp;
+    GlobalContinuousConfigDoFValues const *other_ptr;
     if (other.has_global_dof(key())) {
       other_ptr = &(other.global_dof(key()));
     } else {
-      tmp.values().setZero(_values().values().rows(),
-                           _values().values().cols());
+      other_ptr = &m_zeros;
     }
     _update_A(A, _values());
     _update_B(B, *other_ptr);
@@ -554,23 +579,27 @@ class Global : public Float {
  private:
   Base *_clone() const override { return new Global(*this); }
 
-  void _update_A(PermuteIterator const &A, DoFValuesType const &before) const {
+  void _update_A(PermuteIterator const &A,
+                 GlobalContinuousConfigDoFValues const &before) const {
     if (A.factor_group_index() != m_fg_index_A || !m_tmp_valid) {
       m_fg_index_A = A.factor_group_index();
-      m_new_dof_A.values() =
-          *(A.global_dof_rep(key()).MatrixXd()) * before.values();
+      m_new_dof_A.set_values(*(A.global_dof_rep(key()).MatrixXd()) *
+                             before.values());
     }
   }
 
-  void _update_B(PermuteIterator const &B, DoFValuesType const &before) const {
+  void _update_B(PermuteIterator const &B,
+                 GlobalContinuousConfigDoFValues const &before) const {
     if (B.factor_group_index() != m_fg_index_B || !m_tmp_valid) {
       m_fg_index_B = B.factor_group_index();
-      m_new_dof_B.values() =
-          *(B.global_dof_rep(key()).MatrixXd()) * before.values();
+      m_new_dof_B.set_values(*(B.global_dof_rep(key()).MatrixXd()) *
+                             before.values());
     }
   }
 
-  DoFValuesType const &_values() const { return *m_values_ptr; }
+  GlobalContinuousConfigDoFValues const &_values() const {
+    return *m_values_ptr;
+  }
 
   double _values(Index i) const { return _values().values()[i]; }
 
@@ -589,15 +618,24 @@ class Global : public Float {
     return true;
   }
 
-  DoFValuesType const *m_values_ptr;
+  // Points to GlobalContinuousConfigDoFValues of ConfigDoF this was constructed
+  // with
+  GlobalContinuousConfigDoFValues const *m_values_ptr;
 
+  // Set to false when comparison is made to "other" ConfigDoF, to force update
+  // of temporary dof during the next comparison
   mutable bool m_tmp_valid;
 
+  // Used when "other" ConfigDoF does not have local DoF==this->key()
+  mutable GlobalContinuousConfigDoFValues m_zeros;
+
+  // Store temporary DoFValues under fg operation only:
+
   mutable Index m_fg_index_A;
-  mutable DoFValuesType m_new_dof_A;
+  mutable GlobalContinuousConfigDoFValues m_new_dof_A;
 
   mutable Index m_fg_index_B;
-  mutable DoFValuesType m_new_dof_B;
+  mutable GlobalContinuousConfigDoFValues m_new_dof_B;
 };
 
 }  // namespace ConfigDoFIsEquivalent

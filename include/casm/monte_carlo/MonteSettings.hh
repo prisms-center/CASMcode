@@ -94,7 +94,7 @@ class MonteSettings : protected CASM::jsonParser {
   bool is_motif_configdof() const;
 
   /// \brief ConfigDoF to use as starting motif
-  ConfigDoF motif_configdof() const;
+  ConfigDoF motif_configdof(Index supercell_volume) const;
 
   /// \brief Path to ConfigDoF file to use as starting motif
   fs::path motif_configdof_path() const;

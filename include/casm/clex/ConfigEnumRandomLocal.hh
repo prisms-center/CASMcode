@@ -76,7 +76,7 @@ class ConfigEnumRandomLocal : public InputEnumeratorBase<Configuration> {
   // Number of configurations to be enumerated
   Index m_n_config;
 
-  ConfigDoF::LocalDoFContainerType *m_dof_vals;
+  LocalContinuousConfigDoFValues *m_dof_vals;
 
   // Pseudo-random number generator
   MTRand &m_mtrand;
