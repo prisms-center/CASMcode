@@ -3,10 +3,10 @@
 
 namespace CASM {
 
-  struct CommandArgs;
+struct CommandArgs;
 
-  int init_command(const CommandArgs &args);
+int init_command(const CommandArgs &args);
 
-}
+}  // namespace CASM
 
 #endif

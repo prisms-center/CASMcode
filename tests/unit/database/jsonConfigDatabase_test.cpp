@@ -4,21 +4,19 @@
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/json/jsonDatabase.hh"
 
-
 /// What is being used to test it:
 
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
-#include "casm/crystallography/Structure.hh"
-#include "casm/clex/ConfigEnumAllOccupations.hh"
-#include "casm/database/ScelDatabase.hh"
 #include "casm/casm_io/container/stream_io.hh"
+#include "casm/clex/ConfigEnumAllOccupations.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/database/ScelDatabase.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
 
 using namespace CASM;
 
 TEST(jsonConfigDatabase_Test, Test1) {
-
   // Create testing project
   test::FCCTernaryProj proj;
   proj.check_init();
@@ -40,9 +38,7 @@ TEST(jsonConfigDatabase_Test, Test1) {
   // Create a Configuration to test
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = prim.lattice().vectors();
-  Supercell tscel(
-    &primclex,
-    Lattice(2.*a, 2.*b, c));
+  Supercell tscel(&primclex, Lattice(2. * a, 2. * b, c));
   const Supercell &scel = *tscel.insert().first;
   double tol = 1e-5;
 
@@ -59,7 +55,7 @@ TEST(jsonConfigDatabase_Test, Test1) {
 
   // Enumerate and insert Configs
   ConfigEnumAllOccupations enum_config(scel);
-  for(const auto &config : enum_config) {
+  for (const auto &config : enum_config) {
     db_config.insert(config);
   }
   db_config.commit();
@@ -69,8 +65,9 @@ TEST(jsonConfigDatabase_Test, Test1) {
   EXPECT_EQ(db_config.begin()->id(), "1");
 
   // Check cached properties
-  for(const auto &config : db_config) {
-    //std::cout << "id: " << config.id() << "  occ: " << config.occupation() << std::endl;
+  for (const auto &config : db_config) {
+    // std::cout << "id: " << config.id() << "  occ: " << config.occupation() <<
+    // std::endl;
     EXPECT_EQ(config.cache().contains("multiplicity"), false);
     EXPECT_EQ(config.multiplicity() != 0, true);
     EXPECT_EQ(config.cache().contains("multiplicity"), true);
@@ -82,17 +79,17 @@ TEST(jsonConfigDatabase_Test, Test1) {
     auto next = db_config.begin();
     auto it = next++;
     auto end = db_config.end();
-    for(; next != end; ++it, ++next) {
+    for (; next != end; ++it, ++next) {
       EXPECT_EQ(*it < *next, true);
     }
   }
 
   // View JSON file for debugging purposes
-  //DB::jsonDB::DirectoryStructure jsonDB_dir(primclex.dir().root_dir());
-  //jsonParser file(jsonDB_dir.obj_list<Configuration>());
-  //file.print(std::cout);
-  //fs::ifstream file(jsonDB_dir.obj_list<Configuration>());
-  //std::cout << file.rdbuf() << std::endl;
+  // DB::jsonDB::DirectoryStructure jsonDB_dir(primclex.dir().root_dir());
+  // jsonParser file(jsonDB_dir.obj_list<Configuration>());
+  // file.print(std::cout);
+  // fs::ifstream file(jsonDB_dir.obj_list<Configuration>());
+  // std::cout << file.rdbuf() << std::endl;
 
   // Close database
   db_config.close();
@@ -104,8 +101,9 @@ TEST(jsonConfigDatabase_Test, Test1) {
   EXPECT_EQ(db_config.begin()->id(), "1");
 
   // Check cached properties
-  for(const auto &config : db_config) {
-    //std::cout << "id: " << config.id() << "  occ: " << config.occupation() << std::endl;
+  for (const auto &config : db_config) {
+    // std::cout << "id: " << config.id() << "  occ: " << config.occupation() <<
+    // std::endl;
     EXPECT_EQ(config.cache().contains("multiplicity"), true);
   }
 
@@ -114,7 +112,7 @@ TEST(jsonConfigDatabase_Test, Test1) {
     auto next = db_config.begin();
     auto it = next++;
     auto end = db_config.end();
-    for(; next != end; ++it, ++next) {
+    for (; next != end; ++it, ++next) {
       EXPECT_EQ(*it < *next, true);
     }
   }

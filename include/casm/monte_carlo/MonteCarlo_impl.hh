@@ -1,24 +1,26 @@
 #ifndef CASM_MonteCarlo_impl
 #define CASM_MonteCarlo_impl
 
-#include "casm/monte_carlo/MonteCarlo.hh"
-#include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh"
-#include "casm/monte_carlo/canonical/CanonicalSettings.hh"
-#include "casm/casm_io/Log.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/crystallography/Structure.hh"
-#include "casm/clex/PrimClex.hh"
-#include "casm/clex/Supercell.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/clex/PrimClex.hh"
+#include "casm/clex/Supercell.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/monte_carlo/MonteCarlo.hh"
+#include "casm/monte_carlo/canonical/CanonicalSettings.hh"
+#include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh"
 
 namespace CASM {
-  namespace Monte {
+namespace Monte {
 
-    /// \brief Construct with a starting ConfigDoF as specified the given Settings and prepare data samplers
-    template<typename MonteTypeSettings>
-    MonteCarlo::MonteCarlo(const PrimClex &primclex, const MonteTypeSettings &settings, Log &_log) :
-      m_settings(settings),
+/// \brief Construct with a starting ConfigDoF as specified the given Settings
+/// and prepare data samplers
+template <typename MonteTypeSettings>
+MonteCarlo::MonteCarlo(const PrimClex &primclex,
+                       const MonteTypeSettings &settings, Log &_log)
+    : m_settings(settings),
       m_primclex(primclex),
       m_scel(&primclex, settings.simulation_cell_matrix()),
       m_config(m_scel),
@@ -26,19 +28,18 @@ namespace CASM {
       m_write_trajectory(settings.write_trajectory()),
       m_log(_log),
       m_debug(m_settings.debug()) {
+  settings.samplers(primclex, std::inserter(m_sampler, m_sampler.begin()));
 
-      settings.samplers(primclex, std::inserter(m_sampler, m_sampler.begin()));
-
-      m_must_converge = false;
-      for(auto it = m_sampler.cbegin(); it != m_sampler.cend(); ++it) {
-        if(it->second->must_converge()) {
-          m_must_converge = true;
-          break;
-        }
-      }
+  m_must_converge = false;
+  for (auto it = m_sampler.cbegin(); it != m_sampler.cend(); ++it) {
+    if (it->second->must_converge()) {
+      m_must_converge = true;
+      break;
     }
-
   }
 }
+
+}  // namespace Monte
+}  // namespace CASM
 
 #endif

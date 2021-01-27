@@ -5,9 +5,7 @@
 
 namespace CASM {
 
-  namespace DB {
-
-  }
-}
+namespace DB {}
+}  // namespace CASM
 
 #endif

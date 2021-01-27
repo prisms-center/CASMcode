@@ -4,7 +4,6 @@
 #include "casm/database/ScelDatabase.hh"
 #include "casm/database/json/jsonDatabase.hh"
 
-
 /// What is being used to test it:
 
 #include "Common.hh"
@@ -16,9 +15,7 @@ using namespace CASM;
 using xtal::ScelEnumProps;
 using xtal::SuperlatticeEnumerator;
 
-
 TEST(jsonScelDatabase_Test, Test1) {
-
   test::FCCTernaryProj proj;
   proj.check_init();
 
@@ -37,20 +34,21 @@ TEST(jsonScelDatabase_Test, Test1) {
   int maxvol = 10;
   ScelEnumProps enum_props(minvol, maxvol + 1);
   auto fg = prim.factor_group();
-  SuperlatticeEnumerator lat_enum(fg.begin(), fg.end(), prim.lattice(), enum_props);
-  for(auto it = lat_enum.begin(); it != lat_enum.end(); ++it) {
-    db_scel.emplace(&primclex, xtal::canonical::equivalent(*it, prim.point_group()));
+  SuperlatticeEnumerator lat_enum(fg.begin(), fg.end(), prim.lattice(),
+                                  enum_props);
+  for (auto it = lat_enum.begin(); it != lat_enum.end(); ++it) {
+    db_scel.emplace(&primclex,
+                    xtal::canonical::equivalent(*it, prim.point_group()));
   }
   EXPECT_EQ(db_scel.size(), 87);
 
   db_scel.commit();
-  //fs::ifstream file(primclex.dir().scel_list());
-  //std::cout << file.rdbuf() << std::endl;
+  // fs::ifstream file(primclex.dir().scel_list());
+  // std::cout << file.rdbuf() << std::endl;
 
   db_scel.close();
   EXPECT_EQ(db_scel.size(), 0);
 
   db_scel.open();
   EXPECT_EQ(db_scel.size(), 87);
-
 }

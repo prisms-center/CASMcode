@@ -5,15 +5,17 @@
 
 namespace CASM {
 
-  class ClusterInvariants;
-  class WithinScelClusterInvariants;
+class ClusterInvariants;
+class WithinScelClusterInvariants;
 
-  /// \brief Print ClusterInvariants
-  std::ostream &operator<<(std::ostream &sout, ClusterInvariants const &invariants);
+/// \brief Print ClusterInvariants
+std::ostream &operator<<(std::ostream &sout,
+                         ClusterInvariants const &invariants);
 
-  /// \brief Print WithinScelClusterInvariants
-  std::ostream &operator<<(std::ostream &sout, WithinScelClusterInvariants const &invariants);
+/// \brief Print WithinScelClusterInvariants
+std::ostream &operator<<(std::ostream &sout,
+                         WithinScelClusterInvariants const &invariants);
 
-}
+}  // namespace CASM
 
 #endif

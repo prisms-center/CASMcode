@@ -9,92 +9,92 @@
 
 namespace CASM {
 
-  class Supercell;
+class Supercell;
 
-  /** \defgroup OrbitGeneration
+/** \defgroup OrbitGeneration
 
-      \brief Helpers for generating Orbit
-  */
+    \brief Helpers for generating Orbit
+*/
 
+/// \brief Functor to find the canonical generating element for an orbit in a
+/// Supercell
+///
+/// - Uses Supercell permute group and crystallography_tol
+///
+/// \ingroup OrbitGeneration
+///
+template <typename _ElementType>
+class ScelCanonicalGenerator {
+ public:
+  typedef _ElementType Element;
+  typedef ScelPeriodicSymCompare<Element> SymCompareType;
+  typedef Orbit<SymCompareType> OrbitType;
 
-  /// \brief Functor to find the canonical generating element for an orbit in a Supercell
+  ScelCanonicalGenerator(const Supercell &_scel);
+
+  const Supercell &supercell() const;
+
+  const SymCompareType &sym_compare() const;
+
+  /// \brief Applies symmetry to return an equivalent Element in a canonical
+  /// form
   ///
-  /// - Uses Supercell permute group and crystallography_tol
+  /// - Use [supercell().permute_begin(), supercell().permute_end()) to
+  /// canonicalize
+  Element operator()(const Element &e) const;
+
+  /// \brief Applies symmetry to return an equivalent Element in a canonical
+  /// form
   ///
-  /// \ingroup OrbitGeneration
-  ///
-  template<typename _ElementType>
-  class ScelCanonicalGenerator {
-  public:
+  /// - For use with a container of PermuteIterator
+  /// - Use [begin, end) to canonicalize
+  template <typename PermuteIteratorIt>
+  Element operator()(const Element &e, PermuteIteratorIt begin,
+                     PermuteIteratorIt end) const;
 
-    typedef _ElementType Element;
-    typedef ScelPeriodicSymCompare<Element> SymCompareType;
-    typedef Orbit<SymCompareType> OrbitType;
+  /// \brief After using call operator, this can be checked
+  PermuteIterator to_canonical() const;
 
-    ScelCanonicalGenerator(const Supercell &_scel);
+  /// \brief After using call operator, this can be checked
+  PermuteIterator from_canonical() const;
 
-    const Supercell &supercell() const;
+ private:
+  const Supercell *m_scel;
+  SymCompareType m_sym_compare;
+  mutable PermuteIterator m_to_canonical;
+};
 
-    const SymCompareType &sym_compare() const;
+/// \brief Functor to find to check if element is in canonical form
+///
+/// - Uses generating SymGroup, SymCompareType::prepare, SymCompareType::compare
+///
+/// \ingroup OrbitGeneration
+///
+template <typename _ElementType>
+struct ScelIsCanonical {
+  typedef _ElementType Element;
+  typedef ScelPeriodicSymCompare<Element> SymCompareType;
 
-    /// \brief Applies symmetry to return an equivalent Element in a canonical form
-    ///
-    /// - Use [supercell().permute_begin(), supercell().permute_end()) to canonicalize
-    Element operator()(const Element &e) const;
+  ScelIsCanonical(const Supercell &_scel);
 
-    /// \brief Applies symmetry to return an equivalent Element in a canonical form
-    ///
-    /// - For use with a container of PermuteIterator
-    /// - Use [begin, end) to canonicalize
-    template<typename PermuteIteratorIt>
-    Element operator()(const Element &e, PermuteIteratorIt begin, PermuteIteratorIt end) const;
+  const Supercell &supercell() const;
 
-    /// \brief After using call operator, this can be checked
-    PermuteIterator to_canonical() const;
+  const SymCompareType &sym_compare() const;
 
-    /// \brief After using call operator, this can be checked
-    PermuteIterator from_canonical() const;
+  /// \brief Applies symmetry to check if any Element is greater than e
+  /// - Use [supercell().permute_begin(), supercell().permute_end()) to
+  /// canonicalize
+  bool operator()(const Element &e) const;
 
-  private:
+  /// \brief Applies symmetry to check if any Element is greater than e
+  template <typename PermuteIteratorIt>
+  bool operator()(const Element &e, PermuteIteratorIt begin,
+                  PermuteIteratorIt end) const;
 
-    const Supercell *m_scel;
-    SymCompareType m_sym_compare;
-    mutable PermuteIterator m_to_canonical;
-  };
+  const Supercell *m_scel;
+  SymCompareType m_sym_compare;
+};
 
-  /// \brief Functor to find to check if element is in canonical form
-  ///
-  /// - Uses generating SymGroup, SymCompareType::prepare, SymCompareType::compare
-  ///
-  /// \ingroup OrbitGeneration
-  ///
-  template<typename _ElementType>
-  struct ScelIsCanonical {
-
-    typedef _ElementType Element;
-    typedef ScelPeriodicSymCompare<Element> SymCompareType;
-
-    ScelIsCanonical(const Supercell &_scel);
-
-    const Supercell &supercell() const;
-
-    const SymCompareType &sym_compare() const;
-
-    /// \brief Applies symmetry to check if any Element is greater than e
-    /// - Use [supercell().permute_begin(), supercell().permute_end()) to canonicalize
-    bool operator()(const Element &e) const;
-
-    /// \brief Applies symmetry to check if any Element is greater than e
-    template<typename PermuteIteratorIt>
-    bool operator()(
-      const Element &e,
-      PermuteIteratorIt begin,
-      PermuteIteratorIt end) const;
-
-    const Supercell *m_scel;
-    SymCompareType m_sym_compare;
-  };
-
-}
+}  // namespace CASM
 
 #endif

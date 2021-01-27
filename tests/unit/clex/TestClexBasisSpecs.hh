@@ -5,17 +5,17 @@
 
 namespace test {
 
-  // site_basis_functions : "occupation"
-  // cluster_specs:
-  //   method: "periodic_max_length"
-  //   orbit_branch_specs:
-  //     2: max_length=4.01
-  //     3: max_length=3.01
-  //   orbit_specs: two custom quadruplet clusters
-  std::string FCC_ternary_clex_basis_specs_str_ex0();
+// site_basis_functions : "occupation"
+// cluster_specs:
+//   method: "periodic_max_length"
+//   orbit_branch_specs:
+//     2: max_length=4.01
+//     3: max_length=3.01
+//   orbit_specs: two custom quadruplet clusters
+std::string FCC_ternary_clex_basis_specs_str_ex0();
 
-  inline std::string FCC_ternary_clex_basis_specs_str_ex0() {
-    return R"({
+inline std::string FCC_ternary_clex_basis_specs_str_ex0() {
+  return R"({
 "basis_function_specs" : {
 "dof_specs": {
   "occ": {
@@ -55,7 +55,7 @@ namespace test {
 }
 }
 })";
-  }
 }
+}  // namespace test
 
 #endif

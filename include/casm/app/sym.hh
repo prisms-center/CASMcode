@@ -6,31 +6,28 @@
 
 namespace CASM {
 
-  /// 'casm sym' implementation
-  ///
-  /// Implements:
-  /// - (default) write / print prim symmetry
-  /// - symmetrize a POSCAR
-  /// - DoF space analysis
-  ///
-  class SymCommand : public APICommand<Completer::SymOption> {
+/// 'casm sym' implementation
+///
+/// Implements:
+/// - (default) write / print prim symmetry
+/// - symmetrize a POSCAR
+/// - DoF space analysis
+///
+class SymCommand : public APICommand<Completer::SymOption> {
+ public:
+  static const std::string name;
 
-  public:
+  SymCommand(const CommandArgs &_args, Completer::SymOption &_opt);
 
-    static const std::string name;
+  int vm_count_check() const override;
 
-    SymCommand(const CommandArgs &_args, Completer::SymOption &_opt);
+  int help() const override;
 
-    int vm_count_check() const override;
+  int desc() const override;
 
-    int help() const override;
+  int run() const override;
+};
 
-    int desc() const override;
-
-    int run() const override;
-
-  };
-
-}
+}  // namespace CASM
 
 #endif

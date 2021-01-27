@@ -13,7 +13,6 @@
 using namespace CASM;
 
 TEST(QueryPlugin, Test1) {
-
   ScopedNullLogging logging;
   test::ZrOProj proj;
   proj.check_init();
@@ -22,11 +21,11 @@ TEST(QueryPlugin, Test1) {
 
   PrimClex primclex(proj.dir);
 
-  //TODO: This is more code duplication
+  // TODO: This is more code duplication
   auto cp = [&](std::string _filename) {
-
     fs::path filename(_filename);
-    fs::path src = fs::path(autotools::abs_srcdir()) / "tests/unit/App" / filename;
+    fs::path src =
+        fs::path(autotools::abs_srcdir()) / "tests/unit/App" / filename;
     ASSERT_TRUE(fs::exists(src));
 
     fs::path dest = primclex.dir().query_plugins<Configuration>();
@@ -35,7 +34,6 @@ TEST(QueryPlugin, Test1) {
 
     fs::copy_file(src, dest / filename, fs::copy_option::overwrite_if_exists);
     ASSERT_TRUE(fs::exists(dest / filename));
-
   };
 
   // functor formatter
@@ -67,5 +65,4 @@ TEST(QueryPlugin, Test1) {
   EXPECT_TRUE(check(R"(ccasm query -k 'test_comp_n(O)')"));
 
   EXPECT_TRUE(check(R"(ccasm query -k 'test_configname')"));
-
 }

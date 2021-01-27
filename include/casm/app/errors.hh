@@ -31,22 +31,19 @@
 /// \brief Main CASM namespace
 namespace CASM {
 
-  class runtime_error : public std::runtime_error {
-  public:
-    runtime_error(std::string _what, int _code = ERR_UNKNOWN) :
-      std::runtime_error(_what),
-      m_code(_code) {}
+class runtime_error : public std::runtime_error {
+ public:
+  runtime_error(std::string _what, int _code = ERR_UNKNOWN)
+      : std::runtime_error(_what), m_code(_code) {}
 
-    virtual ~runtime_error() {}
+  virtual ~runtime_error() {}
 
-    int code() const {
-      return m_code;
-    }
+  int code() const { return m_code; }
 
-  private:
-    int m_code;
-  };
+ private:
+  int m_code;
+};
 
-}
+}  // namespace CASM
 
 #endif

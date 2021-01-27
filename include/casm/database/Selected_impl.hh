@@ -4,10 +4,7 @@
 #include "casm/database/Selected.hh"
 
 namespace CASM {
-  namespace DB {
-
-
-  }
-}
+namespace DB {}
+}  // namespace CASM
 
 #endif

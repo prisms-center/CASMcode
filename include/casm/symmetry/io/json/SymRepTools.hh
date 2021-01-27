@@ -3,23 +3,22 @@
 
 #include "casm/global/definitions.hh"
 
-
 namespace CASM {
 
-  namespace SymRepTools {
-    struct IrrepInfo;
-    class SubWedge;
-  }
+namespace SymRepTools {
+struct IrrepInfo;
+class SubWedge;
+}  // namespace SymRepTools
 
-  struct VectorSpaceSymReport;
-  class jsonParser;
+struct VectorSpaceSymReport;
+class jsonParser;
 
-  jsonParser &to_json(SymRepTools::IrrepInfo const &irrep, jsonParser &json);
+jsonParser &to_json(SymRepTools::IrrepInfo const &irrep, jsonParser &json);
 
-  jsonParser &to_json(SymRepTools::SubWedge const &wedge, jsonParser &json);
+jsonParser &to_json(SymRepTools::SubWedge const &wedge, jsonParser &json);
 
-  jsonParser &to_json(VectorSpaceSymReport const &obj, jsonParser &json);
+jsonParser &to_json(VectorSpaceSymReport const &obj, jsonParser &json);
 
-}
+}  // namespace CASM
 
 #endif

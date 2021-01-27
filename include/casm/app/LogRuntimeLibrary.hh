@@ -6,13 +6,11 @@
 
 namespace CASM {
 
-  class RuntimeLibrary;
+class RuntimeLibrary;
 
-  std::shared_ptr<RuntimeLibrary> log_make_shared_runtime_lib(
-    std::string filename_base,
-    std::string compile_options,
-    std::string so_options,
-    std::string compile_msg);
-}
+std::shared_ptr<RuntimeLibrary> log_make_shared_runtime_lib(
+    std::string filename_base, std::string compile_options,
+    std::string so_options, std::string compile_msg);
+}  // namespace CASM
 
 #endif

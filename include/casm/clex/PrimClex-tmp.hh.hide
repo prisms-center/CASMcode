@@ -2,241 +2,235 @@
 #define CASM_PrimClex
 
 #include <memory>
-#include "casm/global/definitions.hh"
+
 #include "casm/casm_io/Log.hh"
+#include "casm/global/definitions.hh"
 
 /// Cluster expansion class
 namespace CASM {
 
-  class DirectoryStructure;
-  class ProjectSettings;
-  struct ClexDescription;
-  class CompositionConverter;
-  class ChemicalReference;
-  class PrimNeighborList;
-  class ClexBasis;
-  class Clexulator;
-  class ECIContainer;
-  class Structure;
+class DirectoryStructure;
+class ProjectSettings;
+struct ClexDescription;
+class CompositionConverter;
+class ChemicalReference;
+class PrimNeighborList;
+class ClexBasis;
+class Clexulator;
+class ECIContainer;
+class Structure;
 
+namespace DB {
+template <typename T>
+class ValDatabase;
+template <typename T>
+class Database;
+class PropertiesDatabase;
+class DatabaseHandler;
+}  // namespace DB
 
-  namespace DB {
-    template<typename T> class ValDatabase;
-    template<typename T> class Database;
-    class PropertiesDatabase;
-    class DatabaseHandler;
-  }
+/** \defgroup Clex
+ *
+ * \brief The functions and classes related to evaluating cluster expansions
+ */
 
-  /** \defgroup Clex
-   *
-   * \brief The functions and classes related to evaluating cluster expansions
-   */
+/** \defgroup PrimClex
+ *  \ingroup Clex
+ *  \ingroup Project
+ *  \brief PrimClex is the top-level data structure for a CASM project
+ *
+ *  @{
+ */
 
-  /** \defgroup PrimClex
-   *  \ingroup Clex
-   *  \ingroup Project
-   *  \brief PrimClex is the top-level data structure for a CASM project
-   *
-   *  @{
-   */
+/// PrimClex provides access to CASM project data that has been stored on the
+/// filesystem
+///
+/// The PrimClex provides the command line executable access to:
+/// - the parent crystal structure (the `prim`)
+/// - project files & settings
+/// - composition axes & references
+/// - databases of enumerated objects (supercells & configurations) and
+/// calculated properties
+/// - basis sets: basis set specs, neighbor lists, & Clexulator
+/// - ECI (effective cluster interactions)
+///
+/// The PrimClex makes for easy checking and access of CASM project data stored
+/// on the filesystem, but does not handle writing or deleting files, which are
+/// handled by standalone functions. In order to update the PrimClex based on
+/// changes to files, use the "refresh" methods to clear data currently stored
+/// in the PrimClex.
+///
+/// The PrimClex has been overused, and going forward should only be used by the
+/// CLI commands implemented in "casm/app" or other interfaces to the libcasm
+/// functionality such as the libccasm C interface.
+///
+class PrimClex : public Logging {
+ public:
+  typedef Structure PrimType;
 
-  /// PrimClex provides access to CASM project data that has been stored on the filesystem
+  // **** Constructors ****
+
+  /// Initial construction of a PrimClex, from ProjectSettings and shared prim
+  explicit PrimClex(ProjectSettings const &_project_settings,
+                    std::shared_ptr<const PrimType> _shared_prim,
+                    const Logging &logging = Logging());
+
+  /// Construct PrimClex from existing CASM project directory
+  ///  - read PrimClex and directory structure to generate all its Supercells
+  ///  and Configurations, etc.
+  explicit PrimClex(const fs::path &_root, const Logging &logging = Logging());
+
+  PrimClex(const PrimClex &) = delete;
+
+  ~PrimClex();
+
+  // ** Prim structure **
+
+  /// const Access to primitive Structure
+  const PrimType &prim() const;
+
+  /// Access the primitive Structure as a shared resource
+  std::shared_ptr<const PrimType> &shared_prim() const;
+
+  /// Read prim from file (must exist)
+  void refresh_prim() const;
+
+  // ** Project settings **
+
+  ProjectSettings const &settings() const;
+
+  /// Read ProjectSettings from file (must exist)
   ///
-  /// The PrimClex provides the command line executable access to:
-  /// - the parent crystal structure (the `prim`)
-  /// - project files & settings
-  /// - composition axes & references
-  /// - databases of enumerated objects (supercells & configurations) and calculated properties
-  /// - basis sets: basis set specs, neighbor lists, & Clexulator
-  /// - ECI (effective cluster interactions)
-  ///
-  /// The PrimClex makes for easy checking and access of CASM project data stored on the filesystem,
-  /// but does not handle writing or deleting files, which are handled by standalone functions. In
-  /// order to update the PrimClex based on changes to files, use the "refresh" methods to clear
-  /// data currently stored in the PrimClex.
-  ///
-  /// The PrimClex has been overused, and going forward should only be used by the CLI commands
-  /// implemented in "casm/app" or other interfaces to the libcasm functionality such as the
-  /// libccasm C interface.
-  ///
-  class PrimClex : public Logging {
+  /// Does not have other side effects, so the user is responsible for
+  /// refreshing other data affected by any changes to the project settings. For
+  /// instance, for a change in crystallography_tol the user should also call
+  /// "refresh_prim".
+  void refresh_settings() const;
 
-  public:
-    typedef Structure PrimType;
+  /// Check if DirectoryStructure exists
+  bool has_dir() const;
 
-    // **** Constructors ****
+  /// Access DirectoryStructure object. Throw if not set.
+  DirectoryStructure const &dir() const;
 
-    /// Initial construction of a PrimClex, from ProjectSettings and shared prim
-    explicit PrimClex(
-      ProjectSettings const &_project_settings,
-      std::shared_ptr<const PrimType> _shared_prim,
-      const Logging &logging = Logging());
+  // ** Composition accessors **
 
-    /// Construct PrimClex from existing CASM project directory
-    ///  - read PrimClex and directory structure to generate all its Supercells and Configurations, etc.
-    explicit PrimClex(const fs::path &_root, const Logging &logging = Logging());
+  /// check if CompositionConverter object exists
+  bool has_composition_axes() const;
 
-    PrimClex(const PrimClex &) = delete;
+  /// const Access current CompositionConverter object
+  CompositionConverter const &composition_axes() const;
 
-    ~PrimClex();
+  /// Read current CompositionConverter object from file (if exists, else delete
+  /// it)
+  void refresh_composition_axes() const;
 
+  // ** Chemical reference **
 
-    // ** Prim structure **
+  /// check if ChemicalReference object exists
+  bool has_chemical_reference() const;
 
-    /// const Access to primitive Structure
-    const PrimType &prim() const;
+  /// const Access ChemicalReference object
+  ChemicalReference const &chemical_reference() const;
 
-    /// Access the primitive Structure as a shared resource
-    std::shared_ptr<const PrimType> &shared_prim() const;
+  /// Read ChemicalReference object from file (if exists, else delete it)
+  void refresh_chemical_reference() const;
 
-    /// Read prim from file (must exist)
-    void refresh_prim() const;
+  // ** Enumeration and calculated property databases ** ------------------
 
+  /// check if ChemicalReference object exists
+  bool has_database_handler() const;
 
-    // ** Project settings **
+  template <typename T>
+  DB::Database<T> &database() const;
 
-    ProjectSettings const &settings() const;
+  template <typename T>
+  DB::PropertiesDatabase &properties_database(std::string calc_type) const;
 
-    /// Read ProjectSettings from file (must exist)
-    ///
-    /// Does not have other side effects, so the user is responsible for refreshing other data
-    /// affected by any changes to the project settings. For instance, for a change in
-    /// crystallography_tol the user should also call "refresh_prim".
-    void refresh_settings() const;
+  DB::DatabaseHandler &database_handler() const;
 
-    /// Check if DirectoryStructure exists
-    bool has_dir() const;
+  void refresh_database_handler() const;
 
-    /// Access DirectoryStructure object. Throw if not set.
-    DirectoryStructure const &dir() const;
+  // ** Basis set specs, neighbor lists, Clexulators ** ------------------
 
+  bool has_basis_set_specs(std::string const &basis_set_name) const;
+  jsonParser const &basis_set_specs(std::string const &basis_set_name) const;
 
-    // ** Composition accessors **
+  bool has_neighbor_list_handler() const;
+  NeighborListHandler &neighbor_list_handler() const;
 
-    /// check if CompositionConverter object exists
-    bool has_composition_axes() const;
+  bool has_clexulator(std::string const &basis_set_name) const;
+  Clexulator clexulator(std::string const &basis_set_name) const;
 
-    /// const Access current CompositionConverter object
-    CompositionConverter const &composition_axes() const;
+  void refresh_basis_sets() const;
 
-    /// Read current CompositionConverter object from file (if exists, else delete it)
-    void refresh_composition_axes() const;
+  // ** ECI ** -----------------------------------------------------------
 
+  bool has_eci(ClexDescription const &clex_desc) const;
+  const ECIContainer &eci(ClexDescription const &clex_desc) const;
 
-    // ** Chemical reference **
+  void refresh_eci() const;
 
-    /// check if ChemicalReference object exists
-    bool has_chemical_reference() const;
+  // ** deprecated member functions ** ----
 
-    /// const Access ChemicalReference object
-    ChemicalReference const &chemical_reference() const;
+  /// Reload PrimClex data from settings
+  void refresh(bool read_settings = false, bool read_composition = false,
+               bool read_chem_ref = false, bool read_configs = false,
+               bool clear_clex = false) const;
 
-    /// Read ChemicalReference object from file (if exists, else delete it)
-    void refresh_chemical_reference() const;
+  /// const Access to number of basis atoms
+  Index n_basis() const;
 
+  /// returns true if vacancy are an allowed species
+  bool vacancy_allowed() const;
 
-    // ** Enumeration and calculated property databases ** ------------------
+  /// returns the index of vacancies in composition vectors
+  Index vacancy_index() const;
 
-    /// check if ChemicalReference object exists
-    bool has_database_handler() const;
+  /// Get the crystallography tolerance (equivalent to prim().lattice().tol())
+  double crystallography_tol() const;
 
-    template<typename T>
-    DB::Database<T> &database() const;
+  template <typename T>
+  DB::ValDatabase<T> &generic_db() const;
 
-    template<typename T>
-    DB::PropertiesDatabase &properties_database(std::string calc_type) const;
+  template <typename T>
+  const DB::ValDatabase<T> &const_generic_db() const;
 
-    DB::DatabaseHandler &database_handler() const;
+  template <typename T>
+  DB::Database<T> &db() const;
 
-    void refresh_database_handler() const;
+  template <typename T>
+  const DB::Database<T> &const_db() const;
 
-    // ** Basis set specs, neighbor lists, Clexulators ** ------------------
+  template <typename T>
+  DB::PropertiesDatabase &db_props(std::string calc_type) const;
 
-    bool has_basis_set_specs(std::string const &basis_set_name) const;
-    jsonParser const &basis_set_specs(std::string const &basis_set_name) const;
+  template <typename T>
+  const DB::PropertiesDatabase &const_db_props(std::string calc_type) const;
 
-    bool has_neighbor_list_handler() const;
-    NeighborListHandler &neighbor_list_handler() const;
+  DB::DatabaseHandler &db_handler() const;
 
-    bool has_clexulator(std::string const &basis_set_name) const;
-    Clexulator clexulator(std::string const &basis_set_name) const;
+  const DB::DatabaseHandler &const_db_handler() const;
 
-    void refresh_basis_sets() const;
+  // bool has_orbits(const ClexDescription &key) const;
+  // template<typename OrbitOutputIterator, typename SymCompareType>
+  // OrbitOutputIterator orbits(const ClexDescription &key,
+  //                            OrbitOutputIterator result,
+  //                            const SymCompareType &sym_compare) const;
 
-    // ** ECI ** -----------------------------------------------------------
+  // bool has_clex_basis(const ClexDescription &key) const;
+  // const ClexBasis &clex_basis(const ClexDescription &key) const;
 
-    bool has_eci(ClexDescription const &clex_desc) const;
-    const ECIContainer &eci(ClexDescription const &clex_desc) const;
+ private:
+  /// To avoid excessive includes, use "pointer to data"
+  /// - PrimClexData is defined in PrimClex.cc
+  struct PrimClexData;
 
-    void refresh_eci() const;
+  /// Initialization routines
+  void _init();
 
+  std::unique_ptr<PrimClexData> m_data;
+};
 
-    // ** deprecated member functions ** ----
-
-    /// Reload PrimClex data from settings
-    void refresh(bool read_settings = false,
-                 bool read_composition = false,
-                 bool read_chem_ref = false,
-                 bool read_configs = false,
-                 bool clear_clex = false) const;
-
-    /// const Access to number of basis atoms
-    Index n_basis() const;
-
-    /// returns true if vacancy are an allowed species
-    bool vacancy_allowed() const;
-
-    /// returns the index of vacancies in composition vectors
-    Index vacancy_index() const;
-
-    /// Get the crystallography tolerance (equivalent to prim().lattice().tol())
-    double crystallography_tol() const;
-
-    template<typename T>
-    DB::ValDatabase<T> &generic_db() const;
-
-    template<typename T>
-    const DB::ValDatabase<T> &const_generic_db() const;
-
-
-    template<typename T>
-    DB::Database<T> &db() const;
-
-    template<typename T>
-    const DB::Database<T> &const_db() const;
-
-
-    template<typename T>
-    DB::PropertiesDatabase &db_props(std::string calc_type) const;
-
-    template<typename T>
-    const DB::PropertiesDatabase &const_db_props(std::string calc_type) const;
-
-    DB::DatabaseHandler &db_handler() const;
-
-    const DB::DatabaseHandler &const_db_handler() const;
-
-    // bool has_orbits(const ClexDescription &key) const;
-    // template<typename OrbitOutputIterator, typename SymCompareType>
-    // OrbitOutputIterator orbits(const ClexDescription &key,
-    //                            OrbitOutputIterator result,
-    //                            const SymCompareType &sym_compare) const;
-
-    // bool has_clex_basis(const ClexDescription &key) const;
-    // const ClexBasis &clex_basis(const ClexDescription &key) const;
-
-  private:
-
-    /// To avoid excessive includes, use "pointer to data"
-    /// - PrimClexData is defined in PrimClex.cc
-    struct PrimClexData;
-
-    /// Initialization routines
-    void _init();
-
-    std::unique_ptr<PrimClexData> m_data;
-
-  };
-
-}
+}  // namespace CASM
 #endif

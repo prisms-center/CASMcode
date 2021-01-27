@@ -8,15 +8,14 @@
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
 #include "ZrOProj.hh"
-#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/app/casm_functions.hh"
-#include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/Niggli.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/misc/CASM_Eigen_math.hh"
 
 using namespace CASM;
 
 TEST(ScelEnumTest, Test1) {
-
   ScopedNullLogging logging;
   test::ZrOProj proj;
   proj.check_init();
@@ -42,36 +41,32 @@ TEST(ScelEnumTest, Test1) {
     EXPECT_TRUE(true);
 
     Index count = 0;
-    for(; it != end; ++it, ++count) {
-
+    for (; it != end; ++it, ++count) {
       Lattice canon_check = xtal::canonical::equivalent(
-                              it->lattice(),
-                              primclex.prim().point_group(),
-                              primclex.crystallography_tol());
+          it->lattice(), primclex.prim().point_group(),
+          primclex.crystallography_tol());
 
-      bool check = almost_equal(
-                     it->lattice().lat_column_mat(),
-                     canon_check.lat_column_mat(),
-                     primclex.crystallography_tol());
+      bool check = almost_equal(it->lattice().lat_column_mat(),
+                                canon_check.lat_column_mat(),
+                                primclex.crystallography_tol());
 
-      if(!check) {
-        std::cout << "superlat: \n" << it->lattice().lat_column_mat() << std::endl;
-        std::cout << "canon_check: \n" << canon_check.lat_column_mat() << std::endl;
+      if (!check) {
+        std::cout << "superlat: \n"
+                  << it->lattice().lat_column_mat() << std::endl;
+        std::cout << "canon_check: \n"
+                  << canon_check.lat_column_mat() << std::endl;
       }
 
       EXPECT_EQ(check, true);
 
       EXPECT_EQ(it->is_canonical(), true);
-
     }
     EXPECT_EQ(count, 114);
     EXPECT_TRUE(it == end);
   }
-
 }
 
 TEST(ScelEnumTest, Test2) {
-
   // in case you want to see what's happening
   ScopedStringStreamLogging logging;
 
@@ -82,7 +77,7 @@ TEST(ScelEnumTest, Test2) {
   // construct PrimClex
   PrimClex primclex(proj.dir);
 
-  auto exec = [&](const std::string & args) {
+  auto exec = [&](const std::string& args) {
     // std::cout << "\n---------------\n" << std::endl;
     // std::cout << "args: " << args << std::endl;
     CommandArgs cmdargs(args, &primclex, proj.dir);
@@ -101,5 +96,4 @@ TEST(ScelEnumTest, Test2) {
   EXPECT_EQ(exec("casm enum --method ConfigEnumAllOccupations --all"), 0);
   EXPECT_EQ(exec("casm enum --method ScelEnum --max 8"), 0);
   EXPECT_EQ(exec("casm enum --method ConfigEnumAllOccupations --max 6"), 0);
-
 }

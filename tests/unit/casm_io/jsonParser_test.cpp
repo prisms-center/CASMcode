@@ -9,7 +9,7 @@
 using namespace CASM;
 
 std::string json_str =
-  R"({
+    R"({
 "int" : 34,
 "number" : 4.0023,
 "string" : "hello",
@@ -32,7 +32,6 @@ std::string json_str =
 })";
 
 TEST(jsonParserTest, Basic) {
-
   jsonParser json = jsonParser::parse(json_str);
 
   ASSERT_EQ(true, json.is_obj());
@@ -49,7 +48,7 @@ TEST(jsonParserTest, Basic) {
   ASSERT_EQ(4.0023, json["number"].get<double>());
 }
 
-template<typename T>
+template <typename T>
 void test_at(T &json) {
   ASSERT_EQ(json.at("int").template get<int>(), 34);
   ASSERT_THROW(json.at("mistake"), std::invalid_argument);
@@ -68,20 +67,17 @@ void test_at(T &json) {
 }
 
 TEST(jsonParserTest, At) {
-
   jsonParser json = jsonParser::parse(json_str);
   test_at(json);
 }
 
 TEST(jsonParserTest, ConstAt) {
-
   const jsonParser json = jsonParser::parse(json_str);
   test_at(json);
 }
 
-template<typename T>
+template <typename T>
 void test_find_at(T &json) {
-
   ASSERT_EQ(&json == &*json.find_at(fs::path()), true);
   ASSERT_EQ(&json == &*json.find_at(""), true);
 
@@ -92,32 +88,29 @@ void test_find_at(T &json) {
     ASSERT_EQ(json.end() == it, true);
   }
 
-
   ASSERT_EQ(json.find_at("int")->template get<int>(), 34);
   ASSERT_EQ(json.find_at("mistake") == json.end(), true);
 
   ASSERT_EQ(json.find_at(fs::path("object") / "int")->template get<int>(), 34);
   ASSERT_EQ(json.find_at(fs::path("object") / "mistake") == json.end(), true);
 
-  ASSERT_EQ(json.find_at(fs::path("mixed_array") / "1")->template get<int>(), 34);
+  ASSERT_EQ(json.find_at(fs::path("mixed_array") / "1")->template get<int>(),
+            34);
   ASSERT_EQ(json.find_at(fs::path("mixed_array") / "10") == json.end(), true);
 }
 
 TEST(jsonParserTest, FindAt) {
-
   jsonParser json = jsonParser::parse(json_str);
   test_find_at(json);
 }
 
 TEST(jsonParserTest, ConstFindAt) {
-
   const jsonParser json = jsonParser::parse(json_str);
 
   test_find_at(json);
 }
 
 TEST(jsonParserTest, Get) {
-
   const jsonParser json = jsonParser::parse(json_str);
 
   ASSERT_EQ(json["int"].get<int>(), 34);
@@ -125,9 +118,8 @@ TEST(jsonParserTest, Get) {
 }
 
 TEST(jsonParserTest, ArrayExtraTrailingComma) {
-
   std::string json_extra_trailing_comma =
-    R"({
+      R"({
 "int" : 34,
 "number" : 4.0023,
 "string" : "hello",
@@ -149,14 +141,13 @@ TEST(jsonParserTest, ArrayExtraTrailingComma) {
 ]
 })";
 
-  ASSERT_THROW(jsonParser::parse(json_extra_trailing_comma), std::runtime_error);
-
+  ASSERT_THROW(jsonParser::parse(json_extra_trailing_comma),
+               std::runtime_error);
 }
 
 TEST(jsonParserTest, ArrayMissingComma) {
-
   std::string json_missing_comma =
-    R"({
+      R"({
 "int" : 34,
 "number" : 4.0023,
 "string" : "hello",
@@ -179,13 +170,11 @@ TEST(jsonParserTest, ArrayMissingComma) {
 })";
 
   ASSERT_THROW(jsonParser::parse(json_missing_comma), std::runtime_error);
-
 }
 
 TEST(jsonParserTest, FindDiffTest) {
-
   jsonParser A = jsonParser::parse(json_str);
-  jsonParser B {A};
+  jsonParser B{A};
 
   B["object"]["number"] = B["object"]["number"].get<double>() + 1e-8;
 
@@ -198,6 +187,4 @@ TEST(jsonParserTest, FindDiffTest) {
 
   diff_point = find_diff(A, B, 1e-5);
   ASSERT_TRUE(diff_point.empty());
-
 }
-

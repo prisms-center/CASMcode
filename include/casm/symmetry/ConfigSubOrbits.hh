@@ -6,7 +6,8 @@
 //
 // namespace CASM {
 //
-//   /// \brief Output the orbit generators necessary to construct the sub-orbits
+//   /// \brief Output the orbit generators necessary to construct the
+//   sub-orbits
 //   /// corresponding to Prim Structure -> Configuration symmetry breaking
 //   class MakeConfigSubOrbitGenerators {
 //   public:
@@ -14,7 +15,8 @@
 //     MakeConfigSubOrbitGenerators(const Configuration &_config);
 //
 //     template<typename OrbitType, typename ElementOutputIterator>
-//     ElementOutputIterator operator()(const OrbitType &orbit, ElementOutputIterator result) const;
+//     ElementOutputIterator operator()(const OrbitType &orbit,
+//     ElementOutputIterator result) const;
 //
 //     template<typename OrbitIterator, typename ElementOutputIterator>
 //     ElementOutputIterator operator()(
@@ -25,7 +27,8 @@
 //   private:
 //
 //     template<typename OrbitType, typename ElementOutputIterator>
-//     ElementOutputIterator _slow(const OrbitType &orbit, ElementOutputIterator result) const;
+//     ElementOutputIterator _slow(const OrbitType &orbit, ElementOutputIterator
+//     result) const;
 //
 //     Configuration m_config;
 //     Configuration m_prim_config;
@@ -38,7 +41,8 @@
 //
 //   };
 //
-//   /// \brief Output the orbit generators necessary to construct the sub-orbits
+//   /// \brief Output the orbit generators necessary to construct the
+//   sub-orbits
 //   /// corresponding to Prim Structure -> Configuration symmetry breaking
 //   template<typename OrbitType, typename ElementOutputIterator>
 //   ElementOutputIterator make_suborbit_generators(
@@ -46,7 +50,8 @@
 //     const Configuration &config,
 //     ElementOutputIterator result);
 //
-//   /// \brief Output the orbit generators necessary to construct the sub-orbits
+//   /// \brief Output the orbit generators necessary to construct the
+//   sub-orbits
 //   /// corresponding to Prim Structure -> Configuration symmetry breaking
 //   template<typename OrbitIterator, typename ElementOutputIterator>
 //   ElementOutputIterator make_suborbit_generators(

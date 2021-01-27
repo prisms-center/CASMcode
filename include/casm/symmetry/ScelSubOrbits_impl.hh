@@ -10,10 +10,11 @@
 //
 //   // --- Prim -> Supercell ---
 //
-//   /// \brief Output the orbit generators necessary to construct the sub-orbits
+//   /// \brief Output the orbit generators necessary to construct the
+//   sub-orbits
 //   /// corresponding to Prim Structure -> Supercell symmetry breaking
-//   template<typename Element, typename ElementOutputIterator, typename PermuteIteratorIt>
-//   ElementOutputIterator make_suborbit_generators(
+//   template<typename Element, typename ElementOutputIterator, typename
+//   PermuteIteratorIt> ElementOutputIterator make_suborbit_generators(
 //     const Element &element,
 //     const Supercell &scel,
 //     PermuteIteratorIt subgroup_begin,
@@ -24,7 +25,8 @@
 //       throw std::runtime_error("Error: PermuteIterator supercell mismatch.");
 //     }
 //
-//     std::vector<PermuteIterator> scel_inv_group = make_invariant_subgroup(element, scel);
+//     std::vector<PermuteIterator> scel_inv_group =
+//     make_invariant_subgroup(element, scel);
 //
 //     // find "max" permute in each coset of the subgroup [begin, end),
 //     //   excluding those cosets that cause duplicate generating elements
@@ -43,7 +45,8 @@
 //       // if test_it is max
 //       if(std::none_of(subgroup_begin, subgroup_end, lambda)) {
 //         // apply to prototype and construct suborbit
-//         auto copy_apply = typename traits<Element>::copy_apply_f_type(scel.primclex().shared_prim());
+//         auto copy_apply = typename
+//         traits<Element>::copy_apply_f_type(scel.primclex().shared_prim());
 //         *result++ = copy_apply(test_it.sym_op(), element);
 //       }
 //     }
@@ -51,14 +54,17 @@
 //     return result;
 //   }
 //
-//   /// \brief Output the orbit generators necessary to construct the sub-orbits
+//   /// \brief Output the orbit generators necessary to construct the
+//   sub-orbits
 //   /// corresponding to Prim Structure -> Supercell symmetry breaking.
 //   ///
-//   /// The function is templated so that you can pass a pair of PermuteIterators
+//   /// The function is templated so that you can pass a pair of
+//   PermuteIterators
 //   /// or a pair of iterators belonging to a container of PermuteIterators.
-//   /// The dereference operators of PermuteIterator are defined such that it returns a reference to itself.
-//   template<typename Element, typename ElementOutputIterator, typename PermuteIteratorIt>
-//   ElementOutputIterator make_suborbit_generators(
+//   /// The dereference operators of PermuteIterator are defined such that it
+//   returns a reference to itself. template<typename Element, typename
+//   ElementOutputIterator, typename PermuteIteratorIt> ElementOutputIterator
+//   make_suborbit_generators(
 //     const Element &element,
 //     const Supercell &scel,
 //     PermuteIteratorIt group_begin,
@@ -72,7 +78,8 @@
 //     }
 //
 //     std::vector<PermuteIterator> scel_inv_group = make_invariant_subgroup(
-//                                                     element, scel, group_begin, group_end);
+//                                                     element, scel,
+//                                                     group_begin, group_end);
 //
 //     // find "max" permute in each coset of the subgroup [begin, end),
 //     //   excluding those cosets that cause duplicate generating elements
@@ -91,7 +98,8 @@
 //       // if test_it is max
 //       if(std::none_of(subgroup_begin, subgroup_end, lambda)) {
 //         // apply to prototype and construct suborbit
-//         auto copy_apply = typename traits<Element>::copy_apply_f_type(scel.primclex().shared_prim());
+//         auto copy_apply = typename
+//         traits<Element>::copy_apply_f_type(scel.primclex().shared_prim());
 //         *result++ = copy_apply(test_it->sym_op(), element);
 //       }
 //     }

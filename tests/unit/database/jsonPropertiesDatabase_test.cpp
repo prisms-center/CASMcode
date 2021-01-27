@@ -3,23 +3,22 @@
 /// What is being tested:
 #include "casm/database/json/jsonPropertiesDatabase.hh"
 
-
 /// What is being used to test it:
 
 #include <boost/filesystem.hpp>
+
 #include "Common.hh"
 #include "ZrOProj.hh"
 
 using namespace CASM;
 
 TEST(jsonPropertiesDatabase_Test, Test1) {
-
   test::ZrOProj proj;
   proj.check_init();
 
   ScopedNullLogging logging;
   PrimClex primclex(proj.dir);
-  //const Structure &prim(primclex.prim());
+  // const Structure &prim(primclex.prim());
   primclex.settings().set_crystallography_tol(1e-5);
   EXPECT_EQ(fs::equivalent(proj.dir, primclex.dir().root_dir()), true);
 
@@ -45,8 +44,8 @@ TEST(jsonPropertiesDatabase_Test, Test1) {
   EXPECT_EQ(db_props.find_via_origin("from/0")->to, "to/0");
   EXPECT_EQ(db_props.find_via_to("to/0")->origin, "from/0");
   EXPECT_EQ(db_props.all_origins("to/0").size(), 1);
-  //EXPECT_EQ(db_props.relaxed_to("from/0"), "to/0");
-  //EXPECT_EQ(db_props.relaxed_from("to/0"), "from/0");
+  // EXPECT_EQ(db_props.relaxed_to("from/0"), "to/0");
+  // EXPECT_EQ(db_props.relaxed_from("to/0"), "from/0");
   EXPECT_EQ(db_props.best_score("to/0"), 0.1);
   EXPECT_EQ(db_props.score("from/0"), 0.1);
 
@@ -61,8 +60,8 @@ TEST(jsonPropertiesDatabase_Test, Test1) {
   EXPECT_EQ(db_props.find_via_origin("from/1")->to, "to/1");
   EXPECT_EQ(db_props.find_via_to("to/1")->origin, "from/1");
   EXPECT_EQ(db_props.all_origins("to/1").size(), 1);
-  //EXPECT_EQ(db_props.relaxed_to("from/1"), "to/1");
-  //EXPECT_EQ(db_props.relaxed_from("to/1"), "from/1");
+  // EXPECT_EQ(db_props.relaxed_to("from/1"), "to/1");
+  // EXPECT_EQ(db_props.relaxed_from("to/1"), "from/1");
   EXPECT_EQ(almost_equal(db_props.best_score("to/1"), 0.2), true);
   EXPECT_EQ(almost_equal(db_props.score("from/1"), 0.2), true);
 
@@ -77,8 +76,8 @@ TEST(jsonPropertiesDatabase_Test, Test1) {
   EXPECT_EQ(db_props.find_via_origin("from/2")->to, "to/1");
   EXPECT_EQ(db_props.find_via_to("to/1")->origin, "from/1");
   EXPECT_EQ(db_props.all_origins("to/1").size(), 2);
-  //EXPECT_EQ(db_props.relaxed_to("from/2"), "to/1");
-  //EXPECT_EQ(db_props.relaxed_from("to/1"), "from/1");
+  // EXPECT_EQ(db_props.relaxed_to("from/2"), "to/1");
+  // EXPECT_EQ(db_props.relaxed_from("to/1"), "from/1");
   EXPECT_EQ(almost_equal(db_props.best_score("to/1"), 0.2), true);
   EXPECT_EQ(almost_equal(db_props.score("from/2"), 0.3), true);
 
@@ -88,13 +87,13 @@ TEST(jsonPropertiesDatabase_Test, Test1) {
   EXPECT_EQ(db_props.find_via_origin("from/1") == db_props.end(), true);
   EXPECT_EQ(db_props.find_via_to("to/1")->origin, "from/2");
   EXPECT_EQ(db_props.all_origins("to/1").size(), 1);
-  //EXPECT_EQ(db_props.relaxed_from("to/1"), "from/2");
+  // EXPECT_EQ(db_props.relaxed_from("to/1"), "from/2");
   EXPECT_EQ(almost_equal(db_props.best_score("to/1"), 0.3), true);
 
   db_props.commit();
   EXPECT_EQ(1, 1);
-  //fs::ifstream file(loc);
-  //std::cout << file.rdbuf() << std::endl;
+  // fs::ifstream file(loc);
+  // std::cout << file.rdbuf() << std::endl;
 
   db_props.close();
   EXPECT_EQ(1, 1);

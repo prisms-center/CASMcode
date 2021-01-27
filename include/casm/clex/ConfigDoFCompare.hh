@@ -5,109 +5,111 @@
 
 namespace CASM {
 
-  /** \ingroup ConfigIsEquivalent
-   *
-   *  @{
-   */
+/** \ingroup ConfigIsEquivalent
+ *
+ *  @{
+ */
 
-  /// \brief Wrapper class for generic less than comparison of ConfigDoF
+/// \brief Wrapper class for generic less than comparison of ConfigDoF
+///
+/// - Wraps a functor derived from ConfigDoFIsEquivalentBase that is specialized
+/// for
+///   comparison of a particular type of DoF
+class ConfigDoFCompare {
+ public:
+  /// \brief Construct a ConfigDoFCompare object for a particular DoF type
   ///
-  /// - Wraps a functor derived from ConfigDoFIsEquivalentBase that is specialized for
-  ///   comparison of a particular type of DoF
-  class ConfigDoFCompare {
-
-  public:
-
-    /// \brief Construct a ConfigDoFCompare object for a particular DoF type
-    ///
-    /// Easiest construction is probably using 'make_dof_compare'.
-    ///
-    /// Example:
-    /// \code
-    /// ConfigDoFCompare strain_compare = make_dof_compare<ConfigDoFIsEquivalent::Strain>(my_configdof or my_config);
-    /// ConfigDoFCompare occ_compare = make_dof_compare<ConfigDoFIsEquivalent::Occupation>(my_configdof or my_config);
-    /// ConfigDoFCompare disp_compare = make_dof_compare<ConfigDoFIsEquivalent::Displacement>(my_configdof or my_config);
-    /// \endcode
-    template<typename ConfigDoFIsEquivalentType>
-    ConfigDoFCompare(std::unique_ptr<ConfigDoFIsEquivalentType> f) :
-      m_f(f) {}
-
-
-    /// \brief Return config < other
-    bool operator()(const Configuration &other) const {
-      return (*this)(other.configdof());
-    }
-
-    /// \brief Return config < other
-    bool operator()(const ConfigDoF &other) const {
-      if((*m_f)(other)) {
-        return false;
-      }
-      return m_f->is_less();
-    }
-
-    /// \brief Return config < A*config
-    bool operator()(const PermuteIterator &A) const {
-      if((*m_f)(A)) {
-        return false;
-      }
-      return m_f->is_less();
-    }
-
-    /// \brief Return A*config < B*config
-    bool operator()(const PermuteIterator &A, const PermuteIterator &B) const {
-      if((*m_f)(A, B)) {
-        return false;
-      }
-      return m_f->is_less();
-    }
-
-    /// \brief Return config < A*other
-    bool operator()(const PermuteIterator &A, const Configuration &other) const {
-      if((*m_f)(A, other.configdof())) {
-        return false;
-      }
-      return m_f->is_less();
-    }
-
-    /// \brief Return config < A*other
-    bool operator()(const PermuteIterator &A, const ConfigDoF &other) const {
-      if((*m_f)(A, other)) {
-        return false;
-      }
-      return m_f->is_less();
-    }
-
-    /// \brief Return A*config < B*other
-    bool operator()(const PermuteIterator &A, const PermuteIterator &B, const Configuration &other) const {
-      if((*m_f)(A, B, other.configdof())) {
-        return false;
-      }
-      return m_f->is_less();
-    }
-
-    /// \brief Return A*config < B*other
-    bool operator()(const PermuteIterator &A, const PermuteIterator &B, const ConfigDoF &other) const {
-      if((*m_f)(A, B, other)) {
-        return false;
-      }
-      return m_f->is_less();
-    }
-
-  private:
-    notstd::cloneable_ptr<ConfigDoFIsEquivalent::Base> m_f;
-
-  };
-
-  /// Factory function to make ConfigDoFCompare
+  /// Easiest construction is probably using 'make_dof_compare'.
   ///
-  /// \relates ConfigDoFCompare
-  template<typename ConfigDoFIsEquivalentType, typename ...Args>
-  ConfigDoFCompare make_dof_compare(Args &&...args) {
-    return ConfigDoFCompare(notstd::make_unique<ConfigDoFIsEquivalentType>(std::forward<Args>(args)...));
+  /// Example:
+  /// \code
+  /// ConfigDoFCompare strain_compare =
+  /// make_dof_compare<ConfigDoFIsEquivalent::Strain>(my_configdof or
+  /// my_config); ConfigDoFCompare occ_compare =
+  /// make_dof_compare<ConfigDoFIsEquivalent::Occupation>(my_configdof or
+  /// my_config); ConfigDoFCompare disp_compare =
+  /// make_dof_compare<ConfigDoFIsEquivalent::Displacement>(my_configdof or
+  /// my_config); \endcode
+  template <typename ConfigDoFIsEquivalentType>
+  ConfigDoFCompare(std::unique_ptr<ConfigDoFIsEquivalentType> f) : m_f(f) {}
+
+  /// \brief Return config < other
+  bool operator()(const Configuration &other) const {
+    return (*this)(other.configdof());
   }
 
-  /** @} */
+  /// \brief Return config < other
+  bool operator()(const ConfigDoF &other) const {
+    if ((*m_f)(other)) {
+      return false;
+    }
+    return m_f->is_less();
+  }
+
+  /// \brief Return config < A*config
+  bool operator()(const PermuteIterator &A) const {
+    if ((*m_f)(A)) {
+      return false;
+    }
+    return m_f->is_less();
+  }
+
+  /// \brief Return A*config < B*config
+  bool operator()(const PermuteIterator &A, const PermuteIterator &B) const {
+    if ((*m_f)(A, B)) {
+      return false;
+    }
+    return m_f->is_less();
+  }
+
+  /// \brief Return config < A*other
+  bool operator()(const PermuteIterator &A, const Configuration &other) const {
+    if ((*m_f)(A, other.configdof())) {
+      return false;
+    }
+    return m_f->is_less();
+  }
+
+  /// \brief Return config < A*other
+  bool operator()(const PermuteIterator &A, const ConfigDoF &other) const {
+    if ((*m_f)(A, other)) {
+      return false;
+    }
+    return m_f->is_less();
+  }
+
+  /// \brief Return A*config < B*other
+  bool operator()(const PermuteIterator &A, const PermuteIterator &B,
+                  const Configuration &other) const {
+    if ((*m_f)(A, B, other.configdof())) {
+      return false;
+    }
+    return m_f->is_less();
+  }
+
+  /// \brief Return A*config < B*other
+  bool operator()(const PermuteIterator &A, const PermuteIterator &B,
+                  const ConfigDoF &other) const {
+    if ((*m_f)(A, B, other)) {
+      return false;
+    }
+    return m_f->is_less();
+  }
+
+ private:
+  notstd::cloneable_ptr<ConfigDoFIsEquivalent::Base> m_f;
+};
+
+/// Factory function to make ConfigDoFCompare
+///
+/// \relates ConfigDoFCompare
+template <typename ConfigDoFIsEquivalentType, typename... Args>
+ConfigDoFCompare make_dof_compare(Args &&... args) {
+  return ConfigDoFCompare(notstd::make_unique<ConfigDoFIsEquivalentType>(
+      std::forward<Args>(args)...));
 }
+
+/** @} */
+}  // namespace CASM
 
 #endif

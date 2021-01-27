@@ -1,9 +1,9 @@
-#include "gtest/gtest.h"
 #include "autotools.hh"
+#include "gtest/gtest.h"
 
 /// What is being tested:
-#include "casm/system/RuntimeLibrary.hh"
 #include "casm/app/LogRuntimeLibrary.hh"
+#include "casm/system/RuntimeLibrary.hh"
 
 /// Dependencies
 #include "casm/casm_io/Log.hh"
@@ -15,38 +15,37 @@
 using namespace CASM;
 
 TEST(LogRuntimeLibraryTest, FunctionTest) {
-
   ScopedStringStreamLogging logging;
 
   EXPECT_EQ(true, true);
-  std::string cc_filename_base = autotools::abs_srcdir() + "/tests/unit/system/runtime_lib";
-  fs::path cc_filename {cc_filename_base + ".cc"};
+  std::string cc_filename_base =
+      autotools::abs_srcdir() + "/tests/unit/system/runtime_lib";
+  fs::path cc_filename{cc_filename_base + ".cc"};
   EXPECT_EQ(true, true);
 
   fs::ofstream file(cc_filename);
   file << "#include <iostream>\n"
-       "extern \"C\" int forty_two() {\n"
-       "   return 42;\n"
-       "}\n"
-       "\n"
-       "extern \"C\" int add(int a, int b) {\n"
-       "   return a + b;\n"
-       "}\n";
+          "extern \"C\" int forty_two() {\n"
+          "   return 42;\n"
+          "}\n"
+          "\n"
+          "extern \"C\" int add(int a, int b) {\n"
+          "   return a + b;\n"
+          "}\n";
   file.close();
   EXPECT_EQ(true, true);
 
   std::string compile_opt = RuntimeLibrary::default_cxx().first + " " +
                             RuntimeLibrary::default_cxxflags().first;
-  std::string so_opt = RuntimeLibrary::default_cxx().first + " " +
-                       RuntimeLibrary::default_soflags().first + " " +
-                       link_path(RuntimeLibrary::default_boost_libdir().first.string());
+  std::string so_opt =
+      RuntimeLibrary::default_cxx().first + " " +
+      RuntimeLibrary::default_soflags().first + " " +
+      link_path(RuntimeLibrary::default_boost_libdir().first.string());
   EXPECT_EQ(true, true);
 
-  std::shared_ptr<RuntimeLibrary> lib = log_make_shared_runtime_lib(
-                                          cc_filename_base,
-                                          compile_opt,
-                                          so_opt,
-                                          "Compiling RuntimeLibrary test code");
+  std::shared_ptr<RuntimeLibrary> lib =
+      log_make_shared_runtime_lib(cc_filename_base, compile_opt, so_opt,
+                                  "Compiling RuntimeLibrary test code");
 
   EXPECT_EQ(true, true);
 
@@ -66,5 +65,4 @@ TEST(LogRuntimeLibraryTest, FunctionTest) {
   lib->rm();
 
   EXPECT_EQ(true, true);
-
 }

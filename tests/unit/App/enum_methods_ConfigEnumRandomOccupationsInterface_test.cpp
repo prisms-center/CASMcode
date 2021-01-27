@@ -1,9 +1,6 @@
-#include "gtest/gtest.h"
-
+#include "App/TestEnumeratorInterface.hh"
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
-#include "App/TestEnumeratorInterface.hh"
-
 #include "casm/app/enum.hh"
 #include "casm/app/enum/methods/ConfigEnumRandomOccupationsInterface.hh"
 #include "casm/app/enum/methods/ScelEnumInterface.hh"
@@ -12,9 +9,9 @@
 #include "casm/completer/Handlers.hh"
 #include "casm/database/Database.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
+#include "gtest/gtest.h"
 
 TEST(ConfigEnumRandomOccupationsTest, ConfigEnumRandomOccupationsRunTest) {
-
   ScopedNullLogging logging;
   test::FCCTernaryProj proj;
   proj.check_init();
@@ -36,7 +33,8 @@ TEST(ConfigEnumRandomOccupationsTest, ConfigEnumRandomOccupationsRunTest) {
   // --dry-run test
   {
     std::string cli_str = cmd + " --dry-run";
-    test::run_enum_interface<ConfigEnumRandomOccupationsInterface>(cli_str, primclex, json_options);
+    test::run_enum_interface<ConfigEnumRandomOccupationsInterface>(
+        cli_str, primclex, json_options);
   }
   EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
   EXPECT_GT(primclex.generic_db<Configuration>().size(), 0);
@@ -47,7 +45,8 @@ TEST(ConfigEnumRandomOccupationsTest, ConfigEnumRandomOccupationsRunTest) {
 
   {
     std::string cli_str = cmd;
-    test::run_enum_interface<ConfigEnumRandomOccupationsInterface>(cli_str, primclex, json_options);
+    test::run_enum_interface<ConfigEnumRandomOccupationsInterface>(
+        cli_str, primclex, json_options);
   }
   EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
   EXPECT_GT(primclex.generic_db<Configuration>().size(), 0);
@@ -55,5 +54,4 @@ TEST(ConfigEnumRandomOccupationsTest, ConfigEnumRandomOccupationsRunTest) {
   primclex.generic_db<Configuration>().open();
   EXPECT_EQ(primclex.generic_db<Supercell>().size(), 13);
   EXPECT_GT(primclex.generic_db<Configuration>().size(), 0);
-
 }

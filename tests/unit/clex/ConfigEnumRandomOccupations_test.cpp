@@ -4,9 +4,9 @@
 #include "casm/clex/ConfigEnumRandomOccupations.hh"
 
 /// What is being used to test it:
+#include "App/TestEnumeratorInterface.hh"
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
-#include "App/TestEnumeratorInterface.hh"
 #include "casm/app/enum.hh"
 #include "casm/app/enum/methods/ConfigEnumRandomOccupationsInterface.hh"
 #include "casm/app/enum/methods/ScelEnumInterface.hh"
@@ -20,7 +20,6 @@
 using namespace CASM;
 
 TEST(ConfigEnumRandomOccupationsTest, Test1) {
-
   ScopedNullLogging logging;
 
   test::FCCTernaryProj proj;
@@ -31,7 +30,8 @@ TEST(ConfigEnumRandomOccupationsTest, Test1) {
   Eigen::Vector3d a, b, c;
   std::tie(a, b, c) = primclex.prim().lattice().vectors();
 
-  Supercell scel = Supercell(&primclex, Lattice {2.*a, 2.*b, 2.*c}).canonical_form();
+  Supercell scel =
+      Supercell(&primclex, Lattice{2. * a, 2. * b, 2. * c}).canonical_form();
 
   Index n_configs = 100;
   MTRand mtrand;
@@ -41,11 +41,10 @@ TEST(ConfigEnumRandomOccupationsTest, Test1) {
     EXPECT_EQ(n_configs, std::distance(e.begin(), e.end()));
   }
 
-
   {
     xtal::ScelEnumProps enum_props(1, 5);
-    ScelEnumByProps enumerator {primclex.shared_prim(), enum_props};
-    for(const auto &supercell : enumerator) {
+    ScelEnumByProps enumerator{primclex.shared_prim(), enum_props};
+    for (const auto &supercell : enumerator) {
       make_canonical_and_insert(enumerator, supercell, supercell_db);
     }
     EXPECT_EQ(primclex.generic_db<Supercell>().size(), 14);
@@ -55,8 +54,8 @@ TEST(ConfigEnumRandomOccupationsTest, Test1) {
     jsonParser json_options;
     json_options["n_config"] = 200;
     std::string cli_str = "casm enum --method ConfigEnumRandomOccupations -a";
-    test::run_enum_interface<ConfigEnumRandomOccupationsInterface>(cli_str, primclex, json_options);
+    test::run_enum_interface<ConfigEnumRandomOccupationsInterface>(
+        cli_str, primclex, json_options);
     EXPECT_GT(primclex.generic_db<Configuration>().size(), 150);
   }
-
 }

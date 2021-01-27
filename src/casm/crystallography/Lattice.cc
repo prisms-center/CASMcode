@@ -1,4 +1,5 @@
 #include "casm/crystallography/Lattice.hh"
+
 #include "casm/container/Counter.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/global/eigen.hh"
@@ -6,107 +7,111 @@
 #include "casm/misc/algorithm.hh"
 
 namespace CASM {
-  namespace xtal {
+namespace xtal {
 
-    Lattice::Lattice(Eigen::Ref<const Eigen::Vector3d> const &vec1,
-                     Eigen::Ref<const Eigen::Vector3d> const &vec2,
-                     Eigen::Ref<const Eigen::Vector3d> const &vec3,                     double xtal_tol,
-                     bool force)
-      : m_tol(xtal_tol) {
-      m_lat_mat << vec1, vec2, vec3;
-      if(!force && m_lat_mat.determinant() < 0) {
-        // this->make_right_handed();
-        // throw std::runtime_error("Attempted to construct a left-handed lattice. Try again or override if you know what you're doing");
-      }
-      m_inv_lat_mat = m_lat_mat.inverse();
-    }
+Lattice::Lattice(Eigen::Ref<const Eigen::Vector3d> const &vec1,
+                 Eigen::Ref<const Eigen::Vector3d> const &vec2,
+                 Eigen::Ref<const Eigen::Vector3d> const &vec3, double xtal_tol,
+                 bool force)
+    : m_tol(xtal_tol) {
+  m_lat_mat << vec1, vec2, vec3;
+  if (!force && m_lat_mat.determinant() < 0) {
+    // this->make_right_handed();
+    // throw std::runtime_error("Attempted to construct a left-handed lattice.
+    // Try again or override if you know what you're doing");
+  }
+  m_inv_lat_mat = m_lat_mat.inverse();
+}
 
-    std::vector<Eigen::Matrix3d> _skew_transforms() {
-      // Creates 12 skew matrices + 12 "double skew" matrices
-      std::vector<Eigen::Matrix3d> skew(24, Eigen::Matrix3d::Identity());
-      Index i, j, k;
-      Index l = 0;
-      for(i = 0; i < 3; i++) {
-        for(j = 0; j < 3; j++) {
-          if(i != j) {
-            // Checks to make sure we're not at a diagonal
-            skew[l](i, j) = 1;
-            skew[l + 12](i, j) = -1;
-            ++l;
-          }
-        }
-      }
-
-      // the 12 "double skew" matrices corresponding to body diagonal substitution
-      for(i = 0; i < 3; i++) {
-        // column
-
-        j = (i + 1) % 3;
-        k = (i + 2) % 3;
-
-        skew[l](j, i) = 1;
-        skew[l](k, i) = 1;
-
-        skew[l + 12](j, i) = -1;
-        skew[l + 12](k, i) = -1;
-
-        ++l;
-
-        skew[l](j, i) = 1;
-        skew[l](k, i) = -1;
-
-        skew[l + 12](j, i) = -1;
-        skew[l + 12](k, i) = 1;
-
+std::vector<Eigen::Matrix3d> _skew_transforms() {
+  // Creates 12 skew matrices + 12 "double skew" matrices
+  std::vector<Eigen::Matrix3d> skew(24, Eigen::Matrix3d::Identity());
+  Index i, j, k;
+  Index l = 0;
+  for (i = 0; i < 3; i++) {
+    for (j = 0; j < 3; j++) {
+      if (i != j) {
+        // Checks to make sure we're not at a diagonal
+        skew[l](i, j) = 1;
+        skew[l + 12](i, j) = -1;
         ++l;
       }
-      return skew;
     }
+  }
 
-    std::vector<Eigen::Matrix3d> const &Lattice::skew_transforms() {
-      static std::vector<Eigen::Matrix3d> result = _skew_transforms();
-      return result;
-    }
+  // the 12 "double skew" matrices corresponding to body diagonal substitution
+  for (i = 0; i < 3; i++) {
+    // column
 
-    /// Construct Lattice from a matrix of lattice vectors, where lattice vectors are columns
-    ///(e.g., lat_mat is equivalent to lat_column_mat())
-    Lattice::Lattice(const Eigen::Ref<const Eigen::Matrix3d> &lat_mat, double xtal_tol, bool force)
-      : m_lat_mat(lat_mat), m_inv_lat_mat(lat_mat.inverse()), m_tol(xtal_tol) {
-      if(!force && m_lat_mat.determinant() < 0) {
-        // this->make_right_handed();
-        // throw std::runtime_error("Attempted to construct a left-handed lattice. Try again or override if you know what you're doing");
-      }
-    }
+    j = (i + 1) % 3;
+    k = (i + 2) % 3;
 
-    Lattice Lattice::fcc(double tol) {
-      Eigen::Matrix3d latmat;
-      // clang-format off
+    skew[l](j, i) = 1;
+    skew[l](k, i) = 1;
+
+    skew[l + 12](j, i) = -1;
+    skew[l + 12](k, i) = -1;
+
+    ++l;
+
+    skew[l](j, i) = 1;
+    skew[l](k, i) = -1;
+
+    skew[l + 12](j, i) = -1;
+    skew[l + 12](k, i) = 1;
+
+    ++l;
+  }
+  return skew;
+}
+
+std::vector<Eigen::Matrix3d> const &Lattice::skew_transforms() {
+  static std::vector<Eigen::Matrix3d> result = _skew_transforms();
+  return result;
+}
+
+/// Construct Lattice from a matrix of lattice vectors, where lattice vectors
+/// are columns
+///(e.g., lat_mat is equivalent to lat_column_mat())
+Lattice::Lattice(const Eigen::Ref<const Eigen::Matrix3d> &lat_mat,
+                 double xtal_tol, bool force)
+    : m_lat_mat(lat_mat), m_inv_lat_mat(lat_mat.inverse()), m_tol(xtal_tol) {
+  if (!force && m_lat_mat.determinant() < 0) {
+    // this->make_right_handed();
+    // throw std::runtime_error("Attempted to construct a left-handed lattice.
+    // Try again or override if you know what you're doing");
+  }
+}
+
+Lattice Lattice::fcc(double tol) {
+  Eigen::Matrix3d latmat;
+  // clang-format off
       latmat << 0, 1, 1,
              1, 0, 1,
              1, 1, 0;
-      // clang-format on
-      latmat /= pow(latmat.determinant(), 1.0 / 3.0);
-      return Lattice(latmat, tol);
-    }
+  // clang-format on
+  latmat /= pow(latmat.determinant(), 1.0 / 3.0);
+  return Lattice(latmat, tol);
+}
 
-    Lattice Lattice::bcc(double tol) {
-      Eigen::Matrix3d latmat;
-      // clang-format off
+Lattice Lattice::bcc(double tol) {
+  Eigen::Matrix3d latmat;
+  // clang-format off
       latmat << -1, 1, 1,
              1, -1, 1,
              1, 1, -1;
-      // clang-format on
-      latmat /= pow(latmat.determinant(), 1.0 / 3.0);
-      return Lattice(latmat, tol);
-    }
+  // clang-format on
+  latmat /= pow(latmat.determinant(), 1.0 / 3.0);
+  return Lattice(latmat, tol);
+}
 
-    Lattice Lattice::cubic(double tol) {
-      return Lattice(Eigen::Matrix3d::Identity(), tol);
-    }
+Lattice Lattice::cubic(double tol) {
+  return Lattice(Eigen::Matrix3d::Identity(), tol);
+}
 
-    Lattice Lattice::hexagonal(double tol) {
-      Eigen::Matrix3d latmat;
-      // clang-format off
+Lattice Lattice::hexagonal(double tol) {
+  Eigen::Matrix3d latmat;
+  // clang-format off
       latmat << 1, -1.0 / sqrt(3.0),
              0, 0, 2.0 / sqrt(3.0),
              0, 0, 0, sqrt(3.0);

@@ -4,17 +4,17 @@
 #include "casm/clex/ConfigIO.hh"
 
 extern "C" {
-  CASM::BaseDatumFormatter<CASM::Configuration> *make_TestConfigname_formatter();
+CASM::BaseDatumFormatter<CASM::Configuration> *make_TestConfigname_formatter();
 }
 
 namespace CASM {
 
-  namespace ConfigIO {
+namespace ConfigIO {
 
-    ConfigIO::GenericConfigFormatter<std::string> test_configname();
-
-  }
+ConfigIO::GenericConfigFormatter<std::string> test_configname();
 
 }
+
+}  // namespace CASM
 
 #endif

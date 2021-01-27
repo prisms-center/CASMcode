@@ -5,18 +5,17 @@
 
 namespace CASM {
 
-  class APICommandBase;
-  class PrimClex;
-  class jsonParser;
+class APICommandBase;
+class PrimClex;
+class jsonParser;
 
-  /// Describe DoF space analysis input
-  std::string dof_space_analysis_desc();
+/// Describe DoF space analysis input
+std::string dof_space_analysis_desc();
 
-  /// Perform DoF space analysis
-  void dof_space_analysis(PrimClex &primclex,
-                          jsonParser const &json_options,
-                          jsonParser const &cli_options_as_json);
+/// Perform DoF space analysis
+void dof_space_analysis(PrimClex &primclex, jsonParser const &json_options,
+                        jsonParser const &cli_options_as_json);
 
-}
+}  // namespace CASM
 
 #endif

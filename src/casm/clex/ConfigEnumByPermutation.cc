@@ -1,43 +1,42 @@
 #include "casm/clex/ConfigEnumByPermutation.hh"
+
 #include <algorithm>
+
 #include "casm/casm_io/Log.hh"
-#include "casm/clex/Configuration.hh"
-#include "casm/clex/Supercell.hh"
 #include "casm/clex/ConfigIsEquivalent.hh"
+#include "casm/clex/Configuration.hh"
 #include "casm/clex/ScelEnumEquivalents.hh"
+#include "casm/clex/Supercell.hh"
 
 namespace CASM {
 
-  namespace {
+namespace {
 
-    struct MakeConfigInvariantSubgroup {
+struct MakeConfigInvariantSubgroup {
+  MakeConfigInvariantSubgroup() {}
 
-      MakeConfigInvariantSubgroup() {}
-
-      template<typename PermuteOutputIterator>
-      PermuteOutputIterator operator()(const Configuration &config, PermuteIterator begin, PermuteIterator end, PermuteOutputIterator result) {
-        ConfigIsEquivalent f(config, config.crystallography_tol());
-        return std::copy_if(begin, end, result, f);
-      }
-
-    };
+  template <typename PermuteOutputIterator>
+  PermuteOutputIterator operator()(const Configuration &config,
+                                   PermuteIterator begin, PermuteIterator end,
+                                   PermuteOutputIterator result) {
+    ConfigIsEquivalent f(config, config.crystallography_tol());
+    return std::copy_if(begin, end, result, f);
   }
+};
+}  // namespace
 
-  const std::string ConfigEnumByPermutation::enumerator_name = "ConfigEnumByPermutation";
+const std::string ConfigEnumByPermutation::enumerator_name =
+    "ConfigEnumByPermutation";
 
-  ConfigEnumByPermutation::ConfigEnumByPermutation(
-    const Configuration &config) :
-    ConfigEnumByPermutation(
-      config,
-      config.supercell().sym_info().permute_begin(),
-      config.supercell().sym_info().permute_end()) {
-  }
+ConfigEnumByPermutation::ConfigEnumByPermutation(const Configuration &config)
+    : ConfigEnumByPermutation(config,
+                              config.supercell().sym_info().permute_begin(),
+                              config.supercell().sym_info().permute_end()) {}
 
-  ConfigEnumByPermutation::ConfigEnumByPermutation(
-    const Configuration &config,
-    PermuteIterator begin,
-    PermuteIterator end) :
-    EnumEquivalents<Configuration, PermuteIterator>(config.canonical_form(), begin, end, MakeConfigInvariantSubgroup()) {
-  }
+ConfigEnumByPermutation::ConfigEnumByPermutation(const Configuration &config,
+                                                 PermuteIterator begin,
+                                                 PermuteIterator end)
+    : EnumEquivalents<Configuration, PermuteIterator>(
+          config.canonical_form(), begin, end, MakeConfigInvariantSubgroup()) {}
 
-}
+}  // namespace CASM

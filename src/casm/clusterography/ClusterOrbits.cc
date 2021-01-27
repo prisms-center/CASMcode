@@ -3,9 +3,8 @@
 
 namespace CASM {
 
-  IntegralClusterOrbitGenerator::IntegralClusterOrbitGenerator(
-    IntegralCluster const &_prototype,
-    bool _include_subclusters):
-    prototype(_prototype), include_subclusters(_include_subclusters) {}
+IntegralClusterOrbitGenerator::IntegralClusterOrbitGenerator(
+    IntegralCluster const &_prototype, bool _include_subclusters)
+    : prototype(_prototype), include_subclusters(_include_subclusters) {}
 
-}
+}  // namespace CASM

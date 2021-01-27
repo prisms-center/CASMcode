@@ -3,480 +3,429 @@
 
 #include "casm/casm_io/dataformatter/DataFormatter.hh"
 #include "casm/casm_io/dataformatter/DataFormatterTools.hh"
-#include "casm/container/ContainerTraits.hh"
-#include "casm/clex/Clexulator.hh"
 #include "casm/clex/ClexParamPack.hh"
+#include "casm/clex/Clexulator.hh"
 #include "casm/clex/ECIContainer.hh"
+#include "casm/container/ContainerTraits.hh"
 
 namespace CASM {
 
-  /// \defgroup ConfigIO Configuration Queries
-  ///
-  /// \brief Data formatters that return Configuration properties
-  ///
-  /// \ingroup DataFormatter
+/// \defgroup ConfigIO Configuration Queries
+///
+/// \brief Data formatters that return Configuration properties
+///
+/// \ingroup DataFormatter
 
+class Configuration;
+template <typename DataObject>
+class Norm;
+class jsonParser;
 
-  class Configuration;
-  template<typename DataObject>
-  class Norm;
-  class jsonParser;
+/**  \addtogroup ConfigIO
+     @{
+ */
 
-  /**  \addtogroup ConfigIO
-       @{
-   */
+namespace ConfigIO_impl {
 
-  namespace ConfigIO_impl {
+/// \brief Returns fraction of sites occupied by a species
+///
+/// Fraction of sites occupied by a species, including vacancies. No argument
+/// prints all available values. Ex: site_frac(Au), site_frac(Pt), etc.
+///
+class MolDependent : public VectorXdAttribute<Configuration> {
+ public:
+  MolDependent(const std::string &_name, const std::string &_desc)
+      : VectorXdAttribute<Configuration>(_name, _desc) {}
 
-    /// \brief Returns fraction of sites occupied by a species
-    ///
-    /// Fraction of sites occupied by a species, including vacancies. No argument
-    /// prints all available values. Ex: site_frac(Au), site_frac(Pt), etc.
-    ///
-    class MolDependent : public VectorXdAttribute<Configuration> {
+  // --- Specialized implementation -----------
 
-    public:
+  /// \brief Expects arguments of the form 'name' or 'name(Au)', 'name(Pt)',
+  /// etc.
+  bool parse_args(const std::string &args) override;
 
-      MolDependent(const std::string &_name, const std::string &_desc) :
-        VectorXdAttribute<Configuration>(_name, _desc) {}
+  /// \brief Adds index rules corresponding to the parsed args
+  bool init(const Configuration &_tmplt) const override;
 
+  /// \brief col_header returns: {'name(Au)', 'name(Pt)', ...}
+  std::vector<std::string> col_header(
+      const Configuration &_tmplt) const override;
 
-      // --- Specialized implementation -----------
+ private:
+  mutable std::vector<std::string> m_mol_names;
+};
 
-      /// \brief Expects arguments of the form 'name' or 'name(Au)', 'name(Pt)', etc.
-      bool parse_args(const std::string &args) override;
+}  // namespace ConfigIO_impl
 
-      /// \brief Adds index rules corresponding to the parsed args
-      bool init(const Configuration &_tmplt) const override;
+/// Contains ConfigIO classes and functions
+namespace ConfigIO {
 
-      /// \brief col_header returns: {'name(Au)', 'name(Pt)', ...}
-      std::vector<std::string> col_header(const Configuration &_tmplt) const override;
+/// \brief Template alias for Configuration formatters of specified ValueType
+///
+template <typename ValueType>
+using GenericConfigFormatter = GenericDatumFormatter<ValueType, Configuration>;
 
-    private:
-      mutable std::vector<std::string> m_mol_names;
+template <typename ValueType>
+using ConstantValue = ConstantValueFormatter<ValueType, Configuration>;
 
-    };
+/// \brief Calculate param composition of a Configuration
+///
+class Comp : public VectorXdAttribute<Configuration> {
+ public:
+  static const std::string Name;
 
+  static const std::string Desc;
+
+  Comp() : Base1DDatumFormatter(Name, Desc) {}
+
+  // --- Required implementations -----------
+
+  /// \brief Returns the parametric composition
+  Eigen::VectorXd evaluate(const Configuration &config) const override;
+
+  /// \brief Clone using copy constructor
+  std::unique_ptr<Comp> clone() const {
+    return std::unique_ptr<Comp>(this->_clone());
   }
 
-  /// Contains ConfigIO classes and functions
-  namespace ConfigIO {
+  // --- Specialized implementation -----------
 
-    /// \brief Template alias for Configuration formatters of specified ValueType
-    ///
-    template<typename ValueType>
-    using GenericConfigFormatter = GenericDatumFormatter<ValueType, Configuration>;
+  /// \brief Returns true if the PrimClex has composition axes
+  bool validate(const Configuration &config) const override;
 
+  /// \brief Expects arguments of the form 'comp' or 'comp(a)', 'comp(b)', etc.
+  bool parse_args(const std::string &args) override;
 
-    template<typename ValueType>
-    using ConstantValue = ConstantValueFormatter<ValueType, Configuration>;
+  /// \brief col_header returns: {'comp(a)', 'comp(b)', ...'}
+  std::vector<std::string> col_header(
+      const Configuration &_tmplt) const override;
 
-    /// \brief Calculate param composition of a Configuration
-    ///
-    class Comp : public VectorXdAttribute<Configuration> {
+ private:
+  /// \brief Clone using copy constructor
+  Comp *_clone() const override { return new Comp(*this); }
+};
 
-    public:
+/// \brief Calculate number of each species per unit cell
+///
+class CompN : public ConfigIO_impl::MolDependent {
+ public:
+  static const std::string Name;
 
-      static const std::string Name;
+  static const std::string Desc;
 
-      static const std::string Desc;
+  CompN() : MolDependent(Name, Desc) {}
 
+  // --- Required implementations -----------
 
-      Comp() :
-        Base1DDatumFormatter(Name, Desc) {}
+  /// \brief Returns the parametric composition
+  Eigen::VectorXd evaluate(const Configuration &config) const override;
 
+  /// \brief Clone using copy constructor
+  std::unique_ptr<CompN> clone() const {
+    return std::unique_ptr<CompN>(this->_clone());
+  }
 
-      // --- Required implementations -----------
+ private:
+  /// \brief Clone using copy constructor
+  CompN *_clone() const override { return new CompN(*this); }
+};
 
-      /// \brief Returns the parametric composition
-      Eigen::VectorXd evaluate(const Configuration &config) const override;
+/// \brief Returns fraction of sites occupied by a species, including vacancies
+///
+/// Fraction of sites occupied by a species, including vacancies. No argument
+/// prints all available values. Ex: site_frac(Au), site_frac(Pt), etc.
+///
+class SiteFrac : public ConfigIO_impl::MolDependent {
+ public:
+  static const std::string Name;
 
-      /// \brief Clone using copy constructor
-      std::unique_ptr<Comp> clone() const {
-        return std::unique_ptr<Comp>(this->_clone());
-      }
+  static const std::string Desc;
 
+  SiteFrac() : MolDependent(Name, Desc) {}
 
-      // --- Specialized implementation -----------
+  // --- Required implementations -----------
 
-      /// \brief Returns true if the PrimClex has composition axes
-      bool validate(const Configuration &config) const override;
+  /// \brief Returns the site fraction
+  Eigen::VectorXd evaluate(const Configuration &config) const override;
 
-      /// \brief Expects arguments of the form 'comp' or 'comp(a)', 'comp(b)', etc.
-      bool parse_args(const std::string &args) override;
+  /// \brief Clone using copy constructor
+  std::unique_ptr<SiteFrac> clone() const {
+    return std::unique_ptr<SiteFrac>(this->_clone());
+  }
 
-      /// \brief col_header returns: {'comp(a)', 'comp(b)', ...'}
-      std::vector<std::string> col_header(const Configuration &_tmplt) const override;
+ private:
+  /// \brief Clone using copy constructor
+  SiteFrac *_clone() const override { return new SiteFrac(*this); }
+};
 
-    private:
+/// \brief Returns fraction of all species that are a particular species,
+/// excluding vacancies
+///
+/// Fraction of species that are a particular species, excluding vacancies.
+/// Without argument, all values are printed. Ex: atom_frac(Au), atom_frac(Pt),
+/// etc.
+///
+class AtomFrac : public ConfigIO_impl::MolDependent {
+ public:
+  static const std::string Name;
 
-      /// \brief Clone using copy constructor
-      Comp *_clone() const override {
-        return new Comp(*this);
-      }
+  static const std::string Desc;
 
-    };
+  AtomFrac() : MolDependent(Name, Desc) {}
 
+  // --- Required implementations -----------
 
-    /// \brief Calculate number of each species per unit cell
-    ///
-    class CompN : public ConfigIO_impl::MolDependent {
+  /// \brief Returns the atom fraction
+  Eigen::VectorXd evaluate(const Configuration &config) const override;
 
-    public:
+  /// \brief Clone using copy constructor
+  std::unique_ptr<AtomFrac> clone() const {
+    return std::unique_ptr<AtomFrac>(this->_clone());
+  }
 
-      static const std::string Name;
+ private:
+  /// \brief Clone using copy constructor
+  AtomFrac *_clone() const override { return new AtomFrac(*this); }
+};
 
-      static const std::string Desc;
-
-
-      CompN() :
-        MolDependent(Name, Desc) {}
-
-
-      // --- Required implementations -----------
-
-      /// \brief Returns the parametric composition
-      Eigen::VectorXd evaluate(const Configuration &config) const override;
-
-      /// \brief Clone using copy constructor
-      std::unique_ptr<CompN> clone() const {
-        return std::unique_ptr<CompN>(this->_clone());
-      }
-
-    private:
-
-      /// \brief Clone using copy constructor
-      CompN *_clone() const override {
-        return new CompN(*this);
-      }
-
-    };
-
-
-    /// \brief Returns fraction of sites occupied by a species, including vacancies
-    ///
-    /// Fraction of sites occupied by a species, including vacancies. No argument
-    /// prints all available values. Ex: site_frac(Au), site_frac(Pt), etc.
-    ///
-    class SiteFrac : public ConfigIO_impl::MolDependent {
-
-    public:
-
-      static const std::string Name;
-
-      static const std::string Desc;
-
-
-      SiteFrac() : MolDependent(Name, Desc) {}
-
-
-      // --- Required implementations -----------
-
-      /// \brief Returns the site fraction
-      Eigen::VectorXd evaluate(const Configuration &config) const override;
-
-      /// \brief Clone using copy constructor
-      std::unique_ptr<SiteFrac> clone() const {
-        return std::unique_ptr<SiteFrac>(this->_clone());
-      }
-
-    private:
-
-      /// \brief Clone using copy constructor
-      SiteFrac *_clone() const override {
-        return new SiteFrac(*this);
-      }
-
-    };
-
-
-    /// \brief Returns fraction of all species that are a particular species, excluding vacancies
-    ///
-    /// Fraction of species that are a particular species, excluding vacancies.
-    /// Without argument, all values are printed. Ex: atom_frac(Au), atom_frac(Pt), etc.
-    ///
-    class AtomFrac : public ConfigIO_impl::MolDependent {
-
-    public:
-
-      static const std::string Name;
-
-      static const std::string Desc;
-
-
-      AtomFrac() : MolDependent(Name, Desc) {}
-
-
-      // --- Required implementations -----------
-
-      /// \brief Returns the atom fraction
-      Eigen::VectorXd evaluate(const Configuration &config) const override;
-
-      /// \brief Clone using copy constructor
-      std::unique_ptr<AtomFrac> clone() const {
-        return std::unique_ptr<AtomFrac>(this->_clone());
-      }
-
-    private:
-      /// \brief Clone using copy constructor
-      AtomFrac *_clone() const override {
-        return new AtomFrac(*this);
-      }
-
-    };
-
-    /// \brief In the future, AtomFrac will actually be atoms only
-    typedef AtomFrac SpeciesFrac;
-
-    /// \brief Returns correlation values
-    ///
-    /// Evaluated basis function values, normalized per primitive cell;
-    ///
-    class Corr : public VectorXdAttribute<Configuration> {
-
-    public:
-
-      static const std::string Name;
-
-      static const std::string Desc;
-
-
-      Corr() : VectorXdAttribute<Configuration>(Name, Desc), m_clex_name("") {}
-
-      Corr(const Clexulator &clexulator) :
-        VectorXdAttribute<Configuration>(Name, Desc),
+/// \brief In the future, AtomFrac will actually be atoms only
+typedef AtomFrac SpeciesFrac;
+
+/// \brief Returns correlation values
+///
+/// Evaluated basis function values, normalized per primitive cell;
+///
+class Corr : public VectorXdAttribute<Configuration> {
+ public:
+  static const std::string Name;
+
+  static const std::string Desc;
+
+  Corr() : VectorXdAttribute<Configuration>(Name, Desc), m_clex_name("") {}
+
+  Corr(const Clexulator &clexulator)
+      : VectorXdAttribute<Configuration>(Name, Desc),
         m_clexulator(clexulator) {}
 
+  // --- Required implementations -----------
 
-      // --- Required implementations -----------
+  /// \brief Returns the atom fraction
+  Eigen::VectorXd evaluate(const Configuration &config) const override;
 
-      /// \brief Returns the atom fraction
-      Eigen::VectorXd evaluate(const Configuration &config) const override;
+  /// \brief Clone using copy constructor
+  std::unique_ptr<Corr> clone() const {
+    return std::unique_ptr<Corr>(this->_clone());
+  }
 
-      /// \brief Clone using copy constructor
-      std::unique_ptr<Corr> clone() const {
-        return std::unique_ptr<Corr>(this->_clone());
-      }
+  // --- Specialized implementation -----------
 
+  /// \brief If not yet initialized, use the global clexulator from the PrimClex
+  bool init(const Configuration &_tmplt) const override;
 
-      // --- Specialized implementation -----------
+  /// \brief Expects 'corr', 'corr(clex_name)', 'corr(index_expression)', or
+  /// 'corr(clex_name,index_expression)'
+  bool parse_args(const std::string &args) override;
 
-      /// \brief If not yet initialized, use the global clexulator from the PrimClex
-      bool init(const Configuration &_tmplt) const override;
+ private:
+  /// \brief Clone using copy constructor
+  Corr *_clone() const override { return new Corr(*this); }
 
-      /// \brief Expects 'corr', 'corr(clex_name)', 'corr(index_expression)', or
-      /// 'corr(clex_name,index_expression)'
-      bool parse_args(const std::string &args) override;
+  mutable Clexulator m_clexulator;
+  mutable std::string m_clex_name;
+};
 
+/// \brief Returns correlation values
+///
+/// Evaluated gradient of basis function values, w.r.t. specified DoF
+///
+class GradCorr : public MatrixXdAttribute<Configuration> {
+ public:
+  static const std::string Name;
 
-    private:
+  static const std::string Desc;
 
-      /// \brief Clone using copy constructor
-      Corr *_clone() const override {
-        return new Corr(*this);
-      }
+  GradCorr() : MatrixXdAttribute<Configuration>(Name, Desc), m_clex_name("") {}
 
-      mutable Clexulator m_clexulator;
-      mutable std::string m_clex_name;
-
-    };
-
-    /// \brief Returns correlation values
-    ///
-    /// Evaluated gradient of basis function values, w.r.t. specified DoF
-    ///
-    class GradCorr : public MatrixXdAttribute<Configuration> {
-
-    public:
-
-      static const std::string Name;
-
-      static const std::string Desc;
-
-
-      GradCorr() : MatrixXdAttribute<Configuration>(Name, Desc), m_clex_name("") {}
-
-      GradCorr(const Clexulator &clexulator) :
-        MatrixXdAttribute<Configuration>(Name, Desc),
+  GradCorr(const Clexulator &clexulator)
+      : MatrixXdAttribute<Configuration>(Name, Desc),
         m_clexulator(clexulator) {}
 
+  // --- Required implementations -----------
 
-      // --- Required implementations -----------
+  /// \brief Returns the atom fraction
+  Eigen::MatrixXd evaluate(const Configuration &config) const override;
 
-      /// \brief Returns the atom fraction
-      Eigen::MatrixXd evaluate(const Configuration &config) const override;
-
-      /// \brief Clone using copy constructor
-      std::unique_ptr<GradCorr> clone() const {
-        return std::unique_ptr<GradCorr>(this->_clone());
-      }
-
-
-      // --- Specialized implementation -----------
-
-      /// \brief If not yet initialized, use the global clexulator from the PrimClex
-      bool init(const Configuration &_tmplt) const override;
-
-      /// \brief Expects 'gradcorr(dof_name)', 'gradcorr(dof_name,clex_name)', 'gradcorr(dof_name,index_expression)', or
-      /// 'gradcorr(dof_name,clex_name,index_expression)'
-      bool parse_args(const std::string &args) override;
-
-
-    private:
-
-      /// \brief Clone using copy constructor
-      GradCorr *_clone() const override {
-        return new GradCorr(*this);
-      }
-
-      mutable Clexulator m_clexulator;
-      mutable std::string m_clex_name;
-      mutable DoFKey m_key;
-
-    };
-
-    /// \brief Returns predicted formation energy
-    ///
-    /// Returns predicted formation energy (only formation energy for now)
-    ///
-    class Clex : public ScalarAttribute<Configuration> {
-
-    public:
-
-      static const std::string Name;
-
-      static const std::string Desc;
-
-
-      Clex();
-
-      /// \brief Construct with Clexulator, ECI, and either 'formation_energy' or 'formation_energy_per_species'
-      Clex(const Clexulator &clexulator, const ECIContainer &eci, const Norm<Configuration> &norm);
-
-
-      // --- Required implementations -----------
-
-      /// \brief Returns the atom fraction
-      double evaluate(const Configuration &config) const override;
-
-      /// \brief Clone using copy constructor
-      std::unique_ptr<Clex> clone() const;
-
-
-      // --- Specialized implementation -----------
-
-      // validate: predicted property can always be calculated if clexulator and
-      // eci were obtained ok
-
-      /// \brief If not yet initialized, use the global clexulator and eci from the PrimClex
-      bool init(const Configuration &_tmplt) const override;
-
-      /// \brief Expects 'clex', 'clex(formation_energy)', or 'clex(formation_energy_per_species)'
-      bool parse_args(const std::string &args) override;
-
-      /// \brief Short header returns: 'clex(formation_energy)', 'clex(formation_energy_per_species)', etc.
-      std::string short_header(const Configuration &_tmplt) const override {
-        return "clex(" + m_clex_name + ")";
-      }
-
-    private:
-
-      /// \brief Returns the normalization
-      double _norm(const Configuration &config) const;
-
-      /// \brief Clone using copy constructor
-      Clex *_clone() const override;
-
-      mutable std::string m_clex_name;
-      mutable Clexulator m_clexulator;
-      mutable ECIContainer m_eci;
-      mutable notstd::cloneable_ptr<Norm<Configuration> > m_norm;
-    };
+  /// \brief Clone using copy constructor
+  std::unique_ptr<GradCorr> clone() const {
+    return std::unique_ptr<GradCorr>(this->_clone());
   }
 
-  namespace ConfigIO {
+  // --- Specialized implementation -----------
 
-    /// \brief Constructs DataFormmaterDictionary containing all Configuration DatumFormatters
-    //void initialize_formatting_dictionary(DataFormatterDictionary<Configuration> &dict);
+  /// \brief If not yet initialized, use the global clexulator from the PrimClex
+  bool init(const Configuration &_tmplt) const override;
 
+  /// \brief Expects 'gradcorr(dof_name)', 'gradcorr(dof_name,clex_name)',
+  /// 'gradcorr(dof_name,index_expression)', or
+  /// 'gradcorr(dof_name,clex_name,index_expression)'
+  bool parse_args(const std::string &args) override;
 
-    ConfigIO::GenericConfigFormatter<std::string> configname();
+ private:
+  /// \brief Clone using copy constructor
+  GradCorr *_clone() const override { return new GradCorr(*this); }
 
-    ConfigIO::GenericConfigFormatter<std::string> scelname();
+  mutable Clexulator m_clexulator;
+  mutable std::string m_clex_name;
+  mutable DoFKey m_key;
+};
 
-    ConfigIO::GenericConfigFormatter<std::string> calc_status();
+/// \brief Returns predicted formation energy
+///
+/// Returns predicted formation energy (only formation energy for now)
+///
+class Clex : public ScalarAttribute<Configuration> {
+ public:
+  static const std::string Name;
 
-    ConfigIO::GenericConfigFormatter<std::string> failure_type();
+  static const std::string Desc;
 
-    ConfigIO::GenericConfigFormatter<std::string> diff_trans_endpoint_of();
+  Clex();
 
-    ConfigIO::GenericConfigFormatter<Index> scel_size();
+  /// \brief Construct with Clexulator, ECI, and either 'formation_energy' or
+  /// 'formation_energy_per_species'
+  Clex(const Clexulator &clexulator, const ECIContainer &eci,
+       const Norm<Configuration> &norm);
 
-    ConfigIO::GenericConfigFormatter<Index> multiplicity();
+  // --- Required implementations -----------
 
-    ConfigIO::GenericConfigFormatter<std::string> point_group_name();
+  /// \brief Returns the atom fraction
+  double evaluate(const Configuration &config) const override;
 
-    ConfigIO::GenericConfigFormatter<bool> is_calculated();
+  /// \brief Clone using copy constructor
+  std::unique_ptr<Clex> clone() const;
 
-    ConfigIO::GenericConfigFormatter<bool> is_primitive();
+  // --- Specialized implementation -----------
 
-    ConfigIO::GenericConfigFormatter<bool> is_canonical();
+  // validate: predicted property can always be calculated if clexulator and
+  // eci were obtained ok
 
-    ConfigIO::GenericConfigFormatter<double> relaxed_energy();
+  /// \brief If not yet initialized, use the global clexulator and eci from the
+  /// PrimClex
+  bool init(const Configuration &_tmplt) const override;
 
-    ConfigIO::GenericConfigFormatter<double> relaxed_energy_per_species();
+  /// \brief Expects 'clex', 'clex(formation_energy)', or
+  /// 'clex(formation_energy_per_species)'
+  bool parse_args(const std::string &args) override;
 
-    ConfigIO::GenericConfigFormatter<double> reference_energy();
-
-    ConfigIO::GenericConfigFormatter<double> reference_energy_per_species();
-
-    ConfigIO::GenericConfigFormatter<double> formation_energy();
-
-    ConfigIO::GenericConfigFormatter<double> formation_energy_per_species();
-
-    Generic1DDatumFormatter<std::vector<double>, Configuration > relaxation_strain();
-
-    ConfigIO::GenericConfigFormatter<double> rms_force();
-
-    ConfigIO::GenericConfigFormatter<double> atomic_deformation();
-
-    ConfigIO::GenericConfigFormatter<double> lattice_deformation();
-
-    ConfigIO::GenericConfigFormatter<double> volume_relaxation();
-
-    ConfigIO::GenericConfigFormatter<double> relaxed_magmom();
-
-    ConfigIO::GenericConfigFormatter<double> relaxed_magmom_per_species();
-
-    ConfigIO::GenericConfigFormatter<jsonParser> config();
-
-    ConfigIO::GenericConfigFormatter<jsonParser> configdof();
-
-    ConfigIO::GenericConfigFormatter<jsonParser> properties();
-
-    ConfigIO::GenericConfigFormatter<std::string> poscar();
+  /// \brief Short header returns: 'clex(formation_energy)',
+  /// 'clex(formation_energy_per_species)', etc.
+  std::string short_header(const Configuration &_tmplt) const override {
+    return "clex(" + m_clex_name + ")";
   }
 
-  template<>
-  StringAttributeDictionary<Configuration> make_string_dictionary<Configuration>();
+ private:
+  /// \brief Returns the normalization
+  double _norm(const Configuration &config) const;
 
-  template<>
-  BooleanAttributeDictionary<Configuration> make_boolean_dictionary<Configuration>();
+  /// \brief Clone using copy constructor
+  Clex *_clone() const override;
 
-  template<>
-  IntegerAttributeDictionary<Configuration> make_integer_dictionary<Configuration>();
+  mutable std::string m_clex_name;
+  mutable Clexulator m_clexulator;
+  mutable ECIContainer m_eci;
+  mutable notstd::cloneable_ptr<Norm<Configuration> > m_norm;
+};
+}  // namespace ConfigIO
 
-  template<>
-  ScalarAttributeDictionary<Configuration> make_scalar_dictionary<Configuration>();
+namespace ConfigIO {
 
-  template<>
-  VectorXdAttributeDictionary<Configuration> make_vectorxd_dictionary<Configuration>();
+/// \brief Constructs DataFormmaterDictionary containing all Configuration
+/// DatumFormatters
+// void initialize_formatting_dictionary(DataFormatterDictionary<Configuration>
+// &dict);
 
-  template<>
-  MatrixXdAttributeDictionary<Configuration> make_matrixxd_dictionary<Configuration>();
+ConfigIO::GenericConfigFormatter<std::string> configname();
 
-  /** @} */
+ConfigIO::GenericConfigFormatter<std::string> scelname();
 
-}
+ConfigIO::GenericConfigFormatter<std::string> calc_status();
+
+ConfigIO::GenericConfigFormatter<std::string> failure_type();
+
+ConfigIO::GenericConfigFormatter<std::string> diff_trans_endpoint_of();
+
+ConfigIO::GenericConfigFormatter<Index> scel_size();
+
+ConfigIO::GenericConfigFormatter<Index> multiplicity();
+
+ConfigIO::GenericConfigFormatter<std::string> point_group_name();
+
+ConfigIO::GenericConfigFormatter<bool> is_calculated();
+
+ConfigIO::GenericConfigFormatter<bool> is_primitive();
+
+ConfigIO::GenericConfigFormatter<bool> is_canonical();
+
+ConfigIO::GenericConfigFormatter<double> relaxed_energy();
+
+ConfigIO::GenericConfigFormatter<double> relaxed_energy_per_species();
+
+ConfigIO::GenericConfigFormatter<double> reference_energy();
+
+ConfigIO::GenericConfigFormatter<double> reference_energy_per_species();
+
+ConfigIO::GenericConfigFormatter<double> formation_energy();
+
+ConfigIO::GenericConfigFormatter<double> formation_energy_per_species();
+
+Generic1DDatumFormatter<std::vector<double>, Configuration> relaxation_strain();
+
+ConfigIO::GenericConfigFormatter<double> rms_force();
+
+ConfigIO::GenericConfigFormatter<double> atomic_deformation();
+
+ConfigIO::GenericConfigFormatter<double> lattice_deformation();
+
+ConfigIO::GenericConfigFormatter<double> volume_relaxation();
+
+ConfigIO::GenericConfigFormatter<double> relaxed_magmom();
+
+ConfigIO::GenericConfigFormatter<double> relaxed_magmom_per_species();
+
+ConfigIO::GenericConfigFormatter<jsonParser> config();
+
+ConfigIO::GenericConfigFormatter<jsonParser> configdof();
+
+ConfigIO::GenericConfigFormatter<jsonParser> properties();
+
+ConfigIO::GenericConfigFormatter<std::string> poscar();
+}  // namespace ConfigIO
+
+template <>
+StringAttributeDictionary<Configuration>
+make_string_dictionary<Configuration>();
+
+template <>
+BooleanAttributeDictionary<Configuration>
+make_boolean_dictionary<Configuration>();
+
+template <>
+IntegerAttributeDictionary<Configuration>
+make_integer_dictionary<Configuration>();
+
+template <>
+ScalarAttributeDictionary<Configuration>
+make_scalar_dictionary<Configuration>();
+
+template <>
+VectorXdAttributeDictionary<Configuration>
+make_vectorxd_dictionary<Configuration>();
+
+template <>
+MatrixXdAttributeDictionary<Configuration>
+make_matrixxd_dictionary<Configuration>();
+
+/** @} */
+
+}  // namespace CASM
 
 #endif

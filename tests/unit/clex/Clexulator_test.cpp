@@ -4,8 +4,8 @@
 #include "casm/clex/Clexulator.hh"
 
 /// Dependencies
-#include "casm/system/RuntimeLibrary.hh"
 #include "casm/casm_io/Log.hh"
+#include "casm/system/RuntimeLibrary.hh"
 
 /// What is being used to test it:
 #include <boost/filesystem.hpp>
@@ -13,22 +13,25 @@
 using namespace CASM;
 
 TEST(ClexulatorTest, MakeClexulatorTest) {
-
   std::cout << "skipping Clexulator_test" << std::endl;
-  if(true) {
+  if (true) {
     return;
   }
 
   namespace fs = boost::filesystem;
 
-  std::string compile_opt = RuntimeLibrary::default_cxx().first + " " + RuntimeLibrary::default_cxxflags().first + " -Iinclude";
-  std::string so_opt = RuntimeLibrary::default_cxx().first + " " + RuntimeLibrary::default_soflags().first;
+  std::string compile_opt = RuntimeLibrary::default_cxx().first + " " +
+                            RuntimeLibrary::default_cxxflags().first +
+                            " -Iinclude";
+  std::string so_opt = RuntimeLibrary::default_cxx().first + " " +
+                       RuntimeLibrary::default_soflags().first;
 
-  if(!RuntimeLibrary::default_boost_includedir().first.empty()) {
-    compile_opt += " " + include_path(RuntimeLibrary::default_boost_includedir().first);
+  if (!RuntimeLibrary::default_boost_includedir().first.empty()) {
+    compile_opt +=
+        " " + include_path(RuntimeLibrary::default_boost_includedir().first);
   }
 
-  if(!RuntimeLibrary::default_boost_libdir().first.empty()) {
+  if (!RuntimeLibrary::default_boost_libdir().first.empty()) {
     so_opt += " " + link_path(RuntimeLibrary::default_boost_libdir().first);
   }
 
@@ -41,12 +44,8 @@ TEST(ClexulatorTest, MakeClexulatorTest) {
   PrimNeighborList nlist(W, sublat_indices.begin(), sublat_indices.end());
 
   ScopedNullLogging logging;
-  Clexulator clexulator("test_Clexulator",
-                        "tests/unit/clex",
-                        nlist,
-                        compile_opt,
-                        so_opt);
+  Clexulator clexulator("test_Clexulator", "tests/unit/clex", nlist,
+                        compile_opt, so_opt);
 
   EXPECT_EQ(clexulator.corr_size(), 75);
-
 }

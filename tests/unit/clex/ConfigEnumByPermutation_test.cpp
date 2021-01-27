@@ -1,5 +1,5 @@
-#include "gtest/gtest.h"
 #include "autotools.hh"
+#include "gtest/gtest.h"
 
 /// What is being tested:
 #include "casm/clex/ConfigEnumAllOccupations.hh"
@@ -7,32 +7,33 @@
 #include "casm/clex/ScelEnumEquivalents.hh"
 
 /// What is being used to test it:
+#include "Common.hh"
+#include "casm/app/AppIO.hh"
+#include "casm/app/ProjectBuilder.hh"
+#include "casm/app/ProjectSettings.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/enumerator/ConfigEnumInput.hh"
-#include "casm/app/AppIO.hh"
-#include "casm/app/ProjectBuilder.hh"
-#include "casm/app/ProjectSettings.hh"
 #include "casm/database/Database.hh"
-#include "Common.hh"
+#include "casm/enumerator/ConfigEnumInput.hh"
 
 using namespace CASM;
 using namespace test;
 
 TEST(ConfigEnumByPermutationTest, Test1) {
-
   // tests ConfigEnumAllOccupations and ConfigEnumByPermutation
   ScopedNullLogging logging;
 
   // read test file
-  fs::path test_cases_path(autotools::abs_srcdir() + "/tests/unit/clex/ConfigEnumByPermutation_test_cases.json");
+  fs::path test_cases_path(
+      autotools::abs_srcdir() +
+      "/tests/unit/clex/ConfigEnumByPermutation_test_cases.json");
   jsonParser tests(test_cases_path);
-  fs::path test_proj_dir(autotools::abs_srcdir() + "/tests/unit/clex/test_proj");
+  fs::path test_proj_dir(autotools::abs_srcdir() +
+                         "/tests/unit/clex/test_proj");
 
-  for(auto test_it = tests.begin(); test_it != tests.end(); ++test_it) {
-
+  for (auto test_it = tests.begin(); test_it != tests.end(); ++test_it) {
     // input and expected output data
     jsonParser &j = *test_it;
 
@@ -48,7 +49,7 @@ TEST(ConfigEnumByPermutationTest, Test1) {
     Structure prim(read_prim(j["prim"], TOL));
 
     // clean up test proj
-    if(fs::exists(test_proj_dir / ".casm")) {
+    if (fs::exists(test_proj_dir / ".casm")) {
       fs::remove_all(test_proj_dir);
     }
 
@@ -56,7 +57,8 @@ TEST(ConfigEnumByPermutationTest, Test1) {
 
     // build a project
     auto project_name = j["title"].get<std::string>();
-    auto project_settings = make_default_project_settings(prim, project_name, test_proj_dir);
+    auto project_settings =
+        make_default_project_settings(prim, project_name, test_proj_dir);
     build_project(project_settings, prim);
 
     // read primclex
@@ -66,7 +68,7 @@ TEST(ConfigEnumByPermutationTest, Test1) {
     // generate supercells
     xtal::ScelEnumProps enum_props(1, j["max_vol"].get<int>() + 1);
     ScelEnumByProps scel_enum(primclex.shared_prim(), enum_props);
-    for(const auto &scel : scel_enum) {
+    for (const auto &scel : scel_enum) {
     }
 
     // generate configurations
@@ -74,12 +76,12 @@ TEST(ConfigEnumByPermutationTest, Test1) {
     std::map<Index, Index> total_count;
 
     Index i = 0;
-    for(const auto &scel : primclex.generic_db<Supercell>()) {
-
+    for (const auto &scel : primclex.generic_db<Supercell>()) {
       // for each supercell, enumerate unique configurations
 
-      //std::cout << "scel: " << scel.name() << std::endl;
-      //std::cout << "max_occupation: " << scel.max_allowed_occupation() << std::endl;
+      // std::cout << "scel: " << scel.name() << std::endl;
+      // std::cout << "max_occupation: " << scel.max_allowed_occupation() <<
+      // std::endl;
 
       ConfigEnumAllOccupations enumerator(scel);
       total_count[i] = 0;
@@ -88,30 +90,30 @@ TEST(ConfigEnumByPermutationTest, Test1) {
       // add prim configurations from smaller supercells that tile scel
       Index j = 0;
       auto scel_j = primclex.generic_db<Supercell>().begin();
-      for(; scel_j->volume() < scel.volume(); ++scel_j) {
+      for (; scel_j->volume() < scel.volume(); ++scel_j) {
         jsonParser json;
         ScelEnumEquivalents e(*scel_j);
-        for(const auto &tunit : e) {
-          if(xtal::is_superlattice(scel.lattice(), tunit.lattice(), tol).first) {
+        for (const auto &tunit : e) {
+          if (xtal::is_superlattice(scel.lattice(), tunit.lattice(), tol)
+                  .first) {
             total_count[i] += prim_count[j];
           }
         }
         ++j;
       }
 
-      for(auto &config : enumerator) {
+      for (auto &config : enumerator) {
         ConfigEnumByPermutation equiv_enum(config);
-        for(auto &equiv : equiv_enum) {
+        for (auto &equiv : equiv_enum) {
           ++total_count[i];
           ++prim_count[i];
-          (void) equiv;
+          (void)equiv;
         }
       }
 
       auto max_occ = scel.max_allowed_occupation();
-      long prod = std::accumulate(max_occ.begin(), max_occ.end(), long {1}, [](long a, int b) {
-        return a * (b + 1);
-      });
+      long prod = std::accumulate(max_occ.begin(), max_occ.end(), long{1},
+                                  [](long a, int b) { return a * (b + 1); });
 
       // check that the number of Configurations enumerated is equal to
       // the product of the number of allowed occupants on each site in the
@@ -125,7 +127,7 @@ TEST(ConfigEnumByPermutationTest, Test1) {
     // ... add more here ...
 
     // clean up test proj
-    if(fs::exists(test_proj_dir / ".casm")) {
+    if (fs::exists(test_proj_dir / ".casm")) {
       fs::remove_all(test_proj_dir);
     }
   }

@@ -9,28 +9,23 @@
 
 namespace CASM {
 
-
-  namespace DoFType {
-    class Traits;
-  }
-  struct BasisFunctionSpecs;
-  class Structure;
-  enum class PARAM_PACK_TYPE;
-
-  ENUM_JSON_IO_DECL(PARAM_PACK_TYPE)
-
-  // see source file for JSON format documentation
-  void parse(
-    InputParser<BasisFunctionSpecs> &parser,
-    Structure const &prim,
-    ParsingDictionary<DoFType::Traits> const *dof_dict);
-
-  jsonParser &to_json(
-    const BasisFunctionSpecs &basis_function_specs,
-    jsonParser &json,
-    Structure const &prim,
-    ParsingDictionary<DoFType::Traits> const *dof_dict);
-
+namespace DoFType {
+class Traits;
 }
+struct BasisFunctionSpecs;
+class Structure;
+enum class PARAM_PACK_TYPE;
+
+ENUM_JSON_IO_DECL(PARAM_PACK_TYPE)
+
+// see source file for JSON format documentation
+void parse(InputParser<BasisFunctionSpecs> &parser, Structure const &prim,
+           ParsingDictionary<DoFType::Traits> const *dof_dict);
+
+jsonParser &to_json(const BasisFunctionSpecs &basis_function_specs,
+                    jsonParser &json, Structure const &prim,
+                    ParsingDictionary<DoFType::Traits> const *dof_dict);
+
+}  // namespace CASM
 
 #endif

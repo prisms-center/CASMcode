@@ -1,23 +1,21 @@
 /// What is being tested:
 ///   the command line executable
 
-#include "gtest/gtest.h"
 #include "autotools.hh"
+#include "gtest/gtest.h"
 
 /// What is being used to test it:
 #include <boost/filesystem.hpp>
 
 #include "Common.hh"
 #include "ZrOProj.hh"
-#include "casm/app/casm_functions.hh"
 #include "casm/app/APICommand.hh"
+#include "casm/app/casm_functions.hh"
 #include "casm/app/enum.hh"
-
 
 using namespace CASM;
 
 TEST(EnumeratorPlugin, Test1) {
-
   // ScopedNullLogging logging;
   test::ZrOProj proj;
   proj.check_init();
@@ -26,9 +24,9 @@ TEST(EnumeratorPlugin, Test1) {
   PrimClex primclex(proj.dir);
 
   auto cp = [&](std::string _filename) {
-
     fs::path filename(_filename);
-    fs::path src = std::string(autotools::abs_srcdir() + "/tests/unit/App") / filename;
+    fs::path src =
+        std::string(autotools::abs_srcdir() + "/tests/unit/App") / filename;
     ASSERT_TRUE(fs::exists(src));
 
     fs::path dest = primclex.dir().enumerator_plugins();
@@ -37,14 +35,15 @@ TEST(EnumeratorPlugin, Test1) {
 
     fs::copy_file(src, dest / filename, fs::copy_option::overwrite_if_exists);
     ASSERT_TRUE(fs::exists(dest / filename));
-
   };
 
   cp("TestEnum.cc");
 
   // refresh to load plugins
-  primclex.settings().set_cxxflags("-O3 -Wall -fPIC --std=c++17 -DGZSTREAM_NAMESPACE=gz");
-  primclex.settings().set_soflags("-shared -lboost_system -lboost_filesystem -lz");
+  primclex.settings().set_cxxflags(
+      "-O3 -Wall -fPIC --std=c++17 -DGZSTREAM_NAMESPACE=gz");
+  primclex.settings().set_soflags(
+      "-shared -lboost_system -lboost_filesystem -lz");
   commit(primclex.settings());
   primclex.refresh(true);
 

@@ -4,85 +4,91 @@
 #include "casm/monte_carlo/MonteSettings.hh"
 
 namespace CASM {
-  namespace Monte {
+namespace Monte {
 
-    class GrandCanonicalConditions;
+class GrandCanonicalConditions;
 
-    class GrandCanonicalSettings : public EquilibriumMonteSettings {
+class GrandCanonicalSettings : public EquilibriumMonteSettings {
+ public:
+  /// \brief Default constructor
+  GrandCanonicalSettings() {}
 
-    public:
+  /// \brief Construct EquilibriumMonteSettings by reading a settings JSON file
+  GrandCanonicalSettings(const PrimClex &primclex, const fs::path &read_path);
 
-      /// \brief Default constructor
-      GrandCanonicalSettings() {}
+  // --- GrandCanonicalConditions settings ---------------------
 
-      /// \brief Construct EquilibriumMonteSettings by reading a settings JSON file
-      GrandCanonicalSettings(const PrimClex &primclex, const fs::path &read_path);
+  /// \brief Expects initial_conditions
+  GrandCanonicalConditions initial_conditions() const;
 
+  /// \brief Expects final_conditions
+  GrandCanonicalConditions final_conditions() const;
 
-      // --- GrandCanonicalConditions settings ---------------------
+  /// \brief Expects incremental_conditions
+  GrandCanonicalConditions incremental_conditions() const;
 
-      /// \brief Expects initial_conditions
-      GrandCanonicalConditions initial_conditions() const;
+  /// \brief Expects custom_conditions
+  std::vector<GrandCanonicalConditions> custom_conditions() const;
 
-      /// \brief Expects final_conditions
-      GrandCanonicalConditions final_conditions() const;
+  // --- Project settings ---------------------
 
-      /// \brief Expects incremental_conditions
-      GrandCanonicalConditions incremental_conditions() const;
+  /// \brief Get formation energy cluster expansion
+  ClexDescription formation_energy(const PrimClex &primclex) const;
 
-      /// \brief Expects custom_conditions
-      std::vector<GrandCanonicalConditions> custom_conditions() const;
+  // --- Sampler settings ---------------------
 
+  /// \brief Construct Samplers as specified in the Settings
+  template <typename SamplerInsertIterator>
+  SamplerInsertIterator samplers(const PrimClex &primclex,
+                                 SamplerInsertIterator result) const;
 
-      // --- Project settings ---------------------
+  /// \brief Return true if all correlations should be sampled
+  bool all_correlations() const;
 
-      /// \brief Get formation energy cluster expansion
-      ClexDescription formation_energy(const PrimClex &primclex) const;
+ private:
+  GrandCanonicalConditions _conditions(std::string name) const;
+  GrandCanonicalConditions _conditions(const jsonParser &json) const;
 
+  template <typename jsonParserIteratorType>
+  std::tuple<bool, double> _get_precision(jsonParserIteratorType it) const;
 
-      // --- Sampler settings ---------------------
+  template <typename jsonParserIteratorType, typename SamplerInsertIterator>
+  SamplerInsertIterator _make_comp_samplers(const PrimClex &primclex,
+                                            jsonParserIteratorType it,
+                                            SamplerInsertIterator result) const;
 
-      /// \brief Construct Samplers as specified in the Settings
-      template<typename SamplerInsertIterator>
-      SamplerInsertIterator samplers(const PrimClex &primclex, SamplerInsertIterator result) const;
+  template <typename jsonParserIteratorType, typename SamplerInsertIterator>
+  SamplerInsertIterator _make_comp_n_samplers(
+      const PrimClex &primclex, jsonParserIteratorType it,
+      SamplerInsertIterator result) const;
 
-      /// \brief Return true if all correlations should be sampled
-      bool all_correlations() const;
+  template <typename jsonParserIteratorType, typename SamplerInsertIterator>
+  SamplerInsertIterator _make_site_frac_samplers(
+      const PrimClex &primclex, jsonParserIteratorType it,
+      SamplerInsertIterator result) const;
 
+  template <typename jsonParserIteratorType, typename SamplerInsertIterator>
+  SamplerInsertIterator _make_atom_frac_samplers(
+      const PrimClex &primclex, jsonParserIteratorType it,
+      SamplerInsertIterator result) const;
 
-    private:
+  template <typename jsonParserIteratorType, typename SamplerInsertIterator>
+  SamplerInsertIterator _make_all_correlations_samplers(
+      const PrimClex &primclex, jsonParserIteratorType it,
+      SamplerInsertIterator result) const;
 
-      GrandCanonicalConditions _conditions(std::string name) const;
-      GrandCanonicalConditions _conditions(const jsonParser &json) const;
+  template <typename jsonParserIteratorType, typename SamplerInsertIterator>
+  SamplerInsertIterator _make_non_zero_eci_correlations_samplers(
+      const PrimClex &primclex, jsonParserIteratorType it,
+      SamplerInsertIterator result) const;
 
-      template<typename jsonParserIteratorType>
-      std::tuple<bool, double> _get_precision(jsonParserIteratorType it) const;
+  template <typename jsonParserIteratorType, typename SamplerInsertIterator>
+  SamplerInsertIterator _make_query_samplers(
+      const PrimClex &primclex, jsonParserIteratorType it,
+      SamplerInsertIterator result) const;
+};
 
-      template<typename jsonParserIteratorType, typename SamplerInsertIterator>
-      SamplerInsertIterator _make_comp_samplers(const PrimClex &primclex, jsonParserIteratorType it, SamplerInsertIterator result) const;
-
-      template<typename jsonParserIteratorType, typename SamplerInsertIterator>
-      SamplerInsertIterator _make_comp_n_samplers(const PrimClex &primclex, jsonParserIteratorType it, SamplerInsertIterator result) const;
-
-      template<typename jsonParserIteratorType, typename SamplerInsertIterator>
-      SamplerInsertIterator _make_site_frac_samplers(const PrimClex &primclex, jsonParserIteratorType it, SamplerInsertIterator result) const;
-
-      template<typename jsonParserIteratorType, typename SamplerInsertIterator>
-      SamplerInsertIterator _make_atom_frac_samplers(const PrimClex &primclex, jsonParserIteratorType it, SamplerInsertIterator result) const;
-
-      template<typename jsonParserIteratorType, typename SamplerInsertIterator>
-      SamplerInsertIterator _make_all_correlations_samplers(const PrimClex &primclex, jsonParserIteratorType it, SamplerInsertIterator result) const;
-
-      template<typename jsonParserIteratorType, typename SamplerInsertIterator>
-      SamplerInsertIterator _make_non_zero_eci_correlations_samplers(const PrimClex &primclex, jsonParserIteratorType it, SamplerInsertIterator result) const;
-
-      template<typename jsonParserIteratorType, typename SamplerInsertIterator>
-      SamplerInsertIterator _make_query_samplers(const PrimClex &primclex, jsonParserIteratorType it, SamplerInsertIterator result) const;
-
-    };
-
-  }
-}
+}  // namespace Monte
+}  // namespace CASM
 
 #endif
-

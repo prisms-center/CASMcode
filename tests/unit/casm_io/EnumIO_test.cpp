@@ -5,19 +5,18 @@
 #include "casm/casm_io/enum/stream_io.hh"
 #include "casm/global/enum.hh"
 #include "casm/global/enum/io_traits.hh"
-#include "casm/global/enum/stream_io.hh"
 #include "casm/global/enum/json_io.hh"
+#include "casm/global/enum/stream_io.hh"
 
 /// What is being used to test it:
 #include <boost/filesystem.hpp>
-#include "casm/casm_io/json/jsonParser.hh"
 
+#include "casm/casm_io/json/jsonParser.hh"
 
 using namespace CASM;
 
-template<typename EnumType>
+template <typename EnumType>
 void enum_io_test(EnumType TEST) {
-
   // 1. std::string to_string(ENUM val)
   // 2. ENUM from_string(const std::string &val)
   // 3. std::string multiline_help<ENUM>();
@@ -28,9 +27,11 @@ void enum_io_test(EnumType TEST) {
   // 8. jsonParser &to_json(const ENUM &val, jsonParser &json); \
   // 9. void from_json(ENUM& val, const jsonParser& json);
   // 10. const std::string traits<ENUM>::name
-  // 11. static const std::multimap<ENUM, std::vector<std::string> > traits<ENUM>::strval
+  // 11. static const std::multimap<ENUM, std::vector<std::string> >
+  // traits<ENUM>::strval
 
-  const std::vector<std::string> &opt = traits<EnumType>::strval.find(TEST)->second;
+  const std::vector<std::string> &opt =
+      traits<EnumType>::strval.find(TEST)->second;
   std::string to_str = opt.front();
 
   // 1.
@@ -67,14 +68,16 @@ void enum_io_test(EnumType TEST) {
     // 8. & 9. to_json  & from_json
     json.put_obj();
     json[traits<EnumType>::name] = "mistake";
-    ASSERT_THROW(from_json(tmp, json[traits<EnumType>::name]), std::invalid_argument);
-    ASSERT_THROW((tmp = from_json<EnumType>(json[traits<EnumType>::name])), std::invalid_argument);
-    ASSERT_THROW((tmp = json[traits<EnumType>::name].template get<EnumType>()), std::invalid_argument);
+    ASSERT_THROW(from_json(tmp, json[traits<EnumType>::name]),
+                 std::invalid_argument);
+    ASSERT_THROW((tmp = from_json<EnumType>(json[traits<EnumType>::name])),
+                 std::invalid_argument);
+    ASSERT_THROW((tmp = json[traits<EnumType>::name].template get<EnumType>()),
+                 std::invalid_argument);
   }
 
   // try reading all recognized strings
-  for(const std::string &val : opt) {
-
+  for (const std::string &val : opt) {
     jsonParser json;
     EnumType tmp;
 
@@ -96,7 +99,6 @@ void enum_io_test(EnumType TEST) {
     ASSERT_EQ(TEST, from_json<EnumType>(json[traits<EnumType>::name]));
     ASSERT_EQ(TEST, json[traits<EnumType>::name].template get<EnumType>());
   }
-
 }
 
 // From CASM_global_enum
@@ -105,7 +107,7 @@ TEST(EnumIOTest, CoordTypeTest) {
   enum_io_test(COORD_TYPE::FRAC);
   enum_io_test(COORD_TYPE::CART);
   enum_io_test(COORD_TYPE::INTEGRAL);
-  //enum_io_test(COORD_TYPE::COORD_DEFAULT);
+  // enum_io_test(COORD_TYPE::COORD_DEFAULT);
 }
 
 TEST(EnumIOTest, PeriodicityTypeTest) {
@@ -113,7 +115,7 @@ TEST(EnumIOTest, PeriodicityTypeTest) {
   enum_io_test(PERIODICITY_TYPE::APERIODIC);
   enum_io_test(PERIODICITY_TYPE::LOCAL);
   ASSERT_EQ(PERIODICITY_TYPE::APERIODIC, PERIODICITY_TYPE::LOCAL);
-  //enum_io_test(PERIODICITY_TYPE::PERIODICITY_DEFAULT);
+  // enum_io_test(PERIODICITY_TYPE::PERIODICITY_DEFAULT);
 }
 
 TEST(EnumIOTest, EquivalenceTypeTest) {

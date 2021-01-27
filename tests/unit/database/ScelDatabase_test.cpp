@@ -4,21 +4,19 @@
 #include "casm/database/ScelDatabase.hh"
 #include "casm/database/json/jsonDatabase.hh"
 
-
 /// What is being used to test it:
 
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
+#include "casm/crystallography/Niggli.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
-#include "casm/crystallography/Niggli.hh"
 
 using namespace CASM;
 using xtal::ScelEnumProps;
 using xtal::SuperlatticeEnumerator;
 
 TEST(ScelDatabase_Test, Test1) {
-
   ScopedNullLogging logging;
 
   EXPECT_EQ(1, 1);
@@ -80,12 +78,13 @@ TEST(ScelDatabase_Test, Test1) {
   int maxvol = 10;
   ScelEnumProps enum_props(minvol, maxvol + 1);
   const auto &fg = prim.factor_group();
-  SuperlatticeEnumerator lat_enum(fg.begin(), fg.end(), prim.lattice(), enum_props);
+  SuperlatticeEnumerator lat_enum(fg.begin(), fg.end(), prim.lattice(),
+                                  enum_props);
   EXPECT_EQ(true, true);
   EXPECT_EQ(std::distance(lat_enum.begin(), lat_enum.end()), 87);
-  for(auto it = lat_enum.begin(); it != lat_enum.end(); ++it) {
-    db_scel.emplace(&primclex, xtal::canonical::equivalent(*it, prim.point_group()));
+  for (auto it = lat_enum.begin(); it != lat_enum.end(); ++it) {
+    db_scel.emplace(&primclex,
+                    xtal::canonical::equivalent(*it, prim.point_group()));
   }
   EXPECT_EQ(db_scel.size(), 87);
-
 }

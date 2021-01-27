@@ -7,7 +7,7 @@
 #include "casm/container/Counter.hh"
 
 /// What is being used to test it:
-#include<vector>
+#include <vector>
 
 using namespace CASM;
 
@@ -24,8 +24,7 @@ TEST(CounterTest, ArrayIntCounter) {
 
     do {
       count++;
-    }
-    while(++counter);
+    } while (++counter);
 
     EXPECT_EQ(count, 8);
   }
@@ -40,8 +39,7 @@ TEST(CounterTest, ArrayIntCounter) {
 
     do {
       count++;
-    }
-    while(++counter);
+    } while (++counter);
 
     EXPECT_EQ(count, 27);
   }
@@ -60,8 +58,7 @@ TEST(CounterTest, ArrayIntCounter) {
 
     do {
       count++;
-    }
-    while(++counter);
+    } while (++counter);
 
     EXPECT_EQ(count, 27);
   }
@@ -80,8 +77,7 @@ TEST(CounterTest, stdVectorDoubleCounter) {
 
     do {
       count++;
-    }
-    while(++counter);
+    } while (++counter);
 
     EXPECT_EQ(count, 27);
   }
@@ -96,8 +92,7 @@ TEST(CounterTest, stdVectorDoubleCounter) {
 
     do {
       count++;
-    }
-    while(++counter);
+    } while (++counter);
 
     EXPECT_EQ(count, 27);
   }
@@ -116,8 +111,7 @@ TEST(CounterTest, stdVectorDoubleCounter) {
 
     do {
       count++;
-    }
-    while(++counter);
+    } while (++counter);
 
     EXPECT_EQ(count, 27);
   }
