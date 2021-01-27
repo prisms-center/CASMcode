@@ -1,6 +1,7 @@
 #ifndef CASM_clex_Configuration_json_io
 #define CASM_clex_Configuration_json_io
 
+#include <memory>
 #include <string>
 
 namespace CASM {

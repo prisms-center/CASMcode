@@ -2,6 +2,7 @@
 #define CASM_ConfigDoF_json_io
 
 #include <map>
+#include <memory>
 #include <vector>
 
 #include "casm/crystallography/DoFDecl.hh"
