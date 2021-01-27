@@ -11,10 +11,10 @@ struct TestConfiguration : public test::TestSupercell {
   TestConfiguration(const PrimClex &primclex, const Configuration &_config);
 
   TestConfiguration(const PrimClex &primclex, const Eigen::Matrix3l &T,
-                    const std::vector<int> &_occupation);
+                    Eigen::VectorXi const &_occupation);
 
   TestConfiguration(const PrimClex &primclex, const Lattice &lat,
-                    const std::vector<int> &_occupation);
+                    Eigen::VectorXi const &_occupation);
 
   TestConfiguration(const PrimClex &primclex, const Configuration &unit,
                     const Eigen::Matrix3l &T, double tol = TOL);

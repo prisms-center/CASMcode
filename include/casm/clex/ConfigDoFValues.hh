@@ -7,24 +7,14 @@ namespace CASM {
 
 class ConfigDoFValues {
  public:
-  ConfigDoFValues() : m_n_sublat(0), m_n_vol(0) {}
   ConfigDoFValues(DoF::BasicTraits const &_traits, Index _n_sublat,
-                  Index _n_vol)
-      : m_type(_traits.name()), m_n_sublat(_n_sublat), m_n_vol(_n_vol) {}
+                  Index _n_vol);
 
-  std::string const &type_name() const { return m_type; }
+  std::string const &type_name() const;
 
-  Index n_vol() const { return m_n_vol; }
+  Index n_vol() const;
 
-  Index n_sublat() const { return m_n_sublat; }
-
-  void resize_vol(Index _n_vol) {
-    m_n_vol = _n_vol;
-    _resize();
-  }
-
- protected:
-  virtual void _resize() = 0;
+  Index n_sublat() const;
 
  private:
   DoFKey m_type;
@@ -32,11 +22,24 @@ class ConfigDoFValues {
   Index m_n_vol;
 };
 
+/// Stores a vector with local discrete (occupation) DoF values
+///
+/// Notes:
+/// - Values are stored in a vector of size=n_vol()*n_sublat()
+/// - The value at site_index l indicates the type of Molecule occupying the
+///   site, via `prim.basis()[b].occupant_dof()[this->occ(l)]`, where the
+///   sublattice, `b = l / this->n_vol()`.
+///
+/// See ConfigDoF documentation for more details on how DoF values are stored.
+///
+/// The vector size is fixed at construction and attempts to change it, other
+/// than via a complete copy, will cause an exception to be thrown.
+///
 class LocalDiscreteConfigDoFValues : public ConfigDoFValues {
  public:
   typedef Eigen::VectorXi ValueType;
   typedef Eigen::VectorXi &Reference;
-  typedef const Eigen::VectorXi &ConstReference;
+  typedef Eigen::VectorXi const &ConstReference;
 
   typedef typename ValueType::Scalar SiteValueType;
   typedef int &SiteReference;
@@ -46,50 +49,65 @@ class LocalDiscreteConfigDoFValues : public ConfigDoFValues {
   typedef typename ValueType::SegmentReturnType SublatReference;
   typedef typename ValueType::ConstSegmentReturnType ConstSublatReference;
 
-  LocalDiscreteConfigDoFValues() {}
-
   LocalDiscreteConfigDoFValues(DoF::BasicTraits const &_traits, Index _n_sublat,
                                Index _n_vol,
-                               Eigen::Ref<const ValueType> const &_vals,
-                               std::vector<SymGroupRepID> const &_symrep_IDs)
-      : ConfigDoFValues(_traits, _n_sublat, _n_vol),
-        m_vals(_vals),
-        m_symrep_IDs(_symrep_IDs) {}
+                               std::vector<SymGroupRepID> const &_symrep_IDs);
 
-  /// Access occupation values (values are indices into Site::occupant_dof())
-  Reference values() { return m_vals; }
+  /// Reference occupation value on site i
+  int &occ(Index i);
+
+  /// Set occupation values (values are indices into Site::occupant_dof())
+  void set_values(Eigen::Ref<ValueType const> const &_values);
+
+  /// Set occupation values to zero
+  void setZero();
 
   /// Const access occupation values (values are indices into
   /// Site::occupant_dof())
-  ConstReference values() const { return m_vals; }
+  Eigen::VectorXi const &values() const;
 
   /// Access vector block of values for all sites on one sublattice
-  SublatReference sublat(Index b) {
-    return m_vals.segment(b * n_vol(), n_vol());
-  }
+  SublatReference sublat(Index b);
 
   /// Const access vector block of values for all sites on one sublattice
-  ConstSublatReference sublat(Index b) const {
-    return m_vals.segment(b * n_vol(), n_vol());
-  }
+  ConstSublatReference sublat(Index b) const;
 
   /// Provides the symmetry representations for transforming `values` (i.e. due
   /// to molecule orientation, not for permuting sites)
-  std::vector<SymGroupRepID> const &symrep_IDs() const { return m_symrep_IDs; }
-
- protected:
-  void _resize() override { m_vals.resize(n_vol() * n_sublat()); }
+  std::vector<SymGroupRepID> const &symrep_IDs() const;
 
  private:
+  void _throw_if_invalid_size(Eigen::Ref<ValueType const> const &_values) const;
+
   ValueType m_vals;
   std::vector<SymGroupRepID> m_symrep_IDs;
 };
 
+/// Stores a matrix with local continuous DoF values
+///
+/// Notes:
+/// - Values are stored in a matrix of size rows=dim(), cols=n_vol()*n_sublat(),
+///   - The value of dim() is the maximum, over all sublattices in the prim, of
+///     the site basis dimension for this type of DoF. In case the site basis
+///     dimension varies from site to site (for example, displacements are
+///     restricted to a 2d plane on some sites, but not others), the columns
+///     corresponding to sublattices with a basis dimension less than dim()
+///     have a tail of zeros which should not be modified.
+/// - Each column represents a site DoF value in the prim DoF basis
+/// - The prim DoF basis for each sublattice can be accessed by
+///   `this->info()[b]`, where `b` is the sublattice index, `b = column_index /
+///   this->n_vol()`
+///
+/// See ConfigDoF documentation for more details on how DoF values are stored.
+///
+/// The matrix size is fixed at construction and attempts to change it, other
+/// than via a complete copy, will cause an exception to be thrown.
+///
 class LocalContinuousConfigDoFValues : public ConfigDoFValues {
  public:
   typedef Eigen::MatrixXd ValueType;
   typedef Eigen::MatrixXd &Reference;
-  typedef const Eigen::MatrixXd &ConstReference;
+  typedef Eigen::MatrixXd const &ConstReference;
 
   typedef Eigen::VectorXd SiteValueType;
   typedef typename ValueType::ColXpr SiteReference;
@@ -99,111 +117,53 @@ class LocalContinuousConfigDoFValues : public ConfigDoFValues {
   typedef typename Eigen::Block<ValueType> SublatReference;
   typedef const typename Eigen::Block<const ValueType> ConstSublatReference;
 
-  LocalContinuousConfigDoFValues() {}
+  /// local continuous DoF values matrix has #rows == max( DoFSetInfo::dim() )
+  static Index matrix_dim(std::vector<DoFSetInfo> const &_info);
 
   LocalContinuousConfigDoFValues(DoF::BasicTraits const &_traits,
                                  Index _n_sublat, Index _n_vol,
-                                 Eigen::Ref<const ValueType> const &_vals,
-                                 std::vector<DoFSetInfo> const &_info)
-      : ConfigDoFValues(_traits, _n_sublat, _n_vol),
-        m_vals(_vals),
-        m_info(_info) {}
+                                 std::vector<DoFSetInfo> const &_info);
 
-  // /// DoF vector representation size
-  // Index dim() const {
-  //   return m_vals.rows(); // this is the standard basis dimension, not the
-  //   prim basis dimension
-  // }
+  /// maximum DoF vector representation size (max of DoFSetInfo::dim())
+  Index dim() const;
 
   /// Access site DoF values (prim DoF basis, matrix representing all sites)
-  ///
-  /// Notes:
-  /// - Matrix of size rows=standard basis dimension
-  /// (this->info()[b].basis().rows()), cols=n_vol()*n_sublat(),
-  /// - Each column represents a site DoF value in the prim DoF basis
-  /// - The prim DoF basis can be accessed by `this->info()[b].basis()`, where
-  /// `b` is the sublattice index,
-  ///   `b = column_index / this->n_vol()`
-  /// - If the prim DoF basis dimension (this->info()[b].basis().cols()) is less
-  /// than the standard
-  ///   DoF basis dimension, the matrix includes blocks of zeros for the
-  ///   corresponding sublattice.
-  Reference values() { return m_vals; }
+  void set_values(Eigen::Ref<const ValueType> const &_values);
+
+  /// Set DoF values to zero
+  void setZero();
 
   /// Const access DoF values (prim DoF basis, matrix representing all sites)
-  ///
-  /// Notes:
-  /// - Matrix of size rows=dim(), cols=n_vol()*n_sublat(),
-  /// - Each column represents a site DoF value in the prim DoF basis
-  /// - The prim DoF basis can be accessed by `this->info()[b]`, where `b` is
-  /// the sublattice index,
-  ///   `b = column_index / this->n_vol()`
-  ConstReference values() const { return m_vals; }
+  Eigen::MatrixXd const &values() const;
 
   /// Set local DoF values from standard DoF values
-  ///
-  /// Notes:
-  /// - Standard DoF values are those expressed according to the standard DoF
-  /// basis, i.e.
-  ///   coordinates whose values corrspond to
-  ///   AnisoValTraits::standard_var_names().
   void from_standard_values(
       Eigen::Ref<const Eigen::MatrixXd> const &_standard_values);
 
   /// Get local DoF values as standard DoF values
-  ///
-  /// Notes:
-  /// - Standard DoF values are those expressed according to the standard DoF
-  /// basis, i.e.
-  ///   coordinates whose values corrspond to
-  ///   AnisoValTraits::standard_var_names().
-  Eigen::MatrixXd standard_values() const {
-    Index rows = m_info[0].basis().rows();
-    Eigen::MatrixXd result(rows, m_vals.cols());
-    for (Index b = 0; b < n_sublat(); ++b) {
-      result.block(0, b * n_vol(), rows, n_vol()) =
-          info()[b].basis() * sublat(b).topRows(info()[b].dim());
-    }
-    return result;
-  }
+  Eigen::MatrixXd standard_values() const;
 
-  /// Access site DoF value (prim DoF basis, vector associated with a single
-  /// site)
-  ///
-  /// Note:
-  /// - If the prim DoF basis dimension < standard DoF basis dimension, this
-  /// includes a tail of
-  ///   zeros (for rows >= this->info()[b].dim()) that should not be modified.
-  SiteReference site_value(Index l) { return m_vals.col(l); }
+  /// Access site DoF value vector
+  SiteReference site_value(Index l);
 
-  /// Const access site DoF value (prim DoF basis, vector associated with a
-  /// single site) Note:
-  /// - If the prim DoF basis dimension < standard DoF basis dimension, this
-  /// includes a tail of
-  ///   zeros (for rows >= this->info()[b].dim()).
-  ConstSiteReference site_value(Index l) const { return m_vals.col(l); }
+  /// Const access site DoF value vector
+  ConstSiteReference site_value(Index l) const;
 
   /// Access matrix block of values for all sites on one sublattice
-  SublatReference sublat(Index b) {
-    return m_vals.block(0, b * n_vol(), m_vals.rows(), n_vol());
-  }
+  SublatReference sublat(Index b);
 
   /// Const access matrix block of values for all sites on one sublattice
-  ConstSublatReference sublat(Index b) const {
-    return m_vals.block(0, b * n_vol(), m_vals.rows(), n_vol());
-  }
+  ConstSublatReference sublat(Index b) const;
 
   /// DoFSetInfo provides the basis and symmetry representations for `values`
-  std::vector<DoFSetInfo> const &info() const { return m_info; }
-
- protected:
-  void _resize() override {
-    m_vals.resize(m_vals.rows(), n_vol() * n_sublat());
-  }
+  std::vector<DoFSetInfo> const &info() const;
 
  private:
-  ValueType m_vals;
+  void _throw_if_invalid_size(Eigen::Ref<ValueType const> const &_values) const;
+
+  Index m_dim;
   std::vector<DoFSetInfo> m_info;
+  ValueType m_vals;
 };
 
 // TODO: It might be confusing that ValueType, Reference, and ConstReference are
@@ -215,66 +175,59 @@ class LocalContinuousConfigDoFValues : public ConfigDoFValues {
 // interface or use Eigen::VectorXd consistently to express that the value is 1
 // dimensional.
 
+/// Stores a vector with global continuous DoF values
+///
+/// Dof values are stored as values in the prim DoF basis. The conversion to
+/// the standard DoF basis values is:
+///
+///     this->standard_values() = info().basis() * this->values()
+///
+/// See ConfigDoF documentation for more details on how DoF values are stored.
+///
+/// The matrix size is fixed at construction and attempts to change it, other
+/// than via a complete copy, will cause an exception to be thrown.
+///
 class GlobalContinuousConfigDoFValues : public ConfigDoFValues {
  public:
   typedef Eigen::VectorXd ValueType;
   typedef Eigen::VectorXd &Reference;
-  typedef const Eigen::VectorXd &ConstReference;
+  typedef Eigen::VectorXd const &ConstReference;
 
   typedef typename ValueType::Scalar SiteValueType;
   typedef int &SiteReference;
   typedef const int &ConstSiteReference;
 
-  GlobalContinuousConfigDoFValues()
-      : m_info(SymGroupRepID(), Eigen::MatrixXd::Zero(0, 0)) {}
-
   GlobalContinuousConfigDoFValues(DoF::BasicTraits const &_traits,
                                   Index _n_sublat, Index _n_vol,
-                                  Eigen::Ref<const ValueType> const &_vals,
-                                  DoFSetInfo const &_info)
-      : ConfigDoFValues(_traits, _n_sublat, _n_vol),
-        m_vals(_vals),
-        m_info(_info) {}
+                                  DoFSetInfo const &_info);
 
   /// Global DoF vector representation dimension
-  Index dim() const { return m_vals.rows(); }
+  Index dim() const;
 
-  /// Access values (coordinates defined by xtal::SiteDoFSet::basis() /
-  /// DoFSetInfo::basis() )
-  Reference values() { return m_vals; }
+  /// Set global DoF values
+  void set_values(Eigen::Ref<const Eigen::MatrixXd> const &_values);
 
-  /// Const access values (coordinates defined by xtal::SiteDoFSet::basis() /
-  /// DoFSetInfo::basis() )
-  ConstReference values() const { return m_vals; }
+  /// Set DoF values to zero
+  void setZero();
+
+  /// Const access global DoF values
+  Eigen::VectorXd const &values() const;
 
   /// Set global DoF values from standard DoF values
-  ///
-  /// Notes:
-  /// - Standard DoF values are those expressed according to the standard DoF
-  /// basis, i.e.
-  ///   coordinates whose values corrspond to
-  ///   AnisoValTraits::standard_var_names().
   void from_standard_values(
       Eigen::Ref<const Eigen::MatrixXd> const &_standard_values);
 
   /// Get global DoF values as standard DoF values
-  ///
-  /// Notes:
-  /// - Standard DoF values are those expressed according to the standard DoF
-  /// basis, i.e.
-  ///   coordinates whose values corrspond to
-  ///   AnisoValTraits::standard_var_names().
-  Eigen::MatrixXd standard_values() const { return m_info.basis() * m_vals; }
+  Eigen::MatrixXd standard_values() const;
 
   /// DoFSetInfo provides the basis and symmetry representations for `values`
-  DoFSetInfo const &info() const { return m_info; }
-
- protected:
-  void _resize() override {}
+  DoFSetInfo const &info() const;
 
  private:
-  ValueType m_vals;
+  void _throw_if_invalid_size(Eigen::Ref<ValueType const> const &_values) const;
+
   DoFSetInfo m_info;
+  ValueType m_vals;
 };
 
 }  // namespace CASM

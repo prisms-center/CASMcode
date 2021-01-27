@@ -1,5 +1,6 @@
 #include "TestConfiguration.hh"
 
+#include "Common.hh"
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/clex/FillSupercell.hh"
 
@@ -11,14 +12,14 @@ TestConfiguration::TestConfiguration(const PrimClex &primclex,
 
 TestConfiguration::TestConfiguration(const PrimClex &primclex,
                                      const Eigen::Matrix3l &T,
-                                     const std::vector<int> &_occupation)
+                                     Eigen::VectorXi const &_occupation)
     : TestConfiguration(primclex,
                         xtal::make_superlattice(primclex.prim().lattice(), T),
                         _occupation) {}
 
 TestConfiguration::TestConfiguration(const PrimClex &primclex,
                                      const Lattice &lat,
-                                     const std::vector<int> &_occupation)
+                                     Eigen::VectorXi const &_occupation)
     : TestSupercell(primclex, lat), config(Configuration::zeros(this->scel)) {
   config.set_occupation(_occupation);
 }

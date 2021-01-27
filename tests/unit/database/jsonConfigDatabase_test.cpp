@@ -42,7 +42,7 @@ TEST(jsonConfigDatabase_Test, Test1) {
   const Supercell &scel = *tscel.insert().first;
   double tol = 1e-5;
 
-  Configuration config(scel, jsonParser(), scel.zero_configdof(tol));
+  Configuration config{scel};
 
   // Insert a Configuration
   auto res = db_config.insert(config);
@@ -56,6 +56,11 @@ TEST(jsonConfigDatabase_Test, Test1) {
   // Enumerate and insert Configs
   ConfigEnumAllOccupations enum_config(scel);
   for (const auto &config : enum_config) {
+    /// Use while transitioning Supercell to no longer need a `PrimClex const
+    /// *`
+    if (!config.supercell().has_primclex()) {
+      config.supercell().set_primclex(&primclex);
+    }
     db_config.insert(config);
   }
   db_config.commit();
@@ -102,8 +107,9 @@ TEST(jsonConfigDatabase_Test, Test1) {
 
   // Check cached properties
   for (const auto &config : db_config) {
-    // std::cout << "id: " << config.id() << "  occ: " << config.occupation() <<
-    // std::endl;
+    // std::cout << "id: " << config.id()
+    //   << "  occ: " << config.occupation().transpose() << std::endl;
+    // std::cout << "cache: " << config.cache() << std::endl;
     EXPECT_EQ(config.cache().contains("multiplicity"), true);
   }
 

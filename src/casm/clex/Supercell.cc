@@ -9,7 +9,6 @@
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/container/stream_io.hh"
 #include "casm/clex/ChemicalReference.hh"
-#include "casm/clex/Configuration.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell_impl.hh"
@@ -33,11 +32,6 @@ template class HasPrimClex<
 namespace DB {
 template class DB::Named<
     Comparisons<SupercellCanonicalForm<CRTPBase<Supercell> > > >;
-}
-
-bool ConfigMapCompare::operator()(const Configuration *A,
-                                  const Configuration *B) const {
-  return *A < *B;
 }
 
 // Copy constructor is needed for proper initialization of supercell sym info
@@ -218,23 +212,16 @@ UnitCellCoord Supercell::uccoord(Index linear_index) const {
   return this->sym_info().unitcellcoord_index_converter()(linear_index);
 }
 
-/// \brief returns Supercell-compatible configdof with zeroed DoF values and
-/// user-specified tolerance
-ConfigDoF Supercell::zero_configdof(double tol) const {
-  return ConfigDoF(basis_size(), volume(), global_dof_info(prim()),
-                   local_dof_info(prim()), prim().occupant_symrep_IDs(), tol);
-}
+Eigen::VectorXi Supercell::max_allowed_occupation() const {
+  Index n_sublat = prim().basis().size();
+  Eigen::VectorXi max_allowed = Eigen::VectorXi::Zero(n_sublat * volume());
 
-std::vector<int> Supercell::max_allowed_occupation() const {
-  std::vector<int> max_allowed;
-
-  // Figures out the maximum number of occupants in each basis site, to
-  // initialize counter with
-  for (Index i = 0; i < prim().basis().size(); i++) {
-    std::vector<int> tmp(volume(), prim().basis()[i].occupant_dof().size() - 1);
-    max_allowed.insert(max_allowed.end(), tmp.begin(), tmp.end());
+  for (Index b = 0; b < n_sublat; b++) {
+    int sublat_max = prim().basis()[b].occupant_dof().size() - 1;
+    max_allowed.segment(volume() * b, volume()) =
+        Eigen::VectorXi::Constant(volume(), sublat_max);
   }
-  // std::cout << "max_allowed_occupation is:  " << max_allowed << "\n\n";
+
   return max_allowed;
 }
 

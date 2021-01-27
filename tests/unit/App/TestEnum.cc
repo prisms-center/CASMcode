@@ -86,7 +86,7 @@ namespace local_impl {
 std::vector<int> max_selected_occupation(
     ConfigEnumInput const &config_enum_input) {
   auto const &supercell = config_enum_input.configuration().supercell();
-  std::vector<int> max_allowed = supercell.max_allowed_occupation();
+  Eigen::VectorXi max_allowed = supercell.max_allowed_occupation();
 
   std::vector<int> max_allowed_on_selected_sites;
   for (Index i : config_enum_input.sites()) {
@@ -94,6 +94,15 @@ std::vector<int> max_selected_occupation(
   }
 
   return max_allowed_on_selected_sites;
+}
+
+void set_occupation(Configuration &configuration,
+                    std::set<Index> const &site_indices,
+                    std::vector<int> const &counter) {
+  Index i = 0;
+  for (Index site_index : site_indices) {
+    configuration.set_occ(site_index, counter[i++]);
+  }
 }
 }  // namespace local_impl
 
@@ -114,7 +123,7 @@ TestEnum::TestEnum(const ConfigEnumInput &config_enum_input)
       m_enumerate_on_a_subset_of_supercell_sites(
           m_site_index_selection.size() !=
           config_enum_input.configuration().size()) {
-  m_current->set_occupation(m_counter());
+  local_impl::set_occupation(*m_current, m_site_index_selection, m_counter);
   reset_properties(*m_current);
   this->_initialize(&(*m_current));
 

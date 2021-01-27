@@ -293,6 +293,12 @@ class ValDatabase : public DatabaseBase {
 
   void write_aliases();
 
+  /// Only ValDatabase<ValueType> is allowed to do clear_name
+  template <typename _ValueType>
+  void clear_name(const _ValueType &obj) const {
+    obj.clear_name();
+  }
+
   /// Only ValDatabase<ValueType> is allowed to do a const id change
   template <typename _ValueType>
   void set_id(const _ValueType &obj, Index id) const {

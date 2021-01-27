@@ -14,12 +14,12 @@
 #include "casm/clex/ClexParamPack.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/CompositionConverter.hh"
+#include "casm/clex/ConfigDoFTools.hh"
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clex/FillSupercell.hh"
 #include "casm/clex/MappedPropertiesTools.hh"
 #include "casm/clex/SimpleStructureTools.hh"
-#include "casm/clex/io/json/ConfigDoF_json_io.hh"
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/IntegralCoordinateWithin.hh"
@@ -55,8 +55,7 @@ Configuration::Configuration(
     std::shared_ptr<Supercell const> const &_supercell_ptr)
     : m_supercell(_supercell_ptr.get()),
       m_supercell_ptr(_supercell_ptr),
-      m_configdof(_supercell_ptr->zero_configdof(
-          _supercell_ptr->prim().lattice().tol())) {}
+      m_configdof(make_configdof(*_supercell_ptr)) {}
 
 Configuration::Configuration(
     std::shared_ptr<Supercell const> const &_supercell_ptr,
@@ -65,112 +64,50 @@ Configuration::Configuration(
       m_supercell_ptr(_supercell_ptr),
       m_configdof(_dof) {}
 
-/// Construct a default Configuration
-Configuration::Configuration(const Supercell &_supercell, const jsonParser &src)
-    : m_supercell(&_supercell),
-      m_configdof(Configuration::zeros(_supercell).configdof()) {
-  set_source(src);
-}
-
-/// Construct a default Configuration
-Configuration::Configuration(const Supercell &_supercell, const jsonParser &src,
-                             const ConfigDoF &_configdof)
-    : m_supercell(&_supercell), m_configdof(_configdof) {
-  set_source(src);
-}
-
-/// Construct a default Configuration that owns its Supercell
-Configuration::Configuration(
-    const std::shared_ptr<Supercell const> &_supercell_ptr,
-    const jsonParser &source)
-    : m_supercell(_supercell_ptr.get()),
-      m_supercell_ptr(_supercell_ptr),
-      m_configdof(Configuration::zeros(*_supercell_ptr).configdof()) {
-  set_source(source);
-}
-
-/// Construct a default Configuration that owns its Supercell
-Configuration::Configuration(const std::shared_ptr<Supercell const> &_supercell,
-                             const jsonParser &source,
-                             const ConfigDoF &_configdof)
-    : m_supercell(_supercell.get()),
-      m_supercell_ptr(_supercell),
-      m_configdof(_configdof) {
-  set_source(source);
-}
-
-/// Construct a Configuration from JSON data
-Configuration::Configuration(const Supercell &_supercell,
-                             const std::string &_id, const jsonParser &_data)
-    : m_configdof(Configuration::zeros(_supercell).configdof()) {
-  if (_id == "none") {
-    if (_data.contains("dof")) {
-      *this = Configuration(_supercell, _data,
-                            _data["dof"].get<ConfigDoF>(_supercell.prim()));
-      return;
-    }
-    *this = Configuration(_supercell, _data);
-    return;
-  }
-  this->from_json(_data, _supercell, _id);
-}
-
-/// Construct a Configuration from JSON data
-Configuration::Configuration(const PrimClex &_primclex,
-                             const std::string &_configname,
-                             const jsonParser &_data)
-    : Configuration(*_primclex.db<Supercell>().find(
-                        Configuration::split_name(_configname).first),
-                    Configuration::split_name(_configname).second, _data) {}
-
-//*********************************************************************************
-
-Configuration Configuration::zeros(Supercell const &_scel) {
-  return Configuration(_scel, jsonParser(),
-                       _scel.zero_configdof(_scel.prim().lattice().tol()));
-}
-
-//*********************************************************************************
-
-Configuration Configuration::zeros(Supercell const &_scel, double _tol) {
-  return Configuration(_scel, jsonParser(), _scel.zero_configdof(_tol));
-}
-
-//*********************************************************************************
-
 Configuration Configuration::zeros(
     const std::shared_ptr<Supercell const> &_supercell_ptr) {
   return Configuration{_supercell_ptr};
 }
 
-//*********************************************************************************
-
 Configuration Configuration::zeros(
     const std::shared_ptr<Supercell const> &_supercell_ptr, double _tol) {
-  return Configuration{_supercell_ptr, _supercell_ptr->zero_configdof(_tol)};
+  return Configuration{_supercell_ptr, make_configdof(*_supercell_ptr, _tol)};
 }
 
-//*********************************************************************************
-void Configuration::clear() {
-  _modify_dof();
-  m_configdof.clear();
+// *** The following constructors should be avoided in new code, if possible
+
+/// Construct a default Configuration
+Configuration::Configuration(const Supercell &_supercell)
+    : m_supercell(&_supercell),
+      m_configdof(Configuration::zeros(_supercell).configdof()) {}
+
+/// Construct a default Configuration
+Configuration::Configuration(const Supercell &_supercell,
+                             const ConfigDoF &_configdof)
+    : m_supercell(&_supercell), m_configdof(_configdof) {}
+
+Configuration Configuration::zeros(Supercell const &_scel) {
+  return Configuration(_scel, make_configdof(_scel));
 }
 
-//*********************************************************************************
+Configuration Configuration::zeros(Supercell const &_scel, double _tol) {
+  return Configuration(_scel, make_configdof(_scel, _tol));
+}
+
+// void Configuration::clear() {
+//   _modify_dof();
+//   m_configdof.clear();
+// }
 
 void Configuration::init_occupation() {
   _modify_dof();
-  set_occupation(std::vector<int>(this->size(), 0));
+  set_occupation(Eigen::VectorXi::Zero(this->size()));
 }
-
-//*********************************************************************************
 
 void Configuration::set_occ(Index site_l, int val) {
   _modify_dof();
   m_configdof.occ(site_l) = val;
 }
-
-//*******************************************************************************
 
 /// \brief Check if this is a primitive Configuration
 bool Configuration::is_primitive() const {
@@ -182,8 +119,6 @@ bool Configuration::is_primitive() const {
   }
   return cache()["is_primitive"].get<bool>();
 }
-
-//*******************************************************************************
 
 /// \brief Returns a PermuteIterator corresponding to the first non-zero pure
 /// translation that maps the Configuration onto itself.
@@ -199,8 +134,6 @@ PermuteIterator Configuration::find_translation() const {
   }
   return std::find_if(begin, end, f);
 }
-
-//*******************************************************************************
 
 /// \brief Return a primitive Configuration
 ///
@@ -239,8 +172,6 @@ Configuration Configuration::primitive() const {
   return tconfig;
 }
 
-//*******************************************************************************
-
 /// \brief Returns the canonical form Configuration in the canonical Supercell
 ///
 /// - Canonical Supercell will be inserted in the PrimClex.db<Supercell>() if
@@ -252,8 +183,6 @@ Configuration Configuration::in_canonical_supercell() const {
   result.supercell().set_primclex(&primclex());
   return result;
 }
-
-//*******************************************************************************
 
 /// \brief Insert this configuration (in primitive & canonical form) in the
 /// database
@@ -279,15 +208,11 @@ ConfigInsertResult Configuration::insert(bool primitive_only) const {
   return result;
 }
 
-//*******************************************************************************
-
 /// \brief Returns the subgroup of the Supercell factor group that leaves the
 ///        Configuration unchanged
 std::vector<PermuteIterator> Configuration::factor_group() const {
   return invariant_subgroup();
 }
-
-//*******************************************************************************
 
 /// \brief Returns the subgroup of the Supercell factor group that leaves the
 ///        Configuration unchanged
@@ -303,8 +228,6 @@ std::vector<PermuteIterator> Configuration::invariant_subgroup() const {
   return fg;
 }
 
-//*******************************************************************************
-
 bool Configuration::is_canonical() const {
   if (!cache().contains("is_canonical")) {
     bool result = ConfigurationBase::is_canonical();
@@ -313,8 +236,6 @@ bool Configuration::is_canonical() const {
   }
   return cache()["is_canonical"].get<bool>();
 }
-
-//*******************************************************************************
 
 /// \brief Returns the point group that leaves the Configuration unchanged
 std::vector<PermuteIterator> Configuration::point_group() const {
@@ -328,8 +249,6 @@ std::vector<PermuteIterator> Configuration::point_group() const {
 
   return result;
 }
-
-//*******************************************************************************
 
 /// \brief Returns the point group that leaves the Configuration unchanged
 std::string Configuration::point_group_name() const {
@@ -395,7 +314,6 @@ std::string RefToCanonicalPrim::name() const {
          std::to_string(from_canonical_config.translation_index());
 }
 
-//*********************************************************************************
 /// \brief Returns a Configuration name
 ///
 /// For configurations in supercells equivalent to the canonical supercell:
@@ -479,34 +397,27 @@ std::string Configuration::generate_name_impl() const {
   return ref.name();
 }
 
-//*********************************************************************************
 /// Returns number of sites, NOT the number of primitives that fit in here
 Index Configuration::size() const { return supercell().num_sites(); }
 
-//*********************************************************************************
 const Supercell &Configuration::supercell() const { return *m_supercell; }
 
-//*********************************************************************************
 UnitCellCoord Configuration::uccoord(Index site_l) const {
   return supercell().uccoord(site_l);
 }
 
-//*********************************************************************************
 Index Configuration::linear_index(const UnitCellCoord &bijk) const {
   return supercell().linear_index(bijk);
 }
 
-//*********************************************************************************
 int Configuration::sublat(Index site_l) const {
   return supercell().sublat(site_l);
 }
 
-//*********************************************************************************
 const Molecule &Configuration::mol(Index site_l) const {
   return prim().basis()[sublat(site_l)].occupant_dof()[occ(site_l)];
 }
 
-//*********************************************************************************
 /// \brief Get symmetric multiplicity, excluding translations
 ///
 /// - equal to prim.factor_group().size() / this->factor_group().size()
@@ -520,8 +431,6 @@ int Configuration::multiplicity() const {
   return cache()["multiplicity"].get<int>();
 }
 
-//*********************************************************************************
-
 Configuration &Configuration::apply_sym(const PermuteIterator &op) {
   auto all_props = calc_properties_map();
   configdof().apply_sym(op);
@@ -531,8 +440,6 @@ Configuration &Configuration::apply_sym(const PermuteIterator &op) {
   }
   return *this;
 }
-
-//*********************************************************************************
 
 /// Returns composition on each sublattice: sublat_comp[ prim basis site /
 /// sublattice][ molecule_type]
@@ -557,7 +464,6 @@ std::vector<Eigen::VectorXd> Configuration::sublattice_composition() const {
   return sublattice_composition;
 }
 
-//*********************************************************************************
 /// Returns number of each molecule by sublattice:
 ///   sublat_num_each_molecule[ prim basis site / sublattice ][ molecule_type]
 ///   molucule_type is ordered as in the Prim structure's site_occupant list for
@@ -580,7 +486,6 @@ std::vector<Eigen::VectorXi> Configuration::sublat_num_each_molecule() const {
   return sublat_num_each_molecule;
 }
 
-//*********************************************************************************
 /// Returns composition, not counting vacancies
 ///    composition[ molecule_type ]: molecule_type ordered as prim structure's
 ///    xtal::struc_molecule_name(), with [Va]=0.0
@@ -608,7 +513,6 @@ Eigen::VectorXd Configuration::composition() const {
   return _num_each_molecule.cast<double>() / double(num_atoms);
 }
 
-//*********************************************************************************
 /// Returns composition, including vacancies
 ///    composition[ molecule_type ]: molecule_type ordered as prim structure's
 ///    xtal::struc_molecule_name()
@@ -616,14 +520,12 @@ Eigen::VectorXd Configuration::true_composition() const {
   return num_each_molecule().cast<double>() / size();
 }
 
-//*********************************************************************************
 /// Returns num_each_molecule[ molecule_type], where 'molecule_type' is ordered
 /// as Structure::xtal::struc_molecule_name()
 Eigen::VectorXi Configuration::num_each_molecule() const {
   return CASM::num_each_molecule(m_configdof, supercell());
 }
 
-//*********************************************************************************
 /// Returns parametric composition, as calculated using PrimClex::param_comp
 Eigen::VectorXd Configuration::param_composition() const {
   if (!primclex().has_composition_axes()) {
@@ -635,7 +537,6 @@ Eigen::VectorXd Configuration::param_composition() const {
   return primclex().composition_axes().param_composition(num_each_component());
 }
 
-//*********************************************************************************
 /// Returns num_each_component[ component_type] per prim cell,
 ///   where 'component_type' is ordered as ParamComposition::components
 Eigen::VectorXd Configuration::num_each_component() const {
@@ -660,102 +561,6 @@ Eigen::VectorXd Configuration::num_each_component() const {
   }
 
   return num_each_component;
-}
-
-//********* IO ************
-
-/// Writes the Configuration to a json object (the config list)
-///
-///   writes: dof, source, cache:
-///     json["dof"]
-///     json["source"]
-///     json["cache"]
-///
-jsonParser &Configuration::to_json(jsonParser &json) const {
-  json.put_obj();
-
-  CASM::to_json(m_configdof, json["dof"]);
-  CASM::to_json(source(), json["source"]);
-
-  json["cache"].put_obj();
-  if (cache_updated()) {
-    json["cache"] = cache();
-  }
-
-  return json;
-}
-
-//*********************************************************************************
-
-/// Private members:
-
-/// Reads the Configuration from JSON
-///   Uses PrimClex's current default settings to read in the appropriate
-///   properties
-///
-/// This is private, because it is only called from the constructor:
-///   Configuration(const jsonParser& json, const PrimClex& _primclex, const
-///   std::string &configname)
-///
-///   "json" corresponds (entire file)["supercells"][scelname][id]
-///   "configname" corresponds to "scelname/id"
-///
-///   read dof, source: (absolute path in config_list)
-///     json["dof"]
-///     json["source"]
-///
-///   read properties: (absolute path in config_list)
-///     json["CURR_CALCTYPE"]["CURR_REF"]["properties"]["calc"]
-///
-
-void Configuration::from_json(const jsonParser &json, const Supercell &scel,
-                              std::string _id) {
-  m_supercell = &scel;
-
-  this->clear_name();
-  this->set_id(_id);
-
-  auto source_it = json.find("source");
-  if (source_it != json.end()) {
-    set_source(*source_it);
-  }
-  CASM::from_json(m_configdof, json["dof"]);  //, primclex().n_basis());
-  CASM::from_json(cache(), json["cache"]);
-
-  // read properties from 'json' input only: does not attempt to read in new
-  // calculation data from the calc.properties.json file
-  // - use read_calc_properties() to read new calc.properties.json files
-
-  const ProjectSettings &set = primclex().settings();
-  std::string calc_string = "calctype." + set.default_clex().calctype;
-  auto calc_it = json.find(calc_string);
-  if (calc_it == json.end()) {
-    return;
-  }
-
-  std::string ref_string = "ref." + set.default_clex().ref;
-  auto ref_it = calc_it->find(ref_string);
-  if (ref_it == calc_it->end()) {
-    return;
-  }
-
-  auto prop_it = ref_it->find("properties");
-  if (prop_it == ref_it->end()) {
-    return;
-  }
-
-  auto calc_props_it = prop_it->find("calc");
-  if (calc_props_it != prop_it->end()) {
-    set_calc_properties(calc_props_it->get<MappedProperties>(),
-                        set.default_clex().calctype);
-  }
-}
-
-void Configuration::from_json(const jsonParser &json, const PrimClex &primclex,
-                              std::string _configname) {
-  auto name = Configuration::split_name(_configname);
-  this->from_json(json, *primclex.db<Supercell>().find(name.first),
-                  name.second);
 }
 
 bool Configuration::operator<(const Configuration &B) const {

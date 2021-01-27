@@ -409,10 +409,9 @@ class Base {
   /// \brief The weight matrix used for ordering the neighbor list
   PrimNeighborList::Matrix3Type m_weight_matrix;
 
-  mutable std::vector<ConfigDoF::LocalDoFContainerType const *>
-      m_local_dof_ptrs;
+  mutable std::vector<LocalContinuousConfigDoFValues const *> m_local_dof_ptrs;
 
-  mutable std::vector<ConfigDoF::GlobalDoFContainerType const *>
+  mutable std::vector<GlobalContinuousConfigDoFValues const *>
       m_global_dof_ptrs;
 
  private:
