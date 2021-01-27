@@ -6,6 +6,7 @@
 namespace CASM {
 
 class APICommandBase;
+class PrimClex;
 class jsonParser;
 
 /// Describe the symmetrize method

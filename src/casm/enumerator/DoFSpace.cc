@@ -234,9 +234,9 @@ void set_dof_value(Configuration &config, DoFSpace const &dof_space,
       throw std::runtime_error(msg.str());
     }
 
+    auto &local_dof = config.configdof().local_dof(dof_key);
     Eigen::VectorXd vector_values = basis * normal_coordinate;
-    Eigen::MatrixXd &matrix_values =
-        config.configdof().local_dof(dof_key).values();
+    Eigen::MatrixXd matrix_values = local_dof.values();
 
     auto const &axis_dof_component = dof_space.axis_dof_component().value();
     auto const &axis_site_index = dof_space.axis_site_index().value();
@@ -245,6 +245,8 @@ void set_dof_value(Configuration &config, DoFSpace const &dof_space,
       matrix_values(axis_dof_component[i], axis_site_index[i]) =
           vector_values[i];
     }
+
+    local_dof.set_values(matrix_values);
   }
 }
 

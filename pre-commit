@@ -1,0 +1,20 @@
+#!/bin/bash
+
+#Make note of current directory and go to root
+DIR=$($pwd)
+cd "$(git rev-parse --show-toplevel)"
+
+#Check if things have been run through astyle
+if [ -f .is_stylized.txt ]; then
+    rm .is_stylized.txt
+    exit 0
+
+else
+    echo "You forgot to run the code formatter, stylize.sh, before committing."
+    echo -e
+    echo "Your commit was rejected."
+    exit 1
+fi
+
+#Return to working directory
+cd $DIR

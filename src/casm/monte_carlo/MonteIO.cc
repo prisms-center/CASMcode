@@ -432,8 +432,9 @@ void write_POSCAR_initial(const MonteCarlo &mc, size_type cond_index,
   fs::create_directories(dir.trajectory_dir(cond_index));
 
   // read initial_state.json
-  ConfigDoF config_dof = jsonParser(dir.initial_state_json(cond_index))
-                             .get<ConfigDoF>(mc.primclex().prim());
+  ConfigDoF config_dof =
+      jsonParser(dir.initial_state_json(cond_index))
+          .get<ConfigDoF>(mc.supercell().prim(), mc.supercell().volume());
 
   if (!fs::exists(dir.initial_state_json(cond_index))) {
     throw std::runtime_error(
@@ -459,8 +460,9 @@ void write_POSCAR_final(const MonteCarlo &mc, size_type cond_index, Log &_log) {
   fs::create_directories(dir.trajectory_dir(cond_index));
 
   // read final_state.json
-  ConfigDoF config_dof = jsonParser(dir.final_state_json(cond_index))
-                             .get<ConfigDoF>(mc.primclex().prim());
+  ConfigDoF config_dof =
+      jsonParser(dir.final_state_json(cond_index))
+          .get<ConfigDoF>(mc.supercell().prim(), mc.supercell().volume());
 
   if (!fs::exists(dir.final_state_json(cond_index))) {
     throw std::runtime_error(
@@ -491,8 +493,6 @@ void write_POSCAR_trajectory(const MonteCarlo &mc, size_type cond_index,
   std::vector<size_type> step;
   std::vector<ConfigDoF> trajectory;
 
-  Structure const &primstruc = mc.supercell().prim();
-
   if (mc.settings().write_json()) {
     std::string filename = dir.trajectory_json(cond_index).string() + ".gz";
 
@@ -512,7 +512,8 @@ void write_POSCAR_trajectory(const MonteCarlo &mc, size_type cond_index,
       step.push_back(it->get<size_type>());
     }
     for (auto it = json["DoF"].cbegin(); it != json["DoF"].cend(); ++it) {
-      trajectory.push_back(it->get<ConfigDoF>(primstruc));
+      trajectory.push_back(
+          it->get<ConfigDoF>(mc.supercell().prim(), mc.supercell().volume()));
     }
 
   } else if (mc.settings().write_csv()) {

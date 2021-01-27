@@ -2,6 +2,7 @@
 #define CASM_ClusterOrbits_json_io
 
 #include <memory>
+#include <vector>
 
 namespace CASM {
 

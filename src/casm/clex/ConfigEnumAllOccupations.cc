@@ -9,7 +9,7 @@ namespace local_impl {
 std::vector<int> max_selected_occupation(
     ConfigEnumInput const &config_enum_input) {
   auto const &supercell = config_enum_input.configuration().supercell();
-  std::vector<int> max_allowed = supercell.max_allowed_occupation();
+  Eigen::VectorXi max_allowed = supercell.max_allowed_occupation();
 
   std::vector<int> max_allowed_on_selected_sites;
   for (Index i : config_enum_input.sites()) {

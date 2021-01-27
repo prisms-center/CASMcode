@@ -1,5 +1,6 @@
 #ifndef CASM_MagSpinDoFTraits
 #define CASM_MagSpinDoFTraits
+#include "casm/basis_set/BasisFunctionSpecs.hh"
 #include "casm/basis_set/BasisSet.hh"
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/crystallography/Site.hh"

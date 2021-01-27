@@ -38,7 +38,7 @@ std::unique_ptr<Configuration> jsonMake<Configuration>::make_from_json(
   report_and_throw_if_invalid(parser, log, error_if_invalid);
   auto shared_supercell = std::make_shared<Supercell const>(shared_prim, T);
 
-  ConfigDoF configdof = make_configdof(*shared_prim, T.determinant());
+  ConfigDoF configdof = make_configdof(*shared_supercell);
   parser.optional(configdof, "dof");
 
   if (configdof.n_vol() != shared_supercell->volume()) {
@@ -102,23 +102,20 @@ jsonParser &to_json(Configuration const &configuration, jsonParser &json) {
 ///
 /// Note:
 /// - See `to_json(Configuration const &configuration, jsonParser &json)` for
-/// expected format.
+///   expected format.
 /// - The attribute "transformation_matrix_to_super" must be present. If
-/// "supercell_name" is
-///   present it is ignored.
+///   "supercell_name" is present it is ignored.
 /// - The constructed Configuration is not necessarily canonical, nor is its
-/// Supercell.
+///   Supercell.
 /// - The constructed Configuration has a shared Supercell
-/// (`std::shared_ptr<Supercell const>`)
-///   that is not owned by any Supercell database.
+///   (`std::shared_ptr<Supercell const>`) that is not owned by any Supercell
+///   database.
 /// - Use `DB::in_canonical_supercell` to make the canonical equivalent
-/// configuration with the
-///   canonical supercell from the Supercell database, without inserting the
-///   configuration in the Configuration database.
+///   configuration with the canonical supercell from the Supercell database,
+///   without inserting the configuration in the Configuration database.
 /// - Use `DB::make_canonical_and_insert` to make the equivalent configuration
-/// with the canonical
-///   supercell from the Supercell database and insert the canonical equivalent
-///   configuration in the Configuration database.
+///   with the canonical supercell from the Supercell database and insert the
+///   canonical equivalent configuration in the Configuration database.
 ///
 void from_json(Configuration &configuration, jsonParser const &json) {
   configuration = jsonConstructor<Configuration>::from_json(

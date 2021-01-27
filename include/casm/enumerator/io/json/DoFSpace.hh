@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "casm/enumerator/ConfigEnumInput.hh"
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
 #include "casm/symmetry/SymRepTools.hh"
@@ -10,13 +11,14 @@
 namespace CASM {
 
 class DoFSpace;
-struct VectorSpaceSymReport;
 template <typename T>
 class InputParser;
+class Structure;
 template <typename T>
 struct jsonConstructor;
 template <typename T>
 struct jsonMake;
+class jsonParser;
 
 // jsonParser &to_json(DoFSpace const &dofspace, jsonParser &json);
 

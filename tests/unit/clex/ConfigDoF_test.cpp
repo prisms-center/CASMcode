@@ -1,5 +1,6 @@
 #include "casm/clex/ConfigDoF.hh"
 
+#include "casm/clex/ConfigDoFTools.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/crystallography/Structure.hh"
@@ -25,8 +26,7 @@ TEST(ConfigDoFTest, Constructor0) {
   auto shared_supercell = std::make_shared<Supercell const>(
       shared_prim, Eigen::Matrix3l::Identity());
 
-  ConfigDoF configdof =
-      shared_supercell->zero_configdof(shared_prim->lattice().tol());
+  ConfigDoF configdof = make_configdof(*shared_supercell);
 
   EXPECT_EQ(
       configdof.has_occupation(),
@@ -43,8 +43,7 @@ TEST(ConfigDoFTest, Constructor1) {
   auto shared_supercell = std::make_shared<Supercell const>(
       shared_prim, Eigen::Matrix3l::Identity());
 
-  ConfigDoF configdof =
-      shared_supercell->zero_configdof(shared_prim->lattice().tol());
+  ConfigDoF configdof = make_configdof(*shared_supercell);
 
   EXPECT_EQ(configdof.has_occupation(), true);
   EXPECT_EQ(configdof.occupation(),
@@ -61,8 +60,7 @@ TEST(ConfigDoFTest, Constructor2) {
   auto shared_supercell = std::make_shared<Supercell const>(
       shared_prim, Eigen::Matrix3l::Identity());
 
-  ConfigDoF configdof =
-      shared_supercell->zero_configdof(shared_prim->lattice().tol());
+  ConfigDoF configdof = make_configdof(*shared_supercell);
 
   EXPECT_EQ(configdof.has_occupation(), true);
   EXPECT_EQ(configdof.global_dofs().size(), 1);
@@ -78,8 +76,7 @@ TEST(ConfigDoFTest, Constructor3) {
   auto shared_supercell = std::make_shared<Supercell const>(
       shared_prim, Eigen::Matrix3l::Identity());
 
-  ConfigDoF configdof =
-      shared_supercell->zero_configdof(shared_prim->lattice().tol());
+  ConfigDoF configdof = make_configdof(*shared_supercell);
 
   EXPECT_EQ(configdof.has_occupation(), true);
   EXPECT_EQ(configdof.global_dofs().size(), 1);
@@ -95,8 +92,7 @@ TEST(ConfigDoFTest, Constructor4) {
   auto shared_supercell = std::make_shared<Supercell const>(
       shared_prim, Eigen::Matrix3l::Identity());
 
-  ConfigDoF configdof =
-      shared_supercell->zero_configdof(shared_prim->lattice().tol());
+  ConfigDoF configdof = make_configdof(*shared_supercell);
 
   EXPECT_EQ(configdof.has_occupation(), true);
   EXPECT_EQ(configdof.global_dofs().size(), 0);
@@ -113,8 +109,7 @@ TEST(ConfigDoFTest, Constructor5) {
   auto shared_supercell = std::make_shared<Supercell const>(
       shared_prim, Eigen::Matrix3l::Identity());
 
-  ConfigDoF configdof =
-      shared_supercell->zero_configdof(shared_prim->lattice().tol());
+  ConfigDoF configdof = make_configdof(*shared_supercell);
 
   EXPECT_EQ(configdof.has_occupation(), true);
   EXPECT_EQ(configdof.global_dofs().size(), 1);

@@ -80,7 +80,7 @@ TEST(ConfigurationTest, Test1) {
   config.init_occupation();
   EXPECT_EQ(config.has_occupation(), true);
 
-  config.set_occupation(std::vector<int>({0}));
+  config.set_occupation(test::eigen_vector<int>({0}));
   EXPECT_EQ(config.has_occupation(), true);
 
   for (int i = 0; i < 3; ++i) {
@@ -105,7 +105,7 @@ TEST(ConfigurationTest, Test2) {
   EXPECT_EQ(config.size(), 2);
 
   // include occupation only
-  config.set_occupation(std::vector<int>({1, 0}));
+  config.set_occupation(test::eigen_vector<int>({1, 0}));
 
   {
     // Identity op
@@ -114,7 +114,7 @@ TEST(ConfigurationTest, Test2) {
     Configuration filled = fill_supercell(fg[0], config, scel);
 
     Configuration check(scel);
-    check.set_occupation(std::vector<int>({1, 0}));
+    check.set_occupation(test::eigen_vector<int>({1, 0}));
 
     EXPECT_EQ(filled, check);
   }
@@ -126,7 +126,7 @@ TEST(ConfigurationTest, Test2) {
     Configuration filled = fill_supercell(fg[0], config, scel);
 
     Configuration check(scel);
-    check.set_occupation(std::vector<int>({1, 0, 1, 0}));
+    check.set_occupation(test::eigen_vector<int>({1, 0, 1, 0}));
 
     EXPECT_EQ(filled, check);
   }
@@ -139,7 +139,7 @@ TEST(ConfigurationTest, Test2) {
     Configuration filled = fill_supercell(fg[1], config, scel);
 
     Configuration check(scel);
-    check.set_occupation(std::vector<int>({1, 0}));
+    check.set_occupation(test::eigen_vector<int>({1, 0}));
 
     EXPECT_EQ(filled, check);
   }
@@ -159,7 +159,7 @@ TEST(ConfigurationTest, Test2) {
     Configuration filled = fill_supercell(fg[0], config, scel);
 
     Configuration check(scel);
-    check.set_occupation(std::vector<int>({1, 0}));
+    check.set_occupation(test::eigen_vector<int>({1, 0}));
     // check.set_disp(0, dx);
 
     EXPECT_EQ(filled, check);
@@ -172,7 +172,7 @@ TEST(ConfigurationTest, Test2) {
     Configuration filled = fill_supercell(fg[0], config, scel);
 
     Configuration check(scel);
-    check.set_occupation(std::vector<int>({1, 0, 1, 0}));
+    check.set_occupation(test::eigen_vector<int>({1, 0, 1, 0}));
     // check.init_displacement();
     // check.set_disp(0, dx);
     // check.set_disp(2, dx);
@@ -187,7 +187,7 @@ TEST(ConfigurationTest, Test2) {
     Configuration filled = fill_supercell(fg[1], config, scel);
 
     Configuration check(scel);
-    check.set_occupation(std::vector<int>({1, 0}));
+    check.set_occupation(test::eigen_vector<int>({1, 0}));
     // check.init_displacement();
     // check.set_disp(0, dy);
 
@@ -214,14 +214,14 @@ TEST(ConfigurationTest, Test3) {
 
     {
       Configuration config(scel);
-      config.set_occupation(std::vector<int>({1, 0, 0, 0}));
+      config.set_occupation(test::eigen_vector<int>({1, 0, 0, 0}));
       EXPECT_EQ(config.is_canonical(), true);
       EXPECT_EQ(config.is_primitive(), true);
       EXPECT_EQ(config.invariant_subgroup().size(), 48);
 
       {
         Configuration test(scel);
-        test.set_occupation(std::vector<int>({1, 0, 0, 0}));
+        test.set_occupation(test::eigen_vector<int>({1, 0, 0, 0}));
         EXPECT_EQ(config == test, true);
         EXPECT_EQ(config.is_sym_equivalent(test), true);
         EXPECT_EQ(test.is_sym_equivalent(config), true);
@@ -231,7 +231,7 @@ TEST(ConfigurationTest, Test3) {
 
       {
         Configuration test(scel);
-        test.set_occupation(std::vector<int>({0, 1, 0, 0}));
+        test.set_occupation(test::eigen_vector<int>({0, 1, 0, 0}));
         EXPECT_EQ(config == test, false);
         EXPECT_EQ(config.is_sym_equivalent(test), true);
         EXPECT_EQ(test.is_sym_equivalent(config), true);
@@ -265,7 +265,7 @@ TEST(ConfigurationTest, TestConfigurationName) {
     {
       // canonical scel, canonical primitive occ
       Configuration config(scel);
-      config.set_occupation(std::vector<int>({0}));
+      config.set_occupation(test::eigen_vector<int>({0}));
 
       // not in datbase -> id == "none"
       EXPECT_EQ(config.name(), "SCEL1_1_1_1_0_0_0/none");
@@ -284,7 +284,7 @@ TEST(ConfigurationTest, TestConfigurationName) {
     {
       // canonical scel, canonical primitive occ
       Configuration config(scel);
-      config.set_occupation(std::vector<int>({1}));
+      config.set_occupation(test::eigen_vector<int>({1}));
       // not in datbase -> id == "none"
       EXPECT_EQ(config.name(), "SCEL1_1_1_1_0_0_0/none");
 
@@ -302,7 +302,7 @@ TEST(ConfigurationTest, TestConfigurationName) {
     {
       // canonical scel, canonical primitive occ
       Configuration config(scel);
-      config.set_occupation(std::vector<int>({0}));
+      config.set_occupation(test::eigen_vector<int>({0}));
 
       // not from database, but now in it -> id == "0"
       EXPECT_EQ(config.name(), "SCEL1_1_1_1_0_0_0/0");
@@ -320,7 +320,7 @@ TEST(ConfigurationTest, TestConfigurationName) {
     {
       // canonical scel, canonical primitive occ
       Configuration config(scel);
-      config.set_occupation(std::vector<int>({1, 0, 0, 0}));
+      config.set_occupation(test::eigen_vector<int>({1, 0, 0, 0}));
       EXPECT_EQ(config.name(), "SCEL4_2_2_1_1_1_0/none");
 
       auto res = db.insert(config.in_canonical_supercell());
@@ -333,7 +333,7 @@ TEST(ConfigurationTest, TestConfigurationName) {
     {
       // canonical scel, non-canonical primitive occ
       Configuration config(scel);
-      config.set_occupation(std::vector<int>({0, 1, 0, 0}));
+      config.set_occupation(test::eigen_vector<int>({0, 1, 0, 0}));
 
       EXPECT_EQ(config.name(), "SCEL4_2_2_1_1_1_0/0.equiv.0.1");
 
@@ -350,7 +350,7 @@ TEST(ConfigurationTest, TestConfigurationName) {
     {
       // canonical scel, canonical non-primitive occ
       Configuration config(scel);
-      config.set_occupation(std::vector<int>({0, 0, 0, 0}));
+      config.set_occupation(test::eigen_vector<int>({0, 0, 0, 0}));
 
       EXPECT_EQ(config.name(), "SCEL4_2_2_1_1_1_0/none");
 
@@ -388,7 +388,7 @@ TEST(ConfigurationTest, TestConfigurationName) {
     {
       // non-canonical scel, canonical primitive occ
       Configuration config(scel);
-      config.set_occupation(std::vector<int>({1, 0, 0, 0}));
+      config.set_occupation(test::eigen_vector<int>({1, 0, 0, 0}));
 
       // having a different, but equivalent supercell, should not change name ^
       // see above
@@ -405,7 +405,7 @@ TEST(ConfigurationTest, TestConfigurationName) {
     {
       // non-canonical scel, non-canonical primitive occ
       Configuration config(scel);
-      config.set_occupation(std::vector<int>({0, 1, 0, 0}));
+      config.set_occupation(test::eigen_vector<int>({0, 1, 0, 0}));
 
       // having a different, but equivalent supercell, should not change name ^
       // see above
@@ -424,7 +424,7 @@ TEST(ConfigurationTest, TestConfigurationName) {
     {
       // equivalent, but non-canonical scel, canonical non-primitive occ
       Configuration config(scel);
-      config.set_occupation(std::vector<int>({0, 0, 0, 0}));
+      config.set_occupation(test::eigen_vector<int>({0, 0, 0, 0}));
 
       // having a different, but equivalent supercell, should not change name ^
       // see above
@@ -445,7 +445,7 @@ TEST(ConfigurationTest, TestConfigurationName) {
     {
       // non-canonical, non-equivalent, scel, canonical primitive occ
       Configuration config(scel);
-      config.set_occupation(std::vector<int>({1, 0, 0, 0, 0, 0, 0, 0}));
+      config.set_occupation(test::eigen_vector<int>({1, 0, 0, 0, 0, 0, 0, 0}));
 
       // having a different, but equivalent supercell, should not change name ^
       // see above
@@ -465,7 +465,7 @@ TEST(ConfigurationTest, TestConfigurationName) {
     {
       // non-canonical, non-equivalent, scel, non-canonical primitive occ
       Configuration config(scel);
-      config.set_occupation(std::vector<int>({0, 1, 0, 0, 0, 0, 0, 0}));
+      config.set_occupation(test::eigen_vector<int>({0, 1, 0, 0, 0, 0, 0, 0}));
 
       // having a different, but equivalent supercell, should not change name ^
       // see above
@@ -486,7 +486,7 @@ TEST(ConfigurationTest, TestConfigurationName) {
     {
       // non-canonical, non-equivalent, scel, canonical non-primitive occ
       Configuration config(scel);
-      config.set_occupation(std::vector<int>({0, 0, 0, 0, 0, 0, 0, 0}));
+      config.set_occupation(test::eigen_vector<int>({0, 0, 0, 0, 0, 0, 0, 0}));
 
       // having a different, but equivalent supercell, should not change name ^
       // see above

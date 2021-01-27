@@ -139,6 +139,7 @@ void RuntimeLibrary::_close() {
   // close
   if (m_handle != nullptr) {
     dlclose(m_handle);
+    m_handle = nullptr;
   }
 }
 
@@ -158,9 +159,7 @@ std::vector<std::string> _cxx_env() {
 }
 
 std::vector<std::string> _cxxflags_env() {
-  return std::vector<std::string>{
-      "CASM_CXXFLAGS",
-  };
+  return std::vector<std::string>{"CASM_CXXFLAGS"};
 }
 
 std::vector<std::string> _soflags_env() {

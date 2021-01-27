@@ -2,6 +2,8 @@
 #define CASM_APICommand_impl
 
 #include "casm/app/APICommand.hh"
+#include "casm/app/DirectoryStructure.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/clex/PrimClex.hh"
 
 namespace CASM {

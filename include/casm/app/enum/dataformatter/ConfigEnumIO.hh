@@ -5,6 +5,10 @@
 
 namespace CASM {
 
+template <typename EnumeratorType, typename InitialStateType>
+struct ConfigEnumData;
+class Supercell;
+
 // Note:
 // - The following formatters are all templated to expect a ConfigEnumDataType
 // that follows the

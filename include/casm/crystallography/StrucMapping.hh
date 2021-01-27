@@ -466,7 +466,7 @@ class StrucMapper {
   StrucMapper(StrucMapCalculatorInterface const &_calculator,
               double _lattice_weight = 0.5, double _max_volume_change = 0.5,
               int _options = 0,  // this should actually be a bitwise-OR of
-              // StrucMapper::Options
+                                 // StrucMapper::Options
               double _cost_tol = TOL, double _min_va_frac = 0.,
               double _max_va_frac = 1.);
 

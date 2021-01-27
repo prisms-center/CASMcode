@@ -18,7 +18,7 @@ namespace {
 struct TestConfig0 : test::TestConfiguration {
   TestConfig0(const PrimClex &primclex)
       : TestConfiguration(primclex, Eigen::Vector3l(2, 1, 1).asDiagonal(),
-                          {0, 0, 0, 0, 1, 1, 0, 0}) {
+                          test::eigen_vector<int>({0, 0, 0, 0, 1, 1, 0, 0})) {
     EXPECT_EQ(this->scel_fg().size(), 16);
     EXPECT_EQ(this->config_sym_fg().size(), 8);
   }

@@ -29,8 +29,6 @@ class ConfigIterator;
 class PermuteIterator;
 class PrimClex;
 class Clexulator;
-class ConfigDoF;
-class Configuration;
 class PrimNeighborList;
 class SuperNeighborList;
 class Structure;
@@ -39,10 +37,6 @@ namespace DB {
 template <typename T>
 class DatabaseIterator;
 }
-
-struct ConfigMapCompare {
-  bool operator()(const Configuration *A, const Configuration *B) const;
-};
 
 /** \defgroup Supercell
  *  \ingroup Clex
@@ -93,11 +87,7 @@ class Supercell
 
   /// \brief returns maximum allowed occupation bitstring -- used for
   /// initializing enumeration counters
-  std::vector<int> max_allowed_occupation() const;
-
-  /// \brief returns Supercell-compatible configdof with zeroed DoF values and
-  /// user-specified tolerance
-  ConfigDoF zero_configdof(double tol) const;
+  Eigen::VectorXi max_allowed_occupation() const;
 
   // **** Accessors ****
 

@@ -149,7 +149,7 @@ std::pair<ConfigDoF, std::string> Canonical::set_state(
     _log() << "motif configdof: " << settings.motif_configdof_path() << "\n";
     _log() << "using configdof: " << settings.motif_configdof_path() << "\n"
            << std::endl;
-    configdof = settings.motif_configdof();
+    configdof = settings.motif_configdof(supercell().volume());
     configname = settings.motif_configdof_path().string();
   } else {
     throw std::runtime_error(
@@ -556,7 +556,7 @@ std::vector<OccSwap>::const_iterator Canonical::_find_grand_canonical_swap(
 ///
 ConfigDoF Canonical::_enforce_conditions(const ConfigDoF &configdof) {
   _log().custom("Enforce composition");
-  Configuration tconfig(_supercell(), jsonParser(), configdof);
+  Configuration tconfig(_supercell(), configdof);
   m_occ_loc.initialize(tconfig);
   jsonParser json;
 

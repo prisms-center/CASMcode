@@ -3,6 +3,7 @@
 #include "casm/app/casm_functions.hh"
 #include "casm/app/enum.hh"
 #include "casm/app/io/json_io_impl.hh"
+#include "casm/clex/ConfigDoFTools.hh"
 #include "casm/clex/ConfigEnumByPermutation.hh"
 #include "casm/clex/FillSupercell.hh"
 #include "casm/clex/FilteredConfigIterator.hh"
@@ -111,7 +112,7 @@ bool SuperConfigEnum::_check_current() const { return true; }
 void SuperConfigEnum::_fill(Array<int> const &counter_val,
                             Configuration &super_config) {
   double xtal_tol = super_config.supercell().prim().lattice().tol();
-  super_config.configdof() = super_config.supercell().zero_configdof(xtal_tol);
+  super_config.configdof() = make_configdof(super_config.supercell(), xtal_tol);
 
   for (Index i = 0; i < this->_unitcell_index_converter().total_sites(); ++i) {
     Configuration const &sub_config_i = _sub_config()[counter_val[i]];
@@ -121,11 +122,11 @@ void SuperConfigEnum::_fill(Array<int> const &counter_val,
 
       for (auto &pair : super_config.configdof().local_dofs()) {
         auto const &dof_key = pair.first;
-        auto &local_dof_values =
-            super_config.configdof().local_dof(dof_key).values();
 
-        local_dof_values.col(m_index_map[i][j]) =
-            sub_config_i.configdof().local_dof(dof_key).values().col(j);
+        auto &local_dof = super_config.configdof().local_dof(dof_key);
+
+        local_dof.site_value(m_index_map[i][j]) =
+            sub_config_i.configdof().local_dof(dof_key).site_value(j);
       }
     }
   }

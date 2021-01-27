@@ -7,6 +7,7 @@
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/casm_io/dataformatter/DataStream.hh"
+#include "casm/clex/ConfigDoFTools.hh"
 #include "casm/clex/ConfigIsEquivalent.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/ParamComposition.hh"
@@ -259,8 +260,8 @@ MappingNode copy_apply(PermuteIterator const &_it, MappingNode const &_node,
 std::pair<ConfigDoF, std::set<std::string> > to_configdof(
     SimpleStructure const &_child_struc, Supercell const &_scel) {
   SimpleStructure::Info const &c_info(_child_struc.mol_info);
-  std::pair<ConfigDoF, std::set<std::string> > result(_scel.zero_configdof(TOL),
-                                                      {});
+  std::pair<ConfigDoF, std::set<std::string> > result(
+      make_configdof(_scel, TOL), {});
   PrimClex::PrimType const &prim(_scel.prim());
   Index i = 0;
   for (Index b = 0; b < prim.basis().size(); ++b) {
@@ -467,7 +468,7 @@ ConfigMapperResult ConfigMapper::import_structure(
         struc_mapper().calculator().resolve_setting(map, child_struc);
     std::pair<ConfigDoF, std::set<std::string> > tdof =
         to_configdof(resolved_struc, *shared_scel);
-    Configuration tconfig(shared_scel, jsonParser(), tdof.first);
+    Configuration tconfig(shared_scel, tdof.first);
     PermuteIterator perm_it = shared_scel->sym_info().permute_begin();
     if (settings().strict) {
       // Strictness transformation reduces permutation swaps, translation

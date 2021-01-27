@@ -540,7 +540,7 @@ Clexulator make_clexulator(ProjectSettings const &settings,
   return Clexulator{settings.project_name() + "_Clexulator",
                     settings.dir().clexulator_dir(basis_set_name),
                     prim_neighbor_list, settings.compile_options(),
-                    settings.so_options()};
+                    settings.so_options() + " -lcasm "};
 }
 
 }  // namespace CASM

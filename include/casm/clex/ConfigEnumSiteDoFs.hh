@@ -147,7 +147,7 @@ class ConfigEnumSiteDoFs : public InputEnumeratorBase<Configuration> {
   // -- Unique -------------------
   notstd::cloneable_ptr<Configuration> m_current;
 
-  ConfigDoF::LocalDoFContainerType *m_dof_vals;
+  LocalContinuousConfigDoFValues *m_dof_vals;
 
   DoFKey m_dof_key;
 

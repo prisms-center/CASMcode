@@ -1,9 +1,12 @@
 #ifndef CASM_sym_write_prim_symmetry
 #define CASM_sym_write_prim_symmetry
 
+#include <string>
+
 namespace CASM {
 
 class APICommandBase;
+class PrimClex;
 class jsonParser;
 
 /// Describe the default `casm sym` option

@@ -84,9 +84,9 @@ void k_best_mapping_test(xtal::SimpleStructure const &sstruc, double d) {
 
   {
     std::string comment(
-        "Check for all mappings better than the pure swap "
-        "mapping, which has a cost of 0.5*d^2. Without "
-        "considering symmetry of child structure there are 8.");
+        "Check for all mappings better than the pure swap mapping, which has a "
+        "cost of 0.5*d^2. Without considering symmetry of child structure "
+        "there are 8.");
     xtal::StrucMapper mapper(xtal::SimpleStrucMapCalculator(sstruc, fgroup),
                              0.5, 0.5, xtal::StrucMapper::robust);
     auto sym_set = mapper.map_deformed_struc_impose_lattice(
@@ -105,9 +105,9 @@ void k_best_mapping_test(xtal::SimpleStructure const &sstruc, double d) {
 
   {
     std::string comment(
-        "Check for all mappings better than the pure swap "
-        "mapping, which has a cost of 0.5 * d^2. Considering "
-        "symmetry of child structure, there are 4.");
+        "Check for all mappings better than the pure swap mapping, which has a "
+        "cost of 0.5 * d^2. Considering symmetry of child structure, there are "
+        "4.");
     xtal::StrucMapper mapper(xtal::SimpleStrucMapCalculator(sstruc, fgroup),
                              0.5, 0.5, xtal::StrucMapper::robust);
     auto sym_set = mapper.map_deformed_struc_impose_lattice(
@@ -155,8 +155,8 @@ void sym_mapping_test(xtal::BasicStructure struc, Index N) {
 
   {
     std::string comment(
-        "Check that we find 8 perfect mapping for a Vol8 "
-        "non-primitive structure");
+        "Check that we find 8 perfect mapping for a Vol8 non-primitive "
+        "structure");
     xtal::StrucMapper mapper((xtal::SimpleStrucMapCalculator(sstruc2)));
     xtal::LatticeNode tnode((xtal::Lattice(sstruc2.lat_column_mat)),
                             (xtal::Lattice(sstruc2.lat_column_mat)),
@@ -171,8 +171,8 @@ void sym_mapping_test(xtal::BasicStructure struc, Index N) {
 
   {
     std::string comment(
-        "Check for perfect mappings using the best-1 calling "
-        "convention, without symmetry");
+        "Check for perfect mappings using the best-1 calling convention, "
+        "without symmetry");
     xtal::StrucMapper mapper((xtal::SimpleStrucMapCalculator(sstruc)));
     auto sym_set = mapper.map_deformed_struc_impose_lattice(
         sstruc, xtal::Lattice(sstruc.lat_column_mat), 1,
@@ -182,8 +182,8 @@ void sym_mapping_test(xtal::BasicStructure struc, Index N) {
 
   {
     std::string comment(
-        "Check for perfect mappings using the best-1000 "
-        "calling convention, without symmetry");
+        "Check for perfect mappings using the best-1000 calling convention, "
+        "without symmetry");
     xtal::StrucMapper mapper((xtal::SimpleStrucMapCalculator(sstruc)));
     auto sym_set = mapper.map_deformed_struc_impose_lattice(
         sstruc, xtal::Lattice(sstruc.lat_column_mat), 1000, 1e-3, -1e-3);

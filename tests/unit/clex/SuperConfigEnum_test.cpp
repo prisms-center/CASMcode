@@ -33,7 +33,7 @@ TEST(SuperConfigEnumTest, Test1) {
 
   auto sub_config = [&](std::initializer_list<int> occ) {
     Configuration tconfig(motif_scel);
-    tconfig.set_occupation(std::vector<int>(occ));
+    tconfig.set_occupation(test::eigen_vector<int>(occ));
     return tconfig;
   };
 

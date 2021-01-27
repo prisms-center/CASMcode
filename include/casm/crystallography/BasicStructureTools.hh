@@ -1,6 +1,8 @@
 #ifndef BASICSTRUCTURETOOLS_HH
 #define BASICSTRUCTURETOOLS_HH
 
+#include <vector>
+
 #include "casm/external/Eigen/Core"
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"

@@ -1,6 +1,7 @@
 #ifndef CASM_ClexBasisSpecs_json_io
 #define CASM_ClexBasisSpecs_json_io
 
+#include <memory>
 #include <utility>
 
 namespace CASM {

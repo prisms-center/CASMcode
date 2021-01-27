@@ -40,7 +40,6 @@ std::pair<DoFDictInserter, RuntimeLibInserter> load_dof_plugins(
         std::string msg = "Compiling new custom DoFTraits for DoF: " +
                           f_s.substr(0, f_size - 3);
 
-        // '-L$CASM_PREFIX/.libs' is a hack so 'make check' works
         auto lib_ptr = log_make_shared_runtime_lib(
             p_s.substr(0, p_size - 3),
             set.compile_options() + " " + include_path(dir.dof_plugins()),

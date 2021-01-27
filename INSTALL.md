@@ -42,28 +42,34 @@ The CASM conda development environment includes the subset of the boost library 
 
 CASM is distributed with the following dependencies:
 
-- **Eigen, v3.1.3**: [http://eigen.tuxfamily.org](http://eigen.tuxfamily.org)
+- **Eigen, v3.1.3**: <http://eigen.tuxfamily.org>
 
   - Eigen is included with CASM as a git submodule.
 
-- **JSON Spirit, v4.06**: [http://www.codeproject.com/Articles/20027/JSON-Spirit-A-C-JSON-Parser-Generator-Implemented](http://www.codeproject.com/Articles/20027/JSON-Spirit-A-C-JSON-Parser-Generator-Implemented)
+- **JSON Spirit, v4.06**: <http://www.codeproject.com/Articles/20027/JSON-Spirit-A-C-JSON-Parser-Generator-Implemented>
 
-- **Mersenne Twister random number generator -- a C++ class MTRand, v1.1**,  28 September 2009, by Richard J. Wagner, wagnerr@umich.edu, based on code by Makoto Matsumoto, Takuji Nishimura, and Shawn Cokus. For more information, see the inventors' web page at [http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html](http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html).
+- **Mersenne Twister random number generator -- a C++ class MTRand, v1.1**,  28 September 2009, by Richard J. Wagner, wagnerr@umich.edu, based on code by Makoto Matsumoto, Takuji Nishimura, and Shawn Cokus. For more information, see the inventors' web page at <http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html>.
 
 - **Qhull, 2015.0.6 2015/10/20**, Barber, C.B., Dobkin, D.P., and Huhdanpaa, H.T., "The Quickhull algorithm for convex hulls," ACM Trans. on Mathematical Software, 22(4):469-483, Dec 1996, http://www.qhull.org.
 
-- **gzstream, v1.5**: [http://www.cs.unc.edu/Research/compgeom/gzstream/](http://www.cs.unc.edu/Research/compgeom/gzstream/)
+- **gzstream, v1.5**: <http://www.cs.unc.edu/Research/compgeom/gzstream/>
 
 For testing:
 
-- **googletest**: [https://github.com/google/googletest](https://github.com/google/googletest)
+- **googletest**: <https://github.com/google/googletest>
 
   - googletest is included with CASM as a git submodule
 
 
 ### Not included with CASM ###
 
-- **jq**: [https://stedolan.github.io/jq/](https://stedolan.github.io/jq/)
+- **clang-format**: <https://clang.llvm.org/docs/ClangFormat.html>
+
+  - `clang-format`, with `-style=google`, is used for C++ code formatting. It can be found in most package managers (`apt-get`, `brew`, `yum`, ...). Use the `stylize.sh` script to format files staged for commit. To enforce that it is run before committing, place the `pre-commit` file, or equivalent code, in `.git/hooks`.
+
+- **jq**: <https://stedolan.github.io/jq/>
+
+  - `jq` is used for inspecting and manipulating JSON for testing purposes. It can be found in most package managers.
 
 
 Build CASM from source

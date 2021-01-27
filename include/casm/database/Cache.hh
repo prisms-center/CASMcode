@@ -31,6 +31,18 @@ class Cache {
     }
   }
 
+  /// Set the configuration cache as read from the database
+  void set_initial_cache(jsonParser const &_cache) {
+    m_cache = _cache;
+    m_cache_updated = false;
+  }
+
+  /// Upate the configuration cache
+  void update_cache(jsonParser const &_cache) {
+    m_cache = _cache;
+    m_cache_updated = true;
+  }
+
   /// Access the configuration cache, which will be saved in the database
   const jsonParser &cache() const { return m_cache; }
 

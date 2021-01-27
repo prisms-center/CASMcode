@@ -134,6 +134,7 @@ static bool initial_atomic_maps(SimpleStructure child_struc,
       *it = node;
     }
   }
+
   return true;
 }
 
@@ -399,7 +400,7 @@ StrucMapper::StrucMapper(
     StrucMapCalculatorInterface const &calculator,
     double _lattice_weight /*= 0.5*/, double _max_volume_change /*= 0.5*/,
     int _options /*= robust*/,  // this should actually be a bitwise-OR of
-    // StrucMapper::Options
+                                // StrucMapper::Options
     double _cost_tol /*= TOL*/, double _min_va_frac /*= 0.*/,
     double _max_va_frac /*= 1.*/)
     : m_calc_ptr(calculator.clone()),
@@ -764,10 +765,12 @@ Index StrucMapper::k_best_maps_better_than(
     // However, max_cost controls search loop, so we set max_cost to min_cost
     max_cost = min_cost;
   }
+
   auto it = queue.begin();
   while (it != queue.end()) {
     bool erase = true;
     auto current = it;
+
     if (it->cost <= (max_cost + this->cost_tol())) {
       // If supercell volumes have already been determined incompatible, we do
       // nothing; current node is deleted
@@ -829,7 +832,6 @@ Index StrucMapper::k_best_maps_better_than(
     } else {
       erase = !keep_tail;
     }
-    // std::cout << "Finished map logic, incrementing iterator" << std::endl;
     // Safe to increment here:
     //  1) No continue/break statements
     //  2) Nothing has been deleted yet

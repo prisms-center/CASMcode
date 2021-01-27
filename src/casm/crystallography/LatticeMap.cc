@@ -383,10 +383,8 @@ bool LatticeMap::_check_canonical() const {
           std::abs(m_icache(2, 2)) > m_range)
         continue;
       if (std::lexicographical_compare(m_icache.data(), m_icache.data() + 9,
-                                       inv_mat().data(),
-                                       inv_mat().data() + 9)) {
+                                       inv_mat().data(), inv_mat().data() + 9))
         return false;
-      }
     }
   }
   return true;

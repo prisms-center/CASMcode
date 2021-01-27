@@ -1,61 +1,27 @@
 #include "casm/clex/io/json/ConfigDoF_json_io.hh"
 
+#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/container/json_io.hh"
+#include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/clex/ConfigDoF.hh"
+#include "casm/clex/ConfigDoFTools.hh"
 #include "casm/crystallography/Structure.hh"
 
 namespace CASM {
 
-jsonParser &to_json(LocalContinuousConfigDoFValues const &_values,
-                    jsonParser &_json) {
-  to_json(_values.standard_values().transpose(), _json["values"]);
-  return _json;
-}
-
-void from_json(LocalContinuousConfigDoFValues &_values,
-               jsonParser const &_json) {
-  Eigen::MatrixXd tval = _json["values"].get<Eigen::MatrixXd>().transpose();
-  _values.from_standard_values(tval);
-}
-
-jsonParser &to_json(LocalDiscreteConfigDoFValues const &_values,
-                    jsonParser &_json) {
-  to_json_array(_values.values(), _json);
-  return _json;
-}
-
-void from_json(LocalDiscreteConfigDoFValues &_values, jsonParser const &_json) {
-  _values.resize_vol(_json.size() / _values.n_sublat());
-  _values.values() = _json.get<LocalDiscreteConfigDoFValues::ValueType>();
-}
-
-jsonParser &to_json(GlobalContinuousConfigDoFValues const &_values,
-                    jsonParser &_json) {
-  to_json_array(_values.standard_values(), _json["values"]);
-  return _json;
-}
-
-void from_json(GlobalContinuousConfigDoFValues &_values,
-               jsonParser const &_json) {
-  _values.from_standard_values(_json["values"].get<Eigen::VectorXd>());
-}
-
 std::unique_ptr<ConfigDoF> jsonMake<ConfigDoF>::make_from_json(
-    const jsonParser &json, Structure const &prim) {
-  auto result_ptr = notstd::make_unique<ConfigDoF>(
-      (Index)prim.basis().size(), 0, global_dof_info(prim),
-      local_dof_info(prim), prim.occupant_symrep_IDs(), prim.lattice().tol());
-  result_ptr->from_json(json);
+    const jsonParser &json, Structure const &prim, Index volume) {
+  auto result_ptr = make_unique_configdof(prim, volume);
+  from_json(*result_ptr, json);
   return result_ptr;
 }
 
 ConfigDoF jsonConstructor<ConfigDoF>::from_json(const jsonParser &json,
-                                                Structure const &prim) {
-  ConfigDoF result{(Index)prim.basis().size(), 0,
-                   global_dof_info(prim),      local_dof_info(prim),
-                   prim.occupant_symrep_IDs(), prim.lattice().tol()};
-  result.from_json(json);
+                                                Structure const &prim,
+                                                Index volume) {
+  ConfigDoF result = make_configdof(prim, volume);
+  CASM::from_json(result, json);
   return result;
 }
 
@@ -64,6 +30,7 @@ ConfigDoF jsonConstructor<ConfigDoF>::from_json(const jsonParser &json,
 /// Format:
 /// \code
 /// {
+///   "volume": <int>,
 ///   "occ": <array of integer>,
 ///   "global_dofs": {
 ///     <dof_name>: {
@@ -155,13 +122,20 @@ ConfigDoF jsonConstructor<ConfigDoF>::from_json(const jsonParser &json,
 ///
 jsonParser &to_json(const ConfigDoF &configdof, jsonParser &json) {
   json = jsonParser::object();
-  if (configdof.occupation().size())
+  if (configdof.occupation().size()) {
     to_json_array(configdof.occupation(), json["occ"]);
+  }
   if (!configdof.local_dofs().empty()) {
-    json["local_dofs"] = configdof.local_dofs();
+    for (auto const &local_dof : configdof.local_dofs()) {
+      to_json(local_dof.second.standard_values().transpose(),
+              json["local_dofs"][local_dof.first]["values"]);
+    }
   }
   if (!configdof.global_dofs().empty()) {
-    json["global_dofs"] = configdof.global_dofs();
+    for (auto const &global_dof : configdof.global_dofs()) {
+      to_json_array(global_dof.second.standard_values(),
+                    json["global_dofs"][global_dof.first]["values"]);
+    }
   }
 
   return json;
@@ -169,31 +143,49 @@ jsonParser &to_json(const ConfigDoF &configdof, jsonParser &json) {
 
 /// Read ConfigDoF from JSON
 void from_json(ConfigDoF &configdof, const jsonParser &json) {
-  if (json.contains("occupation")) {
-    // //For Backwards compatibility
-    configdof.set_occupation(
-        json["occupation"].get<LocalDiscreteConfigDoFValues>().values());
-  } else if (json.contains("occ")) {
-    configdof.set_occupation(
-        json["occ"].get<LocalDiscreteConfigDoFValues>().values());
+  auto &log = CASM::log();
+  ParentInputParser parser{json};
+  std::runtime_error error_if_invalid{
+      "Error reading ConfigDoF from JSON input"};
+
+  Eigen::VectorXi occ;
+  // For Backwards compatibility
+  if (parser.self.contains("occupation")) {
+    parser.require(occ, "occupation");
   } else {
-    throw std::runtime_error(
-        "JSON serialization of ConfigDoF must contain field \"occ\"\n");
-  }
-
-  if (json.contains("local_dofs")) {
-    auto end_it = json["local_dofs"].end();
-    for (auto it = json["local_dofs"].begin(); it != end_it; ++it) {
-      CASM::from_json(configdof.local_dof(it.name()), *it);
+    parser.require(occ, "occ");
+    try {
+      configdof.set_occupation(occ);
+    } catch (std::exception const &e) {
+      parser.insert_error("occ", e.what());
     }
   }
 
-  if (json.contains("global_dofs")) {
-    auto end_it = json["global_dofs"].end();
-    for (auto it = json["global_dofs"].begin(); it != end_it; ++it) {
-      CASM::from_json(configdof.global_dof(it.name()), *it);
+  for (auto const &local_dof : configdof.local_dofs()) {
+    Eigen::MatrixXd tvalues;
+    fs::path values_path = fs::path{"local_dofs"} / local_dof.first / "values";
+    parser.require(tvalues, values_path);
+    try {
+      configdof.local_dof(local_dof.first)
+          .from_standard_values(tvalues.transpose());
+    } catch (std::exception const &e) {
+      parser.insert_error(values_path, e.what());
     }
   }
+
+  for (auto const &global_dof : configdof.global_dofs()) {
+    Eigen::VectorXd tvalues;
+    fs::path values_path =
+        fs::path{"global_dofs"} / global_dof.first / "values";
+    parser.require(tvalues, values_path);
+    try {
+      configdof.global_dof(global_dof.first).from_standard_values(tvalues);
+    } catch (std::exception const &e) {
+      parser.insert_error(values_path, e.what());
+    }
+  }
+
+  report_and_throw_if_invalid(parser, log, error_if_invalid);
 }
 
 }  // namespace CASM
