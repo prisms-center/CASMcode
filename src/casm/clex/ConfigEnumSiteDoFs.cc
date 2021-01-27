@@ -10,7 +10,8 @@ namespace CASM {
 ConfigEnumSiteDoFs::ConfigEnumSiteDoFs(ConfigEnumInput const &_in_config,
                                        ConfigEnumSiteDoFsParams const &params)
     : ConfigEnumSiteDoFs(_in_config, params.dof, params.axes, params.min_val,
-                         params.max_val, params.inc_val, params.min_nonzero,
+                         params.max_val, params.inc_val,
+                         params.exclude_homogeneous_modes, params.min_nonzero,
                          params.max_nonzero) {}
 
 /// See `ConfigEnumSiteDoFsParams` for method and parameter details
@@ -19,10 +20,11 @@ ConfigEnumSiteDoFs::ConfigEnumSiteDoFs(
     Eigen::Ref<const Eigen::MatrixXd> const &_axes,
     Eigen::Ref<const Eigen::VectorXd> const &min_val,
     Eigen::Ref<const Eigen::VectorXd> const &max_val,
-    Eigen::Ref<const Eigen::VectorXd> const &inc_val, Index _min_nonzero,
-    Index _max_nonzero)
+    Eigen::Ref<const Eigen::VectorXd> const &inc_val,
+    bool exclude_homogeneous_modes, Index _min_nonzero, Index _max_nonzero)
     :
 
+      // m_current(_init.config()),
       m_dof_key(_dof),
       m_min_nonzero(_min_nonzero),
       m_max_nonzero(_max_nonzero),
@@ -30,19 +32,19 @@ ConfigEnumSiteDoFs::ConfigEnumSiteDoFs(
       m_min(min_val),
       m_max(max_val),
       m_inc(inc_val),
+      m_exclude_homogeneous_modes(exclude_homogeneous_modes),
       m_unit_length(DoF::BasicTraits(_dof).unit_length()),
       m_sites(_init.sites().begin(), _init.sites().end()),
       m_subset_mode(false),
       // m_combo_mode(false),
       m_combo_index(0) {
-  Configuration const &configuration = _init.configuration();
-
-  if (configuration.size() != m_sites.size()) m_subset_mode = true;
+  if (_init.configuration().size() != _init.sites().size())
+    m_subset_mode = true;
 
   if (m_axes.cols() == 0) {
     this->_invalidate();
   } else {
-    m_current = notstd::make_cloneable<Configuration>(configuration);
+    m_current = notstd::make_cloneable<Configuration>(_init.configuration());
     reset_properties(*m_current);
 
     m_dof_vals = &(m_current->configdof().local_dof(m_dof_key));
@@ -54,7 +56,11 @@ ConfigEnumSiteDoFs::ConfigEnumSiteDoFs(
       m_combo.resize(m_max_nonzero - 1);
       m_combo_index = m_max_nonzero;
     }
-    if (_increment_combo()) this->_initialize(&(*m_current));
+
+    if (_increment_combo()) {
+      this->_initialize(&(*m_current));
+    }
+
     _set_dof();
     m_current->set_source(this->source(step()));
   }
@@ -79,10 +85,9 @@ bool ConfigEnumSiteDoFs::_increment_combo() {
     Eigen::VectorXd vmin(m_combo.size()), vmax(m_combo.size()),
         vinc(m_combo.size());
     for (Index i = 0; i < m_combo.size(); ++i) {
-      Index j = m_combo.size() - 1 - i;
-      vmin[i] = m_min[m_combo[j]];
-      vmax[i] = m_max[m_combo[j]];
-      vinc[i] = m_inc[m_combo[j]];
+      vmin[i] = m_min[m_combo[i]];
+      vmax[i] = m_max[m_combo[i]];
+      vinc[i] = m_inc[m_combo[i]];
       if (almost_zero(vmin[i]) && almost_zero(vmax[i])) invalid = true;
     }
     m_combo_index++;
@@ -100,20 +105,40 @@ void ConfigEnumSiteDoFs::_set_dof() {
   Eigen::MatrixXd vals = m_current->configdof().local_dof(m_dof_key).values();
   Eigen::VectorXd pert_vals(Eigen::VectorXd::Zero(m_axes.rows()));
 
-  for (Index i = 0; i < m_combo.size(); ++i)
+  for (Index i = 0; i < m_combo.size(); ++i) {
     pert_vals += m_counter[i] * m_axes.col(m_combo[i]);
+  }
+
   Index l = 0;
 
   for (Index i = 0; i < m_sites.size(); ++i) {
     for (Index j = 0; j < m_dof_dims[i]; ++j, ++l) {
       vals(j, m_sites[i]) = pert_vals(l);
     }
+
     if (m_unit_length) {
       double tnorm = vals.col(m_sites[i]).norm();
       if (!almost_zero(tnorm)) vals.col(m_sites[i]) /= tnorm;
     }
   }
-  m_current->configdof().set_local_dof(m_dof_key, vals);
+
+  if (m_exclude_homogeneous_modes == true) {
+    std::vector<Eigen::VectorXd> rolled_dof_vals;
+    rolled_dof_vals.reserve(vals.cols());
+    auto const &dof_info = m_current->configdof().local_dof(m_dof_key).info();
+    for (Index i = 0; i < vals.cols(); ++i) {
+      Eigen::MatrixXd basis = dof_info[m_current->sublat(i)].basis();
+      rolled_dof_vals.push_back(basis * vals.col(i));
+    }
+
+    if (!are_all_dof_vals_same(rolled_dof_vals)) {
+      m_current->configdof().set_local_dof(m_dof_key, vals);
+    }
+  }
+
+  else {
+    m_current->configdof().set_local_dof(m_dof_key, vals);
+  }
 }
 
 /// Implements _increment over all occupations
@@ -156,4 +181,55 @@ bool ConfigEnumSiteDoFs::_check_current() const {
   // current().is_canonical());
 }
 
+bool are_all_dof_vals_same(const std::vector<Eigen::VectorXd> &dof_vals) {
+  return std::all_of(dof_vals.begin(), dof_vals.end(),
+                     [&](const Eigen::VectorXd &x) {
+                       return CASM::almost_equal(x, dof_vals[0]);
+                     });
+}
+
+Eigen::MatrixXd make_homogeneous_mode_space(
+    const std::vector<DoFSetInfo> &dof_info) {
+  Index tot_dim = 0;
+  for (const auto &site_dof : dof_info) {
+    tot_dim += site_dof.dim();
+  }
+
+  Eigen::MatrixXd homogeneous_mode_space(tot_dim,
+                                         dof_info[0].inv_basis().cols());
+
+  Index l = 0;
+  for (const auto &site_dof : dof_info) {
+    homogeneous_mode_space.block(l, 0, site_dof.dim(),
+                                 site_dof.inv_basis().cols()) =
+        site_dof.inv_basis();
+    l += site_dof.dim();
+  }
+
+  return homogeneous_mode_space;
+}
+
+bool are_homogeneous_modes_mixed_in_irreps(
+    const Eigen::MatrixXd &axes,
+    const Eigen::MatrixXd &homogeneous_mode_space) {
+  // Make a projection operator out of homogeneous mode space and project each
+  // of the basis vectors onto it If they have a partial projection (not full or
+  // zero) => translational modes are mixed between irreps
+  Eigen::MatrixXd proj_operator =
+      homogeneous_mode_space * homogeneous_mode_space.transpose();
+
+  for (Index i = 0; i < axes.cols(); ++i) {
+    Eigen::VectorXd col_projection = proj_operator * axes.col(i);
+    if (!col_projection.isZero(CASM::TOL)) {
+      col_projection.normalize();
+    }
+
+    if (CASM::almost_equal(col_projection, axes.col(i).normalized()) == false &&
+        col_projection.isZero(CASM::TOL) == false) {
+      return true;
+    }
+  }
+
+  return false;
+}
 }  // namespace CASM
