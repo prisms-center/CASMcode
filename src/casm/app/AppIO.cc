@@ -266,6 +266,11 @@ void from_json(Site &site, const jsonParser &json, Lattice const &_home,
 BasicStructure read_prim(fs::path filename, double xtal_tol,
                          HamiltonianModules const *_modules) {
   jsonParser json;
+  filename = fs::absolute(filename);
+  if (!fs::exists(filename)) {
+    throw std::invalid_argument("Error reading prim from file '" +
+                                filename.string() + "'. Does not exist.");
+  }
   std::ifstream f(filename.string());
   if (!f) {
     throw std::invalid_argument("Error reading prim from file '" +

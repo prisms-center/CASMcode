@@ -193,17 +193,11 @@ int init_command(const CommandArgs &args) {
   if (vm["config"].defaulted() && init_opt.config_strs().empty()) {
     DirectoryStructure dir(root);
     BasicStructure prim;
-    std::string err_msg;
-    std::string extension;
     // Read PRIM or prim.json:
     try {
       prim = read_prim(init_opt.prim_path(), TOL, &modules);
-      std::tie(err_msg, extension, prim) =
-          standardize_prim(prim, vm.count("force"));
-    } catch (std::runtime_error &e) {
+    } catch (std::exception &e) {
       err_log() << e.what() << std::endl;
-      err_log() << "To initialize your project anyway, use the --force option."
-                << std::endl;
       return ERR_INVALID_INPUT_FILE;
     }
 
@@ -225,6 +219,12 @@ int init_command(const CommandArgs &args) {
       site.set_dofs(std::move(site_dofs));
     }
 
+    // Check if prim is standardized
+    std::string err_msg;
+    std::string extension;
+    std::tie(err_msg, extension, prim) =
+        standardize_prim(prim, vm.count("force"));
+
     // Check error message to see if PRIM did not meet standards; report if so
     if (!err_msg.empty()) {
       if (vm.count("force")) {
@@ -243,6 +243,9 @@ int init_command(const CommandArgs &args) {
                   << new_path << "\n";
         write_prim(prim, new_path, init_opt.coordtype_enum(),
                    vm.count(include_va_opt));
+        err_log() << "To initialize your project anyway, use the --force "
+                     "option."
+                  << std::endl;
         return ERR_INVALID_INPUT_FILE;
       }
     }
