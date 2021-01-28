@@ -6,6 +6,7 @@
 
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/app/errors.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/casm_io/json/jsonParser.hh"
@@ -101,6 +102,12 @@ int casm_capi(char *args, cPrimClex *primclex, char *root, costream *log,
     return command_args.parse_result();
   }
 
-  return casm_api(command_args);
+  try {
+    int code = casm_api(command_args);
+    return code;
+  } catch (std::exception const &e) {
+    _log << "CASM: Uncaught exception: \n" << e.what();
+  }
+  return ERR_UNKNOWN;
 }
 }

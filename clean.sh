@@ -10,7 +10,7 @@ find . -name .libs -prune -exec rm -rf {} \;
 find . -name *.os -exec rm -f {} \;
 find . -name *.dirstamp -exec rm -f {} \;
 rm -rf autom4te.cache libtool Makefile Makefile.in aclocal.m4 config.h config.h.in config.log config.status configure stamp-h1
-rm -f casm_version.txt build-aux/compile build-aux/config.guess build-aux/config.sub build-aux/depcomp build-aux/install-sh build-aux/ltmain.sh build-aux/m4/libtool.m4 build-aux/m4/ltoptions.m4 build-aux/m4/ltsugar.m4 build-aux/m4/ltversion.m4 build-aux/m4/lt~obsolete.m4 build-aux/missing build-aux/test-driver
+rm -f build-aux/compile build-aux/config.guess build-aux/config.sub build-aux/depcomp build-aux/install-sh build-aux/ltmain.sh build-aux/m4/libtool.m4 build-aux/m4/ltoptions.m4 build-aux/m4/ltsugar.m4 build-aux/m4/ltversion.m4 build-aux/m4/lt~obsolete.m4 build-aux/missing build-aux/test-driver
 
 # doxygen genrated things
 rm -rf doc/html
