@@ -355,6 +355,9 @@ void parse(InputParser<ConfigEnumSiteDoFsParams> &parser,
   // params.axes.cols()
   parser.optional_else(params.max_nonzero, "max_nonzero",
                        Index{params.axes.cols()});
+
+  // 5) get homogeneous modes
+  parser.optional_else(params.exclude_homogeneous_modes, "exclude_homogeneous_modes", false);
 }
 
 void require_all_input_have_the_same_number_of_selected_sites(
@@ -591,14 +594,6 @@ void ConfigEnumSiteDoFsInterface::run(
   bool sym_axes_option;
   parser.optional_else(sym_axes_option, "sym_axes", false);
 
-  bool exclude_homogeneous_modes;
-  parser.optional_else(exclude_homogeneous_modes, "exclude_homogeneous_modes",
-                       false);
-  log << "Turning off homogeneous modes...\n"; 
-
-  auto params_new_copy = params;
-  params_new_copy.exclude_homogeneous_modes = exclude_homogeneous_modes;
-
   // 3c) check for "print_dof_space_and_quit" option:
   bool print_dof_space_and_quit_option;
   parser.optional_else(print_dof_space_and_quit_option,
@@ -631,7 +626,7 @@ void ConfigEnumSiteDoFsInterface::run(
   DoFSpaceIO::SequentialDirectoryOutput dof_space_output{output_dir};
   
   ConfigEnumSiteDoFsInterface_impl::MakeEnumerator make_enumerator_f{
-      params_new_copy, sym_axes_option, dof_space_output};
+      params, sym_axes_option, dof_space_output};
 
   typedef ConfigEnumData<ConfigEnumSiteDoFs, ConfigEnumInput>
       ConfigEnumDataType;
