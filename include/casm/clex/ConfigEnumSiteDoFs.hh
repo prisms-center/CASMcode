@@ -126,8 +126,7 @@ class ConfigEnumSiteDoFs : public InputEnumeratorBase<Configuration> {
                      Eigen::Ref<const Eigen::VectorXd> const &min_val,
                      Eigen::Ref<const Eigen::VectorXd> const &max_val,
                      Eigen::Ref<const Eigen::VectorXd> const &inc_val,
-                     Index _min_nonzero,
-                     Index _max_nonzero);
+                     Index _min_nonzero, Index _max_nonzero);
 
   std::string name() const override;
 

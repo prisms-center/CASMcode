@@ -10,8 +10,7 @@ namespace CASM {
 ConfigEnumSiteDoFs::ConfigEnumSiteDoFs(ConfigEnumInput const &_in_config,
                                        ConfigEnumSiteDoFsParams const &params)
     : ConfigEnumSiteDoFs(_in_config, params.dof, params.axes, params.min_val,
-                         params.max_val, params.inc_val,
-                         params.min_nonzero,
+                         params.max_val, params.inc_val, params.min_nonzero,
                          params.max_nonzero) {}
 
 /// See `ConfigEnumSiteDoFsParams` for method and parameter details
@@ -20,8 +19,8 @@ ConfigEnumSiteDoFs::ConfigEnumSiteDoFs(
     Eigen::Ref<const Eigen::MatrixXd> const &_axes,
     Eigen::Ref<const Eigen::VectorXd> const &min_val,
     Eigen::Ref<const Eigen::VectorXd> const &max_val,
-    Eigen::Ref<const Eigen::VectorXd> const &inc_val,
-    Index _min_nonzero, Index _max_nonzero)
+    Eigen::Ref<const Eigen::VectorXd> const &inc_val, Index _min_nonzero,
+    Index _max_nonzero)
     :
 
       // m_current(_init.config()),
@@ -121,7 +120,7 @@ void ConfigEnumSiteDoFs::_set_dof() {
     }
   }
 
-    m_current->configdof().set_local_dof(m_dof_key, vals);
+  m_current->configdof().set_local_dof(m_dof_key, vals);
 }
 
 /// Implements _increment over all occupations
