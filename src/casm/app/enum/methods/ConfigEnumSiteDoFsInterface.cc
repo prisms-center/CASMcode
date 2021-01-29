@@ -419,6 +419,9 @@ struct MakeEnumerator {
           dof_space, initial_state, group, calc_wedges, sym_report);
       params_copy.axes = dof_space.basis();
 
+      // If exclude homogeneous modes is true resize all the inc, min, max
+      // values and explicitly compute the symmetry adapted axes without
+      // homogeneous modes
       if (exclude_homogeneous_modes == true) {
         log << "Excluding homogeneous modes..." << std::endl;
 
@@ -555,6 +558,9 @@ void ConfigEnumSiteDoFsInterface::run(
   parser.optional_else(exclude_homogeneous_modes, "exclude_homogeneous_modes",
                        false);
 
+  // If sym_axes is false along with exclude_homogeneous_modes true,
+  // throw an error as we do not have it implemented in the current section of
+  // the code
   if (sym_axes_option == false && exclude_homogeneous_modes == true) {
     log << "You cannot set exclude_homogeneous_modes to be true when using "
            "custom axes. Alternatives: \n 1) Use "

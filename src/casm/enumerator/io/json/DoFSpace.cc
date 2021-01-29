@@ -78,7 +78,7 @@ jsonParser &to_json(DoFSpace const &dofspace, jsonParser &json,
           "enumeration";
     } else {
       std::vector<int> indices =
-          get_indices_of_rigid_translation_space(dofspace, input_state.value());
+          get_indices_of_homogeneous_mode_space(dofspace, input_state.value());
       std::vector<std::string> string_of_indices;
       for (auto i : indices) {
         std::string s = "q" + std::to_string(i + 1);

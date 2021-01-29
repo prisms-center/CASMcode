@@ -479,7 +479,7 @@ Eigen::MatrixXd symmetry_adapted_axes_without_homogeneous_modes(
   return axes;
 }
 
-std::vector<int> get_indices_of_rigid_translation_space(
+std::vector<int> get_indices_of_homogeneous_mode_space(
     const DoFSpace& symmetry_adapted_dof_space,
     const ConfigEnumInput& initial_state) {
   std::vector<int> indices;

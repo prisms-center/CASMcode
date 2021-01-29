@@ -218,8 +218,7 @@ VectorSpaceSymReport vector_space_sym_report(DoFSpace const &dof_space,
 DoFSpace make_symmetry_adapted_dof_space(
     DoFSpace const &dof_space, ConfigEnumInput const &input_state,
     std::vector<PermuteIterator> const &group, bool calc_wedges,
-    std::optional<VectorSpaceSymReport> &symmetry_report
-    );
+    std::optional<VectorSpaceSymReport> &symmetry_report);
 
 class make_symmetry_adapted_dof_space_error : public std::runtime_error {
  public:
@@ -239,13 +238,25 @@ Eigen::MatrixXd make_homogeneous_mode_space(
 bool are_homogeneous_modes_mixed_in_irreps(
     const Eigen::MatrixXd &axes, const Eigen::MatrixXd &homogeneous_mode_space);
 
+/// Returns symmetry adapted axes with homogeneous modes removed
+/// The result of this function might be different from just the symmetry
+/// adapted axes computed using irrep decomposition and explicitly removing the
+/// homogeneous modes by identifying them using the
+/// get_indices_of_rigid_translation_space below This is implemented by
+/// computing the null space of the homogeneous mode space and using it is a
+/// subspace while performing irrep decomposition
 Eigen::MatrixXd symmetry_adapted_axes_without_homogeneous_modes(
-    const DoFSpace& symmetry_adapted_dof_space,
-    const ConfigEnumInput& initial_state);
+    const DoFSpace &symmetry_adapted_dof_space,
+    const ConfigEnumInput &initial_state);
 
-std::vector<int> get_indices_of_rigid_translation_space(
-    const DoFSpace& symmetry_adapted_dof_space,
-    const ConfigEnumInput& initial_state);
+/// Returns the column numbers of the symmetry adapted axes which are
+/// homogeneous modes This assumes that the provided symmetry adapted axes does
+/// not have homogeneous modes mixed within the irrep axes To check if the
+/// symmetry adapted axes has homogeneous modes mixed within the irreps use
+/// are_homogeneous_modes_mixed_in_irreps function
+std::vector<int> get_indices_of_homogeneous_mode_space(
+    const DoFSpace &symmetry_adapted_dof_space,
+    const ConfigEnumInput &initial_state);
 }  // namespace CASM
 
 #endif
