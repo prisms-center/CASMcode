@@ -106,10 +106,6 @@ struct ConfigEnumSiteDoFsParams {
   /// Maximum number of number modes included in the linear combination applied
   /// to the initial state
   Index max_nonzero;
-
-  /// A boolean flag which lets you turn on or off homogeneous modes
-  /// They are included by default and this flag should be used to turn them off
-  bool exclude_homogeneous_modes;
 };
 
 /// Enumerate site (continuous local) DoFs
@@ -130,7 +126,7 @@ class ConfigEnumSiteDoFs : public InputEnumeratorBase<Configuration> {
                      Eigen::Ref<const Eigen::VectorXd> const &min_val,
                      Eigen::Ref<const Eigen::VectorXd> const &max_val,
                      Eigen::Ref<const Eigen::VectorXd> const &inc_val,
-                     bool exclude_homogeneous_modes, Index _min_nonzero,
+                     Index _min_nonzero,
                      Index _max_nonzero);
 
   std::string name() const override;
@@ -176,28 +172,12 @@ class ConfigEnumSiteDoFs : public InputEnumeratorBase<Configuration> {
 
   bool m_subset_mode;
 
-  bool m_exclude_homogeneous_modes;
-
   Index m_combo_index;
 
   std::vector<Index> m_combo;
 
   EigenCounter<Eigen::VectorXd> m_counter;
 };
-
-/// Checks if all the dof values at each site are the same
-bool are_all_dof_vals_same(const std::vector<Eigen::VectorXd> &dof_vals);
-
-/// Constructs a homogeneous mode space of the dof space represented in terms of
-/// user defined axes. Returns a column vectors matrix
-Eigen::MatrixXd make_homogeneous_mode_space(
-    const std::vector<DoFSetInfo> &dof_info);
-
-/// Returns true if the homogeneous modes are mixed within two irreps.
-/// This will be used to issue a warning to the user to look at stuff more
-/// carefully
-bool are_homogeneous_modes_mixed_in_irreps(
-    const Eigen::MatrixXd &axes, const Eigen::MatrixXd &homogeneous_mode_space);
 }  // namespace CASM
 
 #endif

@@ -9,9 +9,9 @@ namespace CASM {
 namespace DoFSpace_impl {
 
 void throw_if_missing_local_dof_requirements(
-    DoFKey const &dof_key,
-    std::optional<Eigen::Matrix3l> const &transformation_matrix_to_super,
-    std::optional<std::set<Index>> const &sites) {
+    DoFKey const& dof_key,
+    std::optional<Eigen::Matrix3l> const& transformation_matrix_to_super,
+    std::optional<std::set<Index>> const& sites) {
   if (!transformation_matrix_to_super.has_value() || !sites.has_value()) {
     std::stringstream msg;
     msg << "Error: local DoF '" << dof_key
@@ -39,11 +39,11 @@ void throw_if_missing_local_dof_requirements(
 ///        match result of `get_dof_space_dimension`.
 ///
 DoFSpace::DoFSpace(
-    std::shared_ptr<Structure const> const &_shared_prim,
-    DoFKey const &_dof_key,
-    std::optional<Eigen::Matrix3l> const &_transformation_matrix_to_super,
-    std::optional<std::set<Index>> const &_sites,
-    std::optional<Eigen::MatrixXd> const &_basis)
+    std::shared_ptr<Structure const> const& _shared_prim,
+    DoFKey const& _dof_key,
+    std::optional<Eigen::Matrix3l> const& _transformation_matrix_to_super,
+    std::optional<std::set<Index>> const& _sites,
+    std::optional<Eigen::MatrixXd> const& _basis)
     : m_shared_prim(_shared_prim),
       m_dof_key(_dof_key),
       m_transformation_matrix_to_super(_transformation_matrix_to_super),
@@ -96,28 +96,28 @@ DoFSpace::DoFSpace(
 }
 
 /// Shared prim structure
-std::shared_ptr<Structure const> const &DoFSpace::shared_prim() const {
+std::shared_ptr<Structure const> const& DoFSpace::shared_prim() const {
   return m_shared_prim;
 }
 
 /// Type of degree of freedom that is under consideration (e.g., "disp",
 /// "Hstrain", "occ")
-DoFKey const &DoFSpace::dof_key() const { return m_dof_key; }
+DoFKey const& DoFSpace::dof_key() const { return m_dof_key; }
 
 /// Specifies the supercell for a local DoF space. Has value for local DoF.
-std::optional<Eigen::Matrix3l> const &DoFSpace::transformation_matrix_to_super()
+std::optional<Eigen::Matrix3l> const& DoFSpace::transformation_matrix_to_super()
     const {
   return m_transformation_matrix_to_super;
 }
 
 /// The sites included in a local DoF space. Has value for local DoF.
-std::optional<std::set<Index>> const &DoFSpace::sites() const {
+std::optional<std::set<Index>> const& DoFSpace::sites() const {
   return m_sites;
 }
 
 /// The DoF space basis, as a column vector matrix. May be a subspace (cols <=
 /// rows).
-Eigen::MatrixXd const &DoFSpace::basis() const { return m_basis; }
+Eigen::MatrixXd const& DoFSpace::basis() const { return m_basis; }
 
 /// The DoF space dimensions (equals to number of rows in basis).
 Index DoFSpace::dim() const { return m_basis.rows(); }
@@ -126,24 +126,24 @@ Index DoFSpace::dim() const { return m_basis.rows(); }
 Index DoFSpace::subspace_dim() const { return m_basis.cols(); }
 
 /// The inverse of the DoF space basis.
-Eigen::MatrixXd const &DoFSpace::basis_inverse() const {
+Eigen::MatrixXd const& DoFSpace::basis_inverse() const {
   return m_basis_inverse;
 }
 
 /// Names the DoF corresponding to each dimension (row) of the basis
-std::vector<std::string> const &DoFSpace::axis_glossary() const {
+std::vector<std::string> const& DoFSpace::axis_glossary() const {
   return m_axis_glossary;
 }
 
 /// The supercell site_index corresponding to each dimension (row) of the basis.
 /// Has value for local DoF.
-std::optional<std::vector<Index>> const &DoFSpace::axis_site_index() const {
+std::optional<std::vector<Index>> const& DoFSpace::axis_site_index() const {
   return m_axis_site_index;
 }
 
 /// The local DoF site DoFSet component index corresponding to each dimension
 /// (row) of the basis. Has value for local DoF.
-std::optional<std::vector<Index>> const &DoFSpace::axis_dof_component() const {
+std::optional<std::vector<Index>> const& DoFSpace::axis_dof_component() const {
   return m_axis_dof_component;
 }
 
@@ -152,8 +152,8 @@ std::optional<std::vector<Index>> const &DoFSpace::axis_dof_component() const {
 /// Checks that:
 /// - The prim are equivalent
 /// - For local DoF, that the transformation_matrix_to_super are equivalent
-bool is_valid_dof_space(Configuration const &config,
-                        DoFSpace const &dof_space) {
+bool is_valid_dof_space(Configuration const& config,
+                        DoFSpace const& dof_space) {
   if (!AnisoValTraits(dof_space.dof_key()).global()) {
     if (config.supercell().shared_prim() != dof_space.shared_prim()) {
       return false;
@@ -167,8 +167,8 @@ bool is_valid_dof_space(Configuration const &config,
 }
 
 /// Throw if `!is_valid_dof_space(config, dof_space)`
-void throw_if_invalid_dof_space(Configuration const &config,
-                                DoFSpace const &dof_space) {
+void throw_if_invalid_dof_space(Configuration const& config,
+                                DoFSpace const& dof_space) {
   if (!is_valid_dof_space(config, dof_space)) {
     std::stringstream msg;
     msg << "Error: DoFSpace is not valid for given configuration." << std::endl;
@@ -177,13 +177,13 @@ void throw_if_invalid_dof_space(Configuration const &config,
 }
 
 /// Return `config` DoF value as a coordinate in the DoFSpace basis
-Eigen::VectorXd get_normal_coordinate(Configuration const &config,
-                                      DoFSpace const &dof_space) {
+Eigen::VectorXd get_normal_coordinate(Configuration const& config,
+                                      DoFSpace const& dof_space) {
   using namespace DoFSpace_impl;
   throw_if_invalid_dof_space(config, dof_space);
 
-  auto const &dof_key = dof_space.dof_key();
-  auto const &basis_inverse = dof_space.basis_inverse();
+  auto const& dof_key = dof_space.dof_key();
+  auto const& basis_inverse = dof_space.basis_inverse();
 
   if (AnisoValTraits(dof_key).global()) {
     return basis_inverse * config.configdof().global_dof(dof_key).values();
@@ -192,11 +192,11 @@ Eigen::VectorXd get_normal_coordinate(Configuration const &config,
       return basis_inverse * config.configdof().occupation().cast<double>();
     } else {
       Eigen::VectorXd vector_values = Eigen::VectorXd::Zero(dof_space.dim());
-      Eigen::MatrixXd const &matrix_values =
+      Eigen::MatrixXd const& matrix_values =
           config.configdof().local_dof(dof_key).values();
 
-      auto const &axis_dof_component = dof_space.axis_dof_component().value();
-      auto const &axis_site_index = dof_space.axis_site_index().value();
+      auto const& axis_dof_component = dof_space.axis_dof_component().value();
+      auto const& axis_site_index = dof_space.axis_site_index().value();
 
       for (Index i = 0; i < dof_space.dim(); ++i) {
         vector_values[i] =
@@ -208,8 +208,8 @@ Eigen::VectorXd get_normal_coordinate(Configuration const &config,
 }
 
 /// Set `config` DoF value from a coordinate in the DoFSpace basis
-void set_dof_value(Configuration &config, DoFSpace const &dof_space,
-                   Eigen::VectorXd const &normal_coordinate) {
+void set_dof_value(Configuration& config, DoFSpace const& dof_space,
+                   Eigen::VectorXd const& normal_coordinate) {
   using namespace DoFSpace_impl;
   throw_if_invalid_dof_space(config, dof_space);
 
@@ -221,8 +221,8 @@ void set_dof_value(Configuration &config, DoFSpace const &dof_space,
     throw std::runtime_error(msg.str());
   }
 
-  auto const &dof_key = dof_space.dof_key();
-  auto const &basis = dof_space.basis();
+  auto const& dof_key = dof_space.dof_key();
+  auto const& basis = dof_space.basis();
 
   if (AnisoValTraits(dof_key).global()) {
     config.configdof().set_global_dof(dof_key, basis * normal_coordinate);
@@ -234,12 +234,12 @@ void set_dof_value(Configuration &config, DoFSpace const &dof_space,
       throw std::runtime_error(msg.str());
     }
 
-    auto &local_dof = config.configdof().local_dof(dof_key);
+    auto& local_dof = config.configdof().local_dof(dof_key);
     Eigen::VectorXd vector_values = basis * normal_coordinate;
     Eigen::MatrixXd matrix_values = local_dof.values();
 
-    auto const &axis_dof_component = dof_space.axis_dof_component().value();
-    auto const &axis_site_index = dof_space.axis_site_index().value();
+    auto const& axis_dof_component = dof_space.axis_dof_component().value();
+    auto const& axis_site_index = dof_space.axis_site_index().value();
 
     for (Index i = 0; i < dof_space.dim(); ++i) {
       matrix_values(axis_dof_component[i], axis_site_index[i]) =
@@ -251,9 +251,9 @@ void set_dof_value(Configuration &config, DoFSpace const &dof_space,
 }
 
 Index get_dof_space_dimension(
-    DoFKey dof_key, xtal::BasicStructure const &prim,
-    std::optional<Eigen::Matrix3l> const &transformation_matrix_to_super,
-    std::optional<std::set<Index>> const &sites) {
+    DoFKey dof_key, xtal::BasicStructure const& prim,
+    std::optional<Eigen::Matrix3l> const& transformation_matrix_to_super,
+    std::optional<std::set<Index>> const& sites) {
   if (AnisoValTraits(dof_key).global()) {
     return prim.global_dof(dof_key).dim();
   } else {
@@ -267,7 +267,7 @@ Index get_dof_space_dimension(
     for (Index site_index : *sites) {
       Index sublattice_index =
           unitcellcoord_index_converter(site_index).sublattice();
-      xtal::Site const &site = prim.basis()[sublattice_index];
+      xtal::Site const& site = prim.basis()[sublattice_index];
       if (dof_key == "occ") {
         dof_space_dimension += site.occupant_dof().size();
       } else if (site.has_dof(dof_key)) {
@@ -280,9 +280,9 @@ Index get_dof_space_dimension(
 
 /// The axis_glossary gives names to an un-symmetrized coordinate system
 std::vector<std::string> make_axis_glossary(
-    DoFKey dof_key, xtal::BasicStructure const &prim,
-    std::optional<Eigen::Matrix3l> const &transformation_matrix_to_super,
-    std::optional<std::set<Index>> const &sites) {
+    DoFKey dof_key, xtal::BasicStructure const& prim,
+    std::optional<Eigen::Matrix3l> const& transformation_matrix_to_super,
+    std::optional<std::set<Index>> const& sites) {
   std::vector<std::string> axis_glossary;
 
   if (AnisoValTraits(dof_key).global()) {
@@ -299,16 +299,16 @@ std::vector<std::string> make_axis_glossary(
     for (Index site_index : *sites) {
       Index sublattice_index =
           unitcellcoord_index_converter(site_index).sublattice();
-      xtal::Site const &site = prim.basis()[sublattice_index];
+      xtal::Site const& site = prim.basis()[sublattice_index];
       if (dof_key == "occ") {
-        for (auto const &molecule : site.occupant_dof()) {
+        for (auto const& molecule : site.occupant_dof()) {
           axis_glossary.push_back("occ[" + std::to_string(site_index + 1) +
                                   "][" + molecule.name() + "]");
         }
       } else if (site.has_dof(dof_key)) {
         std::vector<std::string> tdescs =
             component_descriptions(site.dof(dof_key));
-        for (std::string const &desc : tdescs) {
+        for (std::string const& desc : tdescs) {
           axis_glossary.push_back(desc + "[" + std::to_string(site_index + 1) +
                                   "]");
         }
@@ -321,12 +321,12 @@ std::vector<std::string> make_axis_glossary(
 
 /// The axis_glossary gives names to an un-symmetrized coordinate system
 void make_dof_space_axis_info(
-    DoFKey dof_key, xtal::BasicStructure const &prim,
-    std::optional<Eigen::Matrix3l> const &transformation_matrix_to_super,
-    std::optional<std::set<Index>> const &sites,
-    std::vector<std::string> &axis_glossary,
-    std::optional<std::vector<Index>> &axis_site_index,
-    std::optional<std::vector<Index>> &axis_dof_component) {
+    DoFKey dof_key, xtal::BasicStructure const& prim,
+    std::optional<Eigen::Matrix3l> const& transformation_matrix_to_super,
+    std::optional<std::set<Index>> const& sites,
+    std::vector<std::string>& axis_glossary,
+    std::optional<std::vector<Index>>& axis_site_index,
+    std::optional<std::vector<Index>>& axis_dof_component) {
   if (AnisoValTraits(dof_key).global()) {
     axis_glossary.clear();
     axis_site_index = std::nullopt;
@@ -349,10 +349,10 @@ void make_dof_space_axis_info(
     for (Index site_index : *sites) {
       Index sublattice_index =
           unitcellcoord_index_converter(site_index).sublattice();
-      xtal::Site const &site = prim.basis()[sublattice_index];
+      xtal::Site const& site = prim.basis()[sublattice_index];
       if (dof_key == "occ") {
         Index i = 0;
-        for (auto const &molecule : site.occupant_dof()) {
+        for (auto const& molecule : site.occupant_dof()) {
           axis_glossary.push_back("occ[" + std::to_string(site_index + 1) +
                                   "][" + molecule.name() + "]");
           axis_dof_component->push_back(i);
@@ -363,7 +363,7 @@ void make_dof_space_axis_info(
         std::vector<std::string> tdescs =
             component_descriptions(site.dof(dof_key));
         Index i = 0;
-        for (std::string const &desc : tdescs) {
+        for (std::string const& desc : tdescs) {
           axis_glossary.push_back(desc + "[" + std::to_string(site_index + 1) +
                                   "]");
           axis_dof_component->push_back(i);
@@ -378,9 +378,9 @@ void make_dof_space_axis_info(
 
 /// Make DoFSpace using `dof_key`, transformation matrix and sites from
 /// `input_state`, and `basis`
-DoFSpace make_dof_space(DoFKey dof_key, ConfigEnumInput const &input_state,
-                        std::optional<Eigen::MatrixXd> const &basis) {
-  auto const &supercell = input_state.configuration().supercell();
+DoFSpace make_dof_space(DoFKey dof_key, ConfigEnumInput const& input_state,
+                        std::optional<Eigen::MatrixXd> const& basis) {
+  auto const& supercell = input_state.configuration().supercell();
 
   return DoFSpace(supercell.shared_prim(), dof_key,
                   supercell.sym_info().transformation_matrix_to_super(),
@@ -389,9 +389,9 @@ DoFSpace make_dof_space(DoFKey dof_key, ConfigEnumInput const &input_state,
 
 /// Make DoFSpace with symmetry adapated basis
 DoFSpace make_symmetry_adapted_dof_space(
-    DoFSpace const &dof_space, ConfigEnumInput const &input_state,
-    std::vector<PermuteIterator> const &group, bool calc_wedges,
-    std::optional<VectorSpaceSymReport> &symmetry_report) {
+    DoFSpace const& dof_space, ConfigEnumInput const& input_state,
+    std::vector<PermuteIterator> const& group, bool calc_wedges,
+    std::optional<VectorSpaceSymReport>& symmetry_report) {
   symmetry_report = vector_space_sym_report(
       dof_space, input_state, group.begin(), group.end(), calc_wedges);
 
@@ -406,6 +406,106 @@ DoFSpace make_symmetry_adapted_dof_space(
 
   return make_dof_space(dof_space.dof_key(), input_state,
                         symmetry_report->symmetry_adapted_dof_subspace);
+}
+
+Eigen::MatrixXd make_homogeneous_mode_space(
+    const std::vector<DoFSetInfo>& dof_info) {
+  Index tot_dim = 0;
+  for (const auto& site_dof : dof_info) {
+    tot_dim += site_dof.dim();
+  }
+
+  Eigen::MatrixXd homogeneous_mode_space(tot_dim,
+                                         dof_info[0].inv_basis().cols());
+
+  Index l = 0;
+  for (const auto& site_dof : dof_info) {
+    homogeneous_mode_space.block(l, 0, site_dof.dim(),
+                                 site_dof.inv_basis().cols()) =
+        site_dof.inv_basis();
+    l += site_dof.dim();
+  }
+
+  return homogeneous_mode_space;
+}
+
+bool are_homogeneous_modes_mixed_in_irreps(
+    const Eigen::MatrixXd& axes,
+    const Eigen::MatrixXd& homogeneous_mode_space) {
+  // Make a projection operator out of homogeneous mode space and project each
+  // of the basis vectors onto it If they have a partial projection (not full or
+  // zero) => translational modes are mixed between irreps
+  Eigen::MatrixXd proj_operator =
+      homogeneous_mode_space * homogeneous_mode_space.transpose();
+
+  for (Index i = 0; i < axes.cols(); ++i) {
+    Eigen::VectorXd col_projection = proj_operator * axes.col(i);
+    if (!col_projection.isZero(CASM::TOL)) {
+      col_projection.normalize();
+    }
+
+    if (CASM::almost_equal(col_projection, axes.col(i).normalized()) == false &&
+        col_projection.isZero(CASM::TOL) == false) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+Eigen::MatrixXd symmetry_adapted_axes_without_homogeneous_modes(
+    const DoFSpace& symmetry_adapted_dof_space,
+    const ConfigEnumInput& initial_state) {
+  auto const& dof_info = initial_state.configuration()
+                             .configdof()
+                             .local_dof(symmetry_adapted_dof_space.dof_key())
+                             .info();
+
+  Eigen::MatrixXd homogeneous_mode_space =
+      make_homogeneous_mode_space(dof_info);
+
+  Eigen::MatrixXd null_space =
+      homogeneous_mode_space.transpose().fullPivLu().kernel();
+
+  std::vector<PermuteIterator> group = make_invariant_subgroup(initial_state);
+
+  auto irreps = irrep_decomposition(
+      initial_state.sites().begin(), initial_state.sites().end(),
+      initial_state.configuration().supercell().sym_info(),
+      symmetry_adapted_dof_space.dof_key(), group, null_space);
+
+  Eigen::MatrixXd axes = full_trans_mat(irreps).transpose();
+
+  return axes;
+}
+
+std::vector<int> get_indices_of_rigid_translation_space(
+    const DoFSpace& symmetry_adapted_dof_space,
+    const ConfigEnumInput& initial_state) {
+  std::vector<int> indices;
+  Eigen::MatrixXd sym_axes = symmetry_adapted_dof_space.basis();
+
+  auto const& dof_info = initial_state.configuration()
+                             .configdof()
+                             .local_dof(symmetry_adapted_dof_space.dof_key())
+                             .info();
+
+  Eigen::MatrixXd homogeneous_mode_space =
+      make_homogeneous_mode_space(dof_info);
+  Eigen::MatrixXd proj_operator =
+      homogeneous_mode_space * homogeneous_mode_space.transpose();
+
+  for (Index i = 0; i < sym_axes.cols(); ++i) {
+    Eigen::VectorXd col_projection = proj_operator * sym_axes.col(i);
+    if (!col_projection.isZero(CASM::TOL)) {
+      col_projection.normalize();
+    }
+    if (almost_equal(col_projection, sym_axes.col(i).normalized())) {
+      indices.push_back(i);
+    }
+  }
+
+  return indices;
 }
 
 }  // namespace CASM

@@ -355,9 +355,6 @@ void parse(InputParser<ConfigEnumSiteDoFsParams> &parser,
   // params.axes.cols()
   parser.optional_else(params.max_nonzero, "max_nonzero",
                        Index{params.axes.cols()});
-
-  // 5) get homogeneous modes
-  parser.optional_else(params.exclude_homogeneous_modes, "exclude_homogeneous_modes", false);
 }
 
 void require_all_input_have_the_same_number_of_selected_sites(
@@ -388,15 +385,18 @@ namespace ConfigEnumSiteDoFsInterface_impl {
 struct MakeEnumerator {
   MakeEnumerator(ConfigEnumSiteDoFsParams const &_params,
                  bool _make_symmetry_adapted_axes,
+                 bool _exclude_homogeneous_modes,
                  DoFSpaceIO::SequentialDirectoryOutput &_dof_space_output)
       : log(CASM::log()),
         params(_params),
         make_symmetry_adapted_axes(_make_symmetry_adapted_axes),
+        exclude_homogeneous_modes(_exclude_homogeneous_modes),
         dof_space_output(_dof_space_output) {}
 
   Log &log;
   ConfigEnumSiteDoFsParams const &params;
   bool make_symmetry_adapted_axes;
+  bool exclude_homogeneous_modes;
   DoFSpaceIO::SequentialDirectoryOutput &dof_space_output;
 
   ConfigEnumSiteDoFs operator()(Index index, std::string name,
@@ -404,20 +404,6 @@ struct MakeEnumerator {
     DoFSpace dof_space = make_dof_space(params.dof, initial_state, params.axes);
     std::optional<VectorSpaceSymReport> sym_report;
     ConfigEnumSiteDoFsParams params_copy = params;
-
-    std::vector<Index> dof_dims;
-    auto const &dof_info =
-        initial_state.configuration().configdof().local_dof(params.dof).info();
-    for (Index l : initial_state.sites()) {
-      dof_dims.push_back(
-          dof_info[initial_state.configuration().sublat(l)].dim());
-    }
-
-    Eigen::MatrixXd axes;
-    Eigen::VectorXd inc_val = params.inc_val;
-    Eigen::VectorXd min_val = params.min_val;
-    Eigen::VectorXd max_val = params.max_val;
-    Index max_nonzero = params.max_nonzero;
 
     if (make_symmetry_adapted_axes) {  // if sym_axes==true, make and use
                                        // symmetry adapted axes
@@ -427,41 +413,41 @@ struct MakeEnumerator {
       bool calc_wedges = false;
       std::vector<PermuteIterator> group =
           make_invariant_subgroup(initial_state);
-      std::vector<SymRepTools::IrrepInfo> irreps;
 
-      Eigen::MatrixXd homogeneous_mode_space =
-          make_homogeneous_mode_space(dof_info);
-      if (params.exclude_homogeneous_modes == true) {
-        Eigen::MatrixXd null_space =
-            homogeneous_mode_space.transpose().fullPivLu().kernel();
+      dof_space_output.write_symmetry(index, name, initial_state, group);
+      dof_space = make_symmetry_adapted_dof_space(
+          dof_space, initial_state, group, calc_wedges, sym_report);
+      params_copy.axes = dof_space.basis();
 
-        irreps = irrep_decomposition(
-            initial_state.sites().begin(), initial_state.sites().end(),
-            initial_state.configuration().supercell().sym_info(), params.dof,
-            group, null_space);
+      if (exclude_homogeneous_modes == true) {
+        log << "Excluding homogeneous modes..." << std::endl;
 
-        axes = full_trans_mat(irreps).transpose();
+        params_copy.axes = symmetry_adapted_axes_without_homogeneous_modes(
+            dof_space, initial_state);
 
-        if (almost_zero(min_val)) {
-          min_val.conservativeResize(axes.cols());
+        if (almost_zero(params_copy.min_val)) {
+          params_copy.min_val.conservativeResize(params_copy.axes.cols());
         }
 
-        if (almost_zero(inc_val - Eigen::VectorXd::Constant(inc_val.rows(),
-                                                            inc_val(0)))) {
-          inc_val.conservativeResize(axes.cols());
+        if (almost_zero(params_copy.inc_val -
+                        Eigen::VectorXd::Constant(params_copy.inc_val.rows(),
+                                                  params_copy.inc_val(0)))) {
+          params_copy.inc_val.conservativeResize(params_copy.axes.cols());
         }
 
-        if (almost_zero(max_val - Eigen::VectorXd::Constant(max_val.rows(),
-                                                            max_val(0)))) {
-          max_val.conservativeResize(axes.cols());
+        if (almost_zero(params_copy.max_val -
+                        Eigen::VectorXd::Constant(params_copy.max_val.rows(),
+                                                  params_copy.max_val(0)))) {
+          params_copy.max_val.conservativeResize(params_copy.axes.cols());
         }
 
-        if (max_nonzero == params.axes.cols()) {
-          max_nonzero = axes.cols();
+        if (params_copy.max_nonzero == dof_space.basis().cols()) {
+          params_copy.max_nonzero = params_copy.axes.cols();
         }
 
-        if (axes.cols() != min_val.rows() || axes.cols() != max_val.rows() ||
-            axes.cols() != inc_val.rows()) {
+        if (params_copy.axes.cols() != params_copy.min_val.rows() ||
+            params_copy.axes.cols() != params_copy.max_val.rows() ||
+            params_copy.axes.cols() != params_copy.inc_val.rows()) {
           log << "Since \"sym_axes\" is set to be true along with switching "
                  "off homogeneous modes, irreps "
                  "containing "
@@ -473,74 +459,39 @@ struct MakeEnumerator {
                  "the dimensionality of your "
                  "\"min\", \"max_val\" "
                  "and \"inc\" to have dimensions of \""
-              << axes.cols() << "\n";
+              << params_copy.axes.cols() << "\n";
 
           throw std::runtime_error(
               "dimensions of \"inc\", \"max\", \"min\" do not match the "
               "dimensionality of irreps\n");
         }
 
-        if (max_nonzero > axes.cols()) {
+        if (params_copy.max_nonzero > params_copy.axes.cols()) {
           log << "Since sym_axes is set to be true along with switching off "
                  "homogeneous modes, irreps "
                  "containing "
                  "homogeneous modes will be excluded. This implies you need to "
                  "set your \"max_nonzero\" to not "
                  "exceed "
-              << axes.cols() << "\n";
+              << params_copy.axes.cols() << "\n";
 
           throw std::runtime_error(
               "max_nonzero exceeds the dimensionality of the irreps\n");
         }
       }
 
-      else {
-        irreps = irrep_decomposition(
-            initial_state.sites().begin(), initial_state.sites().end(),
-            initial_state.configuration().supercell().sym_info(), params.dof,
-            group, params.axes);
+      auto const &dof_info = initial_state.configuration()
+                                 .configdof()
+                                 .local_dof(params.dof)
+                                 .info();
+      Eigen::MatrixXd homogeneous_mode_space =
+          make_homogeneous_mode_space(dof_info);
 
-        axes = full_trans_mat(irreps).transpose();
-        if (axes.cols() != params.axes.cols()) {
-          throw std::runtime_error(
-              "In ConfigEnumSiteDoFs, symmetry-adapted axes do not have same "
-              "dimension as provided axes. "
-              "Please ensure that provided axes completely span one or more of "
-              "subspaces listed above.");
-        }
-      }
-
-      if (are_homogeneous_modes_mixed_in_irreps(axes, homogeneous_mode_space)) {
+      if (are_homogeneous_modes_mixed_in_irreps(params_copy.axes,
+                                                homogeneous_mode_space)) {
         log << "WARNING! Irreps have non-homogeneous and homogeneous modes "
                "mixed. Proceed with caution.\n";
       }
-
-      log << "Enumeration will be performed using symmetry-adapted normal "
-             "coordinates as axes.\n"
-          << "Normal coordinates partition DoF space into " << irreps.size()
-          << " subspaces.\n"
-          << "Normal coordinates are:\n";
-
-      Index l = 0;
-      for (Index d = 0; d < irreps.size(); ++d) {
-        log << "Axes for irreducible representation " << (d + 1)
-            << "\n  --------------\n";
-        Index dim = irreps[d].irrep_dim();
-        for (Index i = 0; i < dim; ++i, ++l) {
-          log << axes.col(l).transpose() << "\n";
-        }
-      }
-
-      log << "----------\n";
-
-      dof_space_output.write_symmetry(index, name, initial_state, group);
-      dof_space = make_symmetry_adapted_dof_space(
-          dof_space, initial_state, group, calc_wedges, sym_report);
-      params_copy.axes = axes;
-      params_copy.inc_val = inc_val;
-      params_copy.max_val = max_val;
-      params_copy.min_val = min_val;
-      params_copy.max_nonzero = max_nonzero;
     }
 
     dof_space_output.write_dof_space(index, dof_space, name, initial_state,
@@ -599,6 +550,24 @@ void ConfigEnumSiteDoFsInterface::run(
   parser.optional_else(print_dof_space_and_quit_option,
                        "print_dof_space_and_quit", false);
 
+  // Check for "exclude_homogeneous_modes" option
+  bool exclude_homogeneous_modes;
+  parser.optional_else(exclude_homogeneous_modes, "exclude_homogeneous_modes",
+                       false);
+
+  if (sym_axes_option == false && exclude_homogeneous_modes == true) {
+    log << "You cannot set exclude_homogeneous_modes to be true when using "
+           "custom axes. Alternatives: \n 1) Use "
+           "symmetry_adapted_axes_without_homogeneous_modes provided in the "
+           "symmetry "
+           "report directly with exclude_homogeneous_modes == false \n 2) "
+           "Directly use exclude_homogeneous_modes == true without custom axes "
+           "(sym_axes = true) && exclude_homogeneous_modes == true \n"
+        << std::endl;
+    throw std::runtime_error(
+        "exclude_homogeneous_modes set to be true when using custom axes");
+  }
+
   // parse "output_dir" (optional, default = current_path)
   fs::path output_dir;
   parser.optional_else(output_dir, "output_dir", fs::current_path());
@@ -624,9 +593,9 @@ void ConfigEnumSiteDoFsInterface::run(
   // 4) Enumerate configurations ------------------
 
   DoFSpaceIO::SequentialDirectoryOutput dof_space_output{output_dir};
-  
+
   ConfigEnumSiteDoFsInterface_impl::MakeEnumerator make_enumerator_f{
-      params, sym_axes_option, dof_space_output};
+      params, sym_axes_option, exclude_homogeneous_modes, dof_space_output};
 
   typedef ConfigEnumData<ConfigEnumSiteDoFs, ConfigEnumInput>
       ConfigEnumDataType;

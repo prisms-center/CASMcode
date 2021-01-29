@@ -218,7 +218,8 @@ VectorSpaceSymReport vector_space_sym_report(DoFSpace const &dof_space,
 DoFSpace make_symmetry_adapted_dof_space(
     DoFSpace const &dof_space, ConfigEnumInput const &input_state,
     std::vector<PermuteIterator> const &group, bool calc_wedges,
-    std::optional<VectorSpaceSymReport> &symmetry_report);
+    std::optional<VectorSpaceSymReport> &symmetry_report
+    );
 
 class make_symmetry_adapted_dof_space_error : public std::runtime_error {
  public:
@@ -227,6 +228,24 @@ class make_symmetry_adapted_dof_space_error : public std::runtime_error {
   virtual ~make_symmetry_adapted_dof_space_error() {}
 };
 
+/// Constructs a homogeneous mode space of the dof space represented in terms of
+/// user defined axes. Returns a column vectors matrix
+Eigen::MatrixXd make_homogeneous_mode_space(
+    const std::vector<DoFSetInfo> &dof_info);
+
+/// Returns true if the homogeneous modes are mixed within two irreps.
+/// This will be used to issue a warning to the user to look at stuff more
+/// carefully
+bool are_homogeneous_modes_mixed_in_irreps(
+    const Eigen::MatrixXd &axes, const Eigen::MatrixXd &homogeneous_mode_space);
+
+Eigen::MatrixXd symmetry_adapted_axes_without_homogeneous_modes(
+    const DoFSpace& symmetry_adapted_dof_space,
+    const ConfigEnumInput& initial_state);
+
+std::vector<int> get_indices_of_rigid_translation_space(
+    const DoFSpace& symmetry_adapted_dof_space,
+    const ConfigEnumInput& initial_state);
 }  // namespace CASM
 
 #endif
