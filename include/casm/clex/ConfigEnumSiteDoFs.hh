@@ -177,6 +177,7 @@ class ConfigEnumSiteDoFs : public InputEnumeratorBase<Configuration> {
 
   EigenCounter<Eigen::VectorXd> m_counter;
 };
+
 }  // namespace CASM
 
 #endif
