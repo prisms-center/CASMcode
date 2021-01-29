@@ -493,6 +493,7 @@ struct MakeEnumerator {
                "mixed. Proceed with caution.\n";
       }
     }
+
     dof_space_output.write_dof_space(index, dof_space, name, initial_state,
                                      sym_report);
     return ConfigEnumSiteDoFs{initial_state, params_copy};
@@ -558,16 +559,32 @@ void ConfigEnumSiteDoFsInterface::run(
   // throw an error as we do not have it implemented in the current section of
   // the code
   if (sym_axes_option == false && exclude_homogeneous_modes == true) {
-    log << "You cannot set exclude_homogeneous_modes to be true when using "
+    std::stringstream msg;
+    msg << "You cannot set 'exclude_homogeneous_modes' = true when using "
            "custom axes. Alternatives: \n 1) Use "
            "symmetry_adapted_axes_without_homogeneous_modes provided in the "
            "symmetry "
-           "report directly with exclude_homogeneous_modes == false \n 2) "
-           "Directly use exclude_homogeneous_modes == true without custom axes "
-           "(sym_axes = true) && exclude_homogeneous_modes == true \n"
+           "report directly with 'exclude_homogeneous_modes' = false \n 2) "
+           "Directly use 'exclude_homogeneous_modes' = true without custom "
+           "axes "
+           "('sym_axes' = true) \n"
         << std::endl;
-    throw std::runtime_error(
-        "exclude_homogeneous_modes set to be true when using custom axes");
+    throw std::runtime_error(msg.str());
+  }
+
+  // Throw error if min, max, inc are provided as vectors when using sym_axes
+  std::vector<std::string> axes_attribs{"min", "max", "increment"};
+  if (sym_axes_option == true) {
+    for (auto attrib : axes_attribs) {
+      if (parser.self.contains(attrib)) {
+        if (!parser.self[attrib].is_number()) {
+          std::stringstream msg;
+          msg << "Error: \"" << attrib
+              << "\" should not be a vector. Provide only a value";
+          parser.error.insert(msg.str());
+        }
+      }
+    }
   }
 
   // parse "output_dir" (optional, default = current_path)
