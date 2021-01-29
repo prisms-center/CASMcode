@@ -355,6 +355,13 @@ void parse(InputParser<ConfigEnumSiteDoFsParams> &parser,
   // params.axes.cols()
   parser.optional_else(params.max_nonzero, "max_nonzero",
                        Index{params.axes.cols()});
+
+  // Throw error if min_nonzero exceeds max_nonzero
+  if (params.min_nonzero > params.max_nonzero) {
+    std::stringstream msg;
+    msg << "'min_nonzero' value exceeds 'max_nonzero' value" << std::endl;
+    throw std::runtime_error(msg.str());
+  }
 }
 
 void require_all_input_have_the_same_number_of_selected_sites(
@@ -448,7 +455,8 @@ struct MakeEnumerator {
         if (params_copy.axes.cols() != params_copy.min_val.rows() ||
             params_copy.axes.cols() != params_copy.max_val.rows() ||
             params_copy.axes.cols() != params_copy.inc_val.rows()) {
-          log << "Since \"sym_axes\" is set to be true along with switching "
+          std::stringstream msg;
+          msg << "Since \"sym_axes\" is set to be true along with switching "
                  "off homogeneous modes, irreps "
                  "containing "
                  "homogeneous modes will be excluded. This implies you need to "
@@ -461,13 +469,12 @@ struct MakeEnumerator {
                  "and \"inc\" to have dimensions of \""
               << params_copy.axes.cols() << "\n";
 
-          throw std::runtime_error(
-              "dimensions of \"inc\", \"max\", \"min\" do not match the "
-              "dimensionality of irreps\n");
+          throw std::runtime_error(msg.str());
         }
 
         if (params_copy.max_nonzero > params_copy.axes.cols()) {
-          log << "Since sym_axes is set to be true along with switching off "
+          std::stringstream msg;
+          msg << "Since sym_axes is set to be true along with switching off "
                  "homogeneous modes, irreps "
                  "containing "
                  "homogeneous modes will be excluded. This implies you need to "
@@ -475,8 +482,18 @@ struct MakeEnumerator {
                  "exceed "
               << params_copy.axes.cols() << "\n";
 
-          throw std::runtime_error(
-              "max_nonzero exceeds the dimensionality of the irreps\n");
+          throw std::runtime_error(msg.str());
+        }
+
+        if (params_copy.min_nonzero > params_copy.axes.cols()) {
+          std::stringstream msg;
+          msg << "Since sym_axes is set to be true along with switching off "
+                 "homogeneous modes, irreps containing homogeneous modes will "
+                 "be excluded. This implies you need to set your "
+                 "\"min_nonzero\" to not exceed your new maximum "
+                 "\"max_nonzero\": "
+              << params_copy.axes.cols() << "value\n";
+          throw std::runtime_error(msg.str());
         }
       }
 
