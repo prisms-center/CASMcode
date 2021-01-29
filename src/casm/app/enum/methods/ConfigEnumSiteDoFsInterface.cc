@@ -404,16 +404,13 @@ struct MakeEnumerator {
     DoFSpace dof_space = make_dof_space(params.dof, initial_state, params.axes);
     std::optional<VectorSpaceSymReport> sym_report;
     ConfigEnumSiteDoFsParams params_copy = params;
-
     if (make_symmetry_adapted_axes) {  // if sym_axes==true, make and use
                                        // symmetry adapted axes
-
       log << "Performing DoF space analysis: " << name << std::endl;
       log << "For large spaces this may be slow..." << std::endl;
       bool calc_wedges = false;
       std::vector<PermuteIterator> group =
           make_invariant_subgroup(initial_state);
-
       dof_space_output.write_symmetry(index, name, initial_state, group);
       dof_space = make_symmetry_adapted_dof_space(
           dof_space, initial_state, group, calc_wedges, sym_report);
@@ -496,7 +493,6 @@ struct MakeEnumerator {
                "mixed. Proceed with caution.\n";
       }
     }
-
     dof_space_output.write_dof_space(index, dof_space, name, initial_state,
                                      sym_report);
     return ConfigEnumSiteDoFs{initial_state, params_copy};
