@@ -3,6 +3,7 @@
 #include <ostream>
 #include <vector>
 
+#include "Common.hh"
 #include "autotools.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/BasicStructureTools.hh"
@@ -43,13 +44,12 @@ xtal::SymOpVector make_factor_group_via_mapping(
 
 class CrystalGroupTest : public testing::Test {
  protected:
-  void add_primitive_structure(std::string prim_file_in_crystallography_testdir,
+  void add_primitive_structure(std::string prim_file_in_data_dir,
                                int factor_group_size) {
-    auto test_files_dir =
-        autotools::abs_srcdir() + "/tests/unit/crystallography/";
-    std::ifstream s;
+    auto test_files_dir = test::data_dir("crystallography");
+    fs::ifstream s;
 
-    s.open(test_files_dir + prim_file_in_crystallography_testdir);
+    s.open(test_files_dir / prim_file_in_data_dir);
     primitive_structures.emplace_back(
         xtal::BasicStructure::from_poscar_stream(s));
     expected_primitive_factor_group_size.emplace_back(factor_group_size);

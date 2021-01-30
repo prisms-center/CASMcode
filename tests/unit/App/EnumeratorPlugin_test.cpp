@@ -24,17 +24,15 @@ TEST(EnumeratorPlugin, Test1) {
   PrimClex primclex(proj.dir);
 
   auto cp = [&](std::string _filename) {
-    fs::path filename(_filename);
-    fs::path src =
-        std::string(autotools::abs_srcdir() + "/tests/unit/App") / filename;
+    fs::path src = test::data_file("App", _filename);
     ASSERT_TRUE(fs::exists(src));
 
     fs::path dest = primclex.dir().enumerator_plugins();
     fs::create_directories(dest);
     ASSERT_TRUE(fs::exists(dest));
 
-    fs::copy_file(src, dest / filename, fs::copy_option::overwrite_if_exists);
-    ASSERT_TRUE(fs::exists(dest / filename));
+    fs::copy_file(src, dest / _filename, fs::copy_option::overwrite_if_exists);
+    ASSERT_TRUE(fs::exists(dest / _filename));
   };
 
   cp("TestEnum.cc");

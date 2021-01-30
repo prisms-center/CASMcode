@@ -2,11 +2,14 @@
 
 #include "Common.hh"
 #include "autotools.hh"
+#include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectBuilder.hh"
+#include "casm/app/ProjectSettings.hh"
 #include "casm/basis_set/BasisFunctionSpecs.hh"
 #include "casm/basis_set/OccupationDoFTraits.hh"
 #include "casm/clex/ClexBasisSpecs.hh"
 #include "casm/clex/Clexulator.hh"
+#include "casm/clex/PrimClex_impl.hh"
 #include "casm/clusterography/ClusterSpecs_impl.hh"
 #include "casm/crystallography/Structure.hh"
 
@@ -36,6 +39,8 @@ ProjectBaseTest::ProjectBaseTest(xtal::BasicStructure const &basic_structure,
   this->make_clexulator();
 }
 
+ProjectBaseTest::~ProjectBaseTest() {}
+
 void ProjectBaseTest::write_bspecs_json() {
   // Write bspecs.json file
   DirectoryStructure const &dir = project_settings_ptr->dir();
@@ -60,7 +65,7 @@ void ProjectBaseTest::make_clexulator() {
   auto const &settings = primclex_ptr->settings();
   auto &prim_neighbor_list = primclex_ptr->nlist();
   Clexulator clexulator =
-      make_clexulator(settings, basis_set_name, prim_neighbor_list);
+      CASM::make_clexulator(settings, basis_set_name, prim_neighbor_list);
 }
 
 }  // namespace test

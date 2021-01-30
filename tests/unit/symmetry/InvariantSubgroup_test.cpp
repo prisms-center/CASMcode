@@ -30,8 +30,7 @@ TEST(InvariantSubgroupTest, Test0) {
   EXPECT_EQ(true, true);
 
   // Make PrimPeriodicIntegralClusterOrbit
-  jsonFile bspecs{autotools::abs_srcdir() +
-                  "/tests/unit/symmetry/ZrO_bspecs_0.json"};
+  jsonFile bspecs{test::data_file("symmetry", "ZrO_bspecs_0.json")};
 
   std::vector<PrimPeriodicIntegralClusterOrbit> orbits;
   // TODO: update with ClusterSpecs

@@ -1,3 +1,4 @@
+#include "Common.hh"
 #include "autotools.hh"
 #include "gtest/gtest.h"
 
@@ -186,21 +187,29 @@ void pos1_read_test(Structure &struc) {
   EXPECT_EQ(16, struc.factor_group().size());
 }
 
-namespace {
-fs::path crystallography_test_directory() {
-  return autotools::abs_srcdir() + "/tests/unit/crystallography";
-}
-}  // namespace
+class StructureTest : public testing::Test {
+ protected:
+  fs::path datadir;
+  test::TmpDir tmpdir;
 
-TEST(StructureTest, PRIM1Test) {
-  fs::path testdir = ::crystallography_test_directory();
+  StructureTest() : datadir(test::data_dir("crystallography")) {}
 
+  // // Can use this to check write failures:
+  // void TearDown() {
+  //   if(HasFailure()) {
+  //     std::cout << "tmpdir: " << tmpdir.path() << std::endl;
+  //     tmpdir.do_not_remove_on_destruction();
+  //   }
+  // }
+};
+
+TEST_F(StructureTest, PRIM1Test) {
   // Read in test PRIM and run tests
-  Structure struc(fs::path(testdir / "PRIM1.txt"));
+  Structure struc(datadir / "PRIM1.txt");
   prim1_read_test(struc);
 
   // Write test PRIM back out
-  fs::path tmp_file = testdir / "PRIM1_out.txt";
+  fs::path tmp_file = tmpdir.path() / "PRIM1_out.txt";
   write_prim(struc, tmp_file, FRAC);
 
   // Read new file and run tests again
@@ -208,23 +217,19 @@ TEST(StructureTest, PRIM1Test) {
   prim1_read_test(struc2);
 }
 
-TEST(StructureTest, PRIM2Test) {
-  fs::path testdir = ::crystallography_test_directory();
-
+TEST_F(StructureTest, PRIM2Test) {
   // Read in test PRIM and run tests
-  Structure struc(fs::path(testdir / "PRIM2.txt"));
+  Structure struc(datadir / "PRIM2.txt");
   prim2_read_test(struc);
 }
 
-TEST(StructureTest, POS1Test) {
-  fs::path testdir = ::crystallography_test_directory();
-
+TEST_F(StructureTest, POS1Test) {
   // Read in test PRIM and run tests
-  Structure struc(fs::path(testdir / "POS1.txt"));
+  Structure struc(datadir / "POS1.txt");
   pos1_read_test(struc);
 
   // Write test PRIM back out
-  fs::path tmp_file = testdir / "POS1_out.txt";
+  fs::path tmp_file = tmpdir.path() / "POS1_out.txt";
   fs::ofstream sout(tmp_file);
   VaspIO::PrintPOSCAR printer(xtal::make_simple_structure(struc),
                               struc.structure().title());
@@ -233,19 +238,17 @@ TEST(StructureTest, POS1Test) {
   sout.close();
 
   // Read new file and run tests again
-  Structure struc2(fs::path(testdir / "POS1_out.txt"));
+  Structure struc2(tmp_file);
   pos1_read_test(struc2);
 }
 
-TEST(StructureTest, POS1Vasp5Test) {
-  fs::path testdir = ::crystallography_test_directory();
-
+TEST_F(StructureTest, POS1Vasp5Test) {
   // Read in test PRIM and run tests
-  Structure struc(fs::path(testdir / "POS1.txt"));
+  Structure struc(datadir / "POS1.txt");
   pos1_read_test(struc);
 
   // Write test PRIM back out
-  fs::path tmp_file = testdir / "POS1_vasp5_out.txt";
+  fs::path tmp_file = tmpdir.path() / "POS1_vasp5_out.txt";
   fs::ofstream sout(tmp_file);
   VaspIO::PrintPOSCAR(xtal::make_simple_structure(struc),
                       struc.structure().title())
@@ -253,19 +256,17 @@ TEST(StructureTest, POS1Vasp5Test) {
   sout.close();
 
   // Read new file and run tests again
-  Structure struc2(fs::path(testdir / "POS1_vasp5_out.txt"));
+  Structure struc2(tmp_file);
   pos1_read_test(struc2);
 }
 
-TEST(StructureTest, POS1jsonPrimTest) {
-  fs::path testdir = ::crystallography_test_directory();
-
+TEST_F(StructureTest, POS1jsonPrimTest) {
   // Read in test PRIM and run tests
-  Structure struc(fs::path(testdir / "POS1.txt"));
+  Structure struc(datadir / "POS1.txt");
   pos1_read_test(struc);
 
   // Write test PRIM back out
-  fs::path tmp_file = testdir / "POS1_prim.json";
+  fs::path tmp_file = tmpdir.path() / "POS1_prim.json";
   jsonParser json;
   write_prim(struc, json, FRAC);
   fs::ofstream sout(tmp_file);

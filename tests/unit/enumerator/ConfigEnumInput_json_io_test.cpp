@@ -2,6 +2,7 @@
 #include "gtest/gtest.h"
 
 /// What is being tested:
+#include "Common.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
@@ -32,9 +33,6 @@ Eigen::Matrix3l _fcc_conventional_transf_mat() {
   return transf_mat;
 }
 
-fs::path enumerator_test_directory() {
-  return autotools::abs_srcdir() + "/tests/unit/enumerator";
-}
 }  // namespace
 
 class ConfigEnumInputjsonIOTest : public testing::Test {
@@ -43,6 +41,7 @@ class ConfigEnumInputjsonIOTest : public testing::Test {
   std::shared_ptr<CASM::Structure const> shared_prim;
   CASM::ProjectSettings project_settings;
   CASM::PrimClex primclex;
+  TmpDir tmpdir;
 
   ConfigEnumInputjsonIOTest()
       : title("ConfigEnumInputjsonIOTest"),
@@ -129,7 +128,7 @@ TEST_F(ConfigEnumInputjsonIOTest, Test3) {
       supercell_selection.data()[supercell.name()] = true;
     }
   }
-  fs::path out_path = enumerator_test_directory() / "test3_selection.json";
+  fs::path out_path = tmpdir.path() / "test3_selection.json";
   supercell_selection.write(make_dictionary<Supercell>(),
                             true,  // force
                             out_path,
@@ -184,7 +183,7 @@ TEST_F(ConfigEnumInputjsonIOTest, Test5) {
       configuration_selection.data()[configuration.name()] = true;
     }
   }
-  fs::path out_path = enumerator_test_directory() / "test5_selection.json";
+  fs::path out_path = tmpdir.path() / "test5_selection.json";
   configuration_selection.write(make_dictionary<Configuration>(),
                                 true,  // force
                                 out_path,

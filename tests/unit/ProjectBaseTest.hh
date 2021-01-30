@@ -4,7 +4,9 @@
 #include <boost/filesystem.hpp>
 #include <string>
 
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/global/definitions.hh"
+#include "gtest/gtest.h"
 
 namespace CASM {
 namespace xtal {
@@ -13,8 +15,9 @@ class BasicStructure;
 class PrimClex;
 class ProjectSettings;
 class Structure;
-class jsonParser;
 }  // namespace CASM
+
+using namespace CASM;
 
 namespace test {
 
@@ -23,6 +26,7 @@ class ProjectBaseTest : public testing::Test {
  protected:
   ProjectBaseTest(xtal::BasicStructure const &basic_structure,
                   std::string title, jsonParser const &_basis_set_specs_json);
+  ~ProjectBaseTest();
 
   void write_bspecs_json();
 

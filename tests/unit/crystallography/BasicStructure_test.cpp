@@ -9,6 +9,7 @@
 #include <boost/filesystem/fstream.hpp>
 #include <fstream>
 
+#include "Common.hh"
 #include "casm/app/AppIO.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/crystallography/Coordinate.hh"
@@ -28,7 +29,6 @@
 using namespace CASM;
 using xtal::ScelEnumProps;
 using xtal::SuperlatticeEnumerator;
-;
 
 /** PRIM1 *****************************
 Face-centered Cubic (FCC, cF)
@@ -204,25 +204,35 @@ void pos1_read_test(BasicStructure &struc) {
 }
 
 namespace {
-fs::path crystallography_test_directory() {
-  return autotools::abs_srcdir() + "/tests/unit/crystallography";
-}
-
 BasicStructure read_structure(const fs::path &poscar_path) {
   std::ifstream poscar_stream(poscar_path.string());
   return BasicStructure::from_poscar_stream(poscar_stream);
 }
 }  // namespace
 
-TEST(BasicStructureSiteTest, PRIM1Test) {
-  fs::path testdir = ::crystallography_test_directory();
+class BasicStructureSiteTest : public testing::Test {
+ protected:
+  fs::path datadir;
+  test::TmpDir tmpdir;
 
+  BasicStructureSiteTest() : datadir(test::data_dir("crystallography")) {}
+
+  // // Can use this to check write failures:
+  // void TearDown() {
+  //   if(HasFailure()) {
+  //     std::cout << "tmpdir: " << tmpdir.path() << std::endl;
+  //     tmpdir.do_not_remove_on_destruction();
+  //   }
+  // }
+};
+
+TEST_F(BasicStructureSiteTest, PRIM1Test) {
   // Read in test PRIM and run tests
-  BasicStructure struc = ::read_structure(fs::path(testdir / "PRIM1.txt"));
+  BasicStructure struc = ::read_structure(datadir / "PRIM1.txt");
   prim1_read_test(struc);
 
   // Write test PRIM back out
-  fs::path tmp_file = testdir / "PRIM1_out.txt";
+  fs::path tmp_file = tmpdir.path() / "PRIM1_out.txt";
   write_prim(struc, tmp_file, FRAC);
 
   // Read new file and run tests again
@@ -230,31 +240,24 @@ TEST(BasicStructureSiteTest, PRIM1Test) {
   prim1_read_test(struc2);
 }
 
-TEST(BasicStructureSiteTest, PRIM2Test) {
-  fs::path testdir = ::crystallography_test_directory();
-
+TEST_F(BasicStructureSiteTest, PRIM2Test) {
   // Read in test PRIM and run tests
-  BasicStructure struc = ::read_structure(fs::path(testdir / "PRIM2.txt"));
+  BasicStructure struc = ::read_structure(datadir / "PRIM2.txt");
   prim2_read_test(struc);
 }
 
-TEST(BasicStructureSiteTest, PRIM3Test) {
-  fs::path testdir = ::crystallography_test_directory();
-
+TEST_F(BasicStructureSiteTest, PRIM3Test) {
   // Read in an incorrectly formatted PRIM and check that an exception is thrown
-  EXPECT_THROW(::read_structure(fs::path(testdir / "PRIM3.txt")),
-               std::runtime_error);
+  EXPECT_THROW(::read_structure(datadir / "PRIM3.txt"), std::runtime_error);
 }
 
-TEST(BasicStructureSiteTest, POS1Test) {
-  fs::path testdir = ::crystallography_test_directory();
-
+TEST_F(BasicStructureSiteTest, POS1Test) {
   // Read in test PRIM and run tests
-  BasicStructure struc = ::read_structure(fs::path(testdir / "POS1.txt"));
+  BasicStructure struc = ::read_structure(datadir / "POS1.txt");
   pos1_read_test(struc);
 
   // Write test PRIM back out
-  fs::path tmp_file = testdir / "POS1_out.txt";
+  fs::path tmp_file = tmpdir.path() / "POS1_out.txt";
   fs::ofstream sout(tmp_file);
   VaspIO::PrintPOSCAR printer(make_simple_structure(struc), struc.title());
   printer.set_append_atom_names_off();
@@ -262,30 +265,27 @@ TEST(BasicStructureSiteTest, POS1Test) {
   sout.close();
 
   // Read new file and run tests again
-  BasicStructure struc2 = ::read_structure(fs::path(testdir / "POS1_out.txt"));
+  BasicStructure struc2 = ::read_structure(datadir / "POS1_out.txt");
   pos1_read_test(struc2);
 }
 
-TEST(BasicStructureSiteTest, POS1Vasp5Test) {
-  fs::path testdir = ::crystallography_test_directory();
-
+TEST_F(BasicStructureSiteTest, POS1Vasp5Test) {
   // Read in test PRIM and run tests
-  BasicStructure struc = ::read_structure(fs::path(testdir / "POS1.txt"));
+  BasicStructure struc = ::read_structure(datadir / "POS1.txt");
   pos1_read_test(struc);
 
   // Write test PRIM back out
-  fs::path tmp_file = testdir / "POS1_vasp5_out.txt";
+  fs::path tmp_file = tmpdir.path() / "POS1_vasp5_out.txt";
   fs::ofstream sout(tmp_file);
   VaspIO::PrintPOSCAR(make_simple_structure(struc), struc.title()).print(sout);
   sout.close();
 
   // Read new file and run tests again
-  BasicStructure struc2 =
-      ::read_structure(fs::path(testdir / "POS1_vasp5_out.txt"));
+  BasicStructure struc2 = ::read_structure(tmp_file);
   pos1_read_test(struc2);
 }
 
-TEST(BasicStructureSiteTest, MakeSuperstructure) {
+TEST_F(BasicStructureSiteTest, MakeSuperstructure) {
   Eigen::Matrix3i transf_mat;
   transf_mat << 2, 0, 0, 0, 2, 0, 0, 0, 2;
 
@@ -306,7 +306,7 @@ TEST(BasicStructureSiteTest, MakeSuperstructure) {
   }
 }
 
-TEST(BasicStructureSiteTest, IsPrimitiveTest) {
+TEST_F(BasicStructureSiteTest, IsPrimitiveTest) {
   Structure prim(test::ZrO_prim());
 
   const SymGroup effective_pg = prim.factor_group();
@@ -340,7 +340,7 @@ class HexagonalSuperStructureTest : public testing::Test {
  protected:
   void SetUp() override {
     fs::path hcp_stack_file =
-        ::crystallography_test_directory() / "hcp_stack3.vasp";
+        test::data_file("crystallography", "hcp_stack3.vasp");
     std::ifstream hcp_stack_stream(hcp_stack_file.string());
     xtal::BasicStructure hcp_stack_structure =
         xtal::BasicStructure::from_poscar_stream(hcp_stack_stream);
@@ -351,7 +351,7 @@ class HexagonalSuperStructureTest : public testing::Test {
         new xtal::BasicStructure(xtal::make_primitive(*hcp_3stack_ptr)));
 
     fs::path hcp_read_prim_path =
-        ::crystallography_test_directory() / "hcp_mg.vasp";
+        test::data_file("crystallography", "hcp_mg.vasp");
     std::ifstream hcp_read_prim_stream(hcp_read_prim_path.string());
     xtal::BasicStructure hcp_read_prim_structure =
         xtal::BasicStructure::from_poscar_stream(hcp_read_prim_stream);

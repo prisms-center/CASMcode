@@ -71,8 +71,8 @@ TEST(ClusterographyTest, MultiCaseTest) {
   ScopedNullLogging logging;
 
   // read test file
-  fs::path test_cases_path(autotools::abs_srcdir() +
-                           "/tests/unit/clusterography/test_cases.json");
+  fs::path test_cases_path =
+      test::data_file("clusterography", "test_cases.json");
   jsonParser tests(test_cases_path);
 
   Log &log = CASM::log();

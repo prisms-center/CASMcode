@@ -1,5 +1,6 @@
 #include <boost/filesystem.hpp>
 
+#include "Common.hh"
 #include "autotools.hh"
 #include "gtest/gtest.h"
 
@@ -22,8 +23,7 @@ using namespace CASM;
 using xtal::ScelEnumProps;
 using xtal::SuperlatticeEnumerator;
 
-boost::filesystem::path testdir(autotools::abs_srcdir() +
-                                "/tests/unit/crystallography");
+boost::filesystem::path testdir(test::data_dir("crystallography"));
 
 void autofail() {
   EXPECT_EQ(1, 0);

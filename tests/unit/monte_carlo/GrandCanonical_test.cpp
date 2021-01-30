@@ -28,20 +28,17 @@ TEST(GrandCanonicalTest, Test0) {
   ScopedNullLogging logging;
   PrimClex primclex(proj.dir);
 
-  fs::path eci_src =
-      autotools::abs_srcdir() + "/tests/unit/monte_carlo/eci_0.json";
+  fs::path eci_src = test::data_file("monte_carlo", "eci_0.json");
   fs::path eci_dest = primclex.dir().eci("formation_energy", "default",
                                          "default", "default", "default");
   fs::copy_file(eci_src, eci_dest, fs::copy_option::overwrite_if_exists);
 
-  fs::path bspecs_src =
-      autotools::abs_srcdir() + "/tests/unit/monte_carlo/bspecs_0.json";
+  fs::path bspecs_src = test::data_file("monte_carlo", "bspecs_0.json");
   fs::path bspecs_dest = primclex.dir().bspecs("default");
   fs::copy_file(bspecs_src, bspecs_dest, fs::copy_option::overwrite_if_exists);
 
   fs::path settings_src =
-      autotools::abs_srcdir() +
-      "/tests/unit/monte_carlo/metropolis_grand_canonical_0.json";
+      test::data_file("monte_carlo", "metropolis_grand_canonical_0.json");
   fs::path mc_dir = primclex.dir().root_dir() / "mc_0";
   fs::create_directory(mc_dir);
   fs::path settings_dest = mc_dir / settings_src.filename();
