@@ -1,5 +1,6 @@
 #include <vector>
 
+#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clex/ECIContainer.hh"
 
@@ -10,56 +11,61 @@ namespace CASM {
 /// Format:
 /// \code
 /// {
-///   "site_functions":[
+///   "orbits":[  // "cluster_functions", prior to 1.0.X
 ///     {
-///       "asym_unit": X,
-///       "sublat_indices: [2, 3],
-///       "phi_b_0": {"Va":0.0, "O":1.0},
-///       "phi_b_1": {"Va":0.0, "O":1.0},
-///        ...
+///       "eci": <float>,
+///       "linear_orbit_index": <int>, // "linear_cluster_index", prior to 1.0.X
+///       ...
 ///     },
 ///     ...
 ///   ],
-///   "cluster_functions":[
-///     {
-///       "eci": X.XXXXX,
-///       "prototype_function": "\phi_b_i(s_j)...",
-///       "orbit": [branch_index, orbit_index],
-///       "linear_function_index": I,
-///       "mult": X,
-///       "prototype": [
-///         [b, i, j, k],
-///         ...
-///       ]
-///     },
-///     ...
-///   ]
+///   ...
 /// }
 /// \endcode
 ///
+/// Note:
+/// - Prior to version 1.0.X, the "orbits" array was named "cluster_functions"
+///   and the "linear_orbit_index" was named "linear_cluster_index". For
+///   compatibility, that format is also accepted.
+///
 void parse(InputParser<ECIContainer> &parser) {
-  if (parser.self.find("cluster_functions") == parser.self.end()) {
-    parser.error.insert(
-        "Error parsing ECI: 'cluster_functions' array not found");
+  std::string orbits_name = "orbits";
+  std::string index_name = "linear_orbit_index";
+
+  // v0.X compatibility mode:
+  if (parser.self.contains("cluster_functions") &&
+      !parser.self.contains("orbits")) {
+    err_log() << "WARNING: Detected old ECI format (version < 1.0.X): Reading "
+                 "\"cluster_functions\" instead of \"orbits\", and "
+                 "\"linear_cluster_index\" instead of \"linear_orbit_index\"."
+              << std::endl;
+
+    orbits_name = "cluster_functions";
+    index_name = "linear_cluster_functions";
+  }
+
+  if (parser.self.find(orbits_name) == parser.self.end()) {
+    std::stringstream msg;
+    msg << "Error parsing ECI: '" << orbits_name << "' array not found";
+    parser.error.insert(msg.str());
     return;
   }
 
   std::vector<double> value;
   std::vector<ECIContainer::size_type> index;
 
-  jsonParser const &cluster_functions_json = parser.self["cluster_functions"];
-  fs::path cluster_functions_path{"cluster_functions"};
+  jsonParser const &orbits_json = parser.self[orbits_name];
+  fs::path orbits_path{orbits_name};
   Index i = 0;
-  for (auto const &cluster_json : cluster_functions_json) {
-    if (cluster_json.find("eci") != cluster_json.end()) {
+  for (auto const &orbit : orbits_json) {
+    if (orbit.find("eci") != orbit.end()) {
       double eci_value;
-      ECIContainer::size_type linear_function_index;
-      fs::path cluster_path = cluster_functions_path / std::to_string(i);
-      parser.require(eci_value, cluster_path / "eci");
-      parser.require(linear_function_index,
-                     cluster_path / "linear_function_index");
+      ECIContainer::size_type linear_orbit_index;
+      fs::path orbit_path = orbits_path / std::to_string(i);
+      parser.require(eci_value, orbit_path / "eci");
+      parser.require(linear_orbit_index, orbit_path / index_name);
       value.push_back(eci_value);
-      index.push_back(linear_function_index);
+      index.push_back(linear_orbit_index);
     }
     ++i;
   }
