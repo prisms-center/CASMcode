@@ -1,51 +1,38 @@
-#include "gtest/gtest.h"
-
-/// What is being tested:
 #include "casm/clex/Clexulator.hh"
 
-/// Dependencies
-#include "casm/casm_io/Log.hh"
-#include "casm/system/RuntimeLibrary.hh"
-
-/// What is being used to test it:
-#include <boost/filesystem.hpp>
+#include "ProjectBaseTest.hh"
+#include "casm/clex/Supercell.hh"
+#include "gtest/gtest.h"
 
 using namespace CASM;
 
-TEST(ClexulatorTest, MakeClexulatorTest) {
-  std::cout << "skipping Clexulator_test" << std::endl;
-  if (true) {
-    return;
-  }
+//
+namespace {
+Eigen::Matrix3l _fcc_conventional_transf_mat() {
+  Eigen::Matrix3l transf_mat;
+  transf_mat << -1, 1, 1, 1, -1, 1, 1, 1, -1;
+  return transf_mat;
+}
+}  // namespace
 
-  namespace fs = boost::filesystem;
+/// Note: this builds on FCCTernaryProjectClexBasisTest from PrimClex_test.cpp
+class OccupationClexulatorTest : protected ProjectBaseTest,
+                                 protected testing::Test {
+ protected:
+  OccupationClexulatorTest()
+      : ProjectBaseTest(test::FCC_ternary_prim(), "OccupationClexulatorTest",
+                        test::FCC_ternary_clex_basis_specs_str_ex0()),
+        shared_supercell(std::make_shared<CASM::Supercell>(
+            shared_prim, _fcc_conventional_transf_mat())) {}
 
-  std::string compile_opt = RuntimeLibrary::default_cxx().first + " " +
-                            RuntimeLibrary::default_cxxflags().first +
-                            " -Iinclude";
-  std::string so_opt = RuntimeLibrary::default_cxx().first + " " +
-                       RuntimeLibrary::default_soflags().first;
+  // conventional FCC unit cell
+  std::shared_ptr<CASM::Supercell> shared_supercell;
+};
 
-  if (!RuntimeLibrary::default_boost_includedir().first.empty()) {
-    compile_opt +=
-        " " + include_path(RuntimeLibrary::default_boost_includedir().first);
-  }
+TEST_F(OccupationClexulatorTest, UseClexulator) {
+  // Zeros configuration, conventional FCC unit cell
+  CASM::Configuration configuration{shared_supercell};
 
-  if (!RuntimeLibrary::default_boost_libdir().first.empty()) {
-    so_opt += " " + link_path(RuntimeLibrary::default_boost_libdir().first);
-  }
-
-  std::vector<int> sublat_indices = {0};
-  PrimNeighborList::Matrix3Type W;
-  W.row(0) << 2, 1, 1;
-  W.row(1) << 1, 2, 1;
-  W.row(2) << 1, 1, 2;
-
-  PrimNeighborList nlist(W, sublat_indices.begin(), sublat_indices.end());
-
-  ScopedNullLogging logging;
-  Clexulator clexulator("test_Clexulator", "tests/unit/clex", nlist,
-                        compile_opt, so_opt);
-
-  EXPECT_EQ(clexulator.corr_size(), 75);
+  // Check clexulator
+  EXPECT_EQ(configuration.size(), 4);
 }
