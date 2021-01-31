@@ -12,6 +12,7 @@
 #include "casm/clex/ClexBasis_impl.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/io/stream/BasisFunctionPrinter_impl.hh"
 #include "casm/clusterography/ClusterSpecs_impl.hh"
 #include "casm/completer/Handlers.hh"
 
@@ -129,23 +130,6 @@ class OrbitPrinterAdapter {
 
  private:
   PrinterType m_printer;
-  Log &m_log;
-};
-
-/// This functor implements a template method so that basis functions can be
-/// printed for any orbit type, as determined at runtime from the JSON file
-/// parameters
-class BasisFunctionPrinter {
- public:
-  BasisFunctionPrinter(Log &_log, std::shared_ptr<Structure const> _shared_prim,
-                       ClexBasisSpecs const &_basis_set_specs);
-
-  template <typename OrbitVecType>
-  void operator()(OrbitVecType const &orbits) const;
-
- private:
-  std::shared_ptr<Structure const> m_shared_prim;
-  ClexBasisSpecs m_basis_set_specs;
   Log &m_log;
 };
 
@@ -280,23 +264,5 @@ void OrbitPrinterAdapter<PrinterType>::operator()(
   print_clust(orbits.begin(), orbits.end(), m_log, m_printer);
 }
 
-BasisFunctionPrinter::BasisFunctionPrinter(
-    Log &_log, std::shared_ptr<Structure const> _shared_prim,
-    ClexBasisSpecs const &_basis_set_specs)
-    : m_shared_prim(_shared_prim),
-      m_basis_set_specs(_basis_set_specs),
-      m_log(_log) {}
-
-template <typename OrbitVecType>
-void BasisFunctionPrinter::operator()(OrbitVecType const &orbits) const {
-  ParsingDictionary<DoFType::Traits> const *dof_dict = &DoFType::traits_dict();
-  ClexBasis clex_basis{m_shared_prim, m_basis_set_specs, dof_dict};
-  clex_basis.generate(orbits.begin(), orbits.end());
-
-  print_site_basis_funcs(m_shared_prim, clex_basis, m_log);
-  ProtoFuncsPrinter funcs_printer{clex_basis,
-                                  m_shared_prim->shared_structure()};
-  print_clust(orbits.begin(), orbits.end(), m_log, funcs_printer);
-}
 }  // namespace bset_impl
 }  // namespace CASM
