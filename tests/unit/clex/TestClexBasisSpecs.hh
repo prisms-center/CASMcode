@@ -60,6 +60,21 @@ inline std::string FCC_ternary_clex_basis_specs_str_ex0() {
 }
 })";
 }
+
+inline std::string SimpleCubic_GLstrain_clex_basis_specs_str_ex0() {
+  return R"({
+"basis_function_specs" : {
+"global_max_poly_order": 3
+},
+"cluster_specs": {
+"method": "periodic_max_length",
+"params": {
+  "orbit_branch_specs": {}
+}
+}
+})";
+}
+
 }  // namespace test
 
 #endif

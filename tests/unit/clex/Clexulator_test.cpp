@@ -53,3 +53,39 @@ TEST_F(OccupationClexulatorTest, UseClexulator) {
   Eigen::VectorXd corr = correlations(configuration, clexulator);
   EXPECT_EQ(corr.size(), 75);
 }
+
+/// Note: this builds on FCCTernaryProjectClexBasisTest from PrimClex_test.cpp
+class StrainClexulatorTest : public test::ProjectBaseTest {
+ protected:
+  StrainClexulatorTest()
+      : test::ProjectBaseTest(
+            test::SimpleCubic_GLstrain_prim(), "StrainClexulatorTest",
+            jsonParser::parse(
+                test::SimpleCubic_GLstrain_clex_basis_specs_str_ex0())),
+        shared_supercell(std::make_shared<CASM::Supercell>(
+            shared_prim, Eigen::Matrix3l::Identity())) {
+    shared_supercell->set_primclex(primclex_ptr.get());
+  }
+
+  // conventional FCC unit cell
+  std::shared_ptr<CASM::Supercell> shared_supercell;
+};
+
+TEST_F(StrainClexulatorTest, UseClexulator) {
+  // Zeros configuration, conventional FCC unit cell
+  CASM::Configuration configuration{shared_supercell};
+
+  // Check configuration
+  EXPECT_EQ(configuration.size(), 1);
+
+  Clexulator clexulator = primclex_ptr->clexulator(basis_set_name);
+
+  // Check clexulator
+  EXPECT_EQ(clexulator.name(), "StrainClexulatorTest_Clexulator");
+  EXPECT_EQ(clexulator.nlist_size(), 176);
+  EXPECT_EQ(clexulator.corr_size(), 75);
+  EXPECT_EQ(clexulator.neighborhood().size(), 75);
+
+  Eigen::VectorXd corr = correlations(configuration, clexulator);
+  EXPECT_EQ(corr.size(), 75);
+}
