@@ -10,7 +10,6 @@ template <typename T>
 class InputParser;
 class LocalMaxLengthClusterSpecs;
 class PeriodicMaxLengthClusterSpecs;
-// class WithinScelMaxLengthClusterSpecs;
 class PrimClex;
 class SymGroup;
 class jsonParser;
@@ -36,24 +35,12 @@ void parse(InputParser<ClusterSpecs> &parser,
            const std::shared_ptr<Structure const> &shared_prim,
            const SymGroup &super_group);
 
-// /// Parse ClusterSpecs from JSON for supercell orbits & validate
-// void parse(
-//   InputParser<ClusterSpecs> &parser,
-//   const std::shared_ptr<Structure const> &shared_prim,
-//   std::vector<PermuteIterator> const &super_group,
-//   SupercellSymInfo const &sym_info);
-
 /// \brief Write PeriodicMaxLengthClusterSpecs to JSON
 jsonParser &to_json(const PeriodicMaxLengthClusterSpecs &cspecs,
                     jsonParser &json);
 
 /// \brief Write LocalMaxLengthClusterSpecs to JSON
 jsonParser &to_json(const LocalMaxLengthClusterSpecs &cspecs, jsonParser &json);
-
-// /// \brief Write WithinScelMaxLengthClusterSpecs to JSON
-// jsonParser &to_json(
-//   const WithinScelMaxLengthClusterSpecs &cspecs,
-//   jsonParser &json);
 
 /// \brief Write PeriodicMaxLengthClusterSpecs or LocalMaxLengthClusterSpecs to
 /// JSON

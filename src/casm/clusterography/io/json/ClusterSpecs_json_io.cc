@@ -14,27 +14,27 @@ namespace ClusterSpecs_json_io_impl {
 
 /// Read vector from 'bspecs' JSON
 ///
-/// \returns std::vector<double> giving <attrname> for clusters in branch 0, 1,
-/// etc.
+/// \returns std::vector<double> giving <attrname> value branch 0, 1, etc.
+///
+/// Expects `parser.self` in format:
+/// \code
+/// "orbit_branch_specs": {
+///   // includes "0": {<attrname>: 0.0} always, by default
+///   // includes "b": {<attrname>: 0.0} if any greater branch is present
+///   "2": { <attrname>: 8.0 },
+///   "3": { <attrname>: 6.0 }
+/// }
+/// \endcode
 ///
 template <typename SpecsType>
 std::vector<double> parse_orbit_branch_specs_attr(
     InputParser<SpecsType> &parser, const std::string &attrname) {
-  // "orbit_branch_specs": {
-  //   "2": {
-  //     "max_length": 6.0
-  //   },
-  //   "3": {
-  //     "max_length": 6.0
-  //   }
-  // },
   auto specs_it = parser.self.find("orbit_branch_specs");
   if (specs_it == parser.self.end()) {
-    parser.error.insert("Error: missing required option 'orbit_branch_specs'.");
-    return std::vector<double>{};
+    return std::vector<double>({0.});
   }
 
-  std::vector<double> result;
+  std::vector<double> result ({0.});
   auto update_result = [&](int branch, double value) {
     while (branch >= result.size()) {
       result.push_back(0.0);
@@ -43,10 +43,12 @@ std::vector<double> parse_orbit_branch_specs_attr(
   };
 
   for (auto it = specs_it->begin(); it != specs_it->end(); ++it) {
+    double value = 0.;  // default is 0. if no attrname found
     auto attr_it = it->find(attrname);
     if (attr_it != it->end()) {
-      update_result(std::stoi(it.name()), attr_it->template get<double>());
+      value = attr_it->template get<double>();
     }
+    update_result(std::stoi(it.name()), value);
   }
   return result;
 }
@@ -183,7 +185,7 @@ std::unique_ptr<SymGroup> parse_local_generating_group(
 /// Expects:
 /// \code
 /// {
-///   "orbit_branch_specs": { // required, start at "2"
+///   "orbit_branch_specs": { // optional
 ///     "2": {"max_length":<number>, "cutoff_radius":<number>},
 ///     "3": {"max_length":<number>, "cutoff_radius":<number>},
 ///     ...},
@@ -192,6 +194,13 @@ std::unique_ptr<SymGroup> parse_local_generating_group(
 ///   ]
 /// }
 /// \endcode
+///
+/// Notes:
+/// - The null cluster orbit ("0") is always included with max_length value 0.0
+///   (the value itself does not matter).
+/// - The point cluster orbit ("1") is included with max_length value 0.0 (the
+///   value itself does not matter), if "1" is present with any value, or if
+///   "2" or greater is included.
 ///
 void parse(InputParser<PeriodicMaxLengthClusterSpecs> &parser,
            const std::shared_ptr<const Structure> &shared_prim,
@@ -292,90 +301,12 @@ void parse(InputParser<LocalMaxLengthClusterSpecs> &parser,
       *custom_generators_parser->value);
 }
 
-// /// Parse WithinScelMaxLengthClusterSpecs from JSON
-// void parse(
-//   InputParser<WithinScelMaxLengthClusterSpecs> &parser,
-//   std::shared_ptr<Structure const> const &shared_prim,
-//   std::vector<PermuteIterator> const &super_group,
-//   SupercellSymInfo const &sym_info) {
-//
-//   using namespace ClusterSpecs_json_io_impl;
-//
-//   // parse phenomenal
-//   auto phenomenal_subparser_ptr =
-//   parser.subparse_if<IntegralCluster>("phenomenal", *shared_prim);
-//
-//   // parse generating group
-//   std::vector<PermuteIterator> generating_group;
-//   if(phenomenal_subparser_ptr->value != nullptr) {
-//     // if phenomenal, get generating group with translations that leave
-//     phenomenal sites invariant std::set<Index> phenomenal_indices =
-//     make_cluster_site_indices(
-//                                            *phenomenal_subparser_ptr->value,
-//                                            sym_info);
-//
-//     std::set<Index> generating_group_indices;
-//     parser.require(generating_group_indices, "generating_group");
-//     if(parser.valid()) {
-//       for(auto const &permute_it : super_group) {
-//         if(generating_group_indices.count(permute_it.prim_factor_group_index())
-//         &&
-//            site_indices_are_invariant(permute_it, phenomenal_indices)) {
-//           generating_group.push_back(permute_it);
-//         }
-//       }
-//     }
-//   }
-//   else {
-//     // no phenomenal cluster
-//     if(parser.self.contains("generating_group")) {
-//       std::set<Index> generating_group_indices;
-//       parser.require(generating_group_indices, "generating_group");
-//       if(parser.valid()) {
-//         for(auto const &permute_it : super_group) {
-//           if(generating_group_indices.count(permute_it.prim_factor_group_index()))
-//           {
-//             generating_group.push_back(permute_it);
-//           }
-//         }
-//       }
-//     }
-//     else {
-//       generating_group = super_group;
-//     }
-//   }
-//
-//   // parse max_length and cutoff_radius
-//   auto max_length = parse_orbit_branch_specs_attr(parser, "max_length");
-//   auto cutoff_radius = parse_orbit_branch_specs_attr(parser,
-//   "cutoff_radius");
-//
-//   // parse custom generators ("orbit_specs")
-//   std::vector<IntegralClusterOrbitGenerator> custom_generators;
-//   parser.subparse_if(custom_generators, "orbit_specs", *shared_prim);
-//
-//   if(!parser.valid()) {
-//     return;
-//   }
-//   parser.value = notstd::make_unique<WithinScelMaxLengthClusterSpecs>(
-//                    shared_prim,
-//                    &sym_info,
-//                    generating_group,
-//                    dof_sites_filter(),
-//                    max_length,
-//                    custom_generators,
-//                    std::move(phenomenal_subparser_ptr->value),
-//                    cutoff_radius);
-// }
-
 /// \brief Parse PeriodicMaxLengthClusterSpecs or LocalMaxLengthClusterSpecs
 /// from JSON & validate
 ///
 /// This overload is equivalent to: `parse(parser, shared_prim,
 /// shared_prim->factor_group())`.
 ///
-/// Note:
-/// - This is not appropriate for reading WithinScelMaxLengthClusterSpecs
 void parse(InputParser<ClusterSpecs> &parser,
            const std::shared_ptr<const Structure> &shared_prim) {
   parse(parser, shared_prim, shared_prim->factor_group());
@@ -387,9 +318,7 @@ void parse(InputParser<ClusterSpecs> &parser,
 /// \param parser (InputParser<ClusterSpecs>) Holds resulting value and error or
 /// warning messages \param shared_prim (const std::shared_ptr<const Structure>
 /// &) Prim structure \param super_group (const SymGroup &) Used to generate
-/// orbits. For WithinScelMaxLengthClusterSpecs,
-///        this should include within supercell translations (i.e. correspond to
-///        a Configuraiton factor group).
+/// orbits.
 /// \param transformation_matrix_to_super (Eigen::Matrix3l const *) Optional
 /// super lattice
 ///        transformation matrix for contexts when "within_scel_max_length" is
@@ -400,28 +329,26 @@ void parse(InputParser<ClusterSpecs> &parser,
 ///
 /// Notes on the naming conventions:
 /// - An "orbit" is the set of all equivalent objects under some generating
-/// symmetry group. It
-///   is a general term, and in different contexts within CASM could be used for
-///   orbits of clusters, orbits of functions, or orbits of other objects.
+///   symmetry group. It is a general term, and in different contexts within
+///   CASM could be used for orbits of clusters, orbits of functions, or orbits
+///   of other objects.
 /// - There are infinitely many orbits of 2-point clusters, corresponding to 1st
-/// nearest neighbor,
-///   2nd nearest neighbor, 3rd nearest neighbor, etc. clusters. The same
-///   applies to 3-point, 4-point, etc. clusters.
+///   nearest neighbor, 2nd nearest neighbor, 3rd nearest neighbor, etc.
+///   clusters. The same applies to 3-point, 4-point, etc. clusters.
 /// - The "orbit tree" of all clusters is made up of "orbit branches" where each
-/// "branch" of the
-///   "orbit tree" is made up of all clusters with the same number of sites. For
-///   example, the n=2 "orbit branch" consists of all orbits of 2-point
-///   clusters, the n=3 "orbit branch" consists of all orbits of 3-point
-///   clusters, etc.
+///   "branch" of the "orbit tree" is made up of all clusters with the same
+///   number of sites. For example, the n=2 "orbit branch" consists of all
+///   orbits of 2-point clusters, the n=3 "orbit branch" consists of all orbits
+///   of 3-point clusters, etc.
 ///
 /// Notes on cluster generation methods:
 /// - Clusters are generated recursively, meaning 2-point clusters are generated
-/// by attempting to
-///   add sites to 1-point clusters, 3-point clusters are generated by
-///   attempting to add sites to 2-point clusters, etc. This means that some
-///   (n+1)-point clusters that would otherwise be included may not be if the
-///   (n+1)-point cluster `max_length` is greater than the n-point cluster
-///   `max_length`.
+///   by attempting to add sites to 1-point clusters, 3-point clusters are
+///   generated by attempting to add sites to 2-point clusters, etc. This means
+///   that some (n+1)-point clusters that would otherwise be included may not
+///   be if the (n+1)-point cluster `max_length` is greater than the n-point
+///   cluster `max_length`. (The max_length value does not matter for null and
+///   1-point cluster orbits, so this applies to n >= 2).
 ///
 /// Expected JSON format:
 ///
@@ -446,18 +373,42 @@ void parse(InputParser<ClusterSpecs> &parser,
 ///         depend on the `method` chosen:
 ///
 ///         For method=="periodic_max_length":
-///             orbit_branch_specs: object (optional)
+///             orbit_branch_specs: object (required)
 ///                 Cluster generation is truncated by specifying the maximum
 ///                 distance between sites in a cluster for each orbit branch
-///                 (i.e. 2-point, 3-point, etc. clusters). The 1-point clusters
+///                 (i.e. 2-point, 3-point, etc. clusters). The null (0-point)
+///                 clusters are always included. The 1-point clusters
 ///                 comprising the asymmetric unit of the prim structure are
-///                 always included.
+///                 always included if 2-point clusters or greater are included
+///                 or if "1" is present (with any value).
 ///
-///                 Example:
+///
+///                 Example 1: Generate up to 3-point clusters.
+///                 - null cluster orbit is always included
+///                 - 1-point cluster orbits are included because 2-point
+///                   cluster orbits are included
+///                 - max_length value for point branch 3 is >= max_length
+///                   value for branch 2
+///
 ///                     "orbit_branch_specs": {
 ///                         "2": { "max_length": 10.0 },
-///                         "3": { "max_length": 8.0 },
-///                         ...
+///                         "3": { "max_length": 8.0 }
+///                     }
+///
+///                 Example 2: Generate null cluster orbit only
+///                 - null cluster orbit is always included
+///                   ("orbit_branch_specs" itself need not be included)
+///
+///                     "orbit_branch_specs": {}
+///
+///                 Example 3: Generate null and 1-point cluster orbits only
+///                 - null cluster orbit is always included
+///                 - only the presence of "1" needed to included 1-point
+///                   cluster orbits, the max_length value is not necessary for
+///                   1-point clusters and ignored if present
+///
+///                     "orbit_branch_specs": {
+///                         "1": {}
 ///                     }
 ///
 ///             orbit_specs: array (optional)
@@ -476,7 +427,7 @@ void parse(InputParser<ClusterSpecs> &parser,
 ///                 orbits. In some contexts, the relevant symmetry is lower
 ///                 than that determined from the phenomenal cluster sites
 ///                 alone.
-///             orbit_branch_specs: object (optional)
+///             orbit_branch_specs: object (required)
 ///                 All sites within `cutoff_radius` distance of any site in the
 ///                 phenomenal cluster are considered candidates for inclusion
 ///                 in clusters of a particular orbit branch. Cluster generation
@@ -564,48 +515,12 @@ void parse(InputParser<ClusterSpecs> &parser,
     if (subparser->value) {
       parser.value = std::move(subparser->value);
     }
-  } else if (method == "within_scel_max_length") {
-    parser.error.insert(
-        "Error: \"within_scel_max_length\" is not accepted in this context");
   } else {
     parser.error.insert("Error: unknown cluster_specs method '" + method +
                         "'.");
   }
 }
 
-// /// Parse ClusterSpecs from JSON for supercell orbits & validate
-// void parse(
-//   InputParser<ClusterSpecs> &parser,
-//   const std::shared_ptr<Structure const> &shared_prim,
-//   std::vector<PermuteIterator> const &super_group,
-//   SupercellSymInfo const &sym_info) {
-//
-//   std::string method;
-//   parser.require(method, "method");
-//   if(method.empty()) {
-//     return;
-//   }
-//
-//   // ** this could be a dictionary lookup **
-//   if(method == "periodic_max_length") {
-//     // TODO: can implement this
-//     parser.error.insert("Error: \"periodic_max_length\" is not accepted in
-//     this context");
-//   }
-//   else if(method == "local_max_length") {
-//     // TODO: can implement this
-//     parser.error.insert("Error: \"local_max_length\" is not accepted in this
-//     context");
-//   }
-//   else if(method == "within_scel_max_length") {
-//     parser.subparse_as<WithinScelMaxLengthClusterSpecs>("params",
-//     shared_prim, super_group, sym_info);
-//   }
-//   else {
-//     parser.error.insert("Error: unknown cluster_specs method '" + method +
-//     "'.");
-//   }
-// }
 
 namespace ClusterSpecs_json_io_impl {
 
@@ -654,30 +569,6 @@ jsonParser &to_json(const LocalMaxLengthClusterSpecs &cspecs,
   // currently fixed: site_filter=dof_sites_filter()
   return json;
 }
-
-// /// \brief Write WithinScelMaxLengthClusterSpecs to JSON
-// jsonParser &to_json(
-//   const WithinScelMaxLengthClusterSpecs &cspecs,
-//   jsonParser &json) {
-//
-//   json["method"] = cspecs.name();
-//   jsonParser &json_params = json["params"];;
-//
-//   // select based on method
-//   using namespace ClusterSpecs_json_io_impl;
-//   orbit_branch_specs_attr_to_json(cspecs.max_length, "max_length",
-//   json_params); orbit_branch_specs_attr_to_json(cspecs.cutoff_radius,
-//   "cutoff_radius", json_params); write_group_indices(cspecs.generating_group,
-//   json_params["generating_group"]); if(cspecs.phenomenal != nullptr) {
-//     to_json(*cspecs.phenomenal, json_params["phenomenal"]);
-//   }
-//   if(cspecs.custom_generators.size()) {
-//     json_params["orbit_specs"] = cspecs.custom_generators;
-//   }
-//   // currently fixed: site_filter=dof_sites_filter()
-//   // not output: cspecs.superlattice_matrix, typically this is set based on
-//   the context return json;
-// }
 
 /// \brief Write PeriodicMaxLengthClusterSpecs or LocalMaxLengthClusterSpecs to
 /// JSON
