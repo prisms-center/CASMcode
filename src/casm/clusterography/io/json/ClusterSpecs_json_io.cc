@@ -34,7 +34,7 @@ std::vector<double> parse_orbit_branch_specs_attr(
     return std::vector<double>({0.});
   }
 
-  std::vector<double> result ({0.});
+  std::vector<double> result({0.});
   auto update_result = [&](int branch, double value) {
     while (branch >= result.size()) {
       result.push_back(0.0);
@@ -520,7 +520,6 @@ void parse(InputParser<ClusterSpecs> &parser,
                         "'.");
   }
 }
-
 
 namespace ClusterSpecs_json_io_impl {
 

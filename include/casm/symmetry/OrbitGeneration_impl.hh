@@ -40,17 +40,17 @@ OrbitOutputIterator OrbitGenerators<_OrbitType>::make_orbits(
   return result;
 }
 
-/// \brief Construct Orbit from all generating elements, including PrimClex
-/// pointer
-template <typename _OrbitType>
-template <typename OrbitOutputIterator>
-OrbitOutputIterator OrbitGenerators<_OrbitType>::make_orbits(
-    OrbitOutputIterator result, const PrimClex &primclex) {
-  for (const auto &e : elements) {
-    *result++ = OrbitType(e, group, sym_compare, &primclex);
-  }
-  return result;
-}
+// /// \brief Construct Orbit from all generating elements, including PrimClex
+// /// pointer
+// template <typename _OrbitType>
+// template <typename OrbitOutputIterator>
+// OrbitOutputIterator OrbitGenerators<_OrbitType>::make_orbits(
+//     OrbitOutputIterator result, const PrimClex &primclex) {
+//   for (const auto &e : elements) {
+//     *result++ = OrbitType(e, group, sym_compare, &primclex);
+//   }
+//   return result;
+// }
 
 template <typename SymCompareType>
 std::vector<Orbit<SymCompareType>> generate_orbits(

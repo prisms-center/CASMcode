@@ -1120,11 +1120,9 @@ void write_site_basis_funcs(std::shared_ptr<const Structure> prim_ptr,
 ORBIT_VECTOR_INST(LocalIntegralClusterOrbit)
 ORBIT_VECTOR_INST(PrimPeriodicIntegralClusterOrbit)
 ORBIT_VECTOR_INST(ScelPeriodicIntegralClusterOrbit)
-// ORBIT_VECTOR_INST(WithinScelIntegralClusterOrbit)
 
 ORBIT_SET_INST(LocalIntegralClusterOrbit)
 ORBIT_SET_INST(PrimPeriodicIntegralClusterOrbit)
 ORBIT_SET_INST(ScelPeriodicIntegralClusterOrbit)
-// ORBIT_SET_INST(WithinScelIntegralClusterOrbit)
 
 }  // namespace CASM

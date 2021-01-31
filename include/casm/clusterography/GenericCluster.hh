@@ -17,15 +17,6 @@ namespace CASM {
 
 /* -- GenericCluster Declarations ------------------------------------- */
 
-/*
-template<typename Derived>
-struct traits<GenericCluster<Derived> > {
-  typedef typename traits<Derived>::MostDerived MostDerived;
-  typedef typename traits<Derived>::Element Element;
-  typedef typename traits<Derived>::InvariantsType InvariantsType;
-};
-*/
-
 /// \brief A CRTP base class for a cluster of anything
 ///
 /// GenericCluster provides a standard interface for clusters of various type.

@@ -462,15 +462,18 @@ struct WriteBasisSetDataImpl {
 
   template <typename OrbitVecType>
   void operator()(OrbitVecType const &orbits) const {
+    std::cout << "WriteBasisSetDataImpl 0" << std::endl;
     const auto &dir = settings.dir();
     ParsingDictionary<DoFType::Traits> const *dof_dict =
         &DoFType::traits_dict();
     double xtal_tol = settings.crystallography_tol();
 
     // generate ClexBasis
+    std::cout << "WriteBasisSetDataImpl 1" << std::endl;
     ClexBasis clex_basis{shared_prim, basis_set_specs, dof_dict};
     clex_basis.generate(orbits.begin(), orbits.end());
 
+    std::cout << "WriteBasisSetDataImpl 2" << std::endl;
     // delete any existing data
     throw_if_no_basis_set_specs(basis_set_name, dir);
     dir.delete_bset_data(settings.project_name(), basis_set_name);
@@ -507,6 +510,7 @@ struct WriteBasisSetDataImpl {
     clexwriter.print_clexulator(clexulator_name, clex_basis, orbits,
                                 prim_neighbor_list, outfile, xtal_tol);
     outfile.close();
+    std::cout << "WriteBasisSetDataImpl 3" << std::endl;
   }
 };
 
@@ -520,9 +524,11 @@ void write_basis_set_data(std::shared_ptr<Structure const> shared_prim,
   auto const &cluster_specs = *basis_set_specs.cluster_specs;
   Log &log = CASM::log();
 
+  std::cout << "write_basis_set_data 0" << std::endl;
   WriteBasisSetDataImpl writer{shared_prim, settings, basis_set_name,
                                basis_set_specs, prim_neighbor_list};
   for_all_orbits(cluster_specs, log, writer);
+  std::cout << "write_basis_set_data 1" << std::endl;
 }
 
 /// Make Clexulator from existing source code

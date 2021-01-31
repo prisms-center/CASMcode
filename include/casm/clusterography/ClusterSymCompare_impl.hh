@@ -199,65 +199,6 @@ Element ScelPeriodicSymCompare<Element>::representation_prepare_impl(
   return obj;
 }
 
-// // -- WithinScelSymCompare<IntegralCluster>
-// -------------------------------------
-//
-// /// \brief Constructor
-// ///
-// /// \param tol Tolerance for invariants_compare of site-to-site distances
-// ///
-// template<typename Element>
-// WithinScelSymCompare<Element>::
-// WithinScelSymCompare(
-//   PrimType_ptr prim_ptr,
-//   transf_mat_type transf_mat,
-//   double tol):
-//   m_prim(prim_ptr),
-//   m_transf_mat(transf_mat),
-//   m_bring_within_f(transf_mat),
-//   m_tol(tol) {}
-//
-// /// \brief Returns transformation that takes 'obj' to its prepared
-// (canonical) form
-// ///
-// /// - For now returns pointer to SymPermutation object that encodes
-// permutation due to sorting elements template<typename Element>
-// std::unique_ptr<SymOpRepresentation> WithinScelSymCompare<Element>::
-// canonical_transform_impl(Element const &obj)const {
-//   Element tobj = traits<WithinScelSymCompare<Element>>::bring_within(obj,
-//   this->derived()); return std::unique_ptr<SymOpRepresentation>(new
-//   SymPermutation(tobj.sort_permutation()));
-// }
-//
-// /// \brief Prepare an element for comparison
-// ///
-// /// - Does nothing, since fully prepared version is just sorted and
-// 'within'-ed version of the cluster template<typename Element> Element
-// WithinScelSymCompare<Element>:: spatial_prepare_impl(Element obj) const {
-//   return obj;
-// }
-//
-// /// \brief Access spatial transform that was used during most recent spatial
-// preparation of an element
-// /// - Always identity
-// template<typename Element>
-// SymOp const &WithinScelSymCompare<Element>::
-// spatial_transform_impl() const {
-//   return m_spatial_transform;
-// }
-//
-// /// \brief Prepare an element for comparison
-// ///
-// /// - Puts all sites within the supercell, then sorts
-// template<typename Element>
-// Element WithinScelSymCompare<Element>::
-// representation_prepare_impl(Element obj) const {
-//   if(!obj.size()) {
-//     return obj;
-//   }
-//   obj = traits<WithinScelSymCompare<Element>>::bring_within(obj,
-//   this->derived()); obj.sort(); return obj;
-// }
 }  // namespace CASM
 
 #endif

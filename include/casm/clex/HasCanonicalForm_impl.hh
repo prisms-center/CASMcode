@@ -2,13 +2,13 @@
 #define CASM_HasCanonicalForm_impl
 
 #include "casm/clex/HasCanonicalForm.hh"
+#include "casm/clex/ScelOrbitGeneration.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/crystallography/CanonicalForm.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "casm/symmetry/InvariantSubgroup_impl.hh"
 #include "casm/symmetry/OrbitGeneration.hh"
 #include "casm/symmetry/PermuteIterator.hh"
-#include "casm/symmetry/ScelOrbitGeneration.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymOp.hh"
 

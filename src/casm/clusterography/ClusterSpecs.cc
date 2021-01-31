@@ -79,10 +79,12 @@ PeriodicMaxLengthClusterSpecs::PeriodicMaxLengthClusterSpecs(
       site_filter(_site_filter),
       max_length(_max_length),
       custom_generators(_custom_generators) {
-    if(max_length.size() == 0) {
-      throw libcasm_runtime_error("Error in PeriodicMaxLengthClusterSpecs: max_length.size() == 0 (must be greater than 0).");
-    }
+  if (max_length.size() == 0) {
+    throw libcasm_runtime_error(
+        "Error in PeriodicMaxLengthClusterSpecs: max_length.size() == 0 (must "
+        "be greater than 0).");
   }
+}
 
 std::string PeriodicMaxLengthClusterSpecs::_name() const { return method_name; }
 
@@ -155,11 +157,15 @@ LocalMaxLengthClusterSpecs::LocalMaxLengthClusterSpecs(
       cutoff_radius(_cutoff_radius),
       include_phenomenal_sites(_include_phenomenal_sites),
       custom_generators(_custom_generators) {
-  if(max_length.size() == 0) {
-    throw libcasm_runtime_error("Error in LocalMaxLengthClusterSpecs: max_length.size() == 0 (must be greater than 0).");
+  if (max_length.size() == 0) {
+    throw libcasm_runtime_error(
+        "Error in LocalMaxLengthClusterSpecs: max_length.size() == 0 (must be "
+        "greater than 0).");
   }
-  if(max_length.size() != cutoff_radius.size()) {
-    throw libcasm_runtime_error("Error in LocalMaxLengthClusterSpecs: max_length.size() != cutoff_radius.size() (must be equal).");
+  if (max_length.size() != cutoff_radius.size()) {
+    throw libcasm_runtime_error(
+        "Error in LocalMaxLengthClusterSpecs: max_length.size() != "
+        "cutoff_radius.size() (must be equal).");
   }
 }
 
@@ -224,8 +230,10 @@ GenericPeriodicClusterSpecs::GenericPeriodicClusterSpecs(
       candidate_sites(_candidate_sites),
       custom_generators(_custom_generators),
       m_method_name(_method_name) {
-  if(candidate_sites.size() == 0) {
-    throw libcasm_runtime_error("Error in GenericPeriodicClusterSpecs: candidate_sites.size() == 0 (must be greater than 0).");
+  if (candidate_sites.size() == 0) {
+    throw libcasm_runtime_error(
+        "Error in GenericPeriodicClusterSpecs: candidate_sites.size() == 0 "
+        "(must be greater than 0).");
   }
 }
 
@@ -282,11 +290,15 @@ GenericLocalClusterSpecs::GenericLocalClusterSpecs(
       candidate_sites(_candidate_sites),
       custom_generators(_custom_generators),
       m_method_name(_method_name) {
-  if(candidate_sites.size() == 0) {
-    throw libcasm_runtime_error("Error in GenericLocalClusterSpecs: candidate_sites.size() == 0 (must be greater than 0).");
+  if (candidate_sites.size() == 0) {
+    throw libcasm_runtime_error(
+        "Error in GenericLocalClusterSpecs: candidate_sites.size() == 0 (must "
+        "be greater than 0).");
   }
-  if(candidate_sites.size() != cluster_filter.size()) {
-    throw libcasm_runtime_error("Error in GenericLocalClusterSpecs: candidate_sites.size() != cluster_filter.size() (must be equal).");
+  if (candidate_sites.size() != cluster_filter.size()) {
+    throw libcasm_runtime_error(
+        "Error in GenericLocalClusterSpecs: candidate_sites.size() != "
+        "cluster_filter.size() (must be equal).");
   }
 }
 
@@ -325,7 +337,6 @@ ClusterSpecs::LocalOrbitVec GenericLocalClusterSpecs::_make_local_orbits(
               std::back_inserter(orbits), status);
   return orbits;
 }
-
 
 namespace ClusterSpecs_impl {
 
@@ -371,7 +382,6 @@ class MaxLengthClusterFilter {
  private:
   double max_length;
 };
-
 
 class EmptyNeighborhood {
  public:

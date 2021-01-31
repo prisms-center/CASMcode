@@ -2,9 +2,9 @@
 #define CASM_ScelOrbitGeneration_impl
 
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/ScelOrbitGeneration.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/crystallography/IntegralCoordinateWithin.hh"
-#include "casm/symmetry/ScelOrbitGeneration.hh"
 
 namespace CASM {
 

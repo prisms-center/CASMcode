@@ -3,7 +3,7 @@
 
 #include "casm/clex/HasCanonicalForm_impl.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/ScelOrbitGeneration_impl.hh"
 #include "casm/clex/Supercell.hh"
-#include "casm/symmetry/ScelOrbitGeneration_impl.hh"
 
 #endif

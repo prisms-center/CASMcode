@@ -8,7 +8,7 @@
 
 namespace CASM {
 
-class PrimClex;
+// class PrimClex;
 class SymGroup;
 template <typename SymCompareType>
 class Orbit;
@@ -57,11 +57,11 @@ struct OrbitGenerators {
   template <typename OrbitOutputIterator>
   OrbitOutputIterator make_orbits(OrbitOutputIterator result);
 
-  /// \brief Construct Orbit from all generating elements, including PrimClex
-  /// pointer
-  template <typename OrbitOutputIterator>
-  OrbitOutputIterator make_orbits(OrbitOutputIterator result,
-                                  const PrimClex &primclex);
+  // /// \brief Construct Orbit from all generating elements, including PrimClex
+  // /// pointer
+  // template <typename OrbitOutputIterator>
+  // OrbitOutputIterator make_orbits(OrbitOutputIterator result,
+  //                                 const PrimClex &primclex);
 
   const SymGroup &group;
   const SymCompareType &sym_compare;

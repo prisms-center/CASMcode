@@ -480,6 +480,11 @@ OrbitOutputIterator make_orbits(
     OrbitBranchSpecsIterator begin, OrbitBranchSpecsIterator end,
     const std::vector<IntegralClusterOrbitGenerator> &custom_generators,
     OrbitOutputIterator result, std::ostream &status) {
+  if (begin == end) {
+    throw libcasm_runtime_error(
+        "Error in make_orbits: No OrbitBranchSpecs (begin==end)");
+  }
+
   typedef typename OrbitOutputIterator::container_type container_type;
   typedef typename container_type::value_type orbit_type;
 
