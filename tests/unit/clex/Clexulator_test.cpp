@@ -57,11 +57,12 @@ TEST_F(OccupationClexulatorTest, UseClexulator) {
 /// Note: this builds on FCCTernaryProjectClexBasisTest from PrimClex_test.cpp
 class StrainClexulatorTest : public test::ProjectBaseTest {
  protected:
+  static std::string clex_basis_specs_str();
+
   StrainClexulatorTest()
-      : test::ProjectBaseTest(
-            test::SimpleCubic_GLstrain_prim(), "StrainClexulatorTest",
-            jsonParser::parse(
-                test::SimpleCubic_GLstrain_clex_basis_specs_str_ex0())),
+      : test::ProjectBaseTest(test::SimpleCubic_GLstrain_prim(),
+                              "StrainClexulatorTest",
+                              jsonParser::parse(clex_basis_specs_str())),
         shared_supercell(std::make_shared<CASM::Supercell>(
             shared_prim, Eigen::Matrix3l::Identity())) {
     shared_supercell->set_primclex(primclex_ptr.get());
@@ -71,8 +72,23 @@ class StrainClexulatorTest : public test::ProjectBaseTest {
   std::shared_ptr<CASM::Supercell> shared_supercell;
 };
 
+std::string StrainClexulatorTest::clex_basis_specs_str() {
+  return R"({
+"basis_function_specs" : {
+"global_max_poly_order": 3
+},
+"cluster_specs": {
+"method": "periodic_max_length",
+"params": {
+  "orbit_branch_specs": {
+  }
+}
+}
+})";
+}
+
 TEST_F(StrainClexulatorTest, UseClexulator) {
-  // Zeros configuration, conventional FCC unit cell
+  // Zeros configuration, simple cubic unit cell
   CASM::Configuration configuration{shared_supercell};
 
   // Check configuration
