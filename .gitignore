@@ -96,3 +96,5 @@ stamp-h1
 .clang
 .nostyle.txt
 doc/doxygen_graph
+
+compile_commands.json

@@ -863,7 +863,6 @@ std::set<MappingNode> StrucMapper::_seed_k_best_from_super_lats(
   if (k == 0 || !valid_index(k)) {
     max_lattice_cost = min_lattice_cost;
   }
-
   for (Lattice const &c_lat : _child_scels) {
     auto pg_indices = invariant_subgroup_indices(c_lat, child_factor_group);
     SymOpVector c_lat_factor_group;

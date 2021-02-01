@@ -5,6 +5,8 @@
 #include <vector>
 
 #include "casm/crystallography/SimpleStructure.hh"
+#include "casm/crystallography/SimpleStructureTools.hh"
+#include "casm/crystallography/StrucMapCalculatorInterface.hh"
 #include "casm/crystallography/Superlattice.hh"
 #include "casm/crystallography/SymType.hh"
 #include "casm/external/Eigen/Core"
@@ -509,8 +511,13 @@ class StrucMapper {
   /// when performing the atomic maps. This cost only accounts for that part of
   /// the displacement field that breaks the symmetry of the parent crystal
   /// structure
-  void set_symmetrize_atomic_cost(bool _sym_atomic_cost) {
+  void set_symmetrize_atomic_cost(
+      bool _sym_atomic_cost, const SymOpVector &factor_group,
+      const std::vector<Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic,
+                                                 Index>> &permutation_group) {
     m_symmetrize_atomic_cost = _sym_atomic_cost;
+    m_calc_ptr->set_sym_invariant_displacement_modes(
+        generate_invariant_shuffle_modes(factor_group, permutation_group));
   }
 
   bool symmetrize_lattice_cost() const { return m_symmetrize_lattice_cost; }

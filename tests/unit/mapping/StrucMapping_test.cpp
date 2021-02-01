@@ -436,6 +436,8 @@ TEST(SymInvariantMappingTest, shuffle) {
 
   // Get the factor group of the structure
   auto parent_fg = xtal::make_factor_group(basic_struc, 0.0001);
+  auto parent_permute_group =
+      xtal::make_permutation_representation(basic_struc, parent_fg);
   EXPECT_EQ(parent_fg.size(), 8)
       << "Expected the factor group size to be 8, instead " << parent_fg.size()
       << " operations were found" << std::endl;
@@ -455,7 +457,8 @@ TEST(SymInvariantMappingTest, shuffle) {
                                      allowed_molecule_names(basic_struc)),
       lattice_weight, max_vol_change, options, cost_tol, min_va_frac,
       max_va_frac);
-  sym_struc_map.set_symmetrize_atomic_cost(true);
+  sym_struc_map.set_symmetrize_atomic_cost(true, parent_fg,
+                                           parent_permute_group);
 
   auto child_fg = xtal::make_factor_group(basic_struc);
 

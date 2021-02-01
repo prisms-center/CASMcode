@@ -46,10 +46,8 @@ class StrainCostCalculator {
 
   //\brief Symmetrized strain cost; Utilizes the parent point group symmetry to
   // calculate only the symmetry breaking lattice cost
-  double strain_cost(
-      Eigen::Matrix3d const &_deformation_gradient,
-      Eigen::Matrix3d const &parent_lattice,
-      std::vector<Eigen::Matrix3i> const &parent_fsym_mats) const;
+  double strain_cost(Eigen::Matrix3d const &_deformation_gradient,
+                     SymOpVector const &parent_point_group) const;
 
  private:
   Eigen::MatrixXd m_gram_mat;
@@ -143,6 +141,9 @@ class LatticeMap {
 
   // parent point group matrices, in fractional coordinates
   std::vector<Eigen::Matrix3i> m_parent_fsym_mats;
+
+  // parent point group in cartesian coordinates
+  SymOpVector m_parent_point_group;
 
   // child point group matrices, in fractional coordinates
   std::vector<Eigen::Matrix3i> m_child_fsym_mats;

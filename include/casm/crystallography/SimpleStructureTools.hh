@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "casm/crystallography/DoFDecl.hh"
+#include "casm/crystallography/SymType.hh"
 #include "casm/external/Eigen/Dense"
 #include "casm/global/definitions.hh"
 
@@ -31,19 +32,25 @@ class BasicStructure;
 SimpleStructure make_superstructure(Eigen::Ref<const Eigen::Matrix3i> const &_T,
                                     SimpleStructure const &_sstruc);
 
+/// \brief Constructs a vector containing the basis index of the ith site in the
+/// supercell
+std::vector<Index> superstructure_basis_idx(
+    Eigen::Ref<const Eigen::Matrix3i> const &_T,
+    SimpleStructure const &_sstruc);
+
 /// \brief Construct from decorated structure
 SimpleStructure make_simple_structure(BasicStructure const &_struc);
 
 /// \brief Determine which sites of a BasicStructure can host each atom of a
 /// SimpleStructure result[i] is set of site indices in @param _prim that can
 /// host atom 'i' of @param sstruc
-std::vector<std::set<Index> > atom_site_compatibility(
+std::vector<std::set<Index>> atom_site_compatibility(
     SimpleStructure const &sstruc, BasicStructure const &_prim);
 
 /// \brief Determine which sites of a BasicStructure can host each molecule of a
 /// SimpleStructure result[i] is set of site indices in @param _prim that can
 /// host molecule 'i' of @param sstruc
-std::vector<std::set<Index> > mol_site_compatibility(
+std::vector<std::set<Index>> mol_site_compatibility(
     SimpleStructure const &sstruc, BasicStructure const &_prim);
 
 /// \brief use information in _reference to initialize atom_info from mol_info
@@ -62,7 +69,12 @@ void _atomize(SimpleStructure &_sstruc,
 BasicStructure make_basic_structure(
     SimpleStructure const &_sstruc, std::vector<DoFKey> const &_all_dofs,
     SimpleStructureTools::SpeciesMode mode,
-    std::vector<std::vector<Molecule> > _allowed_occupants = {});
+    std::vector<std::vector<Molecule>> _allowed_occupants = {});
+
+std::vector<Eigen::MatrixXd> generate_invariant_shuffle_modes(
+    const std::vector<xtal::SymOp> &factor_group,
+    const std::vector<Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic,
+                                               Index>> &permute_group);
 /** @} */
 }  // namespace xtal
 

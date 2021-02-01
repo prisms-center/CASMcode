@@ -1,5 +1,7 @@
 #include "casm/crystallography/LatticeMap.hh"
 
+#include <iterator>
+
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/crystallography/Strain.hh"
@@ -108,28 +110,18 @@ double StrainCostCalculator::strain_cost(
 }
 
 //*******************************************************************************************
-
 double StrainCostCalculator::strain_cost(
     Eigen::Matrix3d const &_deformation_gradient,
-    Eigen::Matrix3d const &parent_lattice,
-    std::vector<Eigen::Matrix3i> const &parent_fsym_mats) const {
-  // Convert the fractional sym ops back into cartesian symops
-  std::vector<Eigen::Matrix3d> parent_sym_mats;
-  parent_sym_mats.reserve(parent_fsym_mats.size());
-  Eigen::Matrix3d tmp_op;
-  for (auto const &op : parent_fsym_mats) {
-    tmp_op = parent_lattice * op.cast<double>() * parent_lattice.inverse();
-    parent_sym_mats.push_back(tmp_op.transpose());
-  }
+    SymOpVector const &parent_point_group) const {
   // Apply the sym op to the deformation gradient and average
   Eigen::Matrix3d stretch_aggregate = Eigen::Matrix3d::Zero();
   Eigen::Matrix3d stretch = strain::right_stretch_tensor(_deformation_gradient);
-
-  for (auto const &op : parent_sym_mats) {
-    stretch_aggregate += op * stretch * op.inverse();
+  for (auto const &op : parent_point_group) {
+    stretch_aggregate += op.matrix * stretch * op.matrix.inverse();
   }
-  stretch_aggregate = stretch_aggregate / double(parent_sym_mats.size());
-  return strain_cost(stretch - stretch_aggregate + Eigen::Matrix3d::Identity());
+  stretch_aggregate = stretch_aggregate / double(parent_point_group.size());
+  return strain_cost(stretch - stretch_aggregate + Eigen::Matrix3d::Identity(),
+                     1.0);
 }
 
 //*******************************************************************************************
@@ -186,6 +178,9 @@ LatticeMap::LatticeMap(const Lattice &_parent, const Lattice &_child,
       }
     }
   }
+
+  // Store the parent symmetry operations
+  m_parent_point_group = _parent_point_group;
 
   // Construct fractional symops for child
   {
@@ -301,8 +296,7 @@ const LatticeMap &LatticeMap::best_strain_mapping() const {
 double LatticeMap::calc_strain_cost(
     const Eigen::Matrix3d &deformation_gradient) const {
   if (symmetrize_strain_cost())
-    return m_calc.strain_cost(deformation_gradient, m_parent,
-                              m_parent_fsym_mats);
+    return m_calc.strain_cost(deformation_gradient, m_parent_point_group);
   else
     return m_calc.strain_cost(deformation_gradient, m_vol_factor);
 }

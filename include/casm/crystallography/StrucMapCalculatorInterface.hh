@@ -80,6 +80,16 @@ class StrucMapCalculatorInterface {
     return m_fixed_species;
   }
 
+  /// \brief Sets the sym_invariant_modes
+  void set_sym_invariant_displacement_modes(
+      const std::vector<Eigen::MatrixXd> &_sym_invariant_displacement_modes) {
+    m_sym_invariant_displacement_modes = _sym_invariant_displacement_modes;
+  }
+
+  const std::vector<Eigen::MatrixXd> &sym_invariant_displacement_modes() const {
+    return m_sym_invariant_displacement_modes;
+  };
+
   /// \brief Return maximum possible number of vacancies in underlying primitive
   /// structure
   Index max_n_va() const { return va_allowed().size(); }
@@ -226,6 +236,10 @@ class StrucMapCalculatorInterface {
   std::map<std::string, Index> m_max_n_species;
 
   std::unordered_set<Index> m_va_allowed;
+
+  /// \brief vector of symmetry invariant displacement modes in the parent
+  /// structure
+  std::vector<Eigen::MatrixXd> m_sym_invariant_displacement_modes;
 
   /// \brief Make an exact copy of the calculator (including any initialized
   /// members)

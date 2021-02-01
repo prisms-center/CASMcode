@@ -22,6 +22,7 @@ static Coordinate _make_superlattice_coordinate(
   UnitCell ijk = index_to_ijk_f(ijk_ix);
   return make_superlattice_coordinate(ijk, superlattice);
 }
+
 }  // namespace Local
 
 std::vector<Eigen::Vector3d> SimpleStrucMapCalculator::translations(
@@ -230,37 +231,46 @@ SimpleStructure SimpleStrucMapCalculator::resolve_setting(
 void SimpleStrucMapCalculator::finalize(
     MappingNode &node, SimpleStructure const &_child_struc,
     bool const &symmetrize_atomic_cost) const {
-  // std::cout << " In SimpleStrucMapCalculator::finalize" << std::endl;
-  // std::cout << " symmetrize_atomic_cost : " << symmetrize_atomic_cost
-  //           << std::endl;
   populate_displacement(node, _child_struc);
   node.is_valid = this->_assign_molecules(node, _child_struc);
-  if (!symmetrize_atomic_cost)
+  if (!symmetrize_atomic_cost ||
+      this->sym_invariant_displacement_modes().size() == 0)
     node.atomic_node.cost =
         StrucMapping::atomic_cost(node, this->struc_info(_child_struc).size());
   else {
-    // Construct a BasicStructure based on the atomic and lattice maps
-    xtal::SimpleStructure super_pstruc = make_superstructure(
+    // Get the parent site indices for each site in the supercell
+    auto basis_idx = superstructure_basis_idx(
         (node.lattice_node).parent.transformation_matrix_to_super().cast<int>(),
         parent());
-    std::vector<std::string> _names(node.mol_labels.size(), "-1");
-    for (Index idx = 0; idx < node.mol_labels.size(); ++idx)
-      _names[idx] = node.mol_labels[idx].first;
-    super_pstruc.atom_info.names = _names;
-    // std::cout << " constructed simple structure : " << std::endl;
-    // VaspIO::PrintPOSCAR printer(super_pstruc);
-    // printer.print(std::cout);
-    xtal::BasicStructure decorated_pstruc =
-        xtal::make_basic_structure(super_pstruc, std::vector<DoFKey>({}),
-                                   SimpleStructureTools::SpeciesMode::ATOM);
-    auto factor_group = xtal::make_factor_group(decorated_pstruc);
+    // Expand the sym invariant basis into this supercell
+    std::vector<Eigen::MatrixXd> supercell_sym_invariant_modes(
+        this->sym_invariant_displacement_modes().size(),
+        Eigen::MatrixXd::Zero(3, basis_idx.size()));
 
-    auto permute_group =
-        xtal::make_permutation_representation(decorated_pstruc, factor_group);
-
+    Eigen::Map<Eigen::VectorXd> disp_map(node.atom_displacement.data(),
+                                         node.atom_displacement.size());
+    Eigen::MatrixXd sym_removed_disp = node.atom_displacement;
+    for (int sym_idx = 0;
+         sym_idx < this->sym_invariant_displacement_modes().size(); ++sym_idx) {
+      for (int scel_idx = 0; scel_idx < basis_idx.size(); ++scel_idx)
+        supercell_sym_invariant_modes[sym_idx].col(scel_idx) =
+            this->sym_invariant_displacement_modes()[sym_idx].col(
+                basis_idx[scel_idx]);
+      supercell_sym_invariant_modes[sym_idx] =
+          supercell_sym_invariant_modes[sym_idx] /
+          supercell_sym_invariant_modes[sym_idx].norm();
+      // Project the displacement mode on to this symmetry invariant mode
+      Eigen::VectorXd unrolled_sym_mode = Eigen::Map<Eigen::VectorXd>(
+          supercell_sym_invariant_modes[sym_idx].data(),
+          supercell_sym_invariant_modes[sym_idx].size());
+      double projected_comp = disp_map.dot(unrolled_sym_mode);
+      sym_removed_disp =
+          sym_removed_disp -
+          projected_comp * supercell_sym_invariant_modes[sym_idx];
+    }
+    node.atom_displacement = sym_removed_disp;
     node.atomic_node.cost =
-        StrucMapping::atomic_cost(node, factor_group, permute_group,
-                                  this->struc_info(_child_struc).size());
+        StrucMapping::atomic_cost(node, this->struc_info(_child_struc).size());
   }
   node.cost = node.atomic_weight * node.atomic_node.cost +
               node.lattice_weight * node.lattice_node.cost;
