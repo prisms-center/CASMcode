@@ -161,7 +161,7 @@ class Function : public HierarchyID<Function> {
   void set_arguments(const ArgumentContainer &new_arg) { m_argument = new_arg; }
 
   ///\brief change arguments, allowing for new_arg to be larger than current
-  ///argument list [or permuted (not yet implemented)]
+  /// argument list [or permuted (not yet implemented)]
   /// @param compatibility_map specifies which elements of @param new_arg are
   /// compatible with urrent argument list (e.g., [2, 3])
   void set_arguments(const ArgumentContainer &new_arg,

@@ -33,7 +33,7 @@ void SymOption::initialize() {
       "Perform calculation of irreducible wedge (may significantly slow down "
       "analysis). Used for --dof-space-analysis.")
       //("no-directions", "Skip calculation of high-symmetry direction and
-      //irreducible wedge (for faster evaluation)")
+      // irreducible wedge (for faster evaluation)")
       ("tol", po::value<double>(&m_tol)->default_value(1.0e-5),
        "Tolerance in Angstr. Used for --symmetrize (default 1e-5)")(
           "dof-space-analysis", "Print DoF Space analysis files")(

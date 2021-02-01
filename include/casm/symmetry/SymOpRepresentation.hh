@@ -24,7 +24,7 @@ class SymBasisPermute;
  */
 
 ///\brief SymOpRepresentation is the base class for anything describes a
-///symmetry operation
+/// symmetry operation
 class SymOpRepresentation {
  public:
   SymOpRepresentation() : m_master_group(nullptr), m_op_index(-1) {

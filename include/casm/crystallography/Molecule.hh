@@ -102,7 +102,7 @@ class Molecule {
   static Molecule make_vacancy();
 
   ///\brief Construct with designated name, a list of atoms, and whether
-  ///molecule is chemically divisible
+  /// molecule is chemically divisible
   Molecule(std::string const &_name, std::vector<AtomPosition> _atoms = {},
            bool _divisible = false)
       : m_name(_name), m_atoms(std::move(_atoms)), m_divisible(_divisible) {
@@ -113,7 +113,7 @@ class Molecule {
   Index size() const { return m_atoms.size(); }
 
   ///\brief Designated name of Molecule (may be unrelated to constituent
-  ///species)
+  /// species)
   std::string const &name() const { return m_name; }
 
   ///\brief Const access of all contained AtomPositions
@@ -129,7 +129,7 @@ class Molecule {
   bool is_vacancy() const;
 
   ///\brief True if Molecule contains attributes that are affected by time
-  ///reversal
+  /// reversal
   bool time_reversal_active() const {
     for (auto const &_atom : atoms()) {
       if (_atom.time_reversal_active()) return true;

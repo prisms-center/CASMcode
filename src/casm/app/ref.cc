@@ -148,7 +148,7 @@ void RefOption::initialize() {
 
   m_desc.add_options()
       //("composition-space", "Display information on current composition
-      //space")
+      // space")
       ("display,d", "Display current reference states")(
           "set-auto",
           "Automatically set project level reference states using DFT results")(
@@ -311,7 +311,8 @@ int ref_command(const CommandArgs &args) {
       log() << "    Examples:\n";
       // log() << "      casm ref --composition-space \n";
       // log() << "      - Print composition space column matrix of the
-      // primitive\n"; log() << "      - Print null space column matrix\n"; log()
+      // primitive\n"; log() << "      - Print null space column matrix\n";
+      // log()
       // << "\n";
       log() << "      casm ref --display \n";
       log() << "      - Print chemical reference\n";

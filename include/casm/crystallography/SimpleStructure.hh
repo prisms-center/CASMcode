@@ -20,7 +20,7 @@ namespace SimpleStructureTools {
 // TODO: Capitalize so it looks the same as COORD_MODE? Put it in some
 // crystallography declarations file?
 ///\brief enum to refer to a particular representation of the occupants (atomic
-///or molecular)
+/// or molecular)
 enum class SpeciesMode { ATOM, MOL };
 }  // namespace SimpleStructureTools
 
