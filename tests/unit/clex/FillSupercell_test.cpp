@@ -1,6 +1,5 @@
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
-#include "casm/app/AppIO.hh"
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/clex/FillSupercell_impl.hh"
 #include "casm/crystallography/Niggli.hh"

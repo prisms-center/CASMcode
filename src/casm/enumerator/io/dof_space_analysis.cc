@@ -2,7 +2,6 @@
 
 #include <boost/filesystem.hpp>
 
-#include "casm/app/AppIO.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/SimpleStructureTools.hh"
@@ -12,7 +11,7 @@
 #include "casm/enumerator/DoFSpace_impl.hh"
 #include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/global/definitions.hh"
-#include "casm/symmetry/io/json/SymRepTools.hh"
+#include "casm/symmetry/json_io.hh"
 
 namespace CASM {
 

@@ -4,26 +4,6 @@
 namespace CASM {
 
 template <>
-HamiltonianModules::AnisoValDictionary
-make_parsing_dictionary<AnisoValTraits>() {
-  HamiltonianModules::AnisoValDictionary dict;
-
-  dict.insert(AnisoValTraits::disp(), AnisoValTraits::energy(),
-              AnisoValTraits::cost(), AnisoValTraits::coordinate(),
-              AnisoValTraits::latvec(), AnisoValTraits::selective_dynamics(),
-              AnisoValTraits::Cmagspin(), AnisoValTraits::Cunitmagspin(),
-              AnisoValTraits::NCmagspin(), AnisoValTraits::NCunitmagspin(),
-              AnisoValTraits::SOmagspin(), AnisoValTraits::SOunitmagspin(),
-              AnisoValTraits::isometry(), AnisoValTraits::strain("B"),
-              AnisoValTraits::strain("U"), AnisoValTraits::strain("EA"),
-              AnisoValTraits::strain("GL"), AnisoValTraits::strain("H"),
-              AnisoValTraits::force(), AnisoValTraits::d_orbital_occupation(),
-              AnisoValTraits::d_orbital_occupation_spin_polarized());
-
-  return dict;
-}
-
-template <>
 HamiltonianModules::SymRepBuilderDictionary
 make_parsing_dictionary<SymRepBuilderInterface>() {
   HamiltonianModules::SymRepBuilderDictionary dict;

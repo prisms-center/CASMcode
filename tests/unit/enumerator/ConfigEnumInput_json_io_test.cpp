@@ -129,9 +129,7 @@ TEST_F(ConfigEnumInputjsonIOTest, Test3) {
     }
   }
   fs::path out_path = tmpdir.path() / "test3_selection.json";
-  supercell_selection.write(make_dictionary<Supercell>(),
-                            true,  // force
-                            out_path,
+  supercell_selection.write(make_dictionary<Supercell>(), out_path,
                             true,   // write_json
                             true);  // only_selected
   EXPECT_EQ(fs::exists(out_path), true);
@@ -184,9 +182,7 @@ TEST_F(ConfigEnumInputjsonIOTest, Test5) {
     }
   }
   fs::path out_path = tmpdir.path() / "test5_selection.json";
-  configuration_selection.write(make_dictionary<Configuration>(),
-                                true,  // force
-                                out_path,
+  configuration_selection.write(make_dictionary<Configuration>(), out_path,
                                 true,   // write_json
                                 true);  // only_selected
   EXPECT_EQ(fs::exists(out_path), true);

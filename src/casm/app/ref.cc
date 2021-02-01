@@ -1,16 +1,20 @@
 #include <boost/filesystem.hpp>
 
-#include "casm/app/AppIO.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/casm_io/Log.hh"
+#include "casm/casm_io/SafeOfstream.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/clex/ChemicalReference.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
-#include "casm/clex/io/json/ChemicalReference.hh"
+#include "casm/clex/io/file/ChemicalReference_file_io.hh"
+#include "casm/clex/io/json/ChemicalReference_json_io.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/io/BasicStructureIO.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/ScelDatabase.hh"
 
@@ -24,7 +28,8 @@ int initialize_global(fs::path chem_ref_path, const PrimClex &primclex,
   json["chemical_reference"]["global"] = json_ref;
 
   ChemicalReference chem_ref =
-      read_chemical_reference(json, primclex.prim(), lin_alg_tol);
+      json["chemical_reference"].get<ChemicalReference>(primclex.prim(),
+                                                        lin_alg_tol);
 
   log() << "Initializing the chemical reference to: \n\n";
   ChemicalReferencePrinter p(log(), chem_ref);
@@ -148,7 +153,7 @@ void RefOption::initialize() {
 
   m_desc.add_options()
       //("composition-space", "Display information on current composition
-      //space")
+      // space")
       ("display,d", "Display current reference states")(
           "set-auto",
           "Automatically set project level reference states using DFT results")(
@@ -179,7 +184,7 @@ int ref_command(const CommandArgs &args) {
     std::stringstream ss;
     ProjectSettings set = open_project_settings(root);
     DirectoryStructure const &dir = set.dir();
-    Structure prim(read_prim(dir.prim(), TOL, &(set.hamiltonian_modules())));
+    Structure prim(read_prim(dir.prim(), TOL));
 
     ss << "       For this project, the expected order is:\n"
        << "        '[";
@@ -311,7 +316,8 @@ int ref_command(const CommandArgs &args) {
       log() << "    Examples:\n";
       // log() << "      casm ref --composition-space \n";
       // log() << "      - Print composition space column matrix of the
-      // primitive\n"; log() << "      - Print null space column matrix\n"; log()
+      // primitive\n"; log() << "      - Print null space column matrix\n";
+      // log()
       // << "\n";
       log() << "      casm ref --display \n";
       log() << "      - Print chemical reference\n";

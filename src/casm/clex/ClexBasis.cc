@@ -1,4 +1,3 @@
-#include "casm/app/AppIO.hh"  // necessary for write_prim() function
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/clex/ClexBasis_impl.hh"
@@ -8,6 +7,7 @@
 #include "casm/container/algorithm.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/io/BasicStructureIO.hh"
 #include "casm/global/eigen.hh"
 
 namespace CASM {

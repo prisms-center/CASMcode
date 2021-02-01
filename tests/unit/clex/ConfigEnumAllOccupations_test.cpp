@@ -7,23 +7,6 @@
 #include "crystallography/TestStructures.hh"
 #include "gtest/gtest.h"
 
-// #include "casm/clex/PrimClex.hh"
-// #include "casm/database/ConfigDatabaseTools_impl.hh"
-// #include "casm/database/Database.hh"
-// #include "casm/database/ScelDatabaseTools_impl.hh"
-//
-// #include "casm/app/AppIO.hh"
-// #include "casm/app/ProjectBuilder.hh"
-// #include "casm/app/enum.hh"
-// #include "casm/app/enum/methods/ConfigEnumAllOccupationsInterface.hh"
-// #include "casm/app/enum/methods/ScelEnumInterface.hh"
-// #include "casm/app/CLIParse.hh"
-//
-// #include "Common.hh"
-// #include "FCCTernaryProj.hh"
-// #include "ZrOProj.hh"
-// #include "clex/TestClexEnumerators.hh"
-
 using namespace CASM;
 
 namespace test {

@@ -1,4 +1,5 @@
 #include "casm/clex/io/ProtoFuncsPrinter_impl.hh"
+#include "casm/clusterography/ClusterOrbits_impl.hh"
 
 namespace CASM {
 
@@ -23,7 +24,7 @@ void print_site_basis_funcs(std::shared_ptr<const Structure> prim_ptr,
   std::string indent(indent_space, ' ');
 
   std::ostream nullstream(0);
-  COORD_MODE printer_mode(mode);
+  xtal::COORD_MODE printer_mode(mode);
   std::vector<Orbit<PrimPeriodicSymCompare<IntegralCluster> > > asym_unit;
   make_prim_periodic_asymmetric_unit(prim_ptr,
                                      CASM_TMP::ConstantFunctor<bool>(true), TOL,

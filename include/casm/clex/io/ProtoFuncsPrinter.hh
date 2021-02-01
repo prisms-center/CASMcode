@@ -54,3 +54,5 @@ void write_site_basis_funcs(std::shared_ptr<const Structure> prim_ptr,
                             ClexBasis const &clex_basis, jsonParser &json);
 
 }  // namespace CASM
+
+#endif

@@ -2,7 +2,28 @@
 
 #include <map>
 #include <string>
+
+#include "casm/misc/ParsingDictionary.hh"
 namespace CASM {
+
+template <>
+ParsingDictionary<AnisoValTraits> make_parsing_dictionary<AnisoValTraits>() {
+  ParsingDictionary<AnisoValTraits> dict;
+
+  dict.insert(AnisoValTraits::disp(), AnisoValTraits::energy(),
+              AnisoValTraits::cost(), AnisoValTraits::coordinate(),
+              AnisoValTraits::latvec(), AnisoValTraits::selective_dynamics(),
+              AnisoValTraits::Cmagspin(), AnisoValTraits::Cunitmagspin(),
+              AnisoValTraits::NCmagspin(), AnisoValTraits::NCunitmagspin(),
+              AnisoValTraits::SOmagspin(), AnisoValTraits::SOunitmagspin(),
+              AnisoValTraits::isometry(), AnisoValTraits::strain("B"),
+              AnisoValTraits::strain("U"), AnisoValTraits::strain("EA"),
+              AnisoValTraits::strain("GL"), AnisoValTraits::strain("H"),
+              AnisoValTraits::force(), AnisoValTraits::d_orbital_occupation(),
+              AnisoValTraits::d_orbital_occupation_spin_polarized());
+
+  return dict;
+}
 
 namespace Local {
 

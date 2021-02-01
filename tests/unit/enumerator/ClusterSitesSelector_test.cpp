@@ -1,10 +1,10 @@
 #include "autotools.hh"
-#include "casm/app/AppIO_impl.hh"  // for orbit printing
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/clex/FillSupercell.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clusterography/ClusterSpecs_impl.hh"
 #include "casm/clusterography/SupercellClusterOrbits_impl.hh"
+#include "casm/clusterography/io/OrbitPrinter_impl.hh"
 #include "casm/clusterography/io/stream/IntegralCluster_stream_io.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/enumerator/ClusterSitesSelector_impl.hh"

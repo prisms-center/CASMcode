@@ -10,6 +10,9 @@
 
 namespace CASM {
 
+class IntegralCluster;
+class Structure;
+
 enum class ORBIT_PRINT_MODE { PROTO, FULL };
 
 ENUM_IO_DECL(ORBIT_PRINT_MODE)
@@ -80,7 +83,7 @@ struct Printer : public PrinterBase {
       : PrinterBase(_opt) {}
 
   void print(const Element &element, Log &out) const {
-    COORD_MODE printer_mode(opt.coord_type);
+    xtal::COORD_MODE printer_mode(opt.coord_type);
     out << element;
   }
 };
@@ -192,3 +195,5 @@ jsonParser &write_clust(ClusterOrbitIterator begin, ClusterOrbitIterator end,
                         const jsonParser &bspecs);
 
 }  // namespace CASM
+
+#endif

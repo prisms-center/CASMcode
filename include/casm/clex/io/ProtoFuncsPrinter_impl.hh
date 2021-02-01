@@ -4,7 +4,7 @@
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/clex/ClexBasis.hh"
 #include "casm/clex/io/ProtoFuncsPrinter.hh"
-#include "casm/clusterography/io/OrbitPrinter_impl.hh"
+#include "casm/crystallography/Site.hh"
 
 namespace CASM {
 
@@ -18,7 +18,7 @@ void ProtoFuncsPrinter::operator()(const OrbitType &orbit, Log &out,
   // out.flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
   // out.precision(5);
 
-  COORD_MODE printer_mode(opt.coord_type);
+  xtal::COORD_MODE printer_mode(opt.coord_type);
 
   auto const &clust = orbit.prototype();
   Index np = 0;

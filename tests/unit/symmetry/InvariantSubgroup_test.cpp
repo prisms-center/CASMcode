@@ -8,10 +8,10 @@
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
 #include "ZrOProj.hh"
-#include "casm/app/AppIO_impl.hh"
 #include "casm/casm_io/json/jsonFile.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/clusterography/io/OrbitPrinter_impl.hh"
 #include "casm/symmetry/ElementSymApply.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 

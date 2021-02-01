@@ -179,7 +179,7 @@ class Selection {
   jsonParser &to_json(const DataFormatterDictionary<ObjType> &_dict,
                       jsonParser &_json, bool only_selected = false) const;
 
-  bool write(const DataFormatterDictionary<ObjType> &dict, bool force,
+  void write(const DataFormatterDictionary<ObjType> &dict,
              const fs::path &out_path, bool write_json,
              bool only_selected) const;
 

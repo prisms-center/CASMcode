@@ -2,7 +2,6 @@
 
 #include <boost/filesystem.hpp>
 
-#include "casm/app/AppIO_impl.hh"
 #include "casm/app/ClexDescription.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
@@ -12,7 +11,7 @@
 #include "casm/clex/ClexBasis_impl.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/PrimClex.hh"
-#include "casm/clex/io/stream/BasisFunctionPrinter_impl.hh"
+#include "casm/clex/io/stream/ClexBasis_stream_io_impl.hh"
 #include "casm/clusterography/ClusterSpecs_impl.hh"
 #include "casm/completer/Handlers.hh"
 
@@ -158,7 +157,7 @@ void print_bset(const BsetCommand &cmd) {
                    OrbitPrinterAdapter<FullSitesPrinter>{log});
   }
   if (vm.count("functions")) {
-    BasisFunctionPrinter printer{log, shared_prim, basis_set_specs};
+    ClexBasisFunctionPrinter printer{log, shared_prim, basis_set_specs};
     for_all_orbits(cluster_specs, prototypes, printer);
   }
 }

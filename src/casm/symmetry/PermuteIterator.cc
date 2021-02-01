@@ -7,6 +7,7 @@
 #include "casm/crystallography/LinearIndexConverter.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/external/Eigen/src/Core/Matrix.h"
+#include "casm/misc/cloneable_ptr.hh"
 
 namespace CASM {
 

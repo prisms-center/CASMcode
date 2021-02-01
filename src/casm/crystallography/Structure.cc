@@ -12,7 +12,6 @@
 #include <string>
 #include <vector>
 
-#include "casm/app/AppIO.hh"
 #include "casm/basis_set/Adapter.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/basis_set/DoFIsEquivalent_impl.hh"
@@ -204,7 +203,7 @@ void Structure::_generate_basis_symreps() {
       auto const &dofref_from = basis()[b].occupant_dof();
 
       auto &symrep_from = this->m_occupant_symrep_IDs[b];
-      OccupantDoFIsEquivalent<Molecule> eq(dofref_from);
+      OccupantDoFIsEquivalent<xtal::Molecule> eq(dofref_from);
 
       if (eq(adapter::Adapter<xtal::SymOp, CASM::SymOp>()(op), dofref_to)) {
         if (symrep_from.is_identity()) {
@@ -326,7 +325,7 @@ void Structure::_generate_global_symreps() {
 /// indices:
 ///   mol_list_index = converter[basis_site][site_occupant_index]
 std::vector<std::vector<Index>> make_index_converter(
-    const Structure &struc, std::vector<Molecule> mol_list) {
+    const Structure &struc, std::vector<xtal::Molecule> mol_list) {
   std::vector<std::vector<Index>> converter(struc.basis().size());
 
   for (Index i = 0; i < struc.basis().size(); i++) {

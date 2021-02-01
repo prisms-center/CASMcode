@@ -8,8 +8,8 @@
 /// What is being used to test it:
 #include <boost/filesystem/fstream.hpp>
 
-#include "casm/app/AppIO.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
+#include "casm/crystallography/io/BasicStructureIO.hh"
 #include "casm/crystallography/io/VaspIO.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 
@@ -109,13 +109,13 @@ void prim2_read_test(Structure &struc) {
   }
 
   // Modify the structure that there's different occupants at each site
-  std::vector<Site> new_basis;
+  std::vector<xtal::Site> new_basis;
   new_basis.emplace_back(struc.basis()[0], "A");
   new_basis.emplace_back(struc.basis()[1], "A");
   new_basis.emplace_back(struc.basis()[2], "B");
   new_basis.emplace_back(struc.basis()[3], "C");
 
-  BasicStructure struc_with_new_basis = struc.structure();
+  xtal::BasicStructure struc_with_new_basis = struc.structure();
   struc_with_new_basis.set_basis(new_basis);
   struc = Structure(struc_with_new_basis);
 

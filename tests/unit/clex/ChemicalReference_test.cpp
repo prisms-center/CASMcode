@@ -2,13 +2,12 @@
 
 /// What is being tested:
 #include "casm/clex/ChemicalReference_impl.hh"
-#include "casm/clex/io/json/ChemicalReference.hh"
+#include "casm/clex/io/json/ChemicalReference_json_io.hh"
 
 /// What is being used to test it:
 
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
-#include "casm/app/AppIO.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/crystallography/Structure.hh"
 
@@ -53,11 +52,13 @@ TEST(ChemicalReferenceTest, Basics) {
       true);
 
   // try writing to json, as in project file
-  write_chemical_reference(chem_ref, json);
+  to_json(chem_ref, json["chemical_reference"]);
   EXPECT_EQ(json.contains("chemical_reference"), true);
 
   // try reading from json, as in a project file
-  ChemicalReference chem_ref3 = read_chemical_reference(json, prim, tol);
+  ChemicalReference chem_ref3 =
+      json["chemical_reference"].get<ChemicalReference>(prim, tol);
+
   EXPECT_EQ(
       almost_equal(chem_ref3.global(), Eigen::Vector3d(-1.0, -2.0, -4.0), tol),
       true);
@@ -91,7 +92,7 @@ TEST(ChemicalReferenceTest, HyperplaneConstructor) {
   // std::cout << json << std::endl;
 
   // try writing to json, as in project file
-  write_chemical_reference(chem_ref, json);
+  to_json(chem_ref, json["chemical_reference"]);
   EXPECT_EQ(json.contains("chemical_reference"), true);
   // std::cout << json << std::endl;
 }

@@ -175,6 +175,8 @@ TEST(ClexBasisSpecsJSONTest, ParseTest3) {
     EXPECT_EQ(cluster_specs.name(), "periodic_max_length");
     EXPECT_EQ(cluster_specs.periodicity_type(),
               CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC);
-    EXPECT_EQ(cluster_specs.max_length.size(), 0);
+
+    // Null cluster orbit is always included
+    EXPECT_EQ(cluster_specs.max_length.size(), 1);
   }
 }

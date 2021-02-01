@@ -2,12 +2,12 @@
 #include <boost/filesystem/fstream.hpp>
 #include <cstring>
 
-#include "casm/app/AppIO.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/HamiltonianModules.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/PrimClex.hh"
@@ -20,6 +20,7 @@
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/io/BasicStructureIO.hh"
 #include "casm/global/definitions.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 
@@ -138,7 +139,6 @@ void InitOption::initialize() {
 int init_command(const CommandArgs &args) {
   std::string name;
   po::variables_map vm;
-  HamiltonianModules modules;
 
   /// Set command line options using boost program_options
   Completer::InitOption init_opt;
@@ -195,7 +195,7 @@ int init_command(const CommandArgs &args) {
     BasicStructure prim;
     // Read PRIM or prim.json:
     try {
-      prim = read_prim(init_opt.prim_path(), TOL, &modules);
+      prim = read_prim(init_opt.prim_path(), TOL);
     } catch (std::exception &e) {
       err_log() << e.what() << std::endl;
       return ERR_INVALID_INPUT_FILE;

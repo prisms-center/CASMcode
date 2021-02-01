@@ -1,6 +1,12 @@
+#ifndef CASM_cluterography_io_OrbitPrinter_impl
+#define CASM_cluterography_io_OrbitPrinter_impl
 
+#include "casm/casm_io/container/json_io.hh"
+#include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/clusterography/io/OrbitPrinter.hh"
+#include "casm/clusterography/io/json/IntegralCluster_json_io.hh"
+#include "casm/crystallography/io/BasicStructureIO.hh"
 #include "casm/symmetry/InvariantSubgroup_impl.hh"
-#include "casm/symmetry/SymInfo.hh"
 #include "casm/symmetry/SymTools.hh"
 
 namespace CASM {

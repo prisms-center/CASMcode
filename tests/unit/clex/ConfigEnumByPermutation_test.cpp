@@ -8,13 +8,13 @@
 
 /// What is being used to test it:
 #include "Common.hh"
-#include "casm/app/AppIO.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/io/BasicStructureIO.hh"
 #include "casm/database/Database.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
 

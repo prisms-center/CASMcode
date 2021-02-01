@@ -3,14 +3,18 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 
-#include "casm/app/AppIO.hh"
 #include "casm/app/ClexDescription.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/casm_io/Log.hh"
+#include "casm/casm_io/json/jsonParser.hh"
+#include "casm/clex/CompositionAxes_impl.hh"
 #include "casm/clex/NeighborList.hh"
+#include "casm/clex/io/file/CompositionAxes_file_io.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/io/BasicStructureIO.hh"
 #include "casm/symmetry/SymGroup.hh"
+#include "casm/symmetry/io/json/SymGroup_json_io.hh"
 
 namespace CASM {
 
@@ -78,7 +82,7 @@ void build_project(ProjectSettings const &project_settings,
   }
 
   // Generate empty composition_axes.json --------------------
-  CompositionAxes().write(dir.composition_axes());
+  write_composition_axes(dir.composition_axes(), CompositionAxes());
 }
 
 ProjectSettings make_default_project_settings(xtal::BasicStructure const &prim,

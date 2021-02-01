@@ -246,6 +246,13 @@ int SelectCommandImpl<DataObject>::run() const {
     return ERR_INVALID_ARG;
   }
 
+  bool force_write = _count("force") || (_output_path().string() == "MASTER");
+  if (fs::exists(_output_path()) && !force_write) {
+    log() << "File " << _output_path()
+          << " already exists. Use --force to force overwrite." << std::endl;
+    return ERR_EXISTING_FILE;
+  }
+
   bool only_selected = false;
   if (_count("subset")) {
     _subset();
@@ -255,9 +262,8 @@ int SelectCommandImpl<DataObject>::run() const {
   log() << "selection time: " << log().lap_time() << " (s)\n" << std::endl;
 
   log().write("Selection");
-  int ret_code = _sel(0).write(
-      _dict(), _count("force") || (_output_path().string() == "MASTER"),
-      _output_path(), _count("json"), only_selected);
+  _sel(0).write(_dict(), _output_path(), _count("json"), only_selected);
+
   log() << "write: " << _output_path() << "\n" << std::endl;
 
   log().custom("Output " + traits<DataObject>::short_name + " list",
@@ -266,7 +272,7 @@ int SelectCommandImpl<DataObject>::run() const {
 
   log() << std::endl;
 
-  return ret_code;
+  return 0;
 }
 
 template <typename DataObject>

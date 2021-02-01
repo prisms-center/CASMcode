@@ -1,12 +1,8 @@
 #include <memory>
 
-#include "casm/app/AppIO_impl.hh"
 #include "casm/app/ClexDescription.hh"
 #include "casm/app/DirectoryStructure.hh"
-#include "casm/app/EnumeratorHandler_impl.hh"
-#include "casm/app/HamiltonianModules_impl.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/app/QueryHandler_impl.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
@@ -15,10 +11,14 @@
 #include "casm/clex/ClexBasisWriter_impl.hh"
 #include "casm/clex/ClexBasis_impl.hh"
 #include "casm/clex/Clexulator.hh"
+#include "casm/clex/CompositionAxes_impl.hh"
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clex/NeighborList.hh"
 #include "casm/clex/PrimClex_impl.hh"
+#include "casm/clex/io/ProtoFuncsPrinter_impl.hh"
+#include "casm/clex/io/file/ChemicalReference_file_io.hh"
+#include "casm/clex/io/file/CompositionAxes_file_io.hh"
 #include "casm/clex/io/json/ClexBasisSpecs_json_io.hh"
 #include "casm/clex/io/json/ECIContainer_json_io.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
@@ -34,8 +34,7 @@ namespace CASM {
 
 BasicStructure read_prim(ProjectSettings const &project_settings) {
   return read_prim(project_settings.dir().prim(),
-                   project_settings.crystallography_tol(),
-                   &project_settings.hamiltonian_modules());
+                   project_settings.crystallography_tol());
 }
 
 std::shared_ptr<Structure const> read_shared_prim(
@@ -175,13 +174,13 @@ void PrimClex::refresh(bool read_settings, bool read_composition,
 
   if (read_composition) {
     m_data->has_composition_axes = false;
-    auto comp_axes = dir().composition_axes();
+    auto comp_axes_path = dir().composition_axes();
 
     try {
-      if (fs::is_regular_file(comp_axes)) {
-        log() << "read: " << comp_axes << "\n";
+      if (fs::is_regular_file(comp_axes_path)) {
+        log() << "read: " << comp_axes_path << "\n";
 
-        CompositionAxes opt(comp_axes);
+        CompositionAxes opt = read_composition_axes(comp_axes_path);
 
         if (opt.has_current_axes()) {
           m_data->has_composition_axes = true;
@@ -190,7 +189,7 @@ void PrimClex::refresh(bool read_settings, bool read_composition,
       }
     } catch (std::exception &e) {
       err_log().error("reading composition_axes.json");
-      err_log() << "file: " << comp_axes << "\n" << std::endl;
+      err_log() << "file: " << comp_axes_path << "\n" << std::endl;
       throw e;
     }
   }
@@ -462,18 +461,15 @@ struct WriteBasisSetDataImpl {
 
   template <typename OrbitVecType>
   void operator()(OrbitVecType const &orbits) const {
-    std::cout << "WriteBasisSetDataImpl 0" << std::endl;
     const auto &dir = settings.dir();
     ParsingDictionary<DoFType::Traits> const *dof_dict =
         &DoFType::traits_dict();
     double xtal_tol = settings.crystallography_tol();
 
     // generate ClexBasis
-    std::cout << "WriteBasisSetDataImpl 1" << std::endl;
     ClexBasis clex_basis{shared_prim, basis_set_specs, dof_dict};
     clex_basis.generate(orbits.begin(), orbits.end());
 
-    std::cout << "WriteBasisSetDataImpl 2" << std::endl;
     // delete any existing data
     throw_if_no_basis_set_specs(basis_set_name, dir);
     dir.delete_bset_data(settings.project_name(), basis_set_name);
@@ -510,7 +506,6 @@ struct WriteBasisSetDataImpl {
     clexwriter.print_clexulator(clexulator_name, clex_basis, orbits,
                                 prim_neighbor_list, outfile, xtal_tol);
     outfile.close();
-    std::cout << "WriteBasisSetDataImpl 3" << std::endl;
   }
 };
 
@@ -524,11 +519,9 @@ void write_basis_set_data(std::shared_ptr<Structure const> shared_prim,
   auto const &cluster_specs = *basis_set_specs.cluster_specs;
   Log &log = CASM::log();
 
-  std::cout << "write_basis_set_data 0" << std::endl;
   WriteBasisSetDataImpl writer{shared_prim, settings, basis_set_name,
                                basis_set_specs, prim_neighbor_list};
   for_all_orbits(cluster_specs, log, writer);
-  std::cout << "write_basis_set_data 1" << std::endl;
 }
 
 /// Make Clexulator from existing source code

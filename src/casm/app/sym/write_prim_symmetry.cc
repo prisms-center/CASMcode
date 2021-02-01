@@ -3,7 +3,6 @@
 #include <boost/filesystem/fstream.hpp>
 
 #include "casm/app/APICommand.hh"
-#include "casm/app/AppIO.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/io/json_io.hh"
 #include "casm/casm_io/Log.hh"

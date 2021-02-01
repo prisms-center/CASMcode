@@ -1,5 +1,4 @@
 #include "casm/app/DirectoryStructure.hh"
-#include "casm/app/casm_functions.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/SafeOfstream.hh"
 #include "casm/casm_io/container/stream_io.hh"
@@ -8,6 +7,7 @@
 #include "casm/database/DatabaseTypes_impl.hh"
 #include "casm/database/Selected_impl.hh"
 #include "casm/database/Selection_impl.hh"
+#include "casm/global/errors.hh"
 
 namespace CASM {
 
@@ -482,26 +482,15 @@ void Selection<ObjType>::print(const DataFormatterDictionary<ObjType> &_dict,
   }
 }
 
-/// \brief Write selection to file
-///
-/// \returns 0 if successful, ERR_EXISTING_FILE if file already exists and
-/// !force
+/// \brief Write selection to file -- will overwrite
 template <typename ObjType>
-bool Selection<ObjType>::write(const DataFormatterDictionary<ObjType> &dict,
-                               bool force, const fs::path &_out_path,
-                               bool write_json, bool only_selected) const {
+void Selection<ObjType>::write(const DataFormatterDictionary<ObjType> &dict,
+                               const fs::path &_out_path, bool write_json,
+                               bool only_selected) const {
   fs::path out_path(_out_path);
   auto _matches = matches<DB::SELECTION_TYPE>(out_path.string());
   if (_matches.size() == 1 && *_matches.begin() == DB::SELECTION_TYPE::MASTER) {
     out_path = primclex().dir().template master_selection<ObjType>();
-    force = true;
-  }
-
-  if (fs::exists(out_path) && !force) {
-    err_log() << "File " << out_path
-              << " already exists. Use --force to force overwrite."
-              << std::endl;
-    return ERR_EXISTING_FILE;
   }
 
   if (write_json || out_path.extension() == ".json" ||
@@ -518,7 +507,6 @@ bool Selection<ObjType>::write(const DataFormatterDictionary<ObjType> &dict,
     this->print(dict, sout.ofstream(), only_selected);
     sout.close();
   }
-  return 0;
 }
 
 BOOST_PP_SEQ_FOR_EACH(INST_Selection, _, CASM_DB_TYPES)

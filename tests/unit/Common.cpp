@@ -7,7 +7,6 @@
 
 #include "Proj.hh"
 #include "autotools.hh"
-#include "casm/app/AppIO.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"

@@ -1,8 +1,5 @@
 #include "casm/clex/SuperConfigEnum.hh"
 
-#include "casm/app/casm_functions.hh"
-#include "casm/app/enum.hh"
-#include "casm/app/io/json_io_impl.hh"
 #include "casm/clex/ConfigDoFTools.hh"
 #include "casm/clex/ConfigEnumByPermutation.hh"
 #include "casm/clex/FillSupercell.hh"

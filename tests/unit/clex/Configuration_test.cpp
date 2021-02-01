@@ -8,7 +8,6 @@
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
 #include "TestConfiguration.hh"
-#include "casm/app/AppIO.hh"
 #include "casm/clex/FillSupercell.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/crystallography/Structure.hh"

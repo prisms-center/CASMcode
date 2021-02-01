@@ -1,7 +1,7 @@
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clusterography/ClusterSpecs_impl.hh"
-#include "casm/clusterography/io/json_io.hh"
+#include "casm/clusterography/json_io.hh"
 #include "crystallography/TestStructures.hh"  // for test::ZrO_prim
 #include "gtest/gtest.h"
 

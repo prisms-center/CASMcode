@@ -10,7 +10,6 @@
 #include <fstream>
 
 #include "Common.hh"
-#include "casm/app/AppIO.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/Lattice.hh"
@@ -21,6 +20,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/SymType.hh"
+#include "casm/crystallography/io/BasicStructureIO.hh"
 #include "casm/crystallography/io/VaspIO.hh"
 #include "casm/external/Eigen/src/Core/Matrix.h"
 #include "casm/misc/CASM_Eigen_math.hh"
@@ -41,7 +41,7 @@ D
 0.00 0.00 0.00 A B C
 ***************************************/
 
-void prim1_read_test(BasicStructure &struc) {
+void prim1_read_test(xtal::BasicStructure &struc) {
   double tol = struc.lattice().tol();
 
   EXPECT_EQ(
@@ -90,7 +90,7 @@ D
 0.0 0.5 0.5 A B C :: C
 ***************************************/
 
-void prim2_read_test(BasicStructure &struc) {
+void prim2_read_test(xtal::BasicStructure &struc) {
   double tol = struc.lattice().tol();
 
   EXPECT_EQ(
@@ -126,7 +126,7 @@ void prim2_read_test(BasicStructure &struc) {
   }
 
   // Modify the structure that there's different occupants at each site
-  std::vector<Site> new_basis;
+  std::vector<xtal::Site> new_basis;
   new_basis.emplace_back(struc.basis()[0], "A");
   new_basis.emplace_back(struc.basis()[1], "A");
   new_basis.emplace_back(struc.basis()[2], "B");
@@ -168,7 +168,7 @@ Direct
    0.0000000   0.5000000   0.5000000
 ***************************************/
 
-void pos1_read_test(BasicStructure &struc) {
+void pos1_read_test(xtal::BasicStructure &struc) {
   double tol = struc.lattice().tol();
 
   EXPECT_EQ(
@@ -204,9 +204,9 @@ void pos1_read_test(BasicStructure &struc) {
 }
 
 namespace {
-BasicStructure read_structure(const fs::path &poscar_path) {
+xtal::BasicStructure read_structure(const fs::path &poscar_path) {
   std::ifstream poscar_stream(poscar_path.string());
-  return BasicStructure::from_poscar_stream(poscar_stream);
+  return xtal::BasicStructure::from_poscar_stream(poscar_stream);
 }
 }  // namespace
 
@@ -228,7 +228,7 @@ class BasicStructureSiteTest : public testing::Test {
 
 TEST_F(BasicStructureSiteTest, PRIM1Test) {
   // Read in test PRIM and run tests
-  BasicStructure struc = ::read_structure(datadir / "PRIM1.txt");
+  xtal::BasicStructure struc = ::read_structure(datadir / "PRIM1.txt");
   prim1_read_test(struc);
 
   // Write test PRIM back out
@@ -236,13 +236,13 @@ TEST_F(BasicStructureSiteTest, PRIM1Test) {
   write_prim(struc, tmp_file, FRAC);
 
   // Read new file and run tests again
-  BasicStructure struc2(read_prim(tmp_file, TOL));
+  xtal::BasicStructure struc2(read_prim(tmp_file, TOL));
   prim1_read_test(struc2);
 }
 
 TEST_F(BasicStructureSiteTest, PRIM2Test) {
   // Read in test PRIM and run tests
-  BasicStructure struc = ::read_structure(datadir / "PRIM2.txt");
+  xtal::BasicStructure struc = ::read_structure(datadir / "PRIM2.txt");
   prim2_read_test(struc);
 }
 
@@ -253,7 +253,7 @@ TEST_F(BasicStructureSiteTest, PRIM3Test) {
 
 TEST_F(BasicStructureSiteTest, POS1Test) {
   // Read in test PRIM and run tests
-  BasicStructure struc = ::read_structure(datadir / "POS1.txt");
+  xtal::BasicStructure struc = ::read_structure(datadir / "POS1.txt");
   pos1_read_test(struc);
 
   // Write test PRIM back out
@@ -265,13 +265,13 @@ TEST_F(BasicStructureSiteTest, POS1Test) {
   sout.close();
 
   // Read new file and run tests again
-  BasicStructure struc2 = ::read_structure(datadir / "POS1_out.txt");
+  xtal::BasicStructure struc2 = ::read_structure(datadir / "POS1_out.txt");
   pos1_read_test(struc2);
 }
 
 TEST_F(BasicStructureSiteTest, POS1Vasp5Test) {
   // Read in test PRIM and run tests
-  BasicStructure struc = ::read_structure(datadir / "POS1.txt");
+  xtal::BasicStructure struc = ::read_structure(datadir / "POS1.txt");
   pos1_read_test(struc);
 
   // Write test PRIM back out
@@ -281,7 +281,7 @@ TEST_F(BasicStructureSiteTest, POS1Vasp5Test) {
   sout.close();
 
   // Read new file and run tests again
-  BasicStructure struc2 = ::read_structure(tmp_file);
+  xtal::BasicStructure struc2 = ::read_structure(tmp_file);
   pos1_read_test(struc2);
 }
 
@@ -289,15 +289,15 @@ TEST_F(BasicStructureSiteTest, MakeSuperstructure) {
   Eigen::Matrix3i transf_mat;
   transf_mat << 2, 0, 0, 0, 2, 0, 0, 0, 2;
 
-  BasicStructure prim = test::ZrO_prim();
-  BasicStructure superstruc = xtal::make_superstructure(prim, transf_mat);
+  xtal::BasicStructure prim = test::ZrO_prim();
+  xtal::BasicStructure superstruc = xtal::make_superstructure(prim, transf_mat);
 
   EXPECT_EQ(superstruc.basis().size(),
             transf_mat.determinant() * prim.basis().size());
 
-  for (const Site &prim_site : prim.basis()) {
+  for (const xtal::Site &prim_site : prim.basis()) {
     int match_count = 0;
-    for (const Site &super_site : superstruc.basis()) {
+    for (const xtal::Site &super_site : superstruc.basis()) {
       if (super_site.compare(prim_site)) {
         ++match_count;
       }
@@ -318,7 +318,7 @@ TEST_F(BasicStructureSiteTest, IsPrimitiveTest) {
     Eigen::Matrix3l transformation_matrix =
         xtal::make_transformation_matrix_to_super(prim.lattice(), *it,
                                                   prim.lattice().tol());
-    BasicStructure super =
+    xtal::BasicStructure super =
         xtal::make_superstructure(prim, transformation_matrix);
     EXPECT_EQ(super.lattice().is_right_handed(), true);
 

@@ -7,7 +7,6 @@
 
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
-#include "casm/app/QueryHandler.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/casm_io/container/stream_io.hh"
 #include "casm/clex/ChemicalReference.hh"

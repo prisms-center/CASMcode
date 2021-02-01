@@ -1,6 +1,5 @@
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh"
 
-#include "casm/app/AppIO.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalConditions.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh"

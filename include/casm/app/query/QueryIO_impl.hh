@@ -6,6 +6,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/symmetry/SupercellSymInfo_impl.hh"
+#include "casm/symmetry/SymInfo.hh"
 
 namespace CASM {
 

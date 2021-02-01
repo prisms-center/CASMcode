@@ -1,6 +1,5 @@
 #include "casm/symmetry/SymBasisPermute.hh"
 
-#include "casm/basis_set/DoF.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/misc/CASM_Eigen_math.hh"

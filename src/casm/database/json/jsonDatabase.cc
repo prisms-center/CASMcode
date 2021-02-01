@@ -140,8 +140,8 @@ void jsonDatabase<Supercell>::commit() {
   auto handler = primclex().settings().query_handler<Supercell>();
   handler.set_selected(master_selection());
   master_selection().write(
-      handler.dict(), true,
-      primclex().dir().template master_selection<Supercell>(), false, false);
+      handler.dict(), primclex().dir().template master_selection<Supercell>(),
+      false, false);
 }
 
 void jsonDatabase<Supercell>::close() {
@@ -353,11 +353,10 @@ void jsonDatabase<Configuration>::commit() {
   auto handler = primclex().settings().query_handler<Configuration>();
   handler.set_selected(master_selection());
 
-  bool force = true;
   bool write_json = false;
   bool only_selected = false;
   master_selection().write(
-      handler.dict(), force,
+      handler.dict(),
       primclex().dir().template master_selection<Configuration>(), write_json,
       only_selected);
 }

@@ -10,8 +10,6 @@ namespace xtal {
 class BasicStructure;
 class Site;
 }  // namespace xtal
-using xtal::BasicStructure;
-using xtal::Site;
 
 /**
  * \ingroup ProjectIO
@@ -55,20 +53,20 @@ jsonParser &to_json(const ChemicalReference &ref, jsonParser &json);
 
 /// \brief Read chemical reference from one of 3 alternative forms
 std::pair<Eigen::VectorXd, std::vector<ChemicalReferenceState> >
-one_chemical_reference_from_json(BasicStructure const &prim,
+one_chemical_reference_from_json(xtal::BasicStructure const &prim,
                                  jsonParser const &json);
 
 /// \brief Read chemical reference from JSON
 template <>
 struct jsonConstructor<ChemicalReference> {
   static ChemicalReference from_json(jsonParser const &json,
-                                     BasicStructure const &prim,
+                                     xtal::BasicStructure const &prim,
                                      double tol = 1e-14);
 };
 
 /// \brief Read chemical reference from JSON
 void from_json(ChemicalReference &ref, jsonParser const &json,
-               BasicStructure const &prim, double tol = 1e-14);
+               xtal::BasicStructure const &prim, double tol = 1e-14);
 
 /** @} */
 

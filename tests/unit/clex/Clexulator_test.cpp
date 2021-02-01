@@ -1,9 +1,11 @@
 #include "casm/clex/Clexulator.hh"
 
 #include "ProjectBaseTest.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/PrimClex_impl.hh"
 #include "casm/clex/Supercell.hh"
+#include "casm/clex/io/stream/ClexBasis_stream_io.hh"
 #include "clex/TestClexBasisSpecs.hh"
 #include "crystallography/TestStructures.hh"
 #include "gtest/gtest.h"
@@ -95,6 +97,8 @@ TEST_F(StrainClexulatorTest, UseClexulator) {
   EXPECT_EQ(configuration.size(), 1);
 
   Clexulator clexulator = primclex_ptr->clexulator(basis_set_name);
+
+  print_basis_functions(log(), *primclex_ptr, basis_set_name);
 
   // Check clexulator
   EXPECT_EQ(clexulator.name(), "StrainClexulatorTest_Clexulator");

@@ -9,7 +9,6 @@
 
 /// What is being used to test it:
 #include "Common.hh"
-#include "casm/app/AppIO.hh"
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clex/PrimClex.hh"
@@ -17,6 +16,7 @@
 #include "casm/clusterography/io/json/ClusterSpecs_json_io.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/io/BasicStructureIO.hh"
 #include "casm/crystallography/io/UnitCellCoordIO.hh"
 #include "casm/database/Database.hh"
 

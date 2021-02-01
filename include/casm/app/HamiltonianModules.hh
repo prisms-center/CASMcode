@@ -57,10 +57,6 @@ class HamiltonianModules : public notstd::Cloneable {
 };
 
 template <>
-HamiltonianModules::AnisoValDictionary
-make_parsing_dictionary<AnisoValTraits>();
-
-template <>
 HamiltonianModules::SymRepBuilderDictionary
 make_parsing_dictionary<SymRepBuilderInterface>();
 

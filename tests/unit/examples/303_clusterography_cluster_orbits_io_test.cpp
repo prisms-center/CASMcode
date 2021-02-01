@@ -1,7 +1,7 @@
-#include "casm/app/AppIO_impl.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/clusterography/ClusterSpecs_impl.hh"
+#include "casm/clusterography/io/OrbitPrinter_impl.hh"
 #include "crystallography/TestStructures.hh"  // for test::ZrO_prim
 #include "gtest/gtest.h"
 

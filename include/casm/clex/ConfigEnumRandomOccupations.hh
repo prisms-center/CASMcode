@@ -3,16 +3,11 @@
 
 #include <functional>
 
-#include "casm/app/enum/EnumInterface.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/container/Counter.hh"
 #include "casm/enumerator/InputEnumerator.hh"
 #include "casm/external/MersenneTwister/MersenneTwister.h"
 #include "casm/misc/cloneable_ptr.hh"
-
-extern "C" {
-CASM::EnumInterfaceBase *make_ConfigEnumRandomOccupations_interface();
-}
 
 class MTRand;
 

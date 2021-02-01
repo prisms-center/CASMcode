@@ -102,7 +102,6 @@ PeriodicMaxLengthClusterSpecs::_make_periodic_orbits(
 ClusterSpecs::PeriodicOrbitVec
 PeriodicMaxLengthClusterSpecs::_make_periodic_orbits(
     std::ostream &status) const {
-  std::cout << "PeriodicMaxLengthClusterSpecs 0" << std::endl;
   typedef PrimPeriodicOrbit<IntegralCluster> orbit_type;
   std::vector<OrbitBranchSpecs<orbit_type> > specs;
 
@@ -131,11 +130,9 @@ PeriodicMaxLengthClusterSpecs::_make_periodic_orbits(
   }
 
   // now generate orbits
-  std::cout << "PeriodicMaxLengthClusterSpecs 1" << std::endl;
   PeriodicOrbitVec orbits;
   make_orbits(specs.begin(), specs.end(), custom_generators,
               std::back_inserter(orbits), status);
-  std::cout << "PeriodicMaxLengthClusterSpecs 3" << std::endl;
   return orbits;
 }
 

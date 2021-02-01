@@ -3,11 +3,13 @@
 #include <boost/filesystem.hpp>
 #include <cstring>
 
-#include "casm/app/AppIO_impl.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/casm_io/Log.hh"
+#include "casm/clex/CompositionAxes_impl.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/io/file/CompositionAxes_file_io.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Structure.hh"
@@ -15,27 +17,28 @@
 
 namespace CASM {
 
-void display(std::ostream &sout, const CompositionAxes &opt) {
-  if (opt.all_axes.size()) {
+void display(std::ostream &sout, const CompositionAxes &comp_axes) {
+  if (comp_axes.all_axes.size()) {
     sout << "Possible composition axes:\n\n";
-    display_composition_axes(sout, opt.all_axes);
+    display_composition_axes(sout, comp_axes.all_axes);
   }
   sout << "\n";
 
-  if (opt.has_current_axes()) {
-    sout << "Currently selected composition axes: " << opt.curr_key << "\n";
+  if (comp_axes.has_current_axes()) {
+    sout << "Currently selected composition axes: " << comp_axes.curr_key
+         << "\n";
 
     sout << "\n";
     sout << "Parametric composition:\n";
-    display_comp(sout, opt.curr, 2);
+    display_comp(sout, comp_axes.curr, 2);
 
     sout << "\n";
     sout << "Composition:\n";
-    display_comp_n(sout, opt.curr, 2);
+    display_comp_n(sout, comp_axes.curr, 2);
 
     sout << "\n";
     sout << "Parametric chemical potentials:\n";
-    display_param_chem_pot(sout, opt.curr, 2);
+    display_param_chem_pot(sout, comp_axes.curr, 2);
   }
 }
 
@@ -160,26 +163,26 @@ int composition_command(const CommandArgs &args) {
   PrimClex &primclex = make_primclex_if_not(args, uniq_primclex);
 
   const DirectoryStructure &dir = primclex.dir();
-  fs::path comp_axes = dir.composition_axes();
+  fs::path comp_axes_path = dir.composition_axes();
 
-  CompositionAxes opt;
-  if (fs::exists(comp_axes)) {
-    opt.read(comp_axes);
+  CompositionAxes comp_axes;
+  if (fs::exists(comp_axes_path)) {
+    comp_axes = read_composition_axes(comp_axes_path);
   }
 
   if (vm.count("display")) {
     log() << "\n***************************\n\n";
 
-    display(log(), opt);
+    display(log(), comp_axes);
 
     log() << "\n\n";
 
-    if (opt.err_code) {
-      log() << opt.err_message << std::endl;
-    } else if (opt.all_axes.size() && !opt.has_current_axes()) {
+    if (comp_axes.err_code) {
+      log() << comp_axes.err_message << std::endl;
+    } else if (comp_axes.all_axes.size() && !comp_axes.has_current_axes()) {
       log() << "Please use 'casm composition --select' to choose your "
                "composition axes.\n\n";
-    } else if (!opt.all_axes.size()) {
+    } else if (!comp_axes.all_axes.size()) {
       log() << "Please use 'casm composition --calc' to calculate standard "
                "composition axes.\n\n";
     }
@@ -192,26 +195,26 @@ int composition_command(const CommandArgs &args) {
       log() << "Using the PRIM to enumerate standard composition axes for this "
                "space.\n\n";
 
-      if (opt.enumerated.size()) {
+      if (comp_axes.enumerated.size()) {
         log() << "Overwriting existing standard composition axes.\n\n";
       }
 
-      opt.erase_enumerated();
+      comp_axes.erase_enumerated();
 
       std::vector<CompositionConverter> v;
       standard_composition_axes(xtal::allowed_molecule_names(primclex.prim()),
                                 std::back_inserter(v));
-      opt.insert_enumerated(v.begin(), v.end());
+      comp_axes.insert_enumerated(v.begin(), v.end());
 
-      display(log(), opt);
+      display(log(), comp_axes);
 
       log() << "\n\n";
 
-      opt.write(comp_axes);
+      write_composition_axes(comp_axes_path, comp_axes);
 
-      log() << "Wrote: " << comp_axes << "\n\n";
+      log() << "Wrote: " << comp_axes_path << "\n\n";
 
-      if (!opt.has_current_axes()) {
+      if (!comp_axes.has_current_axes()) {
         log() << "Please use 'casm composition --select' to choose your "
                  "composition axes.\n\n";
       }
@@ -220,17 +223,18 @@ int composition_command(const CommandArgs &args) {
     if (vm.count("select")) {
       log() << "\n***************************\n\n";
 
-      if (opt.all_axes.empty()) {
+      if (comp_axes.all_axes.empty()) {
         log() << "Error: No composition axes found.\n\n";
 
         log() << "Please use 'casm composition --calc' to calculate standard "
                  "composition axes,\n"
-              << "or add custom composition axes to " << comp_axes << "\n\n";
+              << "or add custom composition axes to " << comp_axes_path
+              << "\n\n";
 
         return ERR_MISSING_DEPENDS;
       }
 
-      if (opt.all_axes.count(comp_opt.axis_choice_str()) == 0) {
+      if (comp_axes.all_axes.count(comp_opt.axis_choice_str()) == 0) {
         log() << "Error: The selected composition axes '"
               << comp_opt.axis_choice_str() << "' can not \n"
               << "be found in either the standard or custom compostion axes. "
@@ -241,15 +245,15 @@ int composition_command(const CommandArgs &args) {
         return ERR_INVALID_INPUT_FILE;
       }
 
-      opt.select(comp_opt.axis_choice_str());
+      comp_axes.select(comp_opt.axis_choice_str());
 
-      display(log(), opt);
+      display(log(), comp_axes);
 
       log() << "\n\n";
 
-      opt.write(comp_axes);
+      write_composition_axes(comp_axes_path, comp_axes);
 
-      log() << "Wrote: " << comp_axes << "\n\n";
+      log() << "Wrote: " << comp_axes_path << "\n\n";
 
       if (args.primclex) {
         args.primclex->refresh(false, true, true, false);

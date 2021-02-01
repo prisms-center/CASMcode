@@ -1,23 +1,19 @@
 #include "casm/database/ConfigImport.hh"
 
 #include "casm/app/DirectoryStructure.hh"
+#include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
 #include "casm/clex/ConfigMapping.hh"
 #include "casm/clex/Configuration_impl.hh"
-#include "casm/clex/io/json/ConfigMapping.hh"
+#include "casm/clex/io/json/ConfigMapping_json_io.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/io/SimpleStructureIO.hh"
-//#include "casm/app/import.hh"
-//#include "casm/app/update.hh"
-//#include "casm/app/rm.hh"
-#include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/Import_impl.hh"
 #include "casm/database/PropertiesDatabase.hh"
 #include "casm/database/ScelDatabase.hh"
 #include "casm/database/Selection_impl.hh"
 #include "casm/database/Update_impl.hh"
-//#include "casm/basis_set/DoF.hh"
 
 namespace CASM {
 

@@ -1,7 +1,7 @@
 #include "casm/clusterography/io/stream/IntegralCluster_stream_io.hh"
 
-#include "casm/app/AppIO.hh"
 #include "casm/clusterography/IntegralCluster.hh"
+#include "casm/clusterography/io/OrbitPrinter_impl.hh"
 
 namespace CASM {
 

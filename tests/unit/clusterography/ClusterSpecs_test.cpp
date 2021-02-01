@@ -1,16 +1,15 @@
 #include "autotools.hh"
-#include "casm/app/AppIO_impl.hh"  // for orbit printing
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/clusterography/ClusterSpecs_impl.hh"
-#include "gtest/gtest.h"
-// #include "casm/clusterography/SupercellClusterOrbits_impl.hh"
+#include "casm/clusterography/io/OrbitPrinter_impl.hh"
 #include "casm/clusterography/io/stream/IntegralCluster_stream_io.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/symmetry/SimpleOrbit_impl.hh"
 #include "casm/symmetry/SubOrbits_impl.hh"
 #include "casm/symmetry/SupercellSymInfo_impl.hh"
 #include "crystallography/TestStructures.hh"
+#include "gtest/gtest.h"
 
 using namespace CASM;
 using namespace test;
@@ -27,11 +26,11 @@ namespace test {
 
 void expect_excluded_point_cluster(
     std::vector<Orbit<LocalSymCompare<IntegralCluster>>> const &orbits,
-    UnitCellCoord const &unitcellcoord);
+    xtal::UnitCellCoord const &unitcellcoord);
 
 void expect_included_point_cluster(
     std::vector<Orbit<LocalSymCompare<IntegralCluster>>> const &orbits,
-    UnitCellCoord const &unitcellcoord, int multiplicity);
+    xtal::UnitCellCoord const &unitcellcoord, int multiplicity);
 }  // namespace test
 
 class ClusterSpecsTest : public testing::Test {
@@ -329,7 +328,7 @@ namespace test {
 // orbits
 void expect_excluded_point_cluster(
     std::vector<Orbit<LocalSymCompare<IntegralCluster>>> const &orbits,
-    UnitCellCoord const &unitcellcoord) {
+    xtal::UnitCellCoord const &unitcellcoord) {
   IntegralCluster test{orbits.begin()->prototype().prim()};
   test.elements().push_back(unitcellcoord);
   for (auto const &orbit : orbits) {
@@ -341,7 +340,7 @@ void expect_excluded_point_cluster(
 // with `multiplicity`
 void expect_included_point_cluster(
     std::vector<Orbit<LocalSymCompare<IntegralCluster>>> const &orbits,
-    UnitCellCoord const &unitcellcoord, int multiplicity) {
+    xtal::UnitCellCoord const &unitcellcoord, int multiplicity) {
   IntegralCluster test{orbits.begin()->prototype().prim()};
   test.elements().push_back(unitcellcoord);
   for (auto const &orbit : orbits) {

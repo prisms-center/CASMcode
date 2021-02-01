@@ -56,5 +56,37 @@ TEST(ClusterSpecsJSONTest, ParseTest2) {
             CASM::CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC);
   auto const &cspecs =
       static_cast<PeriodicMaxLengthClusterSpecs const &>(*parser.value);
-  EXPECT_EQ(cspecs.max_length.size(), 0);
+
+  // Null cluster orbit is always included
+  EXPECT_EQ(cspecs.max_length.size(), 1);
+}
+
+TEST(ClusterSpecsJSONTest, ParseTest3) {
+  jsonParser json = jsonParser::parse(std::string(R"({
+    "method": "periodic_max_length",
+    "params": {
+      "orbit_branch_specs": {
+        "1": {}
+      }
+    }
+  })"));
+
+  auto shared_prim =
+      std::make_shared<Structure const>(test::SimpleCubic_GLstrain_prim());
+
+  InputParser<ClusterSpecs> parser{json, shared_prim};
+
+  // Error to throw if parsing fails
+  std::runtime_error error_if_invalid{"Failed to parse cluster specs JSON"};
+  report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
+
+  // In this example we know to expect prim periodic orbits.
+  EXPECT_EQ(parser.value->periodicity_type(),
+            CASM::CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC);
+  auto const &cspecs =
+      static_cast<PeriodicMaxLengthClusterSpecs const &>(*parser.value);
+
+  // Null cluster orbit is always included
+  // 1-point cluster orbits requested
+  EXPECT_EQ(cspecs.max_length.size(), 2);
 }

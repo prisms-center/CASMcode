@@ -7,7 +7,6 @@
 
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
-#include "casm/app/AppIO.hh"
 #include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/crystallography/Structure.hh"
 

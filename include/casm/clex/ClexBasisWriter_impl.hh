@@ -1,7 +1,6 @@
 #ifndef CASM_ClexBasisWriter_impl
 #define CASM_ClexBasisWriter_impl
 
-#include "casm/app/AppIO.hh"
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/clex/ClexBasisWriter.hh"
@@ -9,7 +8,9 @@
 #include "casm/clex/OrbitFunctionTraits.hh"
 #include "casm/clex/io/json/ClexBasisSpecs_json_io.hh"
 #include "casm/clusterography/IntegralCluster_impl.hh"
+#include "casm/clusterography/io/OrbitPrinter_impl.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/io/BasicStructureIO.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 
 // These are where ParamPackMixIns are defined -- only usage
@@ -557,7 +558,7 @@ void print_proto_clust_funcs(ClexBasis const &clex, std::ostream &out,
                              std::vector<OrbitType> const &_tree) {
   // Prints out all prototype clusters (CLUST file)
 
-  out << "COORD_MODE = " << COORD_MODE::NAME() << std::endl << std::endl;
+  out << "COORD_MODE = " << xtal::COORD_MODE::NAME() << std::endl << std::endl;
 
   auto const &site_bases(clex.site_bases());
 

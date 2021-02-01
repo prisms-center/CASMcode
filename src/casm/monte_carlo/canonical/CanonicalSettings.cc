@@ -1,4 +1,3 @@
-#include "casm/app/AppIO.hh"
 #include "casm/monte_carlo/canonical/CanonicalConditions.hh"
 #include "casm/monte_carlo/canonical/CanonicalIO.hh"
 #include "casm/monte_carlo/canonical/CanonicalSettings_impl.hh"

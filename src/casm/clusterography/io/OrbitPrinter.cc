@@ -1,4 +1,7 @@
-#include "casm/clusterography/OrbitPrinter_impl.hh"
+#include "casm/clusterography/IntegralCluster_impl.hh"
+#include "casm/clusterography/io/OrbitPrinter_impl.hh"
+#include "casm/global/enum/json_io.hh"
+#include "casm/global/enum/stream_io.hh"
 
 namespace CASM {
 
@@ -63,9 +66,9 @@ void Printer<IntegralCluster>::print(const IntegralCluster &clust,
 
   COORD_TYPE _mode = this->opt.coord_type;
   if (_mode == COORD_DEFAULT) {
-    _mode = COORD_MODE::CHECK();
+    _mode = xtal::COORD_MODE::CHECK();
   }
-  COORD_MODE printer_mode(_mode);
+  xtal::COORD_MODE printer_mode(_mode);
   if (_mode != INTEGRAL) {
     // calculate nice widths
     int prec = this->opt.prec;
@@ -104,7 +107,8 @@ void Printer<IntegralCluster>::print(const IntegralCluster &clust,
     Eigen::IOFormat format(prec, width);
     for (const auto &coord : clust) {
       out << out.indent_str() << coord << " ";
-      Site::print_occupant_dof(coord.site(clust.prim()).occupant_dof(), out);
+      xtal::Site::print_occupant_dof(coord.site(clust.prim()).occupant_dof(),
+                                     out);
 
       out << std::flush;
       if (this->opt.delim) out << this->opt.delim;

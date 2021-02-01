@@ -3,7 +3,6 @@
 #include <boost/filesystem.hpp>
 #include <functional>
 
-#include "casm/app/AppIO.hh"
 #include "casm/app/ClexDescription.hh"
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
@@ -16,6 +15,7 @@
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/StrucMapping.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/io/BasicStructureIO.hh"
 #include "casm/crystallography/io/SimpleStructureIO.hh"
 
 namespace CASM {
@@ -113,8 +113,7 @@ bool StrucScore::parse_args(const std::string &args) {
 bool StrucScore::init(const Configuration &_tmplt) const {
   PrimClex const &pclex(_tmplt.primclex());
   m_altprim.reset(
-      new BasicStructure(read_prim(m_prim_path, _tmplt.crystallography_tol(),
-                                   &(pclex.settings().hamiltonian_modules()))));
+      new BasicStructure(read_prim(m_prim_path, _tmplt.crystallography_tol())));
 
   m_strucmapper = notstd::make_unique<StrucMapper>(
       PrimStrucMapCalculator(*m_altprim), m_strain_weight);
