@@ -105,7 +105,7 @@ TEST(ConfigDoFTest, Constructor5) {
   // disp DoF
 
   auto shared_prim =
-      std::make_shared<Structure const>(test::FCC_ternary_strain_disp_prim());
+      std::make_shared<Structure const>(test::FCC_ternary_GLstrain_disp_prim());
   auto shared_supercell = std::make_shared<Supercell const>(
       shared_prim, Eigen::Matrix3l::Identity());
 
@@ -120,7 +120,7 @@ TEST(ConfigDoFTest, Constructor5) {
 
 TEST(ConfigDoFTest, Constructor6) {
   auto shared_prim =
-      std::make_shared<Structure const>(test::FCC_ternary_strain_disp_prim());
+      std::make_shared<Structure const>(test::FCC_ternary_GLstrain_disp_prim());
   auto shared_supercell = std::make_shared<Supercell const>(
       shared_prim, Eigen::Matrix3l::Identity());
 

@@ -13,6 +13,7 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/io/stream/ClexBasis_stream_io_impl.hh"
 #include "casm/clusterography/ClusterSpecs_impl.hh"
+#include "casm/clusterography/io/OrbitPrinter_impl.hh"
 #include "casm/completer/Handlers.hh"
 
 namespace CASM {

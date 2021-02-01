@@ -28,7 +28,7 @@ class DoFSpaceTest : public testing::Test {
 
   DoFSpaceTest()
       : shared_prim(std::make_shared<CASM::Structure const>(
-            test::FCC_ternary_strain_disp_prim())),
+            test::FCC_ternary_GLstrain_disp_prim())),
         shared_supercell(std::make_shared<CASM::Supercell>(
             shared_prim, _fcc_conventional_transf_mat())) {}
 };

@@ -8,6 +8,7 @@
 namespace CASM {
 
 class Log;
+class PrimClex;
 class Structure;
 
 /// This functor implements a template method so that basis functions can be

@@ -30,11 +30,19 @@ template <typename SpecsType>
 std::vector<double> parse_orbit_branch_specs_attr(
     InputParser<SpecsType> &parser, const std::string &attrname) {
   auto specs_it = parser.self.find("orbit_branch_specs");
-  if (specs_it == parser.self.end()) {
+  if (specs_it == parser.self.end() || specs_it->is_null()) {
     return std::vector<double>({0.});
   }
-
   std::vector<double> result({0.});
+
+  if (!specs_it->is_obj()) {
+    fs::path path{"orbit_branch_specs"};
+    std::stringstream msg;
+    msg << "Expected a JSON object";
+    parser.insert_error("orbit_branch_specs", msg.str());
+    return result;
+  }
+
   auto update_result = [&](int branch, double value) {
     while (branch >= result.size()) {
       result.push_back(0.0);
@@ -44,6 +52,14 @@ std::vector<double> parse_orbit_branch_specs_attr(
 
   for (auto it = specs_it->begin(); it != specs_it->end(); ++it) {
     double value = 0.;  // default is 0. if no attrname found
+    if (!it->is_obj()) {
+      fs::path path{"orbit_branch_specs"};
+      std::stringstream msg;
+      msg << "Expected JSON object containing '" << attrname
+          << "' (double, default=0.).";
+      parser.insert_error(path / it.name(), msg.str());
+      continue;
+    }
     auto attr_it = it->find(attrname);
     if (attr_it != it->end()) {
       value = attr_it->template get<double>();

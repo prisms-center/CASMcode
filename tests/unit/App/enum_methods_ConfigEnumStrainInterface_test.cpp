@@ -38,7 +38,7 @@ enum_methods_ConfigEnumStrainInterfaceTest::
       proj_dir(test::proj_dir(autotools::abs_srcdir() +
                               "/tests/unit/test_projects/" + title)),
       shared_prim(std::make_shared<CASM::Structure const>(
-          test::FCC_ternary_strain_disp_prim())),
+          test::FCC_ternary_GLstrain_disp_prim())),
       project_settings(
           make_default_project_settings(*shared_prim, title, proj_dir)),
       build_project_placeholder(

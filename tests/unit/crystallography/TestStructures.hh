@@ -130,7 +130,21 @@ inline CASM::xtal::BasicStructure SimpleCubic_disp_prim() {
   return struc;
 }
 
-inline CASM::xtal::BasicStructure FCC_ternary_strain_disp_prim() {
+inline CASM::xtal::BasicStructure FCC_ternary_GLstrain_prim() {
+  using namespace CASM;
+  using namespace CASM::xtal;
+
+  BasicStructure struc = FCC_ternary_prim();
+  struc.set_title("FCC_ternary_strain");
+
+  // Add global DoF
+  // GLstrain: Green-Lagrange strain
+  struc.set_global_dofs({AnisoValTraits::strain("GL")});
+
+  return struc;
+}
+
+inline CASM::xtal::BasicStructure FCC_ternary_GLstrain_disp_prim() {
   using namespace CASM;
   using namespace CASM::xtal;
 
