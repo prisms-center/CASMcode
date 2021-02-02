@@ -5,6 +5,7 @@
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/clex/ClexBasisSpecs.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clusterography/ClusterSpecs_impl.hh"
 #include "casm/clusterography/io/OrbitPrinter_impl.hh"
 #include "casm/crystallography/Structure.hh"
 
