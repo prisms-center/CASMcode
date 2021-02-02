@@ -26,25 +26,40 @@ void QueryOption::initialize() {
   add_output_suboption();
   add_gzip_suboption();
 
-  m_desc.add_options()("columns,k",
-                       po::value<std::vector<std::string>>(&m_columns_vec)
-                           ->multitoken()
-                           ->zero_tokens()
-                           ->value_name(ArgHandler::query()),
-                       "List of values you want printed as columns")(
+  m_desc.add_options()(
+
+      "columns,k",
+      po::value<std::vector<std::string>>(&m_columns_vec)
+          ->multitoken()
+          ->zero_tokens()
+          ->value_name(ArgHandler::query()),
+      "List of values you want printed as columns")(
+
       "json,j",
       "Print in JSON format (CSV otherwise, unless output extension is "
       ".json/.JSON)")("verbatim,v",
                       "Print exact properties specified, without prepending "
                       "'name' and 'selected' entries")(
+
       "all,a",
       "Print results all objects in input selection, whether or not they are "
       "selected.")("no-header,n", "Print without header (CSV only)")(
+
       "alias",
       po::value<std::vector<std::string>>(&m_new_alias_vec)->multitoken(),
       "Create an alias for a query that will persist within this project. "
       "Ex: 'casm query --alias is_Ni_dilute = lt(atom_frac(Ni),0.10001)'")(
-      "write-pos", "Write POS file for each configuration")(
+
+      "write-pos",
+      "Write POS file (VASP structure format) for each configuration")(
+
+      "write-config",
+      "Write config.json file (CASM DoF values format) for each configuration")(
+
+      "write-structure",
+      "Write structure.json file (CASM structure format) for each "
+      "configuration")(
+
       "include-equivalents",
       "Include an entry for all distinct configurations equivalent by "
       "supercell symmetry");
@@ -69,6 +84,18 @@ namespace query_impl {
 /// For 'write_pos' with Supercell use 'write_lat'
 void write_pos(Supercell const &supercell, DirectoryStructure const &dir) {
   write_lat(supercell, dir);
+}
+
+/// For 'write_config_json' with Supercell use 'write_lat'
+void write_config_json(Supercell const &supercell,
+                       DirectoryStructure const &dir) {
+  throw std::runtime_error("--write-config is not supported for supercells");
+}
+
+/// For 'write_config_json' with Supercell use 'write_lat'
+void write_structure_json(Supercell const &supercell,
+                          DirectoryStructure const &dir) {
+  throw std::runtime_error("--write-structure is not supported for supercells");
 }
 
 }  // namespace query_impl
@@ -142,7 +169,11 @@ class QueryCommandImpl : public QueryCommandImplBase {
  private:
   int _alias() const;
 
-  int _write_pos() const;
+  void _write_pos() const;
+
+  void _write_config_json() const;
+
+  void _write_structure_json() const;
 
   int _query() const;
 
@@ -257,12 +288,19 @@ int QueryCommandImpl<DataObject>::desc() const {
 
 template <typename DataObject>
 int QueryCommandImpl<DataObject>::run() const {
-  if (_count("alias")) {
-    return _alias();
-  } else if (_count("write-pos")) {
-    return _write_pos();
-  } else if (_count("columns")) {
+  if (_count("columns")) {
     return _query();
+
+  } else if (_count("alias")) {
+    return _alias();
+
+  } else if (_count("write-pos") || _count("write-config") ||
+             _count("write-structure")) {
+    if (_count("write-pos")) _write_pos();
+    if (_count("write-config")) _write_config_json();
+    if (_count("write-structure")) _write_structure_json();
+
+    return 0;
   }
 
   throw runtime_error("unknown error in 'casm query'", ERR_UNKNOWN);
@@ -298,12 +336,27 @@ int QueryCommandImpl<DataObject>::_alias() const {
 }
 
 template <typename DataObject>
-int QueryCommandImpl<DataObject>::_write_pos() const {
+void QueryCommandImpl<DataObject>::_write_pos() const {
   using namespace query_impl;
   for (const auto &obj : _sel().selected()) {
     write_pos(obj, m_cmd.primclex().dir());
   }
-  return 0;
+}
+
+template <typename DataObject>
+void QueryCommandImpl<DataObject>::_write_config_json() const {
+  using namespace query_impl;
+  for (const auto &obj : _sel().selected()) {
+    write_config_json(obj, m_cmd.primclex().dir());
+  }
+}
+
+template <typename DataObject>
+void QueryCommandImpl<DataObject>::_write_structure_json() const {
+  using namespace query_impl;
+  for (const auto &obj : _sel().selected()) {
+    write_structure_json(obj, m_cmd.primclex().dir());
+  }
 }
 
 namespace {
@@ -512,20 +565,27 @@ int QueryCommand::vm_count_check() const {
   }
 
   std::string cmd;
-  std::vector<std::string> allowed_cmd = {"alias", "columns", "write-pos"};
+  std::vector<std::vector<std::string>> allowed_cmd = {
+      {"alias"}, {"columns"}, {"write-pos", "write-config", "write-structure"}};
 
   Index num_cmd(0);
-  for (const std::string &cmd_str : allowed_cmd) {
-    if (vm().count(cmd_str)) {
+  std::vector<bool> requested(3, false);
+  for (int i = 0; i < allowed_cmd.size(); ++i) {
+    for (auto const &option : allowed_cmd[i]) {
+      if (vm().count(option)) {
+        requested[i] = true;
+      }
+    }
+    if (requested[i]) {
       num_cmd++;
-      cmd = cmd_str;
     }
   }
 
   if (num_cmd != 1) {
-    err_log()
-        << "Error in 'casm query'. Exactly one of the following must be used: "
-        << allowed_cmd << std::endl;
+    err_log() << "Error in 'casm query'. Only the following combinations of "
+                 "options are allowed: \n "
+              << "1) -k/--columns \n"
+              << "2) --alias" << allowed_cmd << std::endl;
     return ERR_INVALID_ARG;
   }
   return 0;

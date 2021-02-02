@@ -19,7 +19,7 @@
 #include "casm/clex/Norm.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/SimpleStructureTools.hh"
-#include "casm/clex/io/json/ConfigDoF_json_io.hh"
+#include "casm/clex/io/json/Configuration_json_io.hh"
 #include "casm/clex/io/stream/Configuration_stream_io.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/Structure.hh"
@@ -601,9 +601,9 @@ GenericConfigFormatter<double> relaxed_magmom_per_species() {
       CASM::relaxed_magmom_per_species, has_relaxed_magmom);
 }
 
-ConfigIO::GenericConfigFormatter<jsonParser> config() {
+ConfigIO::GenericConfigFormatter<jsonParser> structure() {
   return GenericConfigFormatter<jsonParser>(
-      "config",
+      "structure",
       "Structure resulting from application of DoF, formatted as JSON",
       [](Configuration const &configuration) {
         jsonParser json = jsonParser::object();
@@ -612,11 +612,11 @@ ConfigIO::GenericConfigFormatter<jsonParser> config() {
       });
 }
 
-ConfigIO::GenericConfigFormatter<jsonParser> dof() {
+ConfigIO::GenericConfigFormatter<jsonParser> config() {
   return GenericConfigFormatter<jsonParser>(
-      "dof", "All degrees of freedom (DoF), formatted as JSON",
+      "config", "All degrees of freedom (DoF), formatted as JSON",
       [](Configuration const &configuration) {
-        return jsonParser{configuration.configdof()};
+        return jsonParser{configuration};
       });
 }
 
@@ -734,7 +734,7 @@ make_json_dictionary<Configuration>() {
                           BaseValueFormatter<jsonParser, Configuration>>
       dict;
 
-  dict.insert(config(), dof(), properties());
+  dict.insert(structure(), config(), properties());
 
   return dict;
 }

@@ -391,9 +391,9 @@ ConfigIO::GenericConfigFormatter<double> relaxed_magmom();
 
 ConfigIO::GenericConfigFormatter<double> relaxed_magmom_per_species();
 
-ConfigIO::GenericConfigFormatter<jsonParser> config();
+ConfigIO::GenericConfigFormatter<jsonParser> structure();
 
-ConfigIO::GenericConfigFormatter<jsonParser> configdof();
+ConfigIO::GenericConfigFormatter<jsonParser> config();
 
 ConfigIO::GenericConfigFormatter<jsonParser> properties();
 
