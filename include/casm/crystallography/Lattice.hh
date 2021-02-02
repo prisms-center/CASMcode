@@ -237,7 +237,7 @@ std::pair<bool, Eigen::Matrix3d> is_superlattice(const Lattice &scel,
 std::istream &operator>>(std::istream &in, const Lattice &lattice_in);
 
 ///\brief returns Lattice that is smallest possible superlattice of both input
-///Lattice
+/// Lattice
 Lattice make_superduperlattice(const Lattice &lat1, const Lattice &lat2);
 
 /// \brief Returns a minimum volume Lattice obtainable by replacing one Lattice

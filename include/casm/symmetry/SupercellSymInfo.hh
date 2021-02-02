@@ -33,7 +33,7 @@ class SupercellSymInfo {
   using SublatSymReps = std::vector<SymGroupRep::RemoteHandle>;
 
   ///\brief Construct with primitive and super lattice, number of sublattice and
-  ///all relevant representation IDs
+  /// all relevant representation IDs
   SupercellSymInfo(Lattice const &_prim_lat, Lattice const &_super_lat,
                    Index number_of_sublats, SymGroup const &_prim_factor_group,
                    SymGroupRepID basis_permutation_symrep_ID,

@@ -181,7 +181,7 @@ std::vector<SubWedge> symrep_subwedges(
 }  // namespace SymRepTools
 
 ///\brief Summary of data associated with the action of a symmetry group on a
-///vector space
+/// vector space
 struct VectorSpaceSymReport {
   /// \brief Matrix representation for each operation in the group -- defines
   /// action of group on vector space

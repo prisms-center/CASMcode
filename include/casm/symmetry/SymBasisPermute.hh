@@ -21,7 +21,7 @@ class MasterSymGroup;
  */
 
 ///\brief  SymBasisPermute describes how a symmetry operation permutes atoms in
-///a basis
+/// a basis
 ///
 /// - ::SymOp transforms Cartesian coordinate (x) like:
 ///     x' = R*x + T, where R is a point transformation matrix, and T a

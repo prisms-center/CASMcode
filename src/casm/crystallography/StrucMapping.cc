@@ -9,7 +9,12 @@
 #include "casm/crystallography/StrucMapCalculatorInterface.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/SymTools.hh"
+#include "casm/crystallography/io/VaspIO.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
+#include "submodules/eigen/Eigen/src/Core/Map.h"
+#include "submodules/eigen/Eigen/src/Core/PermutationMatrix.h"
+#include "submodules/eigen/Eigen/src/Core/util/Constants.h"
+#include "submodules/eigen/Eigen/src/Core/util/Meta.h"
 
 namespace CASM {
 namespace xtal {
@@ -57,6 +62,29 @@ double atomic_cost(const MappingNode &mapped_result, Index Nsites) {
           atomic_cost_parent(mapped_result, Nsites)) /
          2.;
 }
+
+//*******************************************************************************************
+double atomic_cost(
+    const MappingNode &basic_mapping_node, SymOpVector &factor_group,
+    const std::vector<Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic,
+                                               Index>> &permutation_group,
+    Index Nsites) {
+  const auto disp_matrix = basic_mapping_node.atom_displacement;
+  Eigen::MatrixXd symmetry_preserving_displacement =
+      Eigen::MatrixXd::Zero(disp_matrix.rows(), disp_matrix.cols());
+  for (int i = 0; i < factor_group.size(); ++i) {
+    auto transformed_disp = factor_group[i].matrix * disp_matrix;
+    Eigen::MatrixXd transformed_and_permuted_disp =
+        transformed_disp * permutation_group[i];
+    symmetry_preserving_displacement += transformed_and_permuted_disp;
+  }
+  symmetry_preserving_displacement =
+      symmetry_preserving_displacement / factor_group.size();
+  auto new_report = basic_mapping_node;
+  new_report.atom_displacement = disp_matrix - symmetry_preserving_displacement;
+  return atomic_cost_parent(new_report, Nsites);
+};
+
 }  // namespace StrucMapping
 
 //*******************************************************************************************
@@ -66,7 +94,9 @@ template <typename OutputIterator>
 static bool initial_atomic_maps(SimpleStructure child_struc,
                                 MappingNode const &seed,
                                 StrucMapCalculatorInterface const &calculator,
-                                double max_cost, OutputIterator it) {
+                                double max_cost,
+                                bool const &symmetrize_atomic_cost,
+                                OutputIterator it) {
   // derotate first
   child_struc.rotate_coords(seed.isometry());
 
@@ -98,7 +128,7 @@ static bool initial_atomic_maps(SimpleStructure child_struc,
       return false;
     }
     // Now we are filling up displacements
-    calculator.finalize(node, child_struc);
+    calculator.finalize(node, child_struc, symmetrize_atomic_cost);
 
     if (node.cost < max_cost) {
       *it = node;
@@ -113,7 +143,9 @@ static bool initial_atomic_maps(SimpleStructure child_struc,
 template <typename OutputIterator>
 static void partition_node(MappingNode const &_node,
                            StrucMapCalculatorInterface const &_calculator,
-                           SimpleStructure child_struc, OutputIterator it) {
+                           SimpleStructure child_struc,
+                           bool const &symmetrize_atomic_cost,
+                           OutputIterator it) {
   // derotate first
   child_struc.rotate_coords(_node.isometry());
 
@@ -203,7 +235,7 @@ static void partition_node(MappingNode const &_node,
     p1->calc();
     if (p1->is_viable) {
       // even if p1 is unviable, p2 may still be viable, so we continue
-      _calculator.finalize(*p1, child_struc);
+      _calculator.finalize(*p1, child_struc, symmetrize_atomic_cost);
       it = *p1;
     }
     std::swap(p1, p2);
@@ -377,7 +409,9 @@ StrucMapper::StrucMapper(
       m_cost_tol(max(1e-10, _cost_tol)),
       m_xtal_tol(TOL),
       m_lattice_transformation_range(1),
-      m_filtered(false) {
+      m_filtered(false),
+      m_symmetrize_lattice_cost(false),
+      m_symmetrize_atomic_cost(false) {
   set_min_va_frac(_min_va_frac);
   set_max_va_frac(_max_va_frac);
 
@@ -724,7 +758,7 @@ Index StrucMapper::k_best_maps_better_than(
     bool no_partition /*= false*/) const {
   int nfound = 0;
   // Track pairs of supercell volumes that are chemically incompatible
-  std::set<std::pair<Index, Index> > vol_mismatch;
+  std::set<std::pair<Index, Index>> vol_mismatch;
 
   if (k == 0) {
     // If k==0, then we only keep values less than min_cost
@@ -751,7 +785,7 @@ Index StrucMapper::k_best_maps_better_than(
           //         node, so will
           //          appear later in the queue)
           if (!Local::initial_atomic_maps(child_struc, *current, calculator(),
-                                          max_cost,
+                                          max_cost, symmetrize_atomic_cost(),
                                           std::inserter(queue, current))) {
             // If no basis maps are viable, it indicates volume mismatch; add to
             // vol_mismatch
@@ -784,6 +818,7 @@ Index StrucMapper::k_best_maps_better_than(
           if (nfound < k || current->cost <= min_cost) {
             if (!(no_partition || current->is_partitioned)) {
               Local::partition_node(*current, calculator(), child_struc,
+                                    symmetrize_atomic_cost(),
                                     std::inserter(queue, current));
             }
 
@@ -828,7 +863,6 @@ std::set<MappingNode> StrucMapper::_seed_k_best_from_super_lats(
   if (k == 0 || !valid_index(k)) {
     max_lattice_cost = min_lattice_cost;
   }
-
   for (Lattice const &c_lat : _child_scels) {
     auto pg_indices = invariant_subgroup_indices(c_lat, child_factor_group);
     SymOpVector c_lat_factor_group;
@@ -840,10 +874,10 @@ std::set<MappingNode> StrucMapper::_seed_k_best_from_super_lats(
     for (Lattice const &p_lat : _parent_scels) {
       int n_child_atom = round(std::abs(volume(c_lat) / volume(c_prim_lat))) *
                          _n_species(child_struc);
-      LatticeMap lattice_map(p_lat, c_lat, n_child_atom,
-                             this->lattice_transformation_range(),
-                             calculator().point_group(), c_lat_factor_group,
-                             m_strain_gram_mat, max_lattice_cost);
+      LatticeMap lattice_map(
+          p_lat, c_lat, n_child_atom, this->lattice_transformation_range(),
+          calculator().point_group(), c_lat_factor_group, m_strain_gram_mat,
+          max_lattice_cost, symmetrize_lattice_cost());
 
       // lattice_map is initialized to first mapping better than
       // 'max_lattice_cost', if such a mapping exists We will continue checking

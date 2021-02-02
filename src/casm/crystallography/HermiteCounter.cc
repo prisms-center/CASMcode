@@ -95,8 +95,8 @@ HermiteCounter::Index _spill_factor(Eigen::VectorXi &diag,
   assert(attempt >= 2);
 
   // Use the given attempt as a starting guess for factorizing the element at
-  // position, but if that doesn't work, keep increasing the value of the attempt
-  // until it does.
+  // position, but if that doesn't work, keep increasing the value of the
+  // attempt until it does.
   while (diag(position) % attempt != 0) {
     attempt++;
   }

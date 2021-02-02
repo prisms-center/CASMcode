@@ -18,11 +18,11 @@ void PerturbOption::initialize() {
       "Cluster specifications file defining perturbation");
   //("strain,s", "Generate strain perturbations")
   //("gridsize", po::value<std::vector<Index> > (&subgrids)->multitoken(), "Size
-  //of grid for each subspace")
+  // of grid for each subspace")
   //("mag", po::value<std::vector<double> > (&mags)->multitoken(), "Magnitude of
-  //grid")
+  // grid")
   //("poly-order", po::value<Index> (&poly_order)->default_value(6), "Max order
-  //of strain polynomials")
+  // of strain polynomials")
   //("strainmode", po::value<std::string> (&strain_mode)->default_value("GL"),
   //"Strain mode name");
   return;

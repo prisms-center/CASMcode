@@ -121,7 +121,7 @@ std::pair<OpIterator, Eigen::Matrix3d> is_equivalent_superlattice(
 }
 
 ///\brief returns Lattice that is smallest possible superlattice of all input
-///Lattice
+/// Lattice
 ///
 /// SymOpIterator are provided to apply to each Lattice in an attempt
 /// to find the smallest possible superduperlattice of all symmetrically

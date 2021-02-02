@@ -109,14 +109,14 @@ double hungarian_method(const Eigen::MatrixXd &cost_matrix,
                         const double _tol);
 
 ///\brief Return pointer one past end of vector. Equivalent to
-///convainer.data()+container.size()
+/// convainer.data()+container.size()
 template <typename Derived>
 typename Derived::Scalar *end_ptr(Eigen::PlainObjectBase<Derived> &container) {
   return container.data() + container.size();
 }
 
 ///\brief Return const pointer one past end of vector. Equivalent to
-///convainer.data()+container.size()
+/// convainer.data()+container.size()
 template <typename Derived>
 typename Derived::Scalar const *end_ptr(
     Eigen::PlainObjectBase<Derived> const &container) {
@@ -610,8 +610,8 @@ scale_to_int(const Eigen::MatrixBase<Derived> &val, double _tol = CASM::TOL) {
   // We want to multiply the miller indeces by some factor such that all indeces
   // become integers. In order to do this we pick a tolerance to work with and
   // round the miller indeces if they are close enough to the integer value
-  // (e.g. 2.95 becomes 3). Choosing a tolerance that is too small will result in
-  // the "primitive-slab" blowing up.
+  // (e.g. 2.95 becomes 3). Choosing a tolerance that is too small will result
+  // in the "primitive-slab" blowing up.
 
   // Begin choosing a factor and multiply all indeces by it (starting with 1).
   // Then round the non-smallest miller indeces (smallest index requires no

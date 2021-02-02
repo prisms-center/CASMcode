@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "casm/crystallography/Lattice.hh"
 #include "casm/external/Eigen/Core"
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
@@ -29,11 +30,27 @@ bool is_primitive(const BasicStructure &struc, double tol = TOL);
 BasicStructure make_primitive(const BasicStructure &non_primitive_struc,
                               double tol = TOL);
 
+/// Calculates the rotation angle and axis of a symmetry operation. This
+/// function is almost exactly identical to the constructor of SymInfo::SymInfo
+std::pair<double, Eigen::Vector3d> calc_rotation_angle_and_axis(
+    const SymOp &op, const Lattice &lat);
+
+/// Sort a factor group based on a lexicographical comparison of (-det, -trace,
+/// angle, axis, tau)
+void sort_factor_group(std::vector<SymOp> &factor_group, const Lattice &lat);
+
 /// Create the factor group of the given structure. If the structure has no
 /// degrees of freedom affected by time reversal, time reversal is ignored.
 /// Otherwise symmetry operations are checked for time reversal
 std::vector<SymOp> make_factor_group(const BasicStructure &struc,
                                      double tol = TOL);
+
+/// Create the permtuation group of the given structure. The permutation group
+/// can be used to identify how the basis of this structure are transformed
+/// under the application of a symmetry operation.
+std::vector<Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic, Index>>
+make_permutation_representation(const xtal::BasicStructure &struc,
+                                const std::vector<SymOp> &factor_group);
 
 // TODO: Rename to symmetrize_basis and have it take vector<Site> and Lattice?
 // seems like a symmetrize routine that takes a structure should also symmetrize
