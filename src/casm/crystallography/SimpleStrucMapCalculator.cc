@@ -1,10 +1,16 @@
 #include "casm/crystallography/SimpleStrucMapCalculator.hh"
 
 #include "casm/crystallography/AnisoValTraits.hh"
+#include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/crystallography/Coordinate.hh"
+#include "casm/crystallography/DoFDecl.hh"
 #include "casm/crystallography/IntegralCoordinateWithin.hh"
+#include "casm/crystallography/SimpleStructure.hh"
+#include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/StrucMapping.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/crystallography/io/VaspIO.hh"
 #include "casm/misc/algorithm.hh"
 
 namespace CASM {
@@ -16,6 +22,7 @@ static Coordinate _make_superlattice_coordinate(
   UnitCell ijk = index_to_ijk_f(ijk_ix);
   return make_superlattice_coordinate(ijk, superlattice);
 }
+
 }  // namespace Local
 
 std::vector<Eigen::Vector3d> SimpleStrucMapCalculator::translations(
@@ -222,15 +229,51 @@ SimpleStructure SimpleStrucMapCalculator::resolve_setting(
 //***************************************************************************************************
 
 void SimpleStrucMapCalculator::finalize(
-    MappingNode &node, SimpleStructure const &_child_struc) const {
+    MappingNode &node, SimpleStructure const &_child_struc,
+    bool const &symmetrize_atomic_cost) const {
   populate_displacement(node, _child_struc);
+  node.is_valid = this->_assign_molecules(node, _child_struc);
+  if (!symmetrize_atomic_cost ||
+      this->sym_invariant_displacement_modes().size() == 0)
+    node.atomic_node.cost =
+        StrucMapping::atomic_cost(node, this->struc_info(_child_struc).size());
+  else {
+    // Get the parent site indices for each site in the supercell
+    auto basis_idx = superstructure_basis_idx(
+        (node.lattice_node).parent.transformation_matrix_to_super().cast<int>(),
+        parent());
+    // Expand the sym invariant basis into this supercell
+    std::vector<Eigen::MatrixXd> supercell_sym_invariant_modes(
+        this->sym_invariant_displacement_modes().size(),
+        Eigen::MatrixXd::Zero(3, basis_idx.size()));
 
-  node.atomic_node.cost =
-      StrucMapping::atomic_cost(node, this->struc_info(_child_struc).size());
+    Eigen::Map<Eigen::VectorXd> disp_map(node.atom_displacement.data(),
+                                         node.atom_displacement.size());
+    Eigen::MatrixXd sym_removed_disp = node.atom_displacement;
+    for (int sym_idx = 0;
+         sym_idx < this->sym_invariant_displacement_modes().size(); ++sym_idx) {
+      for (int scel_idx = 0; scel_idx < basis_idx.size(); ++scel_idx)
+        supercell_sym_invariant_modes[sym_idx].col(scel_idx) =
+            this->sym_invariant_displacement_modes()[sym_idx].col(
+                basis_idx[scel_idx]);
+      supercell_sym_invariant_modes[sym_idx] =
+          supercell_sym_invariant_modes[sym_idx] /
+          supercell_sym_invariant_modes[sym_idx].norm();
+      // Project the displacement mode on to this symmetry invariant mode
+      Eigen::VectorXd unrolled_sym_mode = Eigen::Map<Eigen::VectorXd>(
+          supercell_sym_invariant_modes[sym_idx].data(),
+          supercell_sym_invariant_modes[sym_idx].size());
+      double projected_comp = disp_map.dot(unrolled_sym_mode);
+      sym_removed_disp =
+          sym_removed_disp -
+          projected_comp * supercell_sym_invariant_modes[sym_idx];
+    }
+    node.atom_displacement = sym_removed_disp;
+    node.atomic_node.cost =
+        StrucMapping::atomic_cost(node, this->struc_info(_child_struc).size());
+  }
   node.cost = node.atomic_weight * node.atomic_node.cost +
               node.lattice_weight * node.lattice_node.cost;
-
-  node.is_valid = this->_assign_molecules(node, _child_struc);
 
   return;
 }
@@ -441,11 +484,17 @@ bool SimpleStrucMapCalculator::_assign_molecules(
     std::string sp = "Va";
     if (bc < _child_struc.atom_info.size())
       sp = _child_struc.atom_info.names[bc];
-    Index occ_i = find_index(this->_allowed_species()[j / pgrid.size()], sp);
-    if (occ_i == this->_allowed_species()[j / pgrid.size()].size())
+    auto occ_itr =
+        std::find(this->_allowed_species()[j / pgrid.size()].begin(),
+                  this->_allowed_species()[j / pgrid.size()].end(), sp);
+    // Index occ_i = find_index(this->_allowed_species()[j / pgrid.size()], sp);
+    // if (occ_i == this->_allowed_species()[j / pgrid.size()].size())
+    //   return false;
+    if (occ_itr == this->_allowed_species()[j / pgrid.size()].end())
       return false;
 
-    node.mol_labels.emplace_back(sp, occ_i);
+    node.mol_labels.emplace_back(
+        sp, occ_itr - this->_allowed_species()[j / pgrid.size()].begin());
     ++j;
   }
 

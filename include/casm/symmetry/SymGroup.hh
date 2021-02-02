@@ -33,7 +33,7 @@ struct SymInfo;
  */
 
 ///\brief SymGroup is a collection of symmetry operations that satisfy the group
-///property
+/// property
 /// The symmetry operations are stored as their coordinate representation, as
 /// described by the SymOp class i.e., if SymOps 'A' and 'B' are in SymGroup,
 /// C=A*B is also in SymGroup

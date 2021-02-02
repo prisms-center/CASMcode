@@ -137,14 +137,14 @@ typename Container::value_type sum(
 }
 
 ///\brief Return pointer one past end of vector. Equivalent to
-///convainer.data()+container.size()
+/// convainer.data()+container.size()
 template <typename T>
 T *end_ptr(std::vector<T> &container) {
   return container.data() + container.size();
 }
 
 ///\brief Return const pointer one past end of vector. Equivalent to
-///convainer.data()+container.size()
+/// convainer.data()+container.size()
 template <typename T>
 T const *end_ptr(std::vector<T> const &container) {
   return container.data() + container.size();

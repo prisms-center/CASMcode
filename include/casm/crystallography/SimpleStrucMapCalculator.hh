@@ -53,8 +53,8 @@ class SimpleStrucMapCalculator : public StrucMapCalculatorInterface {
       MappingNode const &_node,
       SimpleStructure const &_child_struc) const override;
 
-  void finalize(MappingNode &_node,
-                SimpleStructure const &child_struc) const override;
+  void finalize(MappingNode &_node, SimpleStructure const &child_struc,
+                bool const &symmetrize_atomic_cost = false) const override;
 
   bool populate_cost_mat(MappingNode &_node,
                          SimpleStructure const &child_struc) const override;

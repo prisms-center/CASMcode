@@ -134,33 +134,33 @@ class AnisoValTraits {
   static AnisoValTraits strain(std::string const &_metric);
 
   ///\brief Anisovaltraits named constructor for magnetic spin with spin-orbit
-  ///coupling
+  /// coupling
   static AnisoValTraits SOmagspin();
 
   ///\brief Anisovaltraits named constructor for magnetic spin with spin-orbit
-  ///coupling (unit length)
+  /// coupling (unit length)
   static AnisoValTraits SOunitmagspin();
 
   ///\brief Anisovaltraits named constructor for non-collinear magnetic spin
-  ///WITHOUT spin-orbit coupling
+  /// WITHOUT spin-orbit coupling
   static AnisoValTraits NCmagspin();
 
   ///\brief Anisovaltraits named constructor for non-collinear magnetic spin
-  ///WITHOUT spin-orbit coupling (unit length)
+  /// WITHOUT spin-orbit coupling (unit length)
   static AnisoValTraits NCunitmagspin();
 
   ///\brief Anisovaltraits named constructor for collinear magnetic spin
   static AnisoValTraits Cmagspin();
 
   ///\brief Anisovaltraits named constructor for collinear magnetic spin (unit
-  ///length)
+  /// length)
   static AnisoValTraits Cunitmagspin();
 
   ///\brief Named constructor for d-orbital occupation AnisoValTraits
   static AnisoValTraits d_orbital_occupation();
 
   ///\brief Named constructor for spin-polarized d-orbital occupation
-  ///AnisoValTraits
+  /// AnisoValTraits
   static AnisoValTraits d_orbital_occupation_spin_polarized();
 
   /// \brief Given a string, returns string with all characters before the final

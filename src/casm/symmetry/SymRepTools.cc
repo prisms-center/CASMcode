@@ -173,7 +173,8 @@ static Eigen::MatrixXcd _irrep_symmetrizer_from_directions(
       }
       if (col == dim) {
         // std::cout << "PLAN A-- col: " << col << "; dim: " << dim << ";
-        // min_mult: " << min_mult << "; orthog: " << orb_orthog << ";\naxes: \n"
+        // min_mult: " << min_mult << "; orthog: " << orb_orthog << ";\naxes:
+        // \n"
         // << axes << "\norb_axes: \n" << orb_axes << "\n\n";
         orb_orthog = true;
         min_mult = orbit.size();
@@ -206,7 +207,8 @@ static Eigen::MatrixXcd _irrep_symmetrizer_from_directions(
       }
       if (tot_col == dim) {
         // std::cout << "PLAN B-- col: " << tot_col << "; dim: " << dim << ";
-        // min_mult: " << min_mult << "; orthog: " << tot_orthog << ";\naxes: \n"
+        // min_mult: " << min_mult << "; orthog: " << tot_orthog << ";\naxes:
+        // \n"
         // << axes << "\ntot_axes: \n" << tot_axes << "\n\n";
         tot_orthog = true;
         axes = tot_axes;
@@ -913,8 +915,8 @@ std::vector<SymRepTools::IrrepInfo> irrep_decomposition(
 
         // std::cout << "My big matrix: \n" << commuters[nc] << std::endl;
         // std::cout << "My little matrix: \n" <<
-        // double(dim)*sqrt(double(dim))*kernel.adjoint()*commuters[nc]*kernel <<
-        // std::endl;
+        // double(dim)*sqrt(double(dim))*kernel.adjoint()*commuters[nc]*kernel
+        // << std::endl;
 
         // Columns of tmat are orthonormal eigenvectors of commuter in terms of
         // natural basis (they were calculated in terms of kernel as basis)
@@ -931,12 +933,12 @@ std::vector<SymRepTools::IrrepInfo> irrep_decomposition(
 
         // std::cout << "rebuild little 1:\n"
         //<<
-        //esolve.eigenvectors()*esolve.eigenvalues().asDiagonal()*esolve.eigenvectors().inverse()
+        // esolve.eigenvectors()*esolve.eigenvalues().asDiagonal()*esolve.eigenvectors().inverse()
         //<< std::endl;
 
         // std::cout << "rebuild big 1:\n"
         //<<
-        //kernel*esolve.eigenvectors()*esolve.eigenvalues().asDiagonal()*esolve.eigenvectors().inverse()*kernel.adjoint()
+        // kernel*esolve.eigenvectors()*esolve.eigenvalues().asDiagonal()*esolve.eigenvectors().inverse()*kernel.adjoint()
         //<< std::endl;
 
         // std::cout << "rebuild big 2:\n"

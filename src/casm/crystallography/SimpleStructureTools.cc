@@ -73,6 +73,27 @@ SimpleStructure make_superstructure(Eigen::Ref<const Eigen::Matrix3i> const &_T,
   return superstructure;
 }
 
+//***************************************************************************************************
+
+/// Calculates the parent basis index of each site in a supercell that is
+/// generated with the make_superstructure method
+/// @param _T is the transformation matrix linking `_sstruc` and the supercell
+/// @param _sstruc is a SimpleStructure
+/// @return std::vector<Index> with the Index in the ith entry corresponding to
+/// the index of site i in _sstruc
+std::vector<Index> superstructure_basis_idx(
+    Eigen::Ref<const Eigen::Matrix3i> const &_T,
+    SimpleStructure const &_sstruc) {
+  auto all_lattice_points = make_lattice_points(_T.cast<long>());
+  Index Nvol = all_lattice_points.size();
+  std::vector<Index> basis_idx(_sstruc.atom_info.size() * Nvol, -1);
+  for (Index grid_idx = 0; grid_idx < Nvol; ++grid_idx) {
+    for (Index atom_idx = 0; atom_idx < _sstruc.atom_info.size(); ++atom_idx)
+      basis_idx[grid_idx + atom_idx * Nvol] = atom_idx;
+  }
+  return basis_idx;
+}
+
 //***************************************************************************
 
 SimpleStructure make_simple_structure(BasicStructure const &_struc) {
@@ -97,7 +118,7 @@ SimpleStructure make_simple_structure(BasicStructure const &_struc) {
 BasicStructure make_basic_structure(
     SimpleStructure const &_sstruc, std::vector<DoFKey> const &_all_dofs,
     SimpleStructure::SpeciesMode mode,
-    std::vector<std::vector<Molecule> > _allowed_occupants) {
+    std::vector<std::vector<Molecule>> _allowed_occupants) {
   std::map<DoFKey, DoFSet> global_dof;
   std::map<DoFKey, SiteDoFSet> local_dof;
   for (DoFKey const &dof : _all_dofs) {
@@ -153,6 +174,87 @@ BasicStructure make_basic_structure(
 
 //***************************************************************************
 
+/**
+** Calculates the invariant shuffle modes in the primitive unit cell. They
+*symmetry preserving distortions are found by applying the Reynolds operator to
+*the basis of displacement vectors. The average of the resulting basis vectors
+*is used to form an orthonormal basis.
+*
+* @param factor_group use make_factor_group(struc) to obtain this group
+* @param permute_group use make_permute_group(struc,factor_group) to obtain this
+*group
+*
+* @return the vector of shuffle modes that are invariant under symmetry. Each
+* element has a size `3 x basis_size`.
+*
+*/
+std::vector<Eigen::MatrixXd> generate_invariant_shuffle_modes(
+    const std::vector<xtal::SymOp> &factor_group,
+    const std::vector<Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic,
+                                               Index>> &permute_group) {
+  if (factor_group.size() != permute_group.size()) {
+    throw std::runtime_error(
+        "error, the size of the symmetry operations in "
+        "generate_invariant_shuffle_modes do not match");
+  }
+  int struc_basis_size = permute_group[0].indices().size();
+  // Generate a basis consisting of individual shuffles of each atom in the
+  // structure.
+  std::vector<Eigen::MatrixXd> displacement_basis;
+  for (int basis_idx = 0; basis_idx < struc_basis_size; ++basis_idx) {
+    for (int dir_idx = 0; dir_idx < 3; ++dir_idx) {
+      Eigen::MatrixXd single_shuffle =
+          Eigen::MatrixXd::Zero(3, struc_basis_size);
+      single_shuffle(dir_idx, basis_idx) = 1.0;
+      displacement_basis.push_back(single_shuffle);
+    }
+  }
+  std::vector<Eigen::VectorXd> displacement_aggregate(
+      displacement_basis.size(),
+      Eigen::VectorXd::Zero(displacement_basis[0].cols() *
+                            displacement_basis[0].rows()));
+
+  for (int idx = 0; idx < factor_group.size(); ++idx) {
+    for (int disp_basis_idx = 0; disp_basis_idx < displacement_basis.size();
+         ++disp_basis_idx) {
+      Eigen::MatrixXd transformed_disp = factor_group[idx].matrix *
+                                         displacement_basis[disp_basis_idx] *
+                                         permute_group[idx];
+      displacement_aggregate[disp_basis_idx] +=
+          Eigen::VectorXd(Eigen::Map<Eigen::VectorXd>(
+              transformed_disp.data(),
+              transformed_disp.cols() * transformed_disp.rows()));
+    }
+  }
+  Eigen::MatrixXd sym_disp_basis = Eigen::MatrixXd::Zero(
+      displacement_aggregate.size(), displacement_aggregate[0].size());
+  for (int disp_basis_idx = 0; disp_basis_idx < displacement_basis.size();
+       ++disp_basis_idx) {
+    displacement_aggregate[disp_basis_idx] =
+        displacement_aggregate[disp_basis_idx] / double(factor_group.size());
+    sym_disp_basis.row(disp_basis_idx) = displacement_aggregate[disp_basis_idx];
+  }
+
+  // Perform a SVD of the resulting aggregate matrix to obtain the rank and
+  // space of the symmetry invariant basis vectors
+  sym_disp_basis.transposeInPlace();
+  Eigen::JacobiSVD<Eigen::MatrixXd> svd(
+      sym_disp_basis, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  int matrix_rank = (svd.singularValues().array().abs() >= CASM::TOL).sum();
+  Eigen::MatrixXd sym_preserving_mode_matrix =
+      svd.matrixV()(Eigen::all, Eigen::seq(0, matrix_rank - 1));
+  std::vector<Eigen::MatrixXd> sym_preserving_modes;
+
+  for (int sym_mode_idx = 0; sym_mode_idx < matrix_rank; ++sym_mode_idx) {
+    Eigen::Map<Eigen::MatrixXd> _tmp_mode(
+        sym_preserving_mode_matrix.col(sym_mode_idx).data(), 3,
+        struc_basis_size);
+    sym_preserving_modes.push_back(_tmp_mode);
+  }
+  return sym_preserving_modes;
+}
+
+//***************************************************************************
 void _atomize(SimpleStructure &_sstruc,
               Eigen::Ref<const Eigen::VectorXi> const &_mol_occ,
               BasicStructure const &_reference) {
@@ -228,9 +330,9 @@ void _atomize(SimpleStructure &_sstruc,
 
 //***************************************************************************
 
-std::vector<std::set<Index> > mol_site_compatibility(
+std::vector<std::set<Index>> mol_site_compatibility(
     SimpleStructure const &sstruc, BasicStructure const &_prim) {
-  std::vector<std::set<Index> > result;
+  std::vector<std::set<Index>> result;
   result.reserve(sstruc.mol_info.names.size());
   for (std::string const &sp : sstruc.mol_info.names) {
     result.push_back({});
@@ -243,9 +345,9 @@ std::vector<std::set<Index> > mol_site_compatibility(
   return result;
 }
 
-std::vector<std::set<Index> > atom_site_compatibility(
+std::vector<std::set<Index>> atom_site_compatibility(
     SimpleStructure const &sstruc, BasicStructure const &_prim) {
-  std::vector<std::set<Index> > result;
+  std::vector<std::set<Index>> result;
   result.reserve(sstruc.atom_info.names.size());
   for (std::string const &sp : sstruc.atom_info.names) {
     result.push_back({});

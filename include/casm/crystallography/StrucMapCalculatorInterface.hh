@@ -80,6 +80,16 @@ class StrucMapCalculatorInterface {
     return m_fixed_species;
   }
 
+  /// \brief Sets the sym_invariant_modes
+  void set_sym_invariant_displacement_modes(
+      const std::vector<Eigen::MatrixXd> &_sym_invariant_displacement_modes) {
+    m_sym_invariant_displacement_modes = _sym_invariant_displacement_modes;
+  }
+
+  const std::vector<Eigen::MatrixXd> &sym_invariant_displacement_modes() const {
+    return m_sym_invariant_displacement_modes;
+  };
+
   /// \brief Return maximum possible number of vacancies in underlying primitive
   /// structure
   Index max_n_va() const { return va_allowed().size(); }
@@ -96,8 +106,8 @@ class StrucMapCalculatorInterface {
       MappingNode const &_node, SimpleStructure const &_child_struc) const = 0;
 
   /// \brief Calculates final mapping score and sets _node.is_valid
-  virtual void finalize(MappingNode &_node,
-                        SimpleStructure const &child_struc) const = 0;
+  virtual void finalize(MappingNode &_node, SimpleStructure const &child_struc,
+                        bool const &symmetrize_atomic_cost = false) const = 0;
 
   virtual bool populate_cost_mat(MappingNode &_node,
                                  SimpleStructure const &child_struc) const = 0;
@@ -169,7 +179,7 @@ class StrucMapCalculatorInterface {
   }
 
   ///\brief Sets point_group and internal_translations by breaking factor group
-  ///into pure translations and rotations/rotoreflections
+  /// into pure translations and rotations/rotoreflections
   /// _factor_group should be sorted in order of decreasing character
   void _set_sym_info(SymOpVector const &_factor_group) {
     m_point_group.clear();
@@ -226,6 +236,10 @@ class StrucMapCalculatorInterface {
   std::map<std::string, Index> m_max_n_species;
 
   std::unordered_set<Index> m_va_allowed;
+
+  /// \brief vector of symmetry invariant displacement modes in the parent
+  /// structure
+  std::vector<Eigen::MatrixXd> m_sym_invariant_displacement_modes;
 
   /// \brief Make an exact copy of the calculator (including any initialized
   /// members)

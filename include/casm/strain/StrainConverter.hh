@@ -136,7 +136,7 @@ class StrainConverter {
 
  private:
   STRAIN_METRIC
-      STRAIN_METRIC_MODE;     // set the mode when you initialize your PRIM
+  STRAIN_METRIC_MODE;         // set the mode when you initialize your PRIM
   MatrixXd m_sop_transf_mat;  // Use as sop = sop_transf_mat * unrolled_E
   // unrolled_E[i]= m_weight_strain[i]*strain(m_order_strain[i][0],
   // m_order_strain[i][1])

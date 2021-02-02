@@ -3,6 +3,7 @@
 
 #include "casm/container/Counter.hh"
 #include "casm/crystallography/Lattice.hh"
+#include "casm/global/definitions.hh"
 
 namespace CASM {
 namespace xtal {
@@ -35,13 +36,18 @@ class StrainCostCalculator {
   }
 
   //\brief Anisotropic strain cost; utilizes stored gram matrix to compute
-  //strain cost
+  // strain cost
   double strain_cost(Eigen::Matrix3d const &_deformation_gradient) const;
 
   //\brief Anisotropic strain cost; utilizes stored gram matrix to compute
-  //strain cost
+  // strain cost
   double strain_cost(Eigen::Matrix3d const &_deformation_gradient,
                      double _vol_factor) const;
+
+  //\brief Symmetrized strain cost; Utilizes the parent point group symmetry to
+  // calculate only the symmetry breaking lattice cost
+  double strain_cost(Eigen::Matrix3d const &_deformation_gradient,
+                     SymOpVector const &parent_point_group) const;
 
  private:
   Eigen::MatrixXd m_gram_mat;
@@ -79,7 +85,8 @@ class LatticeMap {
              SymOpVector const &_child_point_group,
              Eigen::Ref<const Eigen::MatrixXd> const &strain_gram_mat =
                  Eigen::MatrixXd::Identity(9, 9),
-             double _init_better_than = 1e20);
+             double _init_better_than = 1e20,
+             bool _symmetrize_strain_cost = false, double _xtal_tol = TOL);
 
   LatticeMap(Eigen::Ref<const DMatType> const &_parent,
              Eigen::Ref<const DMatType> const &_child, Index _num_atoms,
@@ -87,7 +94,8 @@ class LatticeMap {
              SymOpVector const &_child_point_group,
              Eigen::Ref<const Eigen::MatrixXd> const &strain_gram_mat =
                  Eigen::MatrixXd::Identity(9, 9),
-             double _init_better_than = 1e20);
+             double _init_better_than = 1e20,
+             bool _symmetrize_strain_cost = false, double _xtal_tol = TOL);
 
   void reset(double _better_than = 1e20);
 
@@ -99,6 +107,8 @@ class LatticeMap {
 
   double strain_cost() const { return m_cost; }
 
+  double calc_strain_cost(const Eigen::Matrix3d &deformation_gradient) const;
+
   const DMatType &matrixN() const { return m_N; }
 
   const DMatType &deformation_gradient() const {
@@ -108,6 +118,9 @@ class LatticeMap {
   const DMatType &parent_matrix() const { return m_parent; }
 
   const DMatType &child_matrix() const { return m_child; }
+
+  double xtal_tol() const { return m_xtal_tol; }
+  bool symmetrize_strain_cost() const { return m_symmetrize_strain_cost; }
 
  private:
   DMatType m_parent, m_child;
@@ -129,8 +142,16 @@ class LatticeMap {
   // parent point group matrices, in fractional coordinates
   std::vector<Eigen::Matrix3i> m_parent_fsym_mats;
 
+  // parent point group in cartesian coordinates
+  SymOpVector m_parent_point_group;
+
   // child point group matrices, in fractional coordinates
   std::vector<Eigen::Matrix3i> m_child_fsym_mats;
+
+  // flag indicating if the symmetrized strain cost should be used while
+  // searching for the best lattice maps
+  bool m_symmetrize_strain_cost;
+  double m_xtal_tol;
 
   mutable double m_cost;
   mutable Index m_currmat;
@@ -138,7 +159,7 @@ class LatticeMap {
   mutable IMatType m_icache;
 
   ///\brief Returns the inverse of the current transformation matrix under
-  ///consideration
+  /// consideration
   // We treat the unimodular matrices as the inverse of the transformation
   // matrices that we are actively considering, allowing fewer matrix inversions
   Eigen::Matrix3i const &inv_mat() const { return (*m_mvec_ptr)[m_currmat]; }

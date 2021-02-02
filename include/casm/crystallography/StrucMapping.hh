@@ -5,6 +5,8 @@
 #include <vector>
 
 #include "casm/crystallography/SimpleStructure.hh"
+#include "casm/crystallography/SimpleStructureTools.hh"
+#include "casm/crystallography/StrucMapCalculatorInterface.hh"
 #include "casm/crystallography/Superlattice.hh"
 #include "casm/crystallography/SymType.hh"
 #include "casm/external/Eigen/Core"
@@ -28,6 +30,7 @@ class StrucMapper;
 
 namespace StrucMapping {
 
+typedef std::vector<std::vector<Index>> PermuteOpVector;
 /// \brief Very large value used to denote invalid or impossible mapping
 inline double big_inf() { return 10E20; }
 
@@ -60,6 +63,14 @@ double atomic_cost_parent(const MappingNode &mapped_result, Index Nsites);
 /// \brief Calculate the basis cost function of a MappingNode as the average of
 /// atomic_cost_child and atomic_cost_parent
 double atomic_cost(const MappingNode &mapped_config, Index Nsites);
+
+/// \brief Calculate the symmetry breaking atomic cost of a MappingNode
+double atomic_cost(
+    const MappingNode &basic_mapping_node, SymOpVector &factor_group,
+    const std::vector<Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic,
+                                               Index>> &permutation_group,
+    Index Nsites);
+
 }  // namespace StrucMapping
 
 /// \brief Class describing the lattice-mapping portion of a particular mapping
@@ -171,7 +182,7 @@ struct AssignmentNode {
   /// \brief parent->child site assignments that have been forced on at this
   /// node for element 'el' such that forced_on.count(el)==1, 'el' denotes that
   /// child_coord.col(el.second) maps onto parent_coord.col(el.first)
-  std::set<std::pair<Index, Index> > forced_on;
+  std::set<std::pair<Index, Index>> forced_on;
 
   /// \brief 'real' indices of rows in the reduced 'cost_mat'
   /// When a site assignment {i,j} is added to forced_on, row 'i' and col 'j'
@@ -392,7 +403,7 @@ inline bool get_time_reversal(MappingNode const &_node) {
 ///
 class StrucMapper {
  public:
-  using LatMapType = std::map<Index, std::vector<Lattice> >;
+  using LatMapType = std::map<Index, std::vector<Lattice>>;
 
   enum Options {
     none = 0,
@@ -450,10 +461,10 @@ class StrucMapper {
   ///\param _cost_tol tolerance for mapping comparisons
   ///
   ///\param _min_va_frac minimum fraction of vacant sites, below this fraction a
-  ///mapping will not be considered
+  /// mapping will not be considered
   ///
   ///\param _max_va_frac maximum fraction of vacant sites, above this fraction a
-  ///mapping will not be considered
+  /// mapping will not be considered
   StrucMapper(StrucMapCalculatorInterface const &_calculator,
               double _lattice_weight = 0.5, double _max_volume_change = 0.5,
               int _options = 0,  // this should actually be a bitwise-OR of
@@ -465,7 +476,7 @@ class StrucMapper {
   double cost_tol() const { return m_cost_tol; }
 
   ///\brief Tolerance for initializing lattices. For now it is initialized to
-  ///CASM::TOL
+  /// CASM::TOL
   double xtal_tol() const { return m_xtal_tol; }
 
   double lattice_weight() const { return m_lattice_weight; }
@@ -487,6 +498,30 @@ class StrucMapper {
   void set_lattice_transformation_range(Index _new_range) {
     m_lattice_transformation_range = _new_range;
   }
+
+  /// \brief Flag that enables the calculation of a symmetrized lattice cost
+  /// when performing the lattice maps. This cost only accounts for that part of
+  /// the deformation gradient that breaks the symmetry of the parent crystal
+  /// structure
+  void set_symmetrize_lattice_cost(bool _sym_lat_cost) {
+    m_symmetrize_lattice_cost = _sym_lat_cost;
+  }
+
+  /// \brief Flag that enables the calculation of a symmetrized atomic cost
+  /// when performing the atomic maps. This cost only accounts for that part of
+  /// the displacement field that breaks the symmetry of the parent crystal
+  /// structure
+  void set_symmetrize_atomic_cost(
+      bool _sym_atomic_cost, const SymOpVector &factor_group,
+      const std::vector<Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic,
+                                                 Index>> &permutation_group) {
+    m_symmetrize_atomic_cost = _sym_atomic_cost;
+    m_calc_ptr->set_sym_invariant_displacement_modes(
+        generate_invariant_shuffle_modes(factor_group, permutation_group));
+  }
+
+  bool symmetrize_lattice_cost() const { return m_symmetrize_lattice_cost; }
+  bool symmetrize_atomic_cost() const { return m_symmetrize_atomic_cost; }
 
   /// \brief Returns the minimum fraction of sites allowed to be vacant in the
   /// mapping relation Vacancy fraction is used to constrain the mapping
@@ -530,11 +565,11 @@ class StrucMapper {
   void clear_allowed_lattices() const { m_allowed_superlat_map.clear(); }
 
   ///\brief returns true if the search of parent superlattices is constrained to
-  ///a pre-specified list
+  /// a pre-specified list
   bool lattices_constrained() const { return m_allowed_superlat_map.size(); }
 
   ///\brief specify to use filtered lattices for mapping. The filter function is
-  ///of the form
+  /// of the form
   ///  bool filter(parent_lattice, proposed_lattice)
   /// where parent_lattice is the primitive lattice of the parent structure, and
   /// proposed_lattice is a proposed superlattice of the parent structure
@@ -560,30 +595,30 @@ class StrucMapper {
   ///\param child_struc Input structure to be mapped onto parent structure
   ///\param k Number of k-best mapping relations to return.
   ///\param max_cost Search will terminate once no mappings better than max_cost
-  ///are found \param min_cost All mappings better than min_cost will be
-  ///reported, without contributing to 'k'
+  /// are found \param min_cost All mappings better than min_cost will be
+  /// reported, without contributing to 'k'
   ///
   ///\result std::set<MappingNode> a list of valid mappings, sorted first by
-  ///cost, and then other attributes
+  /// cost, and then other attributes
   std::set<MappingNode> map_ideal_struc(
       const SimpleStructure &child_struc, Index k = 1,
       double max_cost = StrucMapping::big_inf(), double min_cost = -TOL,
       bool keep_invalid = false) const;
 
   ///\brief k-best mappings of arbitrary child structure onto parent structure,
-  ///without simplifying assumptions
+  /// without simplifying assumptions
   ///       If k and k+1, k+2, etc mappings have identical cost, k will be
   ///       increased until k+n mapping has cost greater than mapping k
   ///
   ///\param child_struc Input structure to be mapped onto parent structure
   ///\param k Number of k-best mapping relations to return
   ///\param max_cost Search will terminate once no mappings better than max_cost
-  ///are found \param min_cost All mappings better than min_cost will be
-  ///reported, without contributing to 'k' \param keep_invalid If true, invalid
-  ///mappings are retained in output; otherwise they are discarded
+  /// are found \param min_cost All mappings better than min_cost will be
+  /// reported, without contributing to 'k' \param keep_invalid If true, invalid
+  /// mappings are retained in output; otherwise they are discarded
   ///
   ///\result std::set<MappingNode> a list of valid mappings, sorted first by
-  ///cost, and then other attributes
+  /// cost, and then other attributes
   std::set<MappingNode> map_deformed_struc(
       const SimpleStructure &child_struc, Index k = 1,
       double max_cost = StrucMapping::big_inf(), double min_cost = -TOL,
@@ -599,12 +634,12 @@ class StrucMapper {
   ///\param child_struc Input structure to be mapped onto parent structure
   ///\param k Number of k-best mapping relations to return
   ///\param max_cost Search will terminate once no mappings better than max_cost
-  ///are found \param min_cost All mappings better than min_cost will be
-  ///reported, without contributing to 'k' \param keep_invalid If true, invalid
-  ///mappings are retained in output; otherwise they are discarded
+  /// are found \param min_cost All mappings better than min_cost will be
+  /// reported, without contributing to 'k' \param keep_invalid If true, invalid
+  /// mappings are retained in output; otherwise they are discarded
   ///
   ///\result std::set<MappingNode> a list of valid mappings, sorted first by
-  ///cost, and then other attributes
+  /// cost, and then other attributes
   std::set<MappingNode> map_deformed_struc_impose_lattice_vols(
       const SimpleStructure &child_struc, Index min_vol, Index max_vol,
       Index k = 1, double max_cost = StrucMapping::big_inf(),
@@ -622,12 +657,12 @@ class StrucMapper {
   ///\param child_struc Input structure to be mapped onto parent structure
   ///\param k Number of k-best mapping relations to return
   ///\param max_cost Search will terminate once no mappings better than max_cost
-  ///are found \param min_cost All mappings better than min_cost will be
-  ///reported, without contributing to 'k' \param keep_invalid If true, invalid
-  ///mappings are retained in output; otherwise they are discarded
+  /// are found \param min_cost All mappings better than min_cost will be
+  /// reported, without contributing to 'k' \param keep_invalid If true, invalid
+  /// mappings are retained in output; otherwise they are discarded
   ///
   ///\result std::set<MappingNode> a list of valid mappings, sorted first by
-  ///cost, and then other attributes
+  /// cost, and then other attributes
   std::set<MappingNode> map_deformed_struc_impose_lattice(
       const SimpleStructure &child_struc, const Lattice &imposed_lat,
       Index k = 1, double max_cost = StrucMapping::big_inf(),
@@ -647,19 +682,19 @@ class StrucMapper {
   ///\param child_struc Input structure to be mapped onto parent structure
   ///\param k Number of k-best mapping relations to return
   ///\param max_cost Search will terminate once no mappings better than max_cost
-  ///are found \param min_cost All mappings better than min_cost will be
-  ///reported, without contributing to 'k' \param keep_invalid If true, invalid
-  ///mappings are retained in output; otherwise they are discarded
+  /// are found \param min_cost All mappings better than min_cost will be
+  /// reported, without contributing to 'k' \param keep_invalid If true, invalid
+  /// mappings are retained in output; otherwise they are discarded
   ///
   ///\result std::set<MappingNode> a list of valid mappings, sorted first by
-  ///cost, and then other attributes
+  /// cost, and then other attributes
   std::set<MappingNode> map_deformed_struc_impose_lattice_node(
       const SimpleStructure &child_struc, const LatticeNode &imposed_node,
       Index k = 1, double max_cost = StrucMapping::big_inf(),
       double min_cost = -TOL, bool keep_invalid = false) const;
 
   ///\brief low-level function. Takes a queue of mappings and use it to seed a
-  ///search for k-best
+  /// search for k-best
   ///       total mappings. The seed mappings may be partial (having only
   ///       LatticeNode specified, and not HungarianNode) or complete. The
   ///       result is appended to @param queue, and partial and invalid mappings
@@ -679,11 +714,11 @@ class StrucMapper {
   ///
   ///\param k Number of k-best mapping relations to return
   ///\param max_cost Search will terminate once no mappings better than max_cost
-  ///are found \param min_cost All mappings better than min_cost will be
-  ///reported, without contributing to 'k' \param keep_invalid If true, invalid
-  ///mappings are retained in output; otherwise they are discarded \param
-  ///keep_tail If true, any partial or unresolved mappings at back of queue will
-  ///be retained (they are deleted otherwise) \param no_partition
+  /// are found \param min_cost All mappings better than min_cost will be
+  /// reported, without contributing to 'k' \param keep_invalid If true, invalid
+  /// mappings are retained in output; otherwise they are discarded \param
+  /// keep_tail If true, any partial or unresolved mappings at back of queue
+  /// will be retained (they are deleted otherwise) \param no_partition
   /// \parblock
   ///   If true, search over suboptimal basis permutations will be skipped (The
   ///   optimal mapping will be found, but suboptimal mappings may be excluded
@@ -692,7 +727,7 @@ class StrucMapper {
   /// \endparblock
   ///
   ///\result Index specifying the number of complete, valid mappings in the
-  ///solution set
+  /// solution set
   Index k_best_maps_better_than(SimpleStructure const &child_struc,
                                 std::set<MappingNode> &queue, Index k = 1,
                                 double max_cost = StrucMapping::big_inf(),
@@ -710,9 +745,9 @@ class StrucMapper {
   ///
   ///\param k Number of k-best mapping relations to return
   ///\param max_lattice_cost Search will terminate once no lattice mappings
-  ///better than max_lattice_cost are found \param min_lattice_cost All lattice
-  ///mappings better than min_lattice_cost will be returned, without
-  ///contributing to 'k'
+  /// better than max_lattice_cost are found \param min_lattice_cost All lattice
+  /// mappings better than min_lattice_cost will be returned, without
+  /// contributing to 'k'
   std::set<MappingNode> _seed_k_best_from_super_lats(
       SimpleStructure const &child_struc,
       std::vector<Lattice> const &_parent_scels,
@@ -729,7 +764,7 @@ class StrucMapper {
       SymOpVector const &child_factor_group = {SymOp::identity()}) const;
 
   ///\brief returns number of species in a SimpleStructure given the current
-  ///calculator settings.
+  /// calculator settings.
   ///       Use instead of sstruc.n_atom() for consistency
   Index _n_species(SimpleStructure const &sstruc) const;
 
@@ -754,6 +789,9 @@ class StrucMapper {
   double m_max_va_frac;
 
   Index m_lattice_transformation_range;
+
+  bool m_symmetrize_lattice_cost;
+  bool m_symmetrize_atomic_cost;
 
   bool m_filtered;
   std::function<bool(Lattice const &, Lattice const &)> m_filter_f;

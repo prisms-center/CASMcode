@@ -2,14 +2,18 @@
 
 #include <algorithm>
 #include <atomic>
+#include <tuple>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
+#include "casm/basis_set/Adapter.hh"
+#include "casm/basis_set/DoFIsEquivalent.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/DoFSet.hh"
 #include "casm/crystallography/IntegralCoordinateWithin.hh"
+#include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/Superlattice.hh"
@@ -20,8 +24,11 @@
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/external/Eigen/Core"
 #include "casm/external/Eigen/src/Core/Matrix.h"
+#include "casm/global/definitions.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
-
+#include "casm/symmetry/SymOp.hh"
+#include "submodules/eigen/Eigen/src/Core/PermutationMatrix.h"
+#include "submodules/eigen/Eigen/src/Core/util/Constants.h"
 namespace {
 using namespace CASM;
 
@@ -310,6 +317,151 @@ BasicStructure make_primitive(const BasicStructure &non_primitive_struc,
   return primitive_struc;
 }
 
+/// \brief Calculates the rotation angle and axis of a symmetry operation. This
+/// function is almost exactly identical to the constructor of SymInfo::SymInfo
+std::pair<double, Eigen::Vector3d> calc_rotation_angle_and_axis(
+    const SymOp &op, const Lattice &lat) {
+  auto matrix = op.matrix;
+  double angle;
+  Eigen::Vector3d rotation_axis, _axis;
+
+  // Simplest case is identity: has no axis and no location
+  if (almost_equal(matrix.trace(), 3.) || almost_equal(matrix.trace(), -3.)) {
+    angle = 0;
+    _axis = Eigen::Vector3d::Zero();
+    rotation_axis = Coordinate(_axis, lat, CART).const_frac();
+    return std::make_pair(angle, rotation_axis);
+  }
+
+  // det is -1 if improper and +1 if proper
+  int det = round(matrix.determinant());
+
+  // Find eigen decomposition of proper operation (by multiplying by
+  // determinant)
+  Eigen::EigenSolver<Eigen::Matrix3d> t_eig(det * matrix);
+
+  // 'axis' is eigenvector whose eigenvalue is +1
+  for (Index i = 0; i < 3; i++) {
+    if (almost_equal(t_eig.eigenvalues()(i), std::complex<double>(1, 0))) {
+      _axis = t_eig.eigenvectors().col(i).real();
+      break;
+    }
+  }
+
+  // Sign convention for 'axis': first non-zero element is positive
+  for (Index i = 0; i < 3; i++) {
+    if (!almost_zero(_axis[i])) {
+      _axis *= float_sgn(_axis[i]);
+      break;
+    }
+  }
+
+  // get vector orthogonal to axis: ortho,
+  // apply matrix: rot
+  // and check angle between ortho and det*rot,
+  // using determinant to get the correct angle for improper
+  // (i.e. want angle before inversion for rotoinversion)
+  Eigen::Vector3d ortho = _axis.unitOrthogonal();
+  Eigen::Vector3d rot = det * (matrix * ortho);
+  angle = fmod(
+      (180. / M_PI) * atan2(_axis.dot(ortho.cross(rot)), ortho.dot(rot)) + 360.,
+      360.);
+  rotation_axis = Coordinate(_axis, lat, CART).const_frac();
+  return std::make_pair(angle, rotation_axis);
+}
+
+//*******************************************************************************************
+/// \brief Sort SymOp in the SymGroup
+///
+/// SymOp are sorted by lexicographical comparison of: (-det, -trace, angle,
+/// axis, tau)
+/// - angle is positive
+/// - axis[0] is positive
+///
+/// This function is an almost identical clone of SymGroup::sort()
+void sort_factor_group(std::vector<SymOp> &factor_group, const Lattice &lat) {
+  // floating point comparison tolerance
+  double tol = TOL;
+
+  // COORD_TYPE print_mode = CART;
+
+  // compare on vector of '-det', '-trace', 'angle', 'axis', 'tau'
+  typedef Eigen::Matrix<double, 10, 1> key_type;
+  auto make_key = [](const SymOp &op, const Lattice &lat) {
+    key_type vec;
+    int offset = 0;
+    double sym_angle;
+    Eigen::Vector3d sym_frac;
+    std::tie(sym_angle, sym_frac) = calc_rotation_angle_and_axis(op, lat);
+
+    vec[offset] = double(op.is_time_reversal_active);
+    offset++;
+
+    vec[offset] = -op.matrix.determinant();
+    offset++;
+
+    vec[offset] = -op.matrix.trace();
+    offset++;
+
+    vec[offset] = sym_angle;
+    offset++;
+
+    vec.segment<3>(offset) = sym_frac;
+    offset += 3;
+
+    vec.segment<3>(offset) = Coordinate(op.translation, lat, CART).const_frac();
+    offset += 3;
+
+    return vec;
+  };
+
+  // define symop compare function
+  auto op_compare = [tol](const key_type &A, const key_type &B) {
+    return float_lexicographical_compare(A, B, tol);
+  };
+
+  typedef std::map<key_type, SymOp,
+                   std::reference_wrapper<decltype(op_compare)>>
+      map_type;
+
+  // first put identity in position 0 in order to calculat multi_table correctly
+  for (int i = 0; i < factor_group.size(); ++i) {
+    if (factor_group[i].matrix.isIdentity() &&
+        factor_group[i].translation.norm() < TOL &&
+        !factor_group[i].is_time_reversal_active) {
+      std::swap(factor_group[0], factor_group[i]);
+      break;
+    }
+  }
+
+  // sort conjugacy class using the first symop in the sorted class
+  auto cclass_compare = [tol](const map_type &A, const map_type &B) {
+    return float_lexicographical_compare(A.begin()->first, B.begin()->first,
+                                         tol);
+  };
+
+  // sort elements in each conjugracy class (or just put all elements in the
+  // first map)
+  std::set<map_type, std::reference_wrapper<decltype(cclass_compare)>> sorter(
+      cclass_compare);
+
+  // else just sort element
+  map_type all_op(op_compare);
+  for (auto it = factor_group.begin(); it != factor_group.end(); ++it) {
+    all_op.emplace(make_key(*it, lat), *it);
+  }
+  sorter.emplace(std::move(all_op));
+
+  // copy symop back into group
+  int j = 0;
+  for (auto const &cclass : sorter) {
+    for (auto it = cclass.begin(); it != cclass.end(); ++it) {
+      factor_group[j] = it->second;
+      ++j;
+    }
+  }
+}
+
 std::vector<SymOp> make_factor_group(const BasicStructure &struc, double tol) {
   auto prim_factor_group_pair = ::make_primitive_factor_group(struc, tol);
   const BasicStructure &primitive_struc = prim_factor_group_pair.first;
@@ -343,8 +495,64 @@ std::vector<SymOp> make_factor_group(const BasicStructure &struc, double tol) {
           prim_op);
     }
   }
-
+  sort_factor_group(factor_group, struc.lattice());
   return factor_group;
+}
+
+/** \brief make_permutation_representation - The permutation representation for
+ * a structure is obtained by applying each factor group operation to the
+ * structure and identifying the index of the symmetry transformed site
+ *
+ *     \param struc xtal::BasicStructure the structure for which the permutation
+ * group is required
+ *     \param factor_group std::vector<SymOp> the factor group
+ * generated for struc. You should be able to generate this with
+ * xtal::make_factor_group(struc)
+ *     \return std::vector<Eigen::PermutationMatrix> The permutation matrix at
+ * index idx corresponds to the effect of the symmetry operation in
+ * factor_group[idx] on the basis.
+ *
+ *
+ * */
+std::vector<Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic, Index>>
+make_permutation_representation(const xtal::BasicStructure &struc,
+                                const std::vector<SymOp> &factor_group) {
+  std::string clr(100, ' ');
+  if (factor_group.size() <= 0) {
+    std::cout << "ERROR in xtal::make_permutation_representation" << std::endl;
+    std::cout << "Factor group is empty." << std::endl;
+    exit(1);
+  }
+  std::vector<xtal::UnitCellCoord> sitemap;
+
+  Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic, Index> init_perm_mat;
+  init_perm_mat.setIdentity(struc.basis().size());
+  std::vector<Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic, Index>>
+      perm_rep(factor_group.size(), init_perm_mat);
+
+  for (Index s = 0; s < factor_group.size(); ++s) {
+    auto const &op = factor_group[s];
+    std::vector<Index> _perm(struc.basis().size(), -1);
+    sitemap = xtal::symop_site_map(op, struc);
+
+    for (Index b = 0; b < struc.basis().size(); ++b) {
+      auto const &dofref_to =
+          struc.basis()[sitemap[b].sublattice()].occupant_dof();
+      auto const &dofref_from = struc.basis()[b].occupant_dof();
+      OccupantDoFIsEquivalent<xtal::Molecule> eq(dofref_from);
+      // adapter::Adapter<SymOp, CASM::SymOp>()(op)
+      if (eq(op, dofref_to)) {
+        _perm[b] = sitemap[b].sublattice();
+      } else
+        throw std::runtime_error(
+            "In Structure::_generate_basis_symreps(), Sites originally "
+            "identified as equivalent cannot be mapped by symmetry.");
+    }
+    Eigen::Map<Eigen::Matrix<Index, Eigen::Dynamic, 1>> index_matrix(
+        _perm.data(), _perm.size());
+    perm_rep[s].indices() = index_matrix;
+  }
+  return perm_rep;
 }
 
 BasicStructure symmetrize(const BasicStructure &structure,

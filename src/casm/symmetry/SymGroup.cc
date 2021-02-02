@@ -1508,7 +1508,8 @@ void SymGroup::_generate_conjugacy_classes() const {
       // std::cout << "for j=" << j << ", i=" << i << ": j-inverse= " <<
       // ind_inverse(j) << ", i*j-inverse= " << ind_prod(i, ind_inverse(j)); int
       // tk=alt_multi_table[j][i]; std::cout << "-- compare to amt[j][0]=" <<
-      // alt_multi_table[j][0] << " and amt[j][i]=" << tk << " and result is k=";
+      // alt_multi_table[j][0] << " and amt[j][i]=" << tk << " and result is
+      // k=";
       k = ind_prod(j, ind_prod(i, ind_inverse(j)));
       // std::cout << k << " -- compare to explicit value " <<
       // multi_table[tk][j];
@@ -1832,7 +1833,7 @@ void SymGroup::enforce_group(double tol, Index max_size) {
           push_back(within_cell(tOp, lattice(), periodicity()));
           new_ops = true;
           //	  //std::cout << "Pushing back a SymOp due to multiplication
-          //fail.\n";
+          // fail.\n";
         }
       }
 
