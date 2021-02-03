@@ -256,7 +256,7 @@ struct VectorSpaceMixingInfo {
 /// The result of this function might be different from just the symmetry
 /// adapted axes computed using irrep decomposition and explicitly removing the
 /// homogeneous modes by identifying them using the
-/// get_indices_of_rigid_translation_space below This is implemented by
+/// VectorSpaceMixingInfo struct. This is implemented by
 /// computing the null space of the homogeneous mode space and using it is a
 /// subspace while performing irrep decomposition
 Eigen::MatrixXd symmetry_adapted_axes_without_homogeneous_modes(
