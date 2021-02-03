@@ -57,44 +57,45 @@ jsonParser &to_json(DoFSpace const &dofspace, jsonParser &json,
   }
   if (sym_report.has_value()) {
     to_json(sym_report, json);
-  }
-
-  if (dofspace.dof_key() == "disp" && input_state.has_value()) {
-    Eigen::MatrixXd sym_axes = dofspace.basis();
-    auto const &dof_info = input_state.value()
-                               .configuration()
-                               .configdof()
-                               .local_dof(dofspace.dof_key())
-                               .info();
-    Eigen::MatrixXd homogeneous_mode_space =
-        make_homogeneous_mode_space(dof_info);
-    if (are_homogeneous_modes_mixed_in_irreps(sym_axes,
-                                              homogeneous_mode_space)) {
-      json["components_of_sym_axes_which_are_homogeneous_modes"] =
-          "WARNING!! Computed sym_axes has homogeneous modes mixed. Please "
-          "explicitly use the "
-          "\"symmetry_adapted_axes_without_homogeneous_modes\" provided below "
-          "or directly use the tag \"exclude_homogeneous_modes\" = true while "
-          "enumeration";
-    } else {
-      std::vector<int> indices =
-          get_indices_of_homogeneous_mode_space(dofspace, input_state.value());
-      std::vector<std::string> string_of_indices;
-      for (auto i : indices) {
-        std::string s = "q" + std::to_string(i + 1);
-        string_of_indices.push_back(s);
-      }
-      json["components_of_sym_axes_which_are_homogeneous_modes"] =
-          string_of_indices;
+    if (input_state.has_value() && dofspace.dof_key() == "disp") {
+      add_homogeneous_mode_info(json, dofspace, input_state.value());
     }
-
-    json["symmetry_adapted_axes_without_homogeneous_modes"] =
-        symmetry_adapted_axes_without_homogeneous_modes(dofspace,
-                                                        input_state.value())
-            .transpose();
   }
-
   return json;
+}
+
+void add_homogeneous_mode_info(jsonParser &json, DoFSpace const &dofspace,
+                               ConfigEnumInput const &input_state) {
+  jsonParser &irreps_json = json["irreducible_representations"];
+  Eigen::MatrixXd sym_axes = dofspace.basis();
+  auto const &dof_info = input_state.configuration()
+                             .configdof()
+                             .local_dof(dofspace.dof_key())
+                             .info();
+  Eigen::MatrixXd homogeneous_mode_space =
+      make_homogeneous_mode_space(dof_info);
+
+  auto print_string = [&](std::vector<Index> const &indices) {
+    std::vector<std::string> string_of_indices;
+    for (auto &i : indices) {
+      std::string s = "q" + std::to_string(i + 1);
+      string_of_indices.push_back(s);
+    }
+    return string_of_indices;
+  };
+
+  irreps_json["adapted_axes_without_homogeneous_modes"] =
+      symmetry_adapted_axes_without_homogeneous_modes(dofspace, input_state)
+          .transpose();
+
+  VectorSpaceMixingInfo mixing_info(sym_axes, homogeneous_mode_space,
+                                    CASM::TOL);
+  irreps_json["adapted_axes_which_are_not_homogeneous_modes"] =
+      print_string(mixing_info.axes_not_in_subspace);
+  irreps_json["adapted_axes_mixed_with_homogeneous_modes"] =
+      print_string(mixing_info.axes_mixed_with_subspace);
+  irreps_json["adapted_axes_which_are_homogeneous_modes"] =
+      print_string(mixing_info.axes_in_subspace);
 }
 
 DoFSpace jsonConstructor<DoFSpace>::from_json(

@@ -230,13 +230,27 @@ class make_symmetry_adapted_dof_space_error : public std::runtime_error {
 /// Constructs a homogeneous mode space of the dof space represented in terms of
 /// user defined axes. Returns a column vectors matrix
 Eigen::MatrixXd make_homogeneous_mode_space(
-    const std::vector<DoFSetInfo> &dof_info);
+    std::vector<DoFSetInfo> const &dof_info);
 
-/// Returns true if the homogeneous modes are mixed within two irreps.
-/// This will be used to issue a warning to the user to look at stuff more
-/// carefully
-bool are_homogeneous_modes_mixed_in_irreps(
-    const Eigen::MatrixXd &axes, const Eigen::MatrixXd &homogeneous_mode_space);
+/// A struct which gives out the mixing information of given column_vector_space
+/// and a subspace For example, consider a column_vector_space of 3 dimensions.
+/// Let it be [q1, q2, q3] where q1, q2 and q3 are columns of the said vector
+/// space Let's say q1 - has a zero projection onto the given subspace, q2 - has
+/// partial projection onto the subspace, q3 - full projection onto the subspace
+/// Then axes_not_in_subspace will be {0} - where 0 is the index of the column
+/// of the column_vector_space which has zero projection onto the given subspace
+/// Similarly, axes_in_subspace will be {2} & axes_mixed_with_subspace will be
+/// {1} If any of the columns of the given column_vector_space has a partial
+/// projection onto the subspace, are_axes_mixed_with_subspace will be true;
+/// otherwise it will be false
+struct VectorSpaceMixingInfo {
+  VectorSpaceMixingInfo(Eigen::MatrixXd const &column_vector_space,
+                        Eigen::MatrixXd const &subspace, double tol);
+  std::vector<Index> axes_not_in_subspace;
+  std::vector<Index> axes_in_subspace;
+  std::vector<Index> axes_mixed_with_subspace;
+  bool are_axes_mixed_with_subspace = true;
+};
 
 /// Returns symmetry adapted axes with homogeneous modes removed
 /// The result of this function might be different from just the symmetry
@@ -246,17 +260,9 @@ bool are_homogeneous_modes_mixed_in_irreps(
 /// computing the null space of the homogeneous mode space and using it is a
 /// subspace while performing irrep decomposition
 Eigen::MatrixXd symmetry_adapted_axes_without_homogeneous_modes(
-    const DoFSpace &symmetry_adapted_dof_space,
-    const ConfigEnumInput &initial_state);
+    DoFSpace const &symmetry_adapted_dof_space,
+    ConfigEnumInput const &initial_state);
 
-/// Returns the column numbers of the symmetry adapted axes which are
-/// homogeneous modes This assumes that the provided symmetry adapted axes does
-/// not have homogeneous modes mixed within the irrep axes To check if the
-/// symmetry adapted axes has homogeneous modes mixed within the irreps use
-/// are_homogeneous_modes_mixed_in_irreps function
-std::vector<int> get_indices_of_homogeneous_mode_space(
-    const DoFSpace &symmetry_adapted_dof_space,
-    const ConfigEnumInput &initial_state);
 }  // namespace CASM
 
 #endif

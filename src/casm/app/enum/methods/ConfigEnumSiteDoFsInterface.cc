@@ -252,7 +252,8 @@ std::string ConfigEnumSiteDoFsInterface::desc() const {
       "  exclude_homogeneous_modes: bool (optional, default=false)\n"
       "   If true, enumerator only returns non-homogeneous modes. In the case "
       "of \"disp\" dof this "
-      "   excludes all rigid translations.\n\n"
+      "   excludes all rigid translations. This option is allowed only for "
+      "\"sym_axes\":true\n\n"
 
       "  min_nonzero: integer (optional, default = 0) \n"
       "    Minimum number of coordinate amplitudes that are allowed\n"
@@ -360,7 +361,7 @@ void parse(InputParser<ConfigEnumSiteDoFsParams> &parser,
   if (params.min_nonzero > params.max_nonzero) {
     std::stringstream msg;
     msg << "'min_nonzero' value exceeds 'max_nonzero' value" << std::endl;
-    throw std::runtime_error(msg.str());
+    parser.error.insert(msg.str());
   }
 }
 
@@ -504,8 +505,9 @@ struct MakeEnumerator {
       Eigen::MatrixXd homogeneous_mode_space =
           make_homogeneous_mode_space(dof_info);
 
-      if (are_homogeneous_modes_mixed_in_irreps(params_copy.axes,
-                                                homogeneous_mode_space)) {
+      if (VectorSpaceMixingInfo{params_copy.axes, homogeneous_mode_space,
+                                CASM::TOL}
+              .are_axes_mixed_with_subspace) {
         log << "WARNING! Irreps have non-homogeneous and homogeneous modes "
                "mixed. Proceed with caution.\n";
       }
@@ -577,16 +579,16 @@ void ConfigEnumSiteDoFsInterface::run(
   // the code
   if (sym_axes_option == false && exclude_homogeneous_modes == true) {
     std::stringstream msg;
-    msg << "You cannot set 'exclude_homogeneous_modes' = true when using "
-           "custom axes. Alternatives: \n 1) Use "
-           "symmetry_adapted_axes_without_homogeneous_modes provided in the "
-           "symmetry "
-           "report directly with 'exclude_homogeneous_modes' = false \n 2) "
-           "Directly use 'exclude_homogeneous_modes' = true without custom "
-           "axes "
-           "('sym_axes' = true) \n"
+    msg << "You may not use 'exclude_homogeneous_modes' = true with "
+           "\"sym_axes\" : false. "
+           "Alternatives: \n 1) Use "
+           "\"adapted_axes_without_homogeneous_modes\" provided in the "
+           "DoF space symmetry analysis for \"axes\" and "
+           "\"exclude_homogeneous_modes\" = false \n 2) "
+           "Directly use \"exclude_homogeneous_modes\" = true without"
+           "\"sym_axes\" = true) \n"
         << std::endl;
-    throw std::runtime_error(msg.str());
+    parser.error.insert(msg.str());
   }
 
   // Throw error if min, max, inc are provided as vectors when using sym_axes
@@ -597,7 +599,10 @@ void ConfigEnumSiteDoFsInterface::run(
         if (!parser.self[attrib].is_number()) {
           std::stringstream msg;
           msg << "Error: \"" << attrib
-              << "\" should not be a vector. Provide only a value";
+              << "\" should not be a vector. Since you're using \"sym_axes\" : "
+                 "true, provide only a value. To be able to use custom "
+                 "increment/minimum/maximum values for symmetry adapted axes, "
+                 "copy it into \"axes\" and set \"sym_axes\" : false";
           parser.error.insert(msg.str());
         }
       }
