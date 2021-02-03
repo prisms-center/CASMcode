@@ -34,9 +34,6 @@ ProjectBaseTest::ProjectBaseTest(xtal::BasicStructure const &basic_structure,
   this->write_bspecs_json();
 
   primclex_ptr = std::make_unique<PrimClex>(project_settings_ptr->root_dir());
-
-  this->write_basis_set_data();
-  this->make_clexulator();
 }
 
 ProjectBaseTest::~ProjectBaseTest() {}

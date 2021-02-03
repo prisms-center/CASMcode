@@ -2,12 +2,9 @@
 
 #include "casm/casm_io/dataformatter/DataFormatterTools_impl.hh"
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
+#include "casm/clex/SupercellIO_impl.hh"
 #include "casm/clex/Supercell_impl.hh"
-#include "casm/crystallography/Structure.hh"
-#include "casm/crystallography/SymTools.hh"
-#include "casm/database/DatabaseTypes_impl.hh"
 #include "casm/database/Selected_impl.hh"
-#include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/symmetry/SymOp.hh"
 
 namespace CASM {
@@ -23,68 +20,6 @@ template class DataFormatterDictionary<Supercell>;
 
 namespace ScelIO {
 
-// --- template<typename Base> class SupercellCheckBase ---
-
-template <typename Base>
-SupercellCheckBase<Base>::SupercellCheckBase(std::string name, std::string desc)
-    : Base(name, desc),
-      m_refcell(nullptr),
-      m_last_result(notstd::make_cloneable<result_type>()),
-      m_last_scel(nullptr),
-      m_last_unit(nullptr) {}
-
-/// \brief Expects arguments of the form 'is_supercell_of(scelname)'
-template <typename Base>
-bool SupercellCheckBase<Base>::parse_args(const std::string &args) {
-  std::vector<std::string> splt_vec;
-  boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
-
-  if (splt_vec.size() != 1) {
-    std::stringstream ss;
-    ss << this->name() << " expected 1 argument.  Received: " << args << "\n";
-    throw std::runtime_error(ss.str());
-  }
-
-  m_refcell_name = args;
-  return true;
-}
-
-/// \brief Set pointer to ref supercell
-template <typename Base>
-bool SupercellCheckBase<Base>::init(const Supercell &_tmplt) const {
-  m_refcell = &*_tmplt.primclex().db<Supercell>().find(m_refcell_name);
-  return true;
-}
-
-/// \brief col_header returns: {'name(refcell_name)'}
-template <typename Base>
-std::vector<std::string> SupercellCheckBase<Base>::col_header(
-    const Supercell &_tmplt) const {
-  return std::vector<std::string>{this->name() + "(" + m_refcell_name + ")"};
-}
-
-/// Call is_supercell using prim.factor_group() to try possible orientations
-///
-/// Returns (bool, SymOp op, Eigen::MatrixXi T) with:
-/// - scel is supercell of unit?
-/// - If true: scel.lattice() == apply(op, unit.lattice()) * T
-///
-template <typename Base>
-const typename SupercellCheckBase<Base>::result_type &
-SupercellCheckBase<Base>::_evaluate(const Supercell &scel,
-                                    const Supercell &unit) const {
-  if (&scel != m_last_scel || &unit != m_last_unit) {
-    auto res = xtal::is_equivalent_superlattice(
-        scel.lattice(), unit.lattice(), unit.prim().factor_group().begin(),
-        unit.prim().factor_group().end(), unit.crystallography_tol());
-
-    *m_last_result =
-        std::make_tuple(res.first != unit.prim().factor_group().end(),
-                        *res.first, iround(res.second));
-  }
-  return *m_last_result;
-}
-
 // --- IsSupercellOf ---
 
 const std::string IsSupercellOf::Name = "is_supercell_of";
@@ -97,7 +32,7 @@ const std::string IsSupercellOf::Desc =
 IsSupercellOf::IsSupercellOf() : SupercellCheckBase(Name, Desc) {}
 
 bool IsSupercellOf::evaluate(const Supercell &scel) const {
-  return std::get<0>(_evaluate(scel, *m_refcell));
+  return std::get<0>(_evaluate(scel, refcell()));
 }
 
 /// \brief Clone using copy constructor
@@ -121,7 +56,7 @@ const std::string IsUnitcellOf::Desc =
 IsUnitcellOf::IsUnitcellOf() : SupercellCheckBase(Name, Desc) {}
 
 bool IsUnitcellOf::evaluate(const Supercell &unit) const {
-  return std::get<0>(_evaluate(*m_refcell, unit));
+  return std::get<0>(_evaluate(refcell(), unit));
 }
 
 /// \brief Clone using copy constructor
@@ -149,13 +84,13 @@ TransfMat::TransfMat() : SupercellCheckBase(Name, Desc) {}
 Eigen::VectorXi TransfMat::evaluate(const Supercell &scel) const {
   // should be column-major anyways, but let's ensure it
   Eigen::Matrix<int, 3, 3, Eigen::ColMajor> T =
-      std::get<2>(_evaluate(scel, *m_refcell));
+      std::get<2>(_evaluate(scel, refcell()));
   return Eigen::Map<Eigen::VectorXi>(T.data(), T.size());
 }
 
 bool TransfMat::validate(const Supercell &scel) const {
   // should be column-major anyways, but let's ensure it
-  return std::get<0>(_evaluate(scel, *m_refcell));
+  return std::get<0>(_evaluate(scel, refcell()));
 }
 
 /// \brief Clone using copy constructor
@@ -342,7 +277,7 @@ GenericVectorXdScelFormatter lattice_params() {
   return GenericVectorXdScelFormatter(
       "lattice_params", "Lattice parameters, as: (a, b, c, alpha, beta, gamma)",
       [](const Supercell &scel) -> Eigen::VectorXd {
-        Eigen::VectorXd res;
+        Eigen::VectorXd res(6);
         res << scel.lattice().length(0), scel.lattice().length(1),
             scel.lattice().length(2), scel.lattice().angle(0),
             scel.lattice().angle(1), scel.lattice().angle(2);

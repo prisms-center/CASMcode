@@ -21,6 +21,8 @@ class StrainClexulatorTest : public test::ProjectBaseTest {
                               jsonParser::parse(clex_basis_specs_str())),
         shared_supercell(std::make_shared<CASM::Supercell>(
             shared_prim, Eigen::Matrix3l::Identity())) {
+    this->write_basis_set_data();
+    this->make_clexulator();
     shared_supercell->set_primclex(primclex_ptr.get());
   }
 

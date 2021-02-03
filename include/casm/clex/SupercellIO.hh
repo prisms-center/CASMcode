@@ -45,10 +45,12 @@ class SupercellCheckBase : public Base {
   /// Reference supercell name, given meaning by derived class
   std::string m_refcell_name;
 
+  Supercell const &refcell() const;
+
+ private:
   /// Reference supercell, given meaning by derived class
   mutable const Supercell *m_refcell;
 
- private:
   mutable notstd::cloneable_ptr<result_type> m_last_result;
   mutable const Supercell *m_last_scel;
   mutable const Supercell *m_last_unit;
