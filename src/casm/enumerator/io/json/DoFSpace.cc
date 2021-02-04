@@ -18,19 +18,6 @@
 
 namespace CASM {
 
-// jsonParser &to_json(DoFSpace const &dofspace, jsonParser &json) {
-//
-//   json["dof"] = dofspace.dof_key();
-//   json["transformation_matrix_to_supercell"] =
-//   dofspace.transformation_matrix_to_super(); json["sites"] =
-//   dofspace.sites(); json["basis"] = dofspace.basis(); json["glossary"] =
-//   dofspace.axis_glossary(); json["axis_site_index"] =
-//   dofspace.axis_site_index(); json["axis_dof_component"] =
-//   dofspace.axis_site_index();
-//
-//   return json;
-// }
-
 void from_json(DoFSpace &dofspace, jsonParser const &json,
                std::shared_ptr<Structure const> const &shared_prim) {
   dofspace = jsonConstructor<DoFSpace>::from_json(json, shared_prim);
@@ -44,7 +31,7 @@ jsonParser &to_json(DoFSpace const &dofspace, jsonParser &json,
   json["transformation_matrix_to_supercell"] =
       dofspace.transformation_matrix_to_super();
   json["sites"] = dofspace.sites();
-  json["basis"] = dofspace.basis();
+  json["basis"] = dofspace.basis().transpose();
   json["glossary"] = dofspace.axis_glossary();
   json["axis_site_index"] = dofspace.axis_site_index();
   json["axis_dof_component"] = dofspace.axis_dof_component();
@@ -132,8 +119,9 @@ void parse(InputParser<DoFSpace> &parser,
   std::optional<std::set<Index>> sites;
   parser.optional(sites, "sites");
 
-  std::optional<Eigen::MatrixXd> basis;
-  parser.optional(basis, "basis");
+  Eigen::MatrixXd tmp;
+  parser.optional(tmp, "basis");
+  std::optional<Eigen::MatrixXd> basis = tmp.transpose();
 
   if (parser.valid()) {
     parser.value = notstd::make_unique<DoFSpace>(
