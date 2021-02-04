@@ -79,9 +79,6 @@ class DoFSpace {
   /// The DoF subspace dimension (equal to number of columns in basis).
   Index subspace_dim() const;
 
-  /// The inverse of the DoF space basis.
-  Eigen::MatrixXd const &basis_inverse() const;
-
   /// Names the DoF corresponding to each dimension (row) of the basis
   std::vector<std::string> const &axis_glossary() const;
 
@@ -126,9 +123,6 @@ class DoFSpace {
   /// The DoF space basis, as a column vector matrix. May be a subspace (cols <=
   /// rows).
   Eigen::MatrixXd m_basis;
-
-  /// The pseudoinverse of the DoF space basis.
-  Eigen::MatrixXd m_basis_inverse;
 
   /// Names the DoF corresponding to each dimension (row) of the basis
   std::vector<std::string> m_axis_glossary;

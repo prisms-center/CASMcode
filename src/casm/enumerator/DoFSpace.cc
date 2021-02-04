@@ -89,7 +89,7 @@ DoFSpace::DoFSpace(
         << ") > expected dimension (" << m_basis.rows() << ").";
     throw std::runtime_error(msg.str());
   }
-  m_basis_inverse = m_basis.inverse();
+
   make_dof_space_axis_info(
       dof_key(), *shared_prim(), transformation_matrix_to_super(), sites(),
       m_axis_glossary, m_axis_site_index, m_axis_dof_component);
@@ -124,11 +124,6 @@ Index DoFSpace::dim() const { return m_basis.rows(); }
 
 /// The DoF subspace dimension (equal to number of columns in basis).
 Index DoFSpace::subspace_dim() const { return m_basis.cols(); }
-
-/// The inverse of the DoF space basis.
-Eigen::MatrixXd const &DoFSpace::basis_inverse() const {
-  return m_basis_inverse;
-}
 
 /// Names the DoF corresponding to each dimension (row) of the basis
 std::vector<std::string> const &DoFSpace::axis_glossary() const {
@@ -177,19 +172,23 @@ void throw_if_invalid_dof_space(Configuration const &config,
 }
 
 /// Return `config` DoF value as a coordinate in the DoFSpace basis
+///
+/// TODO: handle DoF values not in the basis subspace
 Eigen::VectorXd get_normal_coordinate(Configuration const &config,
                                       DoFSpace const &dof_space) {
   using namespace DoFSpace_impl;
   throw_if_invalid_dof_space(config, dof_space);
 
   auto const &dof_key = dof_space.dof_key();
-  auto const &basis_inverse = dof_space.basis_inverse();
+  auto const &basis = dof_space.basis();
 
   if (AnisoValTraits(dof_key).global()) {
-    return basis_inverse * config.configdof().global_dof(dof_key).values();
+    auto const &dof_values = config.configdof().global_dof(dof_key).values();
+    return basis.colPivHouseholderQr().solve(dof_values);
   } else {
     if (dof_key == "occ") {
-      return basis_inverse * config.configdof().occupation().cast<double>();
+      auto const &dof_values = config.configdof().occupation().cast<double>();
+      return basis.colPivHouseholderQr().solve(dof_values);
     } else {
       Eigen::VectorXd vector_values = Eigen::VectorXd::Zero(dof_space.dim());
       Eigen::MatrixXd const &matrix_values =
@@ -202,7 +201,7 @@ Eigen::VectorXd get_normal_coordinate(Configuration const &config,
         vector_values[i] =
             matrix_values(axis_dof_component[i], axis_site_index[i]);
       }
-      return basis_inverse * vector_values;
+      return basis.colPivHouseholderQr().solve(vector_values);
     }
   }
 }

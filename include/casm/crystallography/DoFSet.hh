@@ -35,8 +35,7 @@ class DoFSet {
          const Eigen::MatrixXd &init_basis)
       : m_traits(init_traits),
         m_component_names(init_component_names),
-        m_basis(init_basis),
-        m_basis_inverse(this->basis().inverse()) {
+        m_basis(init_basis) {
     assert(m_component_names.size() == this->dim());
     assert(m_basis.cols() == this->dim());
     assert(m_basis.rows() ==
@@ -81,7 +80,6 @@ class DoFSet {
   /// you may want to define displacements that only happen along a particular
   /// direction
   Eigen::MatrixXd m_basis;
-  Eigen::MatrixXd m_basis_inverse;
 };
 
 /// Returns descriptive names of the components in a DoFSet, using
