@@ -327,6 +327,7 @@ void jsonDatabase<Configuration>::commit() {
   }
   json["version"] = traits<jsonDB>::version;
 
+  json["supercells"] = jsonParser::object();
   for (const auto &config : m_config_list) {
     jsonParser &configjson =
         json["supercells"][config.supercell().name()][config.id()];

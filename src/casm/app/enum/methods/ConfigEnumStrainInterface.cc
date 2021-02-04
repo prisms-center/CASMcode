@@ -192,7 +192,7 @@ struct MakeEnumerator {
     if (make_symmetry_adapted_axes) {  // if sym_axes==true, make and use
                                        // symmetry adapted axes
       log << "Performing DoF space analysis: " << name << std::endl;
-      bool calc_wedges = false;
+      bool calc_wedges = true;
       std::vector<PermuteIterator> group =
           make_invariant_subgroup(initial_state);
       dof_space_output.write_symmetry(index, name, initial_state, group);
