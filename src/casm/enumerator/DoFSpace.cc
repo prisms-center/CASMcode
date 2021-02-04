@@ -407,4 +407,77 @@ DoFSpace make_symmetry_adapted_dof_space(
                         symmetry_report->symmetry_adapted_dof_subspace);
 }
 
+Eigen::MatrixXd make_homogeneous_mode_space(
+    std::vector<DoFSetInfo> const &dof_info) {
+  Index tot_dim = 0;
+  for (const auto& site_dof : dof_info) {
+    tot_dim += site_dof.dim();
+  }
+
+  Eigen::MatrixXd homogeneous_mode_space(tot_dim,
+                                         dof_info[0].inv_basis().cols());
+
+  Index l = 0;
+  for (const auto& site_dof : dof_info) {
+    homogeneous_mode_space.block(l, 0, site_dof.dim(),
+                                 site_dof.inv_basis().cols()) =
+        site_dof.inv_basis();
+    l += site_dof.dim();
+  }
+
+  return homogeneous_mode_space;
+}
+
+VectorSpaceMixingInfo::VectorSpaceMixingInfo(
+    Eigen::MatrixXd const &column_vector_space, Eigen::MatrixXd const &subspace,
+    double tol) {
+  // Make a projection operator out of homogeneous mode space and project each
+  // of the basis vectors onto it If they have a partial projection (not full or
+  // zero) => translational modes are mixed between irreps
+  Eigen::MatrixXd proj_operator = subspace * subspace.transpose();
+  for (Index i = 0; i < column_vector_space.cols(); ++i) {
+    Eigen::VectorXd col_projection = proj_operator * column_vector_space.col(i);
+    if (col_projection.isZero(tol)) {
+      axes_not_in_subspace.push_back(i);
+    } else if (CASM::almost_equal(col_projection.normalized(),
+                                  column_vector_space.col(i).normalized(),
+                                  tol)) {
+      axes_in_subspace.push_back(i);
+    }
+
+    else {
+      axes_mixed_with_subspace.push_back(i);
+    }
+  }
+
+  if (axes_mixed_with_subspace.size() == 0) {
+    are_axes_mixed_with_subspace = false;
+  }
+}
+
+Eigen::MatrixXd symmetry_adapted_axes_without_homogeneous_modes(
+    DoFSpace const &symmetry_adapted_dof_space,
+    ConfigEnumInput const &initial_state) {
+  auto const& dof_info = initial_state.configuration()
+                             .configdof()
+                             .local_dof(symmetry_adapted_dof_space.dof_key())
+                             .info();
+
+  Eigen::MatrixXd homogeneous_mode_space =
+      make_homogeneous_mode_space(dof_info);
+
+  Eigen::MatrixXd null_space =
+      homogeneous_mode_space.transpose().fullPivLu().kernel();
+
+  std::vector<PermuteIterator> group = make_invariant_subgroup(initial_state);
+
+  auto irreps = irrep_decomposition(
+      initial_state.sites().begin(), initial_state.sites().end(),
+      initial_state.configuration().supercell().sym_info(),
+      symmetry_adapted_dof_space.dof_key(), group, null_space);
+
+  Eigen::MatrixXd axes = full_trans_mat(irreps).transpose();
+
+  return axes;
+}
 }  // namespace CASM
