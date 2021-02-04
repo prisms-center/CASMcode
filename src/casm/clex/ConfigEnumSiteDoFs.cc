@@ -23,6 +23,7 @@ ConfigEnumSiteDoFs::ConfigEnumSiteDoFs(
     Index _max_nonzero)
     :
 
+      // m_current(_init.config()),
       m_dof_key(_dof),
       m_min_nonzero(_min_nonzero),
       m_max_nonzero(_max_nonzero),
@@ -35,14 +36,13 @@ ConfigEnumSiteDoFs::ConfigEnumSiteDoFs(
       m_subset_mode(false),
       // m_combo_mode(false),
       m_combo_index(0) {
-  Configuration const &configuration = _init.configuration();
-
-  if (configuration.size() != m_sites.size()) m_subset_mode = true;
+  if (_init.configuration().size() != _init.sites().size())
+    m_subset_mode = true;
 
   if (m_axes.cols() == 0) {
     this->_invalidate();
   } else {
-    m_current = notstd::make_cloneable<Configuration>(configuration);
+    m_current = notstd::make_cloneable<Configuration>(_init.configuration());
     reset_properties(*m_current);
 
     m_dof_vals = &(m_current->configdof().local_dof(m_dof_key));
@@ -54,7 +54,11 @@ ConfigEnumSiteDoFs::ConfigEnumSiteDoFs(
       m_combo.resize(m_max_nonzero - 1);
       m_combo_index = m_max_nonzero;
     }
-    if (_increment_combo()) this->_initialize(&(*m_current));
+
+    if (_increment_combo()) {
+      this->_initialize(&(*m_current));
+    }
+
     _set_dof();
     m_current->set_source(this->source(step()));
   }
@@ -79,10 +83,9 @@ bool ConfigEnumSiteDoFs::_increment_combo() {
     Eigen::VectorXd vmin(m_combo.size()), vmax(m_combo.size()),
         vinc(m_combo.size());
     for (Index i = 0; i < m_combo.size(); ++i) {
-      Index j = m_combo.size() - 1 - i;
-      vmin[i] = m_min[m_combo[j]];
-      vmax[i] = m_max[m_combo[j]];
-      vinc[i] = m_inc[m_combo[j]];
+      vmin[i] = m_min[m_combo[i]];
+      vmax[i] = m_max[m_combo[i]];
+      vinc[i] = m_inc[m_combo[i]];
       if (almost_zero(vmin[i]) && almost_zero(vmax[i])) invalid = true;
     }
     m_combo_index++;
@@ -100,19 +103,23 @@ void ConfigEnumSiteDoFs::_set_dof() {
   Eigen::MatrixXd vals = m_current->configdof().local_dof(m_dof_key).values();
   Eigen::VectorXd pert_vals(Eigen::VectorXd::Zero(m_axes.rows()));
 
-  for (Index i = 0; i < m_combo.size(); ++i)
+  for (Index i = 0; i < m_combo.size(); ++i) {
     pert_vals += m_counter[i] * m_axes.col(m_combo[i]);
+  }
+
   Index l = 0;
 
   for (Index i = 0; i < m_sites.size(); ++i) {
     for (Index j = 0; j < m_dof_dims[i]; ++j, ++l) {
       vals(j, m_sites[i]) = pert_vals(l);
     }
+
     if (m_unit_length) {
       double tnorm = vals.col(m_sites[i]).norm();
       if (!almost_zero(tnorm)) vals.col(m_sites[i]) /= tnorm;
     }
   }
+
   m_current->configdof().set_local_dof(m_dof_key, vals);
 }
 
@@ -155,5 +162,4 @@ bool ConfigEnumSiteDoFs::_check_current() const {
   // return current().is_primitive() && _check_sparsity() && (m_subset_mode ||
   // current().is_canonical());
 }
-
 }  // namespace CASM

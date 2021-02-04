@@ -16,6 +16,7 @@
 #include "casm/enumerator/io/dof_space_analysis.hh"
 #include "casm/enumerator/io/json/ConfigEnumInput_json_io.hh"
 #include "casm/enumerator/io/json/DoFSpace.hh"
+#include "casm/symmetry/SupercellSymInfo_impl.hh"
 #include "casm/symmetry/SymRepTools.hh"
 #include "casm/symmetry/io/json/SymRepTools.hh"
 
@@ -248,6 +249,12 @@ std::string ConfigEnumSiteDoFsInterface::desc() const {
       "    If array, dimension must be equal to the \"axes\" dimension.\n"
       "    Ex: \"max\" : [0.005, 0.01, 0.01]\n\n"
 
+      "  exclude_homogeneous_modes: bool (optional, default=false)\n"
+      "   If true, enumerator only returns non-homogeneous modes. In the case "
+      "of \"disp\" dof this "
+      "   excludes all rigid translations. This option is allowed only for "
+      "\"sym_axes\":true\n\n"
+
       "  min_nonzero: integer (optional, default = 0) \n"
       "    Minimum number of coordinate amplitudes that are allowed\n"
       "    to be nonzero. Must be less than or equal to the \"axes\" "
@@ -347,8 +354,15 @@ void parse(InputParser<ConfigEnumSiteDoFsParams> &parser,
   // "max_nonzero" -> params.max_nonzero
   // note that help indicates default==axes.rows(), but that is
   // params.axes.cols()
-  parser.optional_else(params.min_nonzero, "max_nonzero",
+  parser.optional_else(params.max_nonzero, "max_nonzero",
                        Index{params.axes.cols()});
+
+  // Throw error if min_nonzero exceeds max_nonzero
+  if (params.min_nonzero > params.max_nonzero) {
+    std::stringstream msg;
+    msg << "'min_nonzero' value exceeds 'max_nonzero' value" << std::endl;
+    parser.error.insert(msg.str());
+  }
 }
 
 void require_all_input_have_the_same_number_of_selected_sites(
@@ -379,15 +393,18 @@ namespace ConfigEnumSiteDoFsInterface_impl {
 struct MakeEnumerator {
   MakeEnumerator(ConfigEnumSiteDoFsParams const &_params,
                  bool _make_symmetry_adapted_axes,
+                 bool _exclude_homogeneous_modes,
                  DoFSpaceIO::SequentialDirectoryOutput &_dof_space_output)
       : log(CASM::log()),
         params(_params),
         make_symmetry_adapted_axes(_make_symmetry_adapted_axes),
+        exclude_homogeneous_modes(_exclude_homogeneous_modes),
         dof_space_output(_dof_space_output) {}
 
   Log &log;
   ConfigEnumSiteDoFsParams const &params;
   bool make_symmetry_adapted_axes;
+  bool exclude_homogeneous_modes;
   DoFSpaceIO::SequentialDirectoryOutput &dof_space_output;
 
   ConfigEnumSiteDoFs operator()(Index index, std::string name,
@@ -406,11 +423,98 @@ struct MakeEnumerator {
       dof_space = make_symmetry_adapted_dof_space(
           dof_space, initial_state, group, calc_wedges, sym_report);
       params_copy.axes = dof_space.basis();
+
+      // If exclude homogeneous modes is true resize all the inc, min, max
+      // values and explicitly compute the symmetry adapted axes without
+      // homogeneous modes
+      if (exclude_homogeneous_modes == true) {
+        log << "Excluding homogeneous modes..." << std::endl;
+
+        params_copy.axes = symmetry_adapted_axes_without_homogeneous_modes(
+            dof_space, initial_state);
+
+        if (almost_zero(params_copy.min_val)) {
+          params_copy.min_val.conservativeResize(params_copy.axes.cols());
+        }
+
+        if (almost_zero(params_copy.inc_val -
+                        Eigen::VectorXd::Constant(params_copy.inc_val.rows(),
+                                                  params_copy.inc_val(0)))) {
+          params_copy.inc_val.conservativeResize(params_copy.axes.cols());
+        }
+
+        if (almost_zero(params_copy.max_val -
+                        Eigen::VectorXd::Constant(params_copy.max_val.rows(),
+                                                  params_copy.max_val(0)))) {
+          params_copy.max_val.conservativeResize(params_copy.axes.cols());
+        }
+
+        if (params_copy.max_nonzero == dof_space.basis().cols()) {
+          params_copy.max_nonzero = params_copy.axes.cols();
+        }
+
+        if (params_copy.axes.cols() != params_copy.min_val.rows() ||
+            params_copy.axes.cols() != params_copy.max_val.rows() ||
+            params_copy.axes.cols() != params_copy.inc_val.rows()) {
+          std::stringstream msg;
+          msg << "Since \"sym_axes\" is set to be true along with switching "
+                 "off homogeneous modes, irreps "
+                 "containing "
+                 "homogeneous modes will be excluded. This implies you need to "
+                 "set your \"min\", "
+                 "\"max\", "
+                 "\"inc\" to match "
+                 "with the dimensionality of new irreps. Please make sure that "
+                 "the dimensionality of your "
+                 "\"min\", \"max_val\" "
+                 "and \"inc\" to have dimensions of \""
+              << params_copy.axes.cols() << "\n";
+
+          throw std::runtime_error(msg.str());
+        }
+
+        if (params_copy.max_nonzero > params_copy.axes.cols()) {
+          std::stringstream msg;
+          msg << "Since sym_axes is set to be true along with switching off "
+                 "homogeneous modes, irreps "
+                 "containing "
+                 "homogeneous modes will be excluded. This implies you need to "
+                 "set your \"max_nonzero\" to not "
+                 "exceed "
+              << params_copy.axes.cols() << "\n";
+
+          throw std::runtime_error(msg.str());
+        }
+
+        if (params_copy.min_nonzero > params_copy.axes.cols()) {
+          std::stringstream msg;
+          msg << "Since sym_axes is set to be true along with switching off "
+                 "homogeneous modes, irreps containing homogeneous modes will "
+                 "be excluded. This implies you need to set your "
+                 "\"min_nonzero\" to not exceed your new maximum "
+                 "\"max_nonzero\": "
+              << params_copy.axes.cols() << "value\n";
+          throw std::runtime_error(msg.str());
+        }
+      }
+
+      auto const &dof_info = initial_state.configuration()
+                                 .configdof()
+                                 .local_dof(params.dof)
+                                 .info();
+      Eigen::MatrixXd homogeneous_mode_space =
+          make_homogeneous_mode_space(dof_info);
+
+      if (VectorSpaceMixingInfo{params_copy.axes, homogeneous_mode_space,
+                                CASM::TOL}
+              .are_axes_mixed_with_subspace) {
+        log << "WARNING! Irreps have non-homogeneous and homogeneous modes "
+               "mixed. Proceed with caution.\n";
+      }
     }
 
     dof_space_output.write_dof_space(index, dof_space, name, initial_state,
                                      sym_report);
-
     return ConfigEnumSiteDoFs{initial_state, params_copy};
   }
 };
@@ -465,6 +569,46 @@ void ConfigEnumSiteDoFsInterface::run(
   parser.optional_else(print_dof_space_and_quit_option,
                        "print_dof_space_and_quit", false);
 
+  // Check for "exclude_homogeneous_modes" option
+  bool exclude_homogeneous_modes;
+  parser.optional_else(exclude_homogeneous_modes, "exclude_homogeneous_modes",
+                       false);
+
+  // If sym_axes is false along with exclude_homogeneous_modes true,
+  // throw an error as we do not have it implemented in the current section of
+  // the code
+  if (sym_axes_option == false && exclude_homogeneous_modes == true) {
+    std::stringstream msg;
+    msg << "You may not use 'exclude_homogeneous_modes' = true with "
+           "\"sym_axes\" : false. "
+           "Alternatives: \n 1) Use "
+           "\"adapted_axes_without_homogeneous_modes\" provided in the "
+           "DoF space symmetry analysis for \"axes\" and "
+           "\"exclude_homogeneous_modes\" = false \n 2) "
+           "Directly use \"exclude_homogeneous_modes\" = true without"
+           "\"sym_axes\" = true) \n"
+        << std::endl;
+    parser.error.insert(msg.str());
+  }
+
+  // Throw error if min, max, inc are provided as vectors when using sym_axes
+  std::vector<std::string> axes_attribs{"min", "max", "increment"};
+  if (sym_axes_option == true) {
+    for (auto attrib : axes_attribs) {
+      if (parser.self.contains(attrib)) {
+        if (!parser.self[attrib].is_number()) {
+          std::stringstream msg;
+          msg << "Error: \"" << attrib
+              << "\" should not be a vector. Since you're using \"sym_axes\" : "
+                 "true, provide only a value. To be able to use custom "
+                 "increment/minimum/maximum values for symmetry adapted axes, "
+                 "copy it into \"axes\" and set \"sym_axes\" : false";
+          parser.error.insert(msg.str());
+        }
+      }
+    }
+  }
+
   // parse "output_dir" (optional, default = current_path)
   fs::path output_dir;
   parser.optional_else(output_dir, "output_dir", fs::current_path());
@@ -490,8 +634,9 @@ void ConfigEnumSiteDoFsInterface::run(
   // 4) Enumerate configurations ------------------
 
   DoFSpaceIO::SequentialDirectoryOutput dof_space_output{output_dir};
+
   ConfigEnumSiteDoFsInterface_impl::MakeEnumerator make_enumerator_f{
-      params, sym_axes_option, dof_space_output};
+      params, sym_axes_option, exclude_homogeneous_modes, dof_space_output};
 
   typedef ConfigEnumData<ConfigEnumSiteDoFs, ConfigEnumInput>
       ConfigEnumDataType;

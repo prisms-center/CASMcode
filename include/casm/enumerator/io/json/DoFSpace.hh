@@ -61,6 +61,10 @@ struct AxesCounterParams {
 /// Parse DoFSpace subspace from  "axes" and normal coordinate grid counter from
 /// "min", "max", and "increment"
 void parse(InputParser<AxesCounterParams> &parser, Index dof_space_dimension);
+
+/// Adds homogeneous mode info to the json file
+void add_homogeneous_mode_info(jsonParser &json, DoFSpace const &dofspace,
+                               ConfigEnumInput const &input_state);
 }  // namespace CASM
 
 #endif

@@ -221,6 +221,42 @@ class make_symmetry_adapted_dof_space_error : public std::runtime_error {
   virtual ~make_symmetry_adapted_dof_space_error() {}
 };
 
+/// Constructs a homogeneous mode space of the dof space represented in terms of
+/// user defined axes. Returns a column vectors matrix
+Eigen::MatrixXd make_homogeneous_mode_space(
+    std::vector<DoFSetInfo> const &dof_info);
+
+/// A struct which gives out the mixing information of given column_vector_space
+/// and a subspace For example, consider a column_vector_space of 3 dimensions.
+/// Let it be [q1, q2, q3] where q1, q2 and q3 are columns of the said vector
+/// space Let's say q1 - has a zero projection onto the given subspace, q2 - has
+/// partial projection onto the subspace, q3 - full projection onto the subspace
+/// Then axes_not_in_subspace will be {0} - where 0 is the index of the column
+/// of the column_vector_space which has zero projection onto the given subspace
+/// Similarly, axes_in_subspace will be {2} & axes_mixed_with_subspace will be
+/// {1} If any of the columns of the given column_vector_space has a partial
+/// projection onto the subspace, are_axes_mixed_with_subspace will be true;
+/// otherwise it will be false
+struct VectorSpaceMixingInfo {
+  VectorSpaceMixingInfo(Eigen::MatrixXd const &column_vector_space,
+                        Eigen::MatrixXd const &subspace, double tol);
+  std::vector<Index> axes_not_in_subspace;
+  std::vector<Index> axes_in_subspace;
+  std::vector<Index> axes_mixed_with_subspace;
+  bool are_axes_mixed_with_subspace = true;
+};
+
+/// Returns symmetry adapted axes with homogeneous modes removed
+/// The result of this function might be different from just the symmetry
+/// adapted axes computed using irrep decomposition and explicitly removing the
+/// homogeneous modes by identifying them using the
+/// VectorSpaceMixingInfo struct. This is implemented by
+/// computing the null space of the homogeneous mode space and using it is a
+/// subspace while performing irrep decomposition
+Eigen::MatrixXd symmetry_adapted_axes_without_homogeneous_modes(
+    DoFSpace const &symmetry_adapted_dof_space,
+    ConfigEnumInput const &initial_state);
+
 }  // namespace CASM
 
 #endif
