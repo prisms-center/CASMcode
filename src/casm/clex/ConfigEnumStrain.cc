@@ -13,6 +13,20 @@
 
 namespace CASM {
 
+namespace {
+
+// Increment past any values outside ellipsoid defined by shape_factor
+// matrix (if trim_corners==true)
+void advance_past_corners(EigenCounter<Eigen::VectorXd> &counter,
+                          Eigen::MatrixXd shape_factor) {
+  while (counter.valid() &&
+         double(counter().transpose() * shape_factor * counter()) > 1.0 + TOL) {
+    ++counter;
+  }
+}
+
+}  // namespace
+
 ConfigEnumStrain::ConfigEnumStrain(ConfigEnumInput const &initial_state,
                                    ConfigEnumStrainParams const &params)
     : ConfigEnumStrain(initial_state, params.wedges, params.min_val,
@@ -31,47 +45,58 @@ ConfigEnumStrain::ConfigEnumStrain(
       m_wedges(wedges),
       m_shape_factor(
           Eigen::MatrixXd::Identity(min_val.size(), min_val.size())) {
-  // Condition range arrays and build shape_factor matrix
-  Index nc = 0;
+  // Check there are wedges to counter over
   if (m_wedges.size() == 0) return;
-  Index nsub = m_wedges[0].irrep_wedges().size();
-  for (Index s = 0; s < nsub; s++) {
-    double abs_mag = 0.;
-    for (Index i = 0; i < m_wedges[0].irrep_wedges()[s].axes.cols(); i++)
-      abs_mag = max<double>(abs_mag, max(abs(max_val(nc)), abs(min_val(nc))));
 
-    for (Index i = 0; i < m_wedges[0].irrep_wedges()[s].axes.cols();
-         i++, nc++) {
-      if (m_wedges[0].irrep_wedges()[s].mult[i] == 1 && auto_range) {
-        min_val(nc) = -max_val(nc);
+  // Check for dimensional mismatches
+  if (min_val.size() != m_wedges[0].trans_mat().cols() ||
+      min_val.size() != inc_val.size() || min_val.size() != max_val.size()) {
+    std::stringstream msg;
+    msg << "Error in ConfigEnumStrain: dimension mismatch";
+    throw std::runtime_error(msg.str());
+  }
+
+  // Check for very small inc_val that would cause problems. Currently it is
+  // hard-coded that there should not be >1e4 points along a dimension
+  for (int d = 0; d < inc_val.size(); ++d) {
+    if (inc_val(d) == 0. || (max_val(d) - min_val(d)) / inc_val(d) > 1e4) {
+      std::stringstream msg;
+      msg << "Error in ConfigEnumStrain: Increment along dimension " << d
+          << " is too small: " << inc_val(d);
+      throw std::runtime_error(msg.str());
+    }
+  }
+
+  // If auto_range==true, set min_val[i]=-max_val[i], for strain components, i,
+  // with multiplicity==1. Typically, set to true if using symmetry adapted axes
+  if (auto_range) {
+    int d = 0;
+    for (auto const &irrep_wedge : m_wedges[0].irrep_wedges()) {
+      for (int i = 0; i < irrep_wedge.axes.cols(); ++i) {
+        if (irrep_wedge.mult[i] == 1) {
+          min_val(d) = -max_val(d);
+        }
+        d++;
       }
+    }
+  }
 
-      if (abs_mag > TOL) m_shape_factor(nc, nc) /= abs_mag * abs_mag;
-
-      if (inc_val(nc) == 0. ||
-          (max_val(nc) - min_val(nc)) / inc_val(nc) > 1e4) {
-        max_val(nc) = min_val(nc) + TOL;
-        inc_val(nc) = 10 * TOL;
-      }
+  // If trim_corners==true, set shape_factor matrix to exclude grid points
+  // that lie outside an ellipsoid defined by most extreme min_val/max_val
+  // Excluded if:
+  //     m_counter().transpose() * m_shape_factor * m_counter() > 1.0 + TOL
+  if (m_trim_corners) {
+    int dim = min_val.size();
+    for (int d = 0; d < dim; ++d) {
+      double mag = max(abs(min_val(d)), abs(max_val(d)));
+      m_shape_factor(d, d) = 1. / (mag * mag);
     }
   }
 
   // Find first valid config
   m_counter = EigenCounter<Eigen::VectorXd>(min_val, max_val, inc_val);
-
   m_counter.reset();
-
-  // Increment past any invalid values, including those that are outside
-  // specified ellipsoid (if trim_corners==true)
-
-  while (
-      m_counter.valid() &&
-      (trim_corners &&
-       double(m_counter().transpose() *
-              m_wedges[m_equiv_ind].trans_mat().transpose() * m_shape_factor *
-              m_wedges[m_equiv_ind].trans_mat() * m_counter()) > 1.0 + TOL)) {
-    ++m_counter;
-  }
+  if (m_trim_corners) advance_past_corners(m_counter, m_shape_factor);
 
   reset_properties(m_current);
   m_current.configdof().set_global_dof(
@@ -82,56 +107,23 @@ ConfigEnumStrain::ConfigEnumStrain(
     this->_invalidate();
   }
 
-  // auto &log = CASM::log();
-  // log.subsection().begin_section<Log::debug>();
-  // log.indent() << "normal coordinates: " << m_counter().transpose() <<
-  // std::endl; log.indent() << "dof value: " <<
-  // (m_wedges[m_equiv_ind].trans_mat() * m_counter()).transpose() << std::endl;
-  // log.indent() << std::endl;
-  // log.end_section();
-
   m_current.set_source(this->source(step()));
 }
 
 // Implements _increment
 void ConfigEnumStrain::increment() {
-  // Increment past any invalid values, including those that are outside
-  // specified ellipsoid (if trim_corners==true)
-  while (
-      ++m_counter &&
-      (m_trim_corners &&
-       double(m_counter().transpose() *
-              m_wedges[m_equiv_ind].trans_mat().transpose() * m_shape_factor *
-              m_wedges[m_equiv_ind].trans_mat() * m_counter()) > 1.0 + TOL)) {
-  }
+  ++m_counter;
+  if (m_trim_corners) advance_past_corners(m_counter, m_shape_factor);
 
-  // move to next part of wedge if necessary
+  // Move to next part of wedge if necessary
   if (!m_counter.valid() && m_equiv_ind + 1 < m_wedges.size()) {
     m_counter.reset();
     ++m_equiv_ind;
 
-    // Increment past any invalid values, including those that are outside
-    // specified ellipsoid (if trim_corners==true)
-    // this time it's for the new wedge
-
-    while (
-        m_counter &&
-        (m_trim_corners &&
-         double(m_counter().transpose() *
-                m_wedges[m_equiv_ind].trans_mat().transpose() * m_shape_factor *
-                m_wedges[m_equiv_ind].trans_mat() * m_counter()) > 1.0 + TOL)) {
-      ++m_counter;
-    }
+    if (m_trim_corners) advance_past_corners(m_counter, m_shape_factor);
   }
 
   if (m_counter.valid()) {
-    // auto &log = CASM::log();
-    // log.subsection().begin_section<Log::debug>();
-    // log.indent() << "normal coordinates: " << m_counter().transpose() <<
-    // std::endl; log.indent() << "dof value: " <<
-    // (m_wedges[m_equiv_ind].trans_mat() * m_counter()).transpose() <<
-    // std::endl; log.indent() << std::endl; log.end_section();
-
     m_current.configdof().set_global_dof(
         m_strain_key, m_wedges[m_equiv_ind].trans_mat() * m_counter());
 
