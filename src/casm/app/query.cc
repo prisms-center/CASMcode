@@ -479,7 +479,7 @@ int QueryCommandImpl<DataObject>::_query() const {
         _query_equivalents(formatter, json, m_cmd.primclex(), *it);
       } else {
         QueryData<DataObject> data{m_cmd.primclex(), *it};
-        json = formatter(data);
+        json.push_back(formatter(data));
       }
     }
     output_stream << json;
