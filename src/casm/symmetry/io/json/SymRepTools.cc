@@ -139,7 +139,7 @@ jsonParser &to_json(VectorSpaceSymReport const &obj, jsonParser &json) {
         "subwedge_axes_" +
         to_sequential_string(i + 1, obj.irreducible_wedge.size());
     json["irreducible_wedge"][subwedge_name] =
-        obj.irreducible_wedge[i].trans_mat();
+        obj.irreducible_wedge[i].trans_mat().transpose();
   }
 
   return json;
