@@ -1,6 +1,7 @@
 #ifndef BASICSTRUCTURETOOLS_HH
 #define BASICSTRUCTURETOOLS_HH
 
+#include <set>
 #include <vector>
 
 #include "casm/crystallography/Lattice.hh"
@@ -45,12 +46,18 @@ void sort_factor_group(std::vector<SymOp> &factor_group, const Lattice &lat);
 std::vector<SymOp> make_factor_group(const BasicStructure &struc,
                                      double tol = TOL);
 
-/// Create the permtuation group of the given structure. The permutation group
-/// can be used to identify how the basis of this structure are transformed
-/// under the application of a symmetry operation.
+/// Create the permutation group of a structure.
 std::vector<Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic, Index>>
 make_permutation_representation(const xtal::BasicStructure &struc,
                                 const std::vector<SymOp> &factor_group);
+
+/// Return indices of equivalent basis sites
+std::set<std::set<Index>> make_asymmetric_unit(
+    const xtal::BasicStructure &struc, const std::vector<SymOp> &factor_group);
+
+/// Return indices of equivalent basis sites
+std::set<std::set<Index>> make_asymmetric_unit(
+    const xtal::BasicStructure &struc);
 
 // TODO: Rename to symmetrize_basis and have it take vector<Site> and Lattice?
 // seems like a symmetrize routine that takes a structure should also symmetrize

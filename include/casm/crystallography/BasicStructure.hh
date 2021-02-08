@@ -130,17 +130,23 @@ class BasicStructure {
 
 /* BasicStructure operator*(const Lattice &LHS, const BasicStructure &RHS); */
 
+/// To which site a SymOp transforms each basis site
 std::vector<UnitCellCoord> symop_site_map(SymOp const &_op,
                                           BasicStructure const &_struc);
+
+/// To which site a SymOp transforms each basis site
 template <typename ExternSymOp>
 std::vector<UnitCellCoord> symop_site_map(ExternSymOp const &_op,
                                           BasicStructure const &_struc) {
   return symop_site_map(adapter::Adapter<SymOp, ExternSymOp>()(_op), _struc);
 }
 
+/// To which site a SymOp transforms each basis site
 std::vector<UnitCellCoord> symop_site_map(SymOp const &_op,
                                           BasicStructure const &_struc,
                                           double _tol);
+
+/// To which site a SymOp transforms each basis site
 template <typename ExternSymOp>
 std::vector<UnitCellCoord> symop_site_map(ExternSymOp const &_op,
                                           BasicStructure const &_struc,

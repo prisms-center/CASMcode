@@ -499,21 +499,25 @@ std::vector<SymOp> make_factor_group(const BasicStructure &struc, double tol) {
   return factor_group;
 }
 
-/** \brief make_permutation_representation - The permutation representation for
- * a structure is obtained by applying each factor group operation to the
- * structure and identifying the index of the symmetry transformed site
- *
- *     \param struc xtal::BasicStructure the structure for which the permutation
- * group is required
- *     \param factor_group std::vector<SymOp> the factor group
- * generated for struc. You should be able to generate this with
- * xtal::make_factor_group(struc)
- *     \return std::vector<Eigen::PermutationMatrix> The permutation matrix at
- * index idx corresponds to the effect of the symmetry operation in
- * factor_group[idx] on the basis.
- *
- *
- * */
+/// Create the permutation group of a structure.
+///
+/// The permutation group can be used to identify how the basis of a
+/// structure is transformed under the application of a symmetry operation. The
+/// permutation representation for a structure is obtained by applying each
+/// factor group operation to the structure and identifying the index of the
+/// symmetry transformed site.
+///
+/// \param struc The input structure
+/// \param factor_group The factor group of `struc`, such as generated with
+///     `xtal::make_factor_group(struc)`.
+///
+/// \return The permutation matrix at index `idx` corresponds to the effect of
+/// the symmetry operation in `factor_group[idx]` on the basis.
+///
+/// The Eigen::PermutationMatrix value is stored in a vector of `indices()`:
+/// - values_after = values_before * permutation_matrix;
+/// - values_after[permutation_matrix.indices()[i]] = values_before[i]
+///
 std::vector<Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic, Index>>
 make_permutation_representation(const xtal::BasicStructure &struc,
                                 const std::vector<SymOp> &factor_group) {
@@ -553,6 +557,52 @@ make_permutation_representation(const xtal::BasicStructure &struc,
     perm_rep[s].indices() = index_matrix;
   }
   return perm_rep;
+}
+
+/// Return indices of equivalent basis sites
+///
+/// \param struc Input structure
+/// \param factor_group Symmetry operations of the input structure.
+///
+/// \returns One `std::set<Index>` for each orbit of equivalent basis sites.
+///
+/// Note:
+/// - This function assumes the operations in `factor_group` do in fact map
+///   sites onto equivalents sites and does not double-check site equivalence.
+std::set<std::set<Index>> make_asymmetric_unit(
+    const xtal::BasicStructure &struc, const std::vector<SymOp> &factor_group) {
+  double tol = struc.lattice().tol();
+
+  auto transformed_site_index = [&](Site const &site, SymOp const &op) {
+    Site transformed_site = op * site;
+    return UnitCellCoord::from_coordinate(struc, transformed_site, tol)
+        .sublattice();
+  };
+
+  std::set<std::set<Index>> asym_unit;
+  for (Site const &site : struc.basis()) {
+    std::set<Index> equivalent_sites;
+    for (SymOp const &op : factor_group) {
+      equivalent_sites.insert(transformed_site_index(site, op));
+    }
+    asym_unit.insert(equivalent_sites);
+  }
+  return asym_unit;
+}
+
+/// Return indices of equivalent basis sites
+///
+/// Equivalent to:
+/// \code
+/// std::vector<SymOp> factor_group = make_factor_group(struc,
+///                                                     struc.lattice().tol());
+/// return make_asymmetric_unit(struc, factor_group);
+/// \endcode
+std::set<std::set<Index>> make_asymmetric_unit(
+    const xtal::BasicStructure &struc) {
+  std::vector<SymOp> factor_group =
+      make_factor_group(struc, struc.lattice().tol());
+  return make_asymmetric_unit(struc, factor_group);
 }
 
 BasicStructure symmetrize(const BasicStructure &structure,

@@ -330,6 +330,13 @@ bool BasicStructure::is_time_reversal_active() const {
 
 //***********************************************************
 
+/// To which site a SymOp transforms each basis site
+///
+/// The resulting value satisifies, for all b:
+/// \code
+/// double _tol = _struc.lattice().tol();
+/// result[b] == UnitCellCoord::from_coordinate(_op * _struc.basis()[b], _tol)
+/// \endcode
 std::vector<UnitCellCoord> symop_site_map(SymOp const &_op,
                                           BasicStructure const &_struc) {
   return symop_site_map(_op, _struc, _struc.lattice().tol());
@@ -337,6 +344,12 @@ std::vector<UnitCellCoord> symop_site_map(SymOp const &_op,
 
 //***********************************************************
 
+/// To which site a SymOp transforms each basis site
+///
+/// The resulting value satisifies, for all b:
+/// \code
+/// result[b] == UnitCellCoord::from_coordinate(_op * _struc.basis()[b], _tol)
+/// \endcode
 std::vector<UnitCellCoord> symop_site_map(SymOp const &_op,
                                           BasicStructure const &_struc,
                                           double _tol) {
