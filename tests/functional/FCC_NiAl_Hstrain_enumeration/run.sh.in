@@ -107,8 +107,8 @@ cp_json_value_to_file $STRAIN_ANALYIS ".irreducible_representations.adapted_axes
 
 # Define the grid on which strained configurations will be sampled
 add_json_key_to_file strain_enum.json "min" "[-0.1, -0.1, -0.1, 0, 0, 0]"
-add_json_key_to_file strain_enum.json "max" "[0.101, 0.101, 0.101, 0, 0, 0]"
-add_json_key_to_file strain_enum.json "increment" "[0.05, 0.05, 0.05, 0, 0, 0]"
+add_json_key_to_file strain_enum.json "max" "[0.101, 0.101, 0.101, 0.001, 0.001, 0.001]"
+add_json_key_to_file strain_enum.json "increment" "[0.05, 0.05, 0.05, 0.05, 0.05, 0.05]"
 
 # Select the initial enumeration state L12 Ni3Al1
 add_json_key_to_file strain_enum.json "confignames" "[\"SCEL4_2_2_1_1_1_0/0\"]"

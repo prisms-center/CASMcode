@@ -61,7 +61,7 @@ ConfigEnumStrain::ConfigEnumStrain(
   for (int d = 0; d < inc_val.size(); ++d) {
     if (inc_val(d) == 0. || (max_val(d) - min_val(d)) / inc_val(d) > 1e4) {
       std::stringstream msg;
-      msg << "Error in ConfigEnumStrain: Increment along dimension " << d
+      msg << "Error in ConfigEnumStrain: Increment along dimension " << d + 1
           << " is too small: " << inc_val(d);
       throw std::runtime_error(msg.str());
     }
