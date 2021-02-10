@@ -50,6 +50,13 @@ class SupercellSymInfo {
   /// supercell's factor group
   SymGroupRep::RemoteHandle const &site_permutation_symrep() const;
 
+  /// \brief Const reference global DoF matrix representations of the
+  /// supercell's factor group
+  std::map<DoFKey, SymGroupRep::RemoteHandle> const &global_dof_symreps()
+      const {
+    return m_global_dof_symreps;
+  }
+
   /// Returns a "RemoteHandle" to the global DoF matrix representation of the
   /// supercell's factor group
   SymGroupRep::RemoteHandle const &global_dof_symrep(DoFKey const &_key) const {
@@ -66,6 +73,12 @@ class SupercellSymInfo {
   ///          sites are also permuted, then the occ_symrep is used as
   ///              site_at(site_index_after).specie(index_after)=site_at(site_index_before).specie(p[index_after]);
   SublatSymReps const &occ_symreps() const { return m_occ_symreps; }
+
+  /// \brief Const reference local DoF matrix representations of the
+  /// supercell's factor group
+  std::map<DoFKey, SublatSymReps> const &local_dof_symreps() const {
+    return m_local_dof_symreps;
+  }
 
   /// \brief SymGroupRep handle for site DoF matrix representation of
   /// supercell's factor group

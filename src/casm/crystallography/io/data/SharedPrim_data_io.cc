@@ -5,6 +5,7 @@
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
 #include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/io/BasicStructureIO.hh"
 #include "casm/symmetry/io/json/SymGroup_json_io.hh"
 
 namespace CASM {
@@ -118,7 +119,68 @@ SharedPrimFormatter<Index> crystal_point_group_size() {
                                     });
 }
 
-// -- misc.
+SharedPrimFormatter<jsonParser> basis_rep() {
+  return SharedPrimFormatter<jsonParser>(
+      "basis_rep",
+      "Describes how integral site coordinates transform under application of "
+      "symmetry. The element `basis_rep[i]` contains `matrix`, "
+      "`sublattice_permute`, and `sublattice_shift`, which describe how the "
+      "`i`th factor group operation transforms a basis site (b, r_frac) -> "
+      "(b', r_frac') according to: `b' = sublattice_permute[b]` and `r_frac' = "
+      "matrix * r_frac + sublattice_shift[b]`, where `b` is the basis "
+      "index and `r_frac` is the integer unit cell coordinate of a site.",
+      [](SharedPrim const &shared_prim) -> jsonParser {
+        jsonParser json;
+        write_basis_permutation_rep(shared_prim->factor_group(), json,
+                                    shared_prim->basis_permutation_symrep_ID());
+        return json;
+      });
+}
+
+SharedPrimFormatter<jsonParser> occ_permutation_rep() {
+  return SharedPrimFormatter<jsonParser>(
+      "occ_permutation_rep",
+      "The permutation occ_permutation_rep[b][i] describes how the `i`th "
+      "factor group operation transforms anisotropic occupant values on "
+      "sublattice `b`. The convention when applying symmetry operations to "
+      "transform occupation values is to first transform the occupant value "
+      "on site `l` (which is on sublattice `b`) according to `occ(l) = "
+      "occ_permutation_rep[b][i][occ(l)]`, then to permute occupant values "
+      "among sites.",
+      [](SharedPrim const &shared_prim) -> jsonParser {
+        jsonParser json;
+        write_occ_permutation_rep(shared_prim->factor_group(), json,
+                                  shared_prim->occupant_symrep_IDs());
+        return json;
+      });
+}
+
+// - matrix, vector<UnitCellCoord>, permutation
+// basis_permutation_matrix_rep // vector<PermutationMatrix>
+// occ_rep   // vector<SymPermutation>
+// site_dof_rep
+// global_dof_rep
+
+SharedPrimFormatter<bool> is_primitive() {
+  return SharedPrimFormatter<bool>(
+      "is_primitive", "Returns true if structure is the primitive structure",
+      [](SharedPrim const &shared_prim) -> double {
+        return xtal::is_primitive(*shared_prim);
+      });
+}
+
+SharedPrimFormatter<jsonParser> primitive() {
+  return SharedPrimFormatter<jsonParser>(
+      "primitive", "Returns the primitive structure, in prim JSON format.",
+      [](SharedPrim const &shared_prim) -> jsonParser {
+        xtal::BasicStructure primitive_struc =
+            xtal::make_primitive(*shared_prim, shared_prim->lattice().tol());
+
+        jsonParser json;
+        bool include_va = false;
+        return to_json(primitive_struc, json, FRAC, include_va);
+      });
+}
 
 SharedPrimFormatter<double> volume() {
   return SharedPrimFormatter<double>(
@@ -183,8 +245,9 @@ make_attribute_dictionary<std::shared_ptr<const Structure>>() {
   dict.insert(lattice_point_group(), lattice_point_group_name(),
               lattice_point_group_size(), factor_group(), factor_group_name(),
               factor_group_size(), crystal_point_group(),
-              crystal_point_group_name(), crystal_point_group_size(), volume(),
-              lattice(), lattice_column_matrix(), lattice_params(),
+              crystal_point_group_name(), crystal_point_group_size(),
+              basis_rep(), occ_permutation_rep(), is_primitive(), primitive(),
+              volume(), lattice(), lattice_column_matrix(), lattice_params(),
               asymmetric_unit());
 
   return dict;

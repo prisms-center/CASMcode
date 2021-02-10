@@ -1,10 +1,13 @@
 #include "casm/symmetry/io/json/SymGroup_json_io.hh"
 
 #include "casm/casm_io/container/json_io.hh"
+#include "casm/container/io/PermutationIO.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/global/enum/json_io.hh"
 #include "casm/misc/CASM_math.hh"
+#include "casm/symmetry/SymBasisPermute.hh"
 #include "casm/symmetry/SymGroup.hh"
+#include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/io/json/SymInfo_json_io.hh"
 
 namespace CASM {
@@ -12,10 +15,12 @@ namespace CASM {
 // --------- SymmetryIO Declarations
 // --------------------------------------------------
 
-void write_symop(const SymGroup &grp, Index i, jsonParser &j) {
+void write_symop(SymGroup const &grp, Index i, jsonParser &j) {
   j = jsonParser::object();
 
   const SymOp &op = grp[i];
+
+  j["master_group_index"] = op.master_group_index();
 
   to_json(op.matrix(), j["CART"]["matrix"]);
   to_json_array(op.tau(), j["CART"]["tau"]);
@@ -39,7 +44,7 @@ void write_symop(const SymGroup &grp, Index i, jsonParser &j) {
           j["info"]["brief"]["FRAC"]);
 }
 
-void write_symgroup(const SymGroup &grp, jsonParser &json) {
+void write_symgroup(SymGroup const &grp, jsonParser &json) {
   json = jsonParser::object();
   {
     jsonParser &json_ops = json["group_operations"];
@@ -89,6 +94,74 @@ void write_symgroup(const SymGroup &grp, jsonParser &json) {
 
   // Character table excluded for now. Will revisit after SymGroup is refactored
   // json["character_table"] = grp.character_table();
+}
+
+/// \brief Describes how integral site coordinates transform under application
+/// of symmetry.
+///
+/// Writes an array, with one element for each group element, containing:
+/// - matrix
+/// - sublattice_permute
+/// - sublattice_shift
+///
+/// The ith factor group operation transforms a basis site:
+///
+///     (b, r_frac) -> (b', r_frac')
+///
+/// according to:
+///
+///     b' = sublattice_permute[b]
+///     r_frac' = matrix * r_frac + sublattice_shift[b]`
+///
+/// where `b` is the basis index and `r_frac` is the integer unit cell
+/// coordinate of a site.
+void write_basis_permutation_rep(SymGroup const &grp,
+                                 jsonParser &group_rep_json,
+                                 SymGroupRepID symgrouprep_id) {
+  group_rep_json = jsonParser::array();
+  for (auto const &op : grp) {
+    jsonParser op_rep_json = jsonParser::object();
+    SymBasisPermute const &op_rep = *op.get_basis_permute_rep(symgrouprep_id);
+    op_rep_json["master_group_index"] = op_rep.master_group_index();
+    op_rep_json["matrix"] = op_rep.matrix();
+    op_rep_json["sublattice_permute"] = jsonParser::array();
+    op_rep_json["sublattice_shift"] = jsonParser::array();
+    for (auto const integral_coordinate : op_rep.data()) {
+      op_rep_json["sublattice_permute"].push_back(
+          integral_coordinate.sublattice());
+
+      jsonParser tjson;
+      to_json(integral_coordinate.unitcell(), tjson, jsonParser::as_flattest());
+      op_rep_json["sublattice_shift"].push_back(tjson);
+    }
+    group_rep_json.push_back(op_rep_json);
+  }
+}
+
+/// Writes a 3d array, where occ_permutation_rep[b][i] is the permutation array
+/// for occupant values on sublattice 'b', due to group operation grp[i],
+/// according to: occ(l) = occ_permutation_rep[b][i][occ(l)]. Occupation values
+/// are transformed on each site in this way before begin permuted among sites.
+void write_occ_permutation_rep(SymGroup const &grp, jsonParser &json,
+                               std::vector<SymGroupRepID> occupant_symrep_IDs) {
+  json = jsonParser::array();
+  for (auto symrep_ID : occupant_symrep_IDs) {
+    jsonParser sublattice_json = jsonParser::array();
+    for (auto const &op : grp) {
+      Permutation const &permute = *op.get_permutation_rep(symrep_ID);
+      jsonParser permute_json;
+      to_json(permute, permute_json);
+      sublattice_json.push_back(permute_json);
+    }
+    json.push_back(sublattice_json);
+  }
+}
+
+void write_matrix_rep(SymGroupRepHandle const &grp, jsonParser &json) {
+  json = jsonParser::array();
+  for (Index i = 0; i < grp.size(); ++i) {
+    json.push_back(*grp[i]->MatrixXd());
+  }
 }
 
 }  // namespace CASM
