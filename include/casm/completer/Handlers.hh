@@ -56,7 +56,8 @@ class ArgHandler {
     REF,
     ECI,
     PROPERTY,
-    DOF
+    DOF,
+    INFOMETHOD
   };
 
   /// Translate the stored boost value_name into an ARG_TYPE for the completer
@@ -113,6 +114,9 @@ class ArgHandler {
 
   /// Get value_type string for property mode completion
   static std::string dof();
+
+  /// Get value_type string for infomethod mode completion
+  static std::string infomethod();
 
   /// Fill the output strings with bash completion appropriate values for VOID
   /// (i.e. do nothing)
@@ -173,6 +177,10 @@ class ArgHandler {
 
   /// Fill the output strings with bash completion appropriate values for DOF
   static void dof_to_bash(std::vector<std::string> &arguments);
+
+  /// Fill the output strings with bash completion appropriate values for
+  /// INFOMETHOD
+  static void infomethod_to_bash(std::vector<std::string> &arguments);
 
  private:
   /// List of pairs relating the value type name of po::option_description to
@@ -887,6 +895,31 @@ class EnumOption : public EnumOptionBase {
   std::string m_method;
   std::string m_filter_str;
 };
+
+//*****************************************************************************************************//
+
+/**
+ * Options set for `casm info`. Get info about CASM objects.
+ */
+
+class InfoOption : public OptionHandlerBase {
+ public:
+  using OptionHandlerBase::input_str;
+  using OptionHandlerBase::settings_path;
+
+  InfoOption();
+
+  const std::vector<std::string> &desc_vec() const { return m_desc_vec; }
+
+  std::string method() const { return m_method; }
+
+ private:
+  void initialize() override;
+
+  std::vector<std::string> m_desc_vec;
+  std::string m_method;
+};
+
 //*****************************************************************************************************//
 
 /**

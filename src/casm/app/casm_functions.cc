@@ -12,6 +12,7 @@
 #include "casm/app/files.hh"
 #include "casm/app/format.hh"
 #include "casm/app/import.hh"
+#include "casm/app/info.hh"
 #include "casm/app/init.hh"
 #include "casm/app/monte.hh"
 #include "casm/app/query.hh"
@@ -117,6 +118,7 @@ CommandMap &command_map() {
       {"status", status_command},
       {"format", format_command},
       {"init", init_command},
+      {"info", run_api_command<InfoCommand>},
       {"settings", settings_command},
       {SymCommand::name, run_api_command<SymCommand>},
       {"composition", composition_command},

@@ -1437,6 +1437,65 @@ class Base2DDatumFormatter : public BaseValueFormatter<Container, DataObject> {
   virtual Base2DDatumFormatter *_clone() const override = 0;
 };
 
+/// \brief A DatumFormatter that returns a 2D value of specified type, via
+/// functions that may be specified at runtime
+///
+/// \ingroup DataFormatterTypes
+///
+template <typename Container, typename DataObject>
+class Generic2DDatumFormatter
+    : public Base2DDatumFormatter<Container, DataObject> {
+ public:
+  typedef std::function<Container(const DataObject &)> Evaluator;
+  typedef std::function<bool(const DataObject &)> Validator;
+
+  /// \brief Constructor
+  ///
+  /// \param _name Name of formatter
+  /// \param _desc Description of the formatter
+  /// \param _evaluator Returns a Container type piece of data about a
+  /// DataObject \param _validator Returns boolean indicating if the _evaluator
+  /// can be used successfully
+  ///
+  Generic2DDatumFormatter(const std::string &_name, const std::string &_desc,
+                          Evaluator _evaluator,
+                          Validator _validator = always_true<DataObject>)
+      : Base2DDatumFormatter<Container, DataObject>(_name, _desc),
+        m_evaluate(_evaluator),
+        m_validate(_validator) {}
+
+  // --- Required implementations -----------
+
+  /// \brief Returns Container type piece of data about a DataObject, the result
+  /// of the Evaluator
+  Container evaluate(const DataObject &obj) const override {
+    return m_evaluate(obj);
+  }
+
+  /// \brief Clone using copy constructor
+  std::unique_ptr<Generic2DDatumFormatter> clone() const {
+    return std::unique_ptr<Generic2DDatumFormatter>(this->_clone());
+  }
+
+  // --- Specialized implementation -----------
+
+  /// \brief Returns boolean indicating if the _evaluator can be used
+  /// successfully,
+  ///        the result of the Validator
+  bool validate(const DataObject &obj) const override {
+    return m_validate(obj);
+  }
+
+ private:
+  /// \brief Clone using copy constructor
+  Generic2DDatumFormatter *_clone() const override {
+    return new Generic2DDatumFormatter(*this);
+  }
+
+  Evaluator m_evaluate;
+  Validator m_validate;
+};
+
 template <typename DataObject>
 MatrixXdAttributeDictionary<DataObject> make_matrixxd_dictionary() {
   return MatrixXdAttributeDictionary<DataObject>();

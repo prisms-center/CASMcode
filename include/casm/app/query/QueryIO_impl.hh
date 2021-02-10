@@ -7,6 +7,7 @@
 #include "casm/symmetry/PermuteIterator.hh"
 #include "casm/symmetry/SupercellSymInfo_impl.hh"
 #include "casm/symmetry/SymInfo.hh"
+#include "casm/symmetry/io/stream/SymInfo_stream_io.hh"
 
 namespace CASM {
 
@@ -39,8 +40,7 @@ GenericDatumFormatter<Index, QueryDataType> equivalent_index() {
   return GenericDatumFormatter<Index, QueryDataType>(
       "equivalent_index",
       "[--include-equivalents query only] Index that counts over distinct "
-      "symmetrically "
-      "equivalent objects",
+      "symmetrically equivalent objects",
       [](QueryDataType const &data) -> Index { return data.equivalent_index; });
 }
 
@@ -49,10 +49,8 @@ GenericDatumFormatter<Index, QueryDataType> permute_scel_factor_group_op() {
   return GenericDatumFormatter<Index, QueryDataType>(
       "permute_scel_factor_group_op",
       "[--include-equivalents query only] Factor group operation (applied "
-      "before "
-      "translation operation) of the permutation that generated the equivalent "
-      "object, as "
-      "its index into the supercell factor group",
+      "before translation operation) of the permutation that generated the "
+      "equivalent object, as its index into the supercell factor group",
       [](QueryDataType const &data) -> Index {
         return data.permute_it->factor_group_index();
       });
@@ -63,10 +61,8 @@ GenericDatumFormatter<Index, QueryDataType> permute_factor_group_op() {
   return GenericDatumFormatter<Index, QueryDataType>(
       "permute_factor_group_op",
       "[--include-equivalents query only] Factor group operation (applied "
-      "before "
-      "translation operation) of the permutation that generated the equivalent "
-      "object, as "
-      "its index into the prim factor group",
+      "before translation operation) of the permutation that generated the "
+      "equivalent object, as its index into the prim factor group",
       [](QueryDataType const &data) -> Index {
         return data.permute_it->prim_factor_group_index();
       });
@@ -78,8 +74,7 @@ permute_factor_group_op_desc() {
   return GenericDatumFormatter<std::string, QueryDataType>(
       "permute_factor_group_op_desc",
       "[--include-equivalents query only] Description of prim factor group "
-      "operation that "
-      "generated the equivalent object.",
+      "operation that generated the equivalent object in Direct coordinates.",
       [](QueryDataType const &data) -> std::string {
         auto const &factor_group_op =
             data.permute_it
@@ -97,8 +92,7 @@ Generic1DDatumFormatter<Eigen::Vector3l, QueryDataType> permute_translation() {
       "permute_translation",
       "[--include-equivalents query only] Translation (applied after factor "
       "group operation) of the permutation that generated the equivalent "
-      "object, as "
-      "(i, j, k) multiples of the prim lattice vectors.",
+      "object, as (i, j, k) multiples of the prim lattice vectors.",
       [](QueryDataType const &data) -> Eigen::Vector3l {
         return data.permute_it->sym_info().unitcell_index_converter()(
             data.permute_it->translation_index());

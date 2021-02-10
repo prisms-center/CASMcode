@@ -504,4 +504,16 @@ void write_prim(const xtal::BasicStructure &prim, jsonParser &json,
   }
 }
 
+void from_json(xtal::BasicStructure &prim, jsonParser const &json,
+               double xtal_tol,
+               ParsingDictionary<AnisoValTraits> const *_aniso_val_dict) {
+  prim = read_prim(json, xtal_tol, _aniso_val_dict);
+}
+
+jsonParser &to_json(const xtal::BasicStructure &prim, jsonParser &json,
+                    COORD_TYPE mode, bool include_va) {
+  write_prim(prim, json, mode, include_va);
+  return json;
+}
+
 }  // namespace CASM

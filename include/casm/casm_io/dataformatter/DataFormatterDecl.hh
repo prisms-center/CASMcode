@@ -59,6 +59,12 @@ class Base2DDatumFormatter;
 template <typename Container, typename DataObject>
 class Generic2DDatumFormatter;
 
+/// \brief Dictionary of all Attribute types of DataObject
+///
+/// Default includes String, Boolean, Integer, Scalar, and VectorXd attributes
+template <typename DataObject>
+DataFormatterDictionary<DataObject> make_attribute_dictionary();
+
 /// \brief Template alias for BaseValueFormatter returning std::string
 ///
 /// \ingroup DataFormatterTypes

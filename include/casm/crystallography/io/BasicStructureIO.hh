@@ -103,6 +103,13 @@ void write_prim(const xtal::BasicStructure &prim, fs::path filename,
 void write_prim(const xtal::BasicStructure &prim, jsonParser &json,
                 COORD_TYPE mode, bool include_va = false);
 
+void from_json(
+    xtal::BasicStructure &prim, jsonParser const &json, double xtal_tol,
+    ParsingDictionary<AnisoValTraits> const *_aniso_val_dict = nullptr);
+
+jsonParser &to_json(const xtal::BasicStructure &prim, jsonParser &json,
+                    COORD_TYPE mode, bool include_va = false);
+
 }  // namespace CASM
 
 #endif

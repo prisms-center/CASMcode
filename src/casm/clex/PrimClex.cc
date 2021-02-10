@@ -119,11 +119,6 @@ PrimClex::~PrimClex() {}
 ///  - If !root.empty(), read all saved data to generate all Supercells and
 ///  Configurations, etc.
 void PrimClex::_init() {
-  if (has_dir()) {
-    log().construct("CASM Project");
-    log() << "from: " << dir().root_dir() << "\n" << std::endl;
-  }
-
   auto struc_mol_name = xtal::struc_molecule_name(prim());
   m_data->vacancy_allowed = false;
   for (int i = 0; i < struc_mol_name.size(); ++i) {
@@ -160,8 +155,6 @@ void PrimClex::_init() {
 ///
 void PrimClex::refresh(bool read_settings, bool read_composition,
                        bool read_chem_ref, bool read_configs, bool clear_clex) {
-  log().custom("Load project data");
-
   if (read_settings) {
     try {
       m_data->settings = open_project_settings(dir().root_dir());
@@ -178,8 +171,6 @@ void PrimClex::refresh(bool read_settings, bool read_composition,
 
     try {
       if (fs::is_regular_file(comp_axes_path)) {
-        log() << "read: " << comp_axes_path << "\n";
-
         CompositionAxes opt = read_composition_axes(comp_axes_path);
 
         if (opt.has_current_axes()) {
@@ -203,7 +194,6 @@ void PrimClex::refresh(bool read_settings, bool read_composition,
 
     try {
       if (fs::is_regular_file(chem_ref_path)) {
-        log() << "read: " << chem_ref_path << "\n";
         m_data->chem_ref =
             notstd::make_cloneable<ChemicalReference>(read_chemical_reference(
                 chem_ref_path, prim(), settings().lin_alg_tol()));
@@ -228,10 +218,7 @@ void PrimClex::refresh(bool read_settings, bool read_composition,
     m_data->clex_basis.clear();
     m_data->clexulator.clear();
     m_data->eci.clear();
-    log() << "refresh cluster expansions\n";
   }
-
-  log() << std::endl;
 }
 
 ProjectSettings &PrimClex::settings() { return m_data->settings; }
@@ -393,9 +380,9 @@ Clexulator PrimClex::clexulator(std::string const &basis_set_name) const {
       it = m_data->clexulator.emplace(basis_set_name, clexulator).first;
     } catch (std::exception &e) {
       // TODO: if this fails...
-      log() << "Error constructing Clexulator. Current settings: \n"
-            << std::endl;
-      print_compiler_settings_summary(settings(), log());
+      err_log() << "Error constructing Clexulator. Current settings: \n"
+                << std::endl;
+      print_compiler_settings_summary(settings(), err_log());
 
       // TODO: then, try this
       // std::cout << "Error constructing Clexulator. Current settings: \n" <<

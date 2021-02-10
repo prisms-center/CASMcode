@@ -270,6 +270,10 @@ std::vector<std::string> Engine::probe_arguments(
       ArgHandler::property_to_bash(arguments);
       break;
 
+    case ARG_TYPE::INFOMETHOD:
+      ArgHandler::infomethod_to_bash(arguments);
+      break;
+
     default:
       break;
   }

@@ -8,6 +8,8 @@
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/enum/EnumInterface.hh"
 #include "casm/app/enum/standard_enumerator_interfaces.hh"
+#include "casm/app/info/InfoInterface.hh"
+#include "casm/app/info/standard_info_method_interfaces.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/dataformatter/DataFormatter.hh"
 #include "casm/casm_io/enum/stream_io.hh"
@@ -84,6 +86,8 @@ std::string ArgHandler::eci() { return m_argument_table[14].first; }
 std::string ArgHandler::property() { return m_argument_table[15].first; }
 
 std::string ArgHandler::dof() { return m_argument_table[16].first; }
+
+std::string ArgHandler::infomethod() { return m_argument_table[17].first; }
 
 void ArgHandler::void_to_bash(std::vector<std::string> &arguments) { return; }
 
@@ -254,6 +258,14 @@ void ArgHandler::dof_to_bash(std::vector<std::string> &arguments) {
   return;
 }
 
+void ArgHandler::infomethod_to_bash(std::vector<std::string> &arguments) {
+  auto info_method_interfaces = make_standard_info_method_interfaces();
+  for (auto const &e : info_method_interfaces) {
+    arguments.push_back(e->name());
+  }
+  return;
+}
+
 /**
  * This construction right here determines what the value_name of the boost
  * options should be named. It is through these strings that bash completion can
@@ -278,7 +290,8 @@ const std::vector<std::pair<std::string, ARG_TYPE> >
          std::make_pair("<ref>", ARG_TYPE::REF),
          std::make_pair("<eci>", ARG_TYPE::ECI),
          std::make_pair("<property>", ARG_TYPE::PROPERTY),
-         std::make_pair("<dof>", ARG_TYPE::DOF)});
+         std::make_pair("<dof>", ARG_TYPE::DOF),
+         std::make_pair("<infomethod>", ARG_TYPE::INFOMETHOD)});
 
 //*****************************************************************************************************//
 
