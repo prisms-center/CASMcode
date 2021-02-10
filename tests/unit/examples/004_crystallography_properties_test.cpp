@@ -4,7 +4,7 @@
 #include "casm/crystallography/SymTools.hh"
 #include "casm/strain/StrainConverter.hh"
 #include "casm/symmetry/SymGroup.hh"
-#include "casm/symmetry/SymInfo.hh"
+#include "casm/symmetry/io/stream/SymInfo_stream_io.hh"
 #include "gtest/gtest.h"
 
 /// Crystal properties

@@ -11,6 +11,7 @@
 #include "casm/crystallography/CoordinateSystems.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/symmetry/SymGroup.hh"
+#include "casm/symmetry/SymInfo.hh"
 #include "casm/symmetry/json_io.hh"
 
 namespace CASM {
@@ -38,7 +39,7 @@ class Structure;
 ///     settings is modified
 void write_prim_symmetry_impl(Structure const &prim,
                               DirectoryStructure const &dir,
-                              COORD_TYPE coordtype, Log &log,
+                              COORD_TYPE coordtype, bool brief, Log &log,
                               bool print_lattice_point_group,
                               bool print_factor_group,
                               bool print_crystal_point_group) {
@@ -47,64 +48,56 @@ void write_prim_symmetry_impl(Structure const &prim,
   xtal::COORD_MODE C(coordtype);
   SymGroup lattice_pg{SymGroup::lattice_point_group(prim.lattice())};
 
-  log << "  Lattice point group size: " << lattice_pg.size() << std::endl;
-  log << "  Lattice point group is: " << lattice_pg.get_name() << std::endl
-      << std::endl;
+  if (!print_lattice_point_group && !print_factor_group &&
+      !print_crystal_point_group) {
+    log << "  Lattice point group size: " << lattice_pg.size() << std::endl;
+    log << "  Lattice point group is: " << lattice_pg.get_name() << std::endl
+        << std::endl;
 
-  log << "  Factor group size: " << prim.factor_group().size() << std::endl;
-  log << "  Crystal point group is: " << prim.point_group().get_name()
-      << std::endl;
+    log << "  Factor group size: " << prim.factor_group().size() << std::endl;
+    log << "  Crystal point group is: " << prim.point_group().get_name()
+        << std::endl;
+  }
+
+  auto print_group = [&](std::string name, SymGroup const &group) {
+    if (brief) {
+      log << name << ": (" << xtal::COORD_MODE::NAME(coordtype)
+          << " representation)" << std::endl;
+      SymInfoOptions opt{coordtype};
+      brief_description(log, group, prim.lattice(), opt);
+    } else {
+      log << name << ":" << std::endl;
+      group.print(log, coordtype);
+    }
+  };
 
   if (print_lattice_point_group) {
-    log << "\n***************************\n" << std::endl;
-    log << "Lattice point group:\n\n" << std::endl;
-    lattice_pg.print(log, coordtype);
+    print_group("Lattice point group", lattice_pg);
   }
 
   if (print_factor_group) {
-    log << "\n***************************\n" << std::endl;
-    log << "Factor group:\n\n" << std::endl;
-    prim.factor_group().print(log, coordtype);
+    print_group("Factor group", prim.factor_group());
   }
 
   if (print_crystal_point_group) {
-    log << "\n***************************\n" << std::endl;
-    log << "Crystal point group:\n\n" << std::endl;
-    prim.point_group().print(log, coordtype);
+    print_group("Crystal point group", prim.point_group());
   }
 
   // Write symmetry info files
   dir.new_symmetry_dir();
 
-  // Write lattice point group
-  {
+  auto write_group = [&](fs::path path, SymGroup const &group) {
     fs::ofstream outfile;
     jsonParser json;
-    outfile.open(dir.lattice_point_group());
-    write_symgroup(lattice_pg, json);
+    outfile.open(path);
+    write_symgroup(group, json);
     json.print(outfile);
     outfile.close();
-  }
+  };
 
-  // Write factor group
-  {
-    fs::ofstream outfile;
-    jsonParser json;
-    outfile.open(dir.factor_group());
-    write_symgroup(prim.factor_group(), json);
-    json.print(outfile);
-    outfile.close();
-  }
-
-  // Write crystal point group
-  {
-    fs::ofstream outfile;
-    jsonParser json;
-    outfile.open(dir.crystal_point_group());
-    write_symgroup(prim.point_group(), json);
-    json.print(outfile);
-    outfile.close();
-  }
+  write_group(dir.lattice_point_group(), lattice_pg);
+  write_group(dir.factor_group(), prim.factor_group());
+  write_group(dir.crystal_point_group(), prim.point_group());
 }
 
 /// Describe the default `casm sym` option
@@ -130,6 +123,8 @@ std::string write_prim_symmetry_desc() {
       "  - Print crystal factor group with --print-factor-group                "
       " \n"
       "  - Print crystal point group with --print-crystal-point-group          "
+      " \n"
+      "  - Print brief symmetry operation descriptions with --brief        "
       " \n"
       "  - Control coordinate printing mode (FRAC vs CART) with --coord        "
       " \n\n"
@@ -157,8 +152,9 @@ void write_prim_symmetry(PrimClex &primclex, jsonParser const &json_options,
        "print_lattice_point_group"},                 // --lattice-point-group
       {"print_factor_group", "print_factor_group"},  // --factor-group
       {"print_crystal_point_group",
-       "print_crystal_point_group"},          // --crystal-point-group
-      {"coordinate_mode", "coordinate_mode"}  // --coord
+       "print_crystal_point_group"},           // --crystal-point-group
+      {"coordinate_mode", "coordinate_mode"},  // --coord
+      {"brief", "brief"}                       // --brief
   };
   combine_json_options(cli_to_combined_keys, cli_options_as_json,
                        json_combined);
@@ -169,6 +165,7 @@ void write_prim_symmetry(PrimClex &primclex, jsonParser const &json_options,
   bool print_factor_group;
   bool print_crystal_point_group;
   COORD_TYPE coordtype;
+  bool brief;
 
   parser.optional_else(print_lattice_point_group, "print_lattice_point_group",
                        false);
@@ -179,8 +176,10 @@ void write_prim_symmetry(PrimClex &primclex, jsonParser const &json_options,
   std::runtime_error error_if_invalid{"Error reading `casm sym` input"};
   report_and_throw_if_invalid(parser, log(), error_if_invalid);
 
-  write_prim_symmetry_impl(primclex.prim(), primclex.dir(), coordtype, log(),
-                           print_lattice_point_group, print_factor_group,
+  parser.optional_else(brief, "brief", false);
+
+  write_prim_symmetry_impl(primclex.prim(), primclex.dir(), coordtype, brief,
+                           log(), print_lattice_point_group, print_factor_group,
                            print_crystal_point_group);
 }
 

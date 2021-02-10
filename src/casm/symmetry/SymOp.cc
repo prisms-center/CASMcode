@@ -156,7 +156,7 @@ void SymOp::print(std::ostream &stream,
     stream << std::setw(22) << ttau(i) << "\n";
   }
 
-  stream << "Time Reversal: " << (time_reversal() ? -1 : 1) << "\n";
+  stream << "Time Reversal: " << (time_reversal() ? "yes" : "no") << "\n";
   stream.precision(tprec);
   stream.flags(tflags);
   return;

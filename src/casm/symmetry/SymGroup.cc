@@ -14,6 +14,7 @@
 #include "casm/symmetry/SymInfo.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
 #include "casm/symmetry/SymPermutation.hh"
+#include "casm/symmetry/io/stream/SymInfo_stream_io.hh"
 
 namespace CASM {
 
@@ -1876,7 +1877,7 @@ void SymGroup::print(std::ostream &out, COORD_TYPE mode) const {
   Eigen::Matrix3d c2f_mat(Eigen::Matrix3d::Identity());
   if (mode == FRAC) c2f_mat = lattice().inv_lat_column_mat();
   for (Index i = 0; i < size(); i++) {
-    out << i << "  " << description(at(i), lattice(), mode) << std::endl;
+    out << i + 1 << "  " << description(at(i), lattice(), mode) << std::endl;
     at(i).print(out, c2f_mat);
     out << std::endl;
   }
@@ -1890,7 +1891,7 @@ void SymGroup::calc_space_group_in_cell(SymGroup &space_group_cell,
   if (!size()) return;
 
   Eigen::Vector3i max_trans(3, 3, 3);
-  Coordinate trans(Eigen::Vector3d::Zero(), _cell, FRAC);
+  xtal::Coordinate trans(Eigen::Vector3d::Zero(), _cell, FRAC);
   space_group_cell.clear();
 
   std::vector<SymInfo> sg_info;
@@ -1933,7 +1934,7 @@ void SymGroup::calc_space_group_in_range(SymGroup &space_group,
                                          Eigen::Vector3i max_trans) const {
   if (!size()) return;
 
-  Coordinate trans(Eigen::Vector3d::Zero(), _cell, FRAC);
+  xtal::Coordinate trans(Eigen::Vector3d::Zero(), _cell, FRAC);
 
   for (Index i = 0; i < size(); i++) {
     EigenCounter<Eigen::Vector3i> lat_comb(min_trans, max_trans,
@@ -2040,7 +2041,7 @@ void SymGroup::sort() {
     vec.segment<3>(offset) = info.axis.const_frac();
     offset += 3;
 
-    vec.segment<3>(offset) = Coordinate(op.tau(), lat, CART).const_frac();
+    vec.segment<3>(offset) = xtal::Coordinate(op.tau(), lat, CART).const_frac();
     offset += 3;
 
     return vec;
@@ -2168,8 +2169,8 @@ bool compare_periodic(const SymOp &a, const SymOp &b, const Lattice &lat,
   //<< "b-tau " << b.tau().transpose() << std::endl;
   if (periodicity != PERIODIC) return almost_equal(a.tau(), b.tau(), _tol);
 
-  return Coordinate(a.tau(), lat, CART)
-             .min_dist(Coordinate(b.tau(), lat, CART)) < _tol;
+  return xtal::Coordinate(a.tau(), lat, CART)
+             .min_dist(xtal::Coordinate(b.tau(), lat, CART)) < _tol;
 }
 
 //**********************************************************
@@ -2178,7 +2179,7 @@ SymOp within_cell(const SymOp &a, const Lattice &lat,
                   PERIODICITY_TYPE periodicity) {
   if (periodicity != PERIODIC) return a;
 
-  Coordinate trans(a.tau(), lat, CART);
+  xtal::Coordinate trans(a.tau(), lat, CART);
   trans.within();
   return SymOp(a.matrix(), trans.cart(), a.time_reversal(), a.map_error());
 }

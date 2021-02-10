@@ -51,6 +51,9 @@ jsonParser &to_json(const Completer::SymOption &sym_opt, jsonParser &json) {
     json["print_crystal_point_group"] =
         static_cast<bool>(vm.count("crystal-point-group"));  // bool
   }
+  if (vm.count("brief")) {
+    json["brief"] = static_cast<bool>(vm.count("brief"));  // bool
+  }
   if (vm.count("coord") && !vm["coord"].defaulted()) {
     json["coordinate_mode"] = sym_opt.coordtype_str();  // string
   }

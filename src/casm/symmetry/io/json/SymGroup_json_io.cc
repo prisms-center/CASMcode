@@ -5,7 +5,7 @@
 #include "casm/global/enum/json_io.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/symmetry/SymGroup.hh"
-#include "casm/symmetry/SymInfo.hh"
+#include "casm/symmetry/io/json/SymInfo_json_io.hh"
 
 namespace CASM {
 
@@ -31,7 +31,12 @@ void write_symop(const SymGroup &grp, Index i, jsonParser &j) {
   to_json(grp.class_of_op(i) + 1, j["info"]["conjugacy_class"]);
   to_json(grp.ind_inverse(i) + 1, j["info"]["inverse_operation"]);
 
-  add_sym_info(grp.info(i), j["info"]);
+  to_json(grp.info(i), j["info"]);
+
+  to_json(to_brief_unicode(grp.info(i), SymInfoOptions(CART)),
+          j["info"]["brief"]["CART"]);
+  to_json(to_brief_unicode(grp.info(i), SymInfoOptions(FRAC)),
+          j["info"]["brief"]["FRAC"]);
 }
 
 void write_symgroup(const SymGroup &grp, jsonParser &json) {

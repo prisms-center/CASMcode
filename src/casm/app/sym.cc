@@ -25,21 +25,27 @@ void SymOption::initialize() {
   add_settings_suboption(required);
   add_input_suboption(required);
 
-  m_desc.add_options()("lattice-point-group",
-                       "Pretty print prim lattice point group")(
+  m_desc.add_options()(
+
+      "lattice-point-group", "Pretty print prim lattice point group")(
+
       "factor-group", "Pretty print prim factor group")(
+
       "crystal-point-group", "Pretty print prim crystal point group")(
+
+      "brief", "Print brief descriptions of symmetry operations")(
+
       "calc-wedge",
       "Perform calculation of irreducible wedge (may significantly slow down "
-      "analysis). Used for --dof-space-analysis.")
-      //("no-directions", "Skip calculation of high-symmetry direction and
-      // irreducible wedge (for faster evaluation)")
-      ("tol", po::value<double>(&m_tol)->default_value(1.0e-5),
-       "Tolerance in Angstr. Used for --symmetrize (default 1e-5)")(
-          "dof-space-analysis", "Print DoF Space analysis files")(
-          "symmetrize",
-          po::value<fs::path>(&m_poscar_path)->value_name(ArgHandler::path()),
-          "symmetrize a POSCAR specified by path to a given tolerance");
+      "analysis). Used for --dof-space-analysis.")(
+
+      "tol", po::value<double>(&m_tol)->default_value(1.0e-5),
+      "Tolerance in Angstr. Used for --symmetrize (default 1e-5)")(
+
+      "dof-space-analysis", "Print DoF Space analysis files")(
+      "symmetrize",
+      po::value<fs::path>(&m_poscar_path)->value_name(ArgHandler::path()),
+      "symmetrize a POSCAR specified by path to a given tolerance");
 
   return;
 }

@@ -2,11 +2,13 @@
 #define CASM_cluterography_io_OrbitPrinter
 
 #include "casm/casm_io/Log.hh"
+#include "casm/casm_io/enum/json_io.hh"
+#include "casm/casm_io/enum/stream_io.hh"
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/clusterography/ClusterDecl.hh"
 #include "casm/global/definitions.hh"
 #include "casm/global/enum.hh"
-#include "casm/symmetry/SymInfo.hh"
+#include "casm/symmetry/io/json/SymInfo_json_io.hh"
 
 namespace CASM {
 
