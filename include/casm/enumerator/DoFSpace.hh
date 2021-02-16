@@ -69,6 +69,9 @@ class DoFSpace {
   /// The sites included in a local DoF space. Has value for local DoF.
   std::optional<std::set<Index>> const &sites() const;
 
+  /// True, if local DoF space with all sites in the supercell included
+  bool includes_all_sites() const;
+
   /// The DoF space basis, as a column vector matrix. May be a subspace (cols <=
   /// rows).
   Eigen::MatrixXd const &basis() const;
@@ -201,16 +204,13 @@ DoFSpace make_dof_space(
     std::optional<Eigen::MatrixXd> const &basis = std::nullopt);
 
 /// Make VectorSpaceSymReport
-template <typename PermuteIteratorIt>
-VectorSpaceSymReport vector_space_sym_report(DoFSpace const &dof_space,
-                                             ConfigEnumInput const &input_state,
-                                             PermuteIteratorIt group_begin,
-                                             PermuteIteratorIt group_end,
-                                             bool calc_wedges = false);
+VectorSpaceSymReport vector_space_sym_report(
+    DoFSpace const &dof_space, SupercellSymInfo const &sym_info,
+    std::vector<PermuteIterator> const &group, bool calc_wedges = false);
 
 /// Make DoFSpace with symmetry adapated basis
 DoFSpace make_symmetry_adapted_dof_space(
-    DoFSpace const &dof_space, ConfigEnumInput const &input_state,
+    DoFSpace const &dof_space, SupercellSymInfo const &sym_info,
     std::vector<PermuteIterator> const &group, bool calc_wedges,
     std::optional<VectorSpaceSymReport> &symmetry_report);
 
@@ -221,13 +221,16 @@ class make_symmetry_adapted_dof_space_error : public std::runtime_error {
   virtual ~make_symmetry_adapted_dof_space_error() {}
 };
 
-/// Constructs a homogeneous mode space of the dof space represented in terms of
-/// user defined axes. Returns a column vectors matrix
-Eigen::MatrixXd make_homogeneous_mode_space(
-    std::vector<DoFSetInfo> const &dof_info);
+/// Removes the homogeneous mode space from the DoFSpace basis
+DoFSpace exclude_homogeneous_mode_space(DoFSpace const &dof_space);
 
-/// A struct which gives out the mixing information of given column_vector_space
-/// and a subspace For example, consider a column_vector_space of 3 dimensions.
+/// Make the homogeneous mode space of a local DoFSpace
+Eigen::MatrixXd make_homogeneous_mode_space(DoFSpace const &dof_space);
+
+/// \brief A struct which gives out the mixing information of given
+/// column_vector_space and a subspace
+///
+/// For example, consider a column_vector_space of 3 dimensions.
 /// Let it be [q1, q2, q3] where q1, q2 and q3 are columns of the said vector
 /// space Let's say q1 - has a zero projection onto the given subspace, q2 - has
 /// partial projection onto the subspace, q3 - full projection onto the subspace
@@ -245,17 +248,6 @@ struct VectorSpaceMixingInfo {
   std::vector<Index> axes_mixed_with_subspace;
   bool are_axes_mixed_with_subspace = true;
 };
-
-/// Returns symmetry adapted axes with homogeneous modes removed
-/// The result of this function might be different from just the symmetry
-/// adapted axes computed using irrep decomposition and explicitly removing the
-/// homogeneous modes by identifying them using the
-/// VectorSpaceMixingInfo struct. This is implemented by
-/// computing the null space of the homogeneous mode space and using it is a
-/// subspace while performing irrep decomposition
-Eigen::MatrixXd symmetry_adapted_axes_without_homogeneous_modes(
-    DoFSpace const &symmetry_adapted_dof_space,
-    ConfigEnumInput const &initial_state);
 
 }  // namespace CASM
 

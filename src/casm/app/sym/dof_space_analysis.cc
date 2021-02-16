@@ -6,7 +6,7 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
-#include "casm/enumerator/DoFSpace_impl.hh"
+#include "casm/enumerator/DoFSpace.hh"
 #include "casm/enumerator/io/dof_space_analysis.hh"
 #include "casm/enumerator/io/json/ConfigEnumInput_json_io.hh"
 

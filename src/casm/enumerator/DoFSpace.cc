@@ -1,8 +1,11 @@
+#include "casm/enumerator/DoFSpace.hh"
+
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/crystallography/Structure.hh"
-#include "casm/enumerator/DoFSpace_impl.hh"
+#include "casm/enumerator/ConfigEnumInput_impl.hh"
 #include "casm/symmetry/SupercellSymInfo_impl.hh"
+#include "casm/symmetry/SymRepTools.hh"
 
 namespace CASM {
 
@@ -113,6 +116,13 @@ std::optional<Eigen::Matrix3l> const &DoFSpace::transformation_matrix_to_super()
 /// The sites included in a local DoF space. Has value for local DoF.
 std::optional<std::set<Index>> const &DoFSpace::sites() const {
   return m_sites;
+}
+
+/// True, if local DoF space with all sites in the supercell included
+bool DoFSpace::includes_all_sites() const {
+  return transformation_matrix_to_super().has_value() && sites().has_value() &&
+         (sites()->size() == transformation_matrix_to_super()->determinant() *
+                                 shared_prim()->basis().size());
 }
 
 /// The DoF space basis, as a column vector matrix. May be a subspace (cols <=
@@ -386,13 +396,70 @@ DoFSpace make_dof_space(DoFKey dof_key, ConfigEnumInput const &input_state,
                   input_state.sites(), basis);
 }
 
+/// Make VectorSpaceSymReport
+///
+/// \param dof_space DoFSpace to make VectorSpaceSymReport for
+/// \param sym_info Supercell symmetry info
+/// \param group Group used for vector space symmetry report
+/// \param calc_wedges If true, calculate the irreducible wedges for the vector
+/// space. This may take a long time.
+VectorSpaceSymReport vector_space_sym_report(
+    DoFSpace const &dof_space, SupercellSymInfo const &sym_info,
+    std::vector<PermuteIterator> const &group, bool calc_wedges) {
+  // We need a temporary mastersymgroup to manage the symmetry representation
+  // for the DoF
+  MasterSymGroup g;
+  SymGroupRepID id;
+  DoFKey dof_key = dof_space.dof_key();
+  xtal::BasicStructure const &prim_struc = dof_space.shared_prim()->structure();
+
+  // Populate temporary objects for two cases
+  // CASE 1: DoF is global (use prim_struc's list of global DoFs, rather than
+  // relying on val_traits.is_global()
+  if (prim_struc.global_dofs().count(dof_key)) {
+    // Global DoF, use point group only
+    SymGroup pointgroup = make_point_group(group, sym_info.supercell_lattice());
+    g = make_master_sym_group(pointgroup, sym_info.supercell_lattice());
+
+    id = g.allocate_representation();
+    SymGroupRep const &rep = *(sym_info.global_dof_symrep(dof_key).rep_ptr());
+    for (Index i = 0; i < pointgroup.size(); ++i) {
+      Index fg_ix = pointgroup[i].index();
+      g[i].set_rep(id, *rep[fg_ix]);
+    }
+
+  }
+  // CASE 2: DoF is local
+  else {
+    if (!dof_space.sites().has_value()) {
+      throw std::runtime_error(
+          "Error vector_space_sym_report: Local DoF, but no sites");
+    }
+    auto group_and_ID = collective_dof_symrep(dof_space.sites()->begin(),
+                                              dof_space.sites()->end(),
+                                              sym_info, dof_key, group);
+    g = group_and_ID.first;
+    g.is_temporary_of(group_and_ID.first);
+    id = group_and_ID.second;
+  }
+
+  SymGroupRep const &rep = g.representation(id);
+
+  // Generate report, based on constructed inputs
+  VectorSpaceSymReport result =
+      vector_space_sym_report(rep, g, dof_space.basis(), calc_wedges);
+  result.axis_glossary = dof_space.axis_glossary();
+
+  return result;
+}
+
 /// Make DoFSpace with symmetry adapated basis
 DoFSpace make_symmetry_adapted_dof_space(
-    DoFSpace const &dof_space, ConfigEnumInput const &input_state,
+    DoFSpace const &dof_space, SupercellSymInfo const &sym_info,
     std::vector<PermuteIterator> const &group, bool calc_wedges,
     std::optional<VectorSpaceSymReport> &symmetry_report) {
-  symmetry_report = vector_space_sym_report(
-      dof_space, input_state, group.begin(), group.end(), calc_wedges);
+  symmetry_report =
+      vector_space_sym_report(dof_space, sym_info, group, calc_wedges);
 
   // check for error occuring for "disp"
   if (symmetry_report->symmetry_adapted_dof_subspace.cols() <
@@ -403,26 +470,150 @@ DoFSpace make_symmetry_adapted_dof_space(
     throw make_symmetry_adapted_dof_space_error(msg.str());
   }
 
-  return make_dof_space(dof_space.dof_key(), input_state,
-                        symmetry_report->symmetry_adapted_dof_subspace);
+  return DoFSpace(dof_space.shared_prim(), dof_space.dof_key(),
+                  sym_info.transformation_matrix_to_super(), dof_space.sites(),
+                  symmetry_report->symmetry_adapted_dof_subspace);
 }
 
-Eigen::MatrixXd make_homogeneous_mode_space(
-    std::vector<DoFSetInfo> const &dof_info) {
-  Index tot_dim = 0;
-  for (const auto& site_dof : dof_info) {
-    tot_dim += site_dof.dim();
+/// Removes the homogeneous mode space from the local continuous DoFSpace basis.
+///
+/// \param dof_space DoF space to remove the homogeneous mode space from.
+/// Must be a DoF space for a local continuous DoF and include all sites in the
+/// supercell (`dof_space.includes_all_sites==true`), else will throw.
+///
+/// \returns A copy of dof_space with basis modified to remove homogeneous
+/// modes.
+DoFSpace exclude_homogeneous_mode_space(DoFSpace const &dof_space) {
+  if (!AnisoValTraits(dof_space.dof_key()).global() ||
+      dof_space.dof_key() == "occ" || !dof_space.includes_all_sites()) {
+    std::stringstream msg;
+    msg << "Error in exclude_homogeneous_mode_space: Must be a DoF space for a "
+           "local continuous degrees of freedom that includes all sites in the "
+           "supercell.";
+    throw std::runtime_error(msg.str());
   }
 
-  Eigen::MatrixXd homogeneous_mode_space(tot_dim,
-                                         dof_info[0].inv_basis().cols());
+  Eigen::MatrixXd null_space =
+      make_homogeneous_mode_space(dof_space).transpose().fullPivLu().kernel();
 
-  Index l = 0;
-  for (const auto& site_dof : dof_info) {
-    homogeneous_mode_space.block(l, 0, site_dof.dim(),
-                                 site_dof.inv_basis().cols()) =
-        site_dof.inv_basis();
-    l += site_dof.dim();
+  return DoFSpace{dof_space.shared_prim(), dof_space.dof_key(),
+                  dof_space.transformation_matrix_to_super(), dof_space.sites(),
+                  null_space};
+}
+
+/// Make the homogeneous mode space of a local DoFSpace
+///
+/// \param dof_space DoF space to find the homogeneous mode space of. Should be
+/// a DoF space for a local continuous DoF and include all sites in the
+/// supercell.
+///
+/// \returns The column vector space of allowed homogeneous modes (i.e. allowed
+/// rigid translations)
+///
+/// The prim DoF basis may not be either equal to the standard DoF basis, or
+/// the same on all sublattices. The homoegeneous mode space then is limited
+/// to the common part of dof_info.basis() for each site in the prim.
+///
+/// Ex: most typical, all displacements allowed on all sites:
+///     prim_dof_info[0].basis(): [[dx], [dy], [dz]],
+///     prim_dof_info[1].basis(): [[dx], [dy], [dz]]
+///     Common basis: Rigid translations in [[dx], [dy], [dz]]
+///
+/// Ex: 2d displacements:
+///     prim_dof_info[0].basis(): [[dx], [dy]],
+///     prim_dof_info[1].basis(): [[dx], [dy]]
+///     Common basis: Rigid translations are only allowed in [[dx], [dy]]
+///
+/// Ex: 2d displacements of differing orientation, 1d common basis:
+///     prim_dof_info[0].basis(): [[dx, dy], [dz]],
+///     prim_dof_info[1].basis(): [[-dx, dy], [dz]]
+///     Common basis: Rigid translations are only allowed in [[dz]]
+///
+/// Ex: some fixed sites:
+///     prim_dof_info[0].basis(): <not allowed>,
+///     prim_dof_info[1].basis(): [[dx], [dy], [dz]]
+///     Common basis: No rigid translations allowed
+///
+/// The common basis, in the standard DoF basis, is:
+///     common_standard_basis = nullspace( Prod_i P(i) - I ),
+/// where projector P(i), is:
+///     P(i) = prim_dof_info[i].basis() * prim_dof_info[i].inv_basis()
+///
+/// If the common_standard_basis is not empty, the homogeneous mode space is
+/// the column vector space constructed by transforming the
+/// common_standard_basis back into the basis for each site in the DoFSpace:
+///
+///     [[ sites_dof_info[0].inv_basis() * common_standard_basis ],
+///      [ sites_dof_info[1].inv_basis() * common_standard_basis ],
+///      ...,
+///      [ sites_dof_info[n_sites-1].inv_basis() * common_standard_basis ]]
+///
+/// Note that the lines above represent blocks equal to the dimension of the
+/// DoF basis on each site.
+Eigen::MatrixXd make_homogeneous_mode_space(DoFSpace const &dof_space) {
+  if (!AnisoValTraits(dof_space.dof_key()).global() ||
+      dof_space.dof_key() == "occ" || !dof_space.includes_all_sites()) {
+    std::stringstream msg;
+    msg << "Error in make_homogeneous_mode_space: Must be a DoF space for a "
+           "local continuous degrees of freedom that includes all sites in the "
+           "supercell.";
+    throw std::runtime_error(msg.str());
+  }
+
+  auto const &dof_key = dof_space.dof_key();
+  auto const &prim = *dof_space.shared_prim();
+  auto const &T = *dof_space.transformation_matrix_to_super();
+  auto const &sites = *dof_space.sites();
+
+  /// DoFSetInfo for each sublattice
+  std::vector<DoFSetInfo> prim_dof_info = local_dof_info(prim)[dof_key];
+
+  /// DoFSetInfo for each site in the DoFSpace with 'dof_key'
+  std::vector<DoFSetInfo> sites_dof_info;
+  // b: sublattice index
+  // l: linear index in supercell
+  // bijk: UnitCellCoord, integral site coordinates
+  xtal::UnitCellCoordIndexConverter l_to_bijk(T, prim.basis().size());
+  for (Index l : sites) {
+    Index b = l_to_bijk(l).sublattice();
+    xtal::Site const &site = prim.basis()[b];
+    if (site.has_dof(dof_key)) {
+      sites_dof_info.push_back(prim_dof_info[b]);
+    }
+  }
+
+  // standard_dof_values = dof_info.basis() * prim_dof_values
+  // dof_info.inv_basis() * standard_dof_values = prim_dof_values
+
+  // find the common basis, in the standard DoF basis, among all sites:
+  int standard_basis_dim = prim_dof_info[0].basis().rows();
+  Eigen::MatrixXd I =
+      Eigen::MatrixXd::Identity(standard_basis_dim, standard_basis_dim);
+  Eigen::MatrixXd prod = I;
+  for (auto const &sublat_dof : prim_dof_info) {
+    prod = sublat_dof.basis() * sublat_dof.inv_basis() * prod;
+  }
+  // common_standard_basis is nullspace of (prod - I):
+  Eigen::MatrixXd common_standard_basis =
+      (prod - I).transpose().fullPivLu().kernel();
+
+  // construct homogeneous_mode_space by transforming common_standard_basis into
+  // the site basis values, and combining for each site
+  Eigen::MatrixXd homogeneous_mode_space{dof_space.basis().rows(),
+                                         common_standard_basis.cols()};
+
+  if (common_standard_basis.cols() == 0) {
+    return homogeneous_mode_space;
+  }
+
+  Index row = 0;  // block starting row
+  Index col = 0;  // block starting column
+  for (auto const &site_dof : sites_dof_info) {
+    auto const &values = site_dof.inv_basis() * common_standard_basis;
+    int n_rows = values.rows();
+    int n_cols = values.cols();
+    homogeneous_mode_space.block(row, col, n_rows, n_cols) = values;
+    row += site_dof.dim();
   }
 
   return homogeneous_mode_space;
@@ -453,31 +644,5 @@ VectorSpaceMixingInfo::VectorSpaceMixingInfo(
   if (axes_mixed_with_subspace.size() == 0) {
     are_axes_mixed_with_subspace = false;
   }
-}
-
-Eigen::MatrixXd symmetry_adapted_axes_without_homogeneous_modes(
-    DoFSpace const &symmetry_adapted_dof_space,
-    ConfigEnumInput const &initial_state) {
-  auto const& dof_info = initial_state.configuration()
-                             .configdof()
-                             .local_dof(symmetry_adapted_dof_space.dof_key())
-                             .info();
-
-  Eigen::MatrixXd homogeneous_mode_space =
-      make_homogeneous_mode_space(dof_info);
-
-  Eigen::MatrixXd null_space =
-      homogeneous_mode_space.transpose().fullPivLu().kernel();
-
-  std::vector<PermuteIterator> group = make_invariant_subgroup(initial_state);
-
-  auto irreps = irrep_decomposition(
-      initial_state.sites().begin(), initial_state.sites().end(),
-      initial_state.configuration().supercell().sym_info(),
-      symmetry_adapted_dof_space.dof_key(), group, null_space);
-
-  Eigen::MatrixXd axes = full_trans_mat(irreps).transpose();
-
-  return axes;
 }
 }  // namespace CASM

@@ -11,7 +11,7 @@
 #include "casm/database/ScelDatabase.hh"
 #include "casm/database/ScelDatabaseTools_impl.hh"
 #include "casm/enumerator/ConfigEnumInput_impl.hh"
-#include "casm/enumerator/DoFSpace_impl.hh"
+#include "casm/enumerator/DoFSpace.hh"
 #include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/symmetry/SymRepTools.hh"
 #include "casm/symmetry/io/json/SymRepTools.hh"
@@ -218,33 +218,27 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, VectorSpaceSymReport) {
   // - TODO: more description ...
 
   // Construct the SimpleCubic GLstrain DoF space.
-  std::cout << "here 0" << std::endl;
   Supercell const &supercell = *primclex.db<Supercell>().begin();
-  std::cout << "here 1" << std::endl;
   ConfigEnumInput config_input{supercell};
-  std::cout << "here 2" << std::endl;
+  SupercellSymInfo const &sym_info = supercell.sym_info();
   std::vector<PermuteIterator> group = make_invariant_subgroup(config_input);
-  std::cout << "here 3" << std::endl;
   DoFKey dof_key = "GLstrain";
-  std::cout << "here 4" << std::endl;
   DoFSpace dof_space = make_dof_space(dof_key, config_input);
 
   // Construct the VectorSpaceSymReport for the SimpleCubic GLstrain space.
-  std::cout << "here 5" << std::endl;
   bool calc_wedges = true;  // explanation TODO
-  VectorSpaceSymReport sym_report = vector_space_sym_report(
-      dof_space, config_input, group.begin(), group.end(), calc_wedges);
-  std::cout << "here 6" << std::endl;
+  VectorSpaceSymReport sym_report =
+      vector_space_sym_report(dof_space, sym_info, group, calc_wedges);
 
-  // Uncomment to print dof_space:
-  jsonParser dof_space_json;
-  to_json(dof_space, dof_space_json, supercell.name() + "/zeros");
-  std::cout << "DoFSpace:\n" << dof_space_json << std::endl;
+  // // Uncomment to print dof_space:
+  // jsonParser dof_space_json;
+  // to_json(dof_space, dof_space_json, supercell.name() + "/zeros");
+  // std::cout << "DoFSpace:\n" << dof_space_json << std::endl;
 
-  // Uncomment to print sym_report:
-  jsonParser sym_report_json;
-  to_json(sym_report, sym_report_json);
-  std::cout << "VectorSpaceSymReport:\n" << sym_report_json << std::endl;
+  // // Uncomment to print sym_report:
+  // jsonParser sym_report_json;
+  // to_json(sym_report, sym_report_json);
+  // std::cout << "VectorSpaceSymReport:\n" << sym_report_json << std::endl;
 
   // Expect three irreducible representations
   EXPECT_EQ(sym_report.irreps.size(), 3);

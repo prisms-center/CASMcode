@@ -5,7 +5,7 @@
 #include "casm/clex/Supercell.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/enumerator/ConfigEnumInput_impl.hh"
-#include "casm/enumerator/DoFSpace_impl.hh"
+#include "casm/enumerator/DoFSpace.hh"
 #include "casm/symmetry/io/json/SymRepTools.hh"
 #include "crystallography/TestStructures.hh"
 #include "gtest/gtest.h"
@@ -110,12 +110,12 @@ TEST_F(DoFSpaceTest, VectorSpaceSymReportTest1) {
   DoFSpace dof_space = make_dof_space(dof_key, config_input);
 
   // Construct the VectorSpaceSymReport (calc_wedges==false)
+  auto const &sym_info = shared_supercell->sym_info();
   std::vector<PermuteIterator> invariant_group =
       make_invariant_subgroup(config_input);
   bool calc_wedges = false;
-  VectorSpaceSymReport report =
-      vector_space_sym_report(dof_space, config_input, invariant_group.begin(),
-                              invariant_group.end(), calc_wedges);
+  VectorSpaceSymReport report = vector_space_sym_report(
+      dof_space, sym_info, invariant_group, calc_wedges);
 
   jsonParser report_json;
   to_json(report, report_json);
@@ -138,12 +138,12 @@ TEST_F(DoFSpaceTest, VectorSpaceSymReportTest2) {
   DoFSpace dof_space = make_dof_space(dof_key, config_input);
 
   // Construct the VectorSpaceSymReport (calc_wedges==true)
+  auto const &sym_info = shared_supercell->sym_info();
   std::vector<PermuteIterator> invariant_group =
       make_invariant_subgroup(config_input);
   bool calc_wedges = true;
-  VectorSpaceSymReport report =
-      vector_space_sym_report(dof_space, config_input, invariant_group.begin(),
-                              invariant_group.end(), calc_wedges);
+  VectorSpaceSymReport report = vector_space_sym_report(
+      dof_space, sym_info, invariant_group, calc_wedges);
   jsonParser report_json;
   to_json(report, report_json);
 
@@ -165,12 +165,12 @@ TEST_F(DoFSpaceTest, VectorSpaceSymReportTest3) {
   DoFSpace dof_space = make_dof_space(dof_key, config_input);
 
   // Construct the VectorSpaceSymReport (calc_wedges==false)
+  auto const &sym_info = shared_supercell->sym_info();
   std::vector<PermuteIterator> invariant_group =
       make_invariant_subgroup(config_input);
   bool calc_wedges = false;
-  VectorSpaceSymReport report =
-      vector_space_sym_report(dof_space, config_input, invariant_group.begin(),
-                              invariant_group.end(), calc_wedges);
+  VectorSpaceSymReport report = vector_space_sym_report(
+      dof_space, sym_info, invariant_group, calc_wedges);
 
   jsonParser report_json;
   to_json(report, report_json);
@@ -193,12 +193,12 @@ TEST_F(DoFSpaceTest, VectorSpaceSymReportTest4) {
   DoFSpace dof_space = make_dof_space(dof_key, config_input);
 
   // Construct the VectorSpaceSymReport (calc_wedges==true)
+  auto const &sym_info = shared_supercell->sym_info();
   std::vector<PermuteIterator> invariant_group =
       make_invariant_subgroup(config_input);
   bool calc_wedges = true;
-  VectorSpaceSymReport report =
-      vector_space_sym_report(dof_space, config_input, invariant_group.begin(),
-                              invariant_group.end(), calc_wedges);
+  VectorSpaceSymReport report = vector_space_sym_report(
+      dof_space, sym_info, invariant_group, calc_wedges);
   jsonParser report_json;
   to_json(report, report_json);
 

@@ -5,10 +5,11 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/SimpleStructureTools.hh"
+#include "casm/clex/Supercell.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/io/SimpleStructureIO.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
-#include "casm/enumerator/DoFSpace_impl.hh"
+#include "casm/enumerator/DoFSpace.hh"
 #include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/global/definitions.hh"
 #include "casm/symmetry/json_io.hh"
@@ -306,6 +307,7 @@ void output_dof_space(Index state_index, std::string const &identifier,
   log.begin(identifier);
   log.increase_indent();
 
+  auto const &sym_info = input_state.configuration().supercell().sym_info();
   std::vector<PermuteIterator> group = make_invariant_subgroup(input_state);
 
   if (options.write_symmetry) {
@@ -334,8 +336,8 @@ void output_dof_space(Index state_index, std::string const &identifier,
     std::optional<VectorSpaceSymReport> report;
     try {
       if (options.sym_axes) {
-        dof_space = make_symmetry_adapted_dof_space(
-            dof_space, input_state, group, options.calc_wedge, report);
+        dof_space = make_symmetry_adapted_dof_space(dof_space, sym_info, group,
+                                                    options.calc_wedge, report);
       }
     } catch (make_symmetry_adapted_dof_space_error &e) {
       log << "Error: " << e.what() << std::endl;

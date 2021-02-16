@@ -257,9 +257,10 @@ DoFSpace MakeEnumerator::make_and_write_dof_space(
       make_dof_space(params_template.dof, initial_state, axes_params.axes);
   if (make_symmetry_adapted_axes) {
     log << "Performing DoF space analysis: " << name << std::endl;
+    auto const &sym_info = initial_state.configuration().supercell().sym_info();
     std::vector<PermuteIterator> group = make_invariant_subgroup(initial_state);
     dof_space_output.write_symmetry(index, name, initial_state, group);
-    dof_space = make_symmetry_adapted_dof_space(dof_space, initial_state, group,
+    dof_space = make_symmetry_adapted_dof_space(dof_space, sym_info, group,
                                                 calc_wedges, sym_report);
   }
   dof_space_output.write_dof_space(index, dof_space, name, initial_state,

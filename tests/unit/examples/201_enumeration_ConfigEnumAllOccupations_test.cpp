@@ -10,7 +10,7 @@
 #include "casm/database/ScelDatabase.hh"
 #include "casm/database/ScelDatabaseTools_impl.hh"
 #include "casm/enumerator/ConfigEnumInput_impl.hh"
-#include "casm/enumerator/DoFSpace_impl.hh"
+#include "casm/enumerator/DoFSpace.hh"
 #include "crystallography/TestStructures.hh"  // for test::ZrO_prim
 #include "gtest/gtest.h"
 
