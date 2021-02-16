@@ -169,26 +169,23 @@ std::string ConfigEnumSiteDoFsInterface::desc() const {
 
   std::string custom_options =
 
-      "  dof: string (required) \n"
-      "    Name of degree of freedom for which normal coordinates are to be "
-      "generated.\n"
-      "    Must be one of the degrees of freedom under consideration in the "
-      "current project,\n"
-      "    as specified in prim.json.\n\n"
+      "  dof: string (required)                                           \n"
+      "    Name of degree of freedom for which normal coordinates are to  \n"
+      "    be generated. Must be one of the degrees of freedom under      \n"
+      "    consideration in the current project, as specified in          \n"
+      "    prim.json.                                                     \n\n"
 
-      "  axes: matrix or JSON object (optional, default=identity matrix of DoF "
-      "space dimension) \n\n"
-      "    Coordinate axes of the DoF grid. Each element in an axis vector "
-      "correponds to an \n"
-      "    individual DoF. Each axis vector corresponds to a normal mode. Use "
-      "the option \n"
-      "    `\"print_dof_space_and_quit\": true` to print DoF space information "
-      "with a glossary \n"
-      "    describing which DoF is specified by which vector element. The "
-      "'axes' may be rank \n"
-      "    deficient indicating enumeration should occur in a subspace of the "
-      "full DoF space \n"
-      "    specified by the \"dof\" value and initial enumeration state.\n"
+      "  axes: matrix or JSON object (optional)                           \n"
+      "    Coordinate axes of the DoF grid. Default value is the identity \n"
+      "    matrix of DoF space dimension Each element in an axis vector   \n"
+      "    correponds to an individual DoF. Each axis vector corresponds  \n"
+      "    to a normal mode. Use the option                               \n"
+      "    `\"print_dof_space_and_quit\": true` to print DoF space        \n"
+      "    information with a glossary describing which DoF is specified  \n"
+      "    by which vector element. The 'axes' may be rank deficient      \n"
+      "    indicating enumeration should occur in a subspace of the full  \n"
+      "    DoF space specified by the \"dof\" value and initial           \n"
+      "    enumeration state.                                             \n\n"
 
       "    Example if matrix (row vector matix): \n"
       "      \"axes\" : [ \n"
@@ -204,69 +201,83 @@ std::string ConfigEnumSiteDoFsInterface::desc() const {
       "          \"q3\": [1,-1, 0, 1,-1, 0]  \n"
       "        } \n\n"
 
-      "      Note: \n"
-      "      - If some \"qi\" in the range [1, DoF space dimension] are "
-      "missing, then enumeration \n"
-      "        is performed in the subspace specified by the axes that are "
-      "provided. \n\n"
+      "    Note: \n"
+      "    - If some \"qi\" in the range [1, DoF space dimension] are     \n"
+      "      missing, then enumeration is performed in the subspace       \n"
+      "      specified by the axes that are provided.                     \n\n"
 
-      "  sym_axes: bool (optional, default=false)\n"
-      "    If true, overrides \"axes\" field and instead constructs "
-      "symmetry-adapted grid axes\n"
-      "    as the symmetry-adapted DoF order parameters of 'config'. Run with "
-      "option \n"
-      "    `\"print_dof_space_and_quit\": true` to obtain the analysis report "
-      "including the \n"
-      "    symmetry-adapted axes.\n\n"
+      "  sym_axes: bool (optional, default=false)                         \n"
+      "    If true, constructs symmetry-adapted grid axes as the symmetry-\n"
+      "    adapted DoF order parameters of the input state in the space   \n"
+      "    specified by \"axes\". Run with option                         \n"
+      "    `\"print_dof_space_and_quit\": true` to obtain the analysis    \n"
+      "    report including the symmetry-adapted axes before doing the    \n"
+      "    enumeration. If `\"sym_axes\": true`, the enumeration grid may \n"
+      "    not be specified using vector-valued \"min\", \"max\",         \n"
+      "    \"increment\", or \"num\".                                     \n\n"
 
-      "  print_dof_space_and_quit: boolean (optional, default=false) \n"
-      "    If true, print DoF space information for each initial enumeration "
-      "state and quit. If \n"
-      "    `\"sym_axes\": true`, will also print irreducible subspaces and "
-      "symmetry-adapted axes. \n\n"
+      "  exclude_homogeneous_modes: bool (optional, default=false)        \n"
+      "   If true, homogeneous modes are removed from \"axes\" before     \n"
+      "   construcing symmetry adapted axes. In the case of \"disp\" DoF, \n"
+      "   this excludes all rigid translations. This option is allowed    \n"
+      "   only for `\"sym_axes\": true`.                                  \n\n"
 
-      "  min: number, or array of numbers (optional, default = [0,...,0]) \n"
-      "    Minimum, starting value of grid counter\n"
-      "    If number, specifies using a constant array of DoF space dimension "
-      "with that given value.\n"
-      "    Ex: \"min\" : -0.1  ( -->  [-0.1, -0.1, ..., -0.1])\n"
-      "    If array, dimension must be equal to the \"axes\" dimension.\n"
-      "    Ex: \"min\" : [-0.05, -0.1, -0.1]\n\n"
+      "  print_dof_space_and_quit: boolean (optional, default=false)      \n"
+      "    If true, print DoF space information for each initial          \n"
+      "    enumeration state and quit. If `\"sym_axes\": true`, will also \n"
+      "    print irreducible subspaces, symmetry-adapted axes, and axes   \n"
+      "    excluding homogeneous modes.                                   \n\n"
 
-      "  max: number, or array of numbers (required) \n"
-      "    Maximum, final value of grid counter\n"
-      "    If number, specifies using a constant array of DoF space dimension "
-      "with that given value.\n"
-      "    Ex: \"max\" : 0.1  ( -->  [0.1, 0.1, ..., 0.1])\n"
-      "    If array, dimension must be equal to the \"axes\" dimension.\n"
-      "    Ex: \"max\" : [0.05, 0.1, 0.1]\n\n"
+      "  min: number, or array of numbers (optional)                      \n"
+      "    Minimum, starting value of grid counter. If number, specifies  \n"
+      "    using a constant array of DoF space dimension with that given  \n"
+      "    value.                                                         \n"
+      "    Ex: \"min\" : -0.1  ( -->  [-0.1, -0.1, ..., -0.1])            \n"
+      "    If array, dimension must be equal to the \"axes\" dimension and\n"
+      "    `\"sym_axes\" must be false`.                                  \n"
+      "    Ex: \"min\" : [-0.05, -0.1, -0.1]                              \n\n"
 
-      "  increment: number, or array of numbers (required) \n"
-      "    Amount by which to increment counter elements\n"
-      "    If number, specifies using a constant array of DoF space dimension "
-      "with that given value.\n"
-      "    Ex: \"increment\" : 0.01  ( -->  [0.01, 0.01, ..., 0.01])\n"
-      "    If array, dimension must be equal to the \"axes\" dimension.\n"
-      "    Ex: \"max\" : [0.005, 0.01, 0.01]\n\n"
+      "  max: number, or array of numbers (required)                      \n"
+      "    Maximum, final value of grid counter. If number, specifies     \n"
+      "    using a constant array of DoF space dimension with that given  \n"
+      "    value.                                                         \n"
+      "    Ex: \"max\" : 0.1  ( -->  [0.1, 0.1, ..., 0.1])                \n"
+      "    If array, dimension must be equal to the \"axes\" dimension and\n"
+      "    `\"sym_axes\" must be false`.                                  \n"
+      "    Ex: \"max\" : [0.05, 0.1, 0.1]                                 \n\n"
 
-      "  exclude_homogeneous_modes: bool (optional, default=false)\n"
-      "   If true, enumerator only returns non-homogeneous modes. In the case "
-      "of \"disp\" dof this "
-      "   excludes all rigid translations. This option is allowed only for "
-      "\"sym_axes\":true\n\n"
+      "  increment: number, or array of numbers (optional)                \n"
+      "    Amount by which to increment counter elements. If number,      \n"
+      "    specifies using a constant array of DoF space dimension with   \n"
+      "    that given value.                                              \n"
+      "    Ex: \"increment\" : 0.01  ( -->  [0.01, 0.01, ..., 0.01])      \n"
+      "    If array, dimension must be equal to the \"axes\" dimension and\n"
+      "    `\"sym_axes\" must be false`.                                  \n"
+      "    Ex: \"increment\" : [0.005, 0.01, 0.01]                        \n"
+      "    One of \"increment\" or \"num\" must be given.                 \n\n"
 
-      "  min_nonzero: integer (optional, default = 0) \n"
-      "    Minimum number of coordinate amplitudes that are allowed\n"
-      "    to be nonzero. Must be less than or equal to the \"axes\" "
-      "dimension.\n\n"
+      "  num: int, or array of int (optional)                             \n"
+      "    Number of values to include. Must be >= 1. If \"num\" is 1,    \n"
+      "    only include a point at the \"min\" value along specified      \n"
+      "    dimensions (this is equivalent to min=min, increment=(max-min),\n"
+      "    max=max-increment/10.). If \"num\" is >1, include that many    \n"
+      "    points, including the \"min\" and \"max\" (this is equivalent  \n"
+      "    to min=min, increment=(max-min)/(num-1), max=max+inc/10.).     \n"
+      "    Ex: \"increment\" : 11  ( --> [11, 11, ..., 11])               \n"
+      "    If array, dimension must be equal to the \"axes\" dimension.   \n"
+      "    Ex: \"num\" : [5, 11, 11]                                      \n"
+      "    One of \"increment\" or \"num\" must be given.                 \n\n"
 
-      "  max_nonzero: integer (optional, default = axes.rows()) \n"
-      "    Maximum number of coordinate amplitudes that are allowed\n"
-      "    to be nonzero. Must be less than or equal to the \"axes\" "
-      "dimension.\n\n"
+      "  min_nonzero: integer (optional, default = 0)                     \n"
+      "    Minimum number of coordinate amplitudes that are allowed       \n"
+      "    to be nonzero. Must be less than or equal to \"max_nonzero\".  \n\n"
 
-      "  output_dir: string (optional, default=current path) \n"
-      "    Selects where output files are written. \n\n";
+      "  max_nonzero: integer (optional, default = axes.rows())           \n"
+      "    Maximum number of coordinate amplitudes that are allowed to be \n"
+      "    nonzero. Must be less than or equal to the \"axes\" dimension. \n\n"
+
+      "  output_dir: string (optional, default=current path)              \n"
+      "    Selects where output files are written.                        \n\n";
 
   std::string examples =
       "  Examples:\n"
@@ -289,40 +300,10 @@ std::string ConfigEnumSiteDoFsInterface::name() const {
   return ConfigEnumSiteDoFs::enumerator_name;
 }
 
-/// Parse the "min" / "increment" / "max" scalar or vector values
-void parse_counter_value(InputParser<ConfigEnumSiteDoFsParams> &parser,
-                         Eigen::VectorXd &counter_value,
-                         std::string attribute_name, Index n_axes_columns,
-                         bool has_default_value,
-                         Eigen::VectorXd const &default_value) {
-  if (parser.self.contains(attribute_name) &&
-      parser.self[attribute_name].is_number()) {
-    counter_value = Eigen::VectorXd::Constant(
-        n_axes_columns, parser.self[attribute_name].get<double>());
-  } else if (parser.self.contains(attribute_name) &&
-             parser.self[attribute_name].is_array()) {
-    parser.optional(counter_value, attribute_name);
-    if (counter_value.size() != n_axes_columns) {
-      std::stringstream msg;
-      // note: message refers to JSON axes rows, but that means
-      // params.axes.cols()
-      msg << "Error: \"" << attribute_name
-          << "\" array size must match dimension of \"axes\" rows";
-      parser.error.insert(msg.str());
-    }
-  } else if (has_default_value) {
-    counter_value = default_value;
-  } else {
-    std::stringstream msg;
-    msg << "Error: \"" << attribute_name
-        << "\" must be a number or array of number";
-    parser.error.insert(msg.str());
-  }
-}
-
 /// Parse the ConfigEnumSiteDoFsParams JSON input
 void parse(InputParser<ConfigEnumSiteDoFsParams> &parser,
-           ConfigEnumInput const &initial_state) {
+           ConfigEnumInput const &initial_state, AxesCounterParams &axes_params,
+           bool sym_axes_option, bool exclude_homogeneous_modes) {
   parser.value = notstd::make_unique<ConfigEnumSiteDoFsParams>();
   auto &params = *parser.value;
 
@@ -340,13 +321,19 @@ void parse(InputParser<ConfigEnumSiteDoFsParams> &parser,
   // ------------------------------------------
   auto grid_parser = parser.parse_as<AxesCounterParams>(dof_space_dimension);
   if (grid_parser->valid()) {
-    params.axes = grid_parser->value->axes;
-    params.min_val = grid_parser->value->min_val;
-    params.max_val = grid_parser->value->max_val;
-    params.inc_val = grid_parser->value->inc_val;
+    axes_params = *grid_parser->value;
   }
 
-  // 4) get min/max nonzero amplitudes -----------------------------------
+  if ((sym_axes_option || exclude_homogeneous_modes) &&
+      !axes_params.scalar_input) {
+    std::stringstream msg;
+    msg << "Error: Vector input for enumeration ranges (\"min\", \"max\", "
+           "\"increment\" or \"num\") is not allowed with `\"sym_axes\": true` "
+           "or `\"exclude_homogeneous_modes\": true`.";
+    throw std::runtime_error(msg.str());
+  }
+
+  // 3) get min/max nonzero amplitudes -----------------------------------
 
   // "min_nonzero" -> params.min_nonzero
   parser.optional_else(params.min_nonzero, "min_nonzero", Index{0});
@@ -388,136 +375,118 @@ void require_all_input_have_the_same_number_of_selected_sites(
 
 namespace ConfigEnumSiteDoFsInterface_impl {
 
+DoFSpace exclude_homogeneous_mode_space(DoFSpace const &dof_space) {
+  throw std::runtime_error("TODO");
+}
+
+typedef ConfigEnumData<ConfigEnumSiteDoFs, ConfigEnumInput> ConfigEnumDataType;
+
 // This functor constructs a ConfigEnumSiteDoFs enumerator for a given initial
 // state
 struct MakeEnumerator {
-  MakeEnumerator(ConfigEnumSiteDoFsParams const &_params,
+  MakeEnumerator(ConfigEnumOptions const &_options,
+                 ConfigEnumSiteDoFsParams const &_params,
+                 AxesCounterParams const &_axes_params,
                  bool _make_symmetry_adapted_axes,
                  bool _exclude_homogeneous_modes,
                  DoFSpaceIO::SequentialDirectoryOutput &_dof_space_output)
       : log(CASM::log()),
-        params(_params),
+        options(_options),
+        params_template(_params),
+        axes_params(_axes_params),
         make_symmetry_adapted_axes(_make_symmetry_adapted_axes),
         exclude_homogeneous_modes(_exclude_homogeneous_modes),
+        calc_wedges(false),
         dof_space_output(_dof_space_output) {}
 
   Log &log;
-  ConfigEnumSiteDoFsParams const &params;
+  ConfigEnumOptions const &options;
+  ConfigEnumSiteDoFsParams const &params_template;
+  AxesCounterParams const &axes_params;
   bool make_symmetry_adapted_axes;
   bool exclude_homogeneous_modes;
+  bool calc_wedges;
   DoFSpaceIO::SequentialDirectoryOutput &dof_space_output;
 
+  // constructs a ConfigEnumSiteDoFs for each initial_state
   ConfigEnumSiteDoFs operator()(Index index, std::string name,
-                                ConfigEnumInput const &initial_state) const {
-    DoFSpace dof_space = make_dof_space(params.dof, initial_state, params.axes);
-    std::optional<VectorSpaceSymReport> sym_report;
-    ConfigEnumSiteDoFsParams params_copy = params;
-    if (make_symmetry_adapted_axes) {  // if sym_axes==true, make and use
-                                       // symmetry adapted axes
-      log << "Performing DoF space analysis: " << name << std::endl;
-      log << "For large spaces this may be slow..." << std::endl;
-      bool calc_wedges = false;
-      std::vector<PermuteIterator> group =
-          make_invariant_subgroup(initial_state);
-      dof_space_output.write_symmetry(index, name, initial_state, group);
-      dof_space = make_symmetry_adapted_dof_space(
-          dof_space, initial_state, group, calc_wedges, sym_report);
-      params_copy.axes = dof_space.basis();
+                                ConfigEnumInput const &initial_state) const;
 
-      // If exclude homogeneous modes is true resize all the inc, min, max
-      // values and explicitly compute the symmetry adapted axes without
-      // homogeneous modes
-      if (exclude_homogeneous_modes == true) {
-        log << "Excluding homogeneous modes..." << std::endl;
+  // constructs a symmetry adapted dof space and writes it to file as a record
+  DoFSpace make_and_write_dof_space(
+      Index index, std::string name, ConfigEnumInput const &initial_state,
+      std::optional<VectorSpaceSymReport> &sym_report) const;
 
-        params_copy.axes = symmetry_adapted_axes_without_homogeneous_modes(
-            dof_space, initial_state);
-
-        if (almost_zero(params_copy.min_val)) {
-          params_copy.min_val.conservativeResize(params_copy.axes.cols());
-        }
-
-        if (almost_zero(params_copy.inc_val -
-                        Eigen::VectorXd::Constant(params_copy.inc_val.rows(),
-                                                  params_copy.inc_val(0)))) {
-          params_copy.inc_val.conservativeResize(params_copy.axes.cols());
-        }
-
-        if (almost_zero(params_copy.max_val -
-                        Eigen::VectorXd::Constant(params_copy.max_val.rows(),
-                                                  params_copy.max_val(0)))) {
-          params_copy.max_val.conservativeResize(params_copy.axes.cols());
-        }
-
-        if (params_copy.max_nonzero == dof_space.basis().cols()) {
-          params_copy.max_nonzero = params_copy.axes.cols();
-        }
-
-        if (params_copy.axes.cols() != params_copy.min_val.rows() ||
-            params_copy.axes.cols() != params_copy.max_val.rows() ||
-            params_copy.axes.cols() != params_copy.inc_val.rows()) {
-          std::stringstream msg;
-          msg << "Since \"sym_axes\" is set to be true along with switching "
-                 "off homogeneous modes, irreps "
-                 "containing "
-                 "homogeneous modes will be excluded. This implies you need to "
-                 "set your \"min\", "
-                 "\"max\", "
-                 "\"inc\" to match "
-                 "with the dimensionality of new irreps. Please make sure that "
-                 "the dimensionality of your "
-                 "\"min\", \"max_val\" "
-                 "and \"inc\" to have dimensions of \""
-              << params_copy.axes.cols() << "\n";
-
-          throw std::runtime_error(msg.str());
-        }
-
-        if (params_copy.max_nonzero > params_copy.axes.cols()) {
-          std::stringstream msg;
-          msg << "Since sym_axes is set to be true along with switching off "
-                 "homogeneous modes, irreps "
-                 "containing "
-                 "homogeneous modes will be excluded. This implies you need to "
-                 "set your \"max_nonzero\" to not "
-                 "exceed "
-              << params_copy.axes.cols() << "\n";
-
-          throw std::runtime_error(msg.str());
-        }
-
-        if (params_copy.min_nonzero > params_copy.axes.cols()) {
-          std::stringstream msg;
-          msg << "Since sym_axes is set to be true along with switching off "
-                 "homogeneous modes, irreps containing homogeneous modes will "
-                 "be excluded. This implies you need to set your "
-                 "\"min_nonzero\" to not exceed your new maximum "
-                 "\"max_nonzero\": "
-              << params_copy.axes.cols() << "value\n";
-          throw std::runtime_error(msg.str());
-        }
-      }
-
-      auto const &dof_info = initial_state.configuration()
-                                 .configdof()
-                                 .local_dof(params.dof)
-                                 .info();
-      Eigen::MatrixXd homogeneous_mode_space =
-          make_homogeneous_mode_space(dof_info);
-
-      if (VectorSpaceMixingInfo{params_copy.axes, homogeneous_mode_space,
-                                CASM::TOL}
-              .are_axes_mixed_with_subspace) {
-        log << "WARNING! Irreps have non-homogeneous and homogeneous modes "
-               "mixed. Proceed with caution.\n";
-      }
-    }
-
-    dof_space_output.write_dof_space(index, dof_space, name, initial_state,
-                                     sym_report);
-    return ConfigEnumSiteDoFs{initial_state, params_copy};
-  }
+  // constructs a DataFormatter to record enumeration results
+  DataFormatter<ConfigEnumDataType> make_formatter() const;
 };
+
+// constructs a ConfigEnumSiteDoFs for each initial_state
+ConfigEnumSiteDoFs MakeEnumerator::operator()(
+    Index index, std::string name, ConfigEnumInput const &initial_state) const {
+  std::optional<VectorSpaceSymReport> sym_report;
+  DoFSpace dof_space =
+      make_and_write_dof_space(index, name, initial_state, sym_report);
+
+  ConfigEnumSiteDoFsParams params = params_template;
+  params.axes = dof_space.basis();
+
+  // set enumeration ranges
+  if (axes_params.scalar_input) {
+    int dim = dof_space.dim();
+    params.min_val = Eigen::VectorXd::Constant(dim, axes_params.min_scalar);
+    params.max_val = Eigen::VectorXd::Constant(dim, axes_params.max_scalar);
+    params.inc_val = Eigen::VectorXd::Constant(dim, axes_params.inc_scalar);
+  } else {
+    params.min_val = axes_params.min_vector;
+    params.max_val = axes_params.max_vector;
+    params.inc_val = axes_params.inc_vector;
+  }
+
+  return ConfigEnumSiteDoFs{initial_state, params};
+}
+
+// constructs a symmetry adapted dof space and writes it to file as a record
+DoFSpace MakeEnumerator::make_and_write_dof_space(
+    Index index, std::string name, ConfigEnumInput const &initial_state,
+    std::optional<VectorSpaceSymReport> &sym_report) const {
+  DoFSpace dof_space =
+      make_dof_space(params_template.dof, initial_state, axes_params.axes);
+  if (make_symmetry_adapted_axes) {
+    log << "Performing DoF space analysis: " << name << std::endl;
+    std::vector<PermuteIterator> group = make_invariant_subgroup(initial_state);
+    if (exclude_homogeneous_modes) {
+      dof_space = exclude_homogeneous_mode_space(dof_space);
+    }
+    dof_space_output.write_symmetry(index, name, initial_state, group);
+    dof_space = make_symmetry_adapted_dof_space(dof_space, initial_state, group,
+                                                calc_wedges, sym_report);
+  }
+  dof_space_output.write_dof_space(index, dof_space, name, initial_state,
+                                   sym_report);
+  return dof_space;
+}
+
+// constructs a DataFormatter to record enumeration results
+DataFormatter<ConfigEnumDataType> MakeEnumerator::make_formatter() const {
+  DataFormatter<ConfigEnumDataType> formatter;
+  formatter.push_back(ConfigEnumIO::name<ConfigEnumDataType>(),
+                      ConfigEnumIO::selected<ConfigEnumDataType>(),
+                      ConfigEnumIO::is_new<ConfigEnumDataType>(),
+                      ConfigEnumIO::is_existing<ConfigEnumDataType>());
+  if (options.filter) {
+    formatter.push_back(
+        ConfigEnumIO::is_excluded_by_filter<ConfigEnumDataType>());
+  }
+  formatter.push_back(
+      ConfigEnumIO::initial_state_index<ConfigEnumDataType>(),
+      ConfigEnumIO::initial_state_name<ConfigEnumDataType>(),
+      ConfigEnumIO::initial_state_configname<ConfigEnumDataType>(),
+      ConfigEnumIO::n_selected_sites<ConfigEnumDataType>());
+
+  return formatter;
+}
+
 }  // namespace ConfigEnumSiteDoFsInterface_impl
 
 void ConfigEnumSiteDoFsInterface::run(
@@ -554,60 +523,50 @@ void ConfigEnumSiteDoFsInterface::run(
   auto const &named_initial_states = *input_parser_ptr->value;
   print_initial_states(log, named_initial_states);
 
-  // 3a) Parse ConfigEnumSiteDoFsParams ------------------
-  auto params_parser_ptr =
-      parser.parse_as<ConfigEnumSiteDoFsParams>(named_initial_states[0].second);
-  report_and_throw_if_invalid(parser, log, error_if_invalid);
-  ConfigEnumSiteDoFsParams const &params = *params_parser_ptr->value;
+  // 3) Parse ConfigEnumSiteDoFsParams ------------------
 
-  // 3b) check for "sym_axes" option:
+  // 3a) check for "sym_axes" option:
   bool sym_axes_option;
   parser.optional_else(sym_axes_option, "sym_axes", false);
+  log.indent() << "sym_axes: " << std::boolalpha << sym_axes_option
+               << std::endl;
 
-  // 3c) check for "print_dof_space_and_quit" option:
-  bool print_dof_space_and_quit_option;
-  parser.optional_else(print_dof_space_and_quit_option,
-                       "print_dof_space_and_quit", false);
-
-  // Check for "exclude_homogeneous_modes" option
+  // 3c) check for "exclude_homogeneous_modes" option
   bool exclude_homogeneous_modes;
   parser.optional_else(exclude_homogeneous_modes, "exclude_homogeneous_modes",
                        false);
+  log.indent() << "exclude_homogeneous_modes: " << std::boolalpha
+               << exclude_homogeneous_modes << std::endl;
 
-  // If sym_axes is false along with exclude_homogeneous_modes true,
-  // throw an error as we do not have it implemented in the current section of
-  // the code
-  if (sym_axes_option == false && exclude_homogeneous_modes == true) {
-    std::stringstream msg;
-    msg << "You may not use 'exclude_homogeneous_modes' = true with "
-           "\"sym_axes\" : false. "
-           "Alternatives: \n 1) Use "
-           "\"adapted_axes_without_homogeneous_modes\" provided in the "
-           "DoF space symmetry analysis for \"axes\" and "
-           "\"exclude_homogeneous_modes\" = false \n 2) "
-           "Directly use \"exclude_homogeneous_modes\" = true without"
-           "\"sym_axes\" = true) \n"
-        << std::endl;
-    parser.error.insert(msg.str());
+  // axes: column vector matrix
+  // - user input, else default = identity matrix of initial state dof space
+  //   dimension
+  // - If sym_axes==false: normal mode coordinates used directly
+  // - If sym_axes==true: subspace to be symmetrized
+  AxesCounterParams axes_params;
+  auto params_parser_ptr = parser.parse_as<ConfigEnumSiteDoFsParams>(
+      named_initial_states[0].second, axes_params, sym_axes_option,
+      exclude_homogeneous_modes);
+  report_and_throw_if_invalid(parser, log, error_if_invalid);
+  ConfigEnumSiteDoFsParams const &params = *params_parser_ptr->value;
+  log.indent() << "axes: (column vectors) \n" << axes_params.axes << std::endl;
+  if (axes_params.scalar_input) {
+    log.indent() << "min: " << axes_params.min_scalar << std::endl;
+    log.indent() << "max: " << axes_params.max_scalar << std::endl;
+    log.indent() << "increment: " << axes_params.inc_scalar << std::endl;
+  } else {
+    log.indent() << "min: " << axes_params.min_vector.transpose() << std::endl;
+    log.indent() << "max: " << axes_params.max_vector.transpose() << std::endl;
+    log.indent() << "increment: " << axes_params.inc_vector.transpose()
+                 << std::endl;
   }
+  log.indent() << "min_nonzero: " << params.min_nonzero << std::endl;
+  log.indent() << "max_nonzero: " << params.max_nonzero << std::endl;
 
-  // Throw error if min, max, inc are provided as vectors when using sym_axes
-  std::vector<std::string> axes_attribs{"min", "max", "increment"};
-  if (sym_axes_option == true) {
-    for (auto attrib : axes_attribs) {
-      if (parser.self.contains(attrib)) {
-        if (!parser.self[attrib].is_number()) {
-          std::stringstream msg;
-          msg << "Error: \"" << attrib
-              << "\" should not be a vector. Since you're using \"sym_axes\" : "
-                 "true, provide only a value. To be able to use custom "
-                 "increment/minimum/maximum values for symmetry adapted axes, "
-                 "copy it into \"axes\" and set \"sym_axes\" : false";
-          parser.error.insert(msg.str());
-        }
-      }
-    }
-  }
+  // 3b) check for "print_dof_space_and_quit" option:
+  bool print_dof_space_and_quit_option;
+  parser.optional_else(print_dof_space_and_quit_option,
+                       "print_dof_space_and_quit", false);
 
   // parse "output_dir" (optional, default = current_path)
   fs::path output_dir;
@@ -616,52 +575,38 @@ void ConfigEnumSiteDoFsInterface::run(
 
   log << std::endl;
 
+  // 4) Enumerate configurations ------------------
+
+  DoFSpaceIO::SequentialDirectoryOutput dof_space_output{output_dir};
+  ConfigEnumSiteDoFsInterface_impl::MakeEnumerator make_enumerator_f{
+      options,
+      params,
+      axes_params,
+      sym_axes_option,
+      exclude_homogeneous_modes,
+      dof_space_output};
+
   if (print_dof_space_and_quit_option) {
     log.begin("Print DoF Space and Quit Option");
     log << "For large spaces this may be slow..." << std::endl;
-    using namespace DoFSpaceIO;
-    SequentialDirectoryOutput dof_space_output{output_dir};
-    DoFSpaceAnalysisOptions options;
-    options.dofs = std::vector<DoFKey>({params.dof});
-    options.sym_axes = true;
-    options.write_symmetry = true;
-    options.calc_wedge = false;
-    dof_space_analysis(named_initial_states, options, dof_space_output);
+    std::optional<VectorSpaceSymReport> sym_report;
+    Index i = 0;
+    for (auto const &pair : named_initial_states) {
+      std::string const &name = pair.first;
+      ConfigEnumInput const &initial_state = pair.second;
+      make_enumerator_f.make_and_write_dof_space(i, name, initial_state,
+                                                 sym_report);
+      i++;
+    }
     log.end_section();
     return;
   }
 
-  // 4) Enumerate configurations ------------------
-
-  DoFSpaceIO::SequentialDirectoryOutput dof_space_output{output_dir};
-
-  ConfigEnumSiteDoFsInterface_impl::MakeEnumerator make_enumerator_f{
-      params, sym_axes_option, exclude_homogeneous_modes, dof_space_output};
-
-  typedef ConfigEnumData<ConfigEnumSiteDoFs, ConfigEnumInput>
-      ConfigEnumDataType;
-  DataFormatter<ConfigEnumDataType> formatter;
-  formatter.push_back(ConfigEnumIO::name<ConfigEnumDataType>(),
-                      ConfigEnumIO::selected<ConfigEnumDataType>(),
-                      ConfigEnumIO::is_new<ConfigEnumDataType>(),
-                      ConfigEnumIO::is_existing<ConfigEnumDataType>());
-  if (options.filter) {
-    formatter.push_back(
-        ConfigEnumIO::is_excluded_by_filter<ConfigEnumDataType>());
-  }
-  formatter.push_back(
-      ConfigEnumIO::initial_state_index<ConfigEnumDataType>(),
-      ConfigEnumIO::initial_state_name<ConfigEnumDataType>(),
-      ConfigEnumIO::initial_state_configname<ConfigEnumDataType>(),
-      ConfigEnumIO::n_selected_sites<ConfigEnumDataType>());
-
   log << std::endl;
   log.begin("ConfigEnumSiteDoFs enumeration");
-
-  enumerate_configurations(primclex, options, make_enumerator_f,
-                           named_initial_states.begin(),
-                           named_initial_states.end(), formatter);
-
+  enumerate_configurations(
+      primclex, options, make_enumerator_f, named_initial_states.begin(),
+      named_initial_states.end(), make_enumerator_f.make_formatter());
   log.end_section();
 }
 

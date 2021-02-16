@@ -53,9 +53,17 @@ struct AxesCounterParams {
 
   // Counter min, max, and increment values (size must match axes.cols())
 
-  Eigen::VectorXd min_val;
-  Eigen::VectorXd max_val;
-  Eigen::VectorXd inc_val;
+  Eigen::VectorXd min_vector;
+  Eigen::VectorXd max_vector;
+  Eigen::VectorXd inc_vector;
+
+  // If scalar_input==true, Counter min, max, increment should be set with
+  // constant vectors sized as necessary to match axes
+  bool scalar_input;
+
+  double min_scalar;
+  double max_scalar;
+  double inc_scalar;
 };
 
 /// Parse DoFSpace subspace from  "axes" and normal coordinate grid counter from

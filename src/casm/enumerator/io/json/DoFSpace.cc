@@ -129,69 +129,136 @@ void parse(InputParser<DoFSpace> &parser,
   }
 }
 
-/// Parse a number or array value and return a vector
+namespace {
+
+/// For 'num input, updates 'inc' and 'max', based on 'min, 'inc', and 'num'
 ///
-/// \param parser AxesCounterParams parser
-/// \param attribute_name std::string containing the name of the attribute to be
-/// parsed \param dimension If a number is given, return a constant vector of
-/// this dimension and the
-///        given value.
-/// \param default_value Optional, pointer to default value to return if
-/// attribute does not
-///        exist or is null. If `default_value==nullptr`, the attribute is a
-///        required input and an error will be inserted.
-///
-/// Options:
-/// - If attribute is not present or null and `default_value!=nullptr`: return
-/// *default_value;
-/// - If attribute is not present or null and `default_value==nullptr`: insert
-/// error message and return Eigen::VectorXd{}
-/// - If attribute is number: return a Eigen::VectorXd::Constant(dimension,
-/// number)
-/// - If attribute is an array: return array as a Eigen::VectorXd
-/// - If attribute is any other type: insert error message and return
-/// Eigen::VectorXd{}
-Eigen::VectorXd parse_vector_from_number_or_array(
-    InputParser<AxesCounterParams> &parser, std::string attribute_name,
-    Index dimension, Eigen::VectorXd const *default_value = nullptr) {
-  std::string option_type =
-      (default_value != nullptr) ? "(optional)" : "(required)";
-  Eigen::VectorXd no_result;
-  if (!parser.self.contains(attribute_name) ||
-      parser.self[attribute_name].is_null()) {
-    if (default_value != nullptr) {
-      return *default_value;
-    } else {
-      std::stringstream msg;
-      msg << "Error: missing required option '" << attribute_name << "'. "
-          << "Must be a number or array of numbers of size " << dimension
-          << ".";
-      parser.insert_error(attribute_name, msg.str());
-      return no_result;
+/// If 'num' < 1: insert error
+/// If 'num' == 1: min=min; inc=max-min; max=max-inc/10.;
+/// If 'num' > 1: min=min; inc=(max-min)/(num-1); max=max+inc/10.;
+void _enforce_num(InputParser<AxesCounterParams> &parser, double &inc,
+                  double &max, double min, int num) {
+  if (num < 1) {
+    parser.insert_error("num", "Error: 'num' must be >= 1.");
+  } else if (num == 1) {
+    inc = (max - min);
+    max -= inc / 10.;
+  } else {
+    inc = (max - min) / (num - 1);
+    max += inc / 10.;
+  }
+}
+
+/// Parse scalar "min", "max", "increment"/"num"
+void _parse_scalar_input(InputParser<AxesCounterParams> &parser) {
+  AxesCounterParams &params = *parser.value;
+  params.scalar_input = true;
+
+  parser.optional_else(params.min_scalar, "min", 0.);
+  parser.require(params.max_scalar, "max");
+
+  if (parser.self.contains("increment") == parser.self.contains("num")) {
+    parser.error.insert("Error: require one of 'increment' or 'num'.");
+    return;
+  }
+  if (parser.self.contains("increment")) {
+    parser.optional(params.inc_scalar, "increment");
+  } else {
+    /// Alternative to "increment", specify number of values along dimension
+    /// (including min and max)
+    int num_scalar;
+    parser.optional(num_scalar, "num");
+    _enforce_num(parser, params.inc_scalar, params.max_scalar,
+                 params.min_scalar, num_scalar);
+  }
+}
+
+/// Parse vector "min", "max", "increment"/"num"
+void _parse_vector_input(InputParser<AxesCounterParams> &parser) {
+  AxesCounterParams &params = *parser.value;
+  int dim = params.axes.cols();
+  params.scalar_input = false;
+
+  // "min"
+  Eigen::VectorXd default_min = Eigen::VectorXd::Constant(dim, 0.);
+  parser.optional_else(params.min_vector, "min", default_min);
+  if (params.min_vector.size() != dim) {
+    parser.insert_error("min", "Error: 'min' size != axes dimension");
+  }
+
+  // "max"
+  parser.require(params.max_vector, "max");
+  if (params.max_vector.size() != dim) {
+    parser.insert_error("max", "Error: 'max' size != axes dimension");
+  }
+
+  // "increment" or "num"
+  if (parser.self.contains("increment") == parser.self.contains("num")) {
+    parser.error.insert("Error: require one of 'increment' or 'num'.");
+    return;
+  }
+  if (parser.self.contains("increment")) {
+    parser.optional(params.inc_vector, "increment");
+    if (params.inc_vector.size() != dim) {
+      parser.insert_error("increment",
+                          "Error: 'increment' size != axes dimension");
+    }
+  } else {
+    /// Alternative to "increment", specify number of values along dimension
+    /// (including min and max)
+    Eigen::VectorXi num_vector;
+    parser.optional(num_vector, "num");
+    if (num_vector.size() != dim) {
+      parser.insert_error("num", "Error: 'num' size != axes dimension");
+    }
+    for (int i = 0; i < num_vector.size(); ++i) {
+      _enforce_num(parser, params.inc_vector[i], params.max_vector[i],
+                   params.min_vector[i], num_vector[i]);
     }
   }
-  if (parser.self[attribute_name].is_number()) {
-    return Eigen::VectorXd::Constant(dimension,
-                                     parser.self[attribute_name].get<double>());
-  } else if (parser.self[attribute_name].is_array()) {
-    auto subparser = parser.subparse<Eigen::VectorXd>(attribute_name);
-    if (subparser->value == nullptr) {
-      return no_result;
-    }
-    if (subparser->value->size() != dimension) {
-      std::stringstream msg;
-      msg << "Error: '" << attribute_name << "' " << option_type
-          << " must be a number or array of numbers of size " << dimension
-          << ".";
-      subparser->error.insert(msg.str());
-    }
-    return *subparser->value;
+}
+
+}  // namespace
+
+/// Parse "min", "max", and one of "increment" or "num"
+///
+/// \param parser AxesCounterParams parser
+///
+/// Examples of equivalent input for a grid in 2d space:
+/// - `{ "min": 0., "max": 0.101, "increment": 0.01}`
+/// - `{ "min": 0., "max": 0.1, "num": 11}`
+/// - `{ "min": [0., 0.], "max": [0.101, 0.101], "increment": [0.1, 0.1]}`
+/// - `{ "min": [0., 0.], "max": [0.1, 0.1], "num": [11, 11]}`
+///
+/// Notes:
+/// - all range inputs must be consistently either scalar or array
+/// - "min", "max", "increment" must be number or array of number
+/// - "num" must be int or array of int, specifies number of values to count
+///   over (including min and max values, unless num==1, then exclude max)
+/// - only "min" is optional, with default value scalar 0, or vector 0,
+///   depending on type of "max"
+/// - only one of "increment", "num" may be present
+/// - sets AxesCounterParams members `scalar_input` based on input
+void parse_axes_counter_range(InputParser<AxesCounterParams> &parser) {
+  if (parser.value == nullptr) {
+    throw std::runtime_error("Unknown AxesCounterParams parsing error");
+    return;
+  }
+
+  // Use "max" to check for scalar or array input
+  if (!parser.self.contains("max")) {
+    parser.insert_error("max", "Error: missing required parameter 'max'.");
+    return;
+  } else if (parser.self["max"].is_number()) {
+    _parse_scalar_input(parser);
+  } else if (parser.self["max"].is_array()) {
+    _parse_vector_input(parser);
   } else {
     std::stringstream msg;
-    msg << "Error: '" << attribute_name << "' " << option_type
-        << " must be a number or array of numbers of size " << dimension << ".";
-    parser.insert_error(attribute_name, msg.str());
-    return no_result;
+    msg << "Error: Parameter 'max' must be a number, or an "
+           "array of numbers matching the 'axes' dimension.";
+    parser.insert_error("max", msg.str());
+    return;
   }
 }
 
@@ -202,20 +269,22 @@ Eigen::VectorXd parse_vector_from_number_or_array(
 /// Full space case:
 /// {
 ///   "axes": {
-///     "q1": [q10, q11, q12, ...],            /// note: starts with "q1", not
-///     "q0" "q2": [q20, q21, q22, ...], "q3": [q30, q31, q32, ...],
+///     "q1": [q10, q11, q12, ...], /// note: starts with "q1", not "q0"
+///     "q2": [q20, q21, q22, ...],
+///     "q3": [q30, q31, q32, ...],
 ///     ...
 ///   },
-///   "min": [q1min, q2min, q3min, ...],        /// optional, default is zeros
-///   vector "max": [q1max, q2max, q3max, ...],        /// required "increment":
-///   [q1inc, q2inc, q3inc, ...],  /// required
+///   "min": [q1min, q2min, q3min, ...], /// optional, default is zeros vector
+///   "max": [q1max, q2max, q3max, ...], /// required
+///   "increment": [q1inc, q2inc, q3inc, ...],  /// required
 /// }
 ///
 /// Subspace case:
 /// - if some qi (i in range [1, dof_space_dimension]) are missing, then use the
-/// subspace
-///   specified by the axes that are provided
-/// - min.size() / max.size() / increment.size() must equal axes.size()
+///   subspace specified by the axes that are provided
+/// - if scalars, min, max, increment will be used along each dimension
+/// - if arrays, min.size() / max.size() / increment.size() must equal
+///   axes.size()
 /// - example:
 /// {
 ///   "axes": {
@@ -225,7 +294,7 @@ Eigen::VectorXd parse_vector_from_number_or_array(
 ///     "q5": [q50, q51, q52, ...],
 ///   },
 ///   "min": [q1min, q2min, q3min, q5min],        /// optional, default is zeros
-///   vector "max": [q1max, q2max, q3max, q5max],        /// required
+///   vector "max": [q1max, q2max, q3max, q5max], /// required
 ///   "increment": [q1inc, q2inc, q3inc, q5inc],  /// required
 /// }
 ///
@@ -236,7 +305,11 @@ Eigen::VectorXd parse_vector_from_number_or_array(
 /// etc.
 ///
 void parse_axes_from_object(InputParser<AxesCounterParams> &parser,
-                            Eigen::MatrixXd &axes, Index dof_space_dimension) {
+                            Index dof_space_dimension) {
+  if (parser.value == nullptr) {
+    throw std::runtime_error("Unknown AxesCounterParams parsing error");
+    return;
+  }
   Eigen::MatrixXd inaxes =
       Eigen::MatrixXd::Zero(dof_space_dimension, dof_space_dimension);
 
@@ -261,18 +334,23 @@ void parse_axes_from_object(InputParser<AxesCounterParams> &parser,
   }
 
   Index subspace_dimension = found.size();
-  axes = inaxes.leftCols(subspace_dimension);
+  parser.value->axes = inaxes.leftCols(subspace_dimension);
 }
 
-/// Read "axes" from a row-vector JSON matrix, store in `axes` argument as a
-/// column vector matrix
+/// Read "axes" from a row-vector JSON matrix, store in `parser.value->axes` as
+/// a column vector matrix
 void parse_axes_from_array(InputParser<AxesCounterParams> &parser,
-                           Eigen::MatrixXd &axes, Index dof_space_dimension) {
-  // Eigen::MatrixXd row_vector_axes;
-  auto subparser = parser.subparse<Eigen::MatrixXd>("axes");
-  if (subparser->value == nullptr) {
+                           Index dof_space_dimension) {
+  if (parser.value == nullptr) {
+    throw std::runtime_error("Unknown AxesCounterParams parsing error");
     return;
   }
+
+  auto subparser = parser.subparse_if<Eigen::MatrixXd>("axes");
+  if (!subparser->valid()) {
+    return;
+  }
+  Eigen::MatrixXd &axes = parser.value->axes;
   axes = subparser->value->transpose();
 
   // check axes dimensions:
@@ -304,22 +382,25 @@ void parse_axes_from_array(InputParser<AxesCounterParams> &parser,
 /// \param parser JSON to be parsed
 /// \param axes Set to be column vector matrix of axes
 /// \param dof_space_dimension Full DoF space dimension. If no `"axes"` in the
-/// JSON, the default
-///        axes are identity matrix of size dof_space_dimension. Errors are
-///        inserted into parser if axes vectors are not of length equal to
-///        dof_space_dimension.
+///        JSON, the default axes are identity matrix of size
+///        dof_space_dimension. Errors are inserted into parser if axes vectors
+///        are not of length equal to dof_space_dimension.
 ///
 /// TODO: document "axes" here
 ///
 void parse_dof_space_axes(InputParser<AxesCounterParams> &parser,
-                          Eigen::MatrixXd &axes, Index dof_space_dimension) {
+                          Index dof_space_dimension) {
+  if (parser.value == nullptr) {
+    return;
+  }
+  Eigen::MatrixXd &axes = parser.value->axes;
   // "axes" -> axes
   if (!parser.self.contains("axes")) {
     axes = Eigen::MatrixXd::Identity(dof_space_dimension, dof_space_dimension);
   } else if (parser.self.contains("axes") && parser.self["axes"].is_obj()) {
-    parse_axes_from_object(parser, axes, dof_space_dimension);
+    parse_axes_from_object(parser, dof_space_dimension);
   } else if (parser.self.contains("axes") && parser.self["axes"].is_array()) {
-    parse_axes_from_array(parser, axes, dof_space_dimension);
+    parse_axes_from_array(parser, dof_space_dimension);
   } else {
     std::stringstream msg;
     msg << "The 'axes' must be a JSON object of axis vectors (named 'q1', "
@@ -328,47 +409,14 @@ void parse_dof_space_axes(InputParser<AxesCounterParams> &parser,
   }
 }
 
-/// Parse DoF space counter values from "min", "max", and "increment"
-///
-/// \param parser JSON to be parsed
-/// \param dof_subspace DoFSpace subspace (column vector matrix)
-/// \param min_val Set to be minimum counter value. Must be same size as
-/// axes.cols(). \param max_val Set to be maximum counter value. Must be same
-/// size as axes.cols(). \param inc_val Set to be counter increment value. Must
-/// be same size as axes.cols().
-///
-/// Errors are inserted into parser if counter vector sizes are not equal to
-/// dof_subspace.cols().
-///
-/// TODO: document "min", "max", "increment" here
-///
-void parse_dof_space_counter(InputParser<AxesCounterParams> &parser,
-                             Eigen::MatrixXd const &dof_subspace,
-                             Eigen::VectorXd &min_val, Eigen::VectorXd &max_val,
-                             Eigen::VectorXd &inc_val) {
-  // "min" -> min_val  (number or array of number, else zeros vector)
-  Eigen::VectorXd default_value = Eigen::VectorXd::Zero(dof_subspace.cols());
-  min_val = parse_vector_from_number_or_array(
-      parser, "min", dof_subspace.cols(), &default_value);
-
-  // "max" -> max_val (number or array of number, required)
-  max_val =
-      parse_vector_from_number_or_array(parser, "max", dof_subspace.cols());
-
-  // "increment" -> inc_val (number or array of number, required)
-  inc_val = parse_vector_from_number_or_array(parser, "increment",
-                                              dof_subspace.cols());
-}
-
 /// Parse DoFSpace subspace from  "axes" and normal coordinate grid counter from
 /// "min", "max", and "increment"
 void parse(InputParser<AxesCounterParams> &parser, Index dof_space_dimension) {
-  AxesCounterParams params;
-  parse_dof_space_axes(parser, params.axes, dof_space_dimension);
-  parse_dof_space_counter(parser, params.axes, params.min_val, params.max_val,
-                          params.inc_val);
-  if (parser.valid()) {
-    parser.value = notstd::make_unique<AxesCounterParams>(params);
+  parser.value = notstd::make_unique<AxesCounterParams>();
+  parse_dof_space_axes(parser, dof_space_dimension);
+  parse_axes_counter_range(parser);
+  if (!parser.valid()) {
+    parser.value.reset();
   }
 }
 
