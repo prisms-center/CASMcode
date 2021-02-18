@@ -11,10 +11,10 @@
 #include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/io/VaspIO.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "submodules/eigen/Eigen/src/Core/Map.h"
-#include "submodules/eigen/Eigen/src/Core/PermutationMatrix.h"
-#include "submodules/eigen/Eigen/src/Core/util/Constants.h"
-#include "submodules/eigen/Eigen/src/Core/util/Meta.h"
+#include "casm/external/Eigen/src/Core/Map.h"
+#include "casm/external/Eigen/src/Core/PermutationMatrix.h"
+#include "casm/external/Eigen/src/Core/util/Constants.h"
+#include "Eigen/src/Core/util/Meta.h"
 
 namespace CASM {
 namespace xtal {
