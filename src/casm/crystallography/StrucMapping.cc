@@ -14,7 +14,7 @@
 #include "casm/external/Eigen/src/Core/Map.h"
 #include "casm/external/Eigen/src/Core/PermutationMatrix.h"
 #include "casm/external/Eigen/src/Core/util/Constants.h"
-#include "Eigen/src/Core/util/Meta.h"
+#include "casm/external/Eigen/src/Core/util/Meta.h"
 
 namespace CASM {
 namespace xtal {
