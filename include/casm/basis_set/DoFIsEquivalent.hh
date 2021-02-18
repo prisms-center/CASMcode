@@ -19,7 +19,6 @@ struct SymOp;
 /// DoFSets dofA and dofB are considered equivalent if
 /// - dofA.type_name()==dofB.type_name() AND
 /// - dofA.size() == dofB.size() AND
-/// - dofA[i].var_name()==dofB[i].var_name() for all i<dofA.size() AND
 /// - the matrix equation dofB.basis() * U = dofA.basis() has a unique solution
 /// U
 ///
@@ -45,8 +44,7 @@ class DoFIsEquivalent {
   Eigen::MatrixXd const &U() const { return m_U; }
 
  private:
-  /// returns true if m_dof and _other are same type, same size, and have same
-  /// variable names
+  /// returns true if m_dof and _other are same type and same size
   bool _label_equiv(DoFSet const &_other) const;
 
   /// returns true if the matrix equation _before_basis * U = _after_basis has a

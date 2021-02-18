@@ -203,6 +203,12 @@ DoFSpace make_dof_space(
     DoFKey dof_key, ConfigEnumInput const &input_state,
     std::optional<Eigen::MatrixXd> const &basis = std::nullopt);
 
+/// Make a SymGroupRep for a DoFSpace
+SymGroupRep const &make_dof_space_symrep(
+    DoFSpace const &dof_space, SupercellSymInfo const &sym_info,
+    std::vector<PermuteIterator> const &group,
+    MasterSymGroup &symrep_master_group, SymGroupRepID &id);
+
 /// Make VectorSpaceSymReport
 VectorSpaceSymReport vector_space_sym_report(
     DoFSpace const &dof_space, SupercellSymInfo const &sym_info,

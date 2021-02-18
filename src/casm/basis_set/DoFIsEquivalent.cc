@@ -31,12 +31,7 @@ bool DoFIsEquivalent::operator()(xtal::SymOp const &_op,
 }
 
 bool DoFIsEquivalent::_label_equiv(DoFSet const &other) const {
-  if (m_dof.type_name() != other.type_name() || m_dof.size() != other.size())
-    return false;
-  for (Index i = 0; i < m_dof.size(); i++) {
-    if (m_dof[i].var_name() != other[i].var_name()) return false;
-  }
-  return true;
+  return m_dof.type_name() == m_dof.type_name() && m_dof.size() == other.size();
 }
 
 bool DoFIsEquivalent::_vector_equiv(

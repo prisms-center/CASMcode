@@ -143,7 +143,6 @@ std::map<std::string, DoFSetType> make_dofset_map(
  *
  * DoFSets are considered equivalent if:
  * - The traits names match
- * - They have the same names for each of the axes
  * - Basis vectors span the same space
  */
 
@@ -165,9 +164,6 @@ struct DoFSetIsEquivalent_f {
 
   /// Returns true if the traits match. Only compares the names
   bool _traits_match(const DoFSet &other_value) const;
-
-  /// Returns true if the order and names of the axis names match
-  bool _axis_names_match(const DoFSet &other_value) const;
 
   /// Returns true if the axis span the same space. For example the basis would
   /// be considered equivalent if they are the same but have been rotated

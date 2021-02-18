@@ -10,7 +10,8 @@ namespace xtal {
 /// Returns descriptive names of the components in a DoFSet, using
 /// AnisoValTraits::variable_descriptors()
 std::vector<std::string> component_descriptions(DoFSet const &dofset) {
-  if (dofset.basis().isIdentity(TOL))
+  if (dofset.basis().isIdentity(TOL) &&
+      dofset.basis().rows() == dofset.basis().cols())
     return dofset.traits().variable_descriptions();
   else
     return dofset.component_names();
@@ -18,10 +19,6 @@ std::vector<std::string> component_descriptions(DoFSet const &dofset) {
 
 bool DoFSetIsEquivalent_f::_traits_match(const DoFSet &other_value) const {
   return m_reference_dofset.traits().name() == other_value.traits().name();
-}
-
-bool DoFSetIsEquivalent_f::_axis_names_match(const DoFSet &other_value) const {
-  return m_reference_dofset.component_names() == other_value.component_names();
 }
 
 bool DoFSetIsEquivalent_f::_basis_spans_same_space(
@@ -49,7 +46,6 @@ bool DoFSetIsEquivalent_f::_basis_spans_same_space(
 
 bool DoFSetIsEquivalent_f::operator()(const DoFSet &other_value) const {
   return this->_traits_match(other_value) &&
-         this->_axis_names_match(other_value) &&
          this->_basis_spans_same_space(other_value);
 }
 

@@ -45,27 +45,42 @@ std::pair<MasterSymGroup, SymGroupRepID> collective_dof_symrep(
   }
 
   result.second = result.first.allocate_representation();
-  Index subdim = 0;
   SupercellSymInfo::SublatSymReps const &subreps =
       _key == "occ" ? _syminfo.occ_symreps() : _syminfo.local_dof_symreps(_key);
 
-  // NOTE: If some sublats have different DoF subspaces, the collective
-  // representation will have
-  //      rows and columns that are all zero. Not sure what to do in this case
-  for (auto const &rep : subreps) subdim = max(subdim, rep.dim());
+  // make map of site_index -> beginning row in basis for that site
+  // (number of rows per site == dof dimension on that site)
+  std::map<Index, Index> site_index_to_basis_index;
+  Index total_dim = 0;
+  for (IterType it = begin; it != end; ++it) {
+    Index b = _syminfo.unitcellcoord_index_converter()(*it).sublattice();
+    Index site_dof_dim = subreps[b].dim();
+    site_index_to_basis_index[*it] = total_dim;
+    total_dim += site_dof_dim;
+  }
 
-  Index Nsite = std::distance(begin, end);
-
-  Eigen::MatrixXd trep(subdim * Nsite, subdim * Nsite);
+  // make matrix rep, by filling in blocks with site dof symreps
+  Eigen::MatrixXd trep(total_dim, total_dim);
   Index g = 0;
   for (PermuteIterator const &perm : _group) {
     trep.setZero();
     for (IterType it = begin; it != end; ++it) {
-      /* Index b = _syminfo.prim_grid().sublat(*it); */
       Index b = _syminfo.unitcellcoord_index_converter()(*it).sublattice();
       auto ptr = (subreps[b][perm.factor_group_index()]->MatrixXd());
-      trep.block(subdim * (*it), subdim * perm.permute_ind(*it), ptr->rows(),
-                 ptr->cols()) = *ptr;
+
+      // can't fail, because it was built from [begin, end)
+      Index row = site_index_to_basis_index.find(*it)->second;
+
+      // could fail, if mismatch between [begin, end) and group
+      auto col_it = site_index_to_basis_index.find(perm.permute_ind(*it));
+      if (col_it == site_index_to_basis_index.end()) {
+        throw std::runtime_error(
+            "Error in collective_dof_symrep: Input group includes permutations "
+            "between selected and unselected sites.");
+      }
+      Index col = col_it->second;
+
+      trep.block(row, col, ptr->rows(), ptr->cols()) = *ptr;
     }
     result.first[g++].set_rep(result.second, SymMatrixXd(trep));
   }

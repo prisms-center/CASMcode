@@ -7,6 +7,12 @@
 #include "casm/symmetry/SupercellSymInfo_impl.hh"
 #include "casm/symmetry/SymRepTools.hh"
 
+// for make_symmetry_adapted_dof_space error_report:
+#include "casm/casm_io/Log.hh"
+#include "casm/crystallography/io/BasicStructureIO.hh"
+#include "casm/enumerator/io/json/DoFSpace.hh"
+#include "casm/symmetry/io/stream/SymInfo_stream_io.hh"
+
 namespace CASM {
 
 namespace DoFSpace_impl {
@@ -396,20 +402,28 @@ DoFSpace make_dof_space(DoFKey dof_key, ConfigEnumInput const &input_state,
                   input_state.sites(), basis);
 }
 
-/// Make VectorSpaceSymReport
+/// Make a SymGroupRep for a DoFSpace
 ///
-/// \param dof_space DoFSpace to make VectorSpaceSymReport for
-/// \param sym_info Supercell symmetry info
-/// \param group Group used for vector space symmetry report
-/// \param calc_wedges If true, calculate the irreducible wedges for the vector
-/// space. This may take a long time.
-VectorSpaceSymReport vector_space_sym_report(
+/// Usage:
+/// \code
+/// DoFSpace dof_space = ... ;
+/// SupercellSymInfo const &sym_info = ... ;
+/// std::vector<PermuteIterator> invariant_group = ... ;
+/// MasterSymGroup symrep_master_group;
+/// SymGroupRepID id;
+/// SymGroupRep const &rep = make_dof_space_symrep(
+///    dof_space, sym_info, invariant_group, symrep_master_group, id);
+/// for (SymOp const &op : group) {
+///   Eigen::MatrixXd matrix_rep = *(rep.MatrixXd(op));
+///   // transformed_dof_values = matrix_rep * dof_values_in_dof_space_basis;
+// }
+/// \endcode
+///
+SymGroupRep const &make_dof_space_symrep(
     DoFSpace const &dof_space, SupercellSymInfo const &sym_info,
-    std::vector<PermuteIterator> const &group, bool calc_wedges) {
-  // We need a temporary mastersymgroup to manage the symmetry representation
-  // for the DoF
-  MasterSymGroup g;
-  SymGroupRepID id;
+    std::vector<PermuteIterator> const &group,
+    MasterSymGroup &symrep_master_group, SymGroupRepID &id) {
+  MasterSymGroup &g = symrep_master_group;
   DoFKey dof_key = dof_space.dof_key();
   xtal::BasicStructure const &prim_struc = dof_space.shared_prim()->structure();
 
@@ -443,7 +457,25 @@ VectorSpaceSymReport vector_space_sym_report(
     id = group_and_ID.second;
   }
 
-  SymGroupRep const &rep = g.representation(id);
+  return g.representation(id);
+}
+
+/// Make VectorSpaceSymReport
+///
+/// \param dof_space DoFSpace to make VectorSpaceSymReport for
+/// \param sym_info Supercell symmetry info
+/// \param group Group used for vector space symmetry report
+/// \param calc_wedges If true, calculate the irreducible wedges for the vector
+/// space. This may take a long time.
+VectorSpaceSymReport vector_space_sym_report(
+    DoFSpace const &dof_space, SupercellSymInfo const &sym_info,
+    std::vector<PermuteIterator> const &group, bool calc_wedges) {
+  // We need a temporary mastersymgroup to manage the symmetry representation
+  // for the DoF
+  MasterSymGroup g;
+  SymGroupRepID id;
+  SymGroupRep const &rep =
+      make_dof_space_symrep(dof_space, sym_info, group, g, id);
 
   // Generate report, based on constructed inputs
   VectorSpaceSymReport result =
@@ -458,12 +490,62 @@ DoFSpace make_symmetry_adapted_dof_space(
     DoFSpace const &dof_space, SupercellSymInfo const &sym_info,
     std::vector<PermuteIterator> const &group, bool calc_wedges,
     std::optional<VectorSpaceSymReport> &symmetry_report) {
-  symmetry_report =
-      vector_space_sym_report(dof_space, sym_info, group, calc_wedges);
+  auto error_report = [&]() {
+    CASM::err_log() << "prim:" << std::endl;
+    COORD_TYPE mode = FRAC;
+    bool include_va = false;
+    jsonParser prim_json;
+    write_prim(*dof_space.shared_prim(), prim_json, mode, include_va);
+    CASM::err_log() << prim_json << std::endl;
 
+    CASM::err_log() << "transformation_matrix_to_super:" << std::endl;
+    CASM::err_log() << sym_info.transformation_matrix_to_super() << std::endl;
+
+    CASM::err_log() << "supercell factor group: " << std::endl;
+    SymInfoOptions opt{CART};
+    brief_description(log(), sym_info.factor_group(),
+                      sym_info.supercell_lattice(), opt);
+
+    jsonParser dof_space_json;
+    std::optional<std::string> identifier;
+    std::optional<ConfigEnumInput> input_state;
+    to_json(dof_space, dof_space_json, identifier, input_state,
+            symmetry_report);
+    CASM::err_log() << dof_space_json << std::endl;
+
+    CASM::err_log() << "dof_space.basis().cols(): " << dof_space.basis().cols()
+                    << std::endl;
+    CASM::err_log() << "dof_space basis: " << std::endl
+                    << dof_space.basis() << std::endl;
+    if (symmetry_report.has_value()) {
+      CASM::err_log() << "symmetry_adapted_dof_subspace.cols(): "
+                      << symmetry_report->symmetry_adapted_dof_subspace.cols()
+                      << std::endl;
+      CASM::err_log() << "symmetry_adapted_dof_subspace: " << std::endl
+                      << symmetry_report->symmetry_adapted_dof_subspace
+                      << std::endl;
+      Index i = 0;
+      for (auto const &irrep : symmetry_report->irreps) {
+        CASM::err_log() << "irrep[" << i << "].trans_mat: " << std::endl;
+        CASM::err_log() << irrep.trans_mat << std::endl;
+        i++;
+      }
+    }
+  };
+
+  try {
+    symmetry_report =
+        vector_space_sym_report(dof_space, sym_info, group, calc_wedges);
+  } catch (std::exception &e) {
+    error_report();
+    CASM::err_log() << "Error constructing vector space symmetry report: "
+                    << e.what() << std::endl;
+    throw e;
+  }
   // check for error occuring for "disp"
   if (symmetry_report->symmetry_adapted_dof_subspace.cols() <
       dof_space.basis().cols()) {
+    error_report();
     std::stringstream msg;
     msg << "Error in make_symmetry_adapted_dof_space: "
         << "symmetry_adapted_dof_subspace.cols() < dof_space.basis().cols()";
@@ -484,7 +566,7 @@ DoFSpace make_symmetry_adapted_dof_space(
 /// \returns A copy of dof_space with basis modified to remove homogeneous
 /// modes.
 DoFSpace exclude_homogeneous_mode_space(DoFSpace const &dof_space) {
-  if (!AnisoValTraits(dof_space.dof_key()).global() ||
+  if (AnisoValTraits(dof_space.dof_key()).global() ||
       dof_space.dof_key() == "occ" || !dof_space.includes_all_sites()) {
     std::stringstream msg;
     msg << "Error in exclude_homogeneous_mode_space: Must be a DoF space for a "
@@ -551,7 +633,7 @@ DoFSpace exclude_homogeneous_mode_space(DoFSpace const &dof_space) {
 /// Note that the lines above represent blocks equal to the dimension of the
 /// DoF basis on each site.
 Eigen::MatrixXd make_homogeneous_mode_space(DoFSpace const &dof_space) {
-  if (!AnisoValTraits(dof_space.dof_key()).global() ||
+  if (AnisoValTraits(dof_space.dof_key()).global() ||
       dof_space.dof_key() == "occ" || !dof_space.includes_all_sites()) {
     std::stringstream msg;
     msg << "Error in make_homogeneous_mode_space: Must be a DoF space for a "
@@ -597,14 +679,14 @@ Eigen::MatrixXd make_homogeneous_mode_space(DoFSpace const &dof_space) {
   Eigen::MatrixXd common_standard_basis =
       (prod - I).transpose().fullPivLu().kernel();
 
+  if (common_standard_basis.isZero(TOL)) {
+    return Eigen::MatrixXd::Zero(dof_space.basis().rows(), 0);
+  }
+
   // construct homogeneous_mode_space by transforming common_standard_basis into
   // the site basis values, and combining for each site
   Eigen::MatrixXd homogeneous_mode_space{dof_space.basis().rows(),
                                          common_standard_basis.cols()};
-
-  if (common_standard_basis.cols() == 0) {
-    return homogeneous_mode_space;
-  }
 
   Index row = 0;  // block starting row
   Index col = 0;  // block starting column

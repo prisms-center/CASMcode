@@ -190,7 +190,6 @@ void Structure::_generate_basis_symreps() {
   //                                       * doftype.symop_to_matrix(op)
   //                                       * basis()[sitemap[b].sublattice()].dof(doftype.name().basis())
   this->_reset_occupant_symrep_IDs();
-  Eigen::MatrixXd trep, trepblock;
   for (Index s = 0; s < m_factor_group.size(); ++s) {
     auto const &op = m_factor_group[s];
 
@@ -227,14 +226,14 @@ void Structure::_generate_basis_symreps() {
             "identified as equivalent cannot be mapped by symmetry.");
     }
 
-    for (auto const &dof_dim : xtal::local_dof_dims(*this)) {
+    for (auto const &dof_key : xtal::continuous_local_dof_types(*this)) {
       for (Index from_b = 0; from_b < basis().size(); ++from_b) {
-        if (!basis()[from_b].has_dof(dof_dim.first)) continue;
+        if (!basis()[from_b].has_dof(dof_key)) continue;
 
-        xtal::DoFSet const &_dofref_from = basis()[from_b].dof(dof_dim.first);
+        xtal::DoFSet const &_dofref_from = basis()[from_b].dof(dof_key);
 
         Index to_b = sitemap[from_b].sublattice();
-        xtal::DoFSet const &_dofref_to = basis()[to_b].dof(dof_dim.first);
+        xtal::DoFSet const &_dofref_to = basis()[to_b].dof(dof_key);
 
         // Transform the xtal::SiteDoFSet to the CASM::DoFSet version
         CASM::DoFSet dofref_from =
@@ -252,20 +251,16 @@ void Structure::_generate_basis_symreps() {
         if (!eq(adapter::Adapter<xtal::SymOp, CASM::SymOp>()(op), dofref_to)) {
           throw std::runtime_error(
               "While generating symmetry representation for local DoF \"" +
-              dof_dim.first +
+              dof_key +
               "\", a symmetry operation was identified that invalidates the "
               "degree of freedom. " +
               "Degrees of freedom must be fully specified before performing "
               "symmetry analyses.");
         }
 
-        trep.setIdentity(dof_dim.second, dof_dim.second);
-        trep.topLeftCorner(dofref_from.size(), dofref_from.size()) = eq.U();
-
         SymGroupRepID from_symrep_ID =
-            this->site_dof_symrep_IDs()[from_b][dof_dim.first];
-
-        op.set_rep(from_symrep_ID, SymMatrixXd(trep));
+            this->site_dof_symrep_IDs()[from_b][dof_key];
+        op.set_rep(from_symrep_ID, SymMatrixXd(eq.U()));
       }
     }
   }
