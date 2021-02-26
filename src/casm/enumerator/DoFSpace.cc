@@ -557,6 +557,103 @@ DoFSpace make_symmetry_adapted_dof_space(
                   symmetry_report->symmetry_adapted_dof_subspace);
 }
 
+/// Make VectorSpaceSymReport
+///
+/// \param dof_space DoFSpace to make VectorSpaceSymReport for
+/// \param sym_info Supercell symmetry info
+/// \param group Group used for vector space symmetry report
+/// \param calc_wedges If true, calculate the irreducible wedges for the vector
+/// space. This may take a long time.
+VectorSpaceSymReport vector_space_sym_report_v2(
+    DoFSpace const &dof_space, SupercellSymInfo const &sym_info,
+    std::vector<PermuteIterator> const &group, bool calc_wedges) {
+  // We need a temporary mastersymgroup to manage the symmetry representation
+  // for the DoF
+  MasterSymGroup g;
+  SymGroupRepID id;
+  SymGroupRep const &rep =
+      make_dof_space_symrep(dof_space, sym_info, group, g, id);
+
+  // Generate report, based on constructed inputs
+  VectorSpaceSymReport result =
+      vector_space_sym_report(rep, g, dof_space.basis(), calc_wedges);
+  result.axis_glossary = dof_space.axis_glossary();
+
+  return result;
+}
+
+/// Make DoFSpace with symmetry adapated basis
+DoFSpace make_symmetry_adapted_dof_space_v2(
+    DoFSpace const &dof_space, SupercellSymInfo const &sym_info,
+    std::vector<PermuteIterator> const &group, bool calc_wedges,
+    std::optional<VectorSpaceSymReport> &symmetry_report) {
+  auto error_report = [&]() {
+    CASM::err_log() << "prim:" << std::endl;
+    COORD_TYPE mode = FRAC;
+    bool include_va = false;
+    jsonParser prim_json;
+    write_prim(*dof_space.shared_prim(), prim_json, mode, include_va);
+    CASM::err_log() << prim_json << std::endl;
+
+    CASM::err_log() << "transformation_matrix_to_super:" << std::endl;
+    CASM::err_log() << sym_info.transformation_matrix_to_super() << std::endl;
+
+    CASM::err_log() << "supercell factor group: " << std::endl;
+    SymInfoOptions opt{CART};
+    brief_description(log(), sym_info.factor_group(),
+                      sym_info.supercell_lattice(), opt);
+
+    jsonParser dof_space_json;
+    std::optional<std::string> identifier;
+    std::optional<ConfigEnumInput> input_state;
+    to_json(dof_space, dof_space_json, identifier, input_state,
+            symmetry_report);
+    CASM::err_log() << dof_space_json << std::endl;
+
+    CASM::err_log() << "dof_space.basis().cols(): " << dof_space.basis().cols()
+                    << std::endl;
+    CASM::err_log() << "dof_space basis: " << std::endl
+                    << dof_space.basis() << std::endl;
+    if (symmetry_report.has_value()) {
+      CASM::err_log() << "symmetry_adapted_dof_subspace.cols(): "
+                      << symmetry_report->symmetry_adapted_dof_subspace.cols()
+                      << std::endl;
+      CASM::err_log() << "symmetry_adapted_dof_subspace: " << std::endl
+                      << symmetry_report->symmetry_adapted_dof_subspace
+                      << std::endl;
+      Index i = 0;
+      for (auto const &irrep : symmetry_report->irreps) {
+        CASM::err_log() << "irrep[" << i << "].trans_mat: " << std::endl;
+        CASM::err_log() << irrep.trans_mat << std::endl;
+        i++;
+      }
+    }
+  };
+
+  try {
+    symmetry_report =
+        vector_space_sym_report(dof_space, sym_info, group, calc_wedges);
+  } catch (std::exception &e) {
+    error_report();
+    CASM::err_log() << "Error constructing vector space symmetry report: "
+                    << e.what() << std::endl;
+    throw e;
+  }
+  // check for error occuring for "disp"
+  if (symmetry_report->symmetry_adapted_dof_subspace.cols() <
+      dof_space.basis().cols()) {
+    error_report();
+    std::stringstream msg;
+    msg << "Error in make_symmetry_adapted_dof_space: "
+        << "symmetry_adapted_dof_subspace.cols() < dof_space.basis().cols()";
+    throw make_symmetry_adapted_dof_space_error(msg.str());
+  }
+
+  return DoFSpace(dof_space.shared_prim(), dof_space.dof_key(),
+                  sym_info.transformation_matrix_to_super(), dof_space.sites(),
+                  symmetry_report->symmetry_adapted_dof_subspace);
+}
+
 /// Removes the homogeneous mode space from the local continuous DoFSpace basis.
 ///
 /// \param dof_space DoF space to remove the homogeneous mode space from.

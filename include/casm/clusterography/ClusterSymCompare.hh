@@ -13,6 +13,7 @@
 
 namespace CASM {
 
+class PermuteIterator;
 class Structure;
 
 /** \defgroup ClusterSymCompare
@@ -80,6 +81,12 @@ class ClusterSymCompare : public Base {
   typedef Element ClusterType;
   using Base::derived;
   using typename Base::InvariantsType;
+
+  using Base::copy_apply;
+
+  /// \brief Get SymOp from PermuteIterator and apply to cluster
+  ClusterType copy_apply(PermuteIterator const &permute_it,
+                         ClusterType obj) const;
 
  protected:
   /// \brief Make orbit invariants from one element in the orbit

@@ -16,6 +16,43 @@
 #include "casm/symmetry/VectorSymCompare_impl.hh"
 
 namespace CASM {
+namespace {
+/// \brief Round entries that are within tol of being integer to that integer
+/// value
+Eigen::MatrixXcd prettyc(const Eigen::MatrixXcd &M) {
+  double tol = 1e-10;
+  Eigen::MatrixXcd Mp(M);
+  for (int i = 0; i < M.rows(); i++) {
+    for (int j = 0; j < M.cols(); j++) {
+      if (std::abs(std::round(M(i, j).real()) - M(i, j).real()) < tol) {
+        Mp(i, j).real(std::round(M(i, j).real()));
+      }
+      if (std::abs(std::round(M(i, j).imag()) - M(i, j).imag()) < tol) {
+        Mp(i, j).imag(std::round(M(i, j).imag()));
+      }
+    }
+  }
+  return Mp;
+}
+
+/// \brief Round entries that are within tol of being integer to that integer
+/// value
+Eigen::MatrixXd pretty(const Eigen::MatrixXd &M) {
+  double tol = 1e-10;
+  Eigen::MatrixXd Mp(M);
+  for (int i = 0; i < M.rows(); i++) {
+    for (int j = 0; j < M.cols(); j++) {
+      if (std::abs(std::round(M(i, j)) - M(i, j)) < tol) {
+        Mp(i, j) = std::round(M(i, j));
+      }
+    }
+  }
+  return Mp;
+}
+}  // namespace
+}  // namespace CASM
+
+namespace CASM {
 namespace Local {
 
 struct IrrepCompare {
@@ -867,17 +904,17 @@ std::vector<SymRepTools::IrrepInfo> irrep_decomposition(
                    kernel.col(kcj).adjoint()  // outer product
                + std::conj(phase[nph]) * kernel.col(kcj) *
                      kernel.col(kci).adjoint();  // adjoint of outer product
-        // std::cout << "tmat:\n" << tmat << std::endl;
+        std::cout << "tmat:\n" << prettyc(tmat) << std::endl;
         // apply reynolds operator
 
         for (SymOp const &op : head_group) {
-          // std::cout << "Op " << ns++ << ":\n" << (*(_rep.MatrixXd(op))) <<
-          // std::endl;
+          // std::cout << "Op " << op.index() << ":\n" << (*(_rep.MatrixXd(op)))
+          // << std::endl;
           tcommute += (*(_rep.MatrixXd(op))) * tmat *
                       (*(_rep.MatrixXd(op))).transpose();
         }
 
-        // std::cout << "Raw commuter: \n" << tcommute << std::endl;
+        std::cout << "Raw commuter: \n" << prettyc(tcommute) << std::endl;
 
         // Do Gram-Shmidt while building 'commuters'
 
@@ -887,6 +924,12 @@ std::vector<SymRepTools::IrrepInfo> irrep_decomposition(
           // std::cout << "tproj" << tproj << std::endl;
           tcommute -= tproj * commuters[nc];
         }
+
+        std::cout << std::endl << "###" << std::endl;
+        std::cout << "commuter_params: (" << kci << ", " << kcj << ", "
+                  << phase[nph] << ") " << std::endl;
+        std::cout << "commuters.size(): " << commuters.size() << std::endl;
+        std::cout << "commuter: \n" << prettyc(tcommute) << std::endl;
 
         double tnorm(
             (tcommute.array().conjugate() * tcommute.array()).sum().real());
@@ -999,6 +1042,10 @@ std::vector<SymRepTools::IrrepInfo> irrep_decomposition(
             if (almost_zero(
                     (t_irrep_subspace.adjoint() * adapted_subspace).norm(),
                     0.001)) {
+              std::cout << "---" << std::endl;
+              std::cout << "new irrep: " << std::endl;
+              std::cout << "characters_squared_norm: " << sqnorm << std::endl;
+
               qr.compute(t_irrep_subspace);
               // it seems stupid to use two different decompositions that do
               // almost the same thing, but
@@ -1040,7 +1087,16 @@ std::vector<SymRepTools::IrrepInfo> irrep_decomposition(
 
               Nfound += rnk;
               found_new_irreps = true;
+
+            } else {
+              std::cout << "---" << std::endl;
+              std::cout << "Irrep, but does not expand space: " << std::endl;
+              std::cout << "characters_squared_norm: " << sqnorm << std::endl;
             }
+          } else {
+            std::cout << "---" << std::endl;
+            std::cout << "Not an irrep: " << std::endl;
+            std::cout << "characters_squared_norm: " << sqnorm << std::endl;
           }
           last_i += subspace_dims[ns];
         }

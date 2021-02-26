@@ -1,12 +1,26 @@
 #ifndef CASM_symmetry_SimpleOrbit_impl
 #define CASM_symmetry_SimpleOrbit_impl
 
+#include <map>
+
+#include "casm/global/errors.hh"
 #include "casm/symmetry/SimpleOrbit.hh"
-#include "casm/symmetry/SymOp.hh"
 
 namespace CASM {
 
 // --- template<typename _SymCompareType> class SimpleOrbitElementCompare ---
+
+template <typename _SymCompareType>
+struct SimpleOrbitElementCompare {
+  typedef _SymCompareType SymCompareType;
+  typedef typename _SymCompareType::Element Element;
+
+  SymCompareType sym_compare;
+
+  SimpleOrbitElementCompare(SymCompareType const &_sym_compare);
+
+  bool operator()(const Element &A, const Element &B) const;
+};
 
 template <typename _SymCompareType>
 SimpleOrbitElementCompare<_SymCompareType>::SimpleOrbitElementCompare(
@@ -28,15 +42,31 @@ SimpleOrbit<SymCompareType>::SimpleOrbit(
     SymCompareType const &_sym_compare)
     : m_sym_compare(_sym_compare),
       m_invariants(_sym_compare.make_invariants(_generating_element)) {
-  std::set<Element, SimpleOrbitElementCompare<SymCompareType> > tmp{
-      SimpleOrbitElementCompare<SymCompareType>{m_sym_compare}};
-  adapter::Adapter<SymOp, typename GroupIterator::value_type> to_symop;
+  auto compare = [&](const Element &A, const Element &B) {
+    return m_sym_compare.compare(A, B);
+  };
+
+  typedef typename GroupIterator::value_type SymOpRepType;
+  std::map<Element, std::set<SymOpRepType>, decltype(compare)> tmp{compare};
   for (auto it = _group_begin; it != _group_end; ++it) {
-    tmp.insert(m_sym_compare.prepare(
-        m_sym_compare.copy_apply(to_symop(*it), _generating_element)));
+    tmp[m_sym_compare.prepare(
+            m_sym_compare.copy_apply(*it, _generating_element))]
+        .insert(*it);
   }
 
-  std::copy(tmp.begin(), tmp.end(), std::back_inserter(m_element));
+  // sanity check equivalence map is rectangular
+  for (auto const &pair : tmp) {
+    if (tmp.begin()->second.size() != pair.second.size()) {
+      throw libcasm_runtime_error(
+          "Error in SimpleOrbit constructor: equivalence map is not "
+          "rectangular");
+    }
+  }
+
+  m_element.reserve(tmp.size());
+  for (auto const &pair : tmp) {
+    m_element.push_back(pair.first);
+  }
 }
 
 /// Compare orbits, using SymCompareType::inter_orbit_compare

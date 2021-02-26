@@ -11,6 +11,8 @@
 #include "casm/crystallography/io/BasicStructureIO.hh"
 #include "casm/enumerator/ConfigEnumInput_impl.hh"
 #include "casm/enumerator/io/json/DoFSpace.hh"
+#include "casm/symmetry/IrrepDecomposition.hh"
+#include "casm/symmetry/IrrepDecompositionImpl.hh"
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymInfo.hh"
 #include "casm/symmetry/io/json/SymGroup_json_io.hh"
@@ -43,6 +45,35 @@ void print_local_dof_symreps(SupercellSymInfo const &sym_info) {
     }
   }
   log() << rep_json << std::endl;
+}
+
+template <typename IrrepInfoVectorType>
+void print_irreps(IrrepInfoVectorType const &irreps) {
+  using SymRepTools_v2::IrrepDecompositionImpl::pretty;
+  using SymRepTools_v2::IrrepDecompositionImpl::prettyc;
+
+  std::cout << "irreps.size(): " << irreps.size() << std::endl;
+
+  for (auto const &irrep : irreps) {
+    std::cout << "---" << std::endl;
+    std::cout << "symmetrized irrep: " << std::endl;
+    std::cout << "index: " << irrep.index << std::endl;
+    std::cout << "characters: " << prettyc(irrep.characters.transpose())
+              << std::endl;
+    std::cout << "subspace: \n" << prettyc(irrep.trans_mat) << std::endl;
+    std::cout << "directions.size() (number of orbits): "
+              << irrep.directions.size() << std::endl;
+    Index orbit_index = 0;
+    for (auto const &orbit : irrep.directions) {
+      std::cout << "-" << std::endl;
+      std::cout << "orbit: " << orbit_index << std::endl;
+      for (auto const &direction : orbit) {
+        std::cout << prettyc(direction.transpose()) << std::endl;
+      }
+      ++orbit_index;
+    }
+  }
+  return;
 }
 
 }  // namespace
@@ -1055,8 +1086,6 @@ class DebugLocalDoFSpaceTest : public testing::Test {
   std::shared_ptr<CASM::Structure const> shared_prim;  // must make in test
   std::shared_ptr<CASM::Supercell> shared_supercell;   // must make in test
 
-  static xtal::BasicStructure make_prim();
-
   DebugLocalDoFSpaceTest() {}
 
   void check_FactorGroupSize(Index factor_group_size);
@@ -1220,25 +1249,74 @@ void DebugLocalDoFSpaceTest::check_SymmetryAdaptedDoFSpace(
   std::cout << "dof space basis: \n" << dof_space.basis() << std::endl;
   EXPECT_EQ(dof_space.basis().rows(), initial_dof_space_shape.first);
   EXPECT_EQ(dof_space.basis().cols(), initial_dof_space_shape.second);
+  std::cout << "dof space glossary: " << std::endl;
+  for (int i = 0; i < dof_space.axis_glossary().size(); ++i) {
+    std::cout << "i: " << i << "  component: " << dof_space.axis_glossary()[i]
+              << std::endl;
+  }
 
   // check make symmery adapted dof space
   SupercellSymInfo const &sym_info = shared_supercell->sym_info();
   std::vector<PermuteIterator> invariant_group =
       make_invariant_subgroup(config_input);
-  bool calc_wedges = false;
-  std::optional<VectorSpaceSymReport> sym_report;
-  DoFSpace dof_space_1 = make_symmetry_adapted_dof_space(
-      dof_space, sym_info, invariant_group, calc_wedges, sym_report);
-  std::cout << "symmetry adapted dof space basis: \n"
-            << dof_space_1.basis() << std::endl;
-  EXPECT_EQ(dof_space_1.basis().rows(), symmetry_adapted_dof_space_shape.first);
-  EXPECT_EQ(dof_space_1.basis().cols(),
-            symmetry_adapted_dof_space_shape.second);
 
-  // check symmetry report
-  jsonParser dof_space_json;
-  to_json(dof_space_1, dof_space_json, "test", config_input, sym_report);
-  std::cout << dof_space_json << std::endl;
+  // *** Original code
+
+  // bool calc_wedges = false;
+  // std::optional<VectorSpaceSymReport> sym_report;
+  // DoFSpace dof_space_1 = make_symmetry_adapted_dof_space(
+  //     dof_space, sym_info, invariant_group, calc_wedges, sym_report);
+  // std::cout << "symmetry adapted dof space basis: \n"
+  //           << dof_space_1.basis() << std::endl;
+  // EXPECT_EQ(dof_space_1.basis().rows(),
+  // symmetry_adapted_dof_space_shape.first);
+  // EXPECT_EQ(dof_space_1.basis().cols(),
+  //           symmetry_adapted_dof_space_shape.second);
+  //
+  // // check symmetry report
+  // jsonParser dof_space_json;
+  // to_json(dof_space_1, dof_space_json, "test", config_input, sym_report);
+  // std::cout << dof_space_json << std::endl;
+
+  // *** IrrepDecomposition Code
+
+  MasterSymGroup symrep_master_group;
+  SymGroupRepID symrep_id;
+  SymGroupRep const *symrep_ptr = &make_dof_space_symrep(
+      dof_space, sym_info, invariant_group, symrep_master_group, symrep_id);
+
+  using namespace SymRepTools_v2;
+  using SymRepTools_v2::IrrepDecompositionImpl::pretty;
+  using SymRepTools_v2::IrrepDecompositionImpl::prettyc;
+
+  SymGroupRep const &rep = *symrep_ptr;
+  SymGroup const &head_group = symrep_master_group;
+  Eigen::MatrixXd const &subspace = dof_space.basis();
+
+  MatrixRep matrix_rep;
+  for (Index i = 0; i < rep.size(); ++i) {
+    matrix_rep.push_back(*rep[i]->MatrixXd());
+  }
+  GroupIndices head_group_indices;
+  for (SymOp const &op : head_group) {
+    head_group_indices.insert(op.index());
+  }
+  GroupIndicesOrbitVector all_subgroups = head_group.subgroups();
+  GroupIndicesOrbitVector cyclic_subgroups = head_group.small_subgroups();
+  bool allow_complex = true;
+  IrrepDecomposition irrep_decomposition{matrix_rep,    head_group_indices,
+                                         subspace,      cyclic_subgroups,
+                                         all_subgroups, allow_complex};
+
+  print_irreps(irrep_decomposition.irreps);
+
+  EXPECT_EQ(irrep_decomposition.symmetry_adapted_subspace.rows(),
+            symmetry_adapted_dof_space_shape.first);
+  EXPECT_EQ(irrep_decomposition.symmetry_adapted_subspace.cols(),
+            symmetry_adapted_dof_space_shape.second);
+  std::cout << "symmetry_adapted_subspace: \n"
+            << pretty(irrep_decomposition.symmetry_adapted_subspace)
+            << std::endl;
 }
 
 void DebugLocalDoFSpaceTest::check_ExcludeHomogeneousModeSpace(
@@ -1363,17 +1441,24 @@ TEST_F(DebugLocalDoFSpaceTest, Test1) {  // currently fails
   shared_supercell = std::make_shared<CASM::Supercell>(
       shared_prim, Eigen::Matrix3l::Identity());
 
-  check_FactorGroupSize(48  // Index factor_group_size
+  Index prim_factor_group_size = 48;
+  Index invariant_group_size = 48;
+  Index vol = 1;
+  Index prim_disp_dof_space_dim = 9;
+  Index homogeneous_mode_dim = 0;
+
+  check_FactorGroupSize(prim_factor_group_size  // Index factor_group_size
   );
 
   check_PrimSiteDoFSymReps(
       // std::vector<std::pair<Index, Index>> sublat_rep_shape
       {{3, 3}, {2, 2}, {2, 2}, {2, 2}});
 
-  check_CollectiveDoFSymReps(48,     // Index invariant_group_size,
-                             48,     // Index rep_size,
-                             {9, 9}  // std::pair<Index, Index> rep_shape
-  );
+  check_CollectiveDoFSymReps(
+      invariant_group_size * vol,  // Index invariant_group_size,
+      invariant_group_size * vol,  // Index rep_size,
+      // std::pair<Index, Index> rep_shape
+      {prim_disp_dof_space_dim * vol, prim_disp_dof_space_dim * vol});
 
   check_SubsetCollectiveDoFSymReps({0},    // std::set<Index> sites,
                                    48,     // Index invariant_group_size,
@@ -1381,15 +1466,21 @@ TEST_F(DebugLocalDoFSpaceTest, Test1) {  // currently fails
                                    {3, 3}  // std::pair<Index, Index> rep_shape
   );
 
-  check_ExcludeHomogeneousModeSpace(
+  check_SymmetryAdaptedDoFSpace(
       // std::pair<Index, Index> initial_dof_space_shape
-      {9, 9},
-      // std::pair<Index, Index> homogeneous_mode_space_shape
-      {9, 0},
-      // std::pair<Index, Index> dof_space_shape_excluding_homogeneous_modes
-      {9, 9},
+      {prim_disp_dof_space_dim * vol, prim_disp_dof_space_dim * vol},
       // std::pair<Index, Index> symmetry_adapted_dof_space_shape
-      {9, 9});
+      {prim_disp_dof_space_dim * vol, prim_disp_dof_space_dim * vol});
+
+  // check_ExcludeHomogeneousModeSpace(
+  //     // std::pair<Index, Index> initial_dof_space_shape
+  //     {9, 9},
+  //     // std::pair<Index, Index> homogeneous_mode_space_shape
+  //     {9, 0},
+  //     // std::pair<Index, Index> dof_space_shape_excluding_homogeneous_modes
+  //     {9, 9},
+  //     // std::pair<Index, Index> symmetry_adapted_dof_space_shape
+  //     {9, 9});
 }
 
 TEST_F(DebugLocalDoFSpaceTest, Test2) {  // currently fails
@@ -1446,17 +1537,24 @@ TEST_F(DebugLocalDoFSpaceTest, Test2) {  // currently fails
   shared_supercell = std::make_shared<CASM::Supercell>(
       shared_prim, Eigen::Matrix3l::Identity());
 
-  check_FactorGroupSize(48  // Index factor_group_size
+  Index prim_factor_group_size = 48;
+  Index invariant_group_size = 48;
+  Index vol = 1;
+  Index prim_disp_dof_space_dim = 6;
+  Index homogeneous_mode_dim = 0;
+
+  check_FactorGroupSize(prim_factor_group_size  // Index factor_group_size
   );
 
   check_PrimSiteDoFSymReps(
       // std::vector<std::pair<Index, Index>> sublat_rep_shape
       {{2, 2}, {2, 2}, {2, 2}});
 
-  check_CollectiveDoFSymReps(48,     // Index invariant_group_size,
-                             48,     // Index rep_size,
-                             {6, 6}  // std::pair<Index, Index> rep_shape
-  );
+  check_CollectiveDoFSymReps(
+      invariant_group_size * vol,  // Index invariant_group_size,
+      invariant_group_size * vol,  // Index rep_size,
+      // std::pair<Index, Index> rep_shape
+      {prim_disp_dof_space_dim * vol, prim_disp_dof_space_dim * vol});
 
   // check_SubsetCollectiveDoFSymReps(
   //   std::set<Index> sites,
@@ -1464,15 +1562,21 @@ TEST_F(DebugLocalDoFSpaceTest, Test2) {  // currently fails
   //   Index rep_size,
   //   std::pair<Index, Index> rep_shape);
 
-  check_ExcludeHomogeneousModeSpace(
+  check_SymmetryAdaptedDoFSpace(
       // std::pair<Index, Index> initial_dof_space_shape
-      {6, 6},
-      // std::pair<Index, Index> homogeneous_mode_space_shape
-      {6, 0},
-      // std::pair<Index, Index> dof_space_shape_excluding_homogeneous_modes
-      {6, 6},
+      {prim_disp_dof_space_dim * vol, prim_disp_dof_space_dim * vol},
       // std::pair<Index, Index> symmetry_adapted_dof_space_shape
-      {6, 6});
+      {prim_disp_dof_space_dim * vol, prim_disp_dof_space_dim * vol});
+
+  // check_ExcludeHomogeneousModeSpace(
+  //     // std::pair<Index, Index> initial_dof_space_shape
+  //     {6, 6},
+  //     // std::pair<Index, Index> homogeneous_mode_space_shape
+  //     {6, 0},
+  //     // std::pair<Index, Index> dof_space_shape_excluding_homogeneous_modes
+  //     {6, 6},
+  //     // std::pair<Index, Index> symmetry_adapted_dof_space_shape
+  //     {6, 6});
 }
 
 TEST_F(DebugLocalDoFSpaceTest, Test3) {  // passes
@@ -1518,17 +1622,24 @@ TEST_F(DebugLocalDoFSpaceTest, Test3) {  // passes
   shared_supercell = std::make_shared<CASM::Supercell>(
       shared_prim, Eigen::Matrix3l::Identity());
 
-  check_FactorGroupSize(16  // Index factor_group_size
+  Index prim_factor_group_size = 16;
+  Index invariant_group_size = 16;
+  Index vol = 1;
+  Index prim_disp_dof_space_dim = 4;
+  Index homogeneous_mode_dim = 1;
+
+  check_FactorGroupSize(prim_factor_group_size  // Index factor_group_size
   );
 
   check_PrimSiteDoFSymReps(
       // std::vector<std::pair<Index, Index>> sublat_rep_shape
       {{3, 3}, {1, 1}});
 
-  check_CollectiveDoFSymReps(16,     // Index invariant_group_size,
-                             16,     // Index rep_size,
-                             {4, 4}  // std::pair<Index, Index> rep_shape
-  );
+  check_CollectiveDoFSymReps(
+      invariant_group_size * vol,  // Index invariant_group_size,
+      invariant_group_size * vol,  // Index rep_size,
+      // std::pair<Index, Index> rep_shape
+      {prim_disp_dof_space_dim * vol, prim_disp_dof_space_dim * vol});
 
   // check_SubsetCollectiveDoFSymReps(
   //   std::set<Index> sites,
@@ -1536,15 +1647,21 @@ TEST_F(DebugLocalDoFSpaceTest, Test3) {  // passes
   //   Index rep_size,
   //   std::pair<Index, Index> rep_shape);
 
-  check_ExcludeHomogeneousModeSpace(
+  check_SymmetryAdaptedDoFSpace(
       // std::pair<Index, Index> initial_dof_space_shape
-      {4, 4},
-      // std::pair<Index, Index> homogeneous_mode_space_shape
-      {4, 1},
-      // std::pair<Index, Index> dof_space_shape_excluding_homogeneous_modes
-      {4, 3},
+      {prim_disp_dof_space_dim * vol, prim_disp_dof_space_dim * vol},
       // std::pair<Index, Index> symmetry_adapted_dof_space_shape
-      {4, 3});
+      {prim_disp_dof_space_dim * vol, prim_disp_dof_space_dim * vol});
+
+  // check_ExcludeHomogeneousModeSpace(
+  //     // std::pair<Index, Index> initial_dof_space_shape
+  //     {4, 4},
+  //     // std::pair<Index, Index> homogeneous_mode_space_shape
+  //     {4, 1},
+  //     // std::pair<Index, Index> dof_space_shape_excluding_homogeneous_modes
+  //     {4, 3},
+  //     // std::pair<Index, Index> symmetry_adapted_dof_space_shape
+  //     {4, 3});
 }
 
 TEST_F(DebugLocalDoFSpaceTest, Test4) {  // fails for 2x2x2, passes for 2x1x1
@@ -1594,7 +1711,7 @@ TEST_F(DebugLocalDoFSpaceTest, Test4) {  // fails for 2x2x2, passes for 2x1x1
   shared_supercell = std::make_shared<CASM::Supercell>(shared_prim, T);
 
   Index prim_factor_group_size = 16;
-  Index invariant_group_size = 8;
+  Index invariant_group_size = 16;  // 16 for 2x2x2, 8 for 2x1x1
   Index vol = T.determinant();
   Index prim_disp_dof_space_dim = 4;
   Index homogeneous_mode_dim = 1;
@@ -1618,17 +1735,17 @@ TEST_F(DebugLocalDoFSpaceTest, Test4) {  // fails for 2x2x2, passes for 2x1x1
       // std::pair<Index, Index> symmetry_adapted_dof_space_shape
       {prim_disp_dof_space_dim * vol, prim_disp_dof_space_dim * vol});
 
-  check_ExcludeHomogeneousModeSpace(
-      // std::pair<Index, Index> initial_dof_space_shape
-      {prim_disp_dof_space_dim * vol, prim_disp_dof_space_dim * vol},
-      // std::pair<Index, Index> homogeneous_mode_space_shape
-      {prim_disp_dof_space_dim * vol, homogeneous_mode_dim},
-      // std::pair<Index, Index> dof_space_shape_excluding_homogeneous_modes
-      {prim_disp_dof_space_dim * vol,
-       prim_disp_dof_space_dim * vol - homogeneous_mode_dim},
-      // std::pair<Index, Index> symmetry_adapted_dof_space_shape
-      {prim_disp_dof_space_dim * vol,
-       prim_disp_dof_space_dim * vol - homogeneous_mode_dim});
+  // check_ExcludeHomogeneousModeSpace(
+  //     // std::pair<Index, Index> initial_dof_space_shape
+  //     {prim_disp_dof_space_dim * vol, prim_disp_dof_space_dim * vol},
+  //     // std::pair<Index, Index> homogeneous_mode_space_shape
+  //     {prim_disp_dof_space_dim * vol, homogeneous_mode_dim},
+  //     // std::pair<Index, Index> dof_space_shape_excluding_homogeneous_modes
+  //     {prim_disp_dof_space_dim * vol,
+  //      prim_disp_dof_space_dim * vol - homogeneous_mode_dim},
+  //     // std::pair<Index, Index> symmetry_adapted_dof_space_shape
+  //     {prim_disp_dof_space_dim * vol,
+  //      prim_disp_dof_space_dim * vol - homogeneous_mode_dim});
 }
 
 // fails for transformation_matrix_to_super:
@@ -1708,16 +1825,17 @@ TEST_F(DebugLocalDoFSpaceTest, Test5) {
         // std::pair<Index, Index> symmetry_adapted_dof_space_shape
         {prim_disp_dof_space_dim * vol, prim_disp_dof_space_dim * vol});
 
-    check_ExcludeHomogeneousModeSpace(
-        // std::pair<Index, Index> initial_dof_space_shape
-        {prim_disp_dof_space_dim * vol, prim_disp_dof_space_dim * vol},
-        // std::pair<Index, Index> homogeneous_mode_space_shape
-        {prim_disp_dof_space_dim * vol, homogeneous_mode_dim},
-        // std::pair<Index, Index> dof_space_shape_excluding_homogeneous_modes
-        {prim_disp_dof_space_dim * vol,
-         prim_disp_dof_space_dim * vol - homogeneous_mode_dim},
-        // std::pair<Index, Index> symmetry_adapted_dof_space_shape
-        {prim_disp_dof_space_dim * vol,
-         prim_disp_dof_space_dim * vol - homogeneous_mode_dim});
+    //   check_ExcludeHomogeneousModeSpace(
+    //       // std::pair<Index, Index> initial_dof_space_shape
+    //       {prim_disp_dof_space_dim * vol, prim_disp_dof_space_dim * vol},
+    //       // std::pair<Index, Index> homogeneous_mode_space_shape
+    //       {prim_disp_dof_space_dim * vol, homogeneous_mode_dim},
+    //       // std::pair<Index, Index>
+    //       dof_space_shape_excluding_homogeneous_modes
+    //       {prim_disp_dof_space_dim * vol,
+    //        prim_disp_dof_space_dim * vol - homogeneous_mode_dim},
+    //       // std::pair<Index, Index> symmetry_adapted_dof_space_shape
+    //       {prim_disp_dof_space_dim * vol,
+    //        prim_disp_dof_space_dim * vol - homogeneous_mode_dim});
   }
 }

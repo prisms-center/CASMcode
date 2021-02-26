@@ -3,9 +3,18 @@
 
 #include "casm/clusterography/ClusterSymCompare.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/symmetry/PermuteIterator.hh"
 #include "casm/symmetry/SymPermutation.hh"
 
 namespace CASM {
+
+/// \brief Get SymOp from PermuteIterator and apply to cluster
+template <typename Base>
+typename ClusterSymCompare<Base>::ClusterType
+ClusterSymCompare<Base>::copy_apply(PermuteIterator const &permute_it,
+                                    ClusterType obj) const {
+  return this->copy_apply(permute_it.sym_op(), obj);
+}
 
 /// \brief Make orbit invariants from one element in the orbit
 template <typename Base>

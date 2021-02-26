@@ -3,6 +3,7 @@
 #include "casm/symmetry/SymGroup.hh"
 #include "casm/symmetry/SymMatrixXd.hh"
 #include "casm/symmetry/SymRepTools.hh"
+#include "casm/symmetry/io/stream/SymInfo_stream_io.hh"
 
 #ifndef CASM_SupercellSymInfo_impl
 #define CASM_SupercellSymInfo_impl
@@ -63,13 +64,23 @@ std::pair<MasterSymGroup, SymGroupRepID> collective_dof_symrep(
   Eigen::MatrixXd trep(total_dim, total_dim);
   Index g = 0;
   for (PermuteIterator const &perm : _group) {
+    std::cout << "---" << std::endl;
+    std::cout << "building " << g << std::endl;
+    std::cout << "symop: "
+              << brief_description(perm.sym_op(), _syminfo.prim_lattice(),
+                                   SymInfoOptions{CART})
+              << std::endl;
     trep.setZero();
     for (IterType it = begin; it != end; ++it) {
       Index b = _syminfo.unitcellcoord_index_converter()(*it).sublattice();
       auto ptr = (subreps[b][perm.factor_group_index()]->MatrixXd());
+      std::cout << "b: " << b << std::endl;
+      std::cout << "perm.factor_group_index(): " << perm.factor_group_index()
+                << std::endl;
 
       // can't fail, because it was built from [begin, end)
       Index row = site_index_to_basis_index.find(*it)->second;
+      std::cout << "row: " << row << std::endl;
 
       // could fail, if mismatch between [begin, end) and group
       auto col_it = site_index_to_basis_index.find(perm.permute_ind(*it));
@@ -79,9 +90,12 @@ std::pair<MasterSymGroup, SymGroupRepID> collective_dof_symrep(
             "between selected and unselected sites.");
       }
       Index col = col_it->second;
-
+      std::cout << "col: " << col << std::endl;
+      std::cout << "subreps matrix: \n" << *ptr << std::endl;
+      std::cout << std::endl;
       trep.block(row, col, ptr->rows(), ptr->cols()) = *ptr;
     }
+    std::cout << "trep: \n" << trep << std::endl;
     result.first[g++].set_rep(result.second, SymMatrixXd(trep));
   }
   result.first.sort();
