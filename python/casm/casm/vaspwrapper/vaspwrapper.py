@@ -4,7 +4,7 @@ from builtins import *
 import os, shutil, six, re, subprocess, json
 import warnings
 import casm.vasp.io
-
+from casm import vasp
 class VaspWrapperError(Exception):
     def __init__(self,msg):
         self.msg = msg
