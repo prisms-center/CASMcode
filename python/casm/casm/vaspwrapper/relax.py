@@ -19,8 +19,9 @@ except ImportError:
 from casm import vasp, wrapper
 from casm.misc import noindent
 from casm.project import DirectoryStructure, ProjectSettings
-from casm.vaspwrapper import VaspWrapperError, read_settings, write_settings, \
-  vasp_input_file_names
+from casm.vaspwrapper import VaspWrapperError, write_settings, vasp_input_file_names
+
+from casm.project.io import read_project_settings
 
 class Relax(object):
     """The Relax class contains functions for setting up, executing, and parsing a VASP relaxation.
@@ -133,7 +134,7 @@ class Relax(object):
 
         else:
             print("  Read settings from:", setfile)
-        self.settings = read_settings(setfile)
+        self.settings = read_project_settings(setfile)
 
         # set default settings if not present
         if not "ncore" in self.settings:
@@ -296,18 +297,18 @@ class Relax(object):
         print("Constructing a job")
         sys.stdout.flush()
         # construct a Job
-        job = Job(name=wrapper.jobname(self.configname),\
-                      account=self.settings["account"],\
-                      nodes=int(math.ceil(float(N)/float(self.settings["atom_per_proc"])/float(self.settings["ppn"]))),\
-                      ppn=int(self.settings["ppn"]),\
-                      walltime=self.settings["walltime"],\
-                      pmem=self.settings["pmem"],\
-                      qos=self.settings["qos"],\
-                      queue=self.settings["queue"],\
-                      message=self.settings["message"],\
-                      email=self.settings["email"],\
-                      priority=self.settings["priority"],\
-                      command=cmd,\
+        job = Job(name=wrapper.jobname(self.configname),
+                      account=self.settings["account"],
+                      nodes=self.settings["nodes"],
+                      ppn=int(self.settings["ppn"]),
+                      walltime=self.settings["walltime"],
+                      pmem=self.settings["pmem"],
+                      qos=self.settings["qos"],
+                      queue=self.settings["queue"],
+                      message=self.settings["message"],
+                      email=self.settings["email"],
+                      priority=self.settings["priority"],
+                      command=cmd,
                       auto=self.auto)
 
         print("Submitting")

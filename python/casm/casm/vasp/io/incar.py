@@ -1,3 +1,4 @@
+
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 from builtins import *
 
@@ -40,7 +41,6 @@ class Incar(object):
     """
     The INCAR class contains:
         tags: a dict of all INCAR settings
-
     All input tags and associated values are stored as key-value pairs in the dicionary called 'tags'.
    """
     def __init__(self,filename, species=None, poscar=None, sort=True):
@@ -208,4 +208,3 @@ class Incar(object):
                 else:
                     incar_write.write('{} = {}\n'.format(tag.upper(),self.tags[tag]))
         incar_write.close()
-

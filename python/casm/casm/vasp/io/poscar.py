@@ -22,7 +22,7 @@ class Site:
             self.occ_alias = alias (POTCAR) name, empty string by default
             self.position = np.array coordinate
     """
-    def __init__(self, cart, position, SD_FLAG = "", occupant = "", occ_alias = ""):
+    def __init__(self, cart, position, SD_FLAG="", occupant="", occ_alias=""):
         """ Site constructor """
         self.cart = cart
         self.SD_FLAG = SD_FLAG
@@ -390,7 +390,6 @@ class Poscar:
                 self.basis.append(Site(cart, np.array(pos), SD_FLAG, atom_type, atom_type))
 
 
-
     def update(self, species):
         """ Set self.type_atoms_alias and self.basis[x].alias according to Species dict.
 
@@ -412,6 +411,3 @@ class Poscar:
                     base.mag = float(species[base.occupant].tags['MAGMOM'])
 
         return
-
-
-

@@ -112,6 +112,9 @@ Individual Package dependencies include:
 
 - **prisms_jobs** ([https://prisms-center.github.io/prisms_jobs_docs](https://prisms-center.github.io/prisms_jobs_docs))
 
+- **atomate** ([https://github.com/hackingmaterials/atomate])(https://github.com/hackingmaterials/atomate)
+
+- ** pymatgen** ([https://github.com/materialsproject/pymatgen])(https://github.com/materialsproject/pymatgen)
 
 Generating html documentation
 -----------------------------

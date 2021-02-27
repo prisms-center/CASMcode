@@ -469,14 +469,15 @@ namespace CASM {
   //*********************************************************************************
 
   bool Configuration::read_calc_properties(jsonParser &parsed_props) const {
-    //std::cout << "begin Configuration::read_calculated()" << std::endl;
+    // std::cout << "begin Configuration::read_calculated()" << std::endl;
     bool success = true;
     /// properties.calc.json: contains calculated properties
     ///   For default clex calctype only
     fs::path filepath = calc_properties_path();
-    //std::cout << "filepath: " << filepath << std::endl;
+    // std::cout << "filepath: " << filepath << std::endl;
     parsed_props = jsonParser();
     if(fs::exists(filepath)) {
+
       jsonParser json(filepath);
 
       //Record file timestamp
@@ -484,7 +485,7 @@ namespace CASM {
 
       std::vector<std::string> props = get_primclex().settings().properties();
       for(Index i = 0; i < props.size(); i++) {
-        //std::cout << "checking for: " << props[i] << std::endl;
+        // std::cout << "checking for: " << props[i] << std::endl;
         if(json.contains(props[i])) {
 
           // normal by #prim cells for some properties
@@ -550,6 +551,7 @@ namespace CASM {
     else
       success = false;
 
+    std::cout << "RESULT: " << success << std::endl;
     return success;
   }
 
