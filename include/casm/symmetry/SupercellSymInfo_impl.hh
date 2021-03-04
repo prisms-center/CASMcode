@@ -37,6 +37,34 @@ template <typename IterType>
 std::pair<MasterSymGroup, SymGroupRepID> collective_dof_symrep(
     IterType begin, IterType end, SupercellSymInfo const &_syminfo,
     DoFKey const &_key, std::vector<PermuteIterator> const &_group) {
+  // To build the collective DoF symrep matrices, we need to know the
+  // conventions for permutations among sites, and the conventions for storing
+  // site DoF symmetry representations.
+  //
+  // For permutation among sites, by convention:
+  //     after[i] = before[perm.permute_ind(i)],
+  // where:
+  // - perm is a PermuteIterator
+  //
+  // For transforming site DoF values, by convention:
+  //     op.matrix() * B_from = B_to * U(from_b, op.index()),
+  // where:
+  // - op.matrix(), factor group operation symmetry matrix
+  // - B_from: site dof basis on "before" site
+  // - B_to: site dof basis on "after" site
+  // - U(from_b, op.index()): symmetry representation matrix, stored in
+  //   `_syminfo.local_dof_symreps(_key)[from_b][op.index()]`
+  //
+  // Relationships between the site DoF on the "from" site before symmetry
+  // application, to the site DoF value on the "to" site after symmetry
+  // application:
+  //
+  //     v_standard_after = op.matrix() * v_standard_before
+  //                      = op.matrix() * B_from * v_prim_from_before
+  //                      = B_to * v_prim_to_after
+  //     v_prim_to_after = B_to^-1 * op.matrix() * B_from * v_prim_from_before
+  //     v_prim_to_after = U(from_b, op.index()) * v_prim_from_before
+
   std::pair<MasterSymGroup, SymGroupRepID> result;
   if (_group.empty())
     throw std::runtime_error("Empty group passed to collective_dof_symrep()");
@@ -62,6 +90,7 @@ std::pair<MasterSymGroup, SymGroupRepID> collective_dof_symrep(
 
   // make matrix rep, by filling in blocks with site dof symreps
   Eigen::MatrixXd trep(total_dim, total_dim);
+
   Index g = 0;
   for (PermuteIterator const &perm : _group) {
     std::cout << "---" << std::endl;
@@ -72,18 +101,14 @@ std::pair<MasterSymGroup, SymGroupRepID> collective_dof_symrep(
               << std::endl;
     trep.setZero();
     for (IterType it = begin; it != end; ++it) {
-      Index b = _syminfo.unitcellcoord_index_converter()(*it).sublattice();
-      auto ptr = (subreps[b][perm.factor_group_index()]->MatrixXd());
-      std::cout << "b: " << b << std::endl;
-      std::cout << "perm.factor_group_index(): " << perm.factor_group_index()
-                << std::endl;
-
       // can't fail, because it was built from [begin, end)
-      Index row = site_index_to_basis_index.find(*it)->second;
+      Index to_site_index = *it;
+      Index row = site_index_to_basis_index.find(to_site_index)->second;
       std::cout << "row: " << row << std::endl;
 
       // could fail, if mismatch between [begin, end) and group
-      auto col_it = site_index_to_basis_index.find(perm.permute_ind(*it));
+      Index from_site_index = perm.permute_ind(*it);
+      auto col_it = site_index_to_basis_index.find(from_site_index);
       if (col_it == site_index_to_basis_index.end()) {
         throw std::runtime_error(
             "Error in collective_dof_symrep: Input group includes permutations "
@@ -91,9 +116,22 @@ std::pair<MasterSymGroup, SymGroupRepID> collective_dof_symrep(
       }
       Index col = col_it->second;
       std::cout << "col: " << col << std::endl;
-      std::cout << "subreps matrix: \n" << *ptr << std::endl;
+
+      Index from_site_b =
+          _syminfo.unitcellcoord_index_converter()(from_site_index)
+              .sublattice();
+      Eigen::MatrixXd U =
+          *(subreps[from_site_b][perm.factor_group_index()]->MatrixXd());
+      std::cout << "from_site_b: " << from_site_b << std::endl;
+      std::cout << "perm.factor_group_index(): " << perm.factor_group_index()
+                << std::endl;
+      std::cout << "*it: " << *it << std::endl;
+      std::cout << "perm.permute_ind(*it): " << perm.permute_ind(*it)
+                << std::endl;
+
+      std::cout << "subreps matrix: \n" << U << std::endl;
       std::cout << std::endl;
-      trep.block(row, col, ptr->rows(), ptr->cols()) = *ptr;
+      trep.block(row, col, U.rows(), U.cols()) = U;
     }
     std::cout << "trep: \n" << trep << std::endl;
     result.first[g++].set_rep(result.second, SymMatrixXd(trep));
