@@ -27,6 +27,17 @@ IrrepInfo make_dummy_irrep_info(Eigen::MatrixXcd const &trans_mat) {
   return IrrepInfo(trans_mat, tchar);
 }
 
+/// Construct a "dummy" IrrepInfo with user specified transformtion matrix
+///
+/// The "dummy" IrrepInfo is constructed with specified transformtion matrix
+/// and character vector of [(dim,0)] where 'dim' is the dimension of irrep
+/// (number of rows of `trans_mat`)
+IrrepInfo make_dummy_irrep_info(Eigen::MatrixXd const &trans_mat) {
+  Eigen::VectorXcd tchar(1);
+  tchar(0) = std::complex<double>(double(trans_mat.rows()), 0.);
+  return IrrepInfo(trans_mat.template cast<std::complex<double>>(), tchar);
+}
+
 /// \brief Assumes that irreps are real, and concatenates their individual
 /// trans_mats to form larger trans_mat
 Eigen::MatrixXd full_trans_mat(std::vector<IrrepInfo> const &irreps) {
@@ -55,6 +66,14 @@ Eigen::MatrixXd full_trans_mat(std::vector<IrrepInfo> const &irreps) {
 ///     expanded by application of rep and orthogonalization to form an
 ///     invariant subspace (i.e. column space dimension is not increased by
 ///     application of elements in head_group)
+/// \param _cyclic_subgroups Cyclic subgroups of head_group. Cyclic subgropus
+///     are those formed by repeated application of a single element. Used for
+///     symmetrization of the irrep subspaces.
+/// \param _all_subgroups All subgroups of head_group. Used for
+///     symmetrization of the irrep subspaces if symmetrization using
+///     _cyclic_subgroups fails.
+/// \param allow_complex If true, all irreps may be complex-valued, if false,
+///     complex irreps are combined to form real representations
 ///
 IrrepDecomposition::IrrepDecomposition(
     MatrixRep const &_fullspace_rep, GroupIndices const &_head_group,
@@ -75,8 +94,8 @@ IrrepDecomposition::IrrepDecomposition(
   //    `subspace_rep` are shape (subspace.cols() x subspace.cols())
   subspace_rep = make_subspace_rep(fullspace_rep, subspace);
 
-  std::cout << "fullspace_rep dim: " << fullspace_rep[0].rows() << std::endl;
-  std::cout << "subspace_rep dim: " << subspace_rep[0].rows() << std::endl;
+  // std::cout << "fullspace_rep dim: " << fullspace_rep[0].rows() << std::endl;
+  // std::cout << "subspace_rep dim: " << subspace_rep[0].rows() << std::endl;
 
   // 3) Perform irrep_decomposition
   std::vector<IrrepInfo> subspace_irreps =
@@ -87,25 +106,25 @@ IrrepDecomposition::IrrepDecomposition(
       symmetrize_irreps(subspace_rep, head_group, subspace_irreps,
                         cyclic_subgroups, all_subgroups);
 
-  for (auto const &irrep : symmetrized_subspace_irreps) {
-    std::cout << "---" << std::endl;
-    std::cout << "symmetrized irrep: " << std::endl;
-    std::cout << "index: " << irrep.index << std::endl;
-    std::cout << "characters: " << prettyc(irrep.characters.transpose())
-              << std::endl;
-    std::cout << "subspace: \n" << prettyc(irrep.trans_mat) << std::endl;
-    std::cout << "directions.size() (number of orbits): "
-              << irrep.directions.size() << std::endl;
-    Index orbit_index = 0;
-    for (auto const &orbit : irrep.directions) {
-      std::cout << "-" << std::endl;
-      std::cout << "orbit: " << orbit_index << std::endl;
-      for (auto const &direction : orbit) {
-        std::cout << prettyc(direction.transpose()) << std::endl;
-      }
-      ++orbit_index;
-    }
-  }
+  // for (auto const &irrep : symmetrized_subspace_irreps) {
+  //   std::cout << "---" << std::endl;
+  //   std::cout << "symmetrized irrep: " << std::endl;
+  //   std::cout << "index: " << irrep.index << std::endl;
+  //   std::cout << "characters: " << prettyc(irrep.characters.transpose())
+  //             << std::endl;
+  //   std::cout << "subspace: \n" << prettyc(irrep.trans_mat) << std::endl;
+  //   std::cout << "directions.size() (number of orbits): "
+  //             << irrep.directions.size() << std::endl;
+  //   Index orbit_index = 0;
+  //   for (auto const &orbit : irrep.directions) {
+  //     std::cout << "-" << std::endl;
+  //     std::cout << "orbit: " << orbit_index << std::endl;
+  //     for (auto const &direction : orbit) {
+  //       std::cout << prettyc(direction.transpose()) << std::endl;
+  //     }
+  //     ++orbit_index;
+  //   }
+  // }
 
   // 5) Transform to fullspace irreps
   irreps = make_fullspace_irreps(symmetrized_subspace_irreps, subspace);
@@ -115,5 +134,35 @@ IrrepDecomposition::IrrepDecomposition(
 }
 
 }  // namespace SymRepTools_v2
+
+}  // namespace CASM
+
+// for `make_irrep_decomposition` only
+#include "casm/symmetry/SymGroup.hh"
+#include "casm/symmetry/SymGroupRep.hh"
+
+namespace CASM {
+
+/// Make an IrrepDecompotion using CASM::SymGroupRep and CASM::SymGroup
+SymRepTools_v2::IrrepDecomposition make_irrep_decomposition(
+    SymGroupRep const &rep, SymGroup const &head_group,
+    Eigen::MatrixXd const &init_subspace, bool allow_complex) {
+  SymRepTools_v2::MatrixRep matrix_rep;
+  for (Index i = 0; i < rep.size(); ++i) {
+    matrix_rep.push_back(*rep[i]->MatrixXd());
+  }
+  SymRepTools_v2::GroupIndices head_group_indices;
+  for (SymOp const &op : head_group) {
+    head_group_indices.insert(op.index());
+  }
+  SymRepTools_v2::GroupIndicesOrbitVector cyclic_subgroups =
+      head_group.small_subgroups();
+  SymRepTools_v2::GroupIndicesOrbitVector all_subgroups =
+      head_group.subgroups();
+  SymRepTools_v2::IrrepDecomposition irrep_decomposition{
+      matrix_rep,       head_group_indices, init_subspace,
+      cyclic_subgroups, all_subgroups,      allow_complex};
+  return irrep_decomposition;
+}
 
 }  // namespace CASM

@@ -132,22 +132,19 @@ Eigen::MatrixXcd make_commuter(CommuterParamsCounter const &params,
   auto const &phase = params.phase;
   Eigen::MatrixXcd M_init = phase * col_i * col_j.adjoint() +
                             std::conj(phase) * col_j * col_i.adjoint();
-  // Eigen::MatrixXcd M_init = phase * col_i * col_i.adjoint() +
-  //                           std::conj(phase) * col_i * col_i.adjoint();
-  // Eigen::MatrixXcd M_init = complex_I(dim, dim);
-  std::cout << "M_init:\n" << prettyc(M_init) << std::endl;
+  // std::cout << "M_init:\n" << prettyc(M_init) << std::endl;
 
   Eigen::MatrixXcd M = complex_Zero(dim, dim);
 
   // Reynolds operation to symmetrize:
   for (Index element_index : head_group) {
-    std::cout << "element: " << element_index << std::endl;
+    // std::cout << "element: " << element_index << std::endl;
     // std::cout << rep[element_index] * M_init * rep[element_index].transpose()
     // << std::endl;
     M += rep[element_index] * M_init * rep[element_index].transpose();
-    std::cout << "M: \n" << prettyc(M) << std::endl;
+    // std::cout << "M: \n" << prettyc(M) << std::endl;
   }
-  std::cout << "R(M_init):\n" << prettyc(M) << std::endl;
+  // std::cout << "R(M_init):\n" << prettyc(M) << std::endl;
 
   // // Gram-Shmidt to orthogonalize with respect to existing commuters:
   // for (Eigen::MatrixXcd const commuter : commuters) {
@@ -223,10 +220,10 @@ Eigen::MatrixXcd make_irrep_subspace(Eigen::MatrixXcd const &KV_matrix,
   Eigen::MatrixXcd Q = qr.householderQ();
   Eigen::MatrixXcd irrep_subspace = Q.leftCols(colqr.rank());
 
-  if (irrep_subspace.cols() != (end - begin)) {
-    std::cout << "IRREP SUBSPACE" << std::endl;
-    std::cout << "X: \n" << prettyc(X) << std::endl;
-  }
+  // if (irrep_subspace.cols() != (end - begin)) {
+  //   std::cout << "IRREP SUBSPACE" << std::endl;
+  //   std::cout << "X: \n" << prettyc(X) << std::endl;
+  // }
 
   return irrep_subspace;
 }
@@ -467,8 +464,8 @@ std::vector<PossibleIrrep> make_possible_irreps(
     Eigen::MatrixXcd const &commuter, Eigen::MatrixXcd const &kernel,
     MatrixRep const &rep, GroupIndices const &head_group, double is_irrep_tol,
     bool allow_complex) {
-  std::cout << "%%%" << std::endl;
-  std::cout << "make_possible_irreps:" << std::endl;
+  // std::cout << "%%%" << std::endl;
+  // std::cout << "make_possible_irreps:" << std::endl;
 
   // magnify the range of eigenvalues to be (I think) independent of
   // matrix dimension by multiplying by dim^{3/2}
@@ -483,10 +480,10 @@ std::vector<PossibleIrrep> make_possible_irreps(
   Eigen::MatrixXd eigenvalues = esolve.eigenvalues();
   Eigen::MatrixXcd KV_matrix = kernel * esolve.eigenvectors();
 
-  std::cout << "***" << std::endl;
-  std::cout << "eigenvalues:" << eigenvalues.transpose() << std::endl;
-  std::cout << "eigenvectors: \n"
-            << prettyc(esolve.eigenvectors()) << std::endl;
+  // std::cout << "***" << std::endl;
+  // std::cout << "eigenvalues:" << eigenvalues.transpose() << std::endl;
+  // std::cout << "eigenvectors: \n"
+  //           << prettyc(esolve.eigenvectors()) << std::endl;
 
   // Columns of KV_matrix are orthonormal eigenvectors of commuter in terms of
   // natural basis (they were calculated in terms of kernel as basis)
@@ -500,15 +497,15 @@ std::vector<PossibleIrrep> make_possible_irreps(
                               KV_matrix);
   }
 
-  std::cout << "***" << std::endl;
-  std::cout << "transformed_rep:\n" << std::endl;
-  Index i = 0;
-  for (auto const &matrix_rep : transformed_rep) {
-    std::cout << "Op: " << i << std::endl;
-    std::cout << prettyc(matrix_rep) << std::endl;
-    ++i;
-  }
-  std::cout << "***" << std::endl;
+  // std::cout << "***" << std::endl;
+  // std::cout << "transformed_rep:\n" << std::endl;
+  // Index i = 0;
+  // for (auto const &matrix_rep : transformed_rep) {
+  //   std::cout << "Op: " << i << std::endl;
+  //   std::cout << prettyc(matrix_rep) << std::endl;
+  //   ++i;
+  // }
+  // std::cout << "***" << std::endl;
 
   // make possible irreps:
   // - The possible irrep corresponds to a range eigenvectors with equal
@@ -518,7 +515,7 @@ std::vector<PossibleIrrep> make_possible_irreps(
   Index begin = 0;
   do {
     Index end = find_end_of_equal_eigenvalues(begin, eigenvalues);
-    std::cout << "[" << begin << ", " << end << ")" << std::endl;
+    // std::cout << "[" << begin << ", " << end << ")" << std::endl;
     possible_irreps.emplace_back(eigenvalues, KV_matrix, transformed_rep,
                                  head_group.size(), is_irrep_tol, allow_complex,
                                  begin, end);
@@ -596,9 +593,9 @@ bool is_irrep(MatrixRep const &rep, GroupIndices const &head_group) {
     characters_squared_norm += character * character;
   }
 
-  std::cout << "characters_squared_norm: " << characters_squared_norm
-            << std::endl;
-  std::cout << "head_group.size(): " << head_group.size() << std::endl;
+  // std::cout << "characters_squared_norm: " << characters_squared_norm
+  //           << std::endl;
+  // std::cout << "head_group.size(): " << head_group.size() << std::endl;
   return almost_equal(characters_squared_norm, double(head_group.size()), TOL);
 }
 
@@ -708,9 +705,10 @@ std::vector<IrrepInfo> irrep_decomposition(MatrixRep const &rep,
 
   // start with all kernel, end with all adapted_subspace
   Eigen::MatrixXcd kernel = complex_I(dim, dim);
-  std::cout << "kernel: \n" << prettyc(kernel) << std::endl;
+  // std::cout << "kernel: \n" << prettyc(kernel) << std::endl;
   Eigen::MatrixXcd adapted_subspace{dim, 0};
-  std::cout << "adapted_subspace: \n" << prettyc(adapted_subspace) << std::endl;
+  // std::cout << "adapted_subspace: \n" << prettyc(adapted_subspace) <<
+  // std::endl;
 
   // In this set, as they are discovered we will save PossibleIrrep that:
   // - i) actually are irreducible,
@@ -737,14 +735,14 @@ std::vector<IrrepInfo> irrep_decomposition(MatrixRep const &rep,
     // make next commuter candidate and check if not zero
     Eigen::MatrixXcd commuter =
         make_commuter(commuter_params, rep, head_group, kernel, commuters);
-    std::cout << std::endl << "###" << std::endl;
-    std::cout << "commuter_params: (" << commuter_params.kernel_column_i << ", "
-              << commuter_params.kernel_column_j << ", "
-              << commuter_params.phase << ") " << std::endl;
-    std::cout << "commuters.size(): " << commuters.size() << std::endl;
-    std::cout << "commuter: \n" << prettyc(commuter) << std::endl;
+    // std::cout << std::endl << "###" << std::endl;
+    // std::cout << "commuter_params: (" << commuter_params.kernel_column_i
+    //           << ", " << commuter_params.kernel_column_j << ", "
+    //           << commuter_params.phase << ") " << std::endl;
+    // std::cout << "commuters.size(): " << commuters.size() << std::endl;
+    // std::cout << "commuter: \n" << prettyc(commuter) << std::endl;
     if (almost_equal(frobenius_product(commuter).real(), 0., TOL)) {
-      std::cout << "commuter is zero" << std::endl;
+      // std::cout << "commuter is zero" << std::endl;
       commuter_params.increment();
       continue;
     }
@@ -759,57 +757,58 @@ std::vector<IrrepInfo> irrep_decomposition(MatrixRep const &rep,
     // - and ii) extends the adapted_subspace space
     bool any_new_irreps = false;
     for (auto const &possible_irrep : possible_irreps) {
-      std::cout << "---" << std::endl;
-      std::cout << "[" << possible_irrep.begin << ", " << possible_irrep.end
-                << ")" << std::endl;
-      std::cout << "subspace: \n"
-                << prettyc(possible_irrep.subspace) << std::endl;
-      std::cout << "is_block_diagonal: " << possible_irrep.is_block_diagonal
-                << std::endl;
-      std::cout << "characters_squared_norm: "
-                << possible_irrep.characters_squared_norm << std::endl;
-      std::cout << "is_irrep: " << possible_irrep.is_irrep << std::endl;
-      std::cout << "is_extended_by: \n"
-                << adapted_subspace.adjoint() * possible_irrep.subspace
-                << std::endl;
-      std::cout << "is_extended_by.norm: "
-                << (adapted_subspace.adjoint() * possible_irrep.subspace).norm()
-                << std::endl;
-      std::cout << "extends space: "
-                << is_extended_by(adapted_subspace, possible_irrep.subspace)
-                << std::endl;
+      // std::cout << "---" << std::endl;
+      // std::cout << "[" << possible_irrep.begin << ", " << possible_irrep.end
+      //           << ")" << std::endl;
+      // std::cout << "subspace: \n"
+      //           << prettyc(possible_irrep.subspace) << std::endl;
+      // std::cout << "is_block_diagonal: " << possible_irrep.is_block_diagonal
+      //           << std::endl;
+      // std::cout << "characters_squared_norm: "
+      //           << possible_irrep.characters_squared_norm << std::endl;
+      // std::cout << "is_irrep: " << possible_irrep.is_irrep << std::endl;
+      // std::cout << "is_extended_by: \n"
+      //           << adapted_subspace.adjoint() * possible_irrep.subspace
+      //           << std::endl;
+      // std::cout << "is_extended_by.norm: "
+      //           << (adapted_subspace.adjoint() *
+      //           possible_irrep.subspace).norm()
+      //           << std::endl;
+      // std::cout << "extends space: "
+      //           << is_extended_by(adapted_subspace, possible_irrep.subspace)
+      //           << std::endl;
 
       if (possible_irrep.is_irrep &&
           is_extended_by(adapted_subspace, possible_irrep.subspace)) {
-        std::cout << "New irrep" << std::endl;
+        // std::cout << "New irrep" << std::endl;
 
         auto insert_result = irreps.insert(possible_irrep);
-        if (!insert_result.second) {
-          std::cout << "Already exists!" << std::endl;
-        }
+        // if (!insert_result.second) {
+        //   std::cout << "Already exists!" << std::endl;
+        // }
         adapted_subspace = extend(adapted_subspace, possible_irrep.subspace);
         any_new_irreps = true;
 
-        std::cout << "adapted_subspace: \n"
-                  << prettyc(adapted_subspace) << std::endl;
-
-      } else if (possible_irrep.is_irrep) {
-        std::cout << "Irrep, but does not expand space: " << std::endl;
-      } else {
-        std::cout << "---" << std::endl;
-        std::cout << "Not an irrep" << std::endl;
+        // std::cout << "adapted_subspace: \n"
+        //           << prettyc(adapted_subspace) << std::endl;
       }
-      std::cout << "---" << std::endl;
+      //  else if (possible_irrep.is_irrep) {
+      //   std::cout << "Irrep, but does not expand space: " << std::endl;
+      // } else {
+      //   std::cout << "---" << std::endl;
+      //   std::cout << "Not an irrep" << std::endl;
+      // }
+      // std::cout << "---" << std::endl;
     }
 
     // if any new irreps were found, recalculate kernel, and go again
     if (any_new_irreps && adapted_subspace.cols() != dim) {
       kernel = make_kernel(adapted_subspace);
-      std::cout << "kernel: \n" << prettyc(kernel) << std::endl;
-      std::cout << "irreps:" << std::endl;
-      for (auto const &irrep : irreps) {
-        std::cout << "irrep_dim: " << irrep.subspace.cols() << std::endl;
-      }
+      // std::cout << "kernel: \n" << prettyc(kernel) << std::endl;
+      // std::cout << "irreps:" << std::endl;
+      // for (auto const &irrep : irreps) {
+      //   std::cout << "irrep_dim: " << irrep.subspace.cols() << std::endl;
+      // }
       commuter_params.reset(kernel);
       if (kernel.cols() + adapted_subspace.cols() != adapted_subspace.rows()) {
         throw std::runtime_error(
@@ -820,10 +819,10 @@ std::vector<IrrepInfo> irrep_decomposition(MatrixRep const &rep,
     }
   } while (adapted_subspace.cols() != dim);
 
-  std::cout << "irreps:" << std::endl;
-  for (auto const &irrep : irreps) {
-    std::cout << "irrep_dim: " << irrep.subspace.cols() << std::endl;
-  }
+  // std::cout << "irreps:" << std::endl;
+  // for (auto const &irrep : irreps) {
+  //   std::cout << "irrep_dim: " << irrep.subspace.cols() << std::endl;
+  // }
 
   // Make irrep info (no directions yet, not a symmetrized basis)
   std::vector<IrrepInfo> irrep_info = make_irrep_info(irreps);

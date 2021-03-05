@@ -3,10 +3,12 @@
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/LinearIndexConverter.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
+#include "casm/misc/CASM_math.hh"
 #include "casm/symmetry/PermuteIterator.hh"
-#include "casm/symmetry/SupercellSymInfo_impl.hh"
+#include "casm/symmetry/SupercellSymInfo.hh"
 #include "casm/symmetry/SymBasisPermute.hh"
 #include "casm/symmetry/SymGroup.hh"
+#include "casm/symmetry/SymMatrixXd.hh"
 #include "casm/symmetry/SymPermutation.hh"
 #include "casm/symmetry/SymTools.hh"
 
@@ -203,6 +205,114 @@ SupercellSymInfo::permute_const_iterator SupercellSymInfo::permute_it(
     Index fg_index, UnitCell trans) const {
   Index trans_index = this->unitcell_index_converter()(trans);
   return permute_it(fg_index, trans_index);
+}
+
+/// \brief Make the matrix representation for group '_group' describing the
+/// transformation of DoF '_key' among a subset of sites
+///
+/// \param site_indices Set of site indices that define subset of sites of
+///     interest
+/// \param _syminfo SupercellSymInfo object that defines all symmetry properties
+///     of supercell
+/// \param _key DoFKey specifying which local DoF is of interest
+/// \param _group vector of PermuteIterators forming the group that is to be
+///     represented (this may be larger than a crystallographic factor group)
+///
+/// \result A std::pair containing a MasterSymGroup instantiation of _group and
+/// a SymGroupRepID that can be used to access the 'collective_dof_symrep'
+/// within the returned MasterSymGroup
+///
+std::pair<MasterSymGroup, SymGroupRepID> make_collective_dof_symrep(
+    std::set<Index> const &site_indices, SupercellSymInfo const &_syminfo,
+    DoFKey const &_key, std::vector<PermuteIterator> const &_group) {
+  // To build the collective DoF symrep matrices, we need to know the
+  // conventions for permutations among sites, and the conventions for storing
+  // site DoF symmetry representations.
+  //
+  // For permutation among sites, by convention:
+  //     after[i] = before[perm.permute_ind(i)],
+  // where:
+  // - perm is a PermuteIterator
+  //
+  // For transforming site DoF values, by convention:
+  //     op.matrix() * B_from = B_to * U(from_b, op.index()),
+  // where:
+  // - op.matrix(), factor group operation symmetry matrix
+  // - B_from: site dof basis on "before" site
+  // - B_to: site dof basis on "after" site
+  // - U(from_b, op.index()): symmetry representation matrix, stored in
+  //   `_syminfo.local_dof_symreps(_key)[from_b][op.index()]`
+  //
+  // Relationships between the site DoF on the "from" site before symmetry
+  // application, to the site DoF value on the "to" site after symmetry
+  // application:
+  //
+  //     v_standard_after = op.matrix() * v_standard_before
+  //                      = op.matrix() * B_from * v_prim_from_before
+  //                      = B_to * v_prim_to_after
+  //     v_prim_to_after = B_to^-1 * op.matrix() * B_from * v_prim_from_before
+  //     v_prim_to_after = U(from_b, op.index()) * v_prim_from_before
+
+  std::pair<MasterSymGroup, SymGroupRepID> result;
+  if (_group.empty())
+    throw std::runtime_error("Empty group passed to collective_dof_symrep()");
+  result.first.set_lattice(_syminfo.supercell_lattice());
+  for (PermuteIterator const &perm : _group) {
+    result.first.push_back(perm.sym_op());
+  }
+
+  result.second = result.first.allocate_representation();
+  SupercellSymInfo::SublatSymReps const &subreps =
+      _key == "occ" ? _syminfo.occ_symreps() : _syminfo.local_dof_symreps(_key);
+
+  // make map of site_index -> beginning row in basis for that site
+  // (number of rows per site == dof dimension on that site)
+  std::map<Index, Index> site_index_to_basis_index;
+  Index total_dim = 0;
+  for (Index site_index : site_indices) {
+    Index b = _syminfo.unitcellcoord_index_converter()(site_index).sublattice();
+    Index site_dof_dim = subreps[b].dim();
+    site_index_to_basis_index[site_index] = total_dim;
+    total_dim += site_dof_dim;
+  }
+
+  // make matrix rep, by filling in blocks with site dof symreps
+  Eigen::MatrixXd trep(total_dim, total_dim);
+  Index g = 0;
+  for (PermuteIterator const &perm : _group) {
+    trep.setZero();
+    for (Index site_index : site_indices) {
+      // "to_site" (after applying symmetry) determines row of block
+      // can't fail, because it was built from [begin, end)
+      Index to_site_index = site_index;
+      Index row = site_index_to_basis_index.find(to_site_index)->second;
+
+      // "from_site" (before applying symmetry) determines col of block
+      // could fail, if mismatch between [begin, end) and group
+      Index from_site_index = perm.permute_ind(site_index);
+      auto col_it = site_index_to_basis_index.find(from_site_index);
+      if (col_it == site_index_to_basis_index.end()) {
+        throw std::runtime_error(
+            "Error in collective_dof_symrep: Input group includes permutations "
+            "between selected and unselected sites.");
+      }
+      Index col = col_it->second;
+
+      // "from_site" sublattice and factor group op index
+      // are used to lookup the site dof rep matrix
+      Index from_site_b =
+          _syminfo.unitcellcoord_index_converter()(from_site_index)
+              .sublattice();
+      Eigen::MatrixXd U =
+          *(subreps[from_site_b][perm.factor_group_index()]->MatrixXd());
+
+      // insert matrix as block in collective dof symrep
+      trep.block(row, col, U.rows(), U.cols()) = U;
+    }
+    result.first[g++].set_rep(result.second, SymMatrixXd(trep));
+  }
+  result.first.sort();
+  return result;
 }
 
 }  // namespace CASM

@@ -19,6 +19,18 @@ jsonParser &to_json(SymRepTools::SubWedge const &wedge, jsonParser &json);
 
 jsonParser &to_json(VectorSpaceSymReport const &obj, jsonParser &json);
 
+namespace SymRepTools_v2 {
+  struct IrrepInfo;
+  class SubWedge;
+  struct VectorSpaceSymReport;
+}  // namespace SymRepTools_v2
+
+jsonParser &to_json(SymRepTools_v2::IrrepInfo const &irrep, jsonParser &json);
+
+jsonParser &to_json(SymRepTools_v2::SubWedge const &wedge, jsonParser &json);
+
+jsonParser &to_json(SymRepTools_v2::VectorSpaceSymReport const &obj, jsonParser &json);
+
 }  // namespace CASM
 
 #endif

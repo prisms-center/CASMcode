@@ -2,7 +2,7 @@
 
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
-#include "casm/symmetry/SupercellSymInfo_impl.hh"
+#include "casm/symmetry/SupercellSymInfo.hh"
 
 namespace CASM {
 

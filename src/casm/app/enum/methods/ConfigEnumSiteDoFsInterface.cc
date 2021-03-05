@@ -16,7 +16,7 @@
 #include "casm/enumerator/io/dof_space_analysis.hh"
 #include "casm/enumerator/io/json/ConfigEnumInput_json_io.hh"
 #include "casm/enumerator/io/json/DoFSpace.hh"
-#include "casm/symmetry/SupercellSymInfo_impl.hh"
+#include "casm/symmetry/SupercellSymInfo.hh"
 #include "casm/symmetry/SymRepTools.hh"
 #include "casm/symmetry/io/json/SymRepTools.hh"
 

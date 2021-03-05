@@ -7,6 +7,7 @@
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
 #include "casm/symmetry/SymRepTools.hh"
+#include "casm/symmetry/VectorSpaceSymReport.hh"
 
 namespace CASM {
 
@@ -30,6 +31,12 @@ jsonParser &to_json(
     std::optional<std::string> const &identifier = std::nullopt,
     std::optional<ConfigEnumInput> const &input_state = std::nullopt,
     std::optional<VectorSpaceSymReport> const &sym_report = std::nullopt);
+
+jsonParser &to_json(
+    DoFSpace const &dofspace, jsonParser &json,
+    std::optional<std::string> const &identifier,
+    std::optional<ConfigEnumInput> const &input_state,
+    std::optional<SymRepTools_v2::VectorSpaceSymReport> const &sym_report);
 
 template <>
 struct jsonConstructor<DoFSpace> {

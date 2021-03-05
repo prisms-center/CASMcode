@@ -8,6 +8,10 @@ namespace CASM {
 
 struct VectorSpaceSymReport;
 
+namespace SymRepTools_v2 {
+struct VectorSpaceSymReport;
+}
+
 /// DoFSpace
 ///
 /// The DoFSpace class is used to specify a particular degree of freedom space.
@@ -214,11 +218,22 @@ VectorSpaceSymReport vector_space_sym_report(
     DoFSpace const &dof_space, SupercellSymInfo const &sym_info,
     std::vector<PermuteIterator> const &group, bool calc_wedges = false);
 
+/// Make VectorSpaceSymReport
+SymRepTools_v2::VectorSpaceSymReport vector_space_sym_report_v2(
+    DoFSpace const &dof_space, SupercellSymInfo const &sym_info,
+    std::vector<PermuteIterator> const &group, bool calc_wedges = false);
+
 /// Make DoFSpace with symmetry adapated basis
 DoFSpace make_symmetry_adapted_dof_space(
     DoFSpace const &dof_space, SupercellSymInfo const &sym_info,
     std::vector<PermuteIterator> const &group, bool calc_wedges,
     std::optional<VectorSpaceSymReport> &symmetry_report);
+
+/// Make DoFSpace with symmetry adapated basis
+DoFSpace make_symmetry_adapted_dof_space_v2(
+    DoFSpace const &dof_space, SupercellSymInfo const &sym_info,
+    std::vector<PermuteIterator> const &group, bool calc_wedges,
+    std::optional<SymRepTools_v2::VectorSpaceSymReport> &symmetry_report);
 
 class make_symmetry_adapted_dof_space_error : public std::runtime_error {
  public:

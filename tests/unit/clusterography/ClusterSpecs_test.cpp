@@ -7,7 +7,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/symmetry/SimpleOrbit_impl.hh"
 #include "casm/symmetry/SubOrbits_impl.hh"
-#include "casm/symmetry/SupercellSymInfo_impl.hh"
+#include "casm/symmetry/SupercellSymInfo.hh"
 #include "crystallography/TestStructures.hh"
 #include "gtest/gtest.h"
 

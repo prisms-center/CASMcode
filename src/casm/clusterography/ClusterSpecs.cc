@@ -7,7 +7,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/symmetry/OrbitGeneration_impl.hh"
 #include "casm/symmetry/Orbit_impl.hh"
-#include "casm/symmetry/SupercellSymInfo_impl.hh"
+#include "casm/symmetry/SupercellSymInfo.hh"
 
 namespace CASM {
 

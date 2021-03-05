@@ -27,7 +27,7 @@
 #include "casm/crystallography/SymType.hh"
 #include "casm/external/Eigen/src/Core/Matrix.h"
 #include "casm/misc/algorithm.hh"
-#include "casm/symmetry/SupercellSymInfo_impl.hh"
+#include "casm/symmetry/SupercellSymInfo.hh"
 #include "casm/symmetry/SymBasisPermute.hh"
 #include "casm/symmetry/SymGroupRep.hh"
 #include "casm/symmetry/SymMatrixXd.hh"

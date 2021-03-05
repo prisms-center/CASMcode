@@ -5,7 +5,7 @@
 #include "casm/casm_io/dataformatter/DatumFormatterAdapter.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/symmetry/PermuteIterator.hh"
-#include "casm/symmetry/SupercellSymInfo_impl.hh"
+#include "casm/symmetry/SupercellSymInfo.hh"
 #include "casm/symmetry/SymInfo.hh"
 #include "casm/symmetry/io/stream/SymInfo_stream_io.hh"
 

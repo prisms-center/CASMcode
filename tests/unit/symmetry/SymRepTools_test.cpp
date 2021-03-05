@@ -162,10 +162,9 @@ TEST_F(IrrepDecompositionTest0, Test1_b) {
   Eigen::MatrixXd symmetry_adapted_dof_subspace =
       full_trans_mat(irreps).adjoint();
 
-  print_irreps(irreps);
-
-  std::cout << "symmetry_adapted_subspace: \n"
-            << pretty(symmetry_adapted_dof_subspace) << std::endl;
+  // print_irreps(irreps);
+  // std::cout << "symmetry_adapted_subspace: \n"
+  //           << pretty(symmetry_adapted_dof_subspace) << std::endl;
 }
 
 TEST_F(IrrepDecompositionTest0, Test2) {
@@ -192,11 +191,10 @@ TEST_F(IrrepDecompositionTest0, Test2) {
                                          subspace,      cyclic_subgroups,
                                          all_subgroups, allow_complex};
 
-  print_irreps(irrep_decomposition.irreps);
-
-  std::cout << "symmetry_adapted_subspace: \n"
-            << pretty(irrep_decomposition.symmetry_adapted_subspace)
-            << std::endl;
+  // print_irreps(irrep_decomposition.irreps);
+  // std::cout << "symmetry_adapted_subspace: \n"
+  //           << pretty(irrep_decomposition.symmetry_adapted_subspace)
+  //           << std::endl;
 }
 
 class IrrepDecompositionTest1 : public testing::Test {
@@ -314,10 +312,9 @@ TEST_F(IrrepDecompositionTest1, Test1_b) {
   Eigen::MatrixXd symmetry_adapted_dof_subspace =
       full_trans_mat(irreps).adjoint();
 
-  print_irreps(irreps);
-
-  std::cout << "symmetry_adapted_subspace: \n"
-            << pretty(symmetry_adapted_dof_subspace) << std::endl;
+  // print_irreps(irreps);
+  // std::cout << "symmetry_adapted_subspace: \n"
+  //           << pretty(symmetry_adapted_dof_subspace) << std::endl;
 }
 
 TEST_F(IrrepDecompositionTest1, Test2) {
@@ -344,11 +341,10 @@ TEST_F(IrrepDecompositionTest1, Test2) {
                                          subspace,      cyclic_subgroups,
                                          all_subgroups, allow_complex};
 
-  print_irreps(irrep_decomposition.irreps);
-
-  std::cout << "symmetry_adapted_subspace: \n"
-            << pretty(irrep_decomposition.symmetry_adapted_subspace)
-            << std::endl;
+  // print_irreps(irrep_decomposition.irreps);
+  // std::cout << "symmetry_adapted_subspace: \n"
+  //           << pretty(irrep_decomposition.symmetry_adapted_subspace)
+  //           << std::endl;
 }
 
 class IrrepDecompositionTest2 : public testing::Test {
@@ -429,10 +425,10 @@ class IrrepDecompositionTest2 : public testing::Test {
     shared_supercell = std::make_shared<CASM::Supercell>(
         shared_prim, Eigen::Matrix3l::Identity());
 
-    std::cout << "prim factor group: " << std::endl;
-    SymInfoOptions opt{CART};
-    brief_description(log(), shared_prim->factor_group(),
-                      shared_prim->lattice(), opt);
+    // std::cout << "prim factor group: " << std::endl;
+    // SymInfoOptions opt{CART};
+    // brief_description(log(), shared_prim->factor_group(),
+    //                   shared_prim->lattice(), opt);
 
     // Construct the disp DoF space.
     ConfigEnumInput config_input{*shared_supercell};
@@ -446,7 +442,7 @@ class IrrepDecompositionTest2 : public testing::Test {
     symrep_ptr = &make_dof_space_symrep(*unique_dof_space, sym_info, group,
                                         symrep_master_group, symrep_id);
     EXPECT_EQ(symrep_ptr->dim(), 9);
-    print_symrep();
+    // print_symrep();
   }
 
   void print_subspace() {
@@ -501,10 +497,9 @@ TEST_F(IrrepDecompositionTest2, Test1_b) {
   Eigen::MatrixXd symmetry_adapted_dof_subspace =
       full_trans_mat(irreps).adjoint();
 
-  print_irreps(irreps);
-
-  std::cout << "symmetry_adapted_subspace: \n"
-            << pretty(symmetry_adapted_dof_subspace) << std::endl;
+  // print_irreps(irreps);
+  // std::cout << "symmetry_adapted_subspace: \n"
+  //           << pretty(symmetry_adapted_dof_subspace) << std::endl;
 }
 
 TEST_F(IrrepDecompositionTest2, Test2) {
@@ -531,8 +526,7 @@ TEST_F(IrrepDecompositionTest2, Test2) {
                                          subspace,      cyclic_subgroups,
                                          all_subgroups, allow_complex};
 
-  print_irreps(irrep_decomposition.irreps);
-
-  std::cout << "symmetry_adapted_subspace: \n"
-            << irrep_decomposition.symmetry_adapted_subspace << std::endl;
+  // print_irreps(irrep_decomposition.irreps);
+  // std::cout << "symmetry_adapted_subspace: \n"
+  //           << irrep_decomposition.symmetry_adapted_subspace << std::endl;
 }

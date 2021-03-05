@@ -13,7 +13,7 @@
 #include "casm/enumerator/io/json/ConfigEnumInput_json_io.hh"
 #include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/symmetry/SupercellSymInfo_impl.hh"
+#include "casm/symmetry/SupercellSymInfo.hh"
 #include "casm/symmetry/io/json/SymRepTools.hh"
 
 namespace CASM {
@@ -57,6 +57,35 @@ jsonParser &to_json(DoFSpace const &dofspace, jsonParser &json,
                     std::optional<std::string> const &identifier,
                     std::optional<ConfigEnumInput> const &input_state,
                     std::optional<VectorSpaceSymReport> const &sym_report) {
+  json["dof"] = dofspace.dof_key();
+  json["transformation_matrix_to_supercell"] =
+      dofspace.transformation_matrix_to_super();
+  json["sites"] = dofspace.sites();
+  json["basis"] = dofspace.basis().transpose();
+  json["glossary"] = dofspace.axis_glossary();
+  json["axis_site_index"] = dofspace.axis_site_index();
+  json["axis_dof_component"] = dofspace.axis_dof_component();
+
+  if (identifier.has_value()) {
+    json["identifier"] = identifier;
+  }
+  if (input_state.has_value()) {
+    json["state"] = input_state;
+  }
+  if (sym_report.has_value()) {
+    to_json(sym_report, json);
+    if (dofspace.includes_all_sites() && dofspace.dof_key() == "disp") {
+      _add_homogeneous_mode_info(json, dofspace);
+    }
+  }
+  return json;
+}
+
+jsonParser &to_json(
+    DoFSpace const &dofspace, jsonParser &json,
+    std::optional<std::string> const &identifier,
+    std::optional<ConfigEnumInput> const &input_state,
+    std::optional<SymRepTools_v2::VectorSpaceSymReport> const &sym_report) {
   json["dof"] = dofspace.dof_key();
   json["transformation_matrix_to_supercell"] =
       dofspace.transformation_matrix_to_super();

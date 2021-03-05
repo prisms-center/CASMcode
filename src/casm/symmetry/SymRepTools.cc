@@ -904,7 +904,7 @@ std::vector<SymRepTools::IrrepInfo> irrep_decomposition(
                    kernel.col(kcj).adjoint()  // outer product
                + std::conj(phase[nph]) * kernel.col(kcj) *
                      kernel.col(kci).adjoint();  // adjoint of outer product
-        std::cout << "tmat:\n" << prettyc(tmat) << std::endl;
+        // std::cout << "tmat:\n" << prettyc(tmat) << std::endl;
         // apply reynolds operator
 
         for (SymOp const &op : head_group) {
@@ -914,7 +914,7 @@ std::vector<SymRepTools::IrrepInfo> irrep_decomposition(
                       (*(_rep.MatrixXd(op))).transpose();
         }
 
-        std::cout << "Raw commuter: \n" << prettyc(tcommute) << std::endl;
+        // std::cout << "Raw commuter: \n" << prettyc(tcommute) << std::endl;
 
         // Do Gram-Shmidt while building 'commuters'
 
@@ -925,11 +925,11 @@ std::vector<SymRepTools::IrrepInfo> irrep_decomposition(
           tcommute -= tproj * commuters[nc];
         }
 
-        std::cout << std::endl << "###" << std::endl;
-        std::cout << "commuter_params: (" << kci << ", " << kcj << ", "
-                  << phase[nph] << ") " << std::endl;
-        std::cout << "commuters.size(): " << commuters.size() << std::endl;
-        std::cout << "commuter: \n" << prettyc(tcommute) << std::endl;
+        // std::cout << std::endl << "###" << std::endl;
+        // std::cout << "commuter_params: (" << kci << ", " << kcj << ", "
+        //           << phase[nph] << ") " << std::endl;
+        // std::cout << "commuters.size(): " << commuters.size() << std::endl;
+        // std::cout << "commuter: \n" << prettyc(tcommute) << std::endl;
 
         double tnorm(
             (tcommute.array().conjugate() * tcommute.array()).sum().real());
@@ -1042,9 +1042,10 @@ std::vector<SymRepTools::IrrepInfo> irrep_decomposition(
             if (almost_zero(
                     (t_irrep_subspace.adjoint() * adapted_subspace).norm(),
                     0.001)) {
-              std::cout << "---" << std::endl;
-              std::cout << "new irrep: " << std::endl;
-              std::cout << "characters_squared_norm: " << sqnorm << std::endl;
+              // std::cout << "---" << std::endl;
+              // std::cout << "new irrep: " << std::endl;
+              // std::cout << "characters_squared_norm: " << sqnorm <<
+              // std::endl;
 
               qr.compute(t_irrep_subspace);
               // it seems stupid to use two different decompositions that do
@@ -1087,17 +1088,19 @@ std::vector<SymRepTools::IrrepInfo> irrep_decomposition(
 
               Nfound += rnk;
               found_new_irreps = true;
-
-            } else {
-              std::cout << "---" << std::endl;
-              std::cout << "Irrep, but does not expand space: " << std::endl;
-              std::cout << "characters_squared_norm: " << sqnorm << std::endl;
             }
-          } else {
-            std::cout << "---" << std::endl;
-            std::cout << "Not an irrep: " << std::endl;
-            std::cout << "characters_squared_norm: " << sqnorm << std::endl;
+            // else {
+            //   std::cout << "---" << std::endl;
+            //   std::cout << "Irrep, but does not expand space: " << std::endl;
+            //   std::cout << "characters_squared_norm: " << sqnorm <<
+            //   std::endl;
+            // }
           }
+          // else {
+          //   std::cout << "---" << std::endl;
+          //   std::cout << "Not an irrep: " << std::endl;
+          //   std::cout << "characters_squared_norm: " << sqnorm << std::endl;
+          // }
           last_i += subspace_dims[ns];
         }
         if (found_new_irreps) {

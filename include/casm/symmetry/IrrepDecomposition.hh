@@ -57,24 +57,16 @@ struct IrrepInfo {
 /// Construct a "dummy" IrrepInfo with user specified transformtion matrix
 IrrepInfo make_dummy_irrep_info(Eigen::MatrixXcd const &trans_mat);
 
+/// Construct a "dummy" IrrepInfo with user specified transformtion matrix
+IrrepInfo make_dummy_irrep_info(Eigen::MatrixXd const &trans_mat);
+
 /// \brief Assumes that irreps are real, and concatenates their individual
 /// trans_mats to form larger trans_mat
 Eigen::MatrixXd full_trans_mat(std::vector<IrrepInfo> const &irreps);
 
 /// Performs irreducible subspace construction and symmetrization
 struct IrrepDecomposition {
-  /// Full space IrrepDecomposition constructor
-  IrrepDecomposition(MatrixRep const &_fullspace_rep,
-                     GroupIndices const &_head_group,
-                     GroupIndicesOrbitVector const &_cyclic_subgroups,
-                     GroupIndicesOrbitVector const &_all_subgroups,
-                     bool allow_complex)
-      : IrrepDecomposition(_fullspace_rep, _head_group,
-                           Eigen::MatrixXd::Identity(_fullspace_rep[0].rows(),
-                                                     _fullspace_rep[0].rows()),
-                           _cyclic_subgroups, _all_subgroups, allow_complex) {}
-
-  /// Subspace IrrepDecomposition constructor
+  /// IrrepDecomposition constructor
   IrrepDecomposition(MatrixRep const &_fullspace_rep,
                      GroupIndices const &_head_group,
                      Eigen::MatrixXd const &_init_subspace,
@@ -83,14 +75,14 @@ struct IrrepDecomposition {
                      bool allow_complex);
 
   /// Full space matrix representation of head_group
-  MatrixRep const &fullspace_rep;
+  MatrixRep fullspace_rep;
 
   /// Group used to find irreducible representations
-  GroupIndices const &head_group;
+  GroupIndices head_group;
 
-  GroupIndicesOrbitVector const &cyclic_subgroups;
+  GroupIndicesOrbitVector cyclic_subgroups;
 
-  GroupIndicesOrbitVector const &all_subgroups;
+  GroupIndicesOrbitVector all_subgroups;
 
   /// Space in which to find irreducible subspaces. This space is formed by
   /// expanding `init_subspace`, if necessary, by application of `rep` and
@@ -107,14 +99,28 @@ struct IrrepDecomposition {
 
   /// Irreducible spaces, symmetrized using `make_irrep_special_directions` and
   /// `make_irrep_symmetrizer_matrix` to align the irreducible space bases along
-  /// high symmetry directions
+  /// high symmetry directions. Irreps are found in `subspace` using the
+  /// `subspace_rep`, and then converted to full space dimension (meaning
+  /// `irrep[i].vector_dim() == full space dimension` and `sum_i
+  /// irrep[i].irrep_dim() == subspace.cols()`).
   std::vector<IrrepInfo> irreps;
 
   /// Symmetry adapted subspace
+  ///
+  /// symmetry_adapted_subspace.rows() == full space dimension
+  /// symmetry_adapted_subspace.cols() == subspace.cols()
   Eigen::MatrixXd symmetry_adapted_subspace;
 };
 
 }  // namespace SymRepTools_v2
+
+class SymGroup;
+class SymGroupRep;
+
+/// Make an IrrepDecompotion using CASM::SymGroupRep and CASM::SymGroup
+SymRepTools_v2::IrrepDecomposition make_irrep_decomposition(
+    SymGroupRep const &rep, SymGroup const &head_group,
+    Eigen::MatrixXd const &_init_subspace, bool allow_complex);
 
 }  // namespace CASM
 

@@ -5,7 +5,7 @@
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
 #include "casm/container/io/PermutationIO.hh"
 #include "casm/crystallography/io/UnitCellCoordIO.hh"
-#include "casm/symmetry/SupercellSymInfo_impl.hh"
+#include "casm/symmetry/SupercellSymInfo.hh"
 #include "casm/symmetry/io/json/SymGroup_json_io.hh"
 
 namespace CASM {

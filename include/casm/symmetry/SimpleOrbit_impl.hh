@@ -8,31 +8,6 @@
 
 namespace CASM {
 
-// --- template<typename _SymCompareType> class SimpleOrbitElementCompare ---
-
-template <typename _SymCompareType>
-struct SimpleOrbitElementCompare {
-  typedef _SymCompareType SymCompareType;
-  typedef typename _SymCompareType::Element Element;
-
-  SymCompareType sym_compare;
-
-  SimpleOrbitElementCompare(SymCompareType const &_sym_compare);
-
-  bool operator()(const Element &A, const Element &B) const;
-};
-
-template <typename _SymCompareType>
-SimpleOrbitElementCompare<_SymCompareType>::SimpleOrbitElementCompare(
-    SymCompareType const &_sym_compare)
-    : sym_compare(_sym_compare) {}
-
-template <typename _SymCompareType>
-bool SimpleOrbitElementCompare<_SymCompareType>::operator()(
-    const Element &A, const Element &B) const {
-  return sym_compare.compare(A, B);
-}
-
 /// Construct a SimpleOrbit using a range of SymOp or PermuteIterator
 template <typename SymCompareType>
 template <typename GroupIterator>

@@ -9,7 +9,7 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/io/BasicStructureIO.hh"
-#include "casm/symmetry/SupercellSymInfo_impl.hh"
+#include "casm/symmetry/SupercellSymInfo.hh"
 #include "casm/symmetry/io/data/SupercellSymInfo_data_io.hh"
 
 namespace CASM {
