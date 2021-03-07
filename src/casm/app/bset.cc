@@ -24,14 +24,18 @@ BsetOption::BsetOption() : OptionHandlerBase("bset") {}
 
 void BsetOption::initialize() {
   add_help_suboption();
+  add_coordtype_suboption();
 
   m_desc.add_options()("update,u", "Update basis set")(
       "orbits", "Pretty-print orbit prototypes")(
       "functions", "Pretty-print prototype cluster functions for each orbit")(
       "clusters", "Pretty-print all clusters")(
       "clex", po::value<std::string>()->value_name(ArgHandler::clex()),
-      "Name of the cluster expansion using the basis set")("force,f",
-                                                           "Force overwrite");
+      "Select a non-default basis set to print by specifying the name of a "
+      "cluster expansion using the basis set")(
+      "align",
+      "Use with --functions to print aligned functions ready to copy and paste "
+      "into a latex document")("force,f", "Force overwrite");
   return;
 }
 }  // namespace Completer
@@ -123,14 +127,14 @@ void update_bset(const BsetCommand &cmd) {
 template <typename PrinterType>
 class OrbitPrinterAdapter {
  public:
-  OrbitPrinterAdapter(Log &_log);
+  OrbitPrinterAdapter(Log &_log, OrbitPrinterOptions _opt);
 
   template <typename OrbitVecType>
   void operator()(OrbitVecType const &orbits) const;
 
  private:
-  PrinterType m_printer;
   Log &m_log;
+  PrinterType m_printer;
 };
 
 /// Implements `casm bset --orbits --clusters --functions` (any combination is
@@ -149,16 +153,28 @@ void print_bset(const BsetCommand &cmd) {
   jsonParser clust_json{primclex.dir().clust(basis_set_name)};
   read_clust(std::back_inserter(prototypes), clust_json, *shared_prim);
 
+  OrbitPrinterOptions orbit_printer_options;
+  orbit_printer_options.coord_type = cmd.opt().coordtype_enum();
+  orbit_printer_options.indent_space = 4;
+  if (orbit_printer_options.coord_type != INTEGRAL) {
+    orbit_printer_options.delim = 0;
+  }
+
   if (vm.count("orbits")) {
-    for_all_orbits(cluster_specs, prototypes,
-                   OrbitPrinterAdapter<ProtoSitesPrinter>{log});
+    OrbitPrinterAdapter<ProtoSitesPrinter> printer{log, orbit_printer_options};
+    for_all_orbits(cluster_specs, prototypes, printer);
   }
   if (vm.count("clusters")) {
-    for_all_orbits(cluster_specs, prototypes,
-                   OrbitPrinterAdapter<FullSitesPrinter>{log});
+    OrbitPrinterAdapter<FullSitesPrinter> printer{log, orbit_printer_options};
+    for_all_orbits(cluster_specs, prototypes, printer);
   }
   if (vm.count("functions")) {
-    ClexBasisFunctionPrinter printer{log, shared_prim, basis_set_specs};
+    bool align = vm.count("align");
+    if (align) {
+      orbit_printer_options.itemize_orbits = true;
+    }
+    ClexBasisFunctionPrinter printer{log, shared_prim, basis_set_specs, align,
+                                     orbit_printer_options};
     for_all_orbits(cluster_specs, prototypes, printer);
   }
 }
@@ -254,8 +270,9 @@ int BsetCommand::run() const {
 namespace bset_impl {
 
 template <typename PrinterType>
-OrbitPrinterAdapter<PrinterType>::OrbitPrinterAdapter(Log &_log)
-    : m_log(_log) {}
+OrbitPrinterAdapter<PrinterType>::OrbitPrinterAdapter(Log &_log,
+                                                      OrbitPrinterOptions _opt)
+    : m_log(_log), m_printer(_opt) {}
 
 template <typename PrinterType>
 template <typename OrbitVecType>

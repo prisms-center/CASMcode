@@ -51,19 +51,17 @@ Index print_clust_basis(std::ostream &stream, BasisSet _clust_basis,
     stream.precision(5);
     stream.width(9);
     _prototype.coordinate(np).print(stream);
-    stream << "  basis_index: " << _prototype[np].sublattice()
-           << "  clust_index: " << np << " ";
     if (delim) stream << delim;
   }
   stream << "\n"
          << "            Basis Functions:\n";
 
   _clust_basis.set_dof_IDs(sequence<Index>(0, _prototype.size() - 1));
-  _clust_basis.accept(OccFuncLabeler("\\phi_%b_%f(s_%n)"));
+  _clust_basis.accept(OccFuncLabeler("\\phi_{%b,%f}(s_{%n})"));
   Index i;
   for (i = 0; i < _clust_basis.size(); i++) {
-    stream << "              \\Phi_" << func_ind + i << " = "
-           << _clust_basis[i]->tex_formula() << std::endl;
+    stream << "              \\Phi_{" << func_ind + i
+           << "} = " << _clust_basis[i]->tex_formula() << std::endl;
   }
   return _clust_basis.size();
 }

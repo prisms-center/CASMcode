@@ -11,50 +11,95 @@ namespace CASM {
 template <typename OrbitType>
 void ProtoFuncsPrinter::operator()(const OrbitType &orbit, Log &out,
                                    Index orbit_index, Index Norbits) const {
-  out << out.indent_str() << "Prototype"
-      << " of " << orbit.size() << " Equivalent " << element_name
-      << " in Orbit " << orbit_index << std::endl;
+  if (m_align) {
+    print_tex_tabular_cluster_sites(out, orbit.prototype(), *prim_ptr,
+                                    opt.coord_type);
 
-  // out.flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
-  // out.precision(5);
+    out << "Prototype basis functions:\n\n";
+    Index func_index = 0;
+    for (Index i = 0; i < orbit_index; i++)
+      func_index += clex_basis.clust_basis(i, 0).size();
 
-  xtal::COORD_MODE printer_mode(opt.coord_type);
+    BasisSet tbasis(clex_basis.clust_basis(orbit_index, 0));
+    tbasis.accept(OccFuncLabeler("\\phi_{%b,%f}(s_{%n})"));
+    out << "\\begin{align*}\n";
+    for (Index i = 0; i < tbasis.size(); i++) {
+      out << "\\Phi_{" << func_index + i << "} ={}& ";
 
-  auto const &clust = orbit.prototype();
-  Index np = 0;
-  this->increase_indent(out);
-  for (const auto &coord : clust) {
-    out.indent();
-    if (opt.coord_type == INTEGRAL) {
-      out << coord;
-      out << " ";
-      Site::print_occupant_dof(coord.site(*prim_ptr).occupant_dof(), out);
-      out << std::flush;
-    } else {
-      coord.site(*prim_ptr).print(out);
+      // wrap formula across multiple lines if its long
+      std::string formula = tbasis[i]->tex_formula();
+      int maxl = opt.max_line_width;
+      int j = 0;
+      int pos = 0;
+      while (formula.size() > maxl) {
+        if (formula[j] == '-' || formula[j] == '+') {
+          if (j > maxl) {
+            if (pos == 0) {
+              pos = j;
+            }
+            out << formula.substr(0, pos) << "\\\\\n";
+            out << " & ";
+            formula = formula.substr(pos, formula.size());
+            j = 0;
+            pos = 0;
+          } else {
+            pos = j;
+          }
+        }
+        ++j;
+      }
+      out << formula;
+
+      if (i + 1 != tbasis.size()) {
+        out << "\\\\\n";
+      } else {
+        out << "\n";
+      }
     }
-    out << "  basis_index: " << coord.sublattice() << "  clust_index: " << np++
-        << " ";
-    if (opt.delim) out << opt.delim;
+    out << "\\end{align*}\n\n";
+  } else {
+    out << out.indent_str() << "Prototype"
+        << " of " << orbit.size() << " Equivalent " << element_name
+        << " in Orbit " << orbit_index << std::endl;
+
+    // out.flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
+    // out.precision(5);
+
+    xtal::COORD_MODE printer_mode(opt.coord_type);
+
+    auto const &clust = orbit.prototype();
+    this->increase_indent(out);
+    for (const auto &coord : clust) {
+      out.indent();
+      if (opt.coord_type == INTEGRAL) {
+        out << coord;
+        out << " ";
+        Site::print_occupant_dof(coord.site(*prim_ptr).occupant_dof(), out);
+        out << std::flush;
+      } else {
+        coord.site(*prim_ptr).print(out);
+      }
+      if (opt.delim) out << opt.delim;
+      out << std::flush;
+    }
+    this->decrease_indent(out);
+
+    Index func_index = 0;
+    for (Index i = 0; i < orbit_index; i++)
+      func_index += clex_basis.clust_basis(i, 0).size();
+
+    // From clust:
+    out.indent() << "Prototype basis functions:\n";
+    BasisSet tbasis(clex_basis.clust_basis(orbit_index, 0));
+    tbasis.accept(OccFuncLabeler("\\phi_{%b,%f}(s_{%n})"));
+    this->increase_indent(out);
+    for (Index i = 0; i < tbasis.size(); i++) {
+      out.indent() << "\\Phi_{" << func_index + i
+                   << "} = " << tbasis[i]->tex_formula() << std::endl;
+    }
+    this->decrease_indent(out);
     out << std::flush;
   }
-  this->decrease_indent(out);
-
-  Index func_index = 0;
-  for (Index i = 0; i < orbit_index; i++)
-    func_index += clex_basis.clust_basis(i, 0).size();
-
-  // From clust:
-  out.indent() << "Basis Functions:\n";
-  BasisSet tbasis(clex_basis.clust_basis(orbit_index, 0));
-  tbasis.accept(OccFuncLabeler("\\phi_%b_%f(s_%n)"));
-  this->increase_indent(out);
-  for (Index i = 0; i < tbasis.size(); i++) {
-    out.indent() << "\\Phi_" << func_index + i << " = "
-                 << tbasis[i]->tex_formula() << std::endl;
-  }
-  this->decrease_indent(out);
-  out << "\n\n" << std::flush;
 }
 
 template <typename OrbitType>
@@ -74,14 +119,15 @@ jsonParser &ProtoFuncsPrinter::to_json(const OrbitType &orbit, jsonParser &json,
     func_index += clex_basis.clust_basis(i, 0).size();
 
   BasisSet tbasis(clex_basis.clust_basis(orbit_index, 0));
-  tbasis.accept(OccFuncLabeler("\\phi_%b_%f(s_%n)"));
+  tbasis.accept(OccFuncLabeler("\\phi_{%b,%f}(s_{%n})"));
   for (auto const &labeler : labelers) {
     tbasis.accept(labeler);
   }
 
   for (Index nf = 0; nf < tbasis.size(); ++nf) {
-    orbitf.push_back(json_pair("\\Phi_" + std::to_string(func_index + nf),
-                               tbasis[nf]->tex_formula()));
+    orbitf.push_back(
+        json_pair("\\Phi_{" + std::to_string(func_index + nf) + "}",
+                  tbasis[nf]->tex_formula()));
   }
 
   return json;

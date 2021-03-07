@@ -1928,7 +1928,7 @@ int format_command(const CommandArgs &args) {
              "     occupant. Of the form:                                      "
              "  \n\n"
              "       { \n"
-             "         \"\\\\phi_b_i\": { \n"
+             "         \"\\\\phi_{bi}\": { \n"
              "           \"A\": val, \n"
              "           \"B\": val, \n"
              "           ... \n"

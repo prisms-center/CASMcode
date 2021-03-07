@@ -116,8 +116,8 @@ void OccupantFunction::make_formula() const {
     tformula << "p_" << var_ind[i];
     ttex << "p_" << var_ind[i];
     if (valid_index(m_var->ID())) {
-      tformula << "_" << m_var->ID();
-      ttex << "_" << m_var->ID();
+      tformula << "_{" << m_var->ID() << "}";
+      ttex << "_{" << m_var->ID() << "}";
     }
   }
   if (var_ind.size() > 1) {

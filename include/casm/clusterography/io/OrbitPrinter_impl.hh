@@ -220,7 +220,9 @@ jsonParser &OrbitPrinter<_Element, ORBIT_PRINT_MODE::FULL>::to_json(
 template <typename ClusterOrbitIterator, typename OrbitPrinter>
 void print_clust(ClusterOrbitIterator begin, ClusterOrbitIterator end, Log &out,
                  OrbitPrinter printer) {
-  printer.coord_type(out);
+  if (!printer.opt.itemize_orbits) {
+    printer.coord_type(out);
+  }
 
   out.ostream().flags(std::ios::showpoint | std::ios::fixed | std::ios::left);
   out.ostream().precision(5);
@@ -230,27 +232,55 @@ void print_clust(ClusterOrbitIterator begin, ClusterOrbitIterator end, Log &out,
   Index Norbits = std::distance(begin, end);
 
   for (auto it = begin; it != end; ++it) {
-    if (it->prototype().size() != branch) {
-      branch = it->prototype().size();
-      out << out.indent_str() << "** Branch " << branch << " ** " << std::endl;
+    if (printer.opt.itemize_orbits) {
+      if (it == begin) {
+        out << "\\begin{itemize}\n";
+      }
+      out << "\\item Orbit " << orbit_index + 1 << "\n\n";
+      double min_length = 0.0;
+      double max_length = 0.0;
+      if (it->invariants().displacement().size()) {
+        min_length = it->invariants().displacement().front();
+        max_length = it->invariants().displacement().back();
+      }
+      out << "\\begin{itemize}\n";
+      out << "\\item Number of cluster sites: " << it->prototype().size()
+          << "\n";
+      out << "\\item Multiplicity: " << it->size() << "\n";
+      out << "\\item Minimum length: " << min_length << "\n";
+      out << "\\item Maximum length: " << max_length << "\n";
+      out << "\\end{itemize}\n\n";
+
+      printer(*it, out, orbit_index, Norbits);
+      auto next = it;
+      ++next;
+      if (next == end) {
+        out << "\\end{itemize}\n\n";
+      }
+    } else {
+      if (it->prototype().size() != branch) {
+        branch = it->prototype().size();
+        out << out.indent_str() << "** Branch " << branch << " ** "
+            << std::endl;
+      }
+      printer.increase_indent(out);
+      double min_length = 0.0;
+      double max_length = 0.0;
+      if (it->invariants().displacement().size()) {
+        min_length = it->invariants().displacement().front();
+        max_length = it->invariants().displacement().back();
+      }
+      out << out.indent_str() << "** " << orbit_index << " of " << Norbits
+          << " Orbits **"
+          << "  Points: " << it->prototype().size() << "  Mult: " << it->size()
+          << "  MinLength: " << min_length << "  MaxLength: " << max_length
+          << std::endl;
+      printer.increase_indent(out);
+      printer(*it, out, orbit_index, Norbits);
+      out << std::endl;
+      printer.decrease_indent(out);
+      printer.decrease_indent(out);
     }
-    printer.increase_indent(out);
-    double min_length = 0.0;
-    double max_length = 0.0;
-    if (it->invariants().displacement().size()) {
-      min_length = it->invariants().displacement().front();
-      max_length = it->invariants().displacement().back();
-    }
-    out << out.indent_str() << "** " << orbit_index << " of " << Norbits
-        << " Orbits **"
-        << "  Points: " << it->prototype().size() << "  Mult: " << it->size()
-        << "  MinLength: " << min_length << "  MaxLength: " << max_length
-        << std::endl;
-    printer.increase_indent(out);
-    printer(*it, out, orbit_index, Norbits);
-    out << std::endl;
-    printer.decrease_indent(out);
-    printer.decrease_indent(out);
     ++orbit_index;
   }
 }

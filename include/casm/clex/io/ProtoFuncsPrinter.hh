@@ -28,6 +28,7 @@ struct ProtoFuncsPrinter : public SitesPrinter {
   std::vector<SubExpressionLabeler> labelers;
 
   ProtoFuncsPrinter(ClexBasis const &_clex_basis, PrimType_ptr prim_ptr,
+                    bool align,
                     OrbitPrinterOptions const &_opt = OrbitPrinterOptions());
 
   /// \brief Print to JSON
@@ -43,12 +44,24 @@ struct ProtoFuncsPrinter : public SitesPrinter {
 
  private:
   PrimType_ptr prim_ptr;
+  bool m_align;
 };
 
-/// \brief Print site basis functions, as for 'casm bset --functions'
+/// Print prototype cluster sites as a tex tabular
+void print_tex_tabular_cluster_sites(Log &out, IntegralCluster const &cluster,
+                                     xtal::BasicStructure const &prim,
+                                     COORD_TYPE mode);
+
+/// Print site basis functions, as for 'casm bset --functions'
 void print_site_basis_funcs(std::shared_ptr<const Structure> prim_ptr,
                             ClexBasis const &clex_basis, Log &out,
                             Index indent_space = 6, COORD_TYPE mode = FRAC);
+
+/// Print aligned site basis functions, as for 'casm bset --functions --align'
+void print_aligned_site_basis_funcs(std::shared_ptr<const Structure> prim_ptr,
+                                    ClexBasis const &clex_basis, Log &out,
+                                    Index indent_space = 6,
+                                    COORD_TYPE mode = FRAC);
 
 void write_site_basis_funcs(std::shared_ptr<const Structure> prim_ptr,
                             ClexBasis const &clex_basis, jsonParser &json);

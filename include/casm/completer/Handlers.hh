@@ -589,6 +589,8 @@ class BsetOption : public OptionHandlerBase {
  public:
   BsetOption();
 
+  using OptionHandlerBase::coordtype_enum;
+
  private:
   void initialize() override;
 };

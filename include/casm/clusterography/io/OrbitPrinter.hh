@@ -28,6 +28,8 @@ struct OrbitPrinterOptions {
   COORD_TYPE coord_type = FRAC;
   ORBIT_PRINT_MODE orbit_print_mode = ORBIT_PRINT_MODE::PROTO;
   SymInfoOptions sym_info_opt;
+  bool itemize_orbits = false;
+  int max_line_width = 100;
   bool print_coordinates = true;
   bool print_equivalence_map = false;
   bool print_invariant_group = false;

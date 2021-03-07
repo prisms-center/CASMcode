@@ -68,7 +68,8 @@ TEST_F(OccStrainClexulatorTest, UseClexulator) {
 
   Clexulator clexulator = primclex_ptr->clexulator(basis_set_name);
 
-  print_basis_functions(log(), *primclex_ptr, basis_set_name);
+  bool align = false;
+  print_basis_functions(log(), *primclex_ptr, basis_set_name, align);
 
   // Check clexulator
   EXPECT_EQ(clexulator.name(), "OccStrainClexulatorTest_Clexulator");

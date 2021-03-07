@@ -21,6 +21,19 @@ namespace CASM {
 
 namespace DoF_impl {
 
+namespace {
+double pretty(double value, double tol) {
+  double pretty_value = value;
+  if (std::abs(value) < tol) {
+    return 0.;
+  }
+  if (std::abs(std::round(value) - value) < tol) {
+    pretty_value = std::round(value);
+  }
+  return pretty_value;
+}
+}  // namespace
+
 std::string OccupationDoFSpecs::_name() const {
   return OccupationDoFTraits().name();
 }
@@ -523,9 +536,9 @@ std::string OccupationDoFTraits::site_basis_description(BasisSet site_bset,
   for (Index f = 0; f < site_bset.size(); f++) {
     for (s = 0; s < site.occupant_dof().size(); s++) {
       if (s == 0) ss << "    ";
-      ss << "    \\phi_" << site_ix << '_' << f << '['
+      ss << "    \\phi_{" << site_ix << "," << f << "}["
          << site.occupant_dof()[s].name()
-         << "] = " << site_bset[f]->remote_eval();
+         << "] = " << pretty(site_bset[f]->remote_eval(), 1e-10);
       if (s + 1 == site.occupant_dof().size())
         ss << "\n";
       else

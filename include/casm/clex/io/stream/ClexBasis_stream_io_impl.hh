@@ -17,9 +17,18 @@ void ClexBasisFunctionPrinter::operator()(OrbitVecType const &orbits) const {
   ClexBasis clex_basis{m_shared_prim, m_basis_set_specs, dof_dict};
   clex_basis.generate(orbits.begin(), orbits.end());
 
-  print_site_basis_funcs(m_shared_prim, clex_basis, m_log);
-  ProtoFuncsPrinter funcs_printer{clex_basis,
-                                  m_shared_prim->shared_structure()};
+  if (m_align) {
+    print_aligned_site_basis_funcs(m_shared_prim, clex_basis, m_log,
+                                   m_orbit_printer_opt.indent_space,
+                                   m_orbit_printer_opt.coord_type);
+  } else {
+    print_site_basis_funcs(m_shared_prim, clex_basis, m_log,
+                           m_orbit_printer_opt.indent_space,
+                           m_orbit_printer_opt.coord_type);
+  }
+  ProtoFuncsPrinter funcs_printer{clex_basis, m_shared_prim->shared_structure(),
+                                  m_align, m_orbit_printer_opt};
+  m_log << "Prototype cluster functions: \n\n";
   print_clust(orbits.begin(), orbits.end(), m_log, funcs_printer);
 }
 

@@ -183,8 +183,8 @@ void Variable::make_formula() const {
     } else {
       tformula << dof_set()[var_ind[i]].var_name() << '['
                << dof_set()[var_ind[i]].ID() << ']';
-      ttex << dof_set()[var_ind[i]].var_name() << '_'
-           << dof_set()[var_ind[i]].ID();
+      ttex << dof_set()[var_ind[i]].var_name() << "_{"
+           << dof_set()[var_ind[i]].ID() << "}";
     }
   }
   if (var_ind.size() > 1) {

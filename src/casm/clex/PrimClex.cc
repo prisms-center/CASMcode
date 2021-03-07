@@ -476,8 +476,9 @@ struct WriteBasisSetDataImpl {
     fs::path basis_json_path = dir.basis(basis_set_name);
     jsonParser basis_json;
     write_site_basis_funcs(shared_prim, clex_basis, basis_json);
-    ProtoFuncsPrinter funcs_printer{clex_basis,
-                                    shared_prim->shared_structure()};
+    bool align = false;
+    ProtoFuncsPrinter funcs_printer{clex_basis, shared_prim->shared_structure(),
+                                    align};
     write_clust(orbits.begin(), orbits.end(), basis_json, funcs_printer,
                 basis_set_specs_json);
     basis_json.write(basis_json_path);
