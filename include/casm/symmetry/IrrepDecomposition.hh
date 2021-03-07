@@ -75,13 +75,18 @@ struct IrrepDecomposition {
                      bool allow_complex);
 
   /// Full space matrix representation of head_group
+  ///
+  /// fullspace_rep[i].rows() == full space dimension
+  /// fullspace_rep[i].cols() == full space dimension
   MatrixRep fullspace_rep;
 
-  /// Group used to find irreducible representations
+  /// Group (as indices into fullspace_rep) used to find irreps
   GroupIndices head_group;
 
+  // Cyclic subgroups of head_group (only first group in each orbit is used)
   GroupIndicesOrbitVector cyclic_subgroups;
 
+  // All subgroups of head_group (only first group in each orbit is used)
   GroupIndicesOrbitVector all_subgroups;
 
   /// Space in which to find irreducible subspaces. This space is formed by
@@ -89,20 +94,15 @@ struct IrrepDecomposition {
   /// orthogonalization to form an invariant subspace (i.e. column space does
   /// not change upon application of elements in head_group)
   ///
-  /// subspace.rows() == init_subspace.rows() (full space dimension)
+  /// subspace.rows() == full space dimension
   /// subspace.cols() == dimension of invariant subspace
   Eigen::MatrixXd subspace;
 
-  /// Matrix representation for operations on coordinates in the this->subspace
-  /// column vector space.
-  MatrixRep subspace_rep;
-
   /// Irreducible spaces, symmetrized using `make_irrep_special_directions` and
   /// `make_irrep_symmetrizer_matrix` to align the irreducible space bases along
-  /// high symmetry directions. Irreps are found in `subspace` using the
-  /// `subspace_rep`, and then converted to full space dimension (meaning
-  /// `irrep[i].vector_dim() == full space dimension` and `sum_i
-  /// irrep[i].irrep_dim() == subspace.cols()`).
+  /// high symmetry directions. Irreps are found in the `subspace` and then
+  /// converted to full space dimension (meaning `irrep[i].vector_dim() == full
+  /// space dimension` and `sum_i irrep[i].irrep_dim() == subspace.cols()`).
   std::vector<IrrepInfo> irreps;
 
   /// Symmetry adapted subspace

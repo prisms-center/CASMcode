@@ -62,10 +62,10 @@ Eigen::MatrixXd full_trans_mat(std::vector<IrrepInfo> const &irreps) {
 /// \param rep Full space matrix representation (rep[0].rows() ==
 ///     init_subspace.rows())
 /// \param head_group Group for which the irreps are to be found
-/// \param _subspace Input subspace in which irreps are to be found. Will be
-///     expanded by application of rep and orthogonalization to form an
-///     invariant subspace (i.e. column space dimension is not increased by
-///     application of elements in head_group)
+/// \param init_subspace Input subspace in which irreps are to be found. Will be
+///     expanded (column space increased) by application of rep and
+///     orthogonalization to form an invariant subspace (i.e. column space
+///     dimension is not increased by application of elements in head_group)
 /// \param _cyclic_subgroups Cyclic subgroups of head_group. Cyclic subgropus
 ///     are those formed by repeated application of a single element. Used for
 ///     symmetrization of the irrep subspaces.
@@ -86,50 +86,53 @@ IrrepDecomposition::IrrepDecomposition(
       all_subgroups(_all_subgroups) {
   using namespace IrrepDecompositionImpl;
 
+  Index dim = fullspace_rep[0].rows();
+
   // 1) Expand subspace by application of group, and orthonormalization
   subspace = make_invariant_space(fullspace_rep, head_group, init_subspace);
 
-  // 2) Create `subspace_rep`, a transformed copy of `fullspace_rep` that acts
-  //    on coordinates with `subspace` columns as their basis. Matrices in
-  //    `subspace_rep` are shape (subspace.cols() x subspace.cols())
-  subspace_rep = make_subspace_rep(fullspace_rep, subspace);
+  // 2) Perform irrep_decomposition
+  // In some cases the `irrep_decomposition` method does not find all irreps.
+  // As long as it finds at least one, this loop will try again in the remaining
+  // subspace.
+  Eigen::MatrixXd subspace_i = subspace;
+  Eigen::MatrixXd finished_subspace = make_kernel(subspace);
+  while (finished_subspace.cols() != dim) {
+    // Irreps are found in a subspace specified via the subspace matrix rep
+    MatrixRep subspace_rep_i = make_subspace_rep(fullspace_rep, subspace_i);
+    std::vector<IrrepInfo> subspace_irreps_i =
+        irrep_decomposition(subspace_rep_i, head_group, allow_complex);
 
-  // std::cout << "fullspace_rep dim: " << fullspace_rep[0].rows() << std::endl;
-  // std::cout << "subspace_rep dim: " << subspace_rep[0].rows() << std::endl;
+    // If not irreps found in the subspace, this method has failed
+    // If the irreps do not span the whole subspace, we'll try again
+    if (subspace_irreps_i.size() == 0) {
+      std::stringstream msg;
+      msg << "Error in IrrepDecomposition: failed to find all irreps";
+      throw std::runtime_error(msg.str());
+    }
 
-  // 3) Perform irrep_decomposition
-  std::vector<IrrepInfo> subspace_irreps =
-      irrep_decomposition(subspace_rep, head_group, allow_complex);
+    // Symmetrize all the irreps that were found
+    std::vector<IrrepInfo> symmetrized_subspace_irreps_i =
+        symmetrize_irreps(subspace_rep_i, head_group, subspace_irreps_i,
+                          cyclic_subgroups, all_subgroups);
+    // Transform the irreps trans_mat to act on vectors in the fullspace
+    std::vector<IrrepInfo> symmetrized_fullspace_irreps_i =
+        make_fullspace_irreps(symmetrized_subspace_irreps_i, subspace_i);
+    // Save the new fullspace irreps
+    for (auto const irrep : symmetrized_fullspace_irreps_i) {
+      irreps.push_back(irrep);
+    }
 
-  // 4) Symmetrize subspace irreps
-  std::vector<IrrepInfo> symmetrized_subspace_irreps =
-      symmetrize_irreps(subspace_rep, head_group, subspace_irreps,
-                        cyclic_subgroups, all_subgroups);
+    // Combine the irrep spaces and add to finished_subspace
+    Eigen::MatrixXd finished_subspace_i =
+        full_trans_mat(symmetrized_fullspace_irreps_i).adjoint();
+    finished_subspace = extend(finished_subspace, finished_subspace_i);
 
-  // for (auto const &irrep : symmetrized_subspace_irreps) {
-  //   std::cout << "---" << std::endl;
-  //   std::cout << "symmetrized irrep: " << std::endl;
-  //   std::cout << "index: " << irrep.index << std::endl;
-  //   std::cout << "characters: " << prettyc(irrep.characters.transpose())
-  //             << std::endl;
-  //   std::cout << "subspace: \n" << prettyc(irrep.trans_mat) << std::endl;
-  //   std::cout << "directions.size() (number of orbits): "
-  //             << irrep.directions.size() << std::endl;
-  //   Index orbit_index = 0;
-  //   for (auto const &orbit : irrep.directions) {
-  //     std::cout << "-" << std::endl;
-  //     std::cout << "orbit: " << orbit_index << std::endl;
-  //     for (auto const &direction : orbit) {
-  //       std::cout << prettyc(direction.transpose()) << std::endl;
-  //     }
-  //     ++orbit_index;
-  //   }
-  // }
+    // If not all irreps have been found, try again in remaining space
+    subspace_i = make_kernel(finished_subspace);
+  }
 
-  // 5) Transform to fullspace irreps
-  irreps = make_fullspace_irreps(symmetrized_subspace_irreps, subspace);
-
-  // 6) Combine to form symmetry adapted subspace
+  // 3) Combine to form symmetry adapted subspace
   symmetry_adapted_subspace = full_trans_mat(irreps).adjoint();
 }
 

@@ -120,8 +120,7 @@ bool CommuterParamsCounter::increment() {
 Eigen::MatrixXcd make_commuter(CommuterParamsCounter const &params,
                                MatrixRep const &rep,
                                GroupIndices const &head_group,
-                               Eigen::MatrixXcd const &kernel,
-                               std::vector<Eigen::MatrixXcd> const &commuters) {
+                               Eigen::MatrixXcd const &kernel) {
   Index dim = rep[0].rows();
 
   // construct outer product space of kernel columns i and j
@@ -132,29 +131,12 @@ Eigen::MatrixXcd make_commuter(CommuterParamsCounter const &params,
   auto const &phase = params.phase;
   Eigen::MatrixXcd M_init = phase * col_i * col_j.adjoint() +
                             std::conj(phase) * col_j * col_i.adjoint();
-  // std::cout << "M_init:\n" << prettyc(M_init) << std::endl;
-
   Eigen::MatrixXcd M = complex_Zero(dim, dim);
 
   // Reynolds operation to symmetrize:
   for (Index element_index : head_group) {
-    // std::cout << "element: " << element_index << std::endl;
-    // std::cout << rep[element_index] * M_init * rep[element_index].transpose()
-    // << std::endl;
     M += rep[element_index] * M_init * rep[element_index].transpose();
-    // std::cout << "M: \n" << prettyc(M) << std::endl;
   }
-  // std::cout << "R(M_init):\n" << prettyc(M) << std::endl;
-
-  // // Gram-Shmidt to orthogonalize with respect to existing commuters:
-  // for (Eigen::MatrixXcd const commuter : commuters) {
-  //   std::complex<double> tproj =
-  //       (commuter.array() * M.array().conjugate()).sum();
-  //   std::cout << "tproj: " << tproj << std::endl;
-  //   M -= tproj * commuter;
-  // }
-  // std::cout << "GS(M, Mk):\n" << prettyc(M) << std::endl;
-
   return M;
 }
 
@@ -162,6 +144,12 @@ Eigen::MatrixXcd make_kernel(Eigen::MatrixXcd const &subspace) {
   Eigen::HouseholderQR<Eigen::MatrixXcd> qr;
   qr.compute(subspace);
   return Eigen::MatrixXcd(qr.householderQ())
+      .rightCols(subspace.rows() - subspace.cols());
+}
+Eigen::MatrixXd make_kernel(Eigen::MatrixXd const &subspace) {
+  Eigen::HouseholderQR<Eigen::MatrixXd> qr;
+  qr.compute(subspace);
+  return Eigen::MatrixXd(qr.householderQ())
       .rightCols(subspace.rows() - subspace.cols());
 }
 
@@ -219,12 +207,6 @@ Eigen::MatrixXcd make_irrep_subspace(Eigen::MatrixXcd const &KV_matrix,
   colqr.compute(subspace_init);
   Eigen::MatrixXcd Q = qr.householderQ();
   Eigen::MatrixXcd irrep_subspace = Q.leftCols(colqr.rank());
-
-  // if (irrep_subspace.cols() != (end - begin)) {
-  //   std::cout << "IRREP SUBSPACE" << std::endl;
-  //   std::cout << "X: \n" << prettyc(X) << std::endl;
-  // }
-
   return irrep_subspace;
 }
 
@@ -260,13 +242,13 @@ bool make_is_block_diagonal(std::vector<Eigen::MatrixXcd> const &rep,
   Index element_index = 0;
   for (Eigen::MatrixXcd const &matrix : rep) {
     // left
-    if (begin) {
+    if (begin != 0) {
       if (!almost_zero(matrix.block(begin, 0, end - begin, begin), tol)) {
         return false;
       }
     }
     // right
-    if (matrix.cols() - end) {
+    if (end != matrix.cols()) {
       if (!almost_zero(
               matrix.block(begin, end, end - begin, matrix.cols() - end),
               tol)) {
@@ -274,13 +256,13 @@ bool make_is_block_diagonal(std::vector<Eigen::MatrixXcd> const &rep,
       }
     }
     // top
-    if (begin) {
+    if (begin != 0) {
       if (!almost_zero(matrix.block(0, begin, begin, end - begin), tol)) {
         return false;
       }
     }
     // bottom
-    if (matrix.rows() - end) {
+    if (end != matrix.rows()) {
       if (!almost_zero(
               matrix.block(end, begin, matrix.rows() - end, end - begin),
               tol)) {
@@ -341,6 +323,15 @@ bool is_extended_by(Eigen::MatrixXcd const &space_A,
 Eigen::MatrixXcd extend(Eigen::MatrixXcd const &space_A,
                         Eigen::MatrixXcd const &space_B) {
   Eigen::MatrixXcd result(space_A.rows(), space_A.cols() + space_B.cols());
+  result.leftCols(space_A.cols()) = space_A;
+  result.rightCols(space_B.cols()) = space_B;
+  return result;
+}
+
+/// Return matrix combining columns of space_A and space_B
+Eigen::MatrixXd extend(Eigen::MatrixXd const &space_A,
+                       Eigen::MatrixXd const &space_B) {
+  Eigen::MatrixXd result(space_A.rows(), space_A.cols() + space_B.cols());
   result.leftCols(space_A.cols()) = space_A;
   result.rightCols(space_B.cols()) = space_B;
   return result;
@@ -457,16 +448,15 @@ bool PossibleIrrep::operator<(PossibleIrrep const &other) const {
   return false;
 }
 
-/// Given a new commuter matrix,
-/// perform eigenvalue decomposition,
-/// and construct possible irreps
+/// Given kernel, K, and commuter matrix, M, perform eigenvalue decomposition
+///     K.adjoint() * M * K = V * D * V.inverse()
+/// and construct matrix representation that acts on vectors in the K*V basis,
+/// which will be block diagonalized and sorted by eigenvalue. Each block
+/// corresponds to a possible irrep, which can be checked by characters value.
 std::vector<PossibleIrrep> make_possible_irreps(
     Eigen::MatrixXcd const &commuter, Eigen::MatrixXcd const &kernel,
     MatrixRep const &rep, GroupIndices const &head_group, double is_irrep_tol,
     bool allow_complex) {
-  // std::cout << "%%%" << std::endl;
-  // std::cout << "make_possible_irreps:" << std::endl;
-
   // magnify the range of eigenvalues to be (I think) independent of
   // matrix dimension by multiplying by dim^{3/2}
   //
@@ -480,16 +470,11 @@ std::vector<PossibleIrrep> make_possible_irreps(
   Eigen::MatrixXd eigenvalues = esolve.eigenvalues();
   Eigen::MatrixXcd KV_matrix = kernel * esolve.eigenvectors();
 
-  // std::cout << "***" << std::endl;
-  // std::cout << "eigenvalues:" << eigenvalues.transpose() << std::endl;
-  // std::cout << "eigenvectors: \n"
-  //           << prettyc(esolve.eigenvectors()) << std::endl;
-
   // Columns of KV_matrix are orthonormal eigenvectors of commuter in terms of
   // natural basis (they were calculated in terms of kernel as basis)
 
-  // make transformed copy of the representation,
-  //   so it operates on coordinates with KV_matrix basis
+  // When the matrix representation is transformed to operate on coordinates
+  // with KV_matrix basis, it becomes block diagonalized
   std::vector<Eigen::MatrixXcd> transformed_rep;
   transformed_rep.reserve(head_group.size());
   for (auto const &element_index : head_group) {
@@ -497,25 +482,18 @@ std::vector<PossibleIrrep> make_possible_irreps(
                               KV_matrix);
   }
 
-  // std::cout << "***" << std::endl;
-  // std::cout << "transformed_rep:\n" << std::endl;
-  // Index i = 0;
-  // for (auto const &matrix_rep : transformed_rep) {
-  //   std::cout << "Op: " << i << std::endl;
-  //   std::cout << prettyc(matrix_rep) << std::endl;
-  //   ++i;
-  // }
-  // std::cout << "***" << std::endl;
-
   // make possible irreps:
   // - The possible irrep corresponds to a range eigenvectors with equal
   //   eigenvalues, could be irrep or could be reducible with degenerate
   //   eigenvalues
+  // - When the possible irrep for a range of equal eigenvectors is constructed,
+  //   its characters vector is constructed, and if the squared norm of the
+  //   characters vectors equals the head group size, then the corresponding
+  //   columns of the KV_matrix are an irrep subspace
   std::vector<PossibleIrrep> possible_irreps;
   Index begin = 0;
   do {
     Index end = find_end_of_equal_eigenvalues(begin, eigenvalues);
-    // std::cout << "[" << begin << ", " << end << ")" << std::endl;
     possible_irreps.emplace_back(eigenvalues, KV_matrix, transformed_rep,
                                  head_group.size(), is_irrep_tol, allow_complex,
                                  begin, end);
@@ -592,10 +570,6 @@ bool is_irrep(MatrixRep const &rep, GroupIndices const &head_group) {
     double character = rep[element_index].trace();
     characters_squared_norm += character * character;
   }
-
-  // std::cout << "characters_squared_norm: " << characters_squared_norm
-  //           << std::endl;
-  // std::cout << "head_group.size(): " << head_group.size() << std::endl;
   return almost_equal(characters_squared_norm, double(head_group.size()), TOL);
 }
 
@@ -605,10 +579,10 @@ bool is_irrep(MatrixRep const &rep, GroupIndices const &head_group) {
 /// spaces (via application of a Reynolds operator), and be orthonormal to
 /// existing commuters (via Gram-Shmidt). The commuters are found via a
 /// process which constructs a candidate commuter which is either the Zero
-/// matrix, and then skipped, or else it is a useful non-zero commuter:
+/// matrix, and then skipped, or else it is a useful non-zero commuter which
+/// will block diagonalize :
 ///
 ///     M_candidate(i,j,phase) = sum_r R(r) * M_init * R(r).transpose()
-///                              - sum_k proj(M_candidate, M_k) * M_k
 ///     M_init = phase * K.col(i) * K.col(j).adjoint() +
 ///              std::conj(phase) * K.col(j) * K.col(i).adjoint()
 ///
@@ -668,7 +642,12 @@ bool is_irrep(MatrixRep const &rep, GroupIndices const &head_group) {
 /// Finds irreducible subspaces that comprise an underlying subspace
 ///
 /// This method does not rely on the character table, but instead utilizes a
-/// brute-force approach.
+/// brute-force approach. It is not guaranteed to find all irreps, so the
+/// resulting irreps should be checked if they span the entire space
+/// represented by `rep`. This can be done by checking if
+///     `full_trans_mat(result).adjoint().rows() == rep[i].rows()`).
+/// This method does not align the irrep subspace axes along high symmetry
+/// directions.
 ///
 /// \param rep Matrix representation of head_group, this defines group action
 /// on the underlying vector space
@@ -687,15 +666,7 @@ std::vector<IrrepInfo> irrep_decomposition(MatrixRep const &rep,
   if (!rep.size()) {
     return std::vector<IrrepInfo>();
   }
-
   int dim = rep[0].rows();
-
-  // Identity always commutes, and by putting it first we prevent some
-  // accidental degeneracies
-  std::vector<Eigen::MatrixXcd> commuters;
-  if (!is_irrep(rep, head_group)) {
-    commuters.push_back(normalize_commuter(complex_I(dim, dim)));
-  }
 
   // This method iteratively finds irreducible spaces, which are used to extend
   // the "adapted_subspace" (combined space of found irreducible spaces). The
@@ -705,15 +676,12 @@ std::vector<IrrepInfo> irrep_decomposition(MatrixRep const &rep,
 
   // start with all kernel, end with all adapted_subspace
   Eigen::MatrixXcd kernel = complex_I(dim, dim);
-  // std::cout << "kernel: \n" << prettyc(kernel) << std::endl;
   Eigen::MatrixXcd adapted_subspace{dim, 0};
-  // std::cout << "adapted_subspace: \n" << prettyc(adapted_subspace) <<
-  // std::endl;
 
   // In this set, as they are discovered we will save PossibleIrrep that:
   // - i) actually are irreducible,
   // - and ii) have distinct subspaces (detected when their subspace extends
-  //   the adapted_subspace space)
+  //   the adapted_subspace space) BP: not necessary?
   std::set<PossibleIrrep> irreps;
 
   // count over possible commuter matrices for this kernel:
@@ -726,105 +694,62 @@ std::vector<IrrepInfo> irrep_decomposition(MatrixRep const &rep,
   do {  // while adapated_subspace.cols() != dim
 
     if (!commuter_params.valid()) {
-      std::stringstream msg;
-      msg << "Error in IrrepDecomposition: exhausted possible commuting "
-             "matrices and failed to construct adapted_subspace";
-      throw std::runtime_error(msg.str());
+      // The commuter construction method does not currently guarantee that
+      // all irreps will be revealed. The caller may have a way to handle this
+      // and so this does not throw an exception.
+      break;
     }
 
-    // make next commuter candidate and check if not zero
+    // make next commuter, M, and check if not zero
     Eigen::MatrixXcd commuter =
-        make_commuter(commuter_params, rep, head_group, kernel, commuters);
-    // std::cout << std::endl << "###" << std::endl;
-    // std::cout << "commuter_params: (" << commuter_params.kernel_column_i
-    //           << ", " << commuter_params.kernel_column_j << ", "
-    //           << commuter_params.phase << ") " << std::endl;
-    // std::cout << "commuters.size(): " << commuters.size() << std::endl;
-    // std::cout << "commuter: \n" << prettyc(commuter) << std::endl;
+        make_commuter(commuter_params, rep, head_group, kernel);
+
     if (almost_equal(frobenius_product(commuter).real(), 0., TOL)) {
-      // std::cout << "commuter is zero" << std::endl;
       commuter_params.increment();
       continue;
     }
-    commuters.push_back(normalize_commuter(commuter));
 
     // make possible irreps:
+    //
+    // Given kernel, K, and commuter matrix, M, perform eigenvalue decomposition
+    //     K.adjoint() * M * K = V * D * V.inverse()
+    // and construct matrix representation that acts on vectors in the K*V
+    // basis, which will be block diagonalized and sorted by eigenvalue. Each
+    // block corresponds to a possible irrep, which can be checked by its
+    // characters. The columns in K*V corresponding to an irrep are the irrep
+    // subspace.
     std::vector<PossibleIrrep> possible_irreps = make_possible_irreps(
         commuter, kernel, rep, head_group, is_irrep_tol, allow_complex);
 
     // save any possible irrep that:
     // - i) is an irrep,
-    // - and ii) extends the adapted_subspace space
+    // - and ii) extends the adapted_subspace space (BP: not necessary?)
     bool any_new_irreps = false;
     for (auto const &possible_irrep : possible_irreps) {
-      // std::cout << "---" << std::endl;
-      // std::cout << "[" << possible_irrep.begin << ", " << possible_irrep.end
-      //           << ")" << std::endl;
-      // std::cout << "subspace: \n"
-      //           << prettyc(possible_irrep.subspace) << std::endl;
-      // std::cout << "is_block_diagonal: " << possible_irrep.is_block_diagonal
-      //           << std::endl;
-      // std::cout << "characters_squared_norm: "
-      //           << possible_irrep.characters_squared_norm << std::endl;
-      // std::cout << "is_irrep: " << possible_irrep.is_irrep << std::endl;
-      // std::cout << "is_extended_by: \n"
-      //           << adapted_subspace.adjoint() * possible_irrep.subspace
-      //           << std::endl;
-      // std::cout << "is_extended_by.norm: "
-      //           << (adapted_subspace.adjoint() *
-      //           possible_irrep.subspace).norm()
-      //           << std::endl;
-      // std::cout << "extends space: "
-      //           << is_extended_by(adapted_subspace, possible_irrep.subspace)
-      //           << std::endl;
-
       if (possible_irrep.is_irrep &&
           is_extended_by(adapted_subspace, possible_irrep.subspace)) {
-        // std::cout << "New irrep" << std::endl;
-
         auto insert_result = irreps.insert(possible_irrep);
-        // if (!insert_result.second) {
-        //   std::cout << "Already exists!" << std::endl;
-        // }
         adapted_subspace = extend(adapted_subspace, possible_irrep.subspace);
         any_new_irreps = true;
-
-        // std::cout << "adapted_subspace: \n"
-        //           << prettyc(adapted_subspace) << std::endl;
       }
-      //  else if (possible_irrep.is_irrep) {
-      //   std::cout << "Irrep, but does not expand space: " << std::endl;
-      // } else {
-      //   std::cout << "---" << std::endl;
-      //   std::cout << "Not an irrep" << std::endl;
-      // }
-      // std::cout << "---" << std::endl;
     }
 
-    // if any new irreps were found, recalculate kernel, and go again
+    // if any new irreps were found, recalculate kernel, reset commuter params
+    // counter, and go again
     if (any_new_irreps && adapted_subspace.cols() != dim) {
       kernel = make_kernel(adapted_subspace);
-      // std::cout << "kernel: \n" << prettyc(kernel) << std::endl;
-      // std::cout << "irreps:" << std::endl;
-      // for (auto const &irrep : irreps) {
-      //   std::cout << "irrep_dim: " << irrep.subspace.cols() << std::endl;
-      // }
       commuter_params.reset(kernel);
       if (kernel.cols() + adapted_subspace.cols() != adapted_subspace.rows()) {
         throw std::runtime_error(
-            "Error finding irreps and extending adapted_subpace");
+            "Unknown error finding irreps: dimension mismatch");
       }
     } else {
       commuter_params.increment();
     }
   } while (adapted_subspace.cols() != dim);
 
-  // std::cout << "irreps:" << std::endl;
-  // for (auto const &irrep : irreps) {
-  //   std::cout << "irrep_dim: " << irrep.subspace.cols() << std::endl;
-  // }
-
-  // Make irrep info (no directions yet, not a symmetrized basis)
+  // Make irrep info (no directions yet, orthogonalized but not aligned along
+  // high symmetry directions)
   std::vector<IrrepInfo> irrep_info = make_irrep_info(irreps);
 
   return irrep_info;
@@ -863,7 +788,9 @@ Eigen::MatrixXd make_invariant_space(MatrixRep const &rep,
     }
     Eigen::ColPivHouseholderQR<Eigen::MatrixXd> colqr(symspace);
     colqr.setThreshold(TOL);
-    return Eigen::MatrixXd(colqr.householderQ()).leftCols(colqr.rank());
+    Eigen::MatrixXd Q = colqr.householderQ();
+    Eigen::MatrixXd result = Q.leftCols(colqr.rank());
+    return result;
   }
   return subspace;
 }

@@ -31,7 +31,7 @@ void _add_homogeneous_mode_info(jsonParser &json, DoFSpace const &dofspace) {
   auto print_string = [&](std::vector<Index> const &indices) {
     std::vector<std::string> string_of_indices;
     for (auto &i : indices) {
-      std::string s = "q" + std::to_string(i + 1);
+      std::string s = "q" + to_sequential_string(i + 1, dofspace.dim());
       string_of_indices.push_back(s);
     }
     return string_of_indices;

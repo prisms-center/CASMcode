@@ -45,7 +45,7 @@ VectorSpaceSymReport vector_space_sym_report(
 SymRepTools_v2::VectorSpaceSymReport vector_space_sym_report_v2(
     SymGroupRep const &rep, SymGroup const &head_group,
     Eigen::MatrixXd const &subspace, bool calc_wedges) {
-  bool allow_complex = false;
+  bool allow_complex = true;
   SymRepTools_v2::IrrepDecomposition irrep_decomposition =
       make_irrep_decomposition(rep, head_group, subspace, allow_complex);
   return SymRepTools_v2::vector_space_sym_report(irrep_decomposition,

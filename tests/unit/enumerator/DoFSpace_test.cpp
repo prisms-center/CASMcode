@@ -528,38 +528,20 @@ TEST_F(DoFSpaceTest, VectorSpaceSymReportTest1_GLStrainNoWedges) {
   std::vector<PermuteIterator> invariant_group =
       make_invariant_subgroup(config_input);
   bool calc_wedges = false;
-  VectorSpaceSymReport report = vector_space_sym_report(
+  SymRepTools_v2::VectorSpaceSymReport report = vector_space_sym_report_v2(
       dof_space, sym_info, invariant_group, calc_wedges);
 
-  jsonParser report_json;
-  to_json(report, report_json);
+  jsonParser report_json_v2;
+  to_json(report, report_json_v2);
 
-  // Uncomment to print VectorSpaceSymReport:
-  log() << "original method: " << std::endl;
-  log() << report_json << std::endl;
+  // // Uncomment to print VectorSpaceSymReport:
+  // log() << report_json_v2 << std::endl;
 
   EXPECT_EQ(report.symgroup_rep.size(), 48);
   EXPECT_EQ(report.irreps.size(), 3);
   EXPECT_EQ(report.irreducible_wedge.size(), 0);
-  EXPECT_EQ(report.symmetry_adapted_dof_subspace.rows(), 6);
-  EXPECT_EQ(report.symmetry_adapted_dof_subspace.cols(), 6);
-  EXPECT_EQ(report.axis_glossary.size(), 6);
-
-  SymRepTools_v2::VectorSpaceSymReport report_v2 = vector_space_sym_report_v2(
-      dof_space, sym_info, invariant_group, calc_wedges);
-
-  jsonParser report_json_v2;
-  to_json(report_v2, report_json_v2);
-
-  // Uncomment to print VectorSpaceSymReport:
-  log() << "new method: " << std::endl;
-  log() << report_json_v2 << std::endl;
-
-  EXPECT_EQ(report_v2.symgroup_rep.size(), 48);
-  EXPECT_EQ(report_v2.irreps.size(), 3);
-  EXPECT_EQ(report_v2.irreducible_wedge.size(), 0);
-  EXPECT_EQ(report_v2.symmetry_adapted_subspace.rows(), 6);
-  EXPECT_EQ(report_v2.symmetry_adapted_subspace.cols(), 6);
+  EXPECT_EQ(report.symmetry_adapted_subspace.rows(), 6);
+  EXPECT_EQ(report.symmetry_adapted_subspace.cols(), 6);
   EXPECT_EQ(report.axis_glossary.size(), 6);
 }
 
@@ -574,37 +556,20 @@ TEST_F(DoFSpaceTest, VectorSpaceSymReportTest2_GLStrainCalcWedges) {
   std::vector<PermuteIterator> invariant_group =
       make_invariant_subgroup(config_input);
   bool calc_wedges = true;
-  VectorSpaceSymReport report = vector_space_sym_report(
+  SymRepTools_v2::VectorSpaceSymReport report = vector_space_sym_report_v2(
       dof_space, sym_info, invariant_group, calc_wedges);
-  jsonParser report_json;
-  to_json(report, report_json);
 
-  // Uncomment to print VectorSpaceSymReport:
-  log() << "original method: " << std::endl;
-  log() << report_json << std::endl;
+  jsonParser report_json_v2;
+  to_json(report, report_json_v2);
+
+  // // Uncomment to print VectorSpaceSymReport:
+  // log() << report_json_v2 << std::endl;
 
   EXPECT_EQ(report.symgroup_rep.size(), 48);
   EXPECT_EQ(report.irreps.size(), 3);
   EXPECT_EQ(report.irreducible_wedge.size(), 6);
-  EXPECT_EQ(report.symmetry_adapted_dof_subspace.rows(), 6);
-  EXPECT_EQ(report.symmetry_adapted_dof_subspace.cols(), 6);
-  EXPECT_EQ(report.axis_glossary.size(), 6);
-
-  SymRepTools_v2::VectorSpaceSymReport report_v2 = vector_space_sym_report_v2(
-      dof_space, sym_info, invariant_group, calc_wedges);
-
-  jsonParser report_json_v2;
-  to_json(report_v2, report_json_v2);
-
-  // Uncomment to print VectorSpaceSymReport:
-  log() << "new method: " << std::endl;
-  log() << report_json_v2 << std::endl;
-
-  EXPECT_EQ(report_v2.symgroup_rep.size(), 48);
-  EXPECT_EQ(report_v2.irreps.size(), 3);
-  EXPECT_EQ(report_v2.irreducible_wedge.size(), 6);
-  EXPECT_EQ(report_v2.symmetry_adapted_subspace.rows(), 6);
-  EXPECT_EQ(report_v2.symmetry_adapted_subspace.cols(), 6);
+  EXPECT_EQ(report.symmetry_adapted_subspace.rows(), 6);
+  EXPECT_EQ(report.symmetry_adapted_subspace.cols(), 6);
   EXPECT_EQ(report.axis_glossary.size(), 6);
 }
 
@@ -619,38 +584,20 @@ TEST_F(DoFSpaceTest, VectorSpaceSymReportTest3_dispNoWedges) {
   std::vector<PermuteIterator> invariant_group =
       make_invariant_subgroup(config_input);
   bool calc_wedges = false;
-  VectorSpaceSymReport report = vector_space_sym_report(
+  SymRepTools_v2::VectorSpaceSymReport report = vector_space_sym_report_v2(
       dof_space, sym_info, invariant_group, calc_wedges);
 
-  jsonParser report_json;
-  to_json(report, report_json);
+  jsonParser report_json_v2;
+  to_json(report, report_json_v2);
 
-  // Uncomment to print VectorSpaceSymReport:
-  log() << "original method: " << std::endl;
-  log() << report_json << std::endl;
+  // // Uncomment to print VectorSpaceSymReport:
+  // log() << report_json_v2 << std::endl;
 
   EXPECT_EQ(report.symgroup_rep.size(), 192);
   EXPECT_EQ(report.irreps.size(), 3);
   EXPECT_EQ(report.irreducible_wedge.size(), 0);
-  EXPECT_EQ(report.symmetry_adapted_dof_subspace.rows(), 12);
-  EXPECT_EQ(report.symmetry_adapted_dof_subspace.cols(), 12);
-  EXPECT_EQ(report.axis_glossary.size(), 12);
-
-  SymRepTools_v2::VectorSpaceSymReport report_v2 = vector_space_sym_report_v2(
-      dof_space, sym_info, invariant_group, calc_wedges);
-
-  jsonParser report_json_v2;
-  to_json(report_v2, report_json_v2);
-
-  // Uncomment to print VectorSpaceSymReport:
-  log() << "new method: " << std::endl;
-  log() << report_json_v2 << std::endl;
-
-  EXPECT_EQ(report_v2.symgroup_rep.size(), 192);
-  EXPECT_EQ(report_v2.irreps.size(), 3);
-  EXPECT_EQ(report_v2.irreducible_wedge.size(), 0);
-  EXPECT_EQ(report_v2.symmetry_adapted_subspace.rows(), 12);
-  EXPECT_EQ(report_v2.symmetry_adapted_subspace.cols(), 12);
+  EXPECT_EQ(report.symmetry_adapted_subspace.rows(), 12);
+  EXPECT_EQ(report.symmetry_adapted_subspace.cols(), 12);
   EXPECT_EQ(report.axis_glossary.size(), 12);
 }
 
@@ -665,37 +612,20 @@ TEST_F(DoFSpaceTest, VectorSpaceSymReportTest4_dispCalcWedges) {
   std::vector<PermuteIterator> invariant_group =
       make_invariant_subgroup(config_input);
   bool calc_wedges = true;
-  VectorSpaceSymReport report = vector_space_sym_report(
+  SymRepTools_v2::VectorSpaceSymReport report = vector_space_sym_report_v2(
       dof_space, sym_info, invariant_group, calc_wedges);
-  jsonParser report_json;
-  to_json(report, report_json);
 
-  // Uncomment to print VectorSpaceSymReport:
-  log() << "original method: " << std::endl;
-  log() << report_json << std::endl;
+  jsonParser report_json_v2;
+  to_json(report, report_json_v2);
+
+  // // Uncomment to print VectorSpaceSymReport:
+  // log() << report_json_v2 << std::endl;
 
   EXPECT_EQ(report.symgroup_rep.size(), 192);
   EXPECT_EQ(report.irreps.size(), 3);
   EXPECT_EQ(report.irreducible_wedge.size(), 2304);
-  EXPECT_EQ(report.symmetry_adapted_dof_subspace.rows(), 12);
-  EXPECT_EQ(report.symmetry_adapted_dof_subspace.cols(), 12);
-  EXPECT_EQ(report.axis_glossary.size(), 12);
-
-  SymRepTools_v2::VectorSpaceSymReport report_v2 = vector_space_sym_report_v2(
-      dof_space, sym_info, invariant_group, calc_wedges);
-
-  jsonParser report_json_v2;
-  to_json(report_v2, report_json_v2);
-
-  // Uncomment to print VectorSpaceSymReport:
-  log() << "new method: " << std::endl;
-  log() << report_json_v2 << std::endl;
-
-  EXPECT_EQ(report_v2.symgroup_rep.size(), 192);
-  EXPECT_EQ(report_v2.irreps.size(), 3);
-  EXPECT_EQ(report_v2.irreducible_wedge.size(), 2304);
-  EXPECT_EQ(report_v2.symmetry_adapted_subspace.rows(), 12);
-  EXPECT_EQ(report_v2.symmetry_adapted_subspace.cols(), 12);
+  EXPECT_EQ(report.symmetry_adapted_subspace.rows(), 12);
+  EXPECT_EQ(report.symmetry_adapted_subspace.cols(), 12);
   EXPECT_EQ(report.axis_glossary.size(), 12);
 }
 
@@ -718,29 +648,16 @@ TEST_F(DoFSpaceTest, ExcludeHomogeneousModeSpace) {
   std::vector<PermuteIterator> invariant_group =
       make_invariant_subgroup(config_input);
   bool calc_wedges = false;
-  // std::optional<VectorSpaceSymReport> sym_report;
-  // DoFSpace dof_space_2 = make_symmetry_adapted_dof_space(
-  //     dof_space_1, sym_info, invariant_group, calc_wedges, sym_report);
-  // EXPECT_EQ(dof_space_2.basis().rows(), dof_space_1.basis().rows());
-  // EXPECT_EQ(dof_space_2.basis().cols(), dof_space_1.basis().cols());
-  //
-  // // check symmetry report
-  // jsonParser json;
-  // to_json(dof_space_2, json, "test", config_input, sym_report);
-  // log() << "original method: " << std::endl;
-  // log() << json << std::endl;
-
-  std::optional<SymRepTools_v2::VectorSpaceSymReport> sym_report_v2;
+  std::optional<SymRepTools_v2::VectorSpaceSymReport> sym_report;
   DoFSpace dof_space_2_v2 = make_symmetry_adapted_dof_space_v2(
-      dof_space_1, sym_info, invariant_group, calc_wedges, sym_report_v2);
+      dof_space_1, sym_info, invariant_group, calc_wedges, sym_report);
   EXPECT_EQ(dof_space_2_v2.basis().rows(), dof_space_1.basis().rows());
   EXPECT_EQ(dof_space_2_v2.basis().cols(), dof_space_1.basis().cols());
 
-  // check symmetry report
-  jsonParser json_v2;
-  to_json(dof_space_2, json_v2, "test", config_input, sym_report_v2);
-  log() << "new method: " << std::endl;
-  log() << json << std::endl;
+  // // check symmetry report
+  // jsonParser json_v2;
+  // to_json(dof_space_2, json_v2, "test", config_input, sym_report);
+  // log() << json << std::endl;
 }
 
 /// Tests on a structure with a restricted local basis (2d displacements), but
@@ -910,8 +827,8 @@ TEST_F(RestrictedLocalDoFSpaceTest, ExcludeHomogeneousModeSpace) {
   std::vector<PermuteIterator> invariant_group =
       make_invariant_subgroup(config_input);
   bool calc_wedges = false;
-  std::optional<VectorSpaceSymReport> sym_report;
-  DoFSpace dof_space_2 = make_symmetry_adapted_dof_space(
+  std::optional<SymRepTools_v2::VectorSpaceSymReport> sym_report;
+  DoFSpace dof_space_2 = make_symmetry_adapted_dof_space_v2(
       dof_space_1, sym_info, invariant_group, calc_wedges, sym_report);
   // std::cout << "excluding homogeneous_mode_space, symmetry adapted: \n"
   //           << dof_space_2.basis() << std::endl;
@@ -1047,16 +964,16 @@ TEST_F(RestrictedLocalDoFSpaceTest2, ExcludeHomogeneousModeSpace) {
   ConfigEnumInput config_input{*shared_supercell};
   DoFKey dof_key = "disp";
   DoFSpace dof_space_0 = make_dof_space(dof_key, config_input);
-  std::cout << "including homogeneous_mode_space: \n"
-            << dof_space_0.basis() << std::endl;
+  // std::cout << "including homogeneous_mode_space: \n"
+  //           << dof_space_0.basis() << std::endl;
   EXPECT_EQ(dof_space_0.basis().rows(), 4);
   EXPECT_EQ(dof_space_0.basis().cols(), 4);
 
   // check make homogeneous mode space
   Eigen::MatrixXd homogeneous_mode_space =
       make_homogeneous_mode_space(dof_space_0);
-  std::cout << "homogeneous_mode_space: \n"
-            << homogeneous_mode_space << std::endl;
+  // std::cout << "homogeneous_mode_space: \n"
+  //           << homogeneous_mode_space << std::endl;
   EXPECT_EQ(homogeneous_mode_space.rows(), 4);
   EXPECT_EQ(homogeneous_mode_space.cols(), 1);
 
@@ -1072,18 +989,18 @@ TEST_F(RestrictedLocalDoFSpaceTest2, ExcludeHomogeneousModeSpace) {
   std::vector<PermuteIterator> invariant_group =
       make_invariant_subgroup(config_input);
   bool calc_wedges = false;
-  std::optional<VectorSpaceSymReport> sym_report;
-  DoFSpace dof_space_2 = make_symmetry_adapted_dof_space(
+  std::optional<SymRepTools_v2::VectorSpaceSymReport> sym_report;
+  DoFSpace dof_space_2 = make_symmetry_adapted_dof_space_v2(
       dof_space_1, sym_info, invariant_group, calc_wedges, sym_report);
   // std::cout << "excluding homogeneous_mode_space, symmetry adapted: \n"
   //           << dof_space_2.basis() << std::endl;
   EXPECT_EQ(dof_space_2.basis().rows(), dof_space_1.basis().rows());
   EXPECT_EQ(dof_space_2.basis().cols(), dof_space_1.basis().cols());
 
-  // check symmetry report
-  jsonParser dof_space_json;
-  to_json(dof_space_2, dof_space_json, "test", config_input, sym_report);
-  std::cout << dof_space_json << std::endl;
+  // // check symmetry report
+  // jsonParser dof_space_json;
+  // to_json(dof_space_2, dof_space_json, "test", config_input, sym_report);
+  // std::cout << dof_space_json << std::endl;
 }
 
 /// Tests on a structure with a restricted local basis (2d displacements), and
@@ -1212,8 +1129,8 @@ TEST_F(RestrictedLocalDoFSpaceTest3, ExcludeHomogeneousModeSpace) {
   ConfigEnumInput config_input{*shared_supercell};
   DoFKey dof_key = "disp";
   DoFSpace dof_space_0 = make_dof_space(dof_key, config_input);
-  std::cout << "including homogeneous_mode_space: \n"
-            << dof_space_0.basis() << std::endl;
+  // std::cout << "including homogeneous_mode_space: \n"
+  //           << dof_space_0.basis() << std::endl;
   EXPECT_EQ(dof_space_0.basis().rows(), 4);
   EXPECT_EQ(dof_space_0.basis().cols(), 4);
 
@@ -1237,8 +1154,8 @@ TEST_F(RestrictedLocalDoFSpaceTest3, ExcludeHomogeneousModeSpace) {
   std::vector<PermuteIterator> invariant_group =
       make_invariant_subgroup(config_input);
   bool calc_wedges = false;
-  std::optional<VectorSpaceSymReport> sym_report;
-  DoFSpace dof_space_2 = make_symmetry_adapted_dof_space(
+  std::optional<SymRepTools_v2::VectorSpaceSymReport> sym_report;
+  DoFSpace dof_space_2 = make_symmetry_adapted_dof_space_v2(
       dof_space_1, sym_info, invariant_group, calc_wedges, sym_report);
   // std::cout << "excluding homogeneous_mode_space, symmetry adapted: \n"
   //           << dof_space_2.basis() << std::endl;
@@ -1520,8 +1437,8 @@ TEST_F(VariableLocalDoFSpaceTest1, ExcludeHomogeneousModeSpace) {
   std::vector<PermuteIterator> invariant_group =
       make_invariant_subgroup(config_input);
   bool calc_wedges = false;
-  std::optional<VectorSpaceSymReport> sym_report;
-  DoFSpace dof_space_2 = make_symmetry_adapted_dof_space(
+  std::optional<SymRepTools_v2::VectorSpaceSymReport> sym_report;
+  DoFSpace dof_space_2 = make_symmetry_adapted_dof_space_v2(
       dof_space_1, sym_info, invariant_group, calc_wedges, sym_report);
   // std::cout << "excluding homogeneous_mode_space, symmetry adapted: \n"
   //           << dof_space_2.basis() << std::endl;
@@ -1773,6 +1690,15 @@ void DebugLocalDoFSpaceTest::check_SymmetryAdaptedDoFSpace(
   // std::cout << "symmetry_adapted_subspace: \n"
   //           << pretty(irrep_decomposition.symmetry_adapted_subspace)
   //           << std::endl;
+
+  bool calc_wedges = false;
+  std::optional<SymRepTools_v2::VectorSpaceSymReport> sym_report;
+  DoFSpace dof_space_1 = make_symmetry_adapted_dof_space_v2(
+      dof_space, sym_info, invariant_group, calc_wedges, sym_report);
+  // // check symmetry report
+  // jsonParser dof_space_json;
+  // to_json(dof_space_1, dof_space_json, "test", config_input, sym_report);
+  // std::cout << dof_space_json << std::endl;
 }
 
 void DebugLocalDoFSpaceTest::check_ExcludeHomogeneousModeSpace(
@@ -1780,8 +1706,6 @@ void DebugLocalDoFSpaceTest::check_ExcludeHomogeneousModeSpace(
     std::pair<Index, Index> homogeneous_mode_space_shape,
     std::pair<Index, Index> dof_space_shape_excluding_homogeneous_modes,
     std::pair<Index, Index> symmetry_adapted_dof_space_shape) {
-  return;  // TODO: remove this
-
   // In this structure, all sites allow displacements, but no rigid
   // translations are possible
 
@@ -1792,7 +1716,7 @@ void DebugLocalDoFSpaceTest::check_ExcludeHomogeneousModeSpace(
   DoFKey dof_key = "disp";
   DoFSpace dof_space_0 = make_dof_space(dof_key, config_input);
   // std::cout << "including homogeneous_mode_space: \n"
-  //           << dof_space_0.basis() << std::endl;
+  //           << pretty(dof_space_0.basis()) << std::endl;
   EXPECT_EQ(dof_space_0.basis().rows(), initial_dof_space_shape.first);
   EXPECT_EQ(dof_space_0.basis().cols(), initial_dof_space_shape.second);
 
@@ -1800,14 +1724,14 @@ void DebugLocalDoFSpaceTest::check_ExcludeHomogeneousModeSpace(
   Eigen::MatrixXd homogeneous_mode_space =
       make_homogeneous_mode_space(dof_space_0);
   // std::cout << "homogeneous_mode_space: \n"
-  //           << homogeneous_mode_space << std::endl;
+  //           << pretty(homogeneous_mode_space) << std::endl;
   EXPECT_EQ(homogeneous_mode_space.rows(), homogeneous_mode_space_shape.first);
   EXPECT_EQ(homogeneous_mode_space.cols(), homogeneous_mode_space_shape.second);
 
   // check exclude homogeneous mode space
   DoFSpace dof_space_1 = exclude_homogeneous_mode_space(dof_space_0);
   // std::cout << "excluding homogeneous_mode_space: \n"
-  //           << dof_space_1.basis() << std::endl;
+  //           << pretty(dof_space_1.basis()) << std::endl;
   EXPECT_EQ(dof_space_1.basis().rows(),
             dof_space_shape_excluding_homogeneous_modes.first);
   EXPECT_EQ(dof_space_1.basis().cols(),
@@ -1820,8 +1744,8 @@ void DebugLocalDoFSpaceTest::check_ExcludeHomogeneousModeSpace(
   std::vector<PermuteIterator> invariant_group =
       make_invariant_subgroup(config_input);
   bool calc_wedges = false;
-  std::optional<VectorSpaceSymReport> sym_report;
-  DoFSpace dof_space_2 = make_symmetry_adapted_dof_space(
+  std::optional<SymRepTools_v2::VectorSpaceSymReport> sym_report;
+  DoFSpace dof_space_2 = make_symmetry_adapted_dof_space_v2(
       dof_space_1, sym_info, invariant_group, calc_wedges, sym_report);
   // std::cout << "excluding homogeneous_mode_space, symmetry adapted: \n"
   //           << dof_space_2.basis() << std::endl;
@@ -1835,7 +1759,7 @@ void DebugLocalDoFSpaceTest::check_ExcludeHomogeneousModeSpace(
   // std::cout << dof_space_json << std::endl;
 }
 
-TEST_F(DebugLocalDoFSpaceTest, Test1) {  // currently fails
+TEST_F(DebugLocalDoFSpaceTest, Test1) {  // failed original method
   // FCC base structure,
   // - with corner atoms {A, B} allowed to displace in 3d
   // - with face atoms {C, D} allowed to displace in the face plane,
@@ -1941,7 +1865,7 @@ TEST_F(DebugLocalDoFSpaceTest, Test1) {  // currently fails
       {9, 9});
 }
 
-TEST_F(DebugLocalDoFSpaceTest, Test2) {  // currently fails
+TEST_F(DebugLocalDoFSpaceTest, Test2) {  // failed original method
   // FCC base structure,
   // - no corner atoms
   // - with face atoms {A, B} allowed to displace in the face plane,
@@ -2110,7 +2034,7 @@ TEST_F(DebugLocalDoFSpaceTest, Test3) {  // passes
       {4, 3});
 }
 
-TEST_F(DebugLocalDoFSpaceTest, Test4) {  // fails for 2x2x2, passes for 2x1x1
+TEST_F(DebugLocalDoFSpaceTest, Test4) {  // failed for 2x2x2, passed for 2x1x1
   // BCC base structure, non-primitive supercell
   // - corner atoms {A, B} allowed to displace in xyz
   // - body atoms {A, B} allowed to displace in z,

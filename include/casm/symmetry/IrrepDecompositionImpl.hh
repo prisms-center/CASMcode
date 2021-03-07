@@ -52,10 +52,10 @@ struct CommuterParamsCounter {
 Eigen::MatrixXcd make_commuter(CommuterParamsCounter const &params,
                                MatrixRep const &rep,
                                GroupIndices const &head_group,
-                               Eigen::MatrixXcd const &kernel,
-                               std::vector<Eigen::MatrixXcd> const &commuters);
+                               Eigen::MatrixXcd const &kernel);
 
 Eigen::MatrixXcd make_kernel(Eigen::MatrixXcd const &subspace);
+Eigen::MatrixXd make_kernel(Eigen::MatrixXd const &subspace);
 
 Index find_end_of_equal_eigenvalues(Index begin,
                                     Eigen::VectorXd const &eigenvalues);
@@ -94,6 +94,10 @@ bool is_extended_by(Eigen::MatrixXcd const &space_A,
 /// Return matrix combining columns of space_A and space_B
 Eigen::MatrixXcd extend(Eigen::MatrixXcd const &space_A,
                         Eigen::MatrixXcd const &space_B);
+
+/// Return matrix combining columns of space_A and space_B
+Eigen::MatrixXd extend(Eigen::MatrixXd const &space_A,
+                       Eigen::MatrixXd const &space_B);
 
 /// Data structure used for storing and checking possible irreps
 struct PossibleIrrep {

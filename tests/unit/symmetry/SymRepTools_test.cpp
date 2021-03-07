@@ -168,6 +168,7 @@ TEST_F(IrrepDecompositionTest0, Test1_b) {
 }
 
 TEST_F(IrrepDecompositionTest0, Test2) {
+  // test for no exceptions
   using namespace SymRepTools_v2;
   using SymRepTools_v2::IrrepDecompositionImpl::pretty;
   using SymRepTools_v2::IrrepDecompositionImpl::prettyc;
@@ -175,21 +176,9 @@ TEST_F(IrrepDecompositionTest0, Test2) {
   SymGroupRep const &rep = *symrep_ptr;
   SymGroup const &head_group = symrep_master_group;
   Eigen::MatrixXd const &subspace = unique_dof_space->basis();
-
-  MatrixRep matrix_rep;
-  for (Index i = 0; i < rep.size(); ++i) {
-    matrix_rep.push_back(*rep[i]->MatrixXd());
-  }
-  GroupIndices head_group_indices;
-  for (SymOp const &op : head_group) {
-    head_group_indices.insert(op.index());
-  }
-  GroupIndicesOrbitVector all_subgroups = head_group.subgroups();
-  GroupIndicesOrbitVector cyclic_subgroups = head_group.small_subgroups();
   bool allow_complex = true;
-  IrrepDecomposition irrep_decomposition{matrix_rep,    head_group_indices,
-                                         subspace,      cyclic_subgroups,
-                                         all_subgroups, allow_complex};
+  IrrepDecomposition irrep_decomposition =
+      make_irrep_decomposition(rep, head_group, subspace, allow_complex);
 
   // print_irreps(irrep_decomposition.irreps);
   // std::cout << "symmetry_adapted_subspace: \n"
@@ -226,18 +215,16 @@ class IrrepDecompositionTest1 : public testing::Test {
     };
 
     // fails:
-    // Lattice lat{Eigen::Vector3d{2.0, 2.0, 0.0},
-    // Eigen::Vector3d{0.0, 2.0, 2.0},
-    //             Eigen::Vector3d{2.0, 0.0, 2.0}};
-    // Eigen::Matrix3l T;
-    // T << 0,  1, -2,
-    //      0, 1, 2,
-    //      1, -1, 0;
+    Lattice lat{Eigen::Vector3d{2.0, 2.0, 0.0}, Eigen::Vector3d{0.0, 2.0, 2.0},
+                Eigen::Vector3d{2.0, 0.0, 2.0}};
+    Eigen::Matrix3l T;
+    T << 0, 1, -2, 0, 1, 2, 1, -1, 0;
 
-    // succeeds
-    Lattice lat{Eigen::Vector3d{0.0, 2.0, 2.0}, Eigen::Vector3d{2.0, 0.0, 2.0},
-                Eigen::Vector3d{2.0, 2.0, 0.0}};
-    Eigen::Matrix3l T = _fcc_conventional_transf_mat();
+    // // succeeds
+    // Lattice lat{Eigen::Vector3d{0.0, 2.0, 2.0}, Eigen::Vector3d{2.0,
+    // 0.0, 2.0},
+    //             Eigen::Vector3d{2.0, 2.0, 0.0}};
+    // Eigen::Matrix3l T = _fcc_conventional_transf_mat();
 
     BasicStructure struc{lat};
     struc.set_basis(
@@ -253,7 +240,7 @@ class IrrepDecompositionTest1 : public testing::Test {
         notstd::make_unique<DoFSpace>(make_dof_space(dof_key, config_input));
     SupercellSymInfo const &sym_info = shared_supercell->sym_info();
     std::vector<PermuteIterator> group = make_invariant_subgroup(config_input);
-    EXPECT_EQ(group.size(), 48 * 4);
+    EXPECT_EQ(group.size(), 32);
 
     symrep_ptr = &make_dof_space_symrep(*unique_dof_space, sym_info, group,
                                         symrep_master_group, symrep_id);
@@ -288,6 +275,7 @@ class IrrepDecompositionTest1 : public testing::Test {
 };
 
 TEST_F(IrrepDecompositionTest1, Test1_a) {
+  // test for no exceptions
   SymGroupRep const &rep = *symrep_ptr;
   Eigen::MatrixXd const &subspace = unique_dof_space->basis();
 
@@ -298,6 +286,7 @@ TEST_F(IrrepDecompositionTest1, Test1_a) {
 }
 
 TEST_F(IrrepDecompositionTest1, Test1_b) {
+  // test for no exceptions
   using namespace SymRepTools;
   using SymRepTools_v2::IrrepDecompositionImpl::pretty;
   using SymRepTools_v2::IrrepDecompositionImpl::prettyc;
@@ -309,9 +298,9 @@ TEST_F(IrrepDecompositionTest1, Test1_b) {
 
   std::vector<SymRepTools::IrrepInfo> irreps =
       irrep_decomposition(rep, head_group, subspace, allow_complex);
-  Eigen::MatrixXd symmetry_adapted_dof_subspace =
-      full_trans_mat(irreps).adjoint();
 
+  // Eigen::MatrixXd symmetry_adapted_dof_subspace =
+  //     full_trans_mat(irreps).adjoint();
   // print_irreps(irreps);
   // std::cout << "symmetry_adapted_subspace: \n"
   //           << pretty(symmetry_adapted_dof_subspace) << std::endl;
@@ -325,21 +314,9 @@ TEST_F(IrrepDecompositionTest1, Test2) {
   SymGroupRep const &rep = *symrep_ptr;
   SymGroup const &head_group = symrep_master_group;
   Eigen::MatrixXd const &subspace = unique_dof_space->basis();
-
-  MatrixRep matrix_rep;
-  for (Index i = 0; i < rep.size(); ++i) {
-    matrix_rep.push_back(*rep[i]->MatrixXd());
-  }
-  GroupIndices head_group_indices;
-  for (SymOp const &op : head_group) {
-    head_group_indices.insert(op.index());
-  }
-  GroupIndicesOrbitVector all_subgroups = head_group.subgroups();
-  GroupIndicesOrbitVector cyclic_subgroups = head_group.small_subgroups();
   bool allow_complex = true;
-  IrrepDecomposition irrep_decomposition{matrix_rep,    head_group_indices,
-                                         subspace,      cyclic_subgroups,
-                                         all_subgroups, allow_complex};
+  IrrepDecomposition irrep_decomposition =
+      make_irrep_decomposition(rep, head_group, subspace, allow_complex);
 
   // print_irreps(irrep_decomposition.irreps);
   // std::cout << "symmetry_adapted_subspace: \n"
@@ -510,23 +487,12 @@ TEST_F(IrrepDecompositionTest2, Test2) {
   SymGroupRep const &rep = *symrep_ptr;
   SymGroup const &head_group = symrep_master_group;
   Eigen::MatrixXd const &subspace = unique_dof_space->basis();
-
-  MatrixRep matrix_rep;
-  for (Index i = 0; i < rep.size(); ++i) {
-    matrix_rep.push_back(*rep[i]->MatrixXd());
-  }
-  GroupIndices head_group_indices;
-  for (SymOp const &op : head_group) {
-    head_group_indices.insert(op.index());
-  }
-  GroupIndicesOrbitVector all_subgroups = head_group.subgroups();
-  GroupIndicesOrbitVector cyclic_subgroups = head_group.small_subgroups();
   bool allow_complex = true;
-  IrrepDecomposition irrep_decomposition{matrix_rep,    head_group_indices,
-                                         subspace,      cyclic_subgroups,
-                                         all_subgroups, allow_complex};
+  IrrepDecomposition irrep_decomposition =
+      make_irrep_decomposition(rep, head_group, subspace, allow_complex);
 
   // print_irreps(irrep_decomposition.irreps);
   // std::cout << "symmetry_adapted_subspace: \n"
-  //           << irrep_decomposition.symmetry_adapted_subspace << std::endl;
+  //           << pretty(irrep_decomposition.symmetry_adapted_subspace)
+  //           << std::endl;
 }
