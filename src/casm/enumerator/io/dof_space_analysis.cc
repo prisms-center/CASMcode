@@ -46,7 +46,7 @@ void OutputImpl::write_dof_space_error(
     make_symmetry_adapted_dof_space_error const &e, Index state_index,
     DoFSpace const &dof_space, std::string const &identifier,
     ConfigEnumInput const &config_enum_input,
-    std::optional<VectorSpaceSymReport> const &sym_report) {
+    std::optional<SymRepTools_v2::VectorSpaceSymReport> const &sym_report) {
   jsonParser json;
   to_json(dof_space, json, identifier, config_enum_input, sym_report);
   errors().emplace_back(state_index, identifier, dof_space.dof_key(), e.what(),
@@ -159,7 +159,7 @@ void DirectoryOutput::write_structure(
 void DirectoryOutput::write_dof_space(
     Index state_index, DoFSpace const &dof_space, std::string const &identifier,
     ConfigEnumInput const &config_enum_input,
-    std::optional<VectorSpaceSymReport> const &sym_report) {
+    std::optional<SymRepTools_v2::VectorSpaceSymReport> const &sym_report) {
   _check_config(state_index, identifier, config_enum_input);
   fs::path output_dir = _output_dir(state_index, identifier, config_enum_input);
 
@@ -286,7 +286,7 @@ void CombinedJsonOutput::write_structure(
 void CombinedJsonOutput::write_dof_space(
     Index state_index, DoFSpace const &dof_space, std::string const &identifier,
     ConfigEnumInput const &config_enum_input,
-    std::optional<VectorSpaceSymReport> const &sym_report) {
+    std::optional<SymRepTools_v2::VectorSpaceSymReport> const &sym_report) {
   jsonParser &output_json =
       _output_json(state_index)["dof_space"][dof_space.dof_key()];
   to_json(dof_space, output_json, identifier, config_enum_input, sym_report);
@@ -333,11 +333,11 @@ void output_dof_space(Index state_index, std::string const &identifier,
   for (DoFKey const &dof : options.dofs) {
     log << "Working on: " << identifier << " " << dof << std::endl;
     DoFSpace dof_space = make_dof_space(dof, input_state);
-    std::optional<VectorSpaceSymReport> report;
+    std::optional<SymRepTools_v2::VectorSpaceSymReport> report;
     try {
       if (options.sym_axes) {
-        dof_space = make_symmetry_adapted_dof_space(dof_space, sym_info, group,
-                                                    options.calc_wedge, report);
+        dof_space = make_symmetry_adapted_dof_space_v2(
+            dof_space, sym_info, group, options.calc_wedge, report);
       }
     } catch (make_symmetry_adapted_dof_space_error &e) {
       log << "Error: " << e.what() << std::endl;

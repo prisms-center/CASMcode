@@ -9,7 +9,7 @@
 
 namespace CASM {
 
-namespace SymRepTools {
+namespace SymRepTools_v2 {
 class SubWedge;
 }
 
@@ -25,11 +25,10 @@ struct ConfigEnumStrainParams {
   ///
   /// Note:
   /// - Symmetry adapted wedges can be obtained from
-  /// VectorSpaceSymReport::irreducible_wedge
+  ///   VectorSpaceSymReport::irreducible_wedge
   /// - The "SubWedge::make_dummy" static function can be used to create a fake
-  /// SubWedge to
-  ///   generate strain states directly on custom axes
-  std::vector<SymRepTools::SubWedge> wedges;
+  ///   SubWedge to generate strain states directly on custom axes
+  std::vector<SymRepTools_v2::SubWedge> wedges;
 
   // The options "min_val", "inc_val", "max_val" defines a grid of points to
   // sample along each wedge axis. Must have same dimension as the number of
@@ -60,7 +59,7 @@ class ConfigEnumStrain : public InputEnumeratorBase<Configuration> {
                    ConfigEnumStrainParams const &params);
 
   ConfigEnumStrain(ConfigEnumInput const &initial_state,
-                   std::vector<SymRepTools::SubWedge> const &wedges,
+                   std::vector<SymRepTools_v2::SubWedge> const &wedges,
                    Eigen::VectorXd min_val, Eigen::VectorXd max_val,
                    Eigen::VectorXd inc_val, DoFKey const &strain_key,
                    bool auto_range, bool trim_corners);
@@ -90,7 +89,7 @@ class ConfigEnumStrain : public InputEnumeratorBase<Configuration> {
   // counts over transformation matrices
   Index m_equiv_ind;
 
-  std::vector<SymRepTools::SubWedge> m_wedges;
+  std::vector<SymRepTools_v2::SubWedge> m_wedges;
 
   // set of non-equivalent transformation matrices matrices that, along with
   // m_counter define irreducible space std::vector<Eigen::MatrixXd>

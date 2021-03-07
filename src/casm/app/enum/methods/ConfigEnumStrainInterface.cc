@@ -18,7 +18,7 @@
 #include "casm/enumerator/io/dof_space_analysis.hh"
 #include "casm/enumerator/io/json/ConfigEnumInput_json_io.hh"
 #include "casm/enumerator/io/json/DoFSpace.hh"
-#include "casm/symmetry/SymRepTools.hh"
+#include "casm/symmetry/IrrepWedge.hh"
 #include "casm/symmetry/io/json/SymRepTools.hh"
 
 namespace CASM {
@@ -212,7 +212,7 @@ struct MakeEnumerator {
   // constructs a symmetry adapted dof space and writes it to file as a record
   DoFSpace make_and_write_dof_space(
       Index index, std::string name, ConfigEnumInput const &initial_state,
-      std::optional<VectorSpaceSymReport> &sym_report) const;
+      std::optional<SymRepTools_v2::VectorSpaceSymReport> &sym_report) const;
 
   // constructs a DataFormatter to record enumeration results
   DataFormatter<ConfigEnumDataType> make_formatter() const;
@@ -221,7 +221,7 @@ struct MakeEnumerator {
 // constructs a ConfigEnumStrain for each initial_state
 ConfigEnumStrain MakeEnumerator::operator()(
     Index index, std::string name, ConfigEnumInput const &initial_state) const {
-  std::optional<VectorSpaceSymReport> sym_report;
+  std::optional<SymRepTools_v2::VectorSpaceSymReport> sym_report;
   DoFSpace dof_space =
       make_and_write_dof_space(index, name, initial_state, sym_report);
 
@@ -231,12 +231,12 @@ ConfigEnumStrain MakeEnumerator::operator()(
   } else {
     params.wedges.clear();
     params.wedges.push_back(
-        SymRepTools::SubWedge::make_dummy(dof_space.basis()));
+        SymRepTools_v2::make_dummy_subwedge(dof_space.basis()));
   }
 
   // set enumeration ranges
   if (axes_params.scalar_input) {
-    int dim = dof_space.dim();
+    int dim = dof_space.subspace_dim();
     params.min_val = Eigen::VectorXd::Constant(dim, axes_params.min_scalar);
     params.max_val = Eigen::VectorXd::Constant(dim, axes_params.max_scalar);
     params.inc_val = Eigen::VectorXd::Constant(dim, axes_params.inc_scalar);
@@ -252,7 +252,7 @@ ConfigEnumStrain MakeEnumerator::operator()(
 // constructs a symmetry adapted dof space and writes it to file as a record
 DoFSpace MakeEnumerator::make_and_write_dof_space(
     Index index, std::string name, ConfigEnumInput const &initial_state,
-    std::optional<VectorSpaceSymReport> &sym_report) const {
+    std::optional<SymRepTools_v2::VectorSpaceSymReport> &sym_report) const {
   DoFSpace dof_space =
       make_dof_space(params_template.dof, initial_state, axes_params.axes);
   if (make_symmetry_adapted_axes) {
@@ -260,8 +260,8 @@ DoFSpace MakeEnumerator::make_and_write_dof_space(
     auto const &sym_info = initial_state.configuration().supercell().sym_info();
     std::vector<PermuteIterator> group = make_invariant_subgroup(initial_state);
     dof_space_output.write_symmetry(index, name, initial_state, group);
-    dof_space = make_symmetry_adapted_dof_space(dof_space, sym_info, group,
-                                                calc_wedges, sym_report);
+    dof_space = make_symmetry_adapted_dof_space_v2(dof_space, sym_info, group,
+                                                   calc_wedges, sym_report);
   }
   dof_space_output.write_dof_space(index, dof_space, name, initial_state,
                                    sym_report);
@@ -452,7 +452,7 @@ void ConfigEnumStrainInterface::run(
 
   if (print_dof_space_and_quit_option) {
     log.begin("Print DoF Space and Quit Option");
-    std::optional<VectorSpaceSymReport> sym_report;
+    std::optional<SymRepTools_v2::VectorSpaceSymReport> sym_report;
     Index i = 0;
     for (auto const &pair : named_initial_states) {
       std::string const &name = pair.first;

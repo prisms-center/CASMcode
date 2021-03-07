@@ -14,8 +14,11 @@ class ConfigEnumInput;
 class DirectoryStructure;
 class DoFSpace;
 class SymGroup;
-struct VectorSpaceSymReport;
 class make_symmetry_adapted_dof_space_error;
+
+namespace SymRepTools_v2 {
+struct VectorSpaceSymReport;
+}
 
 namespace DoFSpaceIO {
 
@@ -66,14 +69,15 @@ class OutputImpl {
   virtual void write_dof_space(
       Index state_index, DoFSpace const &dof_space,
       std::string const &identifier, ConfigEnumInput const &config_enum_input,
-      std::optional<VectorSpaceSymReport> const &sym_report) = 0;
+      std::optional<SymRepTools_v2::VectorSpaceSymReport> const
+          &sym_report) = 0;
 
   /// Write dof space analysis error information
   void write_dof_space_error(
       make_symmetry_adapted_dof_space_error const &e, Index state_index,
       DoFSpace const &dof_space, std::string const &identifier,
       ConfigEnumInput const &config_enum_input,
-      std::optional<VectorSpaceSymReport> const &sym_report);
+      std::optional<SymRepTools_v2::VectorSpaceSymReport> const &sym_report);
 
   std::vector<Error> const &errors() const { return m_errors; }
   std::vector<Error> &errors() { return m_errors; }
@@ -104,10 +108,11 @@ class DirectoryOutput : public OutputImpl {
   void write_structure(Index state_index, std::string const &identifier,
                        ConfigEnumInput const &config_enum_input) override;
 
-  void write_dof_space(
-      Index state_index, DoFSpace const &dof_space,
-      std::string const &identifier, ConfigEnumInput const &config_enum_input,
-      std::optional<VectorSpaceSymReport> const &sym_report) override;
+  void write_dof_space(Index state_index, DoFSpace const &dof_space,
+                       std::string const &identifier,
+                       ConfigEnumInput const &config_enum_input,
+                       std::optional<SymRepTools_v2::VectorSpaceSymReport> const
+                           &sym_report) override;
 
  private:
   /// For SymmetryDirectoryOutput, configurations must exist in database and
@@ -180,10 +185,11 @@ class CombinedJsonOutput : public OutputImpl {
   void write_structure(Index state_index, std::string const &identifier,
                        ConfigEnumInput const &config_enum_input) override;
 
-  void write_dof_space(
-      Index state_index, DoFSpace const &dof_space,
-      std::string const &identifier, ConfigEnumInput const &config_enum_input,
-      std::optional<VectorSpaceSymReport> const &sym_report) override;
+  void write_dof_space(Index state_index, DoFSpace const &dof_space,
+                       std::string const &identifier,
+                       ConfigEnumInput const &config_enum_input,
+                       std::optional<SymRepTools_v2::VectorSpaceSymReport> const
+                           &sym_report) override;
 
  private:
   jsonParser &_output_json(Index state_index);

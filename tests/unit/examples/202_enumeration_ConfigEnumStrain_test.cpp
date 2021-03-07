@@ -13,7 +13,10 @@
 #include "casm/enumerator/ConfigEnumInput_impl.hh"
 #include "casm/enumerator/DoFSpace.hh"
 #include "casm/enumerator/io/json/DoFSpace.hh"
-#include "casm/symmetry/SymRepTools.hh"
+// #include "casm/symmetry/SymRepTools.hh"
+#include "casm/symmetry/IrrepDecomposition.hh"
+#include "casm/symmetry/IrrepWedge.hh"
+#include "casm/symmetry/VectorSpaceSymReport.hh"
 #include "casm/symmetry/io/json/SymRepTools.hh"
 #include "crystallography/TestStructures.hh"  // for test::ZrO_prim
 #include "gtest/gtest.h"
@@ -202,7 +205,7 @@ class ExampleEnumerationSimpleCubicConfigEnumStrain : public testing::Test {
   ExampleEnumerationSimpleCubicConfigEnumStrain();
 
   // Check that the IrrepInfo trans_mat value matches expectations:
-  void check_irrep(SymRepTools::IrrepInfo const &irrep);
+  void check_irrep(SymRepTools_v2::IrrepInfo const &irrep);
 };
 
 TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, VectorSpaceSymReport) {
@@ -227,8 +230,8 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, VectorSpaceSymReport) {
 
   // Construct the VectorSpaceSymReport for the SimpleCubic GLstrain space.
   bool calc_wedges = true;  // explanation TODO
-  VectorSpaceSymReport sym_report =
-      vector_space_sym_report(dof_space, sym_info, group, calc_wedges);
+  SymRepTools_v2::VectorSpaceSymReport sym_report =
+      vector_space_sym_report_v2(dof_space, sym_info, group, calc_wedges);
 
   // // Uncomment to print dof_space:
   // jsonParser dof_space_json;
@@ -244,7 +247,7 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, VectorSpaceSymReport) {
   EXPECT_EQ(sym_report.irreps.size(), 3);
 
   // Check the calculated irreducible representations
-  for (SymRepTools::IrrepInfo const &irrep : sym_report.irreps) {
+  for (SymRepTools_v2::IrrepInfo const &irrep : sym_report.irreps) {
     this->check_irrep(irrep);
   }
 }
@@ -252,7 +255,7 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, VectorSpaceSymReport) {
 TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, FullSpaceIrreps) {
   // Example constructing the full GLstrain space's irreducible representations
   // directly
-
+  using namespace SymRepTools_v2;         // for IrrepDecomposition
   using namespace enumeration_test_impl;  // for global_dof_symrep,
                                           // make_point_group
 
@@ -266,25 +269,27 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, FullSpaceIrreps) {
   SymGroupRep const &strain_symrep = global_dof_symrep(config_input, dof_key);
 
   // Construct irreducible representations
+  Index dim = strain_symrep.dim();
+  Eigen::MatrixXd fullspace = Eigen::MatrixXd::Identity(dim, dim);
   bool allow_complex = true;
-  std::vector<SymRepTools::IrrepInfo> irreps =
-      irrep_decomposition(strain_symrep, point_group, allow_complex);
+  IrrepDecomposition irrep_decomposition = make_irrep_decomposition(
+      strain_symrep, point_group, fullspace, allow_complex);
 
   // Expect three irreducible representations
-  EXPECT_EQ(irreps.size(), 3);
+  EXPECT_EQ(irrep_decomposition.irreps.size(), 3);
 
   // Check the calculated irreducible representations
-  for (SymRepTools::IrrepInfo const &irrep : irreps) {
+  for (IrrepInfo const &irrep : irrep_decomposition.irreps) {
     this->check_irrep(irrep);
   }
 }
 
 TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain,
        MakeFullSpaceIrrepWedges) {
-  // This example demonstrates constructing the unique SymRepTools::IrrepWedge
-  // for the full GLstrain
-  //   space
+  // This example demonstrates constructing the unique IrrepWedge
+  // for the full GLstrain space
 
+  using namespace SymRepTools_v2;         // for IrrepDecomposition, IrrepWedge
   using namespace enumeration_test_impl;  // for global_dof_symrep,
                                           // make_point_group
 
@@ -298,9 +303,11 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain,
 
   // Make the unique IrrepWedge in full GLstrain space
   int dim = strain_symrep.dim();
-  Eigen::MatrixXd subspace = Eigen::MatrixXd::Identity(dim, dim);
-  std::vector<SymRepTools::IrrepWedge> irrep_wedges =
-      SymRepTools::irrep_wedges(strain_symrep, point_group, subspace);
+  Eigen::MatrixXd fullspace = Eigen::MatrixXd::Identity(dim, dim);
+  bool allow_complex = true;
+  IrrepDecomposition irrep_decomposition = make_irrep_decomposition(
+      strain_symrep, point_group, fullspace, allow_complex);
+  std::vector<IrrepWedge> irrep_wedges = make_irrep_wedges(irrep_decomposition);
 
   // TODO: checks that demonstrate what the IrrepWedge are and that they are
   // what they should be
@@ -308,10 +315,10 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain,
 }
 
 TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, MakeFullSpaceSubWedges) {
-  // This example demonstrates constructing the unique SymRepTools::SubWedge for
-  // the full GLstrain
-  //   space
+  // This example demonstrates constructing the unique SubWedge for
+  // the full GLstrain space
 
+  using namespace SymRepTools_v2;         // for IrrepDecomposition, SubWedge
   using namespace enumeration_test_impl;  // for global_dof_symrep,
                                           // make_point_group
 
@@ -324,8 +331,12 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, MakeFullSpaceSubWedges) {
   SymGroupRep const &strain_symrep = global_dof_symrep(config_input, dof_key);
 
   // Make the unique SubWedge in full GLstrain space
-  std::vector<SymRepTools::SubWedge> subwedges =
-      SymRepTools::symrep_subwedges(strain_symrep, point_group);
+  int dim = strain_symrep.dim();
+  Eigen::MatrixXd fullspace = Eigen::MatrixXd::Identity(dim, dim);
+  bool allow_complex = true;
+  IrrepDecomposition irrep_decomposition = make_irrep_decomposition(
+      strain_symrep, point_group, fullspace, allow_complex);
+  std::vector<SubWedge> subwedges = make_symrep_subwedges(irrep_decomposition);
 
   // TODO: checks that demonstrate what the SubWedge are and that they are what
   // they should be
@@ -333,12 +344,12 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, MakeFullSpaceSubWedges) {
 }
 
 TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, FullSpaceWedgesEnum) {
+  // This example demonstrates constructing SubWedge for the full
+  // GLstrain space and  using them to enumerate strain configurations
+
+  using namespace SymRepTools_v2;         // for IrrepDecomposition, SubWedge
   using namespace enumeration_test_impl;  // for global_dof_symrep,
                                           // make_point_group
-
-  // This example demonstrates constructing SymRepTools::SubWedge for the full
-  // GLstrain space and
-  //   using them to enumerate strain configurations
 
   // Use full prim structure symmetry, specified by using the volume 1 supercell
   Supercell const &supercell = *primclex.db<Supercell>().begin();
@@ -348,14 +359,15 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, FullSpaceWedgesEnum) {
   SymGroup point_group = make_point_group(config_input);
   SymGroupRep const &strain_symrep = global_dof_symrep(config_input, dof_key);
 
-  // Make wedges in GLstrain space
-  std::vector<SymRepTools::SubWedge> subwedges =
-      SymRepTools::symrep_subwedges(strain_symrep, point_group);
+  // Make the unique SubWedge in full GLstrain space
+  int dim = strain_symrep.dim();
+  Eigen::MatrixXd fullspace = Eigen::MatrixXd::Identity(dim, dim);
+  bool allow_complex = true;
+  IrrepDecomposition irrep_decomposition = make_irrep_decomposition(
+      strain_symrep, point_group, fullspace, allow_complex);
+  std::vector<SubWedge> subwedges = make_symrep_subwedges(irrep_decomposition);
 
   // ** Enumerate degree of freedom values by sampling in each SubWedge **
-
-  // SubWedge dimension == full GLstrain space dimension (6)
-  int dim = strain_symrep.dim();
 
   // Specify a grid with three points along each SubWedge axis, with minimum
   // value of 0.0
@@ -388,9 +400,9 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, FullSpaceWedgesEnum) {
 
 TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, SubSpaceIrreps) {
   // Example demonstrating generating irreducible representations for the
-  // irreducible subspaces
-  //   containing particular directions
+  // irreducible subspace containing particular directions
 
+  using namespace SymRepTools_v2;         // for IrrepDecomposition, IrrepInfo
   using namespace enumeration_test_impl;  // for global_dof_symrep,
                                           // make_point_group
 
@@ -412,11 +424,11 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, SubSpaceIrreps) {
 
     // Construct irreducible representations spanning the subspace.
     bool allow_complex = true;
-    std::vector<SymRepTools::IrrepInfo> irreps = irrep_decomposition(
+    IrrepDecomposition irrep_decomposition = make_irrep_decomposition(
         strain_symrep, point_group, subspace, allow_complex);
 
-    EXPECT_EQ(irreps.size(), 1);
-    this->check_irrep(irreps[0]);
+    EXPECT_EQ(irrep_decomposition.irreps.size(), 1);
+    this->check_irrep(irrep_decomposition.irreps[0]);
   }
 
   // Example 2:
@@ -431,13 +443,13 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, SubSpaceIrreps) {
 
       // Construct irreducible representations spanning the subspace.
       bool allow_complex = true;
-      std::vector<SymRepTools::IrrepInfo> irreps = irrep_decomposition(
+      IrrepDecomposition irrep_decomposition = make_irrep_decomposition(
           strain_symrep, point_group, subspace, allow_complex);
 
-      EXPECT_EQ(irreps.size(), 2);
+      EXPECT_EQ(irrep_decomposition.irreps.size(), 2);
 
       // TODO: check it contains the expected two irreps
-      for (auto const &irrep : irreps) {
+      for (auto const &irrep : irrep_decomposition.irreps) {
         this->check_irrep(irrep);
       }
     }
@@ -447,6 +459,7 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, SubSpaceIrreps) {
 TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, SubSpaceWedgesEnum) {
   // Example enumerating GLstrain in each of the known irreducible subspaces
 
+  using namespace SymRepTools_v2;         // for IrrepDecomposition, SubWedge
   using namespace enumeration_test_impl;  // for global_dof_symrep,
                                           // make_point_group
 
@@ -468,8 +481,11 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, SubSpaceWedgesEnum) {
     subspace.col(0) = expected_irrep_subspace[i].col(0).real();
 
     // Make SubWedges in the irreducible subspace
-    std::vector<SymRepTools::SubWedge> subwedges =
-        SymRepTools::symrep_subwedges(strain_symrep, point_group, subspace);
+    bool allow_complex = false;
+    IrrepDecomposition irrep_decomposition = make_irrep_decomposition(
+        strain_symrep, point_group, subspace, allow_complex);
+    std::vector<SubWedge> subwedges =
+        make_symrep_subwedges(irrep_decomposition);
 
     // Check single SubWedge generated from single IrrepWedge
     EXPECT_EQ(subwedges.size(), 1);
@@ -517,6 +533,7 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain,
   //   axes of the sampling grid irrespective of any symmetry considerations.
   //   This example demonstrates how to do this.
 
+  using namespace SymRepTools_v2;         // for IrrepDecomposition, SubWedge
   using namespace enumeration_test_impl;  // for global_dof_symrep
 
   // Enumerate GLstrain applied to the default volume 1 supercell
@@ -546,10 +563,9 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain,
   Eigen::MatrixXd axes = Eigen::MatrixXd::Identity(dim, sampled_space_rank);
 
   // We'll "trick" the enumerator by creating a "dummy subwedge" which defines
-  // the axes of the space
-  //   we want to sample.
-  std::vector<SymRepTools::SubWedge> subwedges;
-  subwedges.push_back(SymRepTools::SubWedge::make_dummy(axes));
+  // the axes of the space we want to sample.
+  std::vector<SubWedge> subwedges;
+  subwedges.push_back(make_dummy_subwedge(axes));
 
   EXPECT_EQ(almost_equal(subwedges[0].trans_mat(), axes, tol), true);
   EXPECT_EQ(subwedges.size(), 1);
@@ -676,7 +692,7 @@ ExampleEnumerationSimpleCubicConfigEnumStrain::
 
 // Check that the IrrepInfo trans_mat value matches expectations:
 void ExampleEnumerationSimpleCubicConfigEnumStrain::check_irrep(
-    SymRepTools::IrrepInfo const &irrep) {
+    SymRepTools_v2::IrrepInfo const &irrep) {
   using namespace enumeration_test_impl;  // for is_equivalent_column_space
 
   // The SymRepTools::IrrepInfo::trans_mat is a matrix that multiplies a vector

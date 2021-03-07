@@ -9,7 +9,7 @@
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/algorithm.hh"
-#include "casm/symmetry/SymRepTools.hh"
+#include "casm/symmetry/IrrepWedge.hh"
 
 namespace CASM {
 
@@ -35,9 +35,9 @@ ConfigEnumStrain::ConfigEnumStrain(ConfigEnumInput const &initial_state,
 
 ConfigEnumStrain::ConfigEnumStrain(
     ConfigEnumInput const &initial_state,
-    std::vector<SymRepTools::SubWedge> const &wedges, Eigen::VectorXd min_val,
-    Eigen::VectorXd max_val, Eigen::VectorXd inc_val, DoFKey const &strain_key,
-    bool auto_range, bool trim_corners)
+    std::vector<SymRepTools_v2::SubWedge> const &wedges,
+    Eigen::VectorXd min_val, Eigen::VectorXd max_val, Eigen::VectorXd inc_val,
+    DoFKey const &strain_key, bool auto_range, bool trim_corners)
     : m_strain_key(strain_key),
       m_trim_corners(trim_corners),
       m_current(initial_state.configuration()),
