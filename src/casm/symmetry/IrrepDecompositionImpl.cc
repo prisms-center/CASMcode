@@ -250,8 +250,8 @@ bool make_is_block_diagonal(std::vector<Eigen::MatrixXcd> const &rep,
     // right
     if (end != matrix.cols()) {
       if (!almost_zero(
-              matrix.block(begin, end, end - begin, matrix.cols() - end),
-              tol)) {
+               matrix.block(begin, end, end - begin, matrix.cols() - end),
+               tol)) {
         return false;
       }
     }
@@ -264,8 +264,8 @@ bool make_is_block_diagonal(std::vector<Eigen::MatrixXcd> const &rep,
     // bottom
     if (end != matrix.rows()) {
       if (!almost_zero(
-              matrix.block(end, begin, matrix.rows() - end, end - begin),
-              tol)) {
+               matrix.block(end, begin, matrix.rows() - end, end - begin),
+               tol)) {
         return false;
       }
     }
@@ -728,7 +728,7 @@ std::vector<IrrepInfo> irrep_decomposition(MatrixRep const &rep,
     for (auto const &possible_irrep : possible_irreps) {
       if (possible_irrep.is_irrep &&
           is_extended_by(adapted_subspace, possible_irrep.subspace)) {
-        auto insert_result = irreps.insert(possible_irrep);
+        irreps.insert(possible_irrep);
         adapted_subspace = extend(adapted_subspace, possible_irrep.subspace);
         any_new_irreps = true;
       }

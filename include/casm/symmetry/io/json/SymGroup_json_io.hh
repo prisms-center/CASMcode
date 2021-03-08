@@ -1,6 +1,7 @@
 #ifndef CASM_symmetry_io_json_SymGroup
 #define CASM_symmetry_io_json_SymGroup
 
+#include <vector>
 #include "casm/global/definitions.hh"
 
 namespace CASM {

@@ -15,7 +15,6 @@
 #include "casm/casm_io/json/jsonFile.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
-#include "casm/symmetry/ConfigSubOrbits_impl.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 
 using namespace CASM;
