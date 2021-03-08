@@ -9,6 +9,7 @@
 
 #include "casm/basis_set/Adapter.hh"
 #include "casm/basis_set/DoFIsEquivalent.hh"
+#include "casm/basis_set/DoFIsEquivalent_impl.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/DoFSet.hh"
@@ -27,8 +28,8 @@
 #include "casm/global/definitions.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/symmetry/SymOp.hh"
-#include "submodules/eigen/Eigen/src/Core/PermutationMatrix.h"
-#include "submodules/eigen/Eigen/src/Core/util/Constants.h"
+#include "casm/external/Eigen/src/Core/PermutationMatrix.h"
+#include "casm/external/Eigen/src/Core/util/Constants.h"
 namespace {
 using namespace CASM;
 

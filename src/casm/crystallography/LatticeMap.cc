@@ -7,7 +7,7 @@
 #include "casm/crystallography/Strain.hh"
 #include "casm/crystallography/SymType.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "submodules/eigen/Eigen/src/Core/Matrix.h"
+#include "casm/external/Eigen/src/Core/Matrix.h"
 
 namespace CASM {
 namespace xtal {
