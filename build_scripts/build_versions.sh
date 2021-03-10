@@ -14,7 +14,7 @@ export CASM_PYTHON_VERSION=${CASM_PYTHON_VERSION:-"3"}
 export CASM_XCODE_VERSION="11.6"
 
 # linux condagcc (use conda dist compilers)
-export CASM_CONDAGCC_VERSION="8"
+export CASM_CONDAGCC_VERSION="9"
 
 # Note that this was sourced
 export CASM_DEPENDENCY_VERSIONS="yes"

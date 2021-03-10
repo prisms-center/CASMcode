@@ -12,7 +12,7 @@ export CASM_REPO="https://github.com/"$CASM_GIT_ID_USER"/CASMcode.git"
 export CASM_URL=$CASM_REPO
 
 # boost
-export CASM_BOOST_BUILD_NUMBER="0"
+export CASM_BOOST_BUILD_NUMBER="1"
 
 # casm
 check_var "CASM_BUILD_NUMBER" "CASM conda build number" "0"
@@ -22,8 +22,8 @@ export CASM_BOOST_XCODE_BUILD_STR="xcode_"$CASM_BOOST_BUILD_NUMBER
 export CASM_XCODE_BUILD_STR="xcode_"$CASM_BUILD_NUMBER
 
 # linux condagcc (use conda dist compilers)
-export CASM_BOOST_CONDAGCC_BUILD_STR="condagcc_"$CASM_BOOST_BUILD_NUMBER
-export CASM_CONDAGCC_BUILD_STR="condagcc_"$CASM_BUILD_NUMBER
+export CASM_BOOST_CONDAGCC_BUILD_STR="condagcc${CASM_CONDAGCC_VERSION}_${CASM_BOOST_BUILD_NUMBER}"
+export CASM_CONDAGCC_BUILD_STR="condagcc${CASM_CONDAGCC_VERSION}_${CASM_BUILD_NUMBER}"
 
 # choose $(conda_version) or "X.Y.Z"
 check_var "CASM_CONDA_VERSION" "Version number for conda package"
