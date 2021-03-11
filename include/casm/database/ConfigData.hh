@@ -101,7 +101,7 @@ GenericDatumFormatter<double, Result> lattice_deformation_cost();
 
 GenericDatumFormatter<double, Result> atomic_deformation_cost();
 
-GenericDatumFormatter<double, Result> relaxed_energy();
+GenericDatumFormatter<double, Result> energy();
 
 GenericDatumFormatter<double, Result> score();
 

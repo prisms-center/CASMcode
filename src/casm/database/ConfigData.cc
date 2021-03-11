@@ -145,12 +145,12 @@ GenericDatumFormatter<double, ConfigIO::Result> atomic_deformation_cost() {
       });
 }
 
-GenericDatumFormatter<double, ConfigIO::Result> relaxed_energy() {
+GenericDatumFormatter<double, ConfigIO::Result> energy() {
   return GenericDatumFormatter<double, Result>(
-      "relaxed_energy", "",
-      [](const Result &res) { return res.properties.scalar("relaxed_energy"); },
+      "energy", "",
+      [](const Result &res) { return res.properties.scalar("energy"); },
       [](const Result &res) {
-        return res.properties.has_scalar("relaxed_energy");
+        return res.properties.has_scalar("energy");
       });
 }
 
@@ -212,7 +212,7 @@ void default_update_formatters(DataFormatterDictionary<Result> &dict,
               // configname(),
               data_origin(), to_configname(), is_new_config(), has_data(),
               has_complete_data(), lattice_deformation_cost(),
-              atomic_deformation_cost(), relaxed_energy(), score(db_props),
+              atomic_deformation_cost(), energy(), score(db_props),
               best_score(db_props), is_best(db_props), selected());
 }
 }  // namespace ConfigIO
