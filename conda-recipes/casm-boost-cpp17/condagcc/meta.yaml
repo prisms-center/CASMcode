@@ -9,7 +9,7 @@ source:
   sha256: {{ CASM_BOOST_SHA256 }}
 
 build:
-  number: {{ CASM_BOOST_BUILD_NUMBER }}
+  number: {{ CASM_BOOST_CONDAGCC_BUILD_NUMBER }}
   string: {{ CASM_BOOST_CONDAGCC_BUILD_STR }}
   script_env:
     - CASM_NCPU
