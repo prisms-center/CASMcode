@@ -26,12 +26,9 @@ class Base {
  public:
   typedef unsigned int size_type;
 
-  Base(size_type _nlist_size, size_type _corr_size)
-      : m_nlist_size(_nlist_size),
-        m_corr_size(_corr_size),
-        m_config_ptr(nullptr) {}
+  Base(size_type _nlist_size, size_type _corr_size);
 
-  virtual ~Base() {}
+  virtual ~Base();
 
   /// \brief Neighbor list size
   size_type nlist_size() const { return m_nlist_size; }
@@ -40,9 +37,7 @@ class Base {
   size_type corr_size() const { return m_corr_size; }
 
   /// \brief Clone the Clexulator
-  std::unique_ptr<Base> clone() const {
-    return std::unique_ptr<Base>(_clone());
-  }
+  std::unique_ptr<Base> clone() const;
 
   /// \brief Obtain const reference to abstract ClexParamPack object
   virtual ClexParamPack const &param_pack() const = 0;
@@ -447,19 +442,12 @@ class Clexulator {
   Clexulator(const Clexulator &B);
 
   /// \brief Move constructor
-  Clexulator(Clexulator &&B) { swap(*this, B); }
+  Clexulator(Clexulator &&B);
 
-  ~Clexulator() {
-    // ensure Clexulator is deleted before library
-    delete m_clex.release();
-  }
+  ~Clexulator();
 
   /// \brief Assignment operator
-  Clexulator &operator=(Clexulator B) {
-    swap(*this, B);
-
-    return *this;
-  }
+  Clexulator &operator=(Clexulator B);
 
   /// \brief Swap
   friend void swap(Clexulator &first, Clexulator &second) {

@@ -32,10 +32,9 @@ void ClexBasisWriter::print_clexulator(std::string class_name,
   std::map<UnitCellCoord, std::set<UnitCellCoord> > nhood =
       ClexBasisWriter_impl::dependency_neighborhood(_tree.begin(), _tree.end());
 
-  Index N_branch = nhood.size();
-
+  Index N_flower = nhood.size();
   for (auto const &nbor : nhood)
-    N_branch = max(_nlist.neighbor_index(nbor.first) + 1, N_branch);
+    N_flower = max(_nlist.neighbor_index(nbor.first) + 1, N_flower);
 
   std::stringstream bfunc_imp_stream, bfunc_def_stream;
 
@@ -50,8 +49,8 @@ void ClexBasisWriter::print_clexulator(std::string class_name,
 
   std::string private_declarations =
       ClexBasisWriter_impl::clexulator_member_declarations(
-          class_name, clex, *m_param_pack_mix_in, _orbit_func_traits(), nhood,
-          indent + "  ");
+          class_name, clex, *m_param_pack_mix_in, _orbit_func_traits(),
+          N_flower, indent + "  ");
 
   private_declarations +=
       ClexBasisWriter_impl::clexulator_private_method_declarations(
@@ -71,11 +70,11 @@ void ClexBasisWriter::print_clexulator(std::string class_name,
   std::vector<std::string> orbit_method_names(N_corr, "zero_func");
 
   std::vector<std::vector<std::string> > flower_method_names(
-      N_branch, std::vector<std::string>(N_corr, "zero_func"));
+      N_flower, std::vector<std::string>(N_corr, "zero_func"));
 
   // this is very configuration-centric
   std::vector<std::vector<std::string> > dflower_method_names(
-      N_branch, std::vector<std::string>(N_corr, "zero_func"));
+      N_flower, std::vector<std::string>(N_corr, "zero_func"));
 
   // temporary storage for formula
   std::vector<std::string> formulae, tformulae;
@@ -720,14 +719,14 @@ std::string clexulator_constructor_definition(
   Index N_corr = clex.n_functions();
 
   // Lower bound of branch entries
-  Index N_branch = _nhood.size();
+  Index N_flower = _nhood.size();
 
   // Lower bound of maximum neighbor index
   Index N_hood = 0;
 
-  // Find exact value of N_branch and N_hood by increasing lower bounds
+  // Find exact value of N_flower and N_hood by increasing lower bounds
   for (auto const &nbor : _nhood) {
-    N_branch = max(_nlist.neighbor_index(nbor.first) + 1, N_branch);
+    N_flower = max(_nlist.neighbor_index(nbor.first) + 1, N_flower);
     for (UnitCellCoord const &ucc : nbor.second) {
       N_hood = max(_nlist.neighbor_index(ucc) + 1, N_hood);
     }

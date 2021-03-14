@@ -26,16 +26,43 @@ void BsetOption::initialize() {
   add_help_suboption();
   add_coordtype_suboption();
 
-  m_desc.add_options()("update,u", "Update basis set")(
+  m_desc.add_options()(
+      //
+      "update,u", "Update basis set")(
+      //
       "orbits", "Pretty-print orbit prototypes")(
+      //
       "functions", "Pretty-print prototype cluster functions for each orbit")(
+      //
       "clusters", "Pretty-print all clusters")(
+      //
       "clex", po::value<std::string>()->value_name(ArgHandler::clex()),
       "Select a non-default basis set to print by specifying the name of a "
       "cluster expansion using the basis set")(
+      //
+      "print-invariant-group",
+      "Use with --orbits or --clusters to print the group that leaves clusters "
+      "invariant.")(
+      //
+      "print-equivalence-map",
+      "Use with --clusters to print the orbit equivalence map (sets of "
+      "symmetry operations that map the prototype cluster onto an equivalent "
+      "cluster / cosets of the invariant group).")(
+      //
       "align",
       "Use with --functions to print aligned functions ready to copy and paste "
-      "into a latex document")("force,f", "Force overwrite");
+      "into a latex document")(
+      //
+      "no-compile",
+      "Use with --update to generate basis.json, clust.json, and "
+      "the basis function source code but not compile it.")(
+      //
+      "only-compile",
+      "Use with --update to keep the existing basis.json, clust.json, and "
+      "basis function source code but to re-compile it if the .so and .o files "
+      "do not exist.")(
+      //
+      "force,f", "Force overwrite");
   return;
 }
 }  // namespace Completer
@@ -97,9 +124,17 @@ void check_force(const std::string &bset, const BsetCommand &cmd) {
 
 /// Implements `casm bset --update`
 void update_bset(const BsetCommand &cmd) {
+  const auto &vm = cmd.vm();
   const auto &primclex = cmd.primclex();
 
   auto basis_set_name = get_clex_description(cmd).bset;
+
+  // force compilation by default, opt out with --no-compile, or only compile
+  // with --only-compile
+  if (vm.count("only-compile")) {
+    auto clexulator = primclex.clexulator(basis_set_name);
+    return;
+  }
 
   if (!primclex.has_basis_set_specs(basis_set_name)) {
     auto bspecs_path = primclex.dir().bspecs(basis_set_name);
@@ -118,8 +153,10 @@ void update_bset(const BsetCommand &cmd) {
     throw CASM::runtime_error{e.what(), ERR_INVALID_INPUT_FILE};
   }
 
-  // force compilation
-  auto clexulator = primclex.clexulator(basis_set_name);
+  // force compilation by default, opt out with --no-compile
+  if (!vm.count("no-compile")) {
+    auto clexulator = primclex.clexulator(basis_set_name);
+  }
 }
 
 /// This functor implements a template method so that clusters can be printed
@@ -158,6 +195,12 @@ void print_bset(const BsetCommand &cmd) {
   orbit_printer_options.indent_space = 4;
   if (orbit_printer_options.coord_type != INTEGRAL) {
     orbit_printer_options.delim = 0;
+  }
+  if (vm.count("print-invariant-group")) {
+    orbit_printer_options.print_invariant_group = true;
+  }
+  if (vm.count("print-equivalence-map")) {
+    orbit_printer_options.print_equivalence_map = true;
   }
 
   if (vm.count("orbits")) {

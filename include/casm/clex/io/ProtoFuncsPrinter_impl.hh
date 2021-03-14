@@ -69,18 +69,11 @@ void ProtoFuncsPrinter::operator()(const OrbitType &orbit, Log &out,
 
     auto const &clust = orbit.prototype();
     this->increase_indent(out);
-    for (const auto &coord : clust) {
-      out.indent();
-      if (opt.coord_type == INTEGRAL) {
-        out << coord;
-        out << " ";
-        Site::print_occupant_dof(coord.site(*prim_ptr).occupant_dof(), out);
-        out << std::flush;
-      } else {
-        coord.site(*prim_ptr).print(out);
-      }
-      if (opt.delim) out << opt.delim;
-      out << std::flush;
+    if (this->opt.print_coordinates) {
+      print_coordinates(*this, orbit.prototype(), out);
+    }
+    if (this->opt.print_invariant_group) {
+      this->print_invariant_group(orbit, orbit.prototype(), out);
     }
     this->decrease_indent(out);
 
@@ -109,6 +102,9 @@ jsonParser &ProtoFuncsPrinter::to_json(const OrbitType &orbit, jsonParser &json,
   json["prototype"] = orbit.prototype();
   json["linear_orbit_index"] = orbit_index;
   json["mult"] = orbit.size();
+  if (this->opt.print_invariant_group) {
+    this->print_invariant_group(orbit, orbit.prototype(), json["prototype"]);
+  }
 
   jsonParser &orbitf = json["cluster_functions"];
   orbitf = jsonParser::array();

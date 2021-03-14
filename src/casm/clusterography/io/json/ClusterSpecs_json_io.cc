@@ -301,9 +301,10 @@ void parse(InputParser<LocalMaxLengthClusterSpecs> &parser,
   auto cutoff_radius = parse_orbit_branch_specs_attr(parser, "cutoff_radius");
 
   // parse custom generators ("orbit_specs")
+  std::vector<IntegralClusterOrbitGenerator> default_custom_generators{};
   auto custom_generators_parser =
-      parser.subparse<std::vector<IntegralClusterOrbitGenerator>>("orbit_specs",
-                                                                  *shared_prim);
+      parser.subparse_else<std::vector<IntegralClusterOrbitGenerator>>(
+          "orbit_specs", default_custom_generators, *shared_prim);
 
   // TODO: include option in JSON?
   bool include_phenomenal_sites = false;
