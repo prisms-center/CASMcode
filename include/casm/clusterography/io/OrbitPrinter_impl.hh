@@ -144,8 +144,9 @@ jsonParser &OrbitPrinter<_Element, ORBIT_PRINT_MODE::PROTO>::to_json(
     const OrbitType &orbit, jsonParser &json, Index orbit_index,
     Index Norbits) const {
   json.put_obj();
-  json["linear_orbit_index"] = orbit_index;
   json["prototype"] = orbit.prototype();
+  json["linear_orbit_index"] = orbit_index;
+  json["mult"] = orbit.size();
   if (this->opt.print_invariant_group) {
     this->print_invariant_group(orbit, orbit.prototype(), json["prototype"]);
   }

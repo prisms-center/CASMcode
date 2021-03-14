@@ -305,7 +305,7 @@ void Canonical::_calc_delta_point_corr(Index l, int new_occ,
       _clexulator().calc_point_corr(
           _configdof(), nlist().sites(nlist().unitcell_index(l)).data(),
           end_ptr(nlist().sites(nlist().unitcell_index(l))), sublat,
-          end_ptr(before), before.data());
+          before.data(), end_ptr(before));
 
       // Apply change
       _configdof().occ(l) = new_occ;

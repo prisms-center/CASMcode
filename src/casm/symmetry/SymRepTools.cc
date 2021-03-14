@@ -1234,6 +1234,9 @@ SymGroupRep permuted_direct_sum_rep(
   Eigen::MatrixXd const *rep_mat_ptr(NULL);
   Permutation const *perm_ptr;
   for (Index g = 0; g < permute_rep.size(); g++) {
+    if (permute_rep[g] == NULL) {
+      continue;
+    }
     sum_mat.setZero();
     perm_ptr = permute_rep.permutation(g);
     for (Index r = 0; r < perm_ptr->size(); r++) {

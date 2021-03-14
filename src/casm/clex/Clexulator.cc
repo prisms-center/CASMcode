@@ -74,9 +74,23 @@ Clexulator::Clexulator(std::string name, fs::path dirpath,
 
 /// \brief Copy constructor
 Clexulator::Clexulator(const Clexulator &B) : m_name(B.name()), m_lib(B.m_lib) {
-  if (B.m_clex.get() != nullptr) {
-    m_clex.reset(B.m_clex->clone().release());
+  if (B.m_clex != nullptr) {
+    m_clex = B.m_clex->clone();
   }
+}
+
+/// \brief Move constructor
+Clexulator::Clexulator(Clexulator &&B) { swap(*this, B); }
+
+Clexulator::~Clexulator() {
+  // ensure Clexulator is deleted before library
+  m_clex.reset();
+}
+
+/// \brief Assignment operator
+Clexulator &Clexulator::operator=(Clexulator B) {
+  swap(*this, B);
+  return *this;
 }
 
 /// \brief Obtain ClexParamKey for a particular parameter
@@ -119,6 +133,19 @@ std::string Clexulator::check_evaluation(ClexParamKey const _param_key) const {
 }
 
 namespace Clexulator_impl {
+
+Base::Base(size_type _nlist_size, size_type _corr_size)
+    : m_nlist_size(_nlist_size),
+      m_corr_size(_corr_size),
+      m_config_ptr(nullptr) {}
+
+Base::~Base() {}
+
+/// \brief Clone the Clexulator
+std::unique_ptr<Base> Base::clone() const {
+  return std::unique_ptr<Base>(_clone());
+}
+
 /// \brief Alter evaluation of parameters specified by @param _param_key, using
 /// a custom double -> double function set
 void Base::set_evaluation(

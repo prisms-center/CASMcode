@@ -71,8 +71,7 @@ std::string clexulator_member_declarations(
     std::string const &class_name, ClexBasis const &clex,
     ParamPackMixIn const &_param_pack_mix_in,
     std::vector<std::unique_ptr<OrbitFunctionTraits> > const &orbit_func_traits,
-    std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
-    std::string const &indent);
+    Index N_flower, std::string const &indent);
 //*******************************************************************************************
 
 std::string clexulator_private_method_declarations(

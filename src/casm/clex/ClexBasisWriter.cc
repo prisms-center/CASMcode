@@ -52,10 +52,8 @@ std::string clexulator_member_declarations(
     ParamPackMixIn const &_param_pack_mix_in,
     std::vector<std::unique_ptr<OrbitFunctionTraits> > const
         &orbit_func_writers,
-    std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
-    std::string const &indent) {
+    Index N_flower, std::string const &indent) {
   Index N_corr = clex.n_functions();
-  Index N_branch = _nhood.size();
 
   std::stringstream ss;
 
@@ -102,7 +100,7 @@ std::string clexulator_member_declarations(
           "functions of scalar type "
        << specialization.second << "\n"
        << indent << "BasisFuncPtr_" << ispec << " m_flower_func_table_" << ispec
-       << "[" << N_branch << "][" << N_corr << "];\n\n"
+       << "[" << N_flower << "][" << N_corr << "];\n\n"
        <<
 
         indent
@@ -110,7 +108,7 @@ std::string clexulator_member_declarations(
           "flower functions of scalar type "
        << specialization.second << "\n"
        << indent << "DeltaBasisFuncPtr_" << ispec << " m_delta_func_table_"
-       << ispec << "[" << N_branch << "][" << N_corr << "];\n\n";
+       << ispec << "[" << N_flower << "][" << N_corr << "];\n\n";
 
     ++ispec;
   }
