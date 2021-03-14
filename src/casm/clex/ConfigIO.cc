@@ -236,6 +236,152 @@ bool Corr::parse_args(const std::string &args) {
   return true;
 }
 
+// --- CorrContribution implementations -----------
+
+const std::string CorrContribution::Name = "corr_contribution";
+
+const std::string CorrContribution::Desc =
+    "Correlation values (evaluated basis functions for a single unit cell, not "
+    " normalized). The first argument is the linear unit cell index [0, "
+    " scel_vol). The remaining arguments follow the same conventions as "
+    "`corr` accepting any of `corr_contribution(linear_unitcell_index)` or "
+    "`corr_contribution(linear_unitcell_index, clex_name)` or "
+    "`corr_contribution(linear_unitcell_index, indices)`, or "
+    "`corr_contribution(linear_unitcell_index, clex_name, indices)`.";
+
+/// \brief Returns the atom fraction
+Eigen::VectorXd CorrContribution::evaluate(const Configuration &config) const {
+  return corr_contribution(m_linear_unitcell_index, config, m_clexulator);
+}
+
+/// \brief If not yet initialized, use the default clexulator from the PrimClex
+bool CorrContribution::init(const Configuration &_tmplt) const {
+  if (!m_clexulator.initialized()) {
+    const PrimClex &primclex = _tmplt.primclex();
+    ClexDescription desc = m_clex_name.empty()
+                               ? primclex.settings().default_clex()
+                               : primclex.settings().clex(m_clex_name);
+    m_clexulator = primclex.clexulator(desc.bset);
+  }
+
+  VectorXdAttribute<Configuration>::init(_tmplt);
+  return true;
+}
+
+///
+/// Expects one of:
+/// - 'corr_contribution(linear_unitcell_index)'
+/// - 'corr(linear_unitcell_index), clex_name)'
+/// - 'corr(linear_unitcell_index, index_expression)'
+/// - 'corr(clex_name,index_expression)'
+bool CorrContribution::parse_args(const std::string &args) {
+  std::vector<std::string> splt_vec;
+  boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
+
+  if (!splt_vec.size()) {
+    return false;
+  }
+  if (splt_vec.size() == 1) {
+    m_linear_unitcell_index = std::stol(splt_vec[0]);
+  } else if (splt_vec.size() == 2) {
+    m_linear_unitcell_index = std::stol(splt_vec[0]);
+    if ((splt_vec[1].find_first_not_of("0123456789") == std::string::npos) ||
+        (splt_vec[1].find(':') != std::string::npos)) {
+      _parse_index_expression(splt_vec[1]);
+    } else {
+      m_clex_name = splt_vec[1];
+    }
+  } else if (splt_vec.size() == 3) {
+    m_linear_unitcell_index = std::stol(splt_vec[0]);
+    m_clex_name = splt_vec[1];
+    _parse_index_expression(splt_vec[2]);
+  } else {
+    std::stringstream ss;
+    ss << "Too many arguments for 'corr_contribution'.  Received: " << args
+       << "\n";
+    throw std::runtime_error(ss.str());
+  }
+  return true;
+}
+
+// --- PointCorr implementations -----------
+
+const std::string PointCorr::Name = "point_corr";
+
+const std::string PointCorr::Desc =
+    "Point correlation values (evaluated basis functions for a single site, "
+    "normalized by cluster orbit size). The first argument is the linear unit "
+    "cell index [0, scel_vol). The second argument is the index of the site in "
+    "the neighbor list. For periodic cluster functions this is the sublattice "
+    "index [0, basis_size). For local clusters this is the index of sites in "
+    "the local neighborhood [0, basis_size*neighborhood_size), where "
+    "neighborhood_size is the number of distinct unitcells with a site in any "
+    "cluster orbit. The remaining arguments follow the same conventions as "
+    "`corr` accepting any of "
+    "`corr_contribution(linear_unitcell_index, neighbor_index)` or "
+    "`corr_contribution(linear_unitcell_index, neighbor_index, clex_name)` or "
+    "`corr_contribution(linear_unitcell_index, neighbor_index, indices)`, or "
+    "`corr_contribution(linear_unitcell_index, neighbor_index, clex_name, "
+    "indices)`.";
+
+Eigen::VectorXd PointCorr::evaluate(const Configuration &config) const {
+  return point_corr(m_linear_unitcell_index, m_neighbor_index, config,
+                    m_clexulator);
+}
+
+/// \brief If not yet initialized, use the default clexulator from the PrimClex
+bool PointCorr::init(const Configuration &_tmplt) const {
+  if (!m_clexulator.initialized()) {
+    const PrimClex &primclex = _tmplt.primclex();
+    ClexDescription desc = m_clex_name.empty()
+                               ? primclex.settings().default_clex()
+                               : primclex.settings().clex(m_clex_name);
+    m_clexulator = primclex.clexulator(desc.bset);
+  }
+
+  VectorXdAttribute<Configuration>::init(_tmplt);
+  return true;
+}
+
+///
+/// Expects one of:
+/// - 'point_corr(linear_unitcell_index, neighbor_index)'
+/// - 'point_corr(linear_unitcell_index, neighbor_index, clex_name)'
+/// - 'point_corr(linear_unitcell_index, neighbor_index, index_expression)'
+/// - 'point_corr(linear_unitcell_index, neighbor_index, clex_name,
+/// index_expression)'
+bool PointCorr::parse_args(const std::string &args) {
+  std::vector<std::string> splt_vec;
+  boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
+
+  if (splt_vec.size() < 2) {
+    return false;
+  }
+  if (splt_vec.size() == 2) {
+    m_linear_unitcell_index = std::stol(splt_vec[0]);
+    m_neighbor_index = std::stol(splt_vec[1]);
+  } else if (splt_vec.size() == 3) {
+    m_linear_unitcell_index = std::stol(splt_vec[0]);
+    m_neighbor_index = std::stol(splt_vec[1]);
+    if ((splt_vec[2].find_first_not_of("0123456789") == std::string::npos) ||
+        (splt_vec[2].find(':') != std::string::npos)) {
+      _parse_index_expression(splt_vec[2]);
+    } else {
+      m_clex_name = splt_vec[2];
+    }
+  } else if (splt_vec.size() == 4) {
+    m_linear_unitcell_index = std::stol(splt_vec[0]);
+    m_neighbor_index = std::stol(splt_vec[1]);
+    m_clex_name = splt_vec[2];
+    _parse_index_expression(splt_vec[3]);
+  } else {
+    std::stringstream ss;
+    ss << "Too many arguments for 'point_corr'.  Received: " << args << "\n";
+    throw std::runtime_error(ss.str());
+  }
+  return true;
+}
+
 // --- GradCorr implementations -----------
 
 const std::string GradCorr::Name = "gradcorr";
@@ -708,8 +854,9 @@ make_vectorxd_dictionary<Configuration>() {
   using namespace ConfigIO;
   VectorXdAttributeDictionary<Configuration> dict;
 
-  dict.insert(AtomFrac(), Comp(), CompN(), Corr(), RelaxationStrain(),
-              DoFStrain(), SiteFrac(), StrucScore());
+  dict.insert(AtomFrac(), Comp(), CompN(), Corr(), CorrContribution(),
+              PointCorr(), RelaxationStrain(), DoFStrain(), SiteFrac(),
+              StrucScore());
 
   return dict;
 }

@@ -803,6 +803,23 @@ Eigen::VectorXd correlations(const Configuration &config,
   return correlations(config.configdof(), config.supercell(), clexulator);
 }
 
+/// \brief Returns correlations using 'clexulator'.
+Eigen::VectorXd corr_contribution(Index linear_unitcell_index,
+                                  const Configuration &config,
+                                  Clexulator const &clexulator) {
+  return corr_contribution(linear_unitcell_index, config.configdof(),
+                           config.supercell(), clexulator);
+}
+
+/// \brief Returns point correlations from a single site, normalized by cluster
+/// orbit size
+Eigen::VectorXd point_corr(Index linear_unitcell_index, Index neighbor_index,
+                           const Configuration &config,
+                           Clexulator const &clexulator) {
+  return point_corr(linear_unitcell_index, neighbor_index, config.configdof(),
+                    config.supercell(), clexulator);
+}
+
 /// \brief Returns gradient correlations using 'clexulator', with respect to DoF
 /// 'dof_type'
 Eigen::MatrixXd gradcorrelations(const Configuration &config,
@@ -1120,6 +1137,57 @@ Eigen::VectorXd correlations(const ConfigDoF &configdof, const Supercell &scel,
   }
 
   correlations /= (double)scel_vol;
+
+  return correlations;
+}
+
+/// Returns correlation contribution from a single unit cell, not normalized.
+///
+/// Supercell needs a correctly populated neighbor list.
+Eigen::VectorXd corr_contribution(Index linear_unitcell_index,
+                                  const ConfigDoF &configdof,
+                                  const Supercell &scel,
+                                  Clexulator const &clexulator) {
+  if (linear_unitcell_index >= scel.volume()) {
+    std::stringstream msg;
+    msg << "Error in point_corr: linear_unitcell_index out of range ("
+        << linear_unitcell_index << " >= " << scel.volume() << ")";
+    throw std::runtime_error(msg.str());
+  }
+  Eigen::VectorXd correlations = Eigen::VectorXd::Zero(clexulator.corr_size());
+
+  auto const &unitcell_nlist = scel.nlist().sites(linear_unitcell_index);
+  clexulator.calc_global_corr_contribution(
+      configdof, unitcell_nlist.data(), end_ptr(unitcell_nlist),
+      correlations.data(), end_ptr(correlations));
+
+  return correlations;
+}
+
+/// \brief Returns point correlations from a single site, normalized by cluster
+/// orbit size
+Eigen::VectorXd point_corr(Index linear_unitcell_index, Index neighbor_index,
+                           const ConfigDoF &configdof, const Supercell &scel,
+                           Clexulator const &clexulator) {
+  if (linear_unitcell_index >= scel.volume()) {
+    std::stringstream msg;
+    msg << "Error in point_corr: linear_unitcell_index out of range ("
+        << linear_unitcell_index << " >= " << scel.volume() << ")";
+    throw std::runtime_error(msg.str());
+  }
+
+  Eigen::VectorXd correlations = Eigen::VectorXd::Zero(clexulator.corr_size());
+
+  auto const &unitcell_nlist = scel.nlist().sites(linear_unitcell_index);
+  if (neighbor_index >= clexulator.n_point_corr()) {
+    std::stringstream msg;
+    msg << "Error in point_corr: neighbor_index out of range ("
+        << neighbor_index << " >= " << clexulator.n_point_corr() << ")";
+    throw std::runtime_error(msg.str());
+  }
+  clexulator.calc_global_corr_contribution(
+      configdof, unitcell_nlist.data(), end_ptr(unitcell_nlist),
+      correlations.data(), end_ptr(correlations));
 
   return correlations;
 }

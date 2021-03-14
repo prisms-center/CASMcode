@@ -134,9 +134,10 @@ std::string Clexulator::check_evaluation(ClexParamKey const _param_key) const {
 
 namespace Clexulator_impl {
 
-Base::Base(size_type _nlist_size, size_type _corr_size)
+Base::Base(size_type _nlist_size, size_type _corr_size, size_type _n_point_corr)
     : m_nlist_size(_nlist_size),
       m_corr_size(_corr_size),
+      m_n_point_corr(_n_point_corr),
       m_config_ptr(nullptr) {}
 
 Base::~Base() {}

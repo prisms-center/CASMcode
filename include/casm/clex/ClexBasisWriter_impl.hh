@@ -735,8 +735,8 @@ std::string clexulator_constructor_definition(
   std::stringstream ss;
   // Write constructor
   ss << indent << class_name << "::" << class_name << "() :\n"
-     << indent << "  Clexulator_impl::Base(" << N_hood << ", " << N_corr
-     << ") {\n";
+     << indent << "  Clexulator_impl::Base(" << N_hood << ", " << N_corr << ", "
+     << N_flower << ") {\n";
 
   for (auto const &dof : clex.site_bases()) {
     ss << DoFType::traits(dof.first).clexulator_constructor_string(
