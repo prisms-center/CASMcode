@@ -60,6 +60,17 @@ MatrixXdSupercellSymInfoFormatter supercell_lattice_column_matrix() {
       });
 }
 
+MatrixXdSupercellSymInfoFormatter supercell_lattice_vectors() {
+  return MatrixXdSupercellSymInfoFormatter(
+      "supercell_lattice_vectors",
+      "Supercell lattice vectors, as row vector matrix",
+      [](SupercellSymInfo const &supercell_sym_info) -> Eigen::MatrixXd {
+        Lattice const &supercell_lattice =
+            supercell_sym_info.supercell_lattice();
+        return supercell_lattice.lat_column_mat().transpose();
+      });
+}
+
 SupercellSymInfoFormatter<jsonParser> unitcells() {
   return SupercellSymInfoFormatter<jsonParser>(
       "unitcells",
@@ -125,12 +136,7 @@ SupercellSymInfoFormatter<jsonParser> factor_group() {
 SupercellSymInfoFormatter<Index> factor_group_size() {
   return SupercellSymInfoFormatter<Index>(
       "factor_group_size",
-      "Describes how sites permute due to factor group operations. Outer array "
-      "corresponds to factor group operations that keep the supercell lattice "
-      "invariant, and the inner array (with size is equal to the total number "
-      "of sites, prim basis size * supercell volume) describes how sites "
-      "permute for the `i`th allowed factor group operation, according to "
-      "`after[l] = before[translation_permutation[i][l]]`.",
+      "The number of operations in the supercell factor group.",
       [](SupercellSymInfo const &supercell_sym_info) -> Index {
         return supercell_sym_info.factor_group().size();
       });
@@ -208,10 +214,10 @@ make_attribute_dictionary<SupercellSymInfo>() {
   using namespace SupercellSymInfo_dataformatter_impl;
   DataFormatterDictionary<SupercellSymInfo> dict;
   dict.insert(transformation_matrix_to_super(), supercell_lattice(),
-              supercell_lattice_column_matrix(), unitcells(),
-              integral_site_coordinates(), translation_permutations(),
-              factor_group(), factor_group_size(), factor_group_permutations(),
-              global_dof_reps(), local_dof_reps());
+              supercell_lattice_column_matrix(), supercell_lattice_vectors(),
+              unitcells(), integral_site_coordinates(),
+              translation_permutations(), factor_group(), factor_group_size(),
+              factor_group_permutations(), global_dof_reps(), local_dof_reps());
 
   return dict;
 }

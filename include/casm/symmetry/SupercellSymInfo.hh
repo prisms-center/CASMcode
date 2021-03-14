@@ -231,6 +231,25 @@ class SupercellSymInfo {
   mutable SymGroupRep::RemoteHandle m_site_perm_symrep;
 };
 
+std::string hermite_normal_form_name(const Eigen::Matrix3l &matrix);
+
+Eigen::Matrix3l make_hermite_normal_form(std::string hermite_normal_form_name);
+
+/// Make the supercell name
+std::string make_supercell_name(SymGroup const &point_group,
+                                Lattice const &prim_lattice,
+                                Lattice const &supercell_lattice);
+
+/// Make the canonical supercell name
+std::string make_canonical_supercell_name(SymGroup const &point_group,
+                                          Lattice const &prim_lattice,
+                                          Lattice const &supercell_lattice);
+
+/// Construct a Superlattice from the supercell name
+xtal::Superlattice make_superlattice_from_supercell_name(
+    SymGroup const &factor_group, Lattice const &prim_lattice,
+    std::string supercell_name);
+
 /// \brief Make the matrix representation for group '_group' describing the
 /// transformation of DoF '_key' among a subset of sites
 std::pair<MasterSymGroup, SymGroupRepID> make_collective_dof_symrep(

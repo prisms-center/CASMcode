@@ -318,54 +318,6 @@ std::string Supercell::generate_name_impl() const {
   return scelname(prim(), lattice());
 }
 
-namespace Supercell_impl {
-
-std::string hermite_normal_form_name(const Eigen::Matrix3l &matrix) {
-  std::string name_str;
-
-  Eigen::Matrix3i H = hermite_normal_form(matrix.cast<int>()).first;
-  name_str = "SCEL";
-  std::stringstream tname;
-  // Consider using a for loop with HermiteCounter_impl::_canonical_unroll here
-  tname << H(0, 0) * H(1, 1) * H(2, 2) << "_" << H(0, 0) << "_" << H(1, 1)
-        << "_" << H(2, 2) << "_" << H(1, 2) << "_" << H(0, 2) << "_" << H(0, 1);
-  name_str.append(tname.str());
-
-  return name_str;
-}
-
-Eigen::Matrix3l make_hermite_normal_form(std::string hermite_normal_form_name) {
-  std::vector<std::string> tmp, tokens;
-  try {
-    // else construct transf_mat from name (make sure to remove any empty
-    // tokens)
-    boost::split(tmp, hermite_normal_form_name, boost::is_any_of("SCEL_"),
-                 boost::token_compress_on);
-    std::copy_if(tmp.begin(), tmp.end(), std::back_inserter(tokens),
-                 [](const std::string &val) { return !val.empty(); });
-    if (tokens.size() != 7) {
-      throw std::invalid_argument(
-          "Error in make_supercell: supercell name format error");
-    }
-    Eigen::Matrix3l T;
-    auto cast = [](std::string val) { return boost::lexical_cast<Index>(val); };
-    T << cast(tokens[1]), cast(tokens[6]), cast(tokens[5]), 0, cast(tokens[2]),
-        cast(tokens[4]), 0, 0, cast(tokens[3]);
-    return T;
-  } catch (std::exception &e) {
-    std::string format = "SCELV_T00_T11_T22_T12_T02_T01";
-    err_log().error("In make_hermite_normal_form");
-    err_log() << "expected format: " << format << "\n";
-    err_log() << "name: |" << hermite_normal_form_name << "|" << std::endl;
-    err_log() << "tokens: " << tokens << std::endl;
-    err_log() << "tokens.size(): " << tokens.size() << std::endl;
-    err_log() << e.what() << std::endl;
-    throw e;
-  }
-}
-
-}  // namespace Supercell_impl
-
 /// Make the supercell name from a Superlattice
 ///
 /// For supercells that are equivalent to the canonical supercell:
@@ -383,70 +335,22 @@ Eigen::Matrix3l make_hermite_normal_form(std::string hermite_normal_form_name) {
 ///
 std::string make_supercell_name(Structure const &prim,
                                 xtal::Superlattice const &superlattice) {
-  using namespace Supercell_impl;
-  const SymGroup &pg = prim.point_group();
-  xtal::Superlattice canon_superlattice{
-      prim.lattice(),
-      xtal::canonical::equivalent(superlattice.superlattice(), pg)};
-  std::string supercell_name = hermite_normal_form_name(
-      canon_superlattice.transformation_matrix_to_super());
-  if (!xtal::is_equivalent(superlattice.superlattice(),
-                           canon_superlattice.superlattice())) {
-    auto to_canonical_ix =
-        xtal::canonical::operation_index(superlattice.superlattice(), pg);
-    supercell_name +=
-        ("." + std::to_string(pg[to_canonical_ix].inverse().index()));
-  }
-  return supercell_name;
+  return make_supercell_name(prim.point_group(), prim.lattice(),
+                             superlattice.superlattice());
 }
 
 /// Make the canonical supercell name from a Superlattice
 std::string make_canonical_supercell_name(
     Structure const &prim, xtal::Superlattice const &superlattice) {
-  using namespace Supercell_impl;
-  const SymGroup &pg = prim.point_group();
-  xtal::Superlattice canon_superlattice{
-      prim.lattice(),
-      xtal::canonical::equivalent(superlattice.superlattice(), pg)};
-  return hermite_normal_form_name(
-      canon_superlattice.transformation_matrix_to_super());
+  return make_canonical_supercell_name(prim.point_group(), prim.lattice(),
+                                       superlattice.superlattice());
 }
 
 /// Construct a Superlattice from the supercell name
 xtal::Superlattice make_superlattice_from_supercell_name(
     Structure const &prim, std::string supercell_name) {
-  using namespace Supercell_impl;
-  try {
-    // tokenize name: check if non-canonical
-    std::vector<std::string> tokens;
-    boost::split(tokens, supercell_name, boost::is_any_of("."),
-                 boost::token_compress_on);
-
-    // validate name
-    if (tokens.size() == 0 || tokens.size() > 2) {
-      throw std::invalid_argument("supercell_name format error");
-    }
-
-    Eigen::Matrix3l T = make_hermite_normal_form(tokens[0]);
-    xtal::Lattice super_lattice = make_superlattice(prim.lattice(), T);
-
-    if (tokens.size() == 2) {
-      Index fg_op_index = boost::lexical_cast<Index>(tokens[1]);
-      super_lattice =
-          sym::copy_apply(prim.factor_group()[fg_op_index], super_lattice);
-    } else {
-      super_lattice =
-          xtal::canonical::equivalent(super_lattice, prim.point_group());
-    }
-    return xtal::Superlattice{prim.lattice(), super_lattice};
-
-  } catch (std::exception &e) {
-    std::string format = "$CANON_SCEL_NAME[.$PRIM_FG_OP]";
-    err_log().error("In make_superlattice_from_supercell_name");
-    err_log() << "expected format: " << format << "\n";
-    err_log() << "name: " << supercell_name << std::endl;
-    throw e;
-  }
+  return make_superlattice_from_supercell_name(prim.factor_group(),
+                                               prim.lattice(), supercell_name);
 }
 
 /// Apply symmetry operation to Supercell

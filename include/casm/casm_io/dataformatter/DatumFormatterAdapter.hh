@@ -5,6 +5,13 @@
 
 namespace CASM {
 
+namespace adapter {
+
+template <typename ToType, typename FromType>
+struct Adapter;
+
+}  // namespace adapter
+
 /// Adapt DatumFormatter to reuse with different types
 ///
 template <typename ExternalType, typename InternalType>
