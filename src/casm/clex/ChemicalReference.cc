@@ -416,7 +416,7 @@ ChemicalReference auto_chemical_reference(const PrimClex &primclex,
     double close_dist = std::numeric_limits<double>::max();
 
     for (auto it = begin; it != end; ++it) {
-      if (!it->calc_properties().has_scalar("relaxed_energy")) {
+      if (!it->calc_properties().has_scalar("energy")) {
         continue;
       }
       double curr_dist = (target - comp(*it)).norm();

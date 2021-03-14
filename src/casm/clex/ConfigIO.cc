@@ -480,13 +480,19 @@ GenericConfigFormatter<std::string> point_group_name() {
 GenericConfigFormatter<double> relaxed_energy() {
   return GenericConfigFormatter<double>(
       "relaxed_energy", "DFT relaxed energy, normalized per primitive cell",
-      CASM::relaxed_energy, has_relaxed_energy);
+      CASM::energy, has_energy);
+}
+
+GenericConfigFormatter<double> energy() {
+  return GenericConfigFormatter<double>(
+      "energy", "DFT relaxed energy, normalized per primitive cell",
+      CASM::energy, has_energy);
 }
 
 GenericConfigFormatter<double> relaxed_energy_per_species() {
   return GenericConfigFormatter<double>(
       "relaxed_energy_per_atom", "DFT relaxed energy, normalized per atom",
-      CASM::relaxed_energy_per_species, has_relaxed_energy);
+      CASM::relaxed_energy_per_species, has_energy);
 }
 
 GenericConfigFormatter<double> reference_energy() {
@@ -684,7 +690,7 @@ make_scalar_dictionary<Configuration>() {
   using namespace ConfigIO;
   ScalarAttributeDictionary<Configuration> dict;
 
-  dict.insert(Clex(), HullDist(), ClexHullDist(), Novelty(), relaxed_energy(),
+  dict.insert(Clex(), HullDist(), ClexHullDist(), Novelty(), relaxed_energy(), energy(),
               relaxed_energy_per_species(), reference_energy(),
               reference_energy_per_species(), formation_energy(),
               formation_energy_per_species(), rms_force(), atomic_deformation(),

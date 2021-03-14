@@ -93,7 +93,7 @@ ProjectSettings make_default_project_settings(xtal::BasicStructure const &prim,
   settings.set_nlist_sublat_indices(default_nlist_sublat_indices(prim));
   settings.set_default_clex(default_configuration_clex());
   settings.set_required_properties("Configuration", "default",
-                                   {"relaxed_energy"});
+                                   {"energy"});
   return settings;
 }
 

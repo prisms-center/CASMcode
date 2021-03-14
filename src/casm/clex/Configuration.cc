@@ -855,14 +855,14 @@ Eigen::VectorXd site_frac(const Configuration &config) {
 }
 
 /// \brief Returns the relaxed energy, normalized per unit cell
-double relaxed_energy(const Configuration &config) {
-  return config.calc_properties().scalar("relaxed_energy") /
+double energy(const Configuration &config) {
+  return config.calc_properties().scalar("energy") /
          config.supercell().volume();
 }
 
 /// \brief Returns the relaxed energy, normalized per species
 double relaxed_energy_per_species(const Configuration &config) {
-  return relaxed_energy(config) / n_species(config);
+  return energy(config) / n_species(config);
 }
 
 /// \brief Returns the reference energy, normalized per unit cell
@@ -879,7 +879,7 @@ double reference_energy_per_species(const Configuration &config) {
 
 /// \brief Returns the formation energy, normalized per unit cell
 double formation_energy(const Configuration &config) {
-  return relaxed_energy(config) - reference_energy(config);
+  return energy(config) - reference_energy(config);
 }
 
 /// \brief Returns the formation energy, normalized per species
@@ -1035,8 +1035,8 @@ bool is_canonical(const Configuration &_config) {
   return _config.is_canonical();
 }
 
-bool has_relaxed_energy(const Configuration &_config) {
-  return _config.calc_properties().has_scalar("relaxed_energy");
+bool has_energy(const Configuration &_config) {
+  return _config.calc_properties().has_scalar("energy");
 }
 
 bool has_reference_energy(const Configuration &_config) {
@@ -1045,7 +1045,7 @@ bool has_reference_energy(const Configuration &_config) {
 }
 
 bool has_formation_energy(const Configuration &_config) {
-  return has_relaxed_energy(_config) && has_reference_energy(_config);
+  return has_energy(_config) && has_reference_energy(_config);
 }
 
 bool has_rms_force(const Configuration &_config) {

@@ -704,7 +704,7 @@ DataFormatter<ConfigIO::Result> Import<Configuration>::_import_formatter()
                                   "is_best",
                                   "lattice_deformation_cost",
                                   "atomic_deformation_cost",
-                                  "relaxed_energy"};
+                                  "energy"};
 
   return dict.parse(col);
 }
@@ -789,7 +789,7 @@ DataFormatter<ConfigIO::Result> Update<Configuration>::_update_formatter()
                                   "is_best",
                                   "lattice_deformation_cost",
                                   "atomic_deformation_cost",
-                                  "relaxed_energy"};
+                                  "energy"};
 
   return dict.parse(col);
 }

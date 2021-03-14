@@ -367,6 +367,8 @@ ConfigIO::GenericConfigFormatter<bool> is_canonical();
 
 ConfigIO::GenericConfigFormatter<double> relaxed_energy();
 
+ConfigIO::GenericConfigFormatter<double> energy();
+
 ConfigIO::GenericConfigFormatter<double> relaxed_energy_per_species();
 
 ConfigIO::GenericConfigFormatter<double> reference_energy();

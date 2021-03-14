@@ -495,7 +495,7 @@ Eigen::VectorXd species_frac(const Configuration &config);
 Eigen::VectorXd site_frac(const Configuration &config);
 
 /// \brief Returns the relaxed energy, normalized per unit cell
-double relaxed_energy(const Configuration &config);
+double energy(const Configuration &config);
 
 /// \brief Returns the relaxed energy, normalized per species
 double relaxed_energy_per_species(const Configuration &config);
@@ -576,7 +576,7 @@ bool is_diff_trans_endpoint(const Configuration &_config);
 /// \brief returns which diff_trans _config is an endpoint of
 std::string diff_trans_endpoint_of(const Configuration &_config);
 
-bool has_relaxed_energy(const Configuration &_config);
+bool has_energy(const Configuration &_config);
 
 bool has_reference_energy(const Configuration &_config);
 

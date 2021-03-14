@@ -160,7 +160,7 @@ class ScoreMappedProperties {
 
   struct Option {
     Option(Method _method = Method::minimum,
-           std::string _name = "relaxed_energy")
+           std::string _name = "energy")
         : Option(_method, _name, -1.) {}
 
     Option(Method _method, double _lattice_weight = 0.5)
@@ -180,7 +180,7 @@ class ScoreMappedProperties {
 
   /// \brief Default uses minimum relaxed_energy
   explicit ScoreMappedProperties(Option _opt = Option(Method::minimum,
-                                                      "relaxed_energy"));
+                                                      "energy"));
 
   double operator()(const MappedProperties &obj) const;
 
