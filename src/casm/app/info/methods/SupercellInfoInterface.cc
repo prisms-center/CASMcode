@@ -81,10 +81,34 @@ struct Adapter<SupercellSymInfo, SupercellInfoData> {
 
 }  // namespace adapter
 
+namespace {
+
+DataFormatterDictionary<SupercellInfoData> make_supercell_info_dict() {
+  DataFormatterDictionary<SupercellInfoData> supercell_info_dict;
+
+  // properties that require prim and supercell_sym_info
+  supercell_info_dict.insert(supercell_name(), canonical_supercell_name());
+
+  // properties that only require supercell_sym_info
+  auto sym_info_dict = make_dictionary<SupercellSymInfo>();
+  for (auto it = sym_info_dict.begin(); it != sym_info_dict.end(); ++it) {
+    if (it->type() == DatumFormatterClass::Property) {
+      supercell_info_dict.insert(
+          make_datum_formatter_adapter<SupercellInfoData, SupercellSymInfo>(
+              *it));
+    }
+  }
+
+  return supercell_info_dict;
+}
+
+}  // namespace
+
 std::string SupercellInfoInterface::desc() const {
   std::string description =
       "Get information about a supercell. The supercell is specified by   \n"
-      "the prim and one of the following:                                 \n"
+      "the prim and one of the following (else the primitive cell is      \n"
+      "used):                                                             \n"
       "- transformation_matrix_to_super                                   \n"
       "- supercell_lattice_vectors                                        \n"
       "- supercell_lattice_column_matrix                                  \n"
@@ -117,7 +141,7 @@ std::string SupercellInfoInterface::desc() const {
       "    properties. The allowed options are:                           \n\n";
 
   std::stringstream ss;
-  auto dict = make_dictionary<SupercellSymInfo>();
+  auto dict = make_supercell_info_dict();
   dict.print_help(ss, DatumFormatterClass::Property);
 
   return name() + ": \n\n" + description + custom_options + ss.str();
@@ -191,12 +215,10 @@ void SupercellInfoInterface::run(jsonParser const &json_options,
     xtal::Superlattice superlattice = make_superlattice_from_supercell_name(
         shared_prim->factor_group(), shared_prim->lattice(), supercell_name);
     T = superlattice.transformation_matrix_to_super();
+
+    // else use Identity (prim cell)
   } else {
-    std::stringstream msg;
-    msg << "Error in SupercellInfo: Require one of "
-        << "\"transformation_matrix_to_super\", \"supercell_lattice_vectors\", "
-        << "\"supercell_lattice_column_matrix\", or \"supercell_name\".";
-    parser.error.insert(msg.str());
+    T = Eigen::Matrix3l::Identity();
   }
 
   // read "properties"
@@ -209,20 +231,8 @@ void SupercellInfoInterface::run(jsonParser const &json_options,
   SupercellSymInfo supercell_sym_info =
       make_supercell_sym_info(*shared_prim, super_lattice);
 
-  DataFormatterDictionary<SupercellInfoData> supercell_info_dict;
-
-  // properties that require prim and supercell_sym_info
-  supercell_info_dict.insert(supercell_name(), canonical_supercell_name());
-
-  // properties that only require supercell_sym_info
-  auto sym_info_dict = make_dictionary<SupercellSymInfo>();
-  for (auto it = sym_info_dict.begin(); it != sym_info_dict.end(); ++it) {
-    if (it->type() == DatumFormatterClass::Property) {
-      supercell_info_dict.insert(
-          make_datum_formatter_adapter<SupercellInfoData, SupercellSymInfo>(
-              *it));
-    }
-  }
+  DataFormatterDictionary<SupercellInfoData> supercell_info_dict =
+      make_supercell_info_dict();
 
   // output all properties if empty
   if (properties.empty()) {
