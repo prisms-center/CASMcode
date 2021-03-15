@@ -8,6 +8,7 @@
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/crystallography/LinearIndexConverter.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/symmetry/PermuteIterator.hh"

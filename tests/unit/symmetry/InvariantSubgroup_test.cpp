@@ -12,7 +12,6 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/clusterography/io/OrbitPrinter_impl.hh"
-#include "casm/symmetry/ElementSymApply.hh"
 #include "casm/symmetry/Orbit_impl.hh"
 
 using namespace CASM;
@@ -157,14 +156,13 @@ TEST(InvariantSubgroupTest, Test0) {
     EXPECT_EQ(scel_vol2.factor_group().size() * 2, config_permute_fg.size());
     EXPECT_EQ(config_fg.size(), config_permute_fg.size());
 
-    auto copy_apply_f = sym::CopyApplyWithPrim_f(primclex.shared_prim());
     for (const auto &orbit : orbits) {
       OrbitGenerators<ScelPeriodicIntegralClusterOrbit> generators{
           config_fg, scel_sym_compare};
       for (const auto &eq : orbit) {
         for (auto it = scel_vol2.sym_info().translate_begin();
              it != scel_vol2.sym_info().translate_end(); ++it) {
-          generators.insert(copy_apply_f(it->sym_op(), eq));
+          generators.insert(scel_sym_compare.copy_apply(it->sym_op(), eq));
         }
       }
 
