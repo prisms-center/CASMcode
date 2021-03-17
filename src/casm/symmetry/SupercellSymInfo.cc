@@ -264,16 +264,16 @@ Eigen::Matrix3l make_hermite_normal_form(std::string hermite_normal_form_name) {
 ///
 /// For supercells that are equivalent to the canonical supercell:
 /// - The supercell name is `SCELV_A_B_C_D_E_F`, where 'V' is supercell volume
-/// (number of unit
-///   cells), and 'A-F' are the six non-zero elements of the hermite normal form
-///   of the supercell transformation matrix (T00, T11, T22, T12, T02, T01)
+///   (number of unit cells), and 'A-F' are the six non-zero elements of the
+///   hermite normal form of the canonical supercell transformation matrix
+///   (T00, T11, T22, T12, T02, T01)
 ///
 /// For supercells that are not equivalent to the canonical supercell:
 /// - The supercell name is `$CANON_SCELNAME.$FG_INDEX` where CANON_SCELNAME is
-/// the supercell
-///   name for the canonical equivalent supercell and FG_INDEX is the index of
-///   the prim factor group operation which is applied to the canonical
-///   supercell to construct the non-canonical supercell.
+///   the supercell name for the canonical equivalent supercell and FG_INDEX is
+///   the lowest index prim factor group operation which can be applied to the
+///   canonical supercell lattice to construct a lattice equivalent to the
+///   input supercell lattice.
 ///
 std::string make_supercell_name(SymGroup const &point_group,
                                 Lattice const &prim_lattice,
@@ -285,10 +285,13 @@ std::string make_supercell_name(SymGroup const &point_group,
       canon_superlattice.transformation_matrix_to_super());
   if (!xtal::is_equivalent(supercell_lattice,
                            canon_superlattice.superlattice())) {
-    auto to_canonical_ix =
-        xtal::canonical::operation_index(supercell_lattice, point_group);
-    supercell_name +=
-        ("." + std::to_string(point_group[to_canonical_ix].inverse().index()));
+    double tol = prim_lattice.tol();
+    auto from_canonical_index =
+        is_equivalent_superlattice(supercell_lattice,
+                                   canon_superlattice.superlattice(),
+                                   point_group.begin(), point_group.end(), tol)
+            .first->index();
+    supercell_name += ("." + std::to_string(from_canonical_index));
   }
   return supercell_name;
 }
@@ -324,8 +327,18 @@ xtal::Superlattice make_superlattice_from_supercell_name(
 
     if (tokens.size() == 2) {
       Index fg_op_index = std::stol(tokens[1]);
+      if (fg_op_index >= factor_group.size()) {
+        std::stringstream ss;
+        ss << "Error in make_superlattice_from_supercell_name: "
+           << "found prim factor group index: " << fg_op_index
+           << ", which is out of range [0, " << factor_group.size() << ").";
+        throw std::invalid_argument(ss.str());
+      }
       super_lattice = sym::copy_apply(factor_group[fg_op_index], super_lattice);
+      // ** uses super_lattice point group **
+      super_lattice = xtal::canonical::equivalent(super_lattice);
     } else {
+      // ** uses point group of provided factor group (typically from prim) **
       SymGroup point_group = factor_group.copy_no_trans();
       super_lattice = xtal::canonical::equivalent(super_lattice, point_group);
     }

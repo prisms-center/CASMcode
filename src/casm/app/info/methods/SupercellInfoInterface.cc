@@ -43,10 +43,8 @@ using SupercellInfoFormatter =
 SupercellInfoFormatter<std::string> supercell_name() {
   return SupercellInfoFormatter<std::string>(
       "supercell_name",
-      "Unique name given to a supercell, based on the hermite normal form of "
-      "the transformation_matrix_to_super and, if not canonical, the index of "
-      "the prim factor group operation that transforms the canonical supercell "
-      "into this supercell.",
+      "A name given to all equivalent super lattices of the prim lattice. See "
+      "the input option `supercell_name` for a more detailed description.",
       [](SupercellInfoData const &data) -> std::string {
         return make_supercell_name(data.shared_prim->point_group(),
                                    data.supercell_sym_info.prim_lattice(),
@@ -56,7 +54,9 @@ SupercellInfoFormatter<std::string> supercell_name() {
 
 SupercellInfoFormatter<std::string> canonical_supercell_name() {
   return SupercellInfoFormatter<std::string>(
-      "canonical_supercell_name", "Name of the canonical equivalent supercell.",
+      "canonical_supercell_name",
+      "Name of the canonical equivalent supercell. See the input option "
+      "`supercell_name` for a more detailed description.",
       [](SupercellInfoData const &data) -> std::string {
         return make_canonical_supercell_name(
             data.shared_prim->point_group(),
@@ -130,10 +130,32 @@ std::string SupercellInfoInterface::desc() const {
       "    Supercell lattice vectors, as a column vector matrix.          \n\n"
 
       "  supercell_name: string (optional)                                \n"
-      "    Unique name given to a supercell, based on the hermite normal  \n"
-      "    form, of the transformation_matrix_to_super and, if not        \n"
-      "    canonical, the index of the prim factor group operation that   \n"
-      "    transforms the canonical supercell into this supercell.        \n\n"
+      "    A name given to all equivalent super lattices of the prim      \n"
+      "    lattice. From all super lattices which are equivalent via      \n"
+      "    crystal point group operations of prim, the canonical super    \n"
+      "    lattice is the equivalent lattice in niggli form which has the \n"
+      "    most favorable orientation according to the CASM orientation   \n"
+      "    comparision criteria. These criteria compare the lattices as   \n"
+      "    column vector matrices and first favor symmetric matrices and  \n"
+      "    then favor non-negative lattice vectors which are aligned      \n"
+      "    nearest to the Cartesian axes.                                 \n\n"
+
+      "    For the canonical super lattice, the name is constructed from  \n"
+      "    the hermite normal form of `transformation_matrix_to_super`.   \n"
+      "    For a non-canonical super lattice, the name is the constructed \n"
+      "    from the name of the canonical super lattice and the index of  \n"
+      "    the prim factor group operation that (excluding the shift)     \n"
+      "    transforms the canonical super lattice into this super lattice.\n"
+      "                                                                   \n"
+      "    Example 1: Canonical supercell name                            \n"
+      "                                                                   \n"
+      "        \"SCEL8_4_2_1_1_3_2\"                                      \n"
+      "                                                                   \n"
+      "    Example 2: Non-canonical supercell name representing a         \n"
+      "    re-orientation by application of prim factor group operation   \n"
+      "    with index 2 (indexing starting at 0).                         \n"
+      "                                                                   \n"
+      "        \"SCEL8_4_2_1_1_3_2.2\"                                    \n\n"
 
       "  properties: array of string (optional, default=[])               \n"
       "    An array of strings specifying which supercell properties to   \n"
