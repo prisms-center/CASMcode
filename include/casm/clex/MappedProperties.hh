@@ -130,7 +130,7 @@ jsonParser const &from_json(MappedProperties &prop, const jsonParser &json);
 /// }
 /// {
 ///   "method" : "minimum",
-///   "property" : property name (i.e. "relaxed_energy")
+///   "property" : property name (i.e. "energy")
 /// }
 /// {
 ///   "method" : "maximum",
@@ -159,8 +159,7 @@ class ScoreMappedProperties {
   }
 
   struct Option {
-    Option(Method _method = Method::minimum,
-           std::string _name = "energy")
+    Option(Method _method = Method::minimum, std::string _name = "energy")
         : Option(_method, _name, -1.) {}
 
     Option(Method _method, double _lattice_weight = 0.5)
@@ -178,7 +177,7 @@ class ScoreMappedProperties {
     Option(Method _method, std::string _name, double _lattice_weight);
   };
 
-  /// \brief Default uses minimum relaxed_energy
+  /// \brief Default uses minimum energy
   explicit ScoreMappedProperties(Option _opt = Option(Method::minimum,
                                                       "energy"));
 

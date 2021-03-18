@@ -96,7 +96,7 @@ ScoreMappedProperties::Option::Option(Method _m, std::string _name,
   }
 }
 
-/// \brief Default uses minimum relaxed_energy
+/// \brief Default uses minimum energy
 
 ScoreMappedProperties::ScoreMappedProperties(ScoreMappedProperties::Option _opt)
     : m_opt(_opt) {}

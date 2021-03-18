@@ -623,22 +623,32 @@ GenericConfigFormatter<std::string> point_group_name() {
       });
 }
 
+// deprecated for 'energy'
 GenericConfigFormatter<double> relaxed_energy() {
   return GenericConfigFormatter<double>(
-      "relaxed_energy", "DFT relaxed energy, normalized per primitive cell",
+      "relaxed_energy",
+      "DFT energy, normalized per primitive cell (deprecated for `energy`)",
       CASM::energy, has_energy);
 }
 
 GenericConfigFormatter<double> energy() {
   return GenericConfigFormatter<double>(
-      "energy", "DFT relaxed energy, normalized per primitive cell",
-      CASM::energy, has_energy);
+      "energy", "DFT energy, normalized per primitive cell", CASM::energy,
+      has_energy);
 }
 
+// deprecated for 'energy_per_species'
 GenericConfigFormatter<double> relaxed_energy_per_species() {
   return GenericConfigFormatter<double>(
-      "relaxed_energy_per_atom", "DFT relaxed energy, normalized per atom",
-      CASM::relaxed_energy_per_species, has_energy);
+      "relaxed_energy_per_atom",
+      "DFT energy, normalized per atom (deprecated for `energy_per_atom`)",
+      CASM::energy_per_species, has_energy);
+}
+
+GenericConfigFormatter<double> energy_per_species() {
+  return GenericConfigFormatter<double>("energy_per_atom",
+                                        "DFT energy, normalized per atom",
+                                        CASM::energy_per_species, has_energy);
 }
 
 GenericConfigFormatter<double> reference_energy() {
@@ -836,12 +846,12 @@ make_scalar_dictionary<Configuration>() {
   using namespace ConfigIO;
   ScalarAttributeDictionary<Configuration> dict;
 
-  dict.insert(Clex(), HullDist(), ClexHullDist(), Novelty(), relaxed_energy(), energy(),
-              relaxed_energy_per_species(), reference_energy(),
-              reference_energy_per_species(), formation_energy(),
-              formation_energy_per_species(), rms_force(), atomic_deformation(),
-              lattice_deformation(), volume_relaxation(), relaxed_magmom(),
-              relaxed_magmom_per_species());
+  dict.insert(Clex(), HullDist(), ClexHullDist(), Novelty(), relaxed_energy(),
+              energy(), relaxed_energy_per_species(), energy_per_species(),
+              reference_energy(), reference_energy_per_species(),
+              formation_energy(), formation_energy_per_species(), rms_force(),
+              atomic_deformation(), lattice_deformation(), volume_relaxation(),
+              relaxed_magmom(), relaxed_magmom_per_species());
 
   return dict;
 }

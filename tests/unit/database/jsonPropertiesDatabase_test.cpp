@@ -35,7 +35,7 @@ TEST(jsonPropertiesDatabase_Test, Test1) {
   MappedProperties props;
   props.origin = "from/0";
   props.to = "to/0";
-  props.scalar("relaxed_energy") = 0.1;
+  props.scalar("energy") = 0.1;
   props.site["test"] = Eigen::MatrixXd::Ones(3, 3);
 
   auto res = db_props.insert(props);
@@ -51,7 +51,7 @@ TEST(jsonPropertiesDatabase_Test, Test1) {
 
   props.origin = "from/1";
   props.to = "to/1";
-  props.scalar("relaxed_energy") = 0.2;
+  props.scalar("energy") = 0.2;
   props.site["test"] = Eigen::MatrixXd::Ones(3, 3);
 
   res = db_props.insert(props);
@@ -67,7 +67,7 @@ TEST(jsonPropertiesDatabase_Test, Test1) {
 
   props.origin = "from/2";
   props.to = "to/1";
-  props.scalar("relaxed_energy") = 0.3;
+  props.scalar("energy") = 0.3;
   props.site["test"] = Eigen::MatrixXd::Ones(3, 3);
 
   res = db_props.insert(props);

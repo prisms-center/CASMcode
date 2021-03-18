@@ -278,7 +278,7 @@ int format_command(const CommandArgs &args) {
              "    }\n"
              "  },\n"
              "  \"crystallography_tol\" : 1.0000000000000000e-05,\n"
-             "  \"curr_properties\" : [ \"relaxed_energy\" ],\n"
+             "  \"curr_properties\" : [ \"energy\" ],\n"
              "  \"default_clex\" : \"formation_energy\",\n"
              "  \"lin_alg_tol\" : 1.0000000000000000e-10,\n"
              "  \"name\" : \"ZrO\",\n"

@@ -505,11 +505,11 @@ Eigen::VectorXd species_frac(const Configuration &config);
 /// Structure::get_struc_molecule
 Eigen::VectorXd site_frac(const Configuration &config);
 
-/// \brief Returns the relaxed energy, normalized per unit cell
+/// \brief Returns the energy, normalized per unit cell
 double energy(const Configuration &config);
 
-/// \brief Returns the relaxed energy, normalized per species
-double relaxed_energy_per_species(const Configuration &config);
+/// \brief Returns the energy, normalized per species
+double energy_per_species(const Configuration &config);
 
 /// \brief Returns the reference energy, normalized per unit cell
 double reference_energy(const Configuration &config);

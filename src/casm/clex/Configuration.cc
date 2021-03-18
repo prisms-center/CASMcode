@@ -871,14 +871,14 @@ Eigen::VectorXd site_frac(const Configuration &config) {
   return comp_n(config) / config.prim().basis().size();
 }
 
-/// \brief Returns the relaxed energy, normalized per unit cell
+/// \brief Returns the energy, normalized per unit cell
 double energy(const Configuration &config) {
   return config.calc_properties().scalar("energy") /
          config.supercell().volume();
 }
 
-/// \brief Returns the relaxed energy, normalized per species
-double relaxed_energy_per_species(const Configuration &config) {
+/// \brief Returns the energy, normalized per species
+double energy_per_species(const Configuration &config) {
   return energy(config) / n_species(config);
 }
 

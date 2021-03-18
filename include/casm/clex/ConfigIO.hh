@@ -471,6 +471,8 @@ ConfigIO::GenericConfigFormatter<double> energy();
 
 ConfigIO::GenericConfigFormatter<double> relaxed_energy_per_species();
 
+ConfigIO::GenericConfigFormatter<double> energy_per_species();
+
 ConfigIO::GenericConfigFormatter<double> reference_energy();
 
 ConfigIO::GenericConfigFormatter<double> reference_energy_per_species();

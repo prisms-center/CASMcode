@@ -622,18 +622,18 @@ const std::string Update<Configuration>::desc =
     "         {\"method\":\"deformation_cost\":, \"lattice_weight\":0.5} \n\n"
 
     "    \"minimum\":\n"
-    "       \"property\": property name (ex: \"relaxed_energy\")\n"
+    "       \"property\": property name (ex: \"energy\")\n"
 
     "       Reads the specified property from the mapped properties and\n"
     "       selects the minimum to be the best mapping. Ex: \n"
-    "         {\"method\":\"minimum\":, \"property\": \"relaxed_energy\"} \n\n"
+    "         {\"method\":\"minimum\":, \"property\": \"energy\"} \n\n"
 
     "    \"maximum\":\n"
-    "       \"property\": property name (ex: \"relaxed_energy\")\n"
+    "       \"property\": property name (ex: \"energy\")\n"
 
     "       Reads the specified property from the mapped properties and\n"
     "       selects the maximum to be the best mapping. Ex: \n"
-    "         {\"method\":\"maximum\":, \"property\": \"relaxed_energy\"} \n\n"
+    "         {\"method\":\"maximum\":, \"property\": \"energy\"} \n\n"
 
     "    \"direct_selection\":\n"
     "       \"name\": configname to force as 'best' (ex: "
@@ -645,7 +645,7 @@ const std::string Update<Configuration>::desc =
     "\"SCEL3_1_1_3_0_0_0/4\"} \n\n"
 
     "  The default value used by CASM is:\n"
-    "    {\"method\": \"minimum\", \"property\": \"relaxed_energy\"}\n\n"
+    "    {\"method\": \"minimum\", \"property\": \"energy\"}\n\n"
 
     "Deformation cost:\n"
 

@@ -31,7 +31,7 @@ void build_project(ProjectSettings const &project_settings,
 /// Notes:
 /// - Uses `default_nlist_weight_matrix` and `default_nlist_sublat_indices`
 /// - Create default clex using `default_configuration_clex`
-/// - Sets required_properties for Configuration to "relaxed_energy"
+/// - Sets required_properties for Configuration to "energy"
 ProjectSettings make_default_project_settings(xtal::BasicStructure const &prim,
                                               std::string project_name);
 
@@ -41,7 +41,7 @@ ProjectSettings make_default_project_settings(xtal::BasicStructure const &prim,
 /// Notes:
 /// - Uses `default_nlist_weight_matrix` and `default_nlist_sublat_indices`
 /// - Create default clex using `default_configuration_clex`
-/// - Sets required_properties for Configuration to "relaxed_energy"
+/// - Sets required_properties for Configuration to "energy"
 /// - Sets root dir in project settings
 ProjectSettings make_default_project_settings(xtal::BasicStructure const &prim,
                                               std::string project_name,

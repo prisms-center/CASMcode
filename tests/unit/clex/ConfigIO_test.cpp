@@ -56,6 +56,8 @@ TEST(ConfigIOTest, DatumFormatters) {
   check(Novelty());
   check(relaxed_energy());
   check(relaxed_energy_per_species());
+  check(energy());
+  check(energy_per_species());
   check(reference_energy());
   check(reference_energy_per_species());
   check(formation_energy());

@@ -408,7 +408,7 @@ ChemicalReference auto_chemical_reference(const PrimClex &primclex,
     // return name of Configuration with param_comp closest to target_param_comp
     //   tie break goes to first Configuration with fewest atoms
     //
-    //   must be Configurations for which the relaxed_energy has been calculated
+    //   must be Configurations for which the energy has been calculated
     auto begin = primclex.db<Configuration>().begin();
     auto end = primclex.db<Configuration>().end();
     auto res = end;
@@ -478,7 +478,7 @@ ChemicalReference auto_chemical_reference(const PrimClex &primclex,
   for (auto it = ref_config.begin(); it != ref_config.end(); ++it) {
     ref_states.emplace_back(*primclex.db<Configuration>().find(*it),
                             ConfigIO::SpeciesFrac(),
-                            ConfigIO::relaxed_energy_per_species());
+                            ConfigIO::energy_per_species());
   }
 
   return ChemicalReference(primclex.prim(), ref_states.begin(),
