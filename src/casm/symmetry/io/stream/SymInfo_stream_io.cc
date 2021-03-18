@@ -263,11 +263,20 @@ std::string sym_plane(const xtal::Coordinate &v1, const xtal::Coordinate &v2,
     }
   }
   int min_j = -1;
-  for (int j = 1; j < 3; ++j) {
+  for (int j = 0; j < 3; ++j) {
     if (!almost_zero(b[j], tol) && j != min_i) {
       min_j = j;
       break;
     }
+  }
+
+  if (min_i == -1 || min_j == -1) {
+    std::stringstream msg;
+    msg << "Unexpected error in sym_plane: Could not write a description for "
+           "the symmetry plane defined by a: "
+        << a.transpose() << ", b: " << b.transpose()
+        << ", p: " << p.transpose();
+    throw std::runtime_error(msg.str());
   }
 
   // associate lesser of 'x','y','z' with 'a'
