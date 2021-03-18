@@ -26,7 +26,7 @@ class Base {
  public:
   typedef unsigned int size_type;
 
-  Base(size_type _nlist_size, size_type _corr_size);
+  Base(size_type _nlist_size, size_type _corr_size, size_type _n_point_corr);
 
   virtual ~Base();
 
@@ -35,6 +35,12 @@ class Base {
 
   /// \brief Number of correlations
   size_type corr_size() const { return m_corr_size; }
+
+  /// \brief Valid range for `neighbor_ind` argument to calc_point_corr
+  ///
+  /// - For periodic clex, this is the number of sublattices.
+  /// - For local clex, this is the neighbor list size.
+  size_type n_point_corr() const { return m_n_point_corr; }
 
   /// \brief Clone the Clexulator
   std::unique_ptr<Base> clone() const;
@@ -310,6 +316,9 @@ class Base {
   /// \brief The number of correlations
   size_type m_corr_size;
 
+  /// \brief Valid range for `neighbor_ind` argument to calc_point_corr
+  size_type m_n_point_corr;
+
   std::map<std::string, Index> m_local_dof_registry;
 
   std::map<std::string, Index> m_global_dof_registry;
@@ -469,6 +478,12 @@ class Clexulator {
 
   /// \brief Number of correlations
   size_type corr_size() const { return m_clex->corr_size(); }
+
+  /// \brief Valid range for `neighbor_ind` argument to calc_point_corr
+  ///
+  /// - For periodic clex, this is the number of sublattices.
+  /// - For local clex, this is the neighbor list size.
+  size_type n_point_corr() const { return m_clex->n_point_corr(); }
 
   /// \brief Obtain const reference to abstract ClexParamPack object
   ClexParamPack const &param_pack() const { return m_clex->param_pack(); }

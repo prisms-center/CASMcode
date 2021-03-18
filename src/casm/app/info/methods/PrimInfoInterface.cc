@@ -96,7 +96,7 @@ void PrimInfoInterface::run(jsonParser const &json_options,
 
   jsonParser json;
   formatter.to_json(shared_prim, json);
-  log << json;
+  log << json << std::endl;
 }
 
 }  // namespace CASM

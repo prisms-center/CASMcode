@@ -469,6 +469,17 @@ Configuration make_configuration(const PrimClex &primclex, std::string name);
 Eigen::VectorXd correlations(const Configuration &config,
                              Clexulator const &clexulator);
 
+/// Returns correlation contribution from a single unit cell, not normalized.
+Eigen::VectorXd corr_contribution(Index linear_unitcell_index,
+                                  const Configuration &config,
+                                  Clexulator const &clexulator);
+
+/// \brief Returns point correlations from a single site, normalized by cluster
+/// orbit size
+Eigen::VectorXd point_corr(Index linear_unitcell_index, Index neighbor_index,
+                           const Configuration &config,
+                           Clexulator const &clexulator);
+
 /// \brief Returns gradient correlations using 'clexulator', with respect to DoF
 /// 'dof_type'
 Eigen::MatrixXd gradcorrelations(const Configuration &config,
@@ -598,6 +609,18 @@ bool has_relaxed_mag_basis(const Configuration &_config);
 /// populated neighbor list.
 Eigen::VectorXd correlations(const ConfigDoF &configdof, const Supercell &scel,
                              Clexulator const &clexulator);
+
+/// Returns correlation contribution from a single unit cell, not normalized.
+Eigen::VectorXd corr_contribution(Index linear_unitcell_index,
+                                  const ConfigDoF &configdof,
+                                  const Supercell &scel,
+                                  Clexulator const &clexulator);
+
+/// \brief Returns point correlations from a single site, normalized by cluster
+/// orbit size
+Eigen::VectorXd point_corr(Index linear_unitcell_index, Index neighbor_index,
+                           const ConfigDoF &configdof, const Supercell &scel,
+                           Clexulator const &clexulator);
 
 /// \brief Returns gradient correlations using 'clexulator', with respect to DoF
 /// 'dof_type'
