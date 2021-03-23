@@ -127,20 +127,6 @@ conda_exists () {
 
     echo "# Found: $VERS"
     echo "# Installed here: $LOC"
-    echo "#"
-    echo "# Your shell has not been properly configured to use 'conda activate'."
-    echo "#"
-    echo "# If you have not, please update to conda >=4.4."
-    echo "# To update conda, do:"
-    echo "#"
-    echo "#     $ conda update conda"
-    echo "#"
-    echo "# Previous to conda 4.4, the recommended way to activate conda was to modify PATH in"
-    echo "# your ~/.bash_profile file to include '$LOC/bin'. Now to use conda do: "
-    echo "#"
-    echo "#     $ . $LOC/etc/profile.d/conda.sh"
-    echo "#"
-    exit 1
   fi
   find_conda_dir
   return $?
