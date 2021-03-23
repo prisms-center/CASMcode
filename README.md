@@ -6,18 +6,19 @@ CASM [(https://github.com/prisms-center/CASMcode)](https://github.com/prisms-cen
 This version of CASM supports:
 
 - Constructing, fitting, and evaluating cluster expansion effective Hamiltonians with:
-  - Occupational degrees of freedom.
+  - Occupational degrees of freedom
+  - Strain degrees of freedom
+  - Displacement degrees of freedom
 - High-throughput calculations using:
   - [VASP](https://www.vasp.at)  
-  - [Quantum Espresso](https://www.quantum-espresso.org/)
-  - [SeqQuest](https://dft.sandia.gov/Quest/SeqQ_Home.html)
+  - (update for 1.X in progress) [Quantum Espresso](https://www.quantum-espresso.org/)
 - Monte Carlo calculations using:
   - Semi-grand canonical ensemble
   - Canonical ensemble
 
-CASM is updated frequently with support for new effective Hamiltonians, new interfaces for first-principles electronic structure codes, and new Monte Carlo methods. Collaboration is welcome and new features can be incorporated by forking the repository on GitHub, creating a new feature, and submitting pull requests. If you are interested in developing features that involve a significant time investment we encourage you to first contact the CASM development team at <casm-developers@lists.engr.ucsb.edu>.
+Collaboration is welcome and new features can be incorporated by forking the repository on GitHub, creating a new feature, and submitting pull requests. If you are interested in developing features that involve a significant time investment we encourage you to first contact the CASM development team at <casm-developers@lists.engr.ucsb.edu>.
 
-CASM is currently beta software with very active development. Our goal is that the ``casm`` program interface, including file input and output formats, is mostly stable and backwards compatiblity will be taken into account as new features are added (though some breaking changes may occur as we learn from experience). The CASM library ``libcasm`` is much less stable and we anticipate significant changes will be incorporated in the near future.
+For a particular major version number, the ``ccasm`` program interface, including file input and output formats, will remain stable and backwards compatible. The CASM library ``libcasm`` is less stable and may have some breaking changes without changing the major version number.
 
 
 #### Getting Started
@@ -61,8 +62,3 @@ GNU Lesser General Public License (LGPL). Please see the file LICENSE for detail
 #### For Developers
 
 See INSTALL.md
-
-
-
-
-
