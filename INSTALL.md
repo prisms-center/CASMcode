@@ -27,7 +27,7 @@ Dependencies
 
 ### C++17
 
-CASM must be compiled with a compiler that supports the C++17 standard. Testing is done with gcc-8 and Xcode-11.6.
+CASM must be compiled with a compiler that supports the C++17 standard. Testing is done with gcc-9 and Xcode-11.6.
 
 *Note: On Mac OS X it is necessary to have the Xcode command line tools installed. To install, run ``xcode-select --install`` from the Terminal.*
 
