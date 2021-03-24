@@ -108,11 +108,11 @@ jsonParser &to_json(xtal::Molecule const &mol, jsonParser &json,
 void from_json(xtal::Molecule &mol, const jsonParser &json,
                Eigen::Ref<const Eigen::Matrix3d> const &f2c_mat,
                ParsingDictionary<AnisoValTraits> const &_aniso_val_dict) {
-  std::vector<xtal::AtomPosition> _atoms;
   if (json.contains("atoms")) {
+    std::vector<xtal::AtomPosition> _atoms;
     CASM::from_json(_atoms, json["atoms"], f2c_mat, _aniso_val_dict);
+    mol.set_atoms(_atoms);
   }
-  mol.set_atoms(_atoms);
 
   std::map<std::string, xtal::SpeciesAttribute> attr_map;
   if (json.contains("attributes")) {

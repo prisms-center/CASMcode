@@ -31,8 +31,6 @@ bool compare_type(AtomPosition const &A, AtomPosition const &B, double tol) {
   return true;
 }
 
-//****************************************************
-
 bool Molecule::is_atomic() const {
   if (size() != 1) return false;
   if (!attributes().empty()) return false;
@@ -42,10 +40,8 @@ bool Molecule::is_atomic() const {
   }
   return true;
 }
-//****************************************************
 
 bool Molecule::is_vacancy() const {
-  // return m_atoms.empty();
   return ::CASM::xtal::is_vacancy(m_atoms[0].name());
 }
 
@@ -81,15 +77,6 @@ bool Molecule::contains(std::string const &_name) const {
   for (Index i = 0; i < size(); i++)
     if (atom(i).name() == _name) return true;
   return false;
-}
-
-Molecule Molecule::make_atom(std::string const &atom_name) {
-  return Molecule(atom_name, {AtomPosition(0., 0., 0., atom_name)});
-}
-
-Molecule Molecule::make_vacancy() {
-  // return Molecule("Va", {});
-  return make_atom("Va");
 }
 
 }  // namespace xtal
