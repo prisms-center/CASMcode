@@ -598,29 +598,29 @@ int format_command(const CommandArgs &args) {
              "where 'A' is the 3x3 'operation matrix' and 'b' is the      \n"
              "'shift' vector.                                             \n\n";
 
-    "For a crystal or PRIM file, CASM reports the following      \n"
-    "groups:\n\n"
+    log() << "For a crystal or PRIM file, CASM reports the following      \n"
+             "groups:\n\n"
 
-    "lattice_point_group.json:                                   \n"
-    "  This is the point group of the Bravais lattice, and is the\n"
-    "  list of operations that map the lattice vectors onto      \n"
-    "  themselves. The 'shift' vectors will always be zero.      \n\n"
+             "lattice_point_group.json:                                   \n"
+             "  This is the point group of the Bravais lattice, and is the\n"
+             "  list of operations that map the lattice vectors onto      \n"
+             "  themselves. The 'shift' vectors will always be zero.      \n\n"
 
-    "factor_group.json:                                          \n"
-    "  This is a finite description of the crystal spacegroup, in\n"
-    "  which all redundant operations that differ only by a 'shift'\n"
-    "  are represented by a single operation, whose 'shift' lies \n"
-    "  within the primitive cell. Formally, this is a group      \n"
-    "  formed by the cosets of 'T' in 'S', where 'T' is the      \n"
-    "  translation group of the Bravais lattice and 'S' is the   \n"
-    "  crystal space group.                                      \n\n"
+             "factor_group.json:                                          \n"
+             "  This is a finite description of the crystal spacegroup, in\n"
+             "  which all redundant operations that differ only by a 'shift'\n"
+             "  are represented by a single operation, whose 'shift' lies \n"
+             "  within the primitive cell. Formally, this is a group      \n"
+             "  formed by the cosets of 'T' in 'S', where 'T' is the      \n"
+             "  translation group of the Bravais lattice and 'S' is the   \n"
+             "  crystal space group.                                      \n\n"
 
-    "crystal_point_group.json:                                   \n"
-    "  This is a group of point operations formed by taking the  \n"
-    "  factor group operations and setting their 'shifts' to     \n"
-    "  zero. Macroscopic properties of the crystal must exhibit  \n"
-    "  the symmetries of the crystal point group. It is, by      \n"
-    "  definition a subgroup of the lattice point group.         \n";
+             "crystal_point_group.json:                                   \n"
+             "  This is a group of point operations formed by taking the  \n"
+             "  factor group operations and setting their 'shifts' to     \n"
+             "  zero. Macroscopic properties of the crystal must exhibit  \n"
+             "  the symmetries of the crystal point group. It is, by      \n"
+             "  definition a subgroup of the lattice point group.         \n";
 
     log() << "\n\n";
   }
