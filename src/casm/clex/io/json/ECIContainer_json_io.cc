@@ -11,10 +11,16 @@ namespace CASM {
 /// Format:
 /// \code
 /// {
-///   "orbits":[  // "cluster_functions", prior to 1.0.X
+///   "orbits": [
 ///     {
-///       "eci": <float>,
-///       "linear_orbit_index": <int>, // "linear_cluster_index", prior to 1.0.X
+///       "cluster_functions": [
+///         {
+///           "\\Phi_{<linear_function_index>}": <formula>,
+///           "eci": <number>,
+///           "linear_function_index": <integer>
+///         },
+///         ...
+///       ],
 ///       ...
 ///     },
 ///     ...
@@ -29,24 +35,9 @@ namespace CASM {
 ///   compatibility, that format is also accepted.
 ///
 void parse(InputParser<ECIContainer> &parser) {
-  std::string orbits_name = "orbits";
-  std::string index_name = "linear_orbit_index";
-
-  // v0.X compatibility mode:
-  if (parser.self.contains("cluster_functions") &&
-      !parser.self.contains("orbits")) {
-    err_log() << "WARNING: Detected old ECI format (version < 1.0.X): Reading "
-                 "\"cluster_functions\" instead of \"orbits\", and "
-                 "\"linear_cluster_index\" instead of \"linear_orbit_index\"."
-              << std::endl;
-
-    orbits_name = "cluster_functions";
-    index_name = "linear_cluster_functions";
-  }
-
-  if (parser.self.find(orbits_name) == parser.self.end()) {
+  if (parser.self.find("orbits") == parser.self.end()) {
     std::stringstream msg;
-    msg << "Error parsing ECI: '" << orbits_name << "' array not found";
+    msg << "Error parsing ECI: 'orbits' array not found";
     parser.error.insert(msg.str());
     return;
   }
@@ -54,20 +45,34 @@ void parse(InputParser<ECIContainer> &parser) {
   std::vector<double> value;
   std::vector<ECIContainer::size_type> index;
 
-  jsonParser const &orbits_json = parser.self[orbits_name];
-  fs::path orbits_path{orbits_name};
-  Index i = 0;
-  for (auto const &orbit : orbits_json) {
-    if (orbit.find("eci") != orbit.end()) {
-      double eci_value;
-      ECIContainer::size_type linear_orbit_index;
-      fs::path orbit_path = orbits_path / std::to_string(i);
-      parser.require(eci_value, orbit_path / "eci");
-      parser.require(linear_orbit_index, orbit_path / index_name);
-      value.push_back(eci_value);
-      index.push_back(linear_orbit_index);
+  jsonParser const &orbits_json = parser.self["orbits"];
+  fs::path orbits_path{"orbits"};
+  Index orbit_index = 0;
+  for (auto const &orbit_json : orbits_json) {
+    fs::path orbit_path = orbits_path / std::to_string(orbit_index);
+    if (!orbit_json.contains("cluster_functions")) {
+      parser.insert_error(orbit_path, "Error: missing 'cluster_functions'");
+      return;
     }
-    ++i;
+    jsonParser const &cluster_functions_json = orbit_json["cluster_functions"];
+    Index function_index = 0;
+    for (auto const &function_json : cluster_functions_json) {
+      if (function_json.find("eci") != function_json.end()) {
+        fs::path func_path =
+            orbit_path / "cluster_functions" / std::to_string(function_index);
+
+        double eci_value;
+        parser.require(eci_value, func_path / "eci");
+        value.push_back(eci_value);
+
+        ECIContainer::size_type linear_function_index;
+        parser.require(linear_function_index,
+                       func_path / "linear_function_index");
+        index.push_back(linear_function_index);
+      }
+      ++function_index;
+    }
+    ++orbit_index;
   }
   parser.value = notstd::make_unique<ECIContainer>(value.begin(), value.end(),
                                                    index.begin());

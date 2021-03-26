@@ -95,6 +95,23 @@ void ProtoFuncsPrinter::operator()(const OrbitType &orbit, Log &out,
   }
 }
 
+/// Print prototype functions to JSON
+///
+/// Format:
+/// \code
+/// {
+///   "prototype": <IntegralCluster JSON>,
+///   "linear_orbit_index": <integer>, // cluster orbit index
+///   "mult": <integer>, // orbit size
+///   // factor group indices of invariant group operations
+///   "invariant_group": [<integer>, <intger>, ...],
+///   // 'brief' symop descriptions
+///   "invariant_group_descriptions": [<str>, <str>, ...]
+///   "cluster_functions": [
+///
+///   ]
+/// }
+/// \endcode
 template <typename OrbitType>
 jsonParser &ProtoFuncsPrinter::to_json(const OrbitType &orbit, jsonParser &json,
                                        Index orbit_index, Index Norbits) const {
@@ -106,8 +123,8 @@ jsonParser &ProtoFuncsPrinter::to_json(const OrbitType &orbit, jsonParser &json,
     this->print_invariant_group(orbit, orbit.prototype(), json["prototype"]);
   }
 
-  jsonParser &orbitf = json["cluster_functions"];
-  orbitf = jsonParser::array();
+  jsonParser &cluster_functions_json = json["cluster_functions"];
+  cluster_functions_json = jsonParser::array();
 
   // basis function info
   Index func_index = 0;
@@ -121,9 +138,12 @@ jsonParser &ProtoFuncsPrinter::to_json(const OrbitType &orbit, jsonParser &json,
   }
 
   for (Index nf = 0; nf < tbasis.size(); ++nf) {
-    orbitf.push_back(
-        json_pair("\\Phi_{" + std::to_string(func_index + nf) + "}",
-                  tbasis[nf]->tex_formula()));
+    Index linear_function_index = func_index + nf;
+    jsonParser func_json = jsonParser::object();
+    func_json["\\Phi_{" + std::to_string(linear_function_index) + "}"] =
+        tbasis[nf]->tex_formula();
+    func_json["linear_function_index"] = linear_function_index;
+    cluster_functions_json.push_back(func_json);
   }
 
   return json;
