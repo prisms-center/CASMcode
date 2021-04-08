@@ -256,11 +256,9 @@ GenericScelFormatter<Index> factorgroup_size() {
 }
 
 GenericScelFormatter<double> volume() {
-  return GenericScelFormatter<double>("volume", "Supercell volume (length^3)",
-                                      [](const Supercell &scel) -> double {
-                                        return scel.volume() *
-                                               scel.lattice().volume();
-                                      });
+  return GenericScelFormatter<double>(
+      "volume", "Supercell volume (length^3)",
+      [](const Supercell &scel) -> double { return scel.lattice().volume(); });
 }
 
 GenericVectorXdScelFormatter lattice() {

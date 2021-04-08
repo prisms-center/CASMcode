@@ -120,16 +120,37 @@ std::pair<OpIterator, Eigen::Matrix3d> is_equivalent_superlattice(
   return std::make_pair(end, res.second);
 }
 
-///\brief returns Lattice that is smallest possible superlattice of all input
-/// Lattice
+/// [deprecated] Equivalent to `make_minimal_commensurate_superduperlattice`
+template <typename LatIterator, typename SymOpIterator>
+Lattice make_equivalent_superduperlattice(LatIterator begin, LatIterator end,
+                                          SymOpIterator op_begin,
+                                          SymOpIterator op_end) {
+  return make_minimal_commensurate_superduperlattice(begin, end, op_begin,
+                                                     op_end);
+}
+
+/// Returns the Lattice that is a superlattice of all input Lattice
+template <typename LatIterator>
+Lattice make_commensurate_superduperlattice(LatIterator begin,
+                                            LatIterator end) {
+  Lattice result = *begin;
+  for (auto it = ++begin; it != end; ++it) {
+    result = make_superduperlattice(result, *it);
+  }
+  return result;
+}
+
+/// \brief Returns the Lattice that is the smallest possible superlattice of
+/// an equivalent Lattice to all input Lattice
 ///
 /// SymOpIterator are provided to apply to each Lattice in an attempt
 /// to find the smallest possible superduperlattice of all symmetrically
 /// transformed Lattice
 template <typename LatIterator, typename SymOpIterator>
-Lattice make_equivalent_superduperlattice(LatIterator begin, LatIterator end,
-                                          SymOpIterator op_begin,
-                                          SymOpIterator op_end) {
+Lattice make_minimal_commensurate_superduperlattice(LatIterator begin,
+                                                    LatIterator end,
+                                                    SymOpIterator op_begin,
+                                                    SymOpIterator op_end) {
   Lattice best = *begin;
   for (auto it = ++begin; it != end; ++it) {
     Lattice tmp_best = make_superduperlattice(best, *it);
@@ -142,6 +163,25 @@ Lattice make_equivalent_superduperlattice(LatIterator begin, LatIterator end,
     best = tmp_best;
   }
   return best;
+}
+
+/// \brief Returns the Lattice that is a superlattice of all equivalents of all
+/// input Lattice
+///
+/// SymOpIterator are provided to apply to each Lattice in order find a
+/// superlattice of all equivalents of all input lattice
+template <typename LatIterator, typename SymOpIterator>
+Lattice make_fully_commensurate_superduperlattice(LatIterator begin,
+                                                  LatIterator end,
+                                                  SymOpIterator op_begin,
+                                                  SymOpIterator op_end) {
+  Lattice result = *begin;
+  for (auto it = ++begin; it != end; ++it) {
+    for (auto op_it = op_begin; op_it != op_end; ++op_it) {
+      result = make_superduperlattice(result, sym::copy_apply(*op_it, *it));
+    }
+  }
+  return result;
 }
 
 }  // namespace xtal

@@ -7,10 +7,7 @@
 #include "casm/symmetry/SymOp.hh"
 #include "casm/symmetry/SymOpRepresentation.hh"
 
-// TODO:
-// Why does this class exist again? Literally nothing is using it.
-// It depends fundamentally on CASM::SymOp, so it's getting the boot.
-// Don't keep it in xtal.
+// TODO: Move to symmetry
 
 namespace CASM {
 class SymGroup;

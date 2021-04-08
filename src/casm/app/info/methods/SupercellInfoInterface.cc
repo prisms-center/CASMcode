@@ -2,6 +2,7 @@
 
 #include "casm/app/ProjectSettings.hh"
 #include "casm/casm_io/Log.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/casm_io/container/stream_io.hh"
 #include "casm/casm_io/dataformatter/DataFormatterTools_impl.hh"
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
@@ -9,12 +10,26 @@
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
+#include "casm/crystallography/CanonicalForm.hh"
+#include "casm/crystallography/LatticeEnumEquivalents.hh"
+#include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/SuperlatticeEnumerator.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/io/BasicStructureIO.hh"
 #include "casm/symmetry/SupercellSymInfo.hh"
 #include "casm/symmetry/io/data/SupercellSymInfo_data_io.hh"
 
 namespace CASM {
+
+// declarations:
+namespace {
+
+std::vector<Lattice> parse_params_supercells(
+    jsonParser const &params_json,
+    std::shared_ptr<Structure const> shared_prim);
+
+}
 
 namespace {
 
@@ -27,18 +42,35 @@ std::shared_ptr<Structure const> open_shared_prim(fs::path root) {
 /// Data structure for formatting properties of prim and supercell_sym_info
 struct SupercellInfoData {
   SupercellInfoData(std::shared_ptr<Structure const> _shared_prim,
-                    SupercellSymInfo const &_supercell_sym_info)
-      : shared_prim(_shared_prim), supercell_sym_info(_supercell_sym_info) {}
+                    SupercellSymInfo const &_supercell_sym_info,
+                    jsonParser const &_params_json)
+      : shared_prim(_shared_prim),
+        supercell_sym_info(_supercell_sym_info),
+        params_json(_params_json) {}
 
   std::shared_ptr<Structure const> shared_prim;
 
   SupercellSymInfo const &supercell_sym_info;
+
+  jsonParser const &params_json;
 };
 
 // use for ValueType=bool, int, double, std::string, jsonParser
 template <typename ValueType>
 using SupercellInfoFormatter =
     GenericDatumFormatter<ValueType, SupercellInfoData>;
+
+typedef Generic1DDatumFormatter<Eigen::VectorXd, SupercellInfoData>
+    VectorXdSupercellInfoFormatter;
+
+typedef Generic1DDatumFormatter<Eigen::VectorXi, SupercellInfoData>
+    VectorXiSupercellInfoFormatter;
+
+typedef Generic2DDatumFormatter<Eigen::MatrixXd, SupercellInfoData>
+    MatrixXdSupercellInfoFormatter;
+
+typedef Generic2DDatumFormatter<Eigen::MatrixXi, SupercellInfoData>
+    MatrixXiSupercellInfoFormatter;
 
 SupercellInfoFormatter<std::string> supercell_name() {
   return SupercellInfoFormatter<std::string>(
@@ -65,6 +97,326 @@ SupercellInfoFormatter<std::string> canonical_supercell_name() {
       });
 }
 
+SupercellInfoFormatter<bool> is_canonical() {
+  return SupercellInfoFormatter<bool>(
+      "is_canonical", "Returns true if supercell lattice is in canonical form.",
+      [](SupercellInfoData const &data) -> bool {
+        return xtal::canonical::check(
+            data.supercell_sym_info.supercell_lattice(),
+            data.shared_prim->point_group());
+      });
+}
+
+SupercellInfoFormatter<Index> multiplicity() {
+  return SupercellInfoFormatter<Index>(
+      "multiplicity", "Number of equivalent supercells",
+      [](SupercellInfoData const &data) -> Index {
+        return data.shared_prim->factor_group().size() /
+               data.supercell_sym_info.factor_group().size();
+      });
+}
+
+SupercellInfoFormatter<jsonParser> orbit() {
+  return SupercellInfoFormatter<jsonParser>(
+      "orbit",
+      "Array of equivalent supercell lattices, specified as lattice row vector "
+      "matrices.",
+      [](SupercellInfoData const &data) -> jsonParser {
+        jsonParser orbit = jsonParser::array();
+
+        xtal::Lattice canonical_lattice = xtal::canonical::equivalent(
+            data.supercell_sym_info.supercell_lattice(),
+            data.shared_prim->point_group());
+
+        LatticeEnumEquivalents equivalent_lattice_enumerator(
+            canonical_lattice, data.shared_prim->factor_group());
+
+        for (xtal::Lattice const &lattice : equivalent_lattice_enumerator) {
+          jsonParser tjson;
+          to_json(lattice.lat_column_mat().transpose(), tjson);
+          orbit.push_back(tjson);
+        }
+        return orbit;
+      });
+}
+
+SupercellInfoFormatter<jsonParser> frac_coordinate() {
+  return SupercellInfoFormatter<jsonParser>(
+      "frac_coordinate",
+      "Fractional coordinate (with respect to the supercell lattice vectors) "
+      "of every site in the supercell.",
+      [](SupercellInfoData const &data) -> jsonParser {
+        auto const &prim = *data.shared_prim;
+        jsonParser json = jsonParser::array();
+        auto f = data.supercell_sym_info.unitcellcoord_index_converter();
+        for (Index l = 0; l < f.total_sites(); l++) {
+          jsonParser l_json;
+          xtal::Coordinate coord = f(l).coordinate(prim);
+          coord.set_lattice(data.supercell_sym_info.supercell_lattice(), CART);
+          to_json_array(coord.const_frac(), l_json);
+          json.push_back(l_json);
+        }
+        return json;
+      });
+}
+
+SupercellInfoFormatter<jsonParser> cart_coordinate() {
+  return SupercellInfoFormatter<jsonParser>(
+      "cart_coordinate", "Cartesian coordinate of every site in the supercell.",
+      [](SupercellInfoData const &data) -> jsonParser {
+        auto const &prim = *data.shared_prim;
+        jsonParser json = jsonParser::array();
+        auto f = data.supercell_sym_info.unitcellcoord_index_converter();
+        for (Index l = 0; l < f.total_sites(); l++) {
+          jsonParser l_json;
+          to_json_array(f(l).coordinate(prim).const_cart(), l_json);
+          json.push_back(l_json);
+        }
+        return json;
+      });
+}
+
+SupercellInfoFormatter<jsonParser> is_supercell_of() {
+  return SupercellInfoFormatter<jsonParser>(
+      "is_supercell_of",
+      "For each supercell lattice, L, in the `params/supercells` array, "
+      "determine if the input supercell lattice, S, is a supercell of L. "
+      "Returns an array of JSON objects with the following results for each "
+      "input supercell lattice: `value` (bool), and the values of `S`, `L` and "
+      "`T` in `S = L * "
+      "T`, where S and L are column vector matrices and T is an integer "
+      "transformation matrix if S is a supercell of L and T is a floating "
+      "point matrix if S is not a supercell of L.",
+      [](SupercellInfoData const &data) -> jsonParser {
+        std::vector<xtal::Lattice> supercells =
+            parse_params_supercells(data.params_json, data.shared_prim);
+        double tol = TOL;
+        xtal::Lattice const &S = data.supercell_sym_info.supercell_lattice();
+        jsonParser result = jsonParser::array();
+        for (xtal::Lattice const &L : supercells) {
+          auto pair = xtal::is_superlattice(S, L, tol);
+          jsonParser json;
+          json["value"] = pair.first;
+          json["S"] = S.lat_column_mat();
+          json["L"] = L.lat_column_mat();
+          if (pair.first) {
+            json["T"] = lround(pair.second);
+          } else {
+            json["T"] = pair.second;
+          }
+          result.push_back(json);
+        }
+        return result;
+      });
+}
+
+SupercellInfoFormatter<jsonParser> is_unitcell_of() {
+  return SupercellInfoFormatter<jsonParser>(
+      "is_unitcell_of",
+      "For each supercell lattice, L, in the `params/supercells` array, "
+      "determine if the input supercell lattice, S, is a unit cell of L. "
+      "Returns an array of JSON objects with the following results for each "
+      "input supercell lattice: `value` (bool), and the values of `S`, `L` "
+      "and `T` in `L = S "
+      "* T`, where S and L are column vector matrices and T is an integer "
+      "transformation matrix if S is a unit cell of L and T is a floating "
+      "point matrix if S is not a unit cell of L.",
+      [](SupercellInfoData const &data) -> jsonParser {
+        std::vector<xtal::Lattice> supercells =
+            parse_params_supercells(data.params_json, data.shared_prim);
+        double tol = TOL;
+        xtal::Lattice const &S = data.supercell_sym_info.supercell_lattice();
+        jsonParser result = jsonParser::array();
+        for (xtal::Lattice const &L : supercells) {
+          auto pair = xtal::is_superlattice(L, S, tol);
+          jsonParser json;
+          json["value"] = pair.first;
+          json["S"] = S.lat_column_mat();
+          json["L"] = L.lat_column_mat();
+          if (pair.first) {
+            json["T"] = lround(pair.second);
+          } else {
+            json["T"] = pair.second;
+          }
+          result.push_back(json);
+        }
+        return result;
+      });
+}
+
+SupercellInfoFormatter<jsonParser> is_equivalent_to() {
+  return SupercellInfoFormatter<jsonParser>(
+      "is_equivalent_to",
+      "For each supercell lattice, L, in the `params/supercells` array, "
+      "determine if the input supercell lattice, S, is equivalent to L. "
+      "Returns an array of JSON objects with the following results for each "
+      "input supercell lattice: `value` (bool), and the values of `S`, `L` "
+      "and `U` in `S = L "
+      "* U`, where S and L are column vector matrices, and U is a unimodular "
+      "matrix (integer transformation matrix with determinant==1) if S is "
+      "equivalent to L and U is a floating point matrix if S is not "
+      "equivalent to L.",
+      [](SupercellInfoData const &data) -> jsonParser {
+        std::vector<Lattice> supercells =
+            parse_params_supercells(data.params_json, data.shared_prim);
+        xtal::Lattice const &S = data.supercell_sym_info.supercell_lattice();
+        xtal::LatticeIsEquivalent f{S};
+        jsonParser result = jsonParser::array();
+        for (xtal::Lattice const &L : supercells) {
+          bool value = f(L);
+          jsonParser json;
+          json["value"] = value;
+          json["S"] = S.lat_column_mat();
+          json["L"] = L.lat_column_mat();
+          if (value) {
+            json["U"] = lround(f.U());
+          } else {
+            json["U"] = f.U();
+          }
+          result.push_back(json);
+        }
+        return result;
+      });
+}
+
+SupercellInfoFormatter<jsonParser> is_equivalent_to_a_supercell_of() {
+  return SupercellInfoFormatter<jsonParser>(
+      "is_equivalent_to_a_supercell_of",
+      "For each supercell lattice, L, in the `params/supercells` array, "
+      "determine if the input supercell lattice, S, is equivalent to a "
+      "supercell of L. Returns an array of JSON objects with the following "
+      "results for each input supercell lattice: `value` (bool), and the "
+      "values of `S`, `R`, "
+      "`L` and `T` in `S = R * L * T`, where S and L are column vector "
+      "matrices, R is a Cartesian symmetry matrix of a prim point group "
+      "operation, and T is an integer transformation matrix if S is "
+      "equivalent to a supercell of L and T is a floating point matrix if S "
+      "is not equivalent to a supercell of L.",
+      [](SupercellInfoData const &data) -> jsonParser {
+        std::vector<xtal::Lattice> supercells =
+            parse_params_supercells(data.params_json, data.shared_prim);
+        double tol = TOL;
+        xtal::Lattice const &S = data.supercell_sym_info.supercell_lattice();
+        auto begin = data.shared_prim->point_group().begin();
+        auto end = data.shared_prim->point_group().end();
+
+        jsonParser result = jsonParser::array();
+        for (xtal::Lattice const &L : supercells) {
+          auto pair = xtal::is_equivalent_superlattice(S, L, begin, end, tol);
+          bool value = (pair.first != end);
+          jsonParser json;
+          json["value"] = value;
+          json["S"] = S.lat_column_mat();
+          json["L"] = L.lat_column_mat();
+          if (value) {
+            json["R"] = pair.first->matrix();
+            json["T"] = lround(pair.second);
+          } else {
+            json["R"] = Eigen::Matrix3d::Identity();
+            json["T"] = is_superlattice(S, L, tol).second;
+          }
+          result.push_back(json);
+        }
+        return result;
+      });
+}
+
+MatrixXdSupercellInfoFormatter commensurate_superlattice_of() {
+  return MatrixXdSupercellInfoFormatter(
+      "commensurate_superlattice_of",
+      "Calculate a superlattice, S, which is a supercell of all supercell "
+      "lattices, L(i), in the `params/supercells` array. Returns S such that "
+      "`S = L_i*T_i` for all i, where S and L_i are column vector matrices, "
+      "and T_i are integer transformation matrices.",
+      [](SupercellInfoData const &data) -> Eigen::MatrixXd {
+        std::vector<Lattice> supercells =
+            parse_params_supercells(data.params_json, data.shared_prim);
+        Lattice S = make_commensurate_superduperlattice(supercells.begin(),
+                                                        supercells.end());
+        return S.lat_column_mat();
+      });
+}
+
+MatrixXdSupercellInfoFormatter minimal_commensurate_superlattice_of() {
+  return MatrixXdSupercellInfoFormatter(
+      "minimal_commensurate_superlattice_of",
+      "Calculate a superlattice, S, which the minimum volume superlattice "
+      "that is equivalent to a supercell of all supercell lattices, L(i), in "
+      "the `params/supercells` array. Returns minimum volume superlattice S "
+      "such that `S = R_i*L_i*T_i` for all i, where S and L_i are column "
+      "vector matrices, R_i is a Cartesian symmetry matrix of a prim point "
+      "group operation, and T_i are integer transformation matrices.",
+      [](SupercellInfoData const &data) -> Eigen::MatrixXd {
+        std::vector<Lattice> supercells =
+            parse_params_supercells(data.params_json, data.shared_prim);
+        auto begin = data.shared_prim->point_group().begin();
+        auto end = data.shared_prim->point_group().end();
+        Lattice S = make_minimal_commensurate_superduperlattice(
+            supercells.begin(), supercells.end(), begin, end);
+        return S.lat_column_mat();
+      });
+}
+
+MatrixXdSupercellInfoFormatter fully_commensurate_superlattice_of() {
+  return MatrixXdSupercellInfoFormatter(
+      "fully_commensurate_superlattice_of",
+      "Calculate a superlattice, S, which is a supercell of all equivalents "
+      "of all input supercell lattices, L(i), in the `params/supercells` "
+      "array. Returns S such that `S = R_j*L_i*T_{i,j}` for all (i, j), "
+      "where S and L_i are column vector matrices, R_j is a Cartesian "
+      "symmetry matrix of a prim point group operation, and T_{i,j} are "
+      "integer transformation matrices.",
+      [](SupercellInfoData const &data) -> Eigen::MatrixXd {
+        std::vector<Lattice> supercells =
+            parse_params_supercells(data.params_json, data.shared_prim);
+        auto begin = data.shared_prim->point_group().begin();
+        auto end = data.shared_prim->point_group().end();
+        Lattice S = make_fully_commensurate_superduperlattice(
+            supercells.begin(), supercells.end(), begin, end);
+        return S.lat_column_mat();
+      });
+}
+
+MatrixXiSupercellInfoFormatter enforce_minimum_size() {
+  return MatrixXiSupercellInfoFormatter(
+      "enforce_minimum_size",
+      "Calculate the minimum size superlattice, S, of the prim lattice, P, "
+      "which is a supercell of the input supercell lattice, S_init, and "
+      "greater or equal to some specified minimum size (calculated as "
+      "integer multiples of the prim cell). Returns transformation matrix, "
+      "T, such that `S = P * T = S_init * M`, and the supercell_size of S is "
+      "greater than or equal to `params/minimum_size` (integer, default == "
+      "1), where S, S_init, and P are column vector matrices, and T and M "
+      "are integer transformation matrices. If `params/fixed_shape` (bool) "
+      "is `true` (default == false), then M is fixed to be a multiple of the "
+      "identity matrix, `M = m * I`, where m is an integer, and I is the "
+      "identity matrix.",
+      [](SupercellInfoData const &data) -> Eigen::MatrixXi {
+        Log &log = CASM::log();
+        ParentInputParser parser{data.params_json};
+        std::runtime_error error_if_invalid{
+            "Error reading `enforce_minimum_size` input"};
+
+        Index minimum_size = 1;
+        parser.optional(minimum_size, "minimum_size");
+
+        bool fixed_shape = false;
+        parser.optional(fixed_shape, "fixed_shape");
+
+        report_and_throw_if_invalid(parser, log, error_if_invalid);
+
+        auto begin = data.shared_prim->point_group().begin();
+        auto end = data.shared_prim->point_group().end();
+        Eigen::Matrix3i T_init =
+            data.supercell_sym_info.transformation_matrix_to_super()
+                .cast<int>();
+        Eigen::Matrix3i M =
+            enforce_min_volume(begin, end, data.shared_prim->lattice(), T_init,
+                               minimum_size, fixed_shape);
+        return T_init * M;
+      });
+}
+
 }  // namespace
 
 namespace adapter {
@@ -87,7 +439,13 @@ DataFormatterDictionary<SupercellInfoData> make_supercell_info_dict() {
   DataFormatterDictionary<SupercellInfoData> supercell_info_dict;
 
   // properties that require prim and supercell_sym_info
-  supercell_info_dict.insert(supercell_name(), canonical_supercell_name());
+  supercell_info_dict.insert(
+      supercell_name(), canonical_supercell_name(), is_canonical(),
+      multiplicity(), orbit(), frac_coordinate(), cart_coordinate(),
+      is_supercell_of(), is_unitcell_of(), is_equivalent_to(),
+      is_equivalent_to_a_supercell_of(), commensurate_superlattice_of(),
+      minimal_commensurate_superlattice_of(),
+      fully_commensurate_superlattice_of(), enforce_minimum_size());
 
   // properties that only require supercell_sym_info
   auto sym_info_dict = make_dictionary<SupercellSymInfo>();
@@ -102,6 +460,124 @@ DataFormatterDictionary<SupercellInfoData> make_supercell_info_dict() {
   return supercell_info_dict;
 }
 
+/// Local struct allows for InputParser of Lattice using a local specification
+struct SupercellInfoLatticeIO {
+  SupercellInfoLatticeIO(Lattice const &_lattice) : lattice(_lattice) {}
+  Lattice lattice;
+};
+
+/// Parse SupercellInfoLatticeIO (essentially Lattice) from a JSON object). See
+/// the description of allowed options in `SupercellInfoInterface::desc`.
+void parse(InputParser<SupercellInfoLatticeIO> &parser,
+           std::shared_ptr<Structure const> shared_prim) {
+  Log &log = CASM::log();
+
+  // read "transformation_matrix_to_super"
+  Eigen::Matrix3l T;
+  if (parser.self.contains("transformation_matrix_to_super")) {
+    parser.optional(T, "transformation_matrix_to_super");
+
+    // or read "supercell_lattice_vectors"
+  } else if (parser.self.contains("supercell_lattice_vectors")) {
+    Eigen::Matrix3d L_transpose;
+    parser.optional(L_transpose, "supercell_lattice_vectors");
+    Lattice super_lattice{L_transpose.transpose()};
+    try {
+      T = make_transformation_matrix_to_super(shared_prim->lattice(),
+                                              super_lattice, TOL);
+    } catch (std::exception &e) {
+      auto pair = is_superlattice(super_lattice, shared_prim->lattice(), TOL);
+      log << "The transformation_matrix_to_super determined from "
+             "\"supercell_lattice_vectors\" is not approximately integer. "
+             "Found:\n"
+          << pair.second << std::endl;
+      parser.insert_error("supercell_lattice_vectors", e.what());
+    }
+
+    // or read "supercell_lattice_column_matrix"
+  } else if (parser.self.contains("supercell_lattice_column_matrix")) {
+    Eigen::Matrix3d L;
+    parser.optional(L, "supercell_lattice_column_matrix");
+    Lattice super_lattice{L};
+    try {
+      T = make_transformation_matrix_to_super(shared_prim->lattice(),
+                                              super_lattice, TOL);
+    } catch (std::exception &e) {
+      auto pair = is_superlattice(super_lattice, shared_prim->lattice(), TOL);
+      log << "The transformation_matrix_to_super determined from "
+             "\"supercell_lattice_column_matrix\" is not approximately "
+             "integer. Found:\n"
+          << pair.second << std::endl;
+      parser.insert_error("supercell_lattice_column_matrix", e.what());
+    }
+    // or read "supercell_name"
+  } else if (parser.self.contains("supercell_name")) {
+    std::string supercell_name;
+    parser.optional(supercell_name, "supercell_name");
+    try {
+      xtal::Superlattice superlattice = make_superlattice_from_supercell_name(
+          shared_prim->factor_group(), shared_prim->lattice(), supercell_name);
+      T = superlattice.transformation_matrix_to_super();
+    } catch (std::exception &e) {
+      parser.insert_error("supercell_name", e.what());
+    }
+    // else use Identity (prim cell)
+  } else {
+    T = Eigen::Matrix3l::Identity();
+  }
+
+  // read "make_canonical"
+  bool make_canonical = false;
+  parser.optional(make_canonical, "make_canonical");
+
+  if (!parser.valid()) {
+    return;
+  }
+
+  // construct SupercellSymInfo
+  Lattice super_lattice = make_superlattice(shared_prim->lattice(), T);
+  if (make_canonical) {
+    super_lattice =
+        xtal::canonical::equivalent(super_lattice, shared_prim->point_group());
+  }
+
+  parser.value = notstd::make_unique<SupercellInfoLatticeIO>(super_lattice);
+}
+
+/// Parse "params"/"supercells" (JSON array) as vector<Lattice>, using the
+/// SupercellInfoLatticeIO parser for each element of the array. See
+/// `SupercellInfoInterface::desc`.
+std::vector<Lattice> parse_params_supercells(
+    jsonParser const &params_json,
+    std::shared_ptr<Structure const> shared_prim) {
+  Log &log = CASM::log();
+  ParentInputParser parser{params_json};
+  std::runtime_error error_if_invalid{"Error reading params/supercells input"};
+
+  if (!parser.self.contains("supercells")) {
+    parser.error.insert("Required params/supercells does not exist");
+    report_and_throw_if_invalid(parser, log, error_if_invalid);
+  }
+
+  if (!parser.self["supercells"].is_array()) {
+    parser.error.insert("Input params/supercells must be an array.");
+    report_and_throw_if_invalid(parser, log, error_if_invalid);
+  }
+
+  std::vector<Lattice> supercells;
+  for (int i = 0; i < parser.self["supercells"].size(); ++i) {
+    fs::path option{"supercells"};
+    option /= std::to_string(i);
+    auto shared_lattice_parser =
+        parser.subparse<SupercellInfoLatticeIO>(option, shared_prim);
+    if (!parser.valid()) {
+      report_and_throw_if_invalid(parser, log, error_if_invalid);
+    }
+    supercells.push_back(shared_lattice_parser->value->lattice);
+  }
+  return supercells;
+}
+
 }  // namespace
 
 std::string SupercellInfoInterface::desc() const {
@@ -112,7 +588,18 @@ std::string SupercellInfoInterface::desc() const {
       "- transformation_matrix_to_super                                   \n"
       "- supercell_lattice_vectors                                        \n"
       "- supercell_lattice_column_matrix                                  \n"
-      "- supercell_name                                                   \n\n";
+      "- supercell_name                                                   \n\n"
+
+      "Additionally, if the `make_canonical` option can be used to specify\n"
+      "that the canonical equivalent supercell should be used.            \n\n"
+
+      "From all super lattices which are equivalent via crystal point     \n"
+      "group operations of prim, the canonical super lattice is the       \n"
+      "equivalent lattice in niggli form which has the most favorable     \n"
+      "orientation according to the CASM orientation comparision criteria.\n"
+      "These criteria compare the lattices as column vector matrices and  \n"
+      "first favor symmetric matrices and then favor non-negative lattice \n"
+      "vectors which are aligned nearest to the Cartesian axes.           \n\n";
 
   std::string custom_options =
       "  prim: JSON object (optional, default=prim of current project)    \n"
@@ -131,21 +618,13 @@ std::string SupercellInfoInterface::desc() const {
 
       "  supercell_name: string (optional)                                \n"
       "    A name given to all equivalent super lattices of the prim      \n"
-      "    lattice. From all super lattices which are equivalent via      \n"
-      "    crystal point group operations of prim, the canonical super    \n"
-      "    lattice is the equivalent lattice in niggli form which has the \n"
-      "    most favorable orientation according to the CASM orientation   \n"
-      "    comparision criteria. These criteria compare the lattices as   \n"
-      "    column vector matrices and first favor symmetric matrices and  \n"
-      "    then favor non-negative lattice vectors which are aligned      \n"
-      "    nearest to the Cartesian axes.                                 \n\n"
-
-      "    For the canonical super lattice, the name is constructed from  \n"
-      "    the hermite normal form of `transformation_matrix_to_super`.   \n"
-      "    For a non-canonical super lattice, the name is the constructed \n"
-      "    from the name of the canonical super lattice and the index of  \n"
-      "    the prim factor group operation that (excluding the shift)     \n"
-      "    transforms the canonical super lattice into this super lattice.\n"
+      "    lattice. For the canonical super lattice, the name is          \n"
+      "    constructed from the hermite normal form of                    \n"
+      "    `transformation_matrix_to_super`. For a non-canonical super    \n"
+      "    lattice, the name is the constructed from the name of the      \n"
+      "    canonical super lattice and the index of the prim factor group \n"
+      "    operation that (excluding the shift) transforms the canonical  \n"
+      "    super lattice into this super lattice.                         \n"
       "                                                                   \n"
       "    Example 1: Canonical supercell name                            \n"
       "                                                                   \n"
@@ -156,6 +635,24 @@ std::string SupercellInfoInterface::desc() const {
       "    with index 2 (indexing starting at 0).                         \n"
       "                                                                   \n"
       "        \"SCEL8_4_2_1_1_3_2.2\"                                    \n\n"
+
+      "  make_canonical: bool (optional, default=false)                   \n"
+      "    If \"true\", the canonical equivalent supercell is used.       \n\n"
+
+      "  params: JSON object (optional, default={})                       \n"
+      "    JSON object containing additional parameters for methods that  \n"
+      "    require them. See method descriptions for details of how they  \n"
+      "    are used or other specific parameters not documented here.     \n"
+      "    Options include:                                               \n\n"
+
+      "      supercells: array of JSON object                             \n"
+      "        Each JSON object specifies one lattice, using the same     \n"
+      "        options allowed for specifying the supercell:              \n"
+      "        - transformation_matrix_to_super                           \n"
+      "        - supercell_lattice_vectors                                \n"
+      "        - supercell_lattice_column_matrix                          \n"
+      "        - supercell_name                                           \n"
+      "        - make_canonical                                           \n\n"
 
       "  properties: array of string (optional, default=[])               \n"
       "    An array of strings specifying which supercell properties to   \n"
@@ -209,49 +706,21 @@ void SupercellInfoInterface::run(jsonParser const &json_options,
     }
   }
 
-  // read "transformation_matrix_to_super"
-  Eigen::Matrix3l T;
-  if (parser.self.contains("transformation_matrix_to_super")) {
-    parser.optional(T, "transformation_matrix_to_super");
-
-    // or read "supercell_lattice_vectors"
-  } else if (parser.self.contains("supercell_lattice_vectors")) {
-    Eigen::Matrix3d L_transpose;
-    parser.optional(L_transpose, "supercell_lattice_vectors");
-    Lattice super_lattice{L_transpose.transpose()};
-    T = make_transformation_matrix_to_super(shared_prim->lattice(),
-                                            super_lattice, TOL);
-
-    // or read "supercell_lattice_column_matrix"
-  } else if (parser.self.contains("supercell_lattice_column_matrix")) {
-    Eigen::Matrix3d L;
-    parser.optional(L, "supercell_lattice_column_matrix");
-    Lattice super_lattice{L};
-    T = make_transformation_matrix_to_super(shared_prim->lattice(),
-                                            super_lattice, TOL);
-
-    // or read "supercell_name"
-  } else if (parser.self.contains("supercell_name")) {
-    std::string supercell_name;
-    parser.optional(supercell_name, "supercell_name");
-    xtal::Superlattice superlattice = make_superlattice_from_supercell_name(
-        shared_prim->factor_group(), shared_prim->lattice(), supercell_name);
-    T = superlattice.transformation_matrix_to_super();
-
-    // else use Identity (prim cell)
-  } else {
-    T = Eigen::Matrix3l::Identity();
-  }
+  auto shared_lattice_parser =
+      parser.parse_as<SupercellInfoLatticeIO>(shared_prim);
 
   // read "properties"
   std::vector<std::string> properties;
   parser.optional(properties, "properties");
+
+  // read "params"
+  jsonParser params_json = jsonParser::object();
+  parser.optional(params_json, "params");
+
   report_and_throw_if_invalid(parser, log, error_if_invalid);
 
-  // construct SupercellSymInfo
-  Lattice super_lattice = make_superlattice(shared_prim->lattice(), T);
-  SupercellSymInfo supercell_sym_info =
-      make_supercell_sym_info(*shared_prim, super_lattice);
+  SupercellSymInfo supercell_sym_info = make_supercell_sym_info(
+      *shared_prim, shared_lattice_parser->value->lattice);
 
   DataFormatterDictionary<SupercellInfoData> supercell_info_dict =
       make_supercell_info_dict();
@@ -269,7 +738,7 @@ void SupercellInfoInterface::run(jsonParser const &json_options,
   // format
   auto formatter = supercell_info_dict.parse(properties);
   jsonParser json;
-  SupercellInfoData data{shared_prim, supercell_sym_info};
+  SupercellInfoData data{shared_prim, supercell_sym_info, params_json};
   formatter.to_json(data, json);
   log << json << std::endl;
 }

@@ -71,6 +71,36 @@ MatrixXdSupercellSymInfoFormatter supercell_lattice_vectors() {
       });
 }
 
+VectorXdSupercellSymInfoFormatter supercell_lattice_params() {
+  return VectorXdSupercellSymInfoFormatter(
+      "supercell_lattice_params",
+      "Supercell lattice parameters, as: (a, b, c, alpha, beta, gamma)",
+      [](SupercellSymInfo const &supercell_sym_info) -> Eigen::VectorXd {
+        Lattice const &lat = supercell_sym_info.supercell_lattice();
+        Eigen::VectorXd res(6);
+        res << lat.length(0), lat.length(1), lat.length(2), lat.angle(0),
+            lat.angle(1), lat.angle(2);
+        return res;
+      });
+}
+
+SupercellSymInfoFormatter<Index> supercell_size() {
+  return SupercellSymInfoFormatter<Index>(
+      "supercell_size",
+      "Supercell size, given as the integer number of primitive cells",
+      [](SupercellSymInfo const &supercell_sym_info) -> Index {
+        return supercell_sym_info.unitcell_index_converter().total_sites();
+      });
+}
+
+SupercellSymInfoFormatter<double> supercell_volume() {
+  return SupercellSymInfoFormatter<double>(
+      "supercell_volume", "Supercell volume (length^3)",
+      [](SupercellSymInfo const &supercell_sym_info) -> double {
+        return supercell_sym_info.supercell_lattice().volume();
+      });
+}
+
 SupercellSymInfoFormatter<jsonParser> unitcells() {
   return SupercellSymInfoFormatter<jsonParser>(
       "unitcells",
@@ -164,6 +194,14 @@ SupercellSymInfoFormatter<jsonParser> factor_group_permutations() {
       });
 }
 
+SupercellSymInfoFormatter<std::string> point_group_name() {
+  return SupercellSymInfoFormatter<std::string>(
+      "point_group_name", "Supercell point group name.",
+      [](SupercellSymInfo const &supercell_sym_info) -> std::string {
+        return supercell_sym_info.factor_group().get_name();
+      });
+}
+
 SupercellSymInfoFormatter<jsonParser> global_dof_reps() {
   return SupercellSymInfoFormatter<jsonParser>(
       "global_dof_reps",
@@ -215,6 +253,7 @@ make_attribute_dictionary<SupercellSymInfo>() {
   DataFormatterDictionary<SupercellSymInfo> dict;
   dict.insert(transformation_matrix_to_super(), supercell_lattice(),
               supercell_lattice_column_matrix(), supercell_lattice_vectors(),
+              supercell_lattice_params(), supercell_size(), supercell_volume(),
               unitcells(), integral_site_coordinates(),
               translation_permutations(), factor_group(), factor_group_size(),
               factor_group_permutations(), global_dof_reps(), local_dof_reps());

@@ -28,12 +28,8 @@ jsonParser combine_dof_space_analysis_json_options(
                               json_combined);
 }
 
-/// For now, only support "confignames" and "config_selection" for reading
-/// ConfigEnumInput
-///
-/// Later, could support other ConfigEnumInput JSON options (supercells,
-/// selecting sites, clusters, etc.), but need to determine how to write / print
-/// the data
+/// For output_type==symmetry_directory, the input is restricted to
+/// configurations currently existing in the database
 void require_database_configurations(ParentInputParser &parser) {
   std::set<std::string> do_not_allow{"scelnames",  "supercell_selection",
                                      "supercells", "sublats",
@@ -43,7 +39,9 @@ void require_database_configurations(ParentInputParser &parser) {
     if (parser.self.contains(key)) {
       std::stringstream msg;
       msg << "Error in dof_space_analysis: \"" << key
-          << "\" is not an allowed option.";
+          << "\" is not an allowed option when 'output_type' == "
+             "'symmetry_directory' (only configurations currently existing in "
+             "the database are allowed).";
       parser.error.insert(msg.str());
     }
   }
