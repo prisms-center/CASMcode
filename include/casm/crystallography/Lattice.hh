@@ -228,8 +228,7 @@ class Lattice : public Comparisons<CRTPBase<Lattice>> {
 /// \brief Returns the volume of a Lattice
 double volume(const Lattice &lat);
 
-/// Check if scel is a superlattice of unitcell unit and some integer
-/// transformation matrix T
+/// Check if Lattice `scel` is a superlattice of Lattice `unit`
 std::pair<bool, Eigen::Matrix3d> is_superlattice(const Lattice &scel,
                                                  const Lattice &unit,
                                                  double tol);

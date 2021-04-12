@@ -60,9 +60,9 @@ MatrixXdSupercellSymInfoFormatter supercell_lattice_column_matrix() {
       });
 }
 
-MatrixXdSupercellSymInfoFormatter supercell_lattice_vectors() {
+MatrixXdSupercellSymInfoFormatter supercell_lattice_row_vectors() {
   return MatrixXdSupercellSymInfoFormatter(
-      "supercell_lattice_vectors",
+      "supercell_lattice_row_vectors",
       "Supercell lattice vectors, as row vector matrix",
       [](SupercellSymInfo const &supercell_sym_info) -> Eigen::MatrixXd {
         Lattice const &supercell_lattice =
@@ -252,11 +252,12 @@ make_attribute_dictionary<SupercellSymInfo>() {
   using namespace SupercellSymInfo_dataformatter_impl;
   DataFormatterDictionary<SupercellSymInfo> dict;
   dict.insert(transformation_matrix_to_super(), supercell_lattice(),
-              supercell_lattice_column_matrix(), supercell_lattice_vectors(),
-              supercell_lattice_params(), supercell_size(), supercell_volume(),
-              unitcells(), integral_site_coordinates(),
-              translation_permutations(), factor_group(), factor_group_size(),
-              factor_group_permutations(), global_dof_reps(), local_dof_reps());
+              supercell_lattice_row_vectors(),
+              supercell_lattice_column_matrix(), supercell_lattice_params(),
+              supercell_size(), supercell_volume(), unitcells(),
+              integral_site_coordinates(), translation_permutations(),
+              factor_group(), factor_group_size(), factor_group_permutations(),
+              global_dof_reps(), local_dof_reps());
 
   return dict;
 }

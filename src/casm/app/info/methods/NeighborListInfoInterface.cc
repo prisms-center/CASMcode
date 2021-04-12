@@ -79,7 +79,7 @@ NeighborListInfoFormatter<jsonParser> supercell_neighbor_list() {
         jsonParser json;
         json["transformation_matrix_to_super"] = T;
         json["supercell_lattice_column_matrix"] = L;
-        json["supercell_lattice_vectors"] = L.transpose();
+        json["supercell_lattice_row_vectors"] = L.transpose();
         json["supercell_name"] = make_supercell_name(
             data.shared_prim->point_group(), sym_info.prim_lattice(),
             sym_info.supercell_lattice());
@@ -136,7 +136,7 @@ std::string NeighborListInfoInterface::desc() const {
       "specified by the prim and one of the following (else the primitive \n"
       "cell is used):                                                     \n"
       "- transformation_matrix_to_super                                   \n"
-      "- supercell_lattice_vectors                                        \n"
+      "- supercell_lattice_row_vectors                                    \n"
       "- supercell_lattice_column_matrix                                  \n"
       "- supercell_name                                                   \n\n";
 
@@ -178,7 +178,7 @@ std::string NeighborListInfoInterface::desc() const {
       "    S, in terms of the prim lattice vectors, P: `S = P * T`, where \n"
       "    S and P are column vector matrices.                            \n\n"
 
-      "  supercell_lattice_vectors: 3x3 array of integer (optional)       \n"
+      "  supercell_lattice_row_vectors: 3x3 array of integer (optional)   \n"
       "    Supercell lattice vectors, as a row vector matrix.             \n\n"
 
       "  supercell_lattice_column_matrix: 3x3 array of integer (optional) \n"
@@ -315,10 +315,10 @@ void NeighborListInfoInterface::run(jsonParser const &json_options,
   if (parser.self.contains("transformation_matrix_to_super")) {
     parser.optional(T, "transformation_matrix_to_super");
 
-    // or read "supercell_lattice_vectors"
-  } else if (parser.self.contains("supercell_lattice_vectors")) {
+    // or read "supercell_lattice_row_vectors"
+  } else if (parser.self.contains("supercell_lattice_row_vectors")) {
     Eigen::Matrix3d L_transpose;
-    parser.optional(L_transpose, "supercell_lattice_vectors");
+    parser.optional(L_transpose, "supercell_lattice_row_vectors");
     Lattice super_lattice{L_transpose.transpose()};
     T = make_transformation_matrix_to_super(shared_prim->lattice(),
                                             super_lattice, TOL);

@@ -830,18 +830,38 @@ Lattice Lattice::hexagonal(double tol) {
       return new_lat;
     }
 
-    /// Check if scel is a superlattice of unitcell unit and some integer transformation matrix T
-    // First, find unit*Matrix3i approximation of 'scel', then check if reconstructing 'unit' from this approximation
-    // results in residual vectors less than length 'tol'
+    /// Check if Lattice `scel` is a superlattice of Lattice `unit`
+    ///
+    /// Checks if within a tolerance, S = L * T, with integer T, where:
+    /// - S is the `scel` lattice as a column-vector matrix
+    /// - L is the `unit` lattice as a column vector matrix
+    ///
+    /// To account for floating point tolerance, the check is performed using
+    /// the residual vectors between `S` and `L * T_rounded`, where:
+    ///
+    ///     Eigen::Matrix3d T_exact = L.inverse() * S;
+    ///     Eigen::Matrix3d T_rounded = lround(T_exact).cast<double>();
+    ///     Eigen::Matrix3d diff = L - S * T_rounded.inverse();
+    ///     Eigen::Vector3d error = (diff.transpose() * diff).diagonal();
+    ///
+    ///     // true if `scel` is superlattice of `scel`
+    ///     bool result = almost_zero(error, 2. * tol) &&
+    ///                   !almost_zero(T_rounded, tol);
+    ///
+    ///
+    /// \returns std::make_pair(result, result ? T_rounded : T_exact)
+    ///
     std::pair<bool, Eigen::Matrix3d> is_superlattice(const Lattice &scel, const Lattice &unit, double tol) {
-      // check scel = unit*T, with integer T
-      std::pair<bool, Eigen::Matrix3d> result(true, lround(unit.inv_lat_column_mat() * scel.lat_column_mat()).cast<double>());
 
-      Eigen::Matrix3d diff = unit.lat_column_mat() - scel.lat_column_mat() * result.second.inverse();
+      Eigen::Matrix3d T_exact = unit.inv_lat_column_mat() * scel.lat_column_mat();
+      Eigen::Matrix3d T_rounded = lround(T_exact).cast<double>();
+      Eigen::Matrix3d diff = unit.lat_column_mat() - scel.lat_column_mat() * T_rounded.inverse();
+      Eigen::Vector3d error = (diff.transpose() * diff).diagonal();
 
-      result.first = almost_zero((diff.transpose() * diff).diagonal().eval(), 2 * tol) && !almost_zero(result.second, tol);
+      bool result = almost_zero(error, 2. * tol) &&
+                    !almost_zero(T_rounded, tol);
 
-      return result;
+      return std::make_pair(result, result ? T_rounded : T_exact);
     }
 
 

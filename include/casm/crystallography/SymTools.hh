@@ -176,7 +176,7 @@ Lattice make_fully_commensurate_superduperlattice(LatIterator begin,
                                                   SymOpIterator op_begin,
                                                   SymOpIterator op_end) {
   Lattice result = *begin;
-  for (auto it = ++begin; it != end; ++it) {
+  for (auto it = begin; it != end; ++it) {
     for (auto op_it = op_begin; op_it != op_end; ++op_it) {
       result = make_superduperlattice(result, sym::copy_apply(*op_it, *it));
     }
