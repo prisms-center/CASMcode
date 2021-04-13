@@ -3,6 +3,7 @@
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/enumerator/ConfigEnumInput_impl.hh"
 #include "casm/symmetry/SupercellSymInfo.hh"
 #include "casm/symmetry/SymRepTools.hh"
@@ -190,9 +191,10 @@ DoFSpace::DoFSpace(
     throw std::runtime_error(msg.str());
   }
 
-  make_dof_space_axis_info(
-      dof_key(), *shared_prim(), transformation_matrix_to_super(), sites(),
-      m_axis_glossary, m_axis_site_index, m_axis_dof_component);
+  make_dof_space_axis_info(dof_key(), *shared_prim(),
+                           transformation_matrix_to_super(), sites(),
+                           m_axis_glossary, m_axis_site_index,
+                           m_axis_dof_component, m_basis_row_index);
 }
 
 /// Shared prim structure
@@ -249,6 +251,26 @@ std::optional<std::vector<Index>> const &DoFSpace::axis_dof_component() const {
   return m_axis_dof_component;
 }
 
+/// \brief Gives the index of basis row corresponding to a given
+/// axis_site_index and axis_dof_component.
+///
+/// \throws If global DoF or invalid site_index and dof_component combination
+Index DoFSpace::basis_row_index(Index site_index, Index dof_component) const {
+  if (!m_basis_row_index.has_value()) {
+    std::stringstream msg;
+    msg << "Error in DoFSpace::basis_row_index: Not valid for global DoF";
+    throw std::runtime_error(msg.str());
+  }
+  try {
+    return m_basis_row_index->at(site_index).at(dof_component);
+  } catch (std::out_of_range const &e) {
+    std::stringstream msg;
+    msg << "Error in DoFSpace::basis_row_index: Invalid site_index and "
+           "dof_component combination for this DoFSpace.";
+    throw std::out_of_range(msg.str());
+  }
+}
+
 /// Return true if `dof_space` is valid for `config`
 ///
 /// Checks that:
@@ -278,7 +300,83 @@ void throw_if_invalid_dof_space(Configuration const &config,
   }
 }
 
+DoFSpaceIndexConverter::DoFSpaceIndexConverter(Configuration const &config,
+                                               DoFSpace const &dof_space)
+    : shared_prim(dof_space.shared_prim()),
+      config_index_converter(
+          config.supercell().sym_info().unitcellcoord_index_converter()),
+      dof_space_index_converter(
+          dof_space.transformation_matrix_to_super().value(),
+          dof_space.shared_prim()->basis().size()) {
+  if (config.supercell().shared_prim() != dof_space.shared_prim()) {
+    std::stringstream msg;
+    msg << "Error in DoFSpaceIndexConverter: Configuration and DoFSpace must "
+           "share the same prim."
+        << std::endl;
+    throw std::runtime_error(msg.str());
+  }
+}
+
+/// Perform conversion from Coordinate to DoFSpace site index
+Index DoFSpaceIndexConverter::dof_space_site_index(
+    xtal::Coordinate const &coord, double tol) const {
+  xtal::UnitCellCoord bijk =
+      UnitCellCoord::from_coordinate(*shared_prim, coord, tol);
+  return dof_space_index_converter(bijk);
+}
+
+/// Perform conversion from DoFSpace site index to config site index
+Index DoFSpaceIndexConverter::dof_space_site_index(
+    Index config_site_index) const {
+  xtal::UnitCellCoord bijk = config_index_converter(config_site_index);
+  return dof_space_index_converter(bijk);
+}
+
+/// Perform conversion from Coordinate to config site index
+Index DoFSpaceIndexConverter::config_site_index(xtal::Coordinate const &coord,
+                                                double tol) const {
+  xtal::UnitCellCoord bijk =
+      UnitCellCoord::from_coordinate(*shared_prim, coord, tol);
+  return config_index_converter(bijk);
+}
+
+/// Perform conversion from DoFSpace site index to config site index
+Index DoFSpaceIndexConverter::config_site_index(
+    Index dof_space_site_index) const {
+  xtal::UnitCellCoord bijk = dof_space_index_converter(dof_space_site_index);
+  return config_index_converter(bijk);
+}
+
+/// \brief Perform conversion from DoFSpace site index to config site index,
+/// with additional translation within config
+///
+/// Equivalent to:
+/// \code
+/// xtal::UnitCellCoord bijk =
+///     dof_space_index_converter(dof_space_site_index);
+/// bijk += translation;
+/// return config_index_converter(bijk);
+/// \endcode
+Index DoFSpaceIndexConverter::config_site_index(
+    Index dof_space_site_index, UnitCell const &translation) const {
+  xtal::UnitCellCoord bijk = dof_space_index_converter(dof_space_site_index);
+  bijk += translation;
+  return config_index_converter(bijk);
+}
+
 /// Return `config` DoF value as a coordinate in the DoFSpace basis
+///
+/// This method may be used for global DoF or local DoF values if config and
+/// dof_space have the same supercell. Otherwise use
+/// `get_mean_normal_coordinate` or `get_normal_coordinate_at`
+///
+/// The following relations apply:
+///
+///     standard_dof_values = dof_set.basis() * prim_dof_values
+///     prim_dof_values = dof_space.basis() * normal_coordinate
+///
+/// \throws If dof_space is local and defined for a different supercell than
+/// config
 ///
 /// TODO: handle DoF values not in the basis subspace
 Eigen::VectorXd get_normal_coordinate(Configuration const &config,
@@ -293,23 +391,145 @@ Eigen::VectorXd get_normal_coordinate(Configuration const &config,
     auto const &dof_values = config.configdof().global_dof(dof_key).values();
     return basis.colPivHouseholderQr().solve(dof_values);
   } else {
+    Index dim = dof_space.dim();
+    auto const &axis_dof_component = dof_space.axis_dof_component().value();
+    auto const &axis_site_index = dof_space.axis_site_index().value();
+
     if (dof_key == "occ") {
-      auto const &dof_values = config.configdof().occupation().cast<double>();
-      return basis.colPivHouseholderQr().solve(dof_values);
+      Eigen::VectorXi occ_values = Eigen::VectorXi::Zero(dim);
+      for (Index i = 0; i < dim; ++i) {
+        Index l = axis_site_index[i];
+        occ_values[i] = (config.occupation()[l] == axis_dof_component[i]);
+      }
+      Eigen::VectorXd prim_dof_values = occ_values.cast<double>();
+      return basis.colPivHouseholderQr().solve(prim_dof_values);
     } else {
-      Eigen::VectorXd vector_values = Eigen::VectorXd::Zero(dof_space.dim());
+      Eigen::VectorXd vector_values = Eigen::VectorXd::Zero(dim);
       Eigen::MatrixXd const &matrix_values =
           config.configdof().local_dof(dof_key).values();
 
-      auto const &axis_dof_component = dof_space.axis_dof_component().value();
-      auto const &axis_site_index = dof_space.axis_site_index().value();
-
-      for (Index i = 0; i < dof_space.dim(); ++i) {
-        vector_values[i] =
-            matrix_values(axis_dof_component[i], axis_site_index[i]);
+      for (Index i = 0; i < dim; ++i) {
+        Index l = axis_site_index[i];
+        vector_values[i] = matrix_values(axis_dof_component[i], l);
       }
       return basis.colPivHouseholderQr().solve(vector_values);
     }
+  }
+}
+
+/// \brief Return DoF value in the DoFSpace basis of the subset of the
+/// configuration located at a particular coordinate
+///
+/// This method may be used for local DoF values at a particular location in a
+/// configuration. It may be used even if config and dof_space do not have the
+/// same supercell, in order to construct an average as if being evalauted in a
+/// commensurate supercell.
+///
+/// The following relations apply:
+///
+///     standard_dof_values = dof_set.basis() * prim_dof_values
+///     prim_dof_values = dof_space.basis() * normal_coordinate
+///
+/// \throws If dof_space.dof_key() is a global DoF type.
+///
+Eigen::VectorXd get_normal_coordinate_at(
+    Configuration const &config, DoFSpace const &dof_space,
+    DoFSpaceIndexConverter const &index_converter,
+    UnitCell integral_lattice_coordinate) {
+  auto const &dof_key = dof_space.dof_key();
+  auto const &basis = dof_space.basis();
+
+  if (AnisoValTraits(dof_key).global()) {
+    std::stringstream msg;
+    msg << "Error: get_normal_coordinate_at is not valid for dof type '"
+        << dof_key << "'" << std::endl;
+    throw std::runtime_error(msg.str());
+  } else {
+    Index dim = dof_space.dim();
+    auto const &axis_dof_component = dof_space.axis_dof_component().value();
+    auto const &axis_site_index = dof_space.axis_site_index().value();
+
+    if (dof_key == "occ") {
+      Eigen::VectorXi occ_values = Eigen::VectorXi::Zero(dim);
+      for (Index i = 0; i < dim; ++i) {
+        Index l = index_converter.config_site_index(
+            axis_site_index[i], integral_lattice_coordinate);
+        occ_values[i] = (config.occupation()[l] == axis_dof_component[i]);
+      }
+      Eigen::VectorXd prim_dof_values = occ_values.cast<double>();
+      return basis.colPivHouseholderQr().solve(prim_dof_values);
+
+    } else {
+      Eigen::VectorXd vector_values = Eigen::VectorXd::Zero(dim);
+      Eigen::MatrixXd const &matrix_values =
+          config.configdof().local_dof(dof_key).values();
+
+      for (Index i = 0; i < dim; ++i) {
+        Index l = index_converter.config_site_index(
+            axis_site_index[i], integral_lattice_coordinate);
+        vector_values[i] = matrix_values(axis_dof_component[i], l);
+      }
+      return basis.colPivHouseholderQr().solve(vector_values);
+    }
+  }
+}
+
+/// Return mean DoF value of configuration in the DoFSpace basis
+///
+/// This method may be used for global or local DoF values. For local DoF
+/// values it determines the commensurate supercell for the config and
+/// dof_space supercells and calls `get_normal_coordinate_at` repeatedly as if
+/// the mutually commensurate supercell had been constructed and filled with
+/// `config` in order to calculate a mean normal coordinate value.
+///
+/// The following relations apply:
+///
+///     standard_dof_values = dof_set.basis() * prim_dof_values
+///     prim_dof_values = dof_space.basis() * normal_coordinate
+///
+/// \throws If dof_space.dof_key() is a global DoF type.
+///
+Eigen::VectorXd get_mean_normal_coordinate(Configuration const &config,
+                                           DoFSpace const &dof_space) {
+  auto const &dof_key = dof_space.dof_key();
+  auto const &basis = dof_space.basis();
+
+  if (AnisoValTraits(dof_key).global()) {
+    auto const &dof_values = config.configdof().global_dof(dof_key).values();
+    return basis.colPivHouseholderQr().solve(dof_values);
+  } else {
+    Index dim = dof_space.dim();
+    xtal::Lattice P = config.supercell().sym_info().prim_lattice();
+    Eigen::Matrix3l T = dof_space.transformation_matrix_to_super().value();
+
+    xtal::Lattice const &config_supercell_lattice =
+        config.supercell().sym_info().supercell_lattice();
+    xtal::Lattice dof_space_supercell_lattice = xtal::make_superlattice(P, T);
+    std::vector<Lattice> lattices(
+        {config_supercell_lattice, dof_space_supercell_lattice});
+    xtal::Lattice commensurate_supercell_lattice =
+        xtal::make_commensurate_superduperlattice(lattices.begin(),
+                                                  lattices.end());
+
+    /// Create UnitCellIndexConverter that counts over tilings of
+    /// dof_space_supercell_lattice into commensurate_supercell_lattice
+    xtal::Superlattice superlattice{dof_space_supercell_lattice,
+                                    commensurate_supercell_lattice};
+    xtal::UnitCellIndexConverter sub_supercell_coordinates{
+        superlattice.transformation_matrix_to_super()};
+    Index N = sub_supercell_coordinates.total_sites();
+
+    DoFSpaceIndexConverter index_converter{config, dof_space};
+
+    Eigen::VectorXd normal_coordinate_sum = Eigen::VectorXd::Zero(dim);
+    for (Index i = 0; i < N; ++i) {
+      // to get UnitCell lattice coordinate in config, need to multiply by T
+      UnitCell ijk = T * sub_supercell_coordinates(i);
+      normal_coordinate_sum +=
+          get_normal_coordinate_at(config, dof_space, index_converter, ijk);
+    }
+    Eigen::VectorXd mean_normal_coordinate_sum = normal_coordinate_sum / N;
+    return mean_normal_coordinate_sum;
   }
 }
 
@@ -432,11 +652,13 @@ void make_dof_space_axis_info(
     std::optional<std::set<Index>> const &sites,
     std::vector<std::string> &axis_glossary,
     std::optional<std::vector<Index>> &axis_site_index,
-    std::optional<std::vector<Index>> &axis_dof_component) {
+    std::optional<std::vector<Index>> &axis_dof_component,
+    std::optional<std::vector<std::vector<Index>>> &basis_row_index) {
   if (AnisoValTraits(dof_key).global()) {
     axis_glossary.clear();
     axis_site_index = std::nullopt;
     axis_dof_component = std::nullopt;
+    basis_row_index = std::nullopt;
 
     // Global DoF, axis_glossary comes straight from the DoF
     axis_glossary = component_descriptions(prim.global_dof(dof_key));
@@ -448,9 +670,13 @@ void make_dof_space_axis_info(
     axis_glossary.clear();
     axis_site_index = std::vector<Index>();
     axis_dof_component = std::vector<Index>();
+    basis_row_index = std::vector<std::vector<Index>>();
 
     xtal::UnitCellCoordIndexConverter unitcellcoord_index_converter(
         *transformation_matrix_to_super, prim.basis().size());
+    basis_row_index->resize(unitcellcoord_index_converter.total_sites());
+
+    Index _basis_row_index = 0;
     // Generate full axis_glossary for all active sites of the config_region
     for (Index site_index : *sites) {
       Index sublattice_index =
@@ -463,7 +689,9 @@ void make_dof_space_axis_info(
                                   "][" + molecule.name() + "]");
           axis_dof_component->push_back(i);
           axis_site_index->push_back(site_index);
+          (*basis_row_index)[site_index].push_back(_basis_row_index);
           ++i;
+          ++_basis_row_index;
         }
       } else if (site.has_dof(dof_key)) {
         std::vector<std::string> tdescs =
@@ -474,7 +702,9 @@ void make_dof_space_axis_info(
                                   "]");
           axis_dof_component->push_back(i);
           axis_site_index->push_back(site_index);
+          (*basis_row_index)[site_index].push_back(_basis_row_index);
           ++i;
+          ++_basis_row_index;
         }
       }
       if (!site.has_dof(dof_key)) continue;

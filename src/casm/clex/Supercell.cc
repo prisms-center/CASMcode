@@ -181,8 +181,6 @@ Index Supercell::sublat(Index linear_index) const {
 /// return linear_index(UnitCellCoord(prim(), coord, tol));
 /// \endcode
 Index Supercell::linear_index(const Coordinate &coord, double tol) const {
-  Coordinate tcoord(coord);
-  tcoord.within();
   return linear_index(UnitCellCoord::from_coordinate(prim(), coord, tol));
 }
 

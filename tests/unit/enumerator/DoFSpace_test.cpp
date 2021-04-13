@@ -2,6 +2,7 @@
 
 #include "autotools.hh"
 #include "casm/casm_io/Log.hh"
+#include "casm/clex/FillSupercell.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/crystallography/BasicStructureTools.hh"

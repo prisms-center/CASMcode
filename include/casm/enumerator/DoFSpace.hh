@@ -20,15 +20,18 @@ struct VectorSpaceSymReport;
 ///   - dof_key (DoFKey): A string indicating which DoF type (e.g., "disp",
 ///   "Hstrain", "occ")
 ///   - transformation_matrix_to_super (std::optional<Eigen::Matrix3l>):
-///   Specifies the supercell
-///     for a local DoF space. Has value for local DoF.
+///   Specifies the supercell for a local DoF space. Has value for local DoF.
 ///   - sites (std::optional<std::set<Index>>): The sites included in a local
-///   DoF space. Has value
-///     for local DoF.
+///   DoF space. Has value for local DoF.
 ///   - basis (Eigen::MatrixXd): Allows specifying a subspace of the space
-///   determined from
-///     dof_key, and for local DoF, transformation_matrix_to_super and sites.
-///     Examples:
+///   determined from dof_key, and for local DoF, transformation_matrix_to_super
+///   and sites. The rows of `basis` correspond to prim DoF basis axes, so the
+///   following relations apply:
+///
+///       standard_dof_values = dof_set.basis() * prim_dof_values
+///       prim_dof_values = dof_space.basis() * normal_coordinate
+///
+///    Examples:
 ///
 ///       For dof_key=="disp", and sites.value().size()==4 (any
 ///       transformation_matrix_to_super):
@@ -38,8 +41,8 @@ struct VectorSpaceSymReport;
 ///
 ///       For dof_key=="occ", and sites().value().size()==4 (any
 ///       transformation_matrix_to_super), with the particular sites selected
-///       having allowed occupations ["A", "B"],
-///       ["A", "B", "C"], ["A, B"], and ["A", "B", "C"] :
+///       having allowed occupations ["A", "B"], ["A", "B", "C"], ["A, B"], and
+///       ["A", "B", "C"] :
 ///         The default DoF space has dimension 10 = 2 + 3 + 2 + 3.
 ///         Then, basis is a matrix with 10 rows and 10 or fewer columns.
 ///
@@ -89,29 +92,31 @@ class DoFSpace {
   /// Names the DoF corresponding to each dimension (row) of the basis
   std::vector<std::string> const &axis_glossary() const;
 
-  /// The supercell site_index corresponding to each dimension (row) of the
-  /// basis. Has value for local DoF.
+  /// \brief The supercell site_index corresponding to each dimension (row) of
+  /// the basis. Has value for local DoF.
   ///
   /// Note:
   /// - For continuous DoF this gives the column index in
-  /// `ConfigDoF.local_dof(dof_key).values()`
-  ///   corresponding to each row in the DoFSpace basis.
+  /// `ConfigDoF.local_dof(dof_key).values()` corresponding to each row in the
+  /// DoFSpace basis.
   /// - For "occ" DoF this gives the site index in `ConfigDoF.occupation()`
-  /// corresponding to
-  ///   each row in the DoFSpace basis.
+  /// corresponding to each row in the DoFSpace basis.
   std::optional<std::vector<Index>> const &axis_site_index() const;
 
-  /// The local DoF site DoFSet component index corresponding to each dimension
-  /// (row) of the basis. Has value for local DoF.
+  /// \brief The local DoF site DoFSet component index corresponding to each
+  /// dimension (row) of the basis. Has value for local DoF.
   ///
   /// Note:
   /// - For continuous DoF this gives the row index in
-  /// `ConfigDoF.local_dof(dof_key).values()`
-  ///   corresponding to each row in the DoFSpace basis.
+  /// `ConfigDoF.local_dof(dof_key).values()` corresponding to each row in the
+  /// DoFSpace basis.
   /// - For "occ" DoF this gives the index into `Site.occupant_dof()`, which is
-  /// the value of
-  ///   of `ConfigDoF.occupation()[site_index]`.
+  /// the value of `ConfigDoF.occupation()[site_index]`.
   std::optional<std::vector<Index>> const &axis_dof_component() const;
+
+  /// \brief Gives the index of basis row corresponding to a given
+  /// axis_site_index and axis_dof_component.
+  Index basis_row_index(Index site_index, Index dof_component) const;
 
  private:
   /// Shared prim structure
@@ -139,11 +144,10 @@ class DoFSpace {
   ///
   /// Note:
   /// - For continuous DoF this gives the column index in
-  /// `ConfigDoF.local_dof(dof_key).values()`
-  ///   corresponding to each row in the DoFSpace basis.
+  /// `ConfigDoF.local_dof(dof_key).values()` corresponding to each row in the
+  /// DoFSpace basis.
   /// - For "occ" DoF this gives the site index in `ConfigDoF.occupation()`
-  /// corresponding to
-  ///   each row in the DoFSpace basis.
+  /// corresponding to each row in the DoFSpace basis.
   std::optional<std::vector<Index>> m_axis_site_index;
 
   /// The local DoF site DoFSet component index corresponding to each dimension
@@ -151,12 +155,18 @@ class DoFSpace {
   ///
   /// Note:
   /// - For continuous DoF this gives the row index in
-  /// `ConfigDoF.local_dof(dof_key).values()`
-  ///   corresponding to each row in the DoFSpace basis.
+  /// `ConfigDoF.local_dof(dof_key).values()` corresponding to each row in the
+  /// DoFSpace basis.
   /// - For "occ" DoF this gives the index into `Site.occupant_dof()`, which is
-  /// the value of
-  ///   of `ConfigDoF.occupation()[site_index]`.
+  /// the value of `ConfigDoF.occupation()[site_index]`.
   std::optional<std::vector<Index>> m_axis_dof_component;
+
+  /// Use the site_index and dof_component to lookup the corresponding basis
+  /// row index. Has value for local DoF.
+  ///
+  /// Usage:
+  /// Index basis_row_index = (*m_basis_row_index)[site_index][dof_component]
+  std::optional<std::vector<std::vector<Index>>> m_basis_row_index;
 };
 
 /// Return true if `dof_space` is valid for `config`
@@ -170,9 +180,49 @@ bool is_valid_dof_space(Configuration const &config, DoFSpace const &dof_space);
 void throw_if_invalid_dof_space(Configuration const &config,
                                 DoFSpace const &dof_space);
 
+/// Perform conversions between DoFSpace site indices to config site indices
+struct DoFSpaceIndexConverter {
+  DoFSpaceIndexConverter(Configuration const &config,
+                         DoFSpace const &dof_space);
+
+  std::shared_ptr<Structure const> shared_prim;
+  xtal::UnitCellCoordIndexConverter const &config_index_converter;
+  xtal::UnitCellCoordIndexConverter dof_space_index_converter;
+
+  /// Perform conversion from Coordinate to DoFSpace site index
+  Index dof_space_site_index(xtal::Coordinate const &coord,
+                             double tol = TOL) const;
+
+  /// Perform conversion from DoFSpace site index to config site index
+  Index dof_space_site_index(Index config_site_index) const;
+
+  /// Perform conversion from Coordinate to config site index
+  Index config_site_index(xtal::Coordinate const &coord,
+                          double tol = TOL) const;
+
+  /// Perform conversion from DoFSpace site index to config site index
+  Index config_site_index(Index dof_space_site_index) const;
+
+  /// \brief Perform conversion from DoFSpace site index to config site index,
+  /// with additional translation within config
+  Index config_site_index(Index dof_space_site_index,
+                          UnitCell const &translation) const;
+};
+
 /// Return `config` DoF value as a coordinate in the DoFSpace basis
 Eigen::VectorXd get_normal_coordinate(Configuration const &config,
                                       DoFSpace const &dof_space);
+
+/// \brief Return DoF value in the DoFSpace basis of the subset of the
+/// configuration located at a particular coordinate
+Eigen::VectorXd get_normal_coordinate_at(
+    Configuration const &config, DoFSpace const &dof_space,
+    DoFSpaceIndexConverter const &index_converter,
+    UnitCell integral_lattice_coordinate);
+
+/// Return mean DoF value of configuration in the DoFSpace basis
+Eigen::VectorXd get_mean_normal_coordinate(Configuration const &config,
+                                           DoFSpace const &dof_space);
 
 /// Set `config` DoF value from a coordinate in the DoFSpace basis
 void set_dof_value(Configuration &config, DoFSpace const &dof_space,
@@ -199,7 +249,8 @@ void make_dof_space_axis_info(
     std::optional<std::set<Index>> const &sites,
     std::vector<std::string> &axis_glossary,
     std::optional<std::vector<Index>> &axis_site_index,
-    std::optional<std::vector<Index>> &axis_dof_component);
+    std::optional<std::vector<Index>> &axis_dof_component,
+    std::optional<std::vector<std::vector<Index>>> &basis_row_index);
 
 /// Make DoFSpace using `dof_key`, transformation matrix and sites from
 /// `input_state`, and `basis`

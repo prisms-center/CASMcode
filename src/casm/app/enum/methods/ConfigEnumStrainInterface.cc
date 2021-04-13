@@ -305,12 +305,10 @@ DataFormatter<ConfigEnumDataType> MakeEnumerator::make_formatter() const {
 /// from JSON input
 ///
 /// \param parser InputParser will contain ConfigEnumStrainParams if successful
-/// and error messages
-///               otherwise
-/// \param axes Eigen::MatriXd speciying a custom user subspace / normal mode
-/// axes if provied,
-///        otherwise set to Identity matrix of size dof_space_dimension x
-///        dof_space_dimension.
+/// and error messages otherwise
+/// \param axes Eigen::MatriXd specifying a custom user subspace / normal mode
+/// axes if provied, otherwise set to Identity matrix of size
+/// dof_space_dimension x dof_space_dimension.
 /// \param dof_space_dimension DoF space dimension detected from initial
 /// enumeration states
 void parse(InputParser<ConfigEnumStrainParams> &parser,
