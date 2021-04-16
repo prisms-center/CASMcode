@@ -719,10 +719,9 @@ std::string SupercellInfoInterface::desc() const {
       "        - supercell_name                                           \n"
       "        - make_canonical                                           \n\n"
 
-      "  properties: array of string (optional, default=[])               \n"
+      "  properties: array of string                                      \n"
       "    An array of strings specifying which supercell properties to   \n"
-      "    output. The default value of an empty array will print all     \n"
-      "    properties. The allowed options are:                           \n\n";
+      "    output. The allowed options are:                               \n\n";
 
   std::stringstream ss;
   auto dict = make_supercell_info_dict();
@@ -776,12 +775,11 @@ void SupercellInfoInterface::run(jsonParser const &json_options,
 
   // read "properties"
   std::vector<std::string> properties;
-  parser.optional(properties, "properties");
+  parser.require(properties, "properties");
 
   // read "params"
   jsonParser params_json = jsonParser::object();
   parser.optional(params_json, "params");
-
   report_and_throw_if_invalid(parser, log, error_if_invalid);
 
   SupercellSymInfo supercell_sym_info = make_supercell_sym_info(
@@ -789,16 +787,6 @@ void SupercellInfoInterface::run(jsonParser const &json_options,
 
   DataFormatterDictionary<SupercellInfoData> supercell_info_dict =
       make_supercell_info_dict();
-
-  // output all properties if empty
-  if (properties.empty()) {
-    auto it = supercell_info_dict.begin();
-    for (; it != supercell_info_dict.end(); ++it) {
-      if (it->type() == DatumFormatterClass::Property) {
-        properties.push_back(it->name());
-      }
-    }
-  }
 
   // format
   auto formatter = supercell_info_dict.parse(properties);

@@ -30,10 +30,9 @@ std::string PrimInfoInterface::desc() const {
       "  prim: JSON object (optional, default=prim of current project) \n"
       "    See `casm format --prim` for details on the prim format.\n\n"
 
-      "  properties: array of string (optional, default=[]) \n"
-      "    An array of strings specifying which prim properties to output. \n"
-      "    The default value of an empty array will print all properties. \n"
-      "    The allowed options are: \n\n";
+      "  properties: array of string                                      \n"
+      "    An array of strings specifying which prim properties to output.\n"
+      "    The allowed options are:                                       \n\n";
 
   std::stringstream ss;
   auto dict = make_dictionary<std::shared_ptr<Structure const>>();
@@ -81,17 +80,10 @@ void PrimInfoInterface::run(jsonParser const &json_options,
   }
 
   std::vector<std::string> properties;
-  parser.optional(properties, "properties");
+  parser.require(properties, "properties");
   report_and_throw_if_invalid(parser, log, error_if_invalid);
 
   auto dict = make_dictionary<std::shared_ptr<Structure const>>();
-  if (properties.empty()) {
-    for (auto it = dict.begin(); it != dict.end(); ++it) {
-      if (it->type() == DatumFormatterClass::Property) {
-        properties.push_back(it->name());
-      }
-    }
-  }
   auto formatter = dict.parse(properties);
 
   jsonParser json;

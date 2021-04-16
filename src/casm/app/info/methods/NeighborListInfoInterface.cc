@@ -190,10 +190,9 @@ std::string NeighborListInfoInterface::desc() const {
       "    canonical, the index of the prim factor group operation that   \n"
       "    transforms the canonical supercell into this supercell.        \n\n"
 
-      "  properties: array of string (optional, default=[])               \n"
+      "  properties: array of string                                      \n"
       "    An array of strings specifying which neighbor list properties  \n"
-      "    to output. The default value of an empty array will print all  \n"
-      "    properties. The allowed options are:                           \n\n";
+      "    to output. The allowed options are:                            \n\n";
 
   std::stringstream ss;
   auto dict = make_neighbor_list_info_dict();
@@ -346,7 +345,7 @@ void NeighborListInfoInterface::run(jsonParser const &json_options,
 
   // read "properties"
   std::vector<std::string> properties;
-  parser.optional(properties, "properties");
+  parser.require(properties, "properties");
   report_and_throw_if_invalid(parser, log, error_if_invalid);
 
   Lattice supercell_lattice = make_superlattice(shared_prim->lattice(), T);
@@ -355,14 +354,6 @@ void NeighborListInfoInterface::run(jsonParser const &json_options,
   SuperNeighborList supercell_neighbor_list{T, prim_neighbor_list};
 
   auto dict = make_neighbor_list_info_dict();
-  // output all properties if empty
-  if (properties.empty()) {
-    for (auto it = dict.begin(); it != dict.end(); ++it) {
-      if (it->type() == DatumFormatterClass::Property) {
-        properties.push_back(it->name());
-      }
-    }
-  }
 
   // format
   auto formatter = dict.parse(properties);
