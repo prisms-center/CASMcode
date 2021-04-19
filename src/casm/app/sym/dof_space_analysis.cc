@@ -143,45 +143,38 @@ std::string dof_space_analysis_desc() {
       "      Selects how output files are written. Options are:                "
       "         \n\n"
 
-      "      \"symmetry_directory\": (default)                                 "
-      "         \n"
-      "        If selected, only accepts \"confignames\" and "
-      "\"config_selection\"       \n"
-      "        to specify the initial state for analysis and the results are "
-      "stored in  \n"
-      "        dedicated folders in the CASM project symmetry directory:       "
-      "         \n"
-      "            \"<project_path>/symmetry/analysis/<configname>\".          "
-      "         \n\n"
+      "      \"symmetry_directory\": (default)                            \n"
+      "        If selected, only accepts \"confignames\" and              \n"
+      "        \"config_selection\" to specify the initial state for      \n"
+      "        analysis and the results are stored in dedicated folders in\n"
+      "        the CASM project symmetry directory:                       \n"
+      "            \"<project_path>/symmetry/analysis/<configname>\".     \n\n"
 
-      "      \"sequential\":                                                   "
-      "         \n"
-      "        If selected, accept any input for specifying the initial state "
-      "for       \n"
-      "        analysis, including \"scelnames\", \"supercell_selection\", "
-      "\"supercells\"\n"
-      "        \"sublats\", \"sites\", and \"cluster_specs\", and the results "
-      "are stored\n"
-      "        in indexed folders "
-      "\"<output_dir>/dof_space_analysis/state.<index>\".  \n\n"
+      "      \"sequential\":                                              \n"
+      "        If selected, accept any input for specifying the initial   \n"
+      "        state for analysis, including \"scelnames\",               \n"
+      "        \"supercell_selection\", \"supercells\"                    \n"
+      "        \"sublats\", \"sites\", and \"cluster_specs\", and the     \n"
+      "        results are stored in indexed folders                      \n"
+      "        \"<output_dir>/dof_space_analysis/state.<index>\".         \n\n"
 
-      "      \"combined_json\":                                                "
-      "         \n"
-      "        If selected, accept any input for specifying the initial state "
-      "for       \n"
-      "        analysis, including \"scelnames\", \"supercell_selection\", "
-      "\"supercells\",\n"
-      "        \"sublats\", \"sites\", and \"cluster_specs\", and the results "
-      "are stored\n"
-      "        in a single JSON file \"<output_dir>/dof_space_analysis.json\" "
-      "instead \n"
-      "        of being written separately.                                    "
-      "         \n\n"
+      "      \"combined_json_file\":                                      \n"
+      "        If selected, accept any input for specifying the initial   \n"
+      "        state for analysis, including \"scelnames\",               \n"
+      "        \"supercell_selection\", \"supercells\", \"sublats\",      \n"
+      "        \"sites\", and \"cluster_specs\", and the results are      \n"
+      "        stored in a single JSON file \"<output_dir>/dof_space.json\"\n"
+      "        instead of being written separately.                       \n\n"
 
-      "    output_dir: string (optional, default=current path)                 "
-      "         \n"
-      "      Selects where output files are written.                           "
-      "         \n\n";
+      "      \"combined_json\":                                           \n"
+      "        If selected, accept any input for specifying the initial   \n"
+      "        state for analysis, including \"scelnames\",               \n"
+      "        \"supercell_selection\", \"supercells\", \"sublats\",      \n"
+      "        \"sites\", and \"cluster_specs\", and the results are      \n"
+      "        output as a single JSON array.                             \n\n"
+
+      "    output_dir: string (optional, default=current path)            \n"
+      "      Selects where output files are written.                      \n\n";
 
   return description + custom_options + parse_ConfigEnumInput_desc();
 }
@@ -217,12 +210,20 @@ void dof_space_analysis(PrimClex &primclex, jsonParser const &json_options,
   jsonParser json_combined = combine_dof_space_analysis_json_options(
       json_options, cli_options_as_json);
 
-  log.indent() << "Input:\n" << json_combined << std::endl << std::endl;
-
   // Read input data from JSON
   ParentInputParser parser{json_combined};
   std::runtime_error error_if_invalid{
       "Error reading `casm sym --dof-space-analysis` input"};
+
+  // parse "output_type"= "symmetry_directory" (default), "sequential", or
+  // "combined_json_file", or "combined_json"
+  std::string output_type;
+  parser.optional_else(output_type, "output_type",
+                       std::string("symmetry_directory"));
+
+  if (output_type != "combined_json") {
+    log.indent() << "Input:\n" << json_combined << std::endl << std::endl;
+  }
 
   // 1) parse options
 
@@ -240,12 +241,6 @@ void dof_space_analysis(PrimClex &primclex, jsonParser const &json_options,
   // parse "write_structure" (optional, default = true)
   parser.optional_else(options.write_structure, "write_structure", true);
 
-  // parse "output_type"= "symmetry_directory" (default), "sequential", or
-  // "combined_json"
-  std::string output_type;
-  parser.optional_else(output_type, "output_type",
-                       std::string("symmetry_directory"));
-
   // parse "output_dir" (optional, default = current_path)
   fs::path output_dir;
   parser.optional_else(output_dir, "output_dir", fs::current_path());
@@ -262,11 +257,16 @@ void dof_space_analysis(PrimClex &primclex, jsonParser const &json_options,
 
   // 3) Construct output method implementation and run dof space analysis
 
-  if (output_type == "combined_json") {
+  if (output_type == "combined_json_file") {
     // write all output to one large JSON file:
-    // <output_dir>/dof_space_analysis.json
+    // <output_dir>/dof_space.json
     CombinedJsonOutput output{output_dir};
     dof_space_analysis(named_inputs, options, output);
+  } else if (output_type == "combined_json") {
+    // write all output to log as one JSON array
+    CombinedJsonOutput output;
+    dof_space_analysis(named_inputs, options, output);
+    log << output.combined_json() << std::endl;
   } else if (output_type == "sequential") {
     // write output sequentially indexed directories:
     // <output_dir>/dof_space_analysis/state.<index>/

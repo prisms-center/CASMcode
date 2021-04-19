@@ -238,21 +238,33 @@ fs::path SequentialDirectoryOutput::_output_dir(
   return output_dir;
 }
 
+/// Does not write to file on destruction
+///
+/// - May use `CombinedJsonOutput::combined_json` to access output
+CombinedJsonOutput::CombinedJsonOutput() : CombinedJsonOutput("") {}
+
+/// Writes to <output_dir>/dof_space.json on destruction
+///
+/// - Does not write if `output_dir` is empty
 CombinedJsonOutput::CombinedJsonOutput(fs::path output_dir)
     : m_combined_json(jsonParser::array()), m_output_dir(output_dir) {
-  fs::path output_path = m_output_dir / "dof_space.json";
-  if (fs::exists(output_path)) {
-    throw std::runtime_error(
-        "Error in output_dof_space: \"dof_space.json\" file "
-        "already exists. Will not overwrite.");
+  if (!output_dir.empty()) {
+    fs::path output_path = m_output_dir / "dof_space.json";
+    if (fs::exists(output_path)) {
+      throw std::runtime_error(
+          "Error in output_dof_space: \"dof_space.json\" file "
+          "already exists. Will not overwrite.");
+    }
   }
 }
 
 CombinedJsonOutput::~CombinedJsonOutput() {
-  fs::path output_path = m_output_dir / "dof_space.json";
-  fs::ofstream outfile{output_path};
-  m_combined_json.print(outfile);
-  CASM::log() << "Writing: " << output_path << std::endl;
+  if (!m_output_dir.empty()) {
+    fs::path output_path = m_output_dir / "dof_space.json";
+    fs::ofstream outfile{output_path};
+    m_combined_json.print(outfile);
+    CASM::log() << "Writing: " << output_path << std::endl;
+  }
 }
 
 void CombinedJsonOutput::write_symmetry(
@@ -293,10 +305,10 @@ void CombinedJsonOutput::write_dof_space(
 }
 
 jsonParser &CombinedJsonOutput::_output_json(Index state_index) {
-  while (m_combined_json.size() < state_index) {
+  while (m_combined_json.size() < state_index + 1) {
     m_combined_json.push_back(jsonParser::object());
   }
-  return m_combined_json[state_index - 1];
+  return m_combined_json[state_index];
 }
 
 void output_dof_space(Index state_index, std::string const &identifier,
@@ -304,8 +316,10 @@ void output_dof_space(Index state_index, std::string const &identifier,
                       DoFSpaceAnalysisOptions const &options,
                       OutputImpl &output) {
   Log &log = CASM::log();
-  log.begin(identifier);
-  log.increase_indent();
+  if (output.output_status()) {
+    log.begin(identifier);
+    log.increase_indent();
+  }
 
   auto const &sym_info = input_state.configuration().supercell().sym_info();
   std::vector<PermuteIterator> group = make_invariant_subgroup(input_state);
@@ -331,7 +345,9 @@ void output_dof_space(Index state_index, std::string const &identifier,
   }
 
   for (DoFKey const &dof : options.dofs) {
-    log << "Working on: " << identifier << " " << dof << std::endl;
+    if (output.output_status()) {
+      log << "Working on: " << identifier << " " << dof << std::endl;
+    }
     DoFSpace dof_space = make_dof_space(dof, input_state);
     std::optional<SymRepTools_v2::VectorSpaceSymReport> report;
     try {
@@ -340,8 +356,11 @@ void output_dof_space(Index state_index, std::string const &identifier,
             dof_space, sym_info, group, options.calc_wedge, report);
       }
     } catch (make_symmetry_adapted_dof_space_error &e) {
-      log << "Error: " << e.what() << std::endl;
-      log << "skipping: " << identifier << " " << dof << std::endl << std::endl;
+      if (output.output_status()) {
+        log << "Error: " << e.what() << std::endl;
+        log << "skipping: " << identifier << " " << dof << std::endl
+            << std::endl;
+      }
       output.write_dof_space_error(e, state_index, dof_space, identifier,
                                    input_state, report);
       continue;
@@ -350,8 +369,10 @@ void output_dof_space(Index state_index, std::string const &identifier,
                            report);
   }
 
-  log.decrease_indent();
-  log << std::endl;
+  if (output.output_status()) {
+    log.decrease_indent();
+    log << std::endl;
+  }
 }
 
 void dof_space_analysis(

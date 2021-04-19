@@ -86,6 +86,9 @@ class OutputImpl {
   /// <current_path>/dof_space_errors.json
   void write_errors() const;
 
+  /// If true, output current status to log
+  virtual bool output_status() const { return true; }
+
  private:
   std::vector<Error> m_errors;
 };
@@ -161,10 +164,13 @@ class SequentialDirectoryOutput : public DirectoryOutput {
   fs::path m_output_dir;
 };
 
-/// Implementation that outputs all results to one JSON file at
-/// <output_dir>/dof_space.json
+/// Implementation that outputs all results to one JSON array
 class CombinedJsonOutput : public OutputImpl {
  public:
+  /// Does not write to file on destruction
+  CombinedJsonOutput();
+
+  /// Writes to <output_dir>/dof_space.json on destruction
   CombinedJsonOutput(fs::path output_dir);
 
   ~CombinedJsonOutput();
@@ -190,6 +196,11 @@ class CombinedJsonOutput : public OutputImpl {
                        ConfigEnumInput const &config_enum_input,
                        std::optional<SymRepTools_v2::VectorSpaceSymReport> const
                            &sym_report) override;
+
+  jsonParser const &combined_json() const { return m_combined_json; }
+
+  /// Only output status if writing to file
+  bool output_status() const override { return !m_output_dir.empty(); }
 
  private:
   jsonParser &_output_json(Index state_index);
