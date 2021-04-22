@@ -313,7 +313,7 @@ Lattice Lattice::hexagonal(double tol) {
       while(k < 3) {
         for(int j = k - 1; j >= 0; j--) {
           double mu = reduced_lat.col(k).dot(ortho.col(j)) / ortho.col(j).squaredNorm();
-          if(fabs(mu) > 0.5000001) {
+          if(fabs(mu) > 0.5 + tol()) {
             reduced_lat.col(k) = reduced_lat.col(k) - round(mu) * reduced_lat.col(j);
             Eigen::HouseholderQR<Eigen::Matrix3d> qr2(reduced_lat);
             Q = qr2.householderQ();
@@ -325,7 +325,7 @@ Lattice Lattice::hexagonal(double tol) {
           }
         }
         double mu2 = reduced_lat.col(k).dot(ortho.col(k - 1)) / ortho.col(k - 1).squaredNorm();
-        if((ortho.col(k) + mu2 * ortho.col(k - 1)).squaredNorm() > (0.75) * ortho.col(k - 1).squaredNorm()) {
+        if((ortho.col(k) + mu2 * ortho.col(k - 1)).squaredNorm() > (0.75) * ortho.col(k - 1).squaredNorm() + tol()) {
           k = k + 1;
         }
         else {

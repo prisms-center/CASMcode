@@ -103,3 +103,33 @@ TEST(LatticeTest, PointGroupTest) { lattice_pg_test(); }
 TEST(LatticeTest, IsEquivalentTest) { lattice_is_equivalent_test(); }
 
 TEST(LatticeTest, SuperDuperTest) { lattice_superduper_test(); }
+
+TEST(LatticeTest, ReducedCellTest) {
+  Eigen::Matrix3d L;
+  double tol = TOL;
+
+  {
+    L << 0.0, 2.0, 2.0, 2.0, 0.0, 2.0, 2.0, 2.0, 0.0;
+
+    Lattice lattice = Lattice{L.transpose(), tol}.reduced_cell();
+    EXPECT_TRUE(almost_zero(lattice.lat_column_mat()(0, 0), tol));
+    EXPECT_TRUE(almost_zero(lattice.lat_column_mat()(1, 1), tol));
+    EXPECT_TRUE(almost_zero(lattice.lat_column_mat()(2, 2), tol));
+    // std::cout << "ideal reduced_cell: \n"
+    //           << lattice.lat_column_mat() << std::endl;
+  }
+
+  {
+    L << 0.0000003536419570, 2.1066978438210229, 2.1066934130882378,
+        2.1066934689732455, 0.0000009119994159, 2.1066928546596744,
+        2.1066939752350851, 2.1066977917080814, 0.0000004057519360;
+
+    ;
+    Lattice lattice = Lattice{L.transpose(), tol}.reduced_cell();
+    EXPECT_TRUE(almost_zero(lattice.lat_column_mat()(0, 0), tol));
+    EXPECT_TRUE(almost_zero(lattice.lat_column_mat()(1, 1), tol));
+    EXPECT_TRUE(almost_zero(lattice.lat_column_mat()(2, 2), tol));
+    // std::cout << "imperfect reduced_cell: \n"
+    //           << lattice.reduced_cell().lat_column_mat() << std::endl;
+  }
+}

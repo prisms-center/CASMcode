@@ -92,6 +92,11 @@ xtal::BasicStructure read_prim(
     ParsingDictionary<AnisoValTraits> const *_aniso_val_dict = nullptr);
 
 xtal::BasicStructure read_prim(
+    fs::path filename, double xtal_tol,
+    ParsingDictionary<AnisoValTraits> const *_aniso_val_dict,
+    std::string &prim_file_type);
+
+xtal::BasicStructure read_prim(
     jsonParser const &json, double xtal_tol,
     ParsingDictionary<AnisoValTraits> const *_aniso_val_dict = nullptr);
 

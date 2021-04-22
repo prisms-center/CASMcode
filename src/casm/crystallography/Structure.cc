@@ -90,7 +90,8 @@ void Structure::generate_factor_group() {
   m_factor_group.set_lattice(this->lattice());
 
   // Don't copy a MasterSymGroup or you'll have bad luck
-  xtal::SymOpVector factor_group_operations = xtal::make_factor_group(*this);
+  xtal::SymOpVector factor_group_operations =
+      xtal::make_factor_group(*this, this->lattice().tol());
   for (const xtal::SymOp &op : factor_group_operations) {
     m_factor_group.push_back(adapter::Adapter<CASM::SymOp, xtal::SymOp>()(op));
   }
@@ -193,8 +194,17 @@ void Structure::_generate_basis_symreps() {
   for (Index s = 0; s < m_factor_group.size(); ++s) {
     auto const &op = m_factor_group[s];
 
+    // It seems that ideally xtal::make_factor_group would provide the mappings
+    // that are being re-determined here. Since the factor group has already
+    // been determined at this point using xtal::make_factor_group, no mapping
+    // failures should be tolerated here.
+    // Fundamentally, both xtal::make_factor_group and xtal::symop_site_map use
+    // something equivalent to `basis[i].min_dist(test_site) < lattice().tol()`
+    // to find the basis site mapping and therefore should agree. This should
+    // not re-check that `cart2frac` is integer.
     sitemap = xtal::symop_site_map(op, *this);
-    op.set_rep(m_basis_perm_rep_ID, SymBasisPermute(op, lattice(), sitemap));
+    Eigen::Matrix3l point_mat = lround(cart2frac(op.matrix(), lattice()));
+    op.set_rep(m_basis_perm_rep_ID, SymBasisPermute(point_mat, sitemap));
 
     for (Index b = 0; b < basis().size(); ++b) {
       // copy_aply(symop,dofref_from) = P.permute(dofref_to);

@@ -7,11 +7,13 @@
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/crystallography/Adapter.hh"
 #include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SymTools.hh"
+#include "casm/crystallography/io/BasicStructureIO.hh"
 #include "casm/crystallography/io/VaspIO.hh"
 #include "casm/symmetry/SymGroup.hh"
 
@@ -57,8 +59,8 @@ void _print_factor_group_convergence(const Structure &struc, double small_tol,
 }
 
 /// Return SymGroup calculated for basic_structure with specified tolerance
-SymGroup make_enforced_factor_group(xtal::BasicStructure basic_structure,
-                                    double enforced_tol) {
+std::vector<xtal::SymOp> make_enforced_factor_group(
+    xtal::BasicStructure basic_structure, double enforced_tol) {
   // symmetrized lattice has tolerance set to "enforced_tol"
   Lattice symmetrized_lattice{
       xtal::symmetrize(basic_structure.lattice(), enforced_tol)
@@ -66,8 +68,7 @@ SymGroup make_enforced_factor_group(xtal::BasicStructure basic_structure,
       enforced_tol};
   basic_structure.set_lattice(symmetrized_lattice, FRAC);
 
-  Structure structure{basic_structure};
-  return structure.factor_group();
+  return make_factor_group(basic_structure, enforced_tol);
 }
 
 /// Adjust a structure's lattice and basis to increase factor group symmetry
@@ -141,101 +142,104 @@ void symmetrize_v1(fs::path poscar_path, double tol) {
 ///
 /// Method:
 /// - Read a VASP POSCAR from "input_poscar_location" and, if not primitive,
-/// make its primitive
-///   structure.
+/// make its primitive structure.
 /// - Construct a symmetrized lattice such that the point group of the lattice
-/// is equal to that of
-///   the input structure's lattice when using "enforced_tol" to check for
-///   lattice equivalence. The symmetrized lattice vectors are obtaining through
-///   a process of applying operations in the enforced point group, averaging,
-///   and then rotating to match the original lattice orientation.
+/// is equal to that of the input structure's lattice when using "enforced_tol"
+/// to check for lattice equivalence. The symmetrized lattice vectors are
+/// obtaining through a process of applying operations in the enforced point
+/// group, averaging, and then rotating to match the original lattice
+/// orientation.
 /// - Construct a symmetrized structure with factor group equal to that
-/// generated for the input
-///   structure when using "enforced_tol" to check for structure equivalence.
-///   The symmetrized structure's basis is constructed by setting basis site
-///   coordinates equal to the average coordinate positions found after applying
-///   each operation in the enforced factor group to the original basis sites.
-/// - Write the symmetrized structure to "output_poscar_location"
-/// (default="POSCAR_sym")
+/// generated for the input structure when using "enforced_tol" to check for
+/// structure equivalence. The symmetrized structure's basis is constructed by
+/// setting basis site coordinates equal to the average coordinate positions
+/// found after applying each operation in the enforced factor group to the
+/// original basis sites.
+/// - Write the symmetrized structure to "POSCAR_sym" or "prim.sym.json"
 ///
 /// \param input_poscar_location Location of VASP POSCAR style file to read
-/// \param output_poscar_location Location to write symmetrized structure (or
-/// primitive of input
-///        strucure if higher symmetry is not obtained).
 /// \param enforced_tol Tolerance used to generate the "enforced factor group"
 /// \param input_tol Tolerance used to generate original input structure factor
 /// group
 ///
-void symmetrize_v2(fs::path input_poscar_location,
-                   fs::path output_poscar_location, double enforced_tol,
-                   double input_tol) {
+void symmetrize_v2(fs::path input_poscar_location, double enforced_tol) {
+  using namespace symmetrize_impl;
+
   Log &log = CASM::log();
+
+  double primitive_tol = enforced_tol;
 
   log << "\n***************************\n" << std::endl;
   log << "Symmetrizing: " << input_poscar_location << std::endl;
   log << "with tolerance: " << enforced_tol << std::endl;
 
-  // read input POSCAR
-  fs::ifstream infile{input_poscar_location};
-  Structure input_structure{
-      xtal::BasicStructure::from_poscar_stream(infile, input_tol)};
+  // Read PRIM or prim.json:
+  xtal::BasicStructure basic_structure;
+  ParsingDictionary<AnisoValTraits> const *aniso_val_dict = nullptr;
+  std::string prim_file_type;
+  try {
+    basic_structure = read_prim(input_poscar_location, enforced_tol,
+                                aniso_val_dict, prim_file_type);
+  } catch (std::exception &e) {
+    log << "Error reading input structure" << std::endl;
+    log << e.what() << std::endl;
+    throw e;
+  }
+
+  fs::path output_poscar_location;
+  if (prim_file_type == "vasp") {
+    output_poscar_location = "POSCAR_sym";
+  } else {
+    output_poscar_location = "prim.sym.json";
+  }
 
   // make primitive if necessary
-  bool input_structure_is_primitive = xtal::is_primitive(input_structure);
+  bool input_structure_is_primitive =
+      xtal::is_primitive(basic_structure, primitive_tol);
   if (!input_structure_is_primitive) {
     log << "The input structure is not primitive." << std::endl;
     log << "The primitive structure will be generated and symmetrized."
         << std::endl;
-    input_structure = Structure{xtal::make_primitive(input_structure)};
+    basic_structure = xtal::make_primitive(basic_structure, primitive_tol);
   }
 
-  // original method always printed a result, but only prints the resulting
-  // symmetrized structure (called "test_structure" here) if its factor group is
-  // valid and has higher symmetry than the original input structure
+  // symmetrize lattice using "enforced_tol"
+  Lattice symmetrized_lattice{
+      xtal::symmetrize(basic_structure.lattice(), enforced_tol)
+          .lat_column_mat(),
+      enforced_tol};
+  basic_structure.set_lattice(symmetrized_lattice, FRAC);
 
-  // make the factor group to be enforced (this also symmetrizes the lattice),
-  // and symmetrize
-  SymGroup enforced_factor_group = symmetrize_impl::make_enforced_factor_group(
-      input_structure, enforced_tol);
-  Structure test_structure =
-      xtal::symmetrize(input_structure, enforced_factor_group);
+  // make the factor group to be enforced
+  std::vector<xtal::SymOp> enforced_factor_group =
+      make_factor_group(basic_structure);
+
+  // symmetrize the structure
+  basic_structure = symmetrize(basic_structure, enforced_factor_group);
+
+  Structure structure{basic_structure};
 
   // check factor group of the result and compare to original
-  bool test_factor_group_valid =
-      test_structure.factor_group().is_group(enforced_tol);
-  Index test_factor_group_size = test_structure.factor_group().size();
-  Index input_factor_group_size = input_structure.factor_group().size();
+  bool factor_group_valid = structure.factor_group().is_group(enforced_tol);
+  Index factor_group_size = structure.factor_group().size();
 
-  log << "Factor group size of input structure: " << input_factor_group_size
+  log << "Factor group size with enforced tolerance: " << factor_group_size
       << std::endl;
-  log << "Factor group size with enforced tolerance: " << test_factor_group_size
-      << std::endl;
-
-  // Set to point to the structure that should be printed
-  Structure const *output_structure = nullptr;
-  if (test_factor_group_valid &&
-      (test_factor_group_size > input_factor_group_size)) {
-    log << "Writing symmetrized structure: " << output_poscar_location
-        << std::endl;
-    output_structure = &test_structure;
-  } else {
-    log << "Higher symmetry not found the specified tolerance." << std::endl;
-    if (input_structure_is_primitive) {
-      log << "Writing input structure, unchanged: " << output_poscar_location
-          << std::endl;
-    } else {
-      log << "Writing primitive of input structure: " << output_poscar_location
-          << std::endl;
-    }
-    output_structure = &input_structure;
-  }
 
   // Print result
-  VaspIO::PrintPOSCAR printer{xtal::make_simple_structure(*output_structure),
-                              input_structure.structure().title()};
+  if (prim_file_type == "vasp") {
+    VaspIO::PrintPOSCAR printer{xtal::make_simple_structure(structure),
+                                basic_structure.title()};
 
-  fs::ofstream file{output_poscar_location};
-  printer.print(file);
+    fs::ofstream file{output_poscar_location};
+    printer.print(file);
+  } else {
+    jsonParser json;
+    bool include_va = true;
+    write_prim(structure, json, FRAC, include_va);
+    fs::ofstream file{output_poscar_location};
+    file << json << std::endl;
+  }
 }
 }  // namespace symmetrize_impl
 
@@ -248,48 +252,33 @@ std::string symmetrize_desc() {
       "Symmetrize a POSCAR (--symmetrize POSCAR_LOCATION --tol ENFORCED_TOL): "
       "\n\n"
 
-      "  The --symmetrize option implements a method to adjust a structure's "
-      "lattice \n"
-      "  and basis to increase factor group symmetry.                          "
-      "      \n\n"
+      "  The --symmetrize option implements a method to adjust a          \n"
+      "  structure's lattice and basis to increase factor group symmetry. \n\n"
 
       "  Method: \n"
-      "  - Read a VASP POSCAR file from POSCAR_LOCATION and, if not primitive, "
-      "make  \n"
-      "    its primitive structure.                                            "
-      "      \n"
-      "  - Construct a symmetrized lattice such that the point group of the "
-      "lattice  \n"
-      "    is equal to that of the input structure's lattice when using "
-      "ENFORCED_TOL \n"
-      "    to check for lattice equivalence. The symmetrized lattice vectors "
-      "are     \n"
-      "    obtaining through a process of applying operations in the enforced "
-      "point  \n"
-      "    group, averaging, and then rotating to match the original lattice   "
-      "      \n"
-      "    orientation.                                                        "
-      "      \n"
-      "  - Construct a symmetrized structure with factor group equal to that   "
-      "      \n"
-      "    generated for the input structure when using ENFORCED_TOL to check "
-      "for    \n"
-      "    structure equivalence. The symmetrized structure's basis is "
-      "constructed   \n"
-      "    by setting basis site coordinates equal to the average coordinate   "
-      "      \n"
-      "    positions found after applying each operation in the enforced "
-      "factor group\n"
-      "    to the original basis sites.                                        "
-      "      \n"
-      "  - Write the symmetrized structure to \"POSCAR_sym\".                  "
-      "      \n\n\n";
+      "  - Read a VASP POSCAR file from POSCAR_LOCATION and, if not       \n"
+      "    primitive, make its primitive structure.                       \n"
+      "  - Construct a symmetrized lattice such that the point group of   \n"
+      "    the lattice is equal to that of the input structure's lattice  \n"
+      "    when using ENFORCED_TOL to check for lattice equivalence. The  \n"
+      "    symmetrized lattice vectors are obtaining through a process of \n"
+      "    applying operations in the enforced point group, averaging, and\n"
+      "    then rotating to match the original lattice orientation.       \n"
+      "  - Construct a symmetrized structure with factor group equal to   \n"
+      "    that generated for the input structure when using ENFORCED_TOL \n"
+      "    to check for structure equivalence. The symmetrized structure's\n"
+      "    basis is constructed by setting basis site coordinates equal to\n"
+      "    the average coordinate positions found after applying each     \n"
+      "    operation in the enforced factor group to the original basis   \n"
+      "    sites.                                                         \n"
+      "  - Write the symmetrized structure to \"POSCAR_sym\" or           \n"
+      "    \"prim.sym.json\".                                             \n\n";
 
   return description;
 }
 
 /// Adjust a structure's lattice and basis to increase factor group symmetry
-void symmetrize(PrimClex &primclex, jsonParser const &json_options,
+void symmetrize(jsonParser const &json_options,
                 jsonParser const &cli_options_as_json) {
   Log &log = CASM::log();
 
@@ -313,13 +302,9 @@ void symmetrize(PrimClex &primclex, jsonParser const &json_options,
       "Error reading `casm sym --symmetrize` input"};
   report_and_throw_if_invalid(parser, log, error_if_invalid);
 
-  symmetrize_impl::symmetrize_v1(poscar_path, enforced_tol);
+  // symmetrize_impl::symmetrize_v1(poscar_path, enforced_tol);
 
-  // TODO: check equivalence of v1 and v2
-  // symmetrize_impl::symmetrize_v2(poscar_path,
-  //                                "POSCAR_sym",
-  //                                enforced tol,
-  //                                TOL);
+  symmetrize_impl::symmetrize_v2(poscar_path, enforced_tol);
 }
 
 }  // namespace CASM

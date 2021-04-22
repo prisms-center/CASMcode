@@ -20,6 +20,7 @@
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/SimpleStructureTools.hh"
 #include "casm/crystallography/Structure.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/io/BasicStructureIO.hh"
 #include "casm/global/definitions.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
@@ -35,6 +36,99 @@ const std::string relaxed_opt = "relaxed";
 const std::string molecule_opt = "as-molecules";
 
 const std::string include_va_opt = "include-va";
+
+template <typename ValueType, typename UnaryFunctionOfTolerance>
+std::pair<double, ValueType> find_upper_tol(double init_tol, double step,
+                                            double min_step,
+                                            UnaryFunctionOfTolerance f) {
+  double base = 10.;
+  ValueType init_value = f(std::pow(base, init_tol));
+  ValueType value{init_value};
+  double tol = init_tol;
+  while (true) {
+    value = f(std::pow(base, tol + step));
+    if (value == init_value) {
+      tol += step;
+      if (tol >= -1.00001) {
+        break;
+      }
+    } else {
+      if (step / 10. <= min_step) {
+        tol += step;
+        break;
+      } else {
+        step /= 10.;
+      }
+    }
+  }
+  return std::make_pair(tol, value);
+}
+
+template <typename ValueType, typename UnaryFunctionOfTolerance>
+std::pair<double, ValueType> find_lower_tol(double init_tol, double step,
+                                            double min_step,
+                                            UnaryFunctionOfTolerance f) {
+  double base = 10.;
+  ValueType init_value = f(std::pow(base, init_tol));
+  ValueType value{init_value};
+  double tol = init_tol;
+  while (true) {
+    value = f(std::pow(base, tol - step));
+    if (value == init_value) {
+      tol -= step;
+      if (tol <= -9.99999) {
+        break;
+      }
+    } else {
+      if (step / 10. <= min_step) {
+        tol -= step;
+        break;
+      } else {
+        step /= 10.;
+      }
+    }
+  }
+  return std::make_pair(tol, value);
+}
+
+struct CalcLatticePointGroupSize {
+  CalcLatticePointGroupSize(xtal::BasicStructure const &_struc)
+      : struc(_struc) {}
+
+  int operator()(double tol) {
+    return xtal::make_point_group(struc.lattice(), tol).size();
+  }
+
+  xtal::BasicStructure const &struc;
+};
+
+struct CalcFactorGroupSize {
+  CalcFactorGroupSize(xtal::BasicStructure const &_struc) : struc(_struc) {}
+
+  int operator()(double tol) {
+    xtal::BasicStructure tmp{struc};
+    tmp.set_lattice(Lattice{struc.lattice().lat_column_mat(), tol}, CART);
+    return xtal::make_factor_group(tmp, tol).size();
+  }
+
+  xtal::BasicStructure const &struc;
+};
+
+struct CalcStandardNiggli {
+  CalcStandardNiggli(xtal::BasicStructure const &_struc)
+      : struc(_struc),
+        init_niggli_lat(xtal::canonical::equivalent(struc.lattice())) {}
+
+  bool operator()(double tol) {
+    Lattice tmp_lattice{struc.lattice().lat_column_mat(), tol};
+    Lattice niggli_lat = xtal::canonical::equivalent(tmp_lattice);
+    return almost_equal(init_niggli_lat.lat_column_mat(),
+                        niggli_lat.lat_column_mat(), tol);
+  }
+
+  xtal::BasicStructure const &struc;
+  Lattice init_niggli_lat;
+};
 
 // returns {error message, new file extension, new structure}
 std::tuple<std::string, std::string, BasicStructure> standardize_prim(
@@ -94,6 +188,120 @@ std::tuple<std::string, std::string, BasicStructure> standardize_prim(
       return {err, ".right_handed.json", tmp};
     }
   }
+
+  // Check how sensitive symmetry is to tolerance
+  bool is_sensitive = false;
+  double upper = -3.;
+  double lower = -7.;
+  double symmetrize_tol = -5.;
+  double base = 10.;
+
+  CalcLatticePointGroupSize calc_pg(prim);
+  auto pg_upper = find_upper_tol<int>(-5., 1., 0.09, calc_pg);
+  auto pg_lower = find_lower_tol<int>(-5., 1., 0.09, calc_pg);
+
+  if (pg_upper.first < upper || pg_lower.first > lower) {
+    std::stringstream ss;
+    ss << "- The lattice point group is sensitive to the tolerance used for "
+          "floating point comparisons. This may cause CASM to fail to properly "
+          "standardize and compare objects. At the default tolerance ("
+       << TOL << ") the point group size is " << calc_pg(TOL) << ".";
+    if (pg_upper.first < upper) {
+      ss << " At a tolerance of " << std::pow(base, pg_upper.first)
+         << " the point group size is " << pg_upper.second << ".";
+      if (pg_upper.first > symmetrize_tol) {
+        symmetrize_tol = pg_upper.first;
+      }
+    }
+    if (pg_lower.first > lower) {
+      ss << " At a tolerance of " << std::pow(base, pg_lower.first)
+         << " the point group size is " << pg_lower.second << ".";
+    }
+    ss << "\n";
+    err += ss.str();
+    is_sensitive = true;
+  }
+
+  CalcFactorGroupSize calc_fg(prim);
+  auto fg_upper = find_upper_tol<int>(-5., 1., 0.09, calc_fg);
+  auto fg_lower = find_lower_tol<int>(-5., 1., 0.09, calc_fg);
+
+  if (fg_upper.first < upper || fg_lower.first > lower) {
+    std::stringstream ss;
+    ss << "- The factor group is sensitive to the tolerance used for floating "
+          "point comparisons. This may cause CASM to fail to properly "
+          "standardize and compare objects. At the default tolerance ("
+       << TOL << ") the factor group size is " << calc_fg(TOL) << ".";
+    if (fg_upper.first < upper) {
+      ss << " At a tolerance of " << std::pow(base, fg_upper.first)
+         << " the factor group size is " << fg_upper.second << ".";
+      if (fg_upper.first > symmetrize_tol) {
+        symmetrize_tol = fg_upper.first;
+      }
+    }
+    if (fg_lower.first > lower) {
+      ss << " At a tolerance of " << std::pow(base, fg_lower.first)
+         << " the factor group size is " << fg_lower.second << ".";
+    }
+    ss << "\n";
+    err += ss.str();
+    is_sensitive = true;
+  }
+
+  CalcStandardNiggli calc_standard_niggli(prim);
+  auto standard_niggli_upper =
+      find_upper_tol<bool>(-5., 1., 0.09, calc_standard_niggli);
+  auto standard_niggli_lower =
+      find_lower_tol<bool>(-5., 1., 0.09, calc_standard_niggli);
+
+  if (standard_niggli_upper.first < upper ||
+      standard_niggli_lower.first > lower) {
+    std::stringstream ss;
+    ss << "- The standard Niggli cell is sensitive to the tolerance used for "
+          "floating point comparisons. This may cause CASM to fail to properly "
+          "standardize and compare objects.";
+    if (standard_niggli_upper.first < upper) {
+      ss << " At a tolerance of " << std::pow(base, standard_niggli_upper.first)
+         << " the standard Niggli cell is different than at the default "
+            "tolerance ("
+         << TOL << ").";
+      if (standard_niggli_upper.first > symmetrize_tol) {
+        symmetrize_tol = standard_niggli_upper.first;
+      }
+    }
+    if (standard_niggli_lower.first > lower) {
+      ss << " At a tolerance of " << std::pow(base, standard_niggli_lower.first)
+         << " the standard Niggli cell is different than at the default "
+            "tolerance ("
+         << TOL << ").";
+    }
+    ss << "\n";
+    err += ss.str();
+    is_sensitive = true;
+  }
+
+  if (is_sensitive && !force) {
+    double tol = std::pow(base, symmetrize_tol);
+
+    std::stringstream ss;
+    ss << "- Will generate symmeterized prim using a tolerance of " << tol
+       << ".\n";
+    err += ss.str();
+
+    // symmetrize lattice
+    xtal::BasicStructure tmp(prim);
+    Lattice symmetrized_lattice{
+        xtal::symmetrize(tmp.lattice(), tol).lat_column_mat(), tol};
+    tmp.set_lattice(symmetrized_lattice, FRAC);
+
+    // make the factor group to be enforced
+    std::vector<xtal::SymOp> enforced_factor_group = make_factor_group(tmp);
+
+    // symmetrize the structure
+    tmp = symmetrize(tmp, enforced_factor_group);
+    return {err, ".symmetrized.json", tmp};
+  }
+
   return {err, "", prim};
 }
 

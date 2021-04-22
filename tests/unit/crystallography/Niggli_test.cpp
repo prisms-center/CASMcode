@@ -13,6 +13,10 @@
 #include "crystallography/TestStructures.hh"
 
 namespace CASM {
+namespace xtal {
+std::set<Eigen::Matrix3d, StandardOrientationCompare> _niggli_set(
+    const Lattice &in_lat, double compare_tol, bool keep_handedness);
+}
 
 void confirm_lattice(const Lattice &known_niggli_form,
                      const Eigen::Matrix3i &skewed_unimodular) {
@@ -180,3 +184,49 @@ TEST(NiggliTest, EasyTests) {
 }
 
 TEST(NiggliTest, EvilNiggliTest) { CASM::single_dimension_test(); }
+
+TEST(NiggliTest, ImperfectSymmetryTest1) {
+  using namespace CASM;
+  using namespace CASM::xtal;
+  Eigen::Matrix3d L;
+  double tol = 1e-4;  // TOL;
+  bool keep_handedness = false;
+
+  StandardOrientationCompare f(tol);
+  std::set<Eigen::Matrix3d, StandardOrientationCompare> ideal_niggli_set{f};
+  std::set<Eigen::Matrix3d, StandardOrientationCompare> imperfect_niggli_set{f};
+
+  {
+    L << 0.0, 2.1067, 2.1067, 2.1067, 0.0, 2.1067, 2.1067, 2.1067, 0.0;
+
+    Lattice lattice{L.transpose(), tol};
+    ideal_niggli_set = _niggli_set(lattice, tol, keep_handedness);
+  }
+
+  {
+    L << 0.0000003536419570, 2.1066978438210229, 2.1066934130882378,
+        2.1066934689732455, 0.0000009119994159, 2.1066928546596744,
+        2.1066939752350851, 2.1066977917080814, 0.0000004057519360;
+
+    Lattice lattice{L.transpose(), tol};
+    imperfect_niggli_set = _niggli_set(lattice, tol, keep_handedness);
+  }
+
+  EXPECT_EQ(ideal_niggli_set.size(), imperfect_niggli_set.size());
+  auto it = ideal_niggli_set.begin();
+  auto end = ideal_niggli_set.end();
+  auto it2 = imperfect_niggli_set.begin();
+  auto end2 = imperfect_niggli_set.end();
+  Index i = 0;
+  while (it != end && it2 != end2) {
+    EXPECT_TRUE(almost_equal(*it, *it2, tol))
+        << "\n---\ni: " << i << " / " << ideal_niggli_set.size()
+        << "\nideal: \n"
+        << *it << "\nimperfect: \n"
+        << *it2 << std::endl;
+    ++it;
+    ++it2;
+
+    i += 1;
+  }
+}

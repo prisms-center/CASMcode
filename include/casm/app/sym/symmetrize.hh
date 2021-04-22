@@ -13,7 +13,7 @@ class jsonParser;
 std::string symmetrize_desc();
 
 /// Adjust a structure's lattice and basis to increase factor group symmetry
-void symmetrize(PrimClex &primclex, jsonParser const &json_options,
+void symmetrize(jsonParser const &json_options,
                 jsonParser const &cli_options_as_json);
 
 }  // namespace CASM

@@ -62,8 +62,12 @@ class SymBasisPermute : public SymOpRepresentation {
  public:
   typedef Index size_type;
 
-  /// Construct SymBasisPermute
+  /// Construct SymBasisPermute (deprecated)
   SymBasisPermute(SymOp const &_op, Lattice const &_lat,
+                  std::vector<UnitCellCoord> const &_ucc_permute);
+
+  /// Construct SymBasisPermute
+  SymBasisPermute(Eigen::Matrix3l const &_point_mat,
                   std::vector<UnitCellCoord> const &_ucc_permute);
 
   /// Return pointer to a copy of this SymBasisPermute

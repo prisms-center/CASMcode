@@ -256,9 +256,29 @@ void from_json(xtal::Site &site, const jsonParser &json,
   site.set_allowed_occupants(t_occ);
 }
 
+/// Read BasicStructure, detecting supported file types
+///
+/// \param filename Path to BasicStructure input file
+/// \param xtal_tol Lattice tolerance to use
+/// \param _aniso_val_dict Can be used for reading custom AnisoValTraits
 xtal::BasicStructure read_prim(
     fs::path filename, double xtal_tol,
     ParsingDictionary<AnisoValTraits> const *_aniso_val_dict) {
+  std::string prim_file_type;
+  return read_prim(filename, xtal_tol, _aniso_val_dict, prim_file_type);
+}
+
+/// Read BasicStructure, detecting supported file types
+///
+/// \param filename Path to BasicStructure input file
+/// \param xtal_tol Lattice tolerance to use
+/// \param _aniso_val_dict Can be used for reading custom AnisoValTraits
+/// \param prim_file_type When successful, set with input file type. One of
+///     "vasp", "json".
+xtal::BasicStructure read_prim(
+    fs::path filename, double xtal_tol,
+    ParsingDictionary<AnisoValTraits> const *_aniso_val_dict,
+    std::string &prim_file_type) {
   jsonParser json;
   filename = fs::absolute(filename);
   if (!fs::exists(filename)) {
@@ -280,6 +300,7 @@ xtal::BasicStructure read_prim(
   // Check if JSON
   if (f.peek() == '{') {
     try {
+      prim_file_type = "json";
       json = jsonParser(f);
     } catch (std::exception const &ex) {
       std::stringstream err_msg;
@@ -293,6 +314,7 @@ xtal::BasicStructure read_prim(
   // else tread as vasp-like file
   xtal::BasicStructure prim;
   try {
+    prim_file_type = "vasp";
     prim = xtal::BasicStructure::from_poscar_stream(f);
   } catch (std::exception const &ex) {
     std::stringstream err_msg;

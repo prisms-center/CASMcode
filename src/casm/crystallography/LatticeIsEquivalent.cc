@@ -81,8 +81,8 @@ bool IsPointGroupOp::_check(const Eigen::Matrix3d &tfrac_op) const {
   // The diagonal elements of tMat describe the square of the distance by which
   // the transformed vectors 'miss' the original vectors
 
-  if (tMat(0, 0) < 2. * m_lat.tol() && tMat(1, 1) < 2. * m_lat.tol() &&
-      tMat(2, 2) < 2. * m_lat.tol()) {
+  double sqr_tol = m_lat.tol() * m_lat.tol();
+  if (tMat(0, 0) < sqr_tol && tMat(1, 1) < sqr_tol && tMat(2, 2) < sqr_tol) {
     m_map_error = sqrt(tMat.diagonal().maxCoeff());
     return true;
   }

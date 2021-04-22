@@ -173,13 +173,17 @@ void jsonDatabase<Supercell>::_read_scel_list() {
                              dir.obj_list<Supercell>().string());
   }
 
+  std::cout << "begin reading supercells" << std::endl;
   auto it = json["supercells"].begin();
   auto end = json["supercells"].end();
   for (; it != end; ++it) {
     Eigen::Matrix3l mat;
     from_json(mat, *it);
+    std::cout << "mat: \n" << mat << std::endl;
     this->emplace(&primclex(), mat);
+    std::cout << "emplaced" << std::endl;
   }
+  std::cout << "end reading supercells" << std::endl;
 }
 
 void jsonDatabase<Supercell>::_read_SCEL() {

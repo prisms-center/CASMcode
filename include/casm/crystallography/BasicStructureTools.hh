@@ -16,6 +16,11 @@ class Coordinate;
 class BasicStructure;
 struct SymOp;
 
+// TODO: Use of tolerances should be reconsidered to make mistaken inconsistent
+// usage less likely. If Lattice is provided, should use Lattice.tol() for
+// crystallography tolerances. For DoFSet comparison, provide a
+// linear_algebra_tol or something similar.
+
 /// return basis index of site that is same type and within distance 'tol' (in
 /// Angstr) of test_site If no such site exists in basis, return the size of the
 /// basis
@@ -40,11 +45,11 @@ std::pair<double, Eigen::Vector3d> calc_rotation_angle_and_axis(
 /// angle, axis, tau)
 void sort_factor_group(std::vector<SymOp> &factor_group, const Lattice &lat);
 
-/// Create the factor group of the given structure. If the structure has no
-/// degrees of freedom affected by time reversal, time reversal is ignored.
-/// Otherwise symmetry operations are checked for time reversal
-std::vector<SymOp> make_factor_group(const BasicStructure &struc,
-                                     double tol = TOL);
+/// Create the factor group of the given structure
+std::vector<SymOp> make_factor_group(const BasicStructure &struc);
+
+/// Create the factor group of the given structure (deprecated)
+std::vector<SymOp> make_factor_group(const BasicStructure &struc, double tol);
 
 /// Create the permutation group of a structure.
 std::vector<Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic, Index>>

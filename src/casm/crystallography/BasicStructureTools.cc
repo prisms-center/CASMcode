@@ -25,11 +25,11 @@
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/external/Eigen/Core"
 #include "casm/external/Eigen/src/Core/Matrix.h"
+#include "casm/external/Eigen/src/Core/PermutationMatrix.h"
+#include "casm/external/Eigen/src/Core/util/Constants.h"
 #include "casm/global/definitions.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/symmetry/SymOp.hh"
-#include "casm/external/Eigen/src/Core/PermutationMatrix.h"
-#include "casm/external/Eigen/src/Core/util/Constants.h"
 namespace {
 using namespace CASM;
 
@@ -210,7 +210,7 @@ xtal::SymOpVector make_translation_group(const xtal::BasicStructure &struc,
 std::pair<xtal::BasicStructure, xtal::SymOpVector> make_primitive_factor_group(
     const xtal::BasicStructure &non_primitive_struc, double tol) {
   xtal::BasicStructure primitive_struc =
-      xtal::make_primitive(non_primitive_struc);
+      xtal::make_primitive(non_primitive_struc, tol);
 
   xtal::SymOpVector primitive_point_group =
       xtal::make_point_group(primitive_struc.lattice());
@@ -463,6 +463,30 @@ void sort_factor_group(std::vector<SymOp> &factor_group, const Lattice &lat) {
   }
 }
 
+/// Create the factor group of the given structure
+///
+/// \param struct BasicStructure for which the factor group is constructed
+///
+/// Notes:
+/// - If the structure has no degrees of freedom affected by time reversal,
+/// time reversal is ignored. Otherwise symmetry operations are checked for
+/// time reversal
+/// - For consistency, uses `struc.lattice().tol()` for comparing lattice
+/// vectors and site coordinates.
+std::vector<SymOp> make_factor_group(const BasicStructure &struc) {
+  return make_factor_group(struc, struc.lattice().tol());
+}
+
+/// Create the factor group of the given structure. (deprecated)
+///
+/// \param struct BasicStructure for which the factor group is constructed
+/// \param tol Crystallography tolerance used for comparing lattice vectors and
+/// site coordinates. Should use `struc.lattice().tol()` for consistency.
+///
+/// Notes:
+/// - If the structure has no degrees of freedom affected by time reversal,
+/// time reversal is ignored. Otherwise symmetry operations are checked for
+/// time reversal
 std::vector<SymOp> make_factor_group(const BasicStructure &struc, double tol) {
   auto prim_factor_group_pair = ::make_primitive_factor_group(struc, tol);
   const BasicStructure &primitive_struc = prim_factor_group_pair.first;
@@ -654,7 +678,7 @@ BasicStructure make_superstructure(
     const BasicStructure &tiling_unit,
     const Eigen::Matrix<IntegralType, 3, 3, Options> &transformation_matrix) {
   static_assert(std::is_integral<IntegralType>::value,
-                "Transfomration matrix must be integer matrix");
+                "Transformation matrix must be integer matrix");
   Lattice superlat =
       make_superlattice(tiling_unit.lattice(), transformation_matrix);
   BasicStructure superstruc(superlat);

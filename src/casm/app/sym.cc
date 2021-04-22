@@ -45,7 +45,7 @@ void SymOption::initialize() {
       "dof-space-analysis", "Print DoF Space analysis files")(
       "symmetrize",
       po::value<fs::path>(&m_poscar_path)->value_name(ArgHandler::path()),
-      "symmetrize a POSCAR specified by path to a given tolerance");
+      "symmetrize a prim to a given tolerance");
 
   return;
 }
@@ -105,7 +105,7 @@ int SymCommand::run() const {
   jsonParser cli_options_as_json{opt()};  // All CLI options as JSON object
 
   if (vm().count("symmetrize")) {
-    symmetrize(primclex(), json_options, cli_options_as_json);
+    symmetrize(json_options, cli_options_as_json);
   } else if (vm().count("dof-space-analysis")) {
     dof_space_analysis(primclex(), json_options, cli_options_as_json);
   } else {
