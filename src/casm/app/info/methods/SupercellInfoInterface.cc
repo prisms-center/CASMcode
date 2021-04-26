@@ -734,7 +734,8 @@ std::string SupercellInfoInterface::name() const { return "SupercellInfo"; }
 
 /// Run `prim` info method
 void SupercellInfoInterface::run(jsonParser const &json_options,
-                                 PrimClex const *primclex) const {
+                                 PrimClex const *primclex,
+                                 fs::path root) const {
   Log &log = CASM::log();
 
   ParentInputParser parser{json_options};
@@ -754,7 +755,6 @@ void SupercellInfoInterface::run(jsonParser const &json_options,
     shared_prim = primclex->shared_prim();
   } else {
     // if project contains current working directory
-    fs::path root = find_casmroot(fs::current_path());
     if (!root.empty()) {
       try {
         shared_prim = open_shared_prim(root);

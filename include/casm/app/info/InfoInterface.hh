@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "casm/global/definitions.hh"
 #include "casm/misc/cloneable_ptr.hh"
 
 namespace CASM {
@@ -30,6 +31,8 @@ class InfoInterfaceBase : public notstd::Cloneable {
   /// \param primclex Optional PrimClex pointer gives access to project
   ///     resources. Will only by provided if provided to API, for use of
   ///     current working directory project, must be constructed by the method.
+  /// \param root Path to directory that should be used to read project data,
+  ///     depending on the method implementation.
   ///
   /// It is up to the individual method to determine how to use `json_options`
   /// and document itself via `desc()`. For most methods, the input should
@@ -50,8 +53,8 @@ class InfoInterfaceBase : public notstd::Cloneable {
   ///
   /// Implement a new `casm info` method by following the example of
   /// `PrimInfoInterface`.
-  virtual void run(jsonParser const &json_options,
-                   PrimClex const *primclex = nullptr) const = 0;
+  virtual void run(jsonParser const &json_options, PrimClex const *primclex,
+                   fs::path root) const = 0;
 };
 
 }  // namespace CASM

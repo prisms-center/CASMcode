@@ -45,7 +45,7 @@ std::string PrimInfoInterface::name() const { return "PrimInfo"; }
 
 /// Run `prim` info method
 void PrimInfoInterface::run(jsonParser const &json_options,
-                            PrimClex const *primclex) const {
+                            PrimClex const *primclex, fs::path root) const {
   Log &log = CASM::log();
 
   ParentInputParser parser{json_options};
@@ -64,7 +64,6 @@ void PrimInfoInterface::run(jsonParser const &json_options,
     shared_prim = primclex->shared_prim();
   } else {
     // if project contains current working directory
-    fs::path root = find_casmroot(fs::current_path());
     if (!root.empty()) {
       try {
         shared_prim = open_shared_prim(root);

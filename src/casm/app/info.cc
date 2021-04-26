@@ -146,15 +146,10 @@ int InfoCommand::run() const {
   int count = std::count_if(info_methods().begin(), info_methods().end(),
                             method_name_matches);
 
-  PrimClex const *primclex_ptr = nullptr;
-  if (args().primclex) {
-    primclex_ptr = args().primclex;
-  }
-
   if (count == 1) {
     auto it = std::find_if(info_methods().begin(), info_methods().end(),
                            method_name_matches);
-    (*it)->run(json_options, primclex_ptr);
+    (*it)->run(json_options, args().primclex, args().root);
     return 0;
 
   } else if (count < 1) {
@@ -179,7 +174,7 @@ int InfoCommand::run() const {
     auto it = info_methods().begin();
     std::advance(it, method_index);
 
-    (*it)->run(json_options, primclex_ptr);
+    (*it)->run(json_options, args().primclex, args().root);
     return 0;
   } else if (count > 1) {
     err_log() << "Multiple matches found for --method " << opt().method()

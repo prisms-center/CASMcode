@@ -13,8 +13,8 @@ class NeighborListInfoInterface : public InfoInterfaceBase {
 
   std::string name() const override;
 
-  void run(jsonParser const &json_options,
-           PrimClex const *primclex = nullptr) const override;
+  void run(jsonParser const &json_options, PrimClex const *primclex,
+           fs::path root) const override;
 };
 
 }  // namespace CASM

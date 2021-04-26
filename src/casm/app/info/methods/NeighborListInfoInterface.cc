@@ -207,7 +207,8 @@ std::string NeighborListInfoInterface::name() const {
 
 /// Run `NeighborListInfo` info method
 void NeighborListInfoInterface::run(jsonParser const &json_options,
-                                    PrimClex const *primclex) const {
+                                    PrimClex const *primclex,
+                                    fs::path root) const {
   Log &log = CASM::log();
 
   ParentInputParser parser{json_options};
@@ -215,7 +216,6 @@ void NeighborListInfoInterface::run(jsonParser const &json_options,
 
   std::unique_ptr<PrimClex> primclex_ptr;
   if (primclex == nullptr) {
-    fs::path root = find_casmroot(fs::current_path());
     if (!root.empty()) {
       primclex_ptr = notstd::make_unique<PrimClex>(root);
       primclex = primclex_ptr.get();
