@@ -741,6 +741,8 @@ void SupercellInfoInterface::run(jsonParser const &json_options,
   ParentInputParser parser{json_options};
   std::runtime_error error_if_invalid{"Error reading SupercellInfo input"};
 
+  std::cout << "root: " << root << std::endl;
+
   // read "prim"
   std::shared_ptr<Structure const> shared_prim;
   if (parser.self.contains("prim")) {
@@ -769,6 +771,7 @@ void SupercellInfoInterface::run(jsonParser const &json_options,
       parser.insert_error("prim", msg.str());
     }
   }
+  report_and_throw_if_invalid(parser, log, error_if_invalid);
 
   auto shared_lattice_parser =
       parser.parse_as<SupercellInfoLatticeIO>(shared_prim);
