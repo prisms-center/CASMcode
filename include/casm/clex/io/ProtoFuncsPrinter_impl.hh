@@ -5,6 +5,7 @@
 #include "casm/clex/ClexBasis.hh"
 #include "casm/clex/io/ProtoFuncsPrinter.hh"
 #include "casm/crystallography/Site.hh"
+#include "casm/crystallography/Structure.hh"
 
 namespace CASM {
 
@@ -100,16 +101,23 @@ void ProtoFuncsPrinter::operator()(const OrbitType &orbit, Log &out,
 /// Format:
 /// \code
 /// {
-///   "prototype": <IntegralCluster JSON>,
+///   "cluster_functions": [
+///     "\\Phi_{1}" : "\\phi_{2,0}(s_{0})",
+///     "linear_function_index": <integer>
+///     // this is where to set "eci": <number>
+///   ],
 ///   "linear_orbit_index": <integer>, // cluster orbit index
 ///   "mult": <integer>, // orbit size
-///   // factor group indices of invariant group operations
-///   "invariant_group": [<integer>, <intger>, ...],
-///   // 'brief' symop descriptions
-///   "invariant_group_descriptions": [<str>, <str>, ...]
-///   "cluster_functions": [
-///
-///   ]
+///   "prototype": {
+///      // <IntegralCluster JSON>,
+///      "min_length" : <number>,
+///      "max_length" : <number>,
+///      "sites" : <JSON array of UnitCellCoord>,
+///      // factor group indices of invariant group operations
+///      "invariant_group": [<integer>, <integer>, ...],
+///      // 'brief' symop descriptions
+///      "invariant_group_descriptions": [<str>, <str>, ...]
+///   }
 /// }
 /// \endcode
 template <typename OrbitType>
@@ -147,6 +155,22 @@ jsonParser &ProtoFuncsPrinter::to_json(const OrbitType &orbit, jsonParser &json,
   }
 
   return json;
+}
+
+/// Write basis.json format JSON
+///
+/// - Does not write "bspecs"
+template <typename OrbitVecType>
+void write_clex_basis(ClexBasis const &clex_basis, OrbitVecType const &orbits,
+                      jsonParser &json) {
+  OrbitPrinterOptions orbit_printer_options;
+  orbit_printer_options.print_invariant_group = true;
+  write_site_basis_funcs(clex_basis.shared_prim(), clex_basis, json);
+  bool align = false;
+  ProtoFuncsPrinter funcs_printer{clex_basis,
+                                  clex_basis.shared_prim()->shared_structure(),
+                                  align, orbit_printer_options};
+  write_clust(orbits.begin(), orbits.end(), json, funcs_printer);
 }
 
 }  // namespace CASM

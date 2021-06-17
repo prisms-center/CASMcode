@@ -153,7 +153,12 @@ SupercellInfoFormatter<jsonParser> frac_coordinate() {
   return SupercellInfoFormatter<jsonParser>(
       "frac_coordinate",
       "Fractional coordinate (with respect to the supercell lattice vectors) "
-      "of every site in the supercell.",
+      "of every site in the supercell. For coordinate conversions, the order "
+      "in which sites are listed is the same as for `cart_coordinate` and "
+      "`integral_site_coordinates`. The site order is determined by "
+      "`linear_site_index = linear_unitcell_index + supercell_volume * "
+      "sublattice_index`, where `linear_unitcell_index` is an index into the "
+      "`unitcells` list.",
       [](SupercellInfoData const &data) -> jsonParser {
         auto const &prim = *data.shared_prim;
         jsonParser json = jsonParser::array();
@@ -171,7 +176,13 @@ SupercellInfoFormatter<jsonParser> frac_coordinate() {
 
 SupercellInfoFormatter<jsonParser> cart_coordinate() {
   return SupercellInfoFormatter<jsonParser>(
-      "cart_coordinate", "Cartesian coordinate of every site in the supercell.",
+      "cart_coordinate",
+      "Cartesian coordinate of every site in the supercell. For coordinate "
+      "conversions, the order in which sites are listed is the same as for "
+      "`frac_coordinate` and `integral_site_coordinates`. The site order is "
+      "determined by `linear_site_index = linear_unitcell_index + "
+      "supercell_volume * sublattice_index`, where `linear_unitcell_index` is "
+      "an index into the `unitcells` list.",
       [](SupercellInfoData const &data) -> jsonParser {
         auto const &prim = *data.shared_prim;
         jsonParser json = jsonParser::array();

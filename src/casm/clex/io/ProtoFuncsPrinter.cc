@@ -1,5 +1,7 @@
+#include "casm/basis_set/DoFTraits.hh"
 #include "casm/clex/io/ProtoFuncsPrinter_impl.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
+#include "casm/clusterography/ClusterSpecs_impl.hh"
 
 namespace CASM {
 
@@ -532,6 +534,44 @@ void write_site_basis_funcs(std::shared_ptr<const Structure> prim_ptr,
       }
     }
   }
+}
+
+namespace write_clex_basis_impl {
+
+struct WriteClexBasisImpl {
+  /// Required input & resulting `json` to be populated
+  WriteClexBasisImpl(std::shared_ptr<Structure const> const &_shared_prim,
+                     ClexBasisSpecs const &_basis_set_specs, jsonParser &_json)
+      : shared_prim(_shared_prim),
+        basis_set_specs(_basis_set_specs),
+        json(_json) {}
+
+  std::shared_ptr<Structure const> const &shared_prim;
+  ClexBasisSpecs const &basis_set_specs;
+  jsonParser &json;
+
+  template <typename OrbitVecType>
+  void operator()(OrbitVecType const &orbits) const {
+    ParsingDictionary<DoFType::Traits> const *dof_dict =
+        &DoFType::traits_dict();
+    ClexBasis clex_basis{shared_prim, basis_set_specs, dof_dict};
+    clex_basis.generate(orbits.begin(), orbits.end());
+    write_clex_basis(clex_basis, orbits, json);
+  }
+};
+
+}  // namespace write_clex_basis_impl
+
+/// Write basis.json format JSON
+///
+/// - Does not write "bspecs"
+jsonParser write_clex_basis(std::shared_ptr<const Structure> const &shared_prim,
+                            ClexBasisSpecs const &clex_basis_specs,
+                            jsonParser &json) {
+  using namespace write_clex_basis_impl;
+  WriteClexBasisImpl f{shared_prim, clex_basis_specs, json};
+  for_all_orbits(*clex_basis_specs.cluster_specs, log(), f);
+  return json;
 }
 
 // // explicit template instantiations

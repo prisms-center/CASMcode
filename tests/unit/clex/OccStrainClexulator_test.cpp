@@ -1,6 +1,7 @@
 #include "ProjectBaseTest.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/Clexulator.hh"
+#include "casm/clex/ConfigCorrelations.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/PrimClex_impl.hh"
 #include "casm/clex/Supercell.hh"

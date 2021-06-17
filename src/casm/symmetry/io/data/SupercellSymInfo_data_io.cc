@@ -104,10 +104,10 @@ SupercellSymInfoFormatter<double> supercell_volume() {
 SupercellSymInfoFormatter<jsonParser> unitcells() {
   return SupercellSymInfoFormatter<jsonParser>(
       "unitcells",
-      "Integer coordinates of unit cells in the supercell. The order "
-      "corresponds to the both the linear order of site degree of freedom "
-      "values within one sublattice of a configuration, and the order in which "
-      "translational symmetry operations are applied.",
+      "Integer coordinates of unit cells in the supercell. The order is used "
+      "to determine the linear order of sites and site degrees of freedom "
+      "values within one sublattice of a superstructure or configuration, and "
+      "the order in which translational symmetry operations are applied.",
       [](SupercellSymInfo const &supercell_sym_info) -> jsonParser {
         jsonParser json;
         to_json(xtal::make_lattice_points(
@@ -122,7 +122,10 @@ SupercellSymInfoFormatter<jsonParser> integral_site_coordinates() {
       "integral_site_coordinates",
       "Integer coordinates `(b, i, j, k)` of sites in the supercell, where `b` "
       "is the sublattice index of the site, and `(i,j,k)` are the integral "
-      "coordinates of the unit cell containing the site.",
+      "coordinates of the unit cell containing the site. The site order is "
+      "determined by `linear_site_index = linear_unitcell_index + "
+      "supercell_volume * sublattice_index`, where `linear_unitcell_index` is "
+      "an index into the `unitcells` list.",
       [](SupercellSymInfo const &supercell_sym_info) -> jsonParser {
         jsonParser json = jsonParser::array();
         auto f = supercell_sym_info.unitcellcoord_index_converter();

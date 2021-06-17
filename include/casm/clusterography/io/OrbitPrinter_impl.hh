@@ -144,9 +144,9 @@ jsonParser &OrbitPrinter<_Element, ORBIT_PRINT_MODE::PROTO>::to_json(
     const OrbitType &orbit, jsonParser &json, Index orbit_index,
     Index Norbits) const {
   json.put_obj();
-  json["prototype"] = orbit.prototype();
   json["linear_orbit_index"] = orbit_index;
   json["mult"] = orbit.size();
+  json["prototype"] = orbit.prototype();
   if (this->opt.print_invariant_group) {
     this->print_invariant_group(orbit, orbit.prototype(), json["prototype"]);
   }
@@ -187,6 +187,7 @@ jsonParser &OrbitPrinter<_Element, ORBIT_PRINT_MODE::FULL>::to_json(
     Index Norbits) const {
   json.put_obj();
   json["linear_orbit_index"] = orbit_index;
+  json["mult"] = orbit.size();
   json["prototype"] = orbit.prototype();
   if (this->opt.print_invariant_group) {
     this->print_invariant_group(orbit, orbit.prototype(), json["prototype"]);
@@ -351,17 +352,32 @@ ClusterOutputIterator read_clust(ClusterOutputIterator result,
 /// {
 ///   "orbits": [
 ///     {
+///       "linear_orbit_index": <integer>, // cluster orbit index
+///       "mult": <integer>, // orbit size
 ///       "prototype" : {
-///         "min_length" : number,
-///         "max_length" : number,
-///         "sites" : (JSON array of UnitCellCoord)
-///       }
+///         // <IntegralCluster JSON>,
+///         "min_length" : <number>,
+///         "max_length" : <number>,
+///         "sites" : <JSON array of UnitCellCoord>,
+///         // factor group indices of invariant group operations
+///         "invariant_group": [<integer>, <integer>, ...],
+///         // 'brief' symop descriptions
+///         "invariant_group_descriptions": [<str>, <str>, ...]
+///       },
+///       // optionally print elements if FULL orbit printer used
+///       // optionally print equivalence map for each element if
+///       // printer.opt.print_equivalence_map == true
+///       "elements": [
+///          <Cluster object, formatted the same as "prototype">
+///       ]
 ///     },
 ///     ... for each orbit ...
 ///   ],
 ///   "prim" : (JSON object, the contents of prim.json)
 /// }
 /// \endcode
+///
+/// \anchor write_clust_doc
 ///
 template <typename ClusterOrbitIterator, typename Printer>
 jsonParser &write_clust(ClusterOrbitIterator begin, ClusterOrbitIterator end,
@@ -376,7 +392,13 @@ jsonParser &write_clust(ClusterOrbitIterator begin, ClusterOrbitIterator end,
   return json;
 }
 
-/// \brief Write Orbit<SymCompareType> to JSON, including 'bspecs'
+/// \brief Write Orbit<SymCompareType> to JSON
+///
+/// Notes:
+/// - This overload selects either a prototype only printer or a full orbit
+///   printer based on the value of `opt.orbit_print_mode`.
+/// - See \ref write_clust_doc for the output format.
+///
 template <typename ClusterOrbitIterator>
 jsonParser &write_clust(ClusterOrbitIterator begin, ClusterOrbitIterator end,
                         jsonParser &json, const OrbitPrinterOptions &opt) {
@@ -393,35 +415,6 @@ jsonParser &write_clust(ClusterOrbitIterator begin, ClusterOrbitIterator end,
     OrbitPrinter<Element, ORBIT_PRINT_MODE::FULL> orbit_printer(opt);
     write_clust(begin, end, json, orbit_printer);
   }
-  return json;
-}
-
-/// \brief Write Orbit<SymCompareType> to JSON, including 'bspecs'
-///
-/// Format:
-/// \code
-/// {
-///   "orbits": [
-///     {
-///       "prototype" : {
-///         "min_length" : number,
-///         "max_length" : number,
-///         "sites" : (JSON array of UnitCellCoord)
-///       }
-///     },
-///     ... for each orbit ...
-///   ],
-///   "bspecs" : (JSON object, the contents of bspecs.json)
-///   "prim" : (JSON object, the contents of prim.json)
-/// }
-/// \endcode
-///
-template <typename ClusterOrbitIterator, typename Printer>
-jsonParser &write_clust(ClusterOrbitIterator begin, ClusterOrbitIterator end,
-                        jsonParser &json, Printer printer,
-                        const jsonParser &bspecs) {
-  write_clust(begin, end, json, printer);
-  json["bspecs"] = bspecs;
   return json;
 }
 

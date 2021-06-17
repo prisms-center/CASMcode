@@ -10,6 +10,7 @@
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/clex/Calculable.hh"
+#include "casm/clex/ConfigCorrelations.hh"
 #include "casm/clex/ConfigIOHull.hh"
 #include "casm/clex/ConfigIONovelty.hh"
 #include "casm/clex/ConfigIOStrain.hh"
@@ -247,7 +248,9 @@ const std::string CorrContribution::Desc =
     "`corr` accepting any of `corr_contribution(linear_unitcell_index)` or "
     "`corr_contribution(linear_unitcell_index, clex_name)` or "
     "`corr_contribution(linear_unitcell_index, indices)`, or "
-    "`corr_contribution(linear_unitcell_index, clex_name, indices)`.";
+    "`corr_contribution(linear_unitcell_index, clex_name, indices)`. "
+    "Coordinates of unit cells can be obtained from the `unitcells` "
+    "information of the `info -m SupercellInfo` command.";
 
 /// \brief Returns the atom fraction
 Eigen::VectorXd CorrContribution::evaluate(const Configuration &config) const {
@@ -312,17 +315,19 @@ const std::string PointCorr::Desc =
     "Point correlation values (evaluated basis functions for a single site, "
     "normalized by cluster orbit size). The first argument is the linear unit "
     "cell index [0, scel_vol). The second argument is the index of the site in "
-    "the neighbor list. For periodic cluster functions this is the sublattice "
-    "index [0, basis_size). For local clusters this is the index of sites in "
-    "the local neighborhood [0, basis_size*neighborhood_size), where "
-    "neighborhood_size is the number of distinct unitcells with a site in any "
-    "cluster orbit. The remaining arguments follow the same conventions as "
-    "`corr` accepting any of "
-    "`corr_contribution(linear_unitcell_index, neighbor_index)` or "
-    "`corr_contribution(linear_unitcell_index, neighbor_index, clex_name)` or "
-    "`corr_contribution(linear_unitcell_index, neighbor_index, indices)`, or "
-    "`corr_contribution(linear_unitcell_index, neighbor_index, clex_name, "
-    "indices)`.";
+    "the neighbor list. For periodic cluster functions, the `neighbor_index` "
+    "counts over sites in the primitive cell that have site degrees of "
+    "freedom. If all sites in the prim have site degrees of freedom, then the "
+    "`neighbor_index` is equal to the `sublattice_index` of that site in the "
+    "prim. For local cluster functions, the `neighbor_index` counts over sites "
+    "in the neighborhood that have site degrees of freedom. The remaining "
+    "arguments follow the same conventions as `corr` accepting any of "
+    "`point_corr(linear_unitcell_index, neighbor_index)` or "
+    "`point_corr(linear_unitcell_index, neighbor_index, clex_name)` or "
+    "`point_corr(linear_unitcell_index, neighbor_index, indices)`, or "
+    "`point_corr(linear_unitcell_index, neighbor_index, clex_name, "
+    "indices)`. Coordinates of sites can be obtained from the `info -m "
+    "NeighborListInfo` method.";
 
 Eigen::VectorXd PointCorr::evaluate(const Configuration &config) const {
   return point_corr(m_linear_unitcell_index, m_neighbor_index, config,
@@ -377,6 +382,143 @@ bool PointCorr::parse_args(const std::string &args) {
   } else {
     std::stringstream ss;
     ss << "Too many arguments for 'point_corr'.  Received: " << args << "\n";
+    throw std::runtime_error(ss.str());
+  }
+  return true;
+}
+
+// --- AllCorrContribution implementations -----------
+
+const std::string AllCorrContribution::Name = "all_corr_contribution";
+
+const std::string AllCorrContribution::Desc =
+    "Correlation values (evaluated basis functions for a single unit cell, not "
+    "normalized), for every unitcell in the supercell. The output is a matrix, "
+    "with each row corresponding to a unitcell. The arguments follow the same "
+    "conventions as `corr` accepting any of `all_corr_contribution` or "
+    "`all_corr_contribution(clex_name)` or `all_corr_contribution(indices)`, "
+    "or `all_corr_contribution(clex_name, indices)`. Coordinates of unit cells "
+    "can be obtained from the `unitcells` information of the `info -m "
+    "SupercellInfo` command.";
+
+Eigen::MatrixXd AllCorrContribution::evaluate(
+    const Configuration &config) const {
+  return all_corr_contribution(config, m_clexulator);
+}
+
+/// \brief If not yet initialized, use the default clexulator from the PrimClex
+bool AllCorrContribution::init(const Configuration &_tmplt) const {
+  if (!m_clexulator.initialized()) {
+    const PrimClex &primclex = _tmplt.primclex();
+    ClexDescription desc = m_clex_name.empty()
+                               ? primclex.settings().default_clex()
+                               : primclex.settings().clex(m_clex_name);
+    m_clexulator = primclex.clexulator(desc.bset);
+  }
+
+  MatrixXdAttribute<Configuration>::init(_tmplt);
+  return true;
+}
+
+///
+/// Expects one of:
+/// - 'all_corr_contribution'
+/// - 'all_corr_contribution(clex_name)'
+/// - 'all_corr_contribution(index_expression)'
+/// - 'all_corr_contribution(clex_name, index_expression)'
+bool AllCorrContribution::parse_args(const std::string &args) {
+  std::vector<std::string> splt_vec;
+  boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
+
+  if (!splt_vec.size()) {
+    return true;
+  }
+  if (splt_vec.size() == 1) {
+    if ((splt_vec[0].find_first_not_of("0123456789") == std::string::npos) ||
+        (splt_vec[0].find(':') != std::string::npos)) {
+      _parse_index_expression(splt_vec[0]);
+    } else {
+      m_clex_name = splt_vec[0];
+    }
+  } else if (splt_vec.size() == 2) {
+    m_clex_name = splt_vec[0];
+    _parse_index_expression(splt_vec[1]);
+  } else {
+    std::stringstream ss;
+    ss << "Too many arguments for 'all_corr_contribution'.  Received: " << args
+       << "\n";
+    throw std::runtime_error(ss.str());
+  }
+  return true;
+}
+
+// --- AllPointCorr implementations -----------
+
+const std::string AllPointCorr::Name = "all_point_corr";
+
+const std::string AllPointCorr::Desc =
+    "Point correlation values (evaluated basis functions for a single site, "
+    "normalized by cluster orbit size), for every site in the supercell for "
+    "periodic cluster functions, or every site in the neighborhood of each "
+    "unit cell for local clusters functions. The output is a matrix, with each "
+    "row corresponding to a site. The site in the i-th row is determined by  "
+    "`i = linear_unitcell_index + supercell_volume * neighbor_index`. For "
+    "periodic cluster functions, the `neighbor_index` counts over sites in the "
+    "primitive cell that have site degrees of freedom. If all sites in the "
+    "prim have site degrees of freedom, then the `neighbor_index` is equal to "
+    "the `sublattice_index` of that site in the prim. For local cluster "
+    "functions, the `neighbor_index` counts over sites in the neighborhood "
+    "that have site degrees of freedom. The arguments follow the same "
+    "conventions as `corr` accepting any of `all_point_corr` or "
+    "`all_point_corr(clex_name)` or `all_point_corr(indices)`, or "
+    "`all_point_corr(clex_name, indices)`. Coordinates of sites can be "
+    "obtained from the `info -m NeighborListInfo` method.";
+
+Eigen::MatrixXd AllPointCorr::evaluate(const Configuration &config) const {
+  return all_point_corr(config, m_clexulator);
+}
+
+/// \brief If not yet initialized, use the default clexulator from the PrimClex
+bool AllPointCorr::init(const Configuration &_tmplt) const {
+  if (!m_clexulator.initialized()) {
+    const PrimClex &primclex = _tmplt.primclex();
+    ClexDescription desc = m_clex_name.empty()
+                               ? primclex.settings().default_clex()
+                               : primclex.settings().clex(m_clex_name);
+    m_clexulator = primclex.clexulator(desc.bset);
+  }
+
+  MatrixXdAttribute<Configuration>::init(_tmplt);
+  return true;
+}
+
+///
+/// Expects one of:
+/// - 'all_point_corr'
+/// - 'all_point_corr(clex_name)'
+/// - 'all_point_corr(index_expression)'
+/// - 'all_point_corr(clex_name, index_expression)'
+bool AllPointCorr::parse_args(const std::string &args) {
+  std::vector<std::string> splt_vec;
+  boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
+
+  if (!splt_vec.size()) {
+    return true;
+  }
+  if (splt_vec.size() == 1) {
+    if ((splt_vec[0].find_first_not_of("0123456789") == std::string::npos) ||
+        (splt_vec[0].find(':') != std::string::npos)) {
+      _parse_index_expression(splt_vec[0]);
+    } else {
+      m_clex_name = splt_vec[0];
+    }
+  } else if (splt_vec.size() == 2) {
+    m_clex_name = splt_vec[0];
+    _parse_index_expression(splt_vec[1]);
+  } else {
+    std::stringstream ss;
+    ss << "Too many arguments for 'all_point_corr'.  Received: " << args
+       << "\n";
     throw std::runtime_error(ss.str());
   }
   return true;
@@ -883,7 +1025,7 @@ make_matrixxd_dictionary<Configuration>() {
   using namespace ConfigIO;
   MatrixXdAttributeDictionary<Configuration> dict;
 
-  dict.insert(GradCorr());
+  dict.insert(AllCorrContribution(), AllPointCorr(), GradCorr());
 
   return dict;
 }

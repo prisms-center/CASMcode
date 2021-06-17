@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "casm/clex/Calculable.hh"
+#include "casm/clex/ConfigCorrelations.hh"  // TODO: remove include
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/ConfigurationTraits.hh"
 #include "casm/clex/HasCanonicalForm.hh"
@@ -28,7 +29,6 @@ using xtal::UnitCellCoord;
 class IntegralCluster;
 class PrimClex;
 class Supercell;
-class Clexulator;
 class ConfigIsEquivalent;
 template <typename ConfigType, typename IsEqualImpl>
 class GenericConfigCompare;
@@ -465,26 +465,6 @@ Configuration sub_configuration(std::shared_ptr<Supercell const> sub_scel_ptr,
 /// \brief Make Configuration from name string
 Configuration make_configuration(const PrimClex &primclex, std::string name);
 
-/// \brief Returns correlations using 'clexulator'.
-Eigen::VectorXd correlations(const Configuration &config,
-                             Clexulator const &clexulator);
-
-/// Returns correlation contribution from a single unit cell, not normalized.
-Eigen::VectorXd corr_contribution(Index linear_unitcell_index,
-                                  const Configuration &config,
-                                  Clexulator const &clexulator);
-
-/// \brief Returns point correlations from a single site, normalized by cluster
-/// orbit size
-Eigen::VectorXd point_corr(Index linear_unitcell_index, Index neighbor_index,
-                           const Configuration &config,
-                           Clexulator const &clexulator);
-
-/// \brief Returns gradient correlations using 'clexulator', with respect to DoF
-/// 'dof_type'
-Eigen::MatrixXd gradcorrelations(const Configuration &config,
-                                 Clexulator const &clexulator, DoFKey &key);
-
 /// Returns parametric composition, as calculated using PrimClex::param_comp
 Eigen::VectorXd comp(const Configuration &config);
 
@@ -522,12 +502,6 @@ double formation_energy(const Configuration &config);
 
 /// \brief Returns the formation energy, normalized per species
 double formation_energy_per_species(const Configuration &config);
-
-/// \brief Returns the formation energy, normalized per unit cell
-double clex_formation_energy(const Configuration &config);
-
-/// \brief Returns the formation energy, normalized per species
-double clex_formation_energy_per_species(const Configuration &config);
 
 /// \brief Root-mean-square forces of relaxed configurations, determined from
 /// DFT (eV/Angstr.)
@@ -604,29 +578,6 @@ bool has_volume_relaxation(const Configuration &_config);
 bool has_relaxed_magmom(const Configuration &_config);
 
 bool has_relaxed_mag_basis(const Configuration &_config);
-
-/// \brief Returns correlations using 'clexulator'. Supercell needs a correctly
-/// populated neighbor list.
-Eigen::VectorXd correlations(const ConfigDoF &configdof, const Supercell &scel,
-                             Clexulator const &clexulator);
-
-/// Returns correlation contribution from a single unit cell, not normalized.
-Eigen::VectorXd corr_contribution(Index linear_unitcell_index,
-                                  const ConfigDoF &configdof,
-                                  const Supercell &scel,
-                                  Clexulator const &clexulator);
-
-/// \brief Returns point correlations from a single site, normalized by cluster
-/// orbit size
-Eigen::VectorXd point_corr(Index linear_unitcell_index, Index neighbor_index,
-                           const ConfigDoF &configdof, const Supercell &scel,
-                           Clexulator const &clexulator);
-
-/// \brief Returns gradient correlations using 'clexulator', with respect to DoF
-/// 'dof_type'
-Eigen::MatrixXd gradcorrelations(const ConfigDoF &configdof,
-                                 const Supercell &scel,
-                                 Clexulator const &clexulator, DoFKey &key);
 
 /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is
 /// ordered as Structure::get_struc_molecule()

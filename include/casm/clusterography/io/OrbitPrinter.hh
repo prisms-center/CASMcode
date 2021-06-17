@@ -192,12 +192,6 @@ jsonParser &write_clust(ClusterOrbitIterator begin, ClusterOrbitIterator end,
                         jsonParser &json,
                         const OrbitPrinterOptions &opt = OrbitPrinterOptions());
 
-/// \brief Write Orbit<SymCompareType> to JSON, including 'bspecs'
-template <typename ClusterOrbitIterator, typename Printer>
-jsonParser &write_clust(ClusterOrbitIterator begin, ClusterOrbitIterator end,
-                        jsonParser &json, Printer printer,
-                        const jsonParser &bspecs);
-
 }  // namespace CASM
 
 #endif
