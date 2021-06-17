@@ -213,6 +213,73 @@ bool has_local_neighborhood_overlap(std::vector<OrbitType> const &local_orbits,
   return false;
 }
 
+/// Make site dependency neighborhoods
+///
+/// \param begin Iterator at the beginning of a cluster orbit range
+/// \param end Iterator at the end of a cluster orbit range
+///
+/// \returns a map of UnitCellCoord (translated as necessary to the canonical
+/// unit cell by the SymCompare method), to the set of UnitCellCoord that it is
+/// in clusters with. For cluster function evaluation, this gives the
+/// neighborhood of sites whose DoF values are needed to evaluate clusters
+/// involving a particular site.
+///
+/// Note:
+/// - keys of result are guaranteed to be in canonical translation unit
+template <typename ClusterOrbitIterator>
+std::map<xtal::UnitCellCoord, std::set<xtal::UnitCellCoord>>
+make_site_dependency_neighborhoods(ClusterOrbitIterator begin,
+                                   ClusterOrbitIterator end) {
+  std::map<xtal::UnitCellCoord, std::set<xtal::UnitCellCoord>> result;
+
+  if (begin == end) return result;
+
+  typedef IntegralCluster cluster_type;
+  typedef typename ClusterOrbitIterator::value_type orbit_type;
+
+  xtal::UnitCellCoord const *ucc_ptr(nullptr);
+  ClusterOrbitIterator begin2 = begin;
+  for (; begin2 != end; ++begin2) {
+    auto const &orbit = *begin2;
+    for (auto const &equiv : orbit) {
+      for (xtal::UnitCellCoord const &ucc : equiv) {
+        ucc_ptr = &ucc;
+        break;
+      }
+      if (ucc_ptr) break;
+    }
+    if (ucc_ptr) break;
+  }
+  if (!ucc_ptr) return result;
+
+  Structure const &prim(begin->prototype().prim());
+  SymGroup identity_group(prim.factor_group().begin(),
+                          (prim.factor_group().begin()) + 1);
+  orbit_type empty_orbit(cluster_type(prim), identity_group,
+                         begin->sym_compare());
+
+  // Loop over each site in each cluster of each orbit
+  for (; begin != end; ++begin) {
+    auto const &orbit = *begin;
+    for (auto const &equiv : orbit) {
+      for (xtal::UnitCellCoord const &ucc : equiv) {
+        // create a test cluster from prototype
+        cluster_type test(empty_orbit.prototype());
+
+        // add the new site
+        test.elements().push_back(ucc);
+        test = orbit.sym_compare().prepare(test);
+
+        xtal::UnitCell trans = test.element(0).unitcell() - ucc.unitcell();
+        for (xtal::UnitCellCoord const &ucc2 : equiv) {
+          result[test.element(0)].insert(ucc2 + trans);
+        }
+      }
+    }
+  }
+  return result;
+}
+
 /// \brief Return superlattice transf. matrices for which
 /// has_local_neighborhood_overlap is false
 ///

@@ -10,12 +10,9 @@
 #include "casm/basis_set/DoF.hh"
 #include "casm/casm_io/container/stream_io.hh"
 #include "casm/clex/ChemicalReference.hh"
-#include "casm/clex/ClexParamPack.hh"
-#include "casm/clex/Clexulator.hh"
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/ConfigDoFTools.hh"
 #include "casm/clex/Configuration_impl.hh"
-#include "casm/clex/ECIContainer.hh"
 #include "casm/clex/FillSupercell.hh"
 #include "casm/clex/MappedPropertiesTools.hh"
 #include "casm/clex/SimpleStructureTools.hh"
@@ -797,37 +794,6 @@ Configuration make_configuration(const PrimClex &primclex, std::string name) {
   return *primclex.db<Configuration>().find(name);
 }
 
-/// \brief Returns correlations using 'clexulator'.
-Eigen::VectorXd correlations(const Configuration &config,
-                             Clexulator const &clexulator) {
-  return correlations(config.configdof(), config.supercell(), clexulator);
-}
-
-/// \brief Returns correlations using 'clexulator'.
-Eigen::VectorXd corr_contribution(Index linear_unitcell_index,
-                                  const Configuration &config,
-                                  Clexulator const &clexulator) {
-  return corr_contribution(linear_unitcell_index, config.configdof(),
-                           config.supercell(), clexulator);
-}
-
-/// \brief Returns point correlations from a single site, normalized by cluster
-/// orbit size
-Eigen::VectorXd point_corr(Index linear_unitcell_index, Index neighbor_index,
-                           const Configuration &config,
-                           Clexulator const &clexulator) {
-  return point_corr(linear_unitcell_index, neighbor_index, config.configdof(),
-                    config.supercell(), clexulator);
-}
-
-/// \brief Returns gradient correlations using 'clexulator', with respect to DoF
-/// 'dof_type'
-Eigen::MatrixXd gradcorrelations(const Configuration &config,
-                                 Clexulator const &clexulator, DoFKey &key) {
-  return gradcorrelations(config.configdof(), config.supercell(), clexulator,
-                          key);
-}
-
 /// Returns parametric composition, as calculated using PrimClex::param_comp
 Eigen::VectorXd comp(const Configuration &config) {
   return config.param_composition();
@@ -904,30 +870,6 @@ double formation_energy(const Configuration &config) {
 /// - Currently, this is really a Molecule fraction
 double formation_energy_per_species(const Configuration &config) {
   return formation_energy(config) / n_species(config);
-}
-
-/// \brief Returns the formation energy, normalized per unit cell
-double clex_formation_energy(const Configuration &config) {
-  const auto &primclex = config.primclex();
-  auto formation_energy = primclex.settings().clex("formation_energy");
-  Clexulator clexulator = primclex.clexulator(formation_energy.bset);
-  const ECIContainer &eci = primclex.eci(formation_energy);
-
-  if (eci.index().back() >= clexulator.corr_size()) {
-    Log &err_log = CASM::err_log();
-    err_log.error<Log::standard>("bset and eci mismatch");
-    err_log << "using cluster expansion: 'formation_energy'" << std::endl;
-    err_log << "basis set size: " << clexulator.corr_size() << std::endl;
-    err_log << "max eci index: " << eci.index().back() << std::endl;
-    throw std::runtime_error("Error: bset and eci mismatch");
-  }
-
-  return eci * correlations(config, clexulator);
-}
-
-/// \brief Returns the formation energy, normalized per unit cell
-double clex_formation_energy_per_species(const Configuration &config) {
-  return clex_formation_energy(config) / n_species(config);
 }
 
 /// \brief Cost function that describes the degree to which basis sites have
@@ -1109,172 +1051,6 @@ std::ostream &operator<<(std::ostream &sout, const Configuration &c) {
   }
 
   return sout;
-}
-
-/// \brief Returns correlations using 'clexulator'. Supercell needs a correctly
-/// populated neighbor list.
-Eigen::VectorXd correlations(const ConfigDoF &configdof, const Supercell &scel,
-                             Clexulator const &clexulator) {
-  // Size of the supercell will be used for normalizing correlations to a per
-  // primitive cell value
-  int scel_vol = scel.volume();
-
-  Eigen::VectorXd correlations = Eigen::VectorXd::Zero(clexulator.corr_size());
-
-  // Inform Clexulator of the bitstring
-
-  // Holds contribution to global correlations from a particular neighborhood
-  Eigen::VectorXd tcorr = correlations;
-  // std::vector<double> corr(clexulator.corr_size(), 0.0);
-
-  for (int v = 0; v < scel_vol; v++) {
-    // Fill up contributions
-    clexulator.calc_global_corr_contribution(
-        configdof, scel.nlist().sites(v).data(), end_ptr(scel.nlist().sites(v)),
-        tcorr.data(), end_ptr(tcorr));
-
-    correlations += tcorr;
-  }
-
-  correlations /= (double)scel_vol;
-
-  return correlations;
-}
-
-/// Returns correlation contribution from a single unit cell, not normalized.
-///
-/// Supercell needs a correctly populated neighbor list.
-Eigen::VectorXd corr_contribution(Index linear_unitcell_index,
-                                  const ConfigDoF &configdof,
-                                  const Supercell &scel,
-                                  Clexulator const &clexulator) {
-  if (linear_unitcell_index >= scel.volume()) {
-    std::stringstream msg;
-    msg << "Error in point_corr: linear_unitcell_index out of range ("
-        << linear_unitcell_index << " >= " << scel.volume() << ")";
-    throw std::runtime_error(msg.str());
-  }
-  Eigen::VectorXd correlations = Eigen::VectorXd::Zero(clexulator.corr_size());
-
-  auto const &unitcell_nlist = scel.nlist().sites(linear_unitcell_index);
-  clexulator.calc_global_corr_contribution(
-      configdof, unitcell_nlist.data(), end_ptr(unitcell_nlist),
-      correlations.data(), end_ptr(correlations));
-
-  return correlations;
-}
-
-/// \brief Returns point correlations from a single site, normalized by cluster
-/// orbit size
-Eigen::VectorXd point_corr(Index linear_unitcell_index, Index neighbor_index,
-                           const ConfigDoF &configdof, const Supercell &scel,
-                           Clexulator const &clexulator) {
-  if (linear_unitcell_index >= scel.volume()) {
-    std::stringstream msg;
-    msg << "Error in point_corr: linear_unitcell_index out of range ("
-        << linear_unitcell_index << " >= " << scel.volume() << ")";
-    throw std::runtime_error(msg.str());
-  }
-
-  Eigen::VectorXd correlations = Eigen::VectorXd::Zero(clexulator.corr_size());
-
-  auto const &unitcell_nlist = scel.nlist().sites(linear_unitcell_index);
-  if (neighbor_index >= clexulator.n_point_corr()) {
-    std::stringstream msg;
-    msg << "Error in point_corr: neighbor_index out of range ("
-        << neighbor_index << " >= " << clexulator.n_point_corr() << ")";
-    throw std::runtime_error(msg.str());
-  }
-  clexulator.calc_global_corr_contribution(
-      configdof, unitcell_nlist.data(), end_ptr(unitcell_nlist),
-      correlations.data(), end_ptr(correlations));
-
-  return correlations;
-}
-
-/// \brief Returns gradient correlations using 'clexulator', with respect to DoF
-/// 'dof_type'
-Eigen::MatrixXd gradcorrelations(const ConfigDoF &configdof,
-                                 const Supercell &scel,
-                                 Clexulator const &clexulator, DoFKey &key) {
-  ClexParamKey paramkey;
-  ClexParamKey corr_key(clexulator.param_pack().key("corr"));
-  ClexParamKey dof_key;
-  if (key == "occ") {
-    paramkey = clexulator.param_pack().key("diff/corr/" + key + "_site_func");
-    dof_key = clexulator.param_pack().key("occ_site_func");
-  } else {
-    paramkey = clexulator.param_pack().key("diff/corr/" + key + "_var");
-    dof_key = clexulator.param_pack().key(key + "_var");
-  }
-
-  std::string em_corr, em_dof;
-  em_corr = clexulator.param_pack().eval_mode(corr_key);
-  em_dof = clexulator.param_pack().eval_mode(dof_key);
-
-  // this const_cast is not great...
-  // but it seems like the only place passing const Clexulator is a problem and
-  // it is not actually changing clexulator before/after this function
-  const_cast<Clexulator &>(clexulator)
-      .param_pack()
-      .set_eval_mode(corr_key, "DIFF");
-  const_cast<Clexulator &>(clexulator)
-      .param_pack()
-      .set_eval_mode(dof_key, "DIFF");
-
-  Eigen::MatrixXd gcorr;
-  Index scel_vol = scel.volume();
-  if (DoF::BasicTraits(key).global()) {
-    Eigen::MatrixXd gcorr_func = configdof.global_dof(key).values();
-    gcorr.setZero(gcorr_func.size(), clexulator.corr_size());
-    // Holds contribution to global correlations from a particular neighborhood
-
-    // std::vector<double> corr(clexulator.corr_size(), 0.0);
-    for (int v = 0; v < scel_vol; v++) {
-      // Fill up contributions
-      clexulator.calc_global_corr_contribution(configdof,
-                                               scel.nlist().sites(v).data(),
-                                               end_ptr(scel.nlist().sites(v)));
-
-      for (Index c = 0; c < clexulator.corr_size(); ++c)
-        gcorr.col(c) += clexulator.param_pack().read(paramkey(c));
-    }
-  } else {
-    Eigen::MatrixXd gcorr_func;
-    gcorr.setZero(configdof.local_dof(key).values().size(),
-                  clexulator.corr_size());
-    // Holds contribution to global correlations from a particular neighborhood
-    Index l;
-    for (int v = 0; v < scel_vol; v++) {
-      // Fill up contributions
-      clexulator.calc_global_corr_contribution(configdof,
-                                               scel.nlist().sites(v).data(),
-                                               end_ptr(scel.nlist().sites(v)));
-
-      for (Index c = 0; c < clexulator.corr_size(); ++c) {
-        gcorr_func = clexulator.param_pack().read(paramkey(c));
-
-        for (Index n = 0; n < scel.nlist().sites(v).size(); ++n) {
-          l = scel.nlist().sites(v)[n];
-          // for(Index i=0; i<gcorr_func.cols(); ++i){
-          gcorr.block(l * gcorr_func.rows(), c, gcorr_func.rows(), 1) +=
-              gcorr_func.col(n);
-          // std::cout << "Block: (" << l * gcorr_func.rows() << ", " << c << ",
-          // " << gcorr_func.rows() << ", " << 1 << ") += " <<
-          // gcorr_func.col(n).transpose() << "\n";
-          //}
-        }
-      }
-    }
-  }
-  const_cast<Clexulator &>(clexulator)
-      .param_pack()
-      .set_eval_mode(corr_key, em_corr);
-  const_cast<Clexulator &>(clexulator)
-      .param_pack()
-      .set_eval_mode(dof_key, em_dof);
-
-  return gcorr;
 }
 
 /// \brief Returns num_each_molecule(molecule_type), where 'molecule_type' is

@@ -1,6 +1,7 @@
 
 #include "casm/monte_carlo/canonical/Canonical.hh"
 
+#include "casm/clex/ConfigCorrelations.hh"
 #include "casm/clex/FillSupercell.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/misc/CASM_Eigen_math.hh"

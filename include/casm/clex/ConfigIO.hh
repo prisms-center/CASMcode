@@ -333,6 +333,99 @@ class PointCorr : public VectorXdAttribute<Configuration> {
   mutable std::string m_clex_name;
 };
 
+/// \brief Returns correlation values for all unit cells
+///
+/// Evaluated basis function values for each unit cell, not normalized
+///
+class AllCorrContribution : public MatrixXdAttribute<Configuration> {
+ public:
+  static const std::string Name;
+
+  static const std::string Desc;
+
+  AllCorrContribution()
+      : MatrixXdAttribute<Configuration>(Name, Desc), m_clex_name("") {}
+
+  AllCorrContribution(const Clexulator &clexulator)
+      : MatrixXdAttribute<Configuration>(Name, Desc),
+        m_clexulator(clexulator) {}
+
+  // --- Required implementations -----------
+
+  /// \brief Returns the atom fraction
+  Eigen::MatrixXd evaluate(const Configuration &config) const override;
+
+  /// \brief Clone using copy constructor
+  std::unique_ptr<AllCorrContribution> clone() const {
+    return std::unique_ptr<AllCorrContribution>(this->_clone());
+  }
+
+  // --- Specialized implementation -----------
+
+  /// \brief If not yet initialized, use the global clexulator from the PrimClex
+  bool init(const Configuration &_tmplt) const override;
+
+  /// \brief Expects 'all_point_corr', 'all_point_corr(clex_name)',
+  /// 'all_point_corr(index_expression)', or
+  /// 'all_point_corr(clex_name,index_expression)'
+  bool parse_args(const std::string &args) override;
+
+ private:
+  /// \brief Clone using copy constructor
+  AllCorrContribution *_clone() const override {
+    return new AllCorrContribution(*this);
+  }
+
+  mutable Clexulator m_clexulator;
+  mutable std::string m_clex_name;
+};
+
+/// \brief Returns point correlation values
+///
+/// Evaluated basis function values for each site, normalized by cluster orbit
+/// multiplicity
+///
+class AllPointCorr : public MatrixXdAttribute<Configuration> {
+ public:
+  static const std::string Name;
+
+  static const std::string Desc;
+
+  AllPointCorr()
+      : MatrixXdAttribute<Configuration>(Name, Desc), m_clex_name("") {}
+
+  AllPointCorr(const Clexulator &clexulator)
+      : MatrixXdAttribute<Configuration>(Name, Desc),
+        m_clexulator(clexulator) {}
+
+  // --- Required implementations -----------
+
+  /// \brief Returns the atom fraction
+  Eigen::MatrixXd evaluate(const Configuration &config) const override;
+
+  /// \brief Clone using copy constructor
+  std::unique_ptr<AllPointCorr> clone() const {
+    return std::unique_ptr<AllPointCorr>(this->_clone());
+  }
+
+  // --- Specialized implementation -----------
+
+  /// \brief If not yet initialized, use the global clexulator from the PrimClex
+  bool init(const Configuration &_tmplt) const override;
+
+  /// \brief Expects 'all_point_corr', 'all_point_corr(clex_name)',
+  /// 'all_point_corr(index_expression)', or
+  /// 'all_point_corr(clex_name,index_expression)'
+  bool parse_args(const std::string &args) override;
+
+ private:
+  /// \brief Clone using copy constructor
+  AllPointCorr *_clone() const override { return new AllPointCorr(*this); }
+
+  mutable Clexulator m_clexulator;
+  mutable std::string m_clex_name;
+};
+
 /// \brief Returns correlation values
 ///
 /// Evaluated gradient of basis function values, w.r.t. specified DoF

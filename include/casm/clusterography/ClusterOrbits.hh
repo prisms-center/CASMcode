@@ -3,6 +3,8 @@
 
 #include <functional>
 #include <iostream>
+#include <map>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -154,6 +156,12 @@ OutputIterator local_neighborhood(ClusterOrbitIterator begin,
 template <typename OrbitType>
 bool has_local_neighborhood_overlap(std::vector<OrbitType> &local_orbits,
                                     const Eigen::Matrix3i &transf_mat);
+
+/// Make site dependency neighborhoods
+template <typename ClusterOrbitIterator>
+std::map<xtal::UnitCellCoord, std::set<xtal::UnitCellCoord> >
+make_site_dependency_neighborhoods(ClusterOrbitIterator begin,
+                                   ClusterOrbitIterator end);
 
 /// \brief Return superlattice transf. matrices for which
 /// has_local_neighborhood_overlap is false

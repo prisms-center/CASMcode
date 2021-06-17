@@ -1496,11 +1496,6 @@ class Generic2DDatumFormatter
   Validator m_validate;
 };
 
-template <typename DataObject>
-MatrixXdAttributeDictionary<DataObject> make_matrixxd_dictionary() {
-  return MatrixXdAttributeDictionary<DataObject>();
-}
-
 }  // namespace CASM
 
 #endif

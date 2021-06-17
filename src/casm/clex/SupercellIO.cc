@@ -348,6 +348,13 @@ VectorXdAttributeDictionary<Supercell> make_vectorxd_dictionary<Supercell>() {
 }
 
 template <>
+MatrixXdAttributeDictionary<Supercell> make_matrixxd_dictionary<Supercell>() {
+  using namespace ScelIO;
+  MatrixXdAttributeDictionary<Supercell> dict;
+  return dict;
+}
+
+template <>
 DataFormatterDictionary<Supercell, BaseValueFormatter<jsonParser, Supercell>>
 make_json_dictionary<Supercell>() {
   return DataFormatterDictionary<Supercell,

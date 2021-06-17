@@ -2,6 +2,7 @@
 #include "casm/monte_carlo/grand_canonical/GrandCanonical.hh"
 
 #include "casm/basis_set/DoF.hh"
+#include "casm/clex/ConfigCorrelations.hh"
 #include "casm/clex/FillSupercell.hh"
 #include "casm/clex/Norm.hh"
 #include "casm/clex/PrimClex.hh"

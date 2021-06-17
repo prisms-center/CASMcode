@@ -216,6 +216,9 @@ VectorXiAttributeDictionary<Supercell> make_vectorxi_dictionary<Supercell>();
 template <>
 VectorXdAttributeDictionary<Supercell> make_vectorxd_dictionary<Supercell>();
 
+template <>
+MatrixXdAttributeDictionary<Supercell> make_matrixxd_dictionary<Supercell>();
+
 }  // namespace CASM
 
 #endif

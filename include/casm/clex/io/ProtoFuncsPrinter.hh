@@ -14,6 +14,7 @@ class BasicStructure;
 }
 
 class ClexBasis;
+struct ClexBasisSpecs;
 class Structure;
 class jsonParser;
 
@@ -65,6 +66,16 @@ void print_aligned_site_basis_funcs(std::shared_ptr<const Structure> prim_ptr,
 
 void write_site_basis_funcs(std::shared_ptr<const Structure> prim_ptr,
                             ClexBasis const &clex_basis, jsonParser &json);
+
+/// Write basis.json format JSON
+template <typename OrbitVecType>
+void write_clex_basis(ClexBasis const &clex_basis, OrbitVecType const &orbits,
+                      jsonParser &json);
+
+/// Write basis.json format JSON
+jsonParser write_clex_basis(std::shared_ptr<const Structure> const &shared_prim,
+                            ClexBasisSpecs const &clex_basis_specs,
+                            jsonParser &json);
 
 }  // namespace CASM
 

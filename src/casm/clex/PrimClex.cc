@@ -470,19 +470,15 @@ struct WriteBasisSetDataImpl {
     OrbitPrinterOptions orbit_printer_options;
     orbit_printer_options.print_invariant_group = true;
     ProtoSitesPrinter sites_printer{orbit_printer_options};
-    write_clust(orbits.begin(), orbits.end(), clust_json, sites_printer,
-                basis_set_specs_json);
+    write_clust(orbits.begin(), orbits.end(), clust_json, sites_printer);
+    clust_json["bspecs"] = basis_set_specs_json;
     clust_json.write(clust_json_path);
 
     // write basis
     fs::path basis_json_path = dir.basis(basis_set_name);
     jsonParser basis_json;
-    write_site_basis_funcs(shared_prim, clex_basis, basis_json);
-    bool align = false;
-    ProtoFuncsPrinter funcs_printer{clex_basis, shared_prim->shared_structure(),
-                                    align, orbit_printer_options};
-    write_clust(orbits.begin(), orbits.end(), basis_json, funcs_printer,
-                basis_set_specs_json);
+    write_clex_basis(clex_basis, orbits, basis_json);
+    basis_json["bspecs"] = basis_set_specs_json;
     basis_json.write(basis_json_path);
 
     // write source code
