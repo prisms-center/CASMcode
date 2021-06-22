@@ -119,6 +119,11 @@ const PrimNeighborList::SublatIndices &PrimNeighborList::sublat_indices()
   return m_sublat_indices;
 }
 
+/// \brief The total number of sublattices
+PrimNeighborList::size_type PrimNeighborList::n_sublattices() const {
+  return m_n_sublattices;
+}
+
 /// \brief Get neighborlist index of UnitCellCoord @param _ucc, expanding
 /// neighborhood if necessary
 PrimNeighborList::Scalar PrimNeighborList::neighbor_index(
@@ -237,6 +242,8 @@ SuperNeighborList::SuperNeighborList(
     const PrimNeighborList &prim_nlist) {
   xtal::UnitCellIndexConverter ijk_index_converter{
       transformation_matrix_to_super};
+  // confusingly, `ijk_index_converter.total_sites()` is number of unitcells in
+  // the supercell
   m_prim_grid_size = ijk_index_converter.total_sites();
   m_site.resize(m_prim_grid_size);
   m_unitcell.resize(m_prim_grid_size);
@@ -268,6 +275,29 @@ SuperNeighborList::SuperNeighborList(
       }
     }
   }
+
+  // populate m_site_index_to_neighbor_index
+  m_site_index_to_neighbor_index.clear();
+  auto sublat_indices_begin = prim_nlist.sublat_indices().begin();
+  auto sublat_indices_end = prim_nlist.sublat_indices().end();
+  for (Index b = 0; b < prim_nlist.n_sublattices(); ++b) {
+    auto it = prim_nlist.sublat_indices().find(b);
+    int neighbor_index = -1;
+    if (it != sublat_indices_end) {
+      neighbor_index = std::distance(sublat_indices_begin, it);
+    }
+    for (Index i = 0; i < m_prim_grid_size; ++i) {
+      m_site_index_to_neighbor_index.push_back(neighbor_index);
+    }
+  }
+
+  // check for overlap of periodic images
+  //
+  // there is an overlap if any of the neighboring unitcell indices is repeated
+  // so sort and check if any two neighboring indices are the same
+  std::vector<size_type> nlist = m_unitcell[0];
+  std::sort(nlist.begin(), nlist.end());
+  m_overlaps = std::adjacent_find(nlist.begin(), nlist.end()) != nlist.end();
 }
 
 /// \brief Constructor
@@ -307,14 +337,7 @@ const std::vector<SuperNeighborList::size_type> &SuperNeighborList::unitcells(
 ///
 /// If periodic images of the neighborhood overlap, Clexulator 'delta' values
 /// will be incorrect.
-bool SuperNeighborList::overlaps() const {
-  // there is an overlap if any of the neighboring unitcell indices is repeated
-  // so sort and check if any two neighboring indices are the same
-
-  std::vector<size_type> nlist = m_unitcell[0];
-  std::sort(nlist.begin(), nlist.end());
-  return std::adjacent_find(nlist.begin(), nlist.end()) != nlist.end();
-}
+bool SuperNeighborList::overlaps() const { return m_overlaps; }
 
 /// \brief Clone
 std::unique_ptr<SuperNeighborList> SuperNeighborList::clone() const {

@@ -119,9 +119,8 @@ class GrandCanonical : public MonteCarlo {
   const ECIContainer &_eci() const { return m_formation_energy_clex.eci; }
 
   /// \brief Calculate delta correlations for an event
-  void _set_dCorr(GrandCanonicalEvent &event, Index mutating_site, int sublat,
-                  int current_occupant, int new_occupant, bool use_deltas,
-                  bool all_correlations) const;
+  void _set_dCorr(Index mutating_site, int new_occupant,
+                  Eigen::VectorXd &dCorr) const;
 
   /// \brief Print correlations to _log()
   void _print_correlations(const Eigen::VectorXd &corr, std::string title,

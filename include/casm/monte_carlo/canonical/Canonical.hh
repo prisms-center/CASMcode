@@ -114,9 +114,7 @@ class Canonical : public MonteCarlo {
 
   const ECIContainer &_eci() const { return m_formation_energy_clex.eci; }
 
-  void _set_nlist(size_type l) const;
-  void _calc_delta_point_corr(size_type l, int new_occ,
-                              Eigen::VectorXd &dCorr_comp) const;
+  Eigen::VectorXd _calc_delta_point_corr(size_type l, int new_occ) const;
 
   /// \brief Calculate delta correlations for an event
   void _set_dCorr(CanonicalEvent &event) const;

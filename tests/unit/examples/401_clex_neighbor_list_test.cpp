@@ -88,7 +88,8 @@ TEST(ExampleCrystallography, NeighborList) {
 
   // Construct a PrimNeighborList
   CASM::PrimNeighborList prim_nlist{weight_matrix, nlist_sublat_indices.begin(),
-                                    nlist_sublat_indices.end()};
+                                    nlist_sublat_indices.end(),
+                                    basic_structure.basis().size()};
 
   // Initial size == 1, origin is always included
   EXPECT_EQ(prim_nlist.size(), 1);

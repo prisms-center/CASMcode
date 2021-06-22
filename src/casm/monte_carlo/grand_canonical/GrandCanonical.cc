@@ -473,85 +473,18 @@ double GrandCanonical::potential_energy(const Configuration &config) const {
 }
 
 /// \brief Calculate delta correlations for an event
-void GrandCanonical::_set_dCorr(GrandCanonicalEvent &event, Index mutating_site,
-                                int sublat, int current_occupant,
-                                int new_occupant, bool use_deltas,
-                                bool all_correlations) const {
-  // uses _clexulator(), nlist(), _configdof()
-
-  if (use_deltas) {
-    // Calculate the change in correlations due to this event
-    if (all_correlations) {
-      _clexulator().calc_delta_point_corr(
-          _configdof(),
-          nlist().sites(nlist().unitcell_index(mutating_site)).data(),
-          end_ptr(nlist().sites(nlist().unitcell_index(mutating_site))), sublat,
-          current_occupant, new_occupant, event.dCorr().data(),
-          end_ptr(event.dCorr()));
-    } else {
-      auto begin = _eci().index().data();
-      auto end = begin + _eci().index().size();
-      _clexulator().calc_restricted_delta_point_corr(
-          _configdof(),
-          nlist().sites(nlist().unitcell_index(mutating_site)).data(),
-          end_ptr(nlist().sites(nlist().unitcell_index(mutating_site))), sublat,
-          current_occupant, new_occupant, event.dCorr().data(),
-          end_ptr(event.dCorr()), begin, end);
-    }
+void GrandCanonical::_set_dCorr(Index mutating_site, int new_occupant,
+                                Eigen::VectorXd &dCorr) const {
+  if (m_all_correlations) {
+    dCorr = delta_corr(mutating_site, new_occupant, _config(), _clexulator());
   } else {
-    Eigen::VectorXd before{Eigen::VectorXd::Zero(event.dCorr().size())};
-    Eigen::VectorXd after{Eigen::VectorXd::Zero(event.dCorr().size())};
-
-    // Calculate the change in points correlations due to this event
-    if (all_correlations) {
-      // Calculate before
-      _clexulator().calc_point_corr(
-          _configdof(),
-          nlist().sites(nlist().unitcell_index(mutating_site)).data(),
-          end_ptr(nlist().sites(nlist().unitcell_index(mutating_site))), sublat,
-          before.data(), end_ptr(before));
-
-      // Apply change
-      _configdof().occ(mutating_site) = new_occupant;
-
-      // Calculate after
-      _clexulator().calc_point_corr(
-          _configdof(),
-          nlist().sites(nlist().unitcell_index(mutating_site)).data(),
-          end_ptr(nlist().sites(nlist().unitcell_index(mutating_site))), sublat,
-          after.data(), end_ptr(after));
-    } else {
-      auto begin = _eci().index().data();
-      auto end = begin + _eci().index().size();
-
-      // Calculate before
-      _clexulator().calc_restricted_point_corr(
-          _configdof(),
-          nlist().sites(nlist().unitcell_index(mutating_site)).data(),
-          end_ptr(nlist().sites(nlist().unitcell_index(mutating_site))), sublat,
-          before.data(), end_ptr(before), begin, end);
-
-      // Apply change
-      _configdof().occ(mutating_site) = new_occupant;
-
-      // Calculate after
-      _clexulator().calc_restricted_point_corr(
-          _configdof(),
-          nlist().sites(nlist().unitcell_index(mutating_site)).data(),
-          end_ptr(nlist().sites(nlist().unitcell_index(mutating_site))), sublat,
-          after.data(), end_ptr(after), begin, end);
-    }
-
-    // Calculate the change in correlations due to this event
-    event.dCorr() = after - before;
-
-    // Unapply changes
-    _configdof().occ(mutating_site) = current_occupant;
+    dCorr = restricted_delta_corr(mutating_site, new_occupant, _config(),
+                                  _clexulator(), _eci().index());
   }
 
   if (debug()) {
-    _print_correlations(event.dCorr(), "delta correlations", "dCorr",
-                        all_correlations);
+    _print_correlations(dCorr, "delta correlations", "dCorr",
+                        m_all_correlations);
   }
 }
 
@@ -608,8 +541,7 @@ void GrandCanonical::_update_deltas(GrandCanonicalEvent &event,
 
   // ---- set dcorr --------------
 
-  _set_dCorr(event, mutating_site, sublat, current_occupant, new_occupant,
-             m_use_deltas, m_all_correlations);
+  _set_dCorr(mutating_site, new_occupant, event.dCorr());
 
   // ---- set dformation_energy --------------
 

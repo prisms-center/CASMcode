@@ -49,11 +49,11 @@ class PrimNeighborList {
   typedef NeighborSet::const_iterator const_iterator;
   typedef std::set<int> SublatIndices;
 
-  /// \brief Constructor, specifying the weighting matrix to use and the indices
-  /// of sublattices to include
+  /// \brief Constructor, specifying the weighting matrix to use, the indices
+  /// of sublattices to include, and the total number of sublattices
   template <typename SublatIterator>
   PrimNeighborList(const Matrix3Type &W, SublatIterator begin,
-                   SublatIterator end);
+                   SublatIterator end, size_type n_sublattices);
 
   /// \brief Return the weighting matrix W used to define the canonical order
   Matrix3Type weight_matrix() const;
@@ -87,6 +87,9 @@ class PrimNeighborList {
   /// \brief pair of const_iterators over a range of indices of sublattices to
   /// include
   const SublatIndices &sublat_indices() const;
+
+  /// \brief The total number of sublattices
+  size_type n_sublattices() const;
 
   /// \brief Returns a NeighborList weighting matrix appropriate for a
   /// particular lattice
@@ -156,6 +159,9 @@ class PrimNeighborList {
 
   /// \brief the indices of sublattices that should be included
   SublatIndices m_sublat_indices;
+
+  /// \brief the total number of sublattices
+  size_type m_n_sublattices;
 };
 
 /// SuperNeighborList, linear indices of neighboring sites and unit cells
@@ -196,6 +202,15 @@ class SuperNeighborList {
     return site_index / m_prim_grid_size;
   }
 
+  /// \brief Get neighbor index from site_index (use for periodic Clexulator
+  /// point corr evalulations `neighbor_index` argument)
+  ///
+  /// - Returns -1 if site is on a sublattice that is not included in the
+  /// neighbor list
+  int neighbor_index(size_type site_index) const {
+    return m_site_index_to_neighbor_index[site_index];
+  }
+
   /// \brief const Access the list of sites neighboring a particular unit cell
   const std::vector<size_type> &sites(size_type unitcell_index) const;
 
@@ -226,6 +241,13 @@ class SuperNeighborList {
 
   /// \brief m_unitcell[unitcell_index][neighbor unitcell index]
   std::vector<std::vector<size_type> > m_unitcell;
+
+  /// \brief neighbor index =
+  ///     m_linear_site_index_to_neighbor_index[linear site index]
+  std::vector<int> m_site_index_to_neighbor_index;
+
+  /// \brief True if periodic images of the neighbor list overlap
+  bool m_overlaps;
 };
 
 /// \brief Constructor
@@ -242,12 +264,13 @@ class SuperNeighborList {
 ///
 template <typename SublatIterator>
 PrimNeighborList::PrimNeighborList(const Matrix3Type &W, SublatIterator begin,
-                                   SublatIterator end)
+                                   SublatIterator end, size_type n_sublattices)
     : m_W(W),
       m_neighborhood(std::bind(&PrimNeighborList::_compare_unitcell, this,
                                std::placeholders::_1, std::placeholders::_2)),
       m_range(0),
-      m_sublat_indices(begin, end) {
+      m_sublat_indices(begin, end),
+      m_n_sublattices(n_sublattices) {
   // throw if W is not positive definite
   Eigen::LLT<Eigen::MatrixXd> llt(W.cast<double>());
   if (llt.info() != Eigen::Success) {

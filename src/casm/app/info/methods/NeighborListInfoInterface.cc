@@ -318,9 +318,9 @@ void NeighborListInfoInterface::run(jsonParser const &json_options,
   }
   report_and_throw_if_invalid(parser, log, error_if_invalid);
 
-  PrimNeighborList prim_neighbor_list{nlist_weight_matrix,
-                                      nlist_sublat_indices.begin(),
-                                      nlist_sublat_indices.end()};
+  PrimNeighborList prim_neighbor_list{
+      nlist_weight_matrix, nlist_sublat_indices.begin(),
+      nlist_sublat_indices.end(), shared_prim->basis().size()};
   ExpandPrimNeighborList neighbor_list_expander{prim_neighbor_list};
   std::optional<Index> n_point_corr;
 

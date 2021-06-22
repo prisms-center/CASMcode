@@ -231,6 +231,9 @@ class Corr : public VectorXdAttribute<Configuration> {
 
   mutable Clexulator m_clexulator;
   mutable std::string m_clex_name;
+
+  /// Which correlations to calculate
+  mutable std::vector<Clexulator::size_type> correlation_indices;
 };
 
 /// \brief Returns correlation values

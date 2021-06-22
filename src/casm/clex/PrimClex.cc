@@ -274,7 +274,7 @@ std::shared_ptr<PrimNeighborList> const &PrimClex::shared_nlist() const {
     m_data->nlist = std::make_shared<PrimNeighborList>(
         settings().nlist_weight_matrix(),
         settings().nlist_sublat_indices().begin(),
-        settings().nlist_sublat_indices().end());
+        settings().nlist_sublat_indices().end(), prim().basis().size());
   }
 
   return m_data->nlist;

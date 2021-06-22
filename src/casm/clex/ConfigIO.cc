@@ -194,7 +194,7 @@ const std::string Corr::Desc =
 
 /// \brief Returns the atom fraction
 Eigen::VectorXd Corr::evaluate(const Configuration &config) const {
-  return correlations(config, m_clexulator);
+  return restricted_correlations(config, m_clexulator, correlation_indices);
 }
 
 /// \brief If not yet initialized, use the default clexulator from the PrimClex
@@ -208,6 +208,10 @@ bool Corr::init(const Configuration &_tmplt) const {
   }
 
   VectorXdAttribute<Configuration>::init(_tmplt);
+  correlation_indices.clear();
+  for (Index i = 0; i < _index_rules().size(); i++) {
+    correlation_indices.push_back(_index_rules()[i][0]);
+  }
   return true;
 }
 

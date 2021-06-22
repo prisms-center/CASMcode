@@ -15,7 +15,7 @@ Eigen::VectorXd correlations(const ConfigDoF &configdof, const Supercell &scel,
                              Clexulator const &clexulator) {
   // Size of the supercell will be used for normalizing correlations to a per
   // primitive cell value
-  int scel_vol = scel.volume();
+  int n_unitcells = scel.volume();
 
   Eigen::VectorXd correlations = Eigen::VectorXd::Zero(clexulator.corr_size());
 
@@ -25,16 +25,53 @@ Eigen::VectorXd correlations(const ConfigDoF &configdof, const Supercell &scel,
   Eigen::VectorXd tcorr = correlations;
   // std::vector<double> corr(clexulator.corr_size(), 0.0);
 
-  for (int v = 0; v < scel_vol; v++) {
+  for (int unitcell_index = 0; unitcell_index < n_unitcells; unitcell_index++) {
     // Fill up contributions
     clexulator.calc_global_corr_contribution(
-        configdof, scel.nlist().sites(v).data(), end_ptr(scel.nlist().sites(v)),
-        tcorr.data(), end_ptr(tcorr));
+        configdof, scel.nlist().sites(unitcell_index).data(),
+        end_ptr(scel.nlist().sites(unitcell_index)), tcorr.data(),
+        end_ptr(tcorr));
 
     correlations += tcorr;
   }
 
-  correlations /= (double)scel_vol;
+  correlations /= (double)n_unitcells;
+
+  return correlations;
+}
+
+/// \brief Returns correlations using 'clexulator', restricted to specified
+/// correlation indices. Supercell needs a correctly populated neighbor list.
+///
+/// \returns Eigen::VectorXd correlations, of size `clexulator.corr_size()`,
+/// with zero value for any correlations not in `correlations_indices`.
+Eigen::VectorXd restricted_correlations(
+    const ConfigDoF &configdof, const Supercell &scel,
+    Clexulator const &clexulator,
+    std::vector<unsigned int> const &correlation_indices) {
+  // Size of the supercell will be used for normalizing correlations to a per
+  // primitive cell value
+  int n_unitcells = scel.volume();
+
+  Eigen::VectorXd correlations = Eigen::VectorXd::Zero(clexulator.corr_size());
+
+  // Holds contribution to global correlations from a particular neighborhood
+  Eigen::VectorXd tcorr = correlations;
+
+  auto corr_indices_begin = correlation_indices.data();
+  auto corr_indices_end = corr_indices_begin + correlation_indices.size();
+
+  for (int unitcell_index = 0; unitcell_index < n_unitcells; unitcell_index++) {
+    // Fill up contributions
+    clexulator.calc_restricted_global_corr_contribution(
+        configdof, scel.nlist().sites(unitcell_index).data(),
+        end_ptr(scel.nlist().sites(unitcell_index)), tcorr.data(),
+        end_ptr(tcorr), corr_indices_begin, corr_indices_end);
+
+    correlations += tcorr;
+  }
+
+  correlations /= (double)n_unitcells;
 
   return correlations;
 }
@@ -43,6 +80,77 @@ Eigen::VectorXd correlations(const ConfigDoF &configdof, const Supercell &scel,
 Eigen::VectorXd correlations(const Configuration &config,
                              Clexulator const &clexulator) {
   return correlations(config.configdof(), config.supercell(), clexulator);
+}
+
+/// \brief Returns correlations using 'clexulator', restricted to specified
+/// correlation indices.
+///
+/// \returns Eigen::VectorXd correlations, of size `clexulator.corr_size()`,
+/// with zero value for any correlations not in `correlations_indices`.
+Eigen::VectorXd restricted_correlations(
+    const Configuration &config, Clexulator const &clexulator,
+    std::vector<unsigned int> const &correlation_indices) {
+  return restricted_correlations(config.configdof(), config.supercell(),
+                                 clexulator, correlation_indices);
+}
+
+/// \brief Returns correlations using 'clexulator'. Sum of the contribution from
+/// every unit cell.
+Eigen::VectorXd extensive_correlations(Configuration const &config,
+                                       Clexulator const &clexulator) {
+  ConfigDoF const &configdof = config.configdof();
+  SuperNeighborList const &supercell_neighbor_list = config.supercell().nlist();
+
+  // number of unit cells
+  int n_unitcells = config.supercell().volume();
+
+  Eigen::VectorXd correlations = Eigen::VectorXd::Zero(clexulator.corr_size());
+
+  // Holds contribution to global correlations from a particular neighborhood
+  Eigen::VectorXd tcorr = correlations;
+
+  for (int unitcell_index = 0; unitcell_index < n_unitcells; unitcell_index++) {
+    // Fill up contributions
+    clexulator.calc_global_corr_contribution(
+        configdof, supercell_neighbor_list.sites(unitcell_index).data(),
+        end_ptr(supercell_neighbor_list.sites(unitcell_index)), tcorr.data(),
+        end_ptr(tcorr));
+    correlations += tcorr;
+  }
+  return correlations;
+}
+
+/// \brief Returns correlations using 'clexulator', restricted to specified
+/// correlation indices. Sum of the contribution from every unit cell.
+///
+/// \returns Eigen::VectorXd correlations, of size `clexulator.corr_size()`,
+/// with zero value for any correlations not in `correlations_indices`.
+Eigen::VectorXd restricted_extensive_correlations(
+    Configuration const &config, Clexulator const &clexulator,
+    std::vector<unsigned int> const &correlation_indices) {
+  ConfigDoF const &configdof = config.configdof();
+  SuperNeighborList const &supercell_neighbor_list = config.supercell().nlist();
+
+  // number of unit cells
+  int n_unitcells = config.supercell().volume();
+
+  Eigen::VectorXd correlations = Eigen::VectorXd::Zero(clexulator.corr_size());
+
+  // Holds contribution to global correlations from a particular neighborhood
+  Eigen::VectorXd tcorr = correlations;
+
+  auto corr_indices_begin = correlation_indices.data();
+  auto corr_indices_end = corr_indices_begin + correlation_indices.size();
+
+  for (int unitcell_index = 0; unitcell_index < n_unitcells; unitcell_index++) {
+    // Fill up contributions
+    clexulator.calc_restricted_global_corr_contribution(
+        configdof, supercell_neighbor_list.sites(unitcell_index).data(),
+        end_ptr(supercell_neighbor_list.sites(unitcell_index)), tcorr.data(),
+        end_ptr(tcorr), corr_indices_begin, corr_indices_end);
+    correlations += tcorr;
+  }
+  return correlations;
 }
 
 /// Returns correlation contribution from a single unit cell, not normalized.
@@ -137,6 +245,305 @@ Eigen::MatrixXd all_point_corr(const Configuration &config,
     }
   }
   return corr;
+}
+
+// --- Occupation ---
+
+/// \brief Returns change in (extensive) correlations due to an occupation
+/// change
+Eigen::VectorXd delta_corr(Index linear_site_index, int new_occ,
+                           Configuration const &configuration,
+                           Clexulator const &clexulator) {
+  Eigen::VectorXd dcorr{Eigen::VectorXd::Zero(clexulator.corr_size())};
+
+  ConfigDoF const &configdof = configuration.configdof();
+  SuperNeighborList const &supercell_neighbor_list =
+      configuration.supercell().nlist();
+
+  Index unitcell_index =
+      supercell_neighbor_list.unitcell_index(linear_site_index);
+  int neighbor_index =
+      supercell_neighbor_list.neighbor_index(linear_site_index);
+
+  auto const &nlist_sites = supercell_neighbor_list.sites(unitcell_index);
+  long int const *nlist_begin = nlist_sites.data();
+  long int const *nlist_end = end_ptr(nlist_sites);
+  double *corr_begin = dcorr.data();
+  double *corr_end = end_ptr(dcorr);
+
+  if (!supercell_neighbor_list.overlaps()) {
+    int curr_occ = configdof.occ(linear_site_index);
+    clexulator.calc_delta_point_corr(configdof, nlist_begin, nlist_end,
+                                     neighbor_index, curr_occ, new_occ,
+                                     corr_begin, corr_end);
+  } else {
+    Eigen::VectorXd before{Eigen::VectorXd::Zero(dcorr.size())};
+    Eigen::VectorXd after{Eigen::VectorXd::Zero(dcorr.size())};
+
+    /// here we have to mutate and unmutate the dof, so in the end it
+    /// will not be changed.
+    ConfigDoF &mutable_configdof = const_cast<ConfigDoF &>(configdof);
+
+    int curr_occ = configdof.occ(linear_site_index);
+
+    // Calculate before
+    clexulator.calc_point_corr(configdof, nlist_begin, nlist_end,
+                               neighbor_index, before.data(), end_ptr(before));
+
+    // Apply change
+    mutable_configdof.occ(linear_site_index) = new_occ;
+
+    // Calculate after
+    clexulator.calc_point_corr(configdof, nlist_begin, nlist_end,
+                               neighbor_index, after.data(), end_ptr(after));
+
+    dcorr = after - before;
+
+    // Unapply changes
+    mutable_configdof.occ(linear_site_index) = curr_occ;
+  }
+
+  return dcorr;
+}
+
+/// \brief Returns change in (extensive) correlations due to an occupation
+/// change, restricted to specified correlations
+///
+/// \returns Eigen::VectorXd correlations, of size `clexulator.corr_size()`,
+/// with zero value for any correlations not in `correlations_indices`.
+Eigen::VectorXd restricted_delta_corr(
+    Index linear_site_index, int new_occ, Configuration const &configuration,
+    Clexulator const &clexulator,
+    std::vector<unsigned int> const &correlation_indices) {
+  Eigen::VectorXd dcorr{Eigen::VectorXd::Zero(clexulator.corr_size())};
+
+  ConfigDoF const &configdof = configuration.configdof();
+  SuperNeighborList const &supercell_neighbor_list =
+      configuration.supercell().nlist();
+
+  Index unitcell_index =
+      supercell_neighbor_list.unitcell_index(linear_site_index);
+  int neighbor_index =
+      supercell_neighbor_list.neighbor_index(linear_site_index);
+
+  auto const &nlist_sites = supercell_neighbor_list.sites(unitcell_index);
+  long int const *nlist_begin = nlist_sites.data();
+  long int const *nlist_end = end_ptr(nlist_sites);
+  double *corr_begin = dcorr.data();
+  double *corr_end = end_ptr(dcorr);
+  unsigned int const *corr_index_begin = correlation_indices.data();
+  unsigned int const *corr_index_end = end_ptr(correlation_indices);
+
+  if (!supercell_neighbor_list.overlaps()) {
+    int curr_occ = configuration.occ(linear_site_index);
+    clexulator.calc_restricted_delta_point_corr(
+        configdof, nlist_begin, nlist_end, neighbor_index, curr_occ, new_occ,
+        corr_begin, corr_end, corr_index_begin, corr_index_end);
+  } else {
+    Eigen::VectorXd before{Eigen::VectorXd::Zero(dcorr.size())};
+    Eigen::VectorXd after{Eigen::VectorXd::Zero(dcorr.size())};
+
+    /// here we have to mutate and unmutate the dof, so in the end it
+    /// will not be changed.
+    ConfigDoF &mutable_configdof = const_cast<ConfigDoF &>(configdof);
+
+    int curr_occ = configdof.occ(linear_site_index);
+
+    // Calculate before
+    clexulator.calc_restricted_point_corr(
+        configdof, nlist_begin, nlist_end, neighbor_index, before.data(),
+        end_ptr(before), corr_index_begin, corr_index_end);
+
+    // Apply change
+    mutable_configdof.occ(linear_site_index) = new_occ;
+
+    // Calculate after
+    clexulator.calc_restricted_point_corr(
+        configdof, nlist_begin, nlist_end, neighbor_index, after.data(),
+        end_ptr(after), corr_index_begin, corr_index_end);
+
+    dcorr = after - before;
+
+    // Unapply changes
+    mutable_configdof.occ(linear_site_index) = curr_occ;
+  }
+
+  return dcorr;
+}
+
+// --- Local continuous ---
+
+/// \brief Returns change in (extensive) correlations due to a local continuous
+/// DoF change
+Eigen::VectorXd delta_corr(Index linear_site_index,
+                           Eigen::VectorXd const &new_value, DoFKey const &key,
+                           Configuration const &configuration,
+                           Clexulator const &clexulator) {
+  Eigen::VectorXd dcorr{Eigen::VectorXd::Zero(clexulator.corr_size())};
+
+  ConfigDoF const &configdof = configuration.configdof();
+  SuperNeighborList const &supercell_neighbor_list =
+      configuration.supercell().nlist();
+  LocalContinuousConfigDoFValues const &dof_values = configdof.local_dof(key);
+
+  Index unitcell_index =
+      supercell_neighbor_list.unitcell_index(linear_site_index);
+  int neighbor_index =
+      supercell_neighbor_list.neighbor_index(linear_site_index);
+
+  auto const &nlist_sites = supercell_neighbor_list.sites(unitcell_index);
+  long int const *nlist_begin = nlist_sites.data();
+  long int const *nlist_end = end_ptr(nlist_sites);
+
+  Eigen::VectorXd before{Eigen::VectorXd::Zero(dcorr.size())};
+  Eigen::VectorXd after{Eigen::VectorXd::Zero(dcorr.size())};
+
+  /// here we have to mutate and unmutate the dof, so in the end it
+  /// will not be changed.
+  LocalContinuousConfigDoFValues &mutable_dof_values =
+      const_cast<LocalContinuousConfigDoFValues &>(dof_values);
+
+  Eigen::VectorXd curr_value = dof_values.site_value(linear_site_index);
+
+  // Calculate before
+  clexulator.calc_point_corr(configdof, nlist_begin, nlist_end, neighbor_index,
+                             before.data(), end_ptr(before));
+
+  // Apply change
+  mutable_dof_values.site_value(linear_site_index) = new_value;
+
+  // Calculate after
+  clexulator.calc_point_corr(configdof, nlist_begin, nlist_end, neighbor_index,
+                             after.data(), end_ptr(after));
+
+  dcorr = after - before;
+
+  // Unapply changes
+  mutable_dof_values.site_value(linear_site_index) = curr_value;
+
+  return dcorr;
+}
+
+/// \brief Returns change in (extensive) correlations due to a local continuous
+/// DoF change, restricted to specified correlations
+///
+/// \returns Eigen::VectorXd correlations, of size `clexulator.corr_size()`,
+/// with zero value for any correlations not in `correlations_indices`.
+Eigen::VectorXd restricted_delta_corr(
+    Index linear_site_index, Eigen::VectorXd const &new_value,
+    DoFKey const &key, Configuration const &configuration,
+    Clexulator const &clexulator,
+    std::vector<unsigned int> const &correlation_indices) {
+  Eigen::VectorXd dcorr{Eigen::VectorXd::Zero(clexulator.corr_size())};
+
+  ConfigDoF const &configdof = configuration.configdof();
+  SuperNeighborList const &supercell_neighbor_list =
+      configuration.supercell().nlist();
+  LocalContinuousConfigDoFValues const &dof_values = configdof.local_dof(key);
+
+  Index unitcell_index =
+      supercell_neighbor_list.unitcell_index(linear_site_index);
+  int neighbor_index =
+      supercell_neighbor_list.neighbor_index(linear_site_index);
+
+  auto const &nlist_sites = supercell_neighbor_list.sites(unitcell_index);
+  long int const *nlist_begin = nlist_sites.data();
+  long int const *nlist_end = end_ptr(nlist_sites);
+  unsigned int const *corr_index_begin = correlation_indices.data();
+  unsigned int const *corr_index_end = end_ptr(correlation_indices);
+
+  Eigen::VectorXd before{Eigen::VectorXd::Zero(dcorr.size())};
+  Eigen::VectorXd after{Eigen::VectorXd::Zero(dcorr.size())};
+
+  /// here we have to mutate and unmutate the dof, so in the end it
+  /// will not be changed.
+  LocalContinuousConfigDoFValues &mutable_dof_values =
+      const_cast<LocalContinuousConfigDoFValues &>(dof_values);
+
+  Eigen::VectorXd curr_value = dof_values.site_value(linear_site_index);
+
+  // Calculate before
+  clexulator.calc_restricted_point_corr(
+      configdof, nlist_begin, nlist_end, neighbor_index, before.data(),
+      end_ptr(before), corr_index_begin, corr_index_end);
+
+  // Apply change
+  mutable_dof_values.site_value(linear_site_index) = new_value;
+
+  // Calculate after
+  clexulator.calc_restricted_point_corr(
+      configdof, nlist_begin, nlist_end, neighbor_index, after.data(),
+      end_ptr(after), corr_index_begin, corr_index_end);
+
+  dcorr = after - before;
+
+  // Unapply changes
+  mutable_dof_values.site_value(linear_site_index) = curr_value;
+
+  return dcorr;
+}
+
+// --- Global continuous ---
+
+/// \brief Returns change in (extensive) correlations due to a global continuous
+/// DoF change
+Eigen::VectorXd delta_corr(
+    Eigen::VectorXd const &new_value, DoFKey const &key,
+    Eigen::VectorXd const &current_extensive_correlations,
+    Configuration const &configuration, Clexulator const &clexulator) {
+  GlobalContinuousConfigDoFValues const &dof_values =
+      configuration.configdof().global_dof(key);
+
+  /// here we have to mutate and unmutate the dof, so in the end it
+  /// will not be changed.
+  GlobalContinuousConfigDoFValues &mutable_dof_values =
+      const_cast<GlobalContinuousConfigDoFValues &>(dof_values);
+
+  Eigen::VectorXd curr_value = dof_values.values();
+
+  // Apply change
+  mutable_dof_values.set_values(new_value);
+
+  // Calculate after
+  Eigen::VectorXd after = extensive_correlations(configuration, clexulator);
+
+  // Unapply changes
+  mutable_dof_values.set_values(curr_value);
+
+  return after - current_extensive_correlations;
+}
+
+/// \brief Returns change in (extensive) correlations due to a global continuous
+/// DoF change, restricted to specified correlations
+///
+/// \returns Eigen::VectorXd correlations, of size `clexulator.corr_size()`,
+/// with zero value for any correlations not in `correlations_indices`.
+Eigen::VectorXd restricted_delta_corr(
+    Eigen::VectorXd const &new_value, DoFKey const &key,
+    Eigen::VectorXd const &current_extensive_correlations,
+    Configuration const &configuration, Clexulator const &clexulator,
+    std::vector<unsigned int> const &correlation_indices) {
+  GlobalContinuousConfigDoFValues const &dof_values =
+      configuration.configdof().global_dof(key);
+
+  /// here we have to mutate and unmutate the dof, so in the end it
+  /// will not be changed.
+  GlobalContinuousConfigDoFValues &mutable_dof_values =
+      const_cast<GlobalContinuousConfigDoFValues &>(dof_values);
+
+  Eigen::VectorXd curr_value = dof_values.values();
+
+  // Apply change
+  mutable_dof_values.set_values(new_value);
+
+  // Calculate after
+  Eigen::VectorXd after = restricted_extensive_correlations(
+      configuration, clexulator, correlation_indices);
+
+  // Unapply changes
+  mutable_dof_values.set_values(curr_value);
+
+  return after - current_extensive_correlations;
 }
 
 /// Return a vector of xtal::Coordinate for each row in `all_point_corr`

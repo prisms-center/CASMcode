@@ -276,69 +276,12 @@ double Canonical::potential_energy(const Configuration &config) const {
   return _eci() * corr.data();
 }
 
-void Canonical::_calc_delta_point_corr(Index l, int new_occ,
-                                       Eigen::VectorXd &dCorr_comp) const {
-  int sublat = _config().sublat(l);
-  int curr_occ = _configdof().occ(l);
-
-  // Calculate the change in correlations due to this event
-  if (m_use_deltas) {
-    if (m_all_correlations) {
-      _clexulator().calc_delta_point_corr(
-          _configdof(), nlist().sites(nlist().unitcell_index(l)).data(),
-          end_ptr(nlist().sites(nlist().unitcell_index(l))), sublat, curr_occ,
-          new_occ, dCorr_comp.data(), end_ptr(dCorr_comp));
-    } else {
-      auto begin = _eci().index().data();
-      auto end = begin + _eci().index().size();
-      _clexulator().calc_restricted_delta_point_corr(
-          _configdof(), nlist().sites(nlist().unitcell_index(l)).data(),
-          end_ptr(nlist().sites(nlist().unitcell_index(l))), sublat, curr_occ,
-          new_occ, dCorr_comp.data(), end_ptr(dCorr_comp), begin, end);
-    }
+Eigen::VectorXd Canonical::_calc_delta_point_corr(Index l, int new_occ) const {
+  if (m_all_correlations) {
+    return delta_corr(l, new_occ, _config(), _clexulator());
   } else {
-    Eigen::VectorXd before{Eigen::VectorXd::Zero(dCorr_comp.size())};
-    Eigen::VectorXd after{Eigen::VectorXd::Zero(dCorr_comp.size())};
-
-    // Calculate the change in points correlations due to this event
-    if (m_all_correlations) {
-      // Calculate before
-      _clexulator().calc_point_corr(
-          _configdof(), nlist().sites(nlist().unitcell_index(l)).data(),
-          end_ptr(nlist().sites(nlist().unitcell_index(l))), sublat,
-          before.data(), end_ptr(before));
-
-      // Apply change
-      _configdof().occ(l) = new_occ;
-
-      // Calculate after
-      _clexulator().calc_point_corr(
-          _configdof(), nlist().sites(nlist().unitcell_index(l)).data(),
-          end_ptr(nlist().sites(nlist().unitcell_index(l))), sublat,
-          after.data(), end_ptr(after));
-    } else {
-      auto begin = _eci().index().data();
-      auto end = begin + _eci().index().size();
-
-      // Calculate before
-      _clexulator().calc_restricted_point_corr(
-          _configdof(), nlist().sites(nlist().unitcell_index(l)).data(),
-          end_ptr(nlist().sites(nlist().unitcell_index(l))), sublat,
-          before.data(), end_ptr(before), begin, end);
-
-      // Apply change
-      _configdof().occ(l) = new_occ;
-
-      // Calculate after
-      _clexulator().calc_restricted_point_corr(
-          _configdof(), nlist().sites(nlist().unitcell_index(l)).data(),
-          end_ptr(nlist().sites(nlist().unitcell_index(l))), sublat,
-          after.data(), end_ptr(after), begin, end);
-    }
-    dCorr_comp = after - before;
-
-    // Unapply changes
-    _configdof().occ(l) = curr_occ;
+    return restricted_delta_corr(l, new_occ, _config(), _clexulator(),
+                                 _eci().index());
   }
 }
 
@@ -352,17 +295,14 @@ void Canonical::_set_dCorr(CanonicalEvent &event) const {
   Index new_occ_a = m_convert.occ_index(f_a.asym, f_a.to_species);
   Index new_occ_b = m_convert.occ_index(f_b.asym, f_b.to_species);
 
-  Eigen::VectorXd dCorr_comp{Eigen::VectorXd::Zero(event.dCorr().size())};
-
   // calc dCorr for first site
-  _calc_delta_point_corr(f_a.l, new_occ_a, event.dCorr());
+  event.dCorr() = _calc_delta_point_corr(f_a.l, new_occ_a);
 
   // change occ on first site
   _configdof().occ(f_a.l) = new_occ_a;
 
   // calc dCorr for second site
-  _calc_delta_point_corr(f_b.l, new_occ_b, dCorr_comp);
-  event.dCorr() += dCorr_comp;
+  event.dCorr() += _calc_delta_point_corr(f_b.l, new_occ_b);
 
   // unchange occ on first site
   _configdof().occ(f_a.l) = curr_occ_a;

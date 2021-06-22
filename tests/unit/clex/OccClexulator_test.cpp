@@ -291,6 +291,7 @@ void assert_correlations_equivalence(PrimClex const &primclex,
   std::shared_ptr<Structure const> const &shared_prim = primclex.shared_prim();
   ClexBasisSpecs const &basis_set_specs =
       primclex.basis_set_specs(basis_set_name);
+  Index n_unitcells = configuration.supercell().volume();
 
   ClexBasisInfo clex_basis_info =
       make_clex_basis_info(shared_prim, basis_set_specs, primclex.nlist());
@@ -301,6 +302,30 @@ void assert_correlations_equivalence(PrimClex const &primclex,
   // std::cout << "basis: \n" << basis_json << std::endl;
 
   Eigen::VectorXd C_corr = correlations(configuration, clexulator);
+
+  // -- check extensive correlations --
+  Eigen::VectorXd C_ext_corr =
+      extensive_correlations(configuration, clexulator);
+  ASSERT_TRUE(almost_equal(C_corr, C_ext_corr / ((double)n_unitcells)));
+
+  // -- check restricted correlations --
+  std::vector<unsigned int> correlation_indices;
+  std::vector<unsigned int> other_indices;
+  for (Index i = 0; i < clexulator.corr_size(); i++) {
+    if (i % 2 == 0) {
+      correlation_indices.push_back(i);
+    } else {
+      other_indices.push_back(i);
+    }
+  }
+  Eigen::VectorXd C_corr_restricted =
+      restricted_correlations(configuration, clexulator, correlation_indices);
+  for (Index i : correlation_indices) {
+    ASSERT_TRUE(almost_equal(C_corr_restricted(i), C_corr(i)));
+  }
+  for (Index i : other_indices) {
+    ASSERT_TRUE(almost_equal(C_corr_restricted(i), 0.));
+  }
 
   Index volume = configuration.supercell().volume();
 
