@@ -169,10 +169,6 @@ class Canonical : public MonteCarlo {
   /// non-zero eci
   bool m_all_correlations;
 
-  /// \brief If the supercell is large enough, calculate delta correlations
-  /// directly
-  bool m_use_deltas;
-
   /// Keeps track of what sites have which occupants
   OccLocation m_occ_loc;
 

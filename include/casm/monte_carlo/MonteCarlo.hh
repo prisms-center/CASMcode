@@ -79,13 +79,6 @@ class MonteCarlo {
   /// \brief const Access the Supercell that *this is based on
   const Supercell &supercell() const { return m_scel; }
 
-  /// \brief Set a pointer to the SuperNeighborList once it is ready
-  void set_nlist() { m_nlist = &(supercell().nlist()); }
-
-  /// \brief const Access the SuperNeighborList via pointer stored by
-  /// 'set_nlist'
-  const SuperNeighborList &nlist() const { return *m_nlist; }
-
   /// \brief const Access current microstate
   const Configuration &config() const { return m_config; }
 
@@ -225,9 +218,6 @@ class MonteCarlo {
 
   /// \brief Supercell for the calculation.
   Supercell m_scel;
-
-  /// \brief Pointer to SuperNeighborList
-  const SuperNeighborList *m_nlist;
 
   /// \brief Stores all degrees of freedom of the current microstate
   ///

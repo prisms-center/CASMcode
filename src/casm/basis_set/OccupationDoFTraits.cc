@@ -437,8 +437,7 @@ std::string OccupationDoFTraits::clexulator_private_method_declarations_string(
         stream << indent << "double const &eval_occ_func_" << nb << '_' << f
                << "(const int &nlist_ind) const {\n"
                << indent << "  return "
-               << "m_occ_func_" << nb << '_' << f
-               << "[_configdof().occ(_l(nlist_ind))];\n"
+               << "m_occ_func_" << nb << '_' << f << "[_occ(nlist_ind)];\n"
                << indent << "}\n\n"
                <<
 

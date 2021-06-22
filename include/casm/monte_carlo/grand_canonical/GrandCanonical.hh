@@ -165,10 +165,6 @@ class GrandCanonical : public MonteCarlo {
   /// Event to propose, check, accept/reject:
   EventType m_event;
 
-  /// \brief If the supercell is large enough, calculate delta correlations
-  /// directly
-  bool m_use_deltas;
-
   // ---- Pointers to properties for faster access
 
   /// \brief Formation energy, normalized per primitive cell

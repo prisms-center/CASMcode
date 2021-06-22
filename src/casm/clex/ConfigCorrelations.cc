@@ -316,6 +316,23 @@ Eigen::VectorXd restricted_delta_corr(
     Clexulator const &clexulator,
     std::vector<unsigned int> const &correlation_indices) {
   Eigen::VectorXd dcorr{Eigen::VectorXd::Zero(clexulator.corr_size())};
+  restricted_delta_corr(dcorr, linear_site_index, new_occ, configuration,
+                        clexulator, correlation_indices);
+  return dcorr;
+}
+
+/// \brief Returns change in (extensive) correlations due to an occupation
+/// change, restricted to specified correlations
+///
+/// \returns Eigen::VectorXd correlations, of size `clexulator.corr_size()`,
+/// with values set only for any correlations in `correlations_indices`.
+void restricted_delta_corr(
+    Eigen::VectorXd &dcorr, Index linear_site_index, int new_occ,
+    Configuration const &configuration, Clexulator const &clexulator,
+    std::vector<unsigned int> const &correlation_indices) {
+  if (dcorr.size() != clexulator.corr_size()) {
+    dcorr = Eigen::VectorXd::Zero(clexulator.corr_size());
+  }
 
   ConfigDoF const &configdof = configuration.configdof();
   SuperNeighborList const &supercell_neighbor_list =
@@ -367,8 +384,6 @@ Eigen::VectorXd restricted_delta_corr(
     // Unapply changes
     mutable_configdof.occ(linear_site_index) = curr_occ;
   }
-
-  return dcorr;
 }
 
 // --- Local continuous ---

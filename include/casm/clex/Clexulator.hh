@@ -300,6 +300,7 @@ class Base {
   void _set_configdof(ConfigDoF const &_input_configdof) const {
     if (m_config_ptr != &_input_configdof) {
       m_config_ptr = &_input_configdof;
+      m_occ_ptr = _input_configdof.occupation().data();
       for (auto const &dof : m_local_dof_registry) {
         m_local_dof_ptrs[dof.second] = &(_configdof().local_dof(dof.first));
       }
@@ -384,6 +385,11 @@ class Base {
   /// \brief access reference to internally pointed ConfigDoF
   Index const &_l(Index nlist_ind) const { return *(m_nlist_ptr + nlist_ind); }
 
+  /// \brief access reference to internally pointed occupation list
+  int const &_occ(Index nlist_ind) const {
+    return *(m_occ_ptr + *(m_nlist_ptr + nlist_ind));
+  }
+
   /// \brief Set pointer to neighbor list
   ///
   /// Call using:
@@ -424,6 +430,9 @@ class Base {
 
   /// \brief Pointer to neighbor list
   mutable long int const *m_nlist_ptr;
+
+  /// \brief Pointer to occupation list
+  mutable int const *m_occ_ptr;
 };
 }  // namespace Clexulator_impl
 

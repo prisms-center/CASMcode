@@ -106,6 +106,17 @@ Eigen::VectorXd restricted_delta_corr(
     Clexulator const &clexulator,
     std::vector<unsigned int> const &correlation_indices);
 
+/// \brief Returns change in (extensive) correlations due to an occupation
+/// change, restricted to specified correlations
+///
+/// \param dcorr, Eigen::VectorXd of change in correlations. Will be set to
+/// size `clexulator.corr_size()`, with zero value for any correlations not in
+/// `correlations_indices`.
+void restricted_delta_corr(
+    Eigen::VectorXd &dcorr, Index linear_site_index, int new_occ,
+    Configuration const &configuration, Clexulator const &clexulator,
+    std::vector<unsigned int> const &correlation_indices);
+
 // --- Local continuous ---
 
 /// \brief Returns change in (extensive) correlations due to a local continuous
