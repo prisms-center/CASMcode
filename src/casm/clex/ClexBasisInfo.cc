@@ -1,4 +1,4 @@
-
+#include <memory>
 #include "casm/clex/ClexBasisInfo.hh"
 
 #include "casm/casm_io/Log.hh"
