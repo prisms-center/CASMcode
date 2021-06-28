@@ -11,12 +11,14 @@
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/ConfigCorrelations.hh"
 #include "casm/clex/NeighborList.hh"
+#include "casm/clex/NeighborhoodInfo_impl.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clusterography/ClusterSpecs_impl.hh"
 #include "casm/clusterography/io/json/ClusterSpecs_json_io.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/io/BasicStructureIO.hh"
+#include "casm/crystallography/io/UnitCellCoordIO.hh"
 #include "casm/symmetry/SupercellSymInfo.hh"
 
 namespace CASM {
@@ -29,18 +31,18 @@ struct NeighborListInfoData {
                        SupercellSymInfo const &_supercell_sym_info,
                        PrimNeighborList const &_prim_neighbor_list,
                        SuperNeighborList const &_supercell_neighbor_list,
-                       std::optional<Index> const &_n_point_corr)
+                       NeighborhoodInfo const *_neighborhood_info)
       : shared_prim(_shared_prim),
         supercell_sym_info(_supercell_sym_info),
         prim_neighbor_list(_prim_neighbor_list),
         supercell_neighbor_list(_supercell_neighbor_list),
-        n_point_corr(_n_point_corr) {}
+        neighborhood_info(_neighborhood_info) {}
 
   std::shared_ptr<Structure const> shared_prim;
   SupercellSymInfo const &supercell_sym_info;
   PrimNeighborList const &prim_neighbor_list;
   SuperNeighborList const &supercell_neighbor_list;
-  std::optional<Index> n_point_corr;
+  NeighborhoodInfo const *neighborhood_info;
 };
 
 // use for ValueType=bool, int, double, std::string, jsonParser
@@ -113,7 +115,7 @@ NeighborListInfoFormatter<jsonParser> all_point_corr_frac_coordinates() {
       "Requires specifying the basis set (one and only one) via "
       "`basis_set_names`.",
       [](NeighborListInfoData const &data) -> jsonParser {
-        if (!data.n_point_corr) {
+        if (!data.neighborhood_info) {
           std::stringstream msg;
           msg << "Error in `neighbor_frac_coordinate`: Requires specifying one "
                  "and only one basis set via `basis_set_names`.";
@@ -122,8 +124,8 @@ NeighborListInfoFormatter<jsonParser> all_point_corr_frac_coordinates() {
 
         jsonParser json;
         json = make_all_point_corr_frac_coordinates(
-            data.n_point_corr.value(), *data.shared_prim,
-            data.supercell_sym_info, data.supercell_neighbor_list);
+            data.shared_prim->structure(), *data.neighborhood_info,
+            data.supercell_sym_info);
         return json;
       });
 }
@@ -136,17 +138,69 @@ NeighborListInfoFormatter<jsonParser> all_point_corr_cart_coordinates() {
       "configuration query output. Requires specifying the basis set (one and "
       "only one) via `basis_set_names`.",
       [](NeighborListInfoData const &data) -> jsonParser {
-        if (!data.n_point_corr) {
+        if (!data.neighborhood_info) {
           std::stringstream msg;
-          msg << "Error in `neighbor_frac_coordinate`: Requires specifying one "
-                 "and only one basis set via `basis_set_names`.";
+          msg << "Error in `all_point_corr_cart_coordinates`: Requires "
+                 "specifying one and only one basis set via `basis_set_names`.";
           throw std::runtime_error(msg.str());
         }
 
         jsonParser json;
         json = make_all_point_corr_cart_coordinates(
-            data.n_point_corr.value(), *data.shared_prim,
-            data.supercell_sym_info, data.supercell_neighbor_list);
+            data.shared_prim->structure(), *data.neighborhood_info,
+            data.supercell_sym_info);
+        return json;
+      });
+}
+
+NeighborListInfoFormatter<jsonParser>
+all_point_corr_integral_site_coordinates() {
+  return NeighborListInfoFormatter<jsonParser>(
+      "all_point_corr_integral_site_coordinates",
+      "Each row is the integer coordinates `(b, i, j, k)` for the site whose "
+      "point correlations are in corresponding row of the `all_point_corr` "
+      "configuration query output. Coordinate `b` is the sublattice index of "
+      "the site, and `(i,j,k)` are the integral coordinates of the unit cell "
+      "containing the site. Requires specifying the basis set (one and only "
+      "one) via `basis_set_names`.",
+      [](NeighborListInfoData const &data) -> jsonParser {
+        if (!data.neighborhood_info) {
+          std::stringstream msg;
+          msg << "Error in `all_point_corr_integral_site_coordinates`: "
+                 "Requires specifying one and only one basis set via "
+                 "`basis_set_names`.";
+          throw std::runtime_error(msg.str());
+        }
+
+        jsonParser json;
+        json = make_all_point_corr_unitcellcoord(*data.neighborhood_info,
+                                                 data.supercell_sym_info);
+        return json;
+      });
+}
+
+NeighborListInfoFormatter<jsonParser> all_point_corr_asymmetric_unit() {
+  return NeighborListInfoFormatter<jsonParser>(
+      "all_point_corr_asymmetric_unit",
+      "Each row is an index indicating the point orbit of the site whose "
+      "point correlations are in corresponding row of the `all_point_corr` "
+      "configuration query output. All sites with the same index are "
+      "symmetrically equivalent according to the group used to generate "
+      "cluster orbits. Requires specifying the basis set (one and "
+      "only one) via `basis_set_names`.",
+      [](NeighborListInfoData const &data) -> jsonParser {
+        if (!data.neighborhood_info) {
+          std::stringstream msg;
+          msg << "Error in `all_point_corr_asymmetric_unit`: Requires "
+                 "specifying one and only one basis set via `basis_set_names`.";
+          throw std::runtime_error(msg.str());
+        }
+
+        auto asym_unit_indices = make_all_point_corr_asymmetric_unit_indices(
+            *data.neighborhood_info, data.supercell_sym_info);
+
+        jsonParser json;
+        json = asym_unit_indices;
         return json;
       });
 }
@@ -157,7 +211,9 @@ DataFormatterDictionary<NeighborListInfoData> make_neighbor_list_info_dict() {
   // properties that require prim and supercell_sym_info
   neighbor_list_info_dict.insert(
       prim_neighbor_list(), supercell_neighbor_list(),
-      all_point_corr_frac_coordinates(), all_point_corr_cart_coordinates());
+      all_point_corr_frac_coordinates(), all_point_corr_cart_coordinates(),
+      all_point_corr_integral_site_coordinates(),
+      all_point_corr_asymmetric_unit());
   return neighbor_list_info_dict;
 }
 
@@ -322,7 +378,7 @@ void NeighborListInfoInterface::run(jsonParser const &json_options,
       nlist_weight_matrix, nlist_sublat_indices.begin(),
       nlist_sublat_indices.end(), shared_prim->basis().size()};
   ExpandPrimNeighborList neighbor_list_expander{prim_neighbor_list};
-  std::optional<Index> n_point_corr;
+  NeighborhoodInfo const *neighborhood_info = nullptr;
 
   // read "cluster_specs" (optional)
   if (parser.self.contains("cluster_specs")) {
@@ -355,7 +411,7 @@ void NeighborListInfoInterface::run(jsonParser const &json_options,
                      neighbor_list_expander);
     }
     if (basis_set_names.size() == 1) {
-      n_point_corr = primclex->clexulator(basis_set_names[0]).n_point_corr();
+      neighborhood_info = &primclex->neighborhood_info(basis_set_names[0]);
     }
   }
 
@@ -416,7 +472,7 @@ void NeighborListInfoInterface::run(jsonParser const &json_options,
   auto formatter = dict.parse(properties);
   jsonParser json;
   NeighborListInfoData data{shared_prim, supercell_sym_info, prim_neighbor_list,
-                            supercell_neighbor_list, n_point_corr};
+                            supercell_neighbor_list, neighborhood_info};
   formatter.to_json(data, json);
   log << json << std::endl;
 }

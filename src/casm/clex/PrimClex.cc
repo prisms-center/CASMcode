@@ -15,6 +15,7 @@
 #include "casm/clex/CompositionConverter.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clex/NeighborList.hh"
+#include "casm/clex/NeighborhoodInfo_impl.hh"
 #include "casm/clex/PrimClex_impl.hh"
 #include "casm/clex/io/ProtoFuncsPrinter_impl.hh"
 #include "casm/clex/io/file/ChemicalReference_file_io.hh"
@@ -87,8 +88,9 @@ struct PrimClex::PrimClexData {
 
   typedef std::string BasisSetName;
   mutable std::map<BasisSetName, ClexBasisSpecs> basis_set_specs;
-  mutable std::map<BasisSetName, ClexBasis> clex_basis;
   mutable std::map<BasisSetName, Clexulator> clexulator;
+  mutable std::map<BasisSetName, std::unique_ptr<NeighborhoodInfo>>
+      neighborhood_info;
   mutable std::map<ClexDescription, ECIContainer> eci;
 };
 
@@ -215,7 +217,6 @@ void PrimClex::refresh(bool read_settings, bool read_composition,
 
   if (clear_clex) {
     m_data->nlist.reset();
-    m_data->clex_basis.clear();
     m_data->clexulator.clear();
     m_data->eci.clear();
   }
@@ -361,6 +362,40 @@ ClexBasisSpecs const &PrimClex::basis_set_specs(
     it = m_data->basis_set_specs.emplace(basis_set_name, *parser.value).first;
   }
   return it->second;
+}
+
+NeighborhoodInfo const &PrimClex::neighborhood_info(
+    std::string const &basis_set_name) const {
+  ClexBasisSpecs const &basis_set_specs = this->basis_set_specs(basis_set_name);
+
+  auto it = m_data->neighborhood_info.find(basis_set_name);
+  if (it == m_data->neighborhood_info.end()) {
+    fs::path clust_json_path = dir().clust(basis_set_name);
+    if (!fs::exists(clust_json_path)) {
+      std::stringstream ss;
+      ss << "Error loading neighborhood info for basis set " << basis_set_name
+         << ". No clusters exist.";
+      throw std::runtime_error(ss.str());
+    }
+
+    try {
+      std::vector<IntegralCluster> prototypes;
+      jsonParser clust_json{clust_json_path};
+      read_clust(std::back_inserter(prototypes), clust_json, prim());
+      std::unique_ptr<NeighborhoodInfo> neighborhood_info =
+          make_neighborhood_info(*basis_set_specs.cluster_specs, prototypes,
+                                 nlist());
+      it = m_data->neighborhood_info
+               .emplace(basis_set_name, std::move(neighborhood_info))
+               .first;
+    } catch (std::exception &e) {
+      err_log() << "Error constructing neighborhood info from: "
+                << clust_json_path << std::endl;
+      err_log() << "What: " << e.what() << std::endl;
+      throw e;
+    }
+  }
+  return *it->second;
 }
 
 Clexulator PrimClex::clexulator(std::string const &basis_set_name) const {

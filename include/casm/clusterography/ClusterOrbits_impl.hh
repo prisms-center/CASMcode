@@ -889,6 +889,52 @@ OutputIterator flower_neighborhood(ClusterOrbitIterator begin,
   }
   return result;
 }
+
+/// \brief Return index of asymmetric unit containing unitcellcoord
+///
+/// \param begin,end Range of orbits of IntegralCluster
+/// \param unitcellcoord Site to search for
+///
+/// \returns Index of point orbit (starting from 0, counting point orbits only)
+/// that contains the point cluster consisting of unitcellcoord. Uses
+/// sym_compare to prepare the point cluster. Returns -1 if not found in any
+/// point orbit.
+///
+template <typename ClusterOrbitIterator>
+Index find_asymmetric_unit_index(xtal::UnitCellCoord const &unitcellcoord,
+                                 ClusterOrbitIterator begin,
+                                 ClusterOrbitIterator end) {
+  if (begin == end) {
+    return -1;
+  }
+
+  auto orbit_it = begin;
+  auto const &prim = orbit_it->prototype().prim();
+  auto const &sym_compare = orbit_it->sym_compare();
+
+  // create a test cluster with just unitcellcoord, then "prepare" it for
+  // comparisons
+  IntegralCluster test{prim};
+  test.elements().push_back(unitcellcoord);
+  test = sym_compare.prepare(test);
+
+  // find point orbit that contains unitcellcoord
+  Index asym_unit_index = 0;
+  for (; orbit_it != end; ++orbit_it) {
+    if (orbit_it->prototype().size() != 1) {
+      continue;
+    }
+    auto cluster_it = orbit_it->find(test);
+    if (cluster_it != orbit_it->end()) {
+      return asym_unit_index;
+    }
+    ++asym_unit_index;
+  }
+
+  // if unitcellcoord not included in any point orbit
+  return -1;
+}
+
 }  // namespace CASM
 
 #endif

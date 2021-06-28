@@ -321,24 +321,6 @@ SuperNeighborList::SuperNeighborList(const xtal::Superlattice &superlattice,
     : SuperNeighborList(superlattice.transformation_matrix_to_super(),
                         prim_nlist) {}
 
-/// \brief const Access the list of sites neighboring a particular unitcell
-const std::vector<SuperNeighborList::size_type> &SuperNeighborList::sites(
-    size_type unitcell_index) const {
-  return m_site[unitcell_index];
-}
-
-/// \brief const Access the list of unitcells neighboring a particular unitcell
-const std::vector<SuperNeighborList::size_type> &SuperNeighborList::unitcells(
-    size_type unitcell_index) const {
-  return m_unitcell[unitcell_index];
-}
-
-/// \brief Returns true if periodic images of the neighbor list overlap
-///
-/// If periodic images of the neighborhood overlap, Clexulator 'delta' values
-/// will be incorrect.
-bool SuperNeighborList::overlaps() const { return m_overlaps; }
-
 /// \brief Clone
 std::unique_ptr<SuperNeighborList> SuperNeighborList::clone() const {
   return std::unique_ptr<SuperNeighborList>(new SuperNeighborList(*this));

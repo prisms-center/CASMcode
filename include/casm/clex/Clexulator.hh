@@ -36,10 +36,18 @@ class Base {
   /// \brief Number of correlations
   size_type corr_size() const { return m_corr_size; }
 
-  /// \brief Valid range for `neighbor_ind` argument to calc_point_corr
+  /// \brief Number of distinct point correlations per unit cell
   ///
-  /// - For periodic clex, this is the number of sublattices.
-  /// - For local clex, this is the neighbor list size.
+  /// Note:
+  /// - This is not the number of point functions
+  /// - [0, n_point_corr()) is the valid range for the `neighbor_ind`
+  /// argument to for the point correlation calculating member functions
+  /// (calc_point_corr, calc_restricted_point_corr, calc_delta_point_corr, and
+  /// calc_restricted_delta_point_corr)
+  /// - For periodic clex, this is number of prim basis sites with site degrees
+  /// of freedom included in the cluster functions.
+  /// - For local clex, this is the number of sites in the local neighborhood
+  /// with site degrees of freedom included in the cluster functions  .
   size_type n_point_corr() const { return m_n_point_corr; }
 
   /// \brief Clone the Clexulator

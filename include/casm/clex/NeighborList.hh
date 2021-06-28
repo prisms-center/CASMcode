@@ -192,6 +192,10 @@ class SuperNeighborList {
   SuperNeighborList(const xtal::Superlattice &prim_grid,
                     const PrimNeighborList &prim_nlist);
 
+  // --- Keep inlined functions inline for most efficient use  ---
+
+  size_type n_unitcells() const { return m_prim_grid_size; }
+
   /// Get unitcell_index from site_index
   size_type unitcell_index(size_type site_index) const {
     return site_index % m_prim_grid_size;
@@ -212,14 +216,21 @@ class SuperNeighborList {
   }
 
   /// \brief const Access the list of sites neighboring a particular unit cell
-  const std::vector<size_type> &sites(size_type unitcell_index) const;
+  const std::vector<size_type> &sites(size_type unitcell_index) const {
+    return m_site[unitcell_index];
+  }
 
   /// \brief const Access the list of unitcells neighboring a particular unit
   /// cell
-  const std::vector<size_type> &unitcells(size_type unitcell_index) const;
+  const std::vector<size_type> &unitcells(size_type unitcell_index) const {
+    return m_unitcell[unitcell_index];
+  }
 
   /// \brief Returns true if periodic images of the neighbor list overlap
-  bool overlaps() const;
+  ///
+  /// If periodic images of the neighborhood overlap, Clexulator 'delta' values
+  /// will be incorrect.
+  bool overlaps() const { return m_overlaps; }
 
   /// \brief Clone
   std::unique_ptr<SuperNeighborList> clone() const;
