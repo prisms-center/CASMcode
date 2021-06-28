@@ -10,6 +10,7 @@
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/clex/Calculable.hh"
+#include "casm/clex/ClexBasisSpecs.hh"
 #include "casm/clex/ConfigCorrelations.hh"
 #include "casm/clex/ConfigIOHull.hh"
 #include "casm/clex/ConfigIONovelty.hh"
@@ -17,14 +18,17 @@
 #include "casm/clex/ConfigIOStrucScore.hh"
 #include "casm/clex/ConfigMapping.hh"
 #include "casm/clex/MappedProperties.hh"
+#include "casm/clex/NeighborhoodInfo.hh"
 #include "casm/clex/Norm.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/SimpleStructureTools.hh"
 #include "casm/clex/io/json/Configuration_json_io.hh"
 #include "casm/clex/io/stream/Configuration_stream_io.hh"
+#include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/io/SimpleStructureIO.hh"
+#include "casm/crystallography/io/UnitCellCoordIO.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/Selected.hh"
 
@@ -194,7 +198,12 @@ const std::string Corr::Desc =
 
 /// \brief Returns the atom fraction
 Eigen::VectorXd Corr::evaluate(const Configuration &config) const {
-  return restricted_correlations(config, m_clexulator, correlation_indices);
+  Eigen::VectorXd corr;
+  restricted_extensive_correlations(
+      corr, config.configdof(), config.supercell().nlist(), m_clexulator,
+      m_correlation_indices.data(), end_ptr(m_correlation_indices));
+  corr /= ((double)config.supercell().volume());
+  return corr;
 }
 
 /// \brief If not yet initialized, use the default clexulator from the PrimClex
@@ -208,9 +217,9 @@ bool Corr::init(const Configuration &_tmplt) const {
   }
 
   VectorXdAttribute<Configuration>::init(_tmplt);
-  correlation_indices.clear();
+  m_correlation_indices.clear();
   for (Index i = 0; i < _index_rules().size(); i++) {
-    correlation_indices.push_back(_index_rules()[i][0]);
+    m_correlation_indices.push_back(_index_rules()[i][0]);
   }
   return true;
 }
@@ -398,8 +407,9 @@ const std::string AllCorrContribution::Name = "all_corr_contribution";
 const std::string AllCorrContribution::Desc =
     "Correlation values (evaluated basis functions for a single unit cell, not "
     "normalized), for every unitcell in the supercell. The output is a matrix, "
-    "with each row corresponding to a unitcell. The arguments follow the same "
-    "conventions as `corr` accepting any of `all_corr_contribution` or "
+    "with each row corresponding to a unitcell. The mean over rows is equal to "
+    "the `corr` output. The arguments follow the same conventions as `corr` "
+    "accepting any of `all_corr_contribution` or "
     "`all_corr_contribution(clex_name)` or `all_corr_contribution(indices)`, "
     "or `all_corr_contribution(clex_name, indices)`. Coordinates of unit cells "
     "can be obtained from the `unitcells` information of the `info -m "
@@ -456,30 +466,183 @@ bool AllCorrContribution::parse_args(const std::string &args) {
   return true;
 }
 
+// --- SiteCentricCorrelations implementations -----------
+
+const std::string SiteCentricCorrelations::Name = "site_centric_correlations";
+
+const std::string SiteCentricCorrelations::Desc =
+    "Site-centric correlation values, the sum of all cluster functions that "
+    "include a particular site, normalized by cluster orbit size. The output "
+    "is a JSON object, with a \"value\" matrix of size (n_sites, "
+    "n_correlations) and an \"asymmetric_unit_indices\" array of size n_sites. "
+    "Each row in the \"value\" matrix contains the point correlations for a "
+    "site. The sum over rows normalized by supercell size (number of unit "
+    "cells) is equal to the global mean correlations (`corr`) times the "
+    "cluster size for functions associated with a given column (due to "
+    "multiple counting of cluster functions for each site involved in the "
+    "cluster). The i-th element of \"asymmetric_unit_indices\" gives the "
+    "asymmetric unit index for the site's sublattice (equal indices indicates "
+    "sites on symmetrically equivalent sublattices). Accepts either zero "
+    "arguments (`site_centric_correlations`), and uses the default cluster "
+    "expansion or one argument, (`site_centric_correlations(clex_name)`) and "
+    "uses the named cluster expansion. More detailed coordinates of sites for "
+    "any supercell can be obtained from the `info -m NeighborListInfo` method.";
+
+jsonParser SiteCentricCorrelations::evaluate(
+    const Configuration &config) const {
+  Supercell const &supercell = config.supercell();
+  auto const &origin_unitcellcoords =
+      m_neighborhood_info->point_corr_unitcellcoord;
+
+  std::vector<Index> asymmetric_unit_indices;
+  for (xtal::UnitCellCoord unitcellcoord : origin_unitcellcoords) {
+    for (Index v = 0; v < supercell.volume(); ++v) {
+      asymmetric_unit_indices.push_back(
+          m_sublattice_to_asymmetric_unit[unitcellcoord.sublattice()]);
+    }
+  }
+
+  jsonParser json;
+  json["asymmetric_unit_indices"] = asymmetric_unit_indices;
+  json["value"] = all_point_corr(config, m_clexulator);
+  return json;
+}
+
+bool SiteCentricCorrelations::validate(const Configuration &config) const {
+  if (!m_neighborhood_info) {
+    CASM::err_log() << "Error in \"site_centric_correlations\": not properly "
+                       "initialized (unknown error)."
+                    << std::endl;
+    return false;
+  }
+  return true;
+}
+
+/// \brief If not yet initialized, use the default clexulator from the PrimClex
+bool SiteCentricCorrelations::init(const Configuration &_tmplt) const {
+  if (!m_clexulator.initialized()) {
+    const PrimClex &primclex = _tmplt.primclex();
+    auto const &prim = primclex.prim();
+    ClexDescription desc = m_clex_name.empty()
+                               ? primclex.settings().default_clex()
+                               : primclex.settings().clex(m_clex_name);
+    ClexBasisSpecs const &basis_set_specs = primclex.basis_set_specs(desc.bset);
+    ClusterSpecs const &cluster_specs = *basis_set_specs.cluster_specs;
+    if (cluster_specs.periodicity_type() !=
+        CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC) {
+      throw std::runtime_error(
+          "Error: \"site_centric_correlations\" is only valid for periodic "
+          "cluster expansions.");
+    }
+    if (static_cast<PeriodicMaxLengthClusterSpecs const &>(cluster_specs)
+            .generating_group.size() != prim.factor_group().size()) {
+      throw std::runtime_error(
+          "Error: \"site_centric_correlations\" is only valid when the "
+          "generating group is the prim factor group.");
+    }
+
+    m_clexulator = primclex.clexulator(desc.bset);
+    m_neighborhood_info = &primclex.neighborhood_info(desc.bset);
+
+    adapter::Adapter<xtal::SymOpVector, SymGroup> adapter;
+    // set of [sets of basis indices of equivalent sites]
+    std::set<std::set<Index>> orbits =
+        xtal::make_asymmetric_unit(prim, adapter(prim.factor_group()));
+
+    m_sublattice_to_asymmetric_unit.resize(prim.basis().size());
+    Index asym_unit_index = 0;
+    for (std::set<Index> const &orbit : orbits) {
+      for (Index const &sublat : orbit) {
+        m_sublattice_to_asymmetric_unit[sublat] = asym_unit_index;
+      }
+      asym_unit_index++;
+    }
+  }
+
+  BaseValueFormatter<jsonParser, Configuration>::init(_tmplt);
+  return true;
+}
+
+/// Expects one of:
+/// - 'site_centric_correlations'
+/// - 'site_centric_correlations(clex_name)'
+bool SiteCentricCorrelations::parse_args(const std::string &args) {
+  std::vector<std::string> splt_vec;
+  boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
+
+  if (!splt_vec.size()) {
+    return true;
+  } else if (splt_vec.size() == 1) {
+    m_clex_name = splt_vec[0];
+  } else {
+    std::stringstream ss;
+    ss << "Too many arguments for 'site_centric_correlations'.  Received: "
+       << args << "\n";
+    throw std::runtime_error(ss.str());
+  }
+  return true;
+}
+
 // --- AllPointCorr implementations -----------
 
 const std::string AllPointCorr::Name = "all_point_corr";
 
-const std::string AllPointCorr::Desc =
-    "Point correlation values (evaluated basis functions for a single site, "
-    "normalized by cluster orbit size), for every site in the supercell for "
-    "periodic cluster functions, or every site in the neighborhood of each "
-    "unit cell for local clusters functions. The output is a matrix, with each "
-    "row corresponding to a site. The site in the i-th row is determined by  "
-    "`i = linear_unitcell_index + supercell_volume * neighbor_index`. For "
-    "periodic cluster functions, the `neighbor_index` counts over sites in the "
-    "primitive cell that have site degrees of freedom. If all sites in the "
-    "prim have site degrees of freedom, then the `neighbor_index` is equal to "
-    "the `sublattice_index` of that site in the prim. For local cluster "
-    "functions, the `neighbor_index` counts over sites in the neighborhood "
-    "that have site degrees of freedom. The arguments follow the same "
-    "conventions as `corr` accepting any of `all_point_corr` or "
-    "`all_point_corr(clex_name)` or `all_point_corr(indices)`, or "
-    "`all_point_corr(clex_name, indices)`. Coordinates of sites can be "
-    "obtained from the `info -m NeighborListInfo` method.";
+/// \brief Returns point correlations from all sites, normalized by cluster
+/// orbit size
+///
+/// \returns Matrix of size (n_sites, clexulator.corr_size()), where n_sites =
+/// clexulator.n_point_corr() * config.supercell().volume().
+///
+/// Notes:
+/// - The point correlations (each row in the result), described elsewhere in
+/// CASM as "flower functions", are the values of all cluster functions that
+/// include a particular site, normalized by cluster orbit size.
+/// - The interpretation and application differs for periodic vs local cluster
+/// expansions
+/// - The value clexulator.n_point_corr() is the number of sites for which
+/// point correlations can be evaluated (per unit cell), which is the sum of
+/// cluster orbit size over all point cluster orbits.
 
-Eigen::MatrixXd AllPointCorr::evaluate(const Configuration &config) const {
-  return all_point_corr(config, m_clexulator);
+const std::string AllPointCorr::Desc =
+    "Point correlation values, the sum of all cluster functions that include a "
+    "particular site, normalized by cluster orbit size, output as a JSON "
+    "object. The \"value\" is a matrix of size (n_sites, n_correlations). Each "
+    "row in the \"value\" matrix contains the point correlations for one site. "
+    "The interpretation and application differs for periodic vs local cluster "
+    "expansions. The sum over rows normalized by supercell size (number of "
+    "unit cells) is equal to the global mean correlations (`corr`) times the "
+    "cluster size for functions associated with a given column (due to "
+    "multiple counting of cluster functions for each site involved in the "
+    "cluster). Information about the sites is provided by the arrays (each of "
+    "size n_sites) \"asymmetric_unit_indices\" (equivalent indices indicates "
+    "symmetrically equivalent sites), \"linear_unitcell_index\" (indicates "
+    "which unit cell the functions were evaluated for), \"unitcellcoord\" (the "
+    "integral site coordinates (b, i, j, k) of the site, where b is the "
+    "sublattice index and (i,j,k) are integral coordinates of the unit cell "
+    "containing the site). Accepts either zero arguments (`all_point_corr`), "
+    "and uses the default cluster expansion or one argument, "
+    "(`all_point_corr(clex_name)`) and uses the named cluster expansion.";
+
+jsonParser AllPointCorr::evaluate(const Configuration &config) const {
+  Supercell const &supercell = config.supercell();
+  jsonParser json;
+  json["asymmetric_unit_indices"] = make_all_point_corr_asymmetric_unit_indices(
+      *m_neighborhood_info, supercell.sym_info());
+  json["linear_unitcell_indices"] = make_all_point_corr_linear_unitcell_indices(
+      *m_neighborhood_info, supercell.sym_info());
+  json["unitcellcoord"] = make_all_point_corr_unitcellcoord(
+      *m_neighborhood_info, supercell.sym_info());
+  json["value"] = all_point_corr(config, m_clexulator);
+  return json;
+}
+
+bool AllPointCorr::validate(const Configuration &config) const {
+  if (!m_neighborhood_info) {
+    CASM::err_log() << "Error in AllPointCorr: not properly initialized."
+                    << std::endl;
+    return false;
+  }
+  return true;
 }
 
 /// \brief If not yet initialized, use the default clexulator from the PrimClex
@@ -490,9 +653,10 @@ bool AllPointCorr::init(const Configuration &_tmplt) const {
                                ? primclex.settings().default_clex()
                                : primclex.settings().clex(m_clex_name);
     m_clexulator = primclex.clexulator(desc.bset);
+    m_neighborhood_info = &primclex.neighborhood_info(desc.bset);
   }
 
-  MatrixXdAttribute<Configuration>::init(_tmplt);
+  BaseValueFormatter<jsonParser, Configuration>::init(_tmplt);
   return true;
 }
 
@@ -500,25 +664,14 @@ bool AllPointCorr::init(const Configuration &_tmplt) const {
 /// Expects one of:
 /// - 'all_point_corr'
 /// - 'all_point_corr(clex_name)'
-/// - 'all_point_corr(index_expression)'
-/// - 'all_point_corr(clex_name, index_expression)'
 bool AllPointCorr::parse_args(const std::string &args) {
   std::vector<std::string> splt_vec;
   boost::split(splt_vec, args, boost::is_any_of(","), boost::token_compress_on);
 
   if (!splt_vec.size()) {
     return true;
-  }
-  if (splt_vec.size() == 1) {
-    if ((splt_vec[0].find_first_not_of("0123456789") == std::string::npos) ||
-        (splt_vec[0].find(':') != std::string::npos)) {
-      _parse_index_expression(splt_vec[0]);
-    } else {
-      m_clex_name = splt_vec[0];
-    }
-  } else if (splt_vec.size() == 2) {
+  } else if (splt_vec.size() == 1) {
     m_clex_name = splt_vec[0];
-    _parse_index_expression(splt_vec[1]);
   } else {
     std::stringstream ss;
     ss << "Too many arguments for 'all_point_corr'.  Received: " << args
@@ -1029,7 +1182,7 @@ make_matrixxd_dictionary<Configuration>() {
   using namespace ConfigIO;
   MatrixXdAttributeDictionary<Configuration> dict;
 
-  dict.insert(AllCorrContribution(), AllPointCorr(), GradCorr());
+  dict.insert(AllCorrContribution(), GradCorr());
 
   return dict;
 }
@@ -1043,7 +1196,8 @@ make_json_dictionary<Configuration>() {
                           BaseValueFormatter<jsonParser, Configuration>>
       dict;
 
-  dict.insert(structure(), config(), properties());
+  dict.insert(structure(), config(), properties(), SiteCentricCorrelations(),
+              AllPointCorr());
 
   return dict;
 }
