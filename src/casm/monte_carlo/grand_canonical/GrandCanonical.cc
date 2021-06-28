@@ -45,7 +45,6 @@ GrandCanonical::GrandCanonical(const PrimClex &primclex,
     : MonteCarlo(primclex, settings, log),
       m_site_swaps(supercell()),
       m_formation_energy_clex(make_clex(primclex, settings)),
-      m_all_correlations(settings.all_correlations()),
       m_event(primclex.composition_axes().components().size(),
               _clexulator().corr_size()) {
   const auto &desc = settings.formation_energy(primclex);
@@ -467,24 +466,19 @@ double GrandCanonical::potential_energy(const Configuration &config) const {
 /// \brief Calculate delta correlations for an event
 void GrandCanonical::_set_dCorr(Index mutating_site, int new_occupant,
                                 Eigen::VectorXd &dCorr) const {
-  if (m_all_correlations) {
-    dCorr = delta_corr(mutating_site, new_occupant, _config(), _clexulator());
-  } else {
-    restricted_delta_corr(dCorr, mutating_site, new_occupant, _config(),
-                          _clexulator(), _eci().index());
-  }
+  restricted_delta_corr(dCorr, mutating_site, new_occupant, configdof(),
+                        supercell().nlist(), _clexulator(),
+                        _eci().index().data(), end_ptr(_eci().index()));
 
   if (debug()) {
-    _print_correlations(dCorr, "delta correlations", "dCorr",
-                        m_all_correlations);
+    _print_correlations(dCorr, "delta correlations", "dCorr");
   }
 }
 
 /// \brief Print correlations to _log()
 void GrandCanonical::_print_correlations(const Eigen::VectorXd &corr,
                                          std::string title,
-                                         std::string colheader,
-                                         bool all_correlations) const {
+                                         std::string colheader) const {
   _log().calculate(title);
   _log() << std::setw(12) << "i" << std::setw(16) << "ECI" << std::setw(16)
          << colheader << std::endl;
@@ -496,7 +490,7 @@ void GrandCanonical::_print_correlations(const Eigen::VectorXd &corr,
     if (index != _eci().index().size()) {
       eci = _eci().value()[index];
     }
-    if (!all_correlations && index == _eci().index().size()) {
+    if (index == _eci().index().size()) {
       calculated = false;
     }
 
@@ -548,8 +542,7 @@ void GrandCanonical::_update_deltas(GrandCanonicalEvent &event,
 /// \brief Calculate properties given current conditions
 void GrandCanonical::_update_properties() {
   // initialize properties and store pointers to the data strucures
-  _vector_properties()["corr"] =
-      correlations(_configdof(), supercell(), _clexulator());
+  _vector_properties()["corr"] = correlations(_config(), _clexulator());
   m_corr = &_vector_property("corr");
 
   _vector_properties()["comp_n"] = CASM::comp_n(_configdof(), supercell());
@@ -565,7 +558,7 @@ void GrandCanonical::_update_properties() {
   m_potential_energy = &_scalar_property("potential_energy");
 
   if (debug()) {
-    _print_correlations(corr(), "correlations", "corr", m_all_correlations);
+    _print_correlations(corr(), "correlations", "corr");
 
     auto origin = primclex().composition_axes().origin();
     auto exchange_chem_pot = m_condition.exchange_chem_pot();

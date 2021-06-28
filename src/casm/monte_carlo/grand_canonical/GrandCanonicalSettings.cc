@@ -132,33 +132,6 @@ ClexDescription GrandCanonicalSettings::formation_energy(
 
 // --- Sampler settings ---------------------
 
-/// \brief Return true if all correlations should be sampled
-bool GrandCanonicalSettings::all_correlations() const {
-  if (method() == Monte::METHOD::LTE1) {  // hack
-    return false;
-  }
-  std::string level1 = "data";
-  std::string level2 = "measurements";
-  try {
-    const jsonParser &json = (*this)[level1][level2];
-    for (auto it = json.cbegin(); it != json.cend(); ++it) {
-      if (it->contains("quantity") &&
-          (*it)["quantity"].get<std::string>() == "all_correlations") {
-        return true;
-      }
-    }
-    return false;
-  } catch (std::runtime_error &e) {
-    Log &err_log = CASM::err_log();
-    err_log.error<Log::standard>("Reading Monte Carlo settings");
-    err_log << "Error checking if 'all_correlations' should be sampled.\n";
-    err_log << "Error reading settings at [\"" << level1 << "\"][\"" << level2
-            << "\"]\n";
-    err_log << "See 'casm format --monte' for help.\n" << std::endl;
-    throw e;
-  }
-}
-
 GrandCanonicalConditions GrandCanonicalSettings::_conditions(
     std::string name) const {
   std::string level1 = "driver";

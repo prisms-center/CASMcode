@@ -1867,8 +1867,6 @@ int format_command(const CommandArgs &args) {
            "\n"
            "        which have non-zero eci values.                            "
            "\n"
-           "      \"all_correlations\": correlations (per unit cell)           "
-           "\n"
            "      \"<anything else>\": is interpreted as a 'casm query' query  "
            "\n\n"
 

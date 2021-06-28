@@ -19,9 +19,6 @@ LocalDiscreteConfigDoFValues::LocalDiscreteConfigDoFValues(
       m_vals(Eigen::VectorXi::Zero(_n_sublat * _n_vol)),
       m_symrep_IDs(_symrep_IDs) {}
 
-/// Reference occupation value on site i
-int &LocalDiscreteConfigDoFValues::occ(Index i) { return m_vals(i); }
-
 /// Set occupation values (values are indices into Site::occupant_dof())
 ///
 /// \throws std::runtime_error ("Invalid size in
@@ -35,12 +32,6 @@ void LocalDiscreteConfigDoFValues::set_values(
 
 /// Set occupation values to zero
 void LocalDiscreteConfigDoFValues::setZero() { m_vals.setZero(); }
-
-/// Const access occupation values (values are indices into
-/// Site::occupant_dof())
-Eigen::VectorXi const &LocalDiscreteConfigDoFValues::values() const {
-  return m_vals;
-}
 
 /// Access vector block of values for all sites on one sublattice
 LocalDiscreteConfigDoFValues::SublatReference
@@ -178,34 +169,6 @@ Eigen::MatrixXd LocalContinuousConfigDoFValues::standard_values() const {
   return result;
 }
 
-/// Access site DoF value vector
-///
-/// Note:
-/// - This is the vector of DoF values associated with a single site, in the
-///   prim DoF basis
-/// - If the prim DoF basis dimension for this site is less than dim(), this
-///   includes a tail of zeros (for rows >= this->info()[b].dim(), where b is
-///   the sublattice index for site_index l). The tail of zeros should not be
-///   modified.
-LocalContinuousConfigDoFValues::SiteReference
-LocalContinuousConfigDoFValues::site_value(Index l) {
-  return m_vals.col(l);
-}
-
-/// Const access site DoF value vector
-///
-/// Note:
-/// - This is the vector of DoF values associated with a single site, in the
-///   prim DoF basis
-/// - If the prim DoF basis dimension for this site is less than dim(), this
-///   includes a tail of zeros (for rows >= this->info()[b].dim(), where b is
-///   the sublattice index for site_index l). The tail of zeros should not be
-///   modified.
-LocalContinuousConfigDoFValues::ConstSiteReference
-LocalContinuousConfigDoFValues::site_value(Index l) const {
-  return m_vals.col(l);
-}
-
 /// Access matrix block of values for all sites on one sublattice
 LocalContinuousConfigDoFValues::SublatReference
 LocalContinuousConfigDoFValues::sublat(Index b) {
@@ -240,30 +203,13 @@ GlobalContinuousConfigDoFValues::GlobalContinuousConfigDoFValues(
     DoFSetInfo const &_info)
     : ConfigDoFValues(_traits, _n_sublat, _n_vol),
       m_info(_info),
-      m_vals(Eigen::VectorXd::Zero(m_info.dim())) {
-  _throw_if_invalid_size(m_vals);
-}
+      m_vals(Eigen::VectorXd::Zero(m_info.dim())) {}
 
 /// Global DoF vector representation dimension
 Index GlobalContinuousConfigDoFValues::dim() const { return m_vals.rows(); }
 
-/// Set global DoF values
-///
-/// \throws std::runtime_error ("Invalid size in
-/// GlobalContinuousConfigDoFValues...") if size is not valid
-void GlobalContinuousConfigDoFValues::set_values(
-    Eigen::Ref<const Eigen::MatrixXd> const &_values) {
-  _throw_if_invalid_size(_values);
-  m_vals = _values;
-}
-
 /// Set DoF values to zero
 void GlobalContinuousConfigDoFValues::setZero() { m_vals.setZero(); }
-
-/// Const access global DoF values
-Eigen::VectorXd const &GlobalContinuousConfigDoFValues::values() const {
-  return m_vals;
-}
 
 /// Set global DoF values from standard DoF values
 ///
@@ -298,17 +244,6 @@ Eigen::MatrixXd GlobalContinuousConfigDoFValues::standard_values() const {
 /// DoFSetInfo provides the basis and symmetry representations for `values`
 DoFSetInfo const &GlobalContinuousConfigDoFValues::info() const {
   return m_info;
-}
-
-void GlobalContinuousConfigDoFValues::_throw_if_invalid_size(
-    Eigen::Ref<ValueType const> const &_values) const {
-  if (_values.size() != m_info.basis().cols()) {
-    std::stringstream msg;
-    msg << "Invalid size in LocalContinuousConfigDoFValues: "
-        << "Expected size=" << m_info.basis().cols()
-        << ", received size=" << _values.size();
-    throw std::runtime_error(msg.str());
-  }
 }
 
 }  // namespace CASM

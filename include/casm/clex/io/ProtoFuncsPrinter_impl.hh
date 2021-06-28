@@ -68,7 +68,6 @@ void ProtoFuncsPrinter::operator()(const OrbitType &orbit, Log &out,
 
     xtal::COORD_MODE printer_mode(opt.coord_type);
 
-    auto const &clust = orbit.prototype();
     this->increase_indent(out);
     if (this->opt.print_coordinates) {
       print_coordinates(*this, orbit.prototype(), out);

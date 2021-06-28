@@ -114,14 +114,15 @@ class Canonical : public MonteCarlo {
 
   const ECIContainer &_eci() const { return m_formation_energy_clex.eci; }
 
-  Eigen::VectorXd _calc_delta_point_corr(size_type l, int new_occ) const;
+  void _calc_delta_point_corr(Eigen::VectorXd &dcorr, size_type l,
+                              int new_occ) const;
 
   /// \brief Calculate delta correlations for an event
   void _set_dCorr(CanonicalEvent &event) const;
 
   /// \brief Print correlations to _log()
   void _print_correlations(const Eigen::VectorXd &corr, std::string title,
-                           std::string colheader, bool all_correlations) const;
+                           std::string colheader) const;
 
   /// \brief Calculate delta properties for an event and update the event with
   /// those properties
@@ -164,10 +165,6 @@ class Canonical : public MonteCarlo {
 
   /// Convert sublat/asym_unit and species/occ index
   OccCandidateList m_cand;
-
-  /// If true, calculate all correlations; if false, calculate correlations with
-  /// non-zero eci
-  bool m_all_correlations;
 
   /// Keeps track of what sites have which occupants
   OccLocation m_occ_loc;
