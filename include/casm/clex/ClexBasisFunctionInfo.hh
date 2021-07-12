@@ -1,5 +1,5 @@
-#ifndef CASM_ClexBasisInfo
-#define CASM_ClexBasisInfo
+#ifndef CASM_ClexBasisFunctionInfo
+#define CASM_ClexBasisFunctionInfo
 
 #include "casm/clusterography/IntegralCluster.hh"
 
@@ -9,7 +9,7 @@ class ClexBasis;
 
 /// Clex basis function info
 ///
-/// Stored for each cluster expansion basis function in ClexBasisInfo
+/// Stores info for each cluster expansion basis function
 struct ClexBasisFunctionInfo {
   ClexBasisFunctionInfo(Index _linear_orbit_index, Index _linear_function_index,
                         IntegralCluster _prototype, Index _multiplicity,

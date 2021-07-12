@@ -1,8 +1,8 @@
-#ifndef CASM_ClexBasisInfo_impl
-#define CASM_ClexBasisInfo_impl
+#ifndef CASM_ClexBasisFunctionInfo_impl
+#define CASM_ClexBasisFunctionInfo_impl
 
 #include "casm/clex/ClexBasis.hh"
-#include "casm/clex/ClexBasisInfo.hh"
+#include "casm/clex/ClexBasisFunctionInfo.hh"
 
 namespace CASM {
 
