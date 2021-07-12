@@ -119,13 +119,12 @@ class GrandCanonical : public MonteCarlo {
   const ECIContainer &_eci() const { return m_formation_energy_clex.eci; }
 
   /// \brief Calculate delta correlations for an event
-  void _set_dCorr(GrandCanonicalEvent &event, Index mutating_site, int sublat,
-                  int current_occupant, int new_occupant, bool use_deltas,
-                  bool all_correlations) const;
+  void _set_dCorr(Index mutating_site, int new_occupant,
+                  Eigen::VectorXd &dCorr) const;
 
   /// \brief Print correlations to _log()
   void _print_correlations(const Eigen::VectorXd &corr, std::string title,
-                           std::string colheader, bool all_correlations) const;
+                           std::string colheader) const;
 
   /// \brief Calculate delta properties for an event and update the event with
   /// those properties
@@ -159,16 +158,8 @@ class GrandCanonical : public MonteCarlo {
   /// Holds Clexulator and ECI references
   Clex m_formation_energy_clex;
 
-  /// If true, calculate all correlations; if false, calculate correlations with
-  /// non-zero eci
-  bool m_all_correlations;
-
   /// Event to propose, check, accept/reject:
   EventType m_event;
-
-  /// \brief If the supercell is large enough, calculate delta correlations
-  /// directly
-  bool m_use_deltas;
 
   // ---- Pointers to properties for faster access
 

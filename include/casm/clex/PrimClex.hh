@@ -19,6 +19,7 @@ class ClusterSpecs;
 class ClexBasis;
 class Clexulator;
 class ECIContainer;
+struct NeighborhoodInfo;
 class Structure;
 
 namespace DB {
@@ -158,6 +159,8 @@ class PrimClex {
 
   bool has_basis_set_specs(std::string const &basis_set_name) const;
   ClexBasisSpecs const &basis_set_specs(
+      std::string const &basis_set_name) const;
+  NeighborhoodInfo const &neighborhood_info(
       std::string const &basis_set_name) const;
   Clexulator clexulator(std::string const &basis_set_name) const;
 

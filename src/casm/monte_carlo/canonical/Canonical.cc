@@ -8,6 +8,7 @@
 #include "casm/misc/algorithm.hh"
 #include "casm/monte_carlo/MonteCarloEnum_impl.hh"
 #include "casm/monte_carlo/MonteCarlo_impl.hh"
+#include "casm/monte_carlo/MonteCorrelations.hh"
 #include "casm/monte_carlo/MonteIO_impl.hh"
 #include "casm/monte_carlo/canonical/CanonicalIO.hh"
 #include "casm/monte_carlo/canonical/CanonicalSettings_impl.hh"
@@ -39,18 +40,10 @@ Canonical::Canonical(const PrimClex &primclex,
       m_formation_energy_clex(make_clex(primclex, settings)),
       m_convert(_supercell()),
       m_cand(m_convert),
-      m_all_correlations(settings.all_correlations()),
       m_occ_loc(m_convert, m_cand),
       m_event(primclex.composition_axes().components().size(),
               _clexulator().corr_size()) {
   const auto &desc = settings.formation_energy(primclex);
-
-  // set the SuperNeighborList...
-  set_nlist();
-
-  // If the simulation is big enough, use delta cluster functions;
-  // else, calculate all cluster functions
-  m_use_deltas = !nlist().overlaps();
 
   _log().construct("Canonical Monte Carlo");
   _log() << "project: " << this->primclex().dir().root_dir() << "\n";
@@ -61,7 +54,6 @@ Canonical::Canonical(const PrimClex &primclex,
   _log() << std::setw(16) << "bset: " << desc.bset << "\n";
   _log() << std::setw(16) << "eci: " << desc.eci << "\n";
   _log() << "supercell: \n" << supercell().transf_mat() << "\n";
-  _log() << "use_deltas: " << std::boolalpha << m_use_deltas << "\n";
   _log() << "\nSampling: \n";
   _log() << std::setw(24) << "quantity" << std::setw(24)
          << "requested_precision"
@@ -276,107 +268,21 @@ double Canonical::potential_energy(const Configuration &config) const {
   return _eci() * corr.data();
 }
 
-void Canonical::_calc_delta_point_corr(Index l, int new_occ,
-                                       Eigen::VectorXd &dCorr_comp) const {
-  int sublat = _config().sublat(l);
-  int curr_occ = _configdof().occ(l);
-
-  // Calculate the change in correlations due to this event
-  if (m_use_deltas) {
-    if (m_all_correlations) {
-      _clexulator().calc_delta_point_corr(
-          _configdof(), nlist().sites(nlist().unitcell_index(l)).data(),
-          end_ptr(nlist().sites(nlist().unitcell_index(l))), sublat, curr_occ,
-          new_occ, dCorr_comp.data(), end_ptr(dCorr_comp));
-    } else {
-      auto begin = _eci().index().data();
-      auto end = begin + _eci().index().size();
-      _clexulator().calc_restricted_delta_point_corr(
-          _configdof(), nlist().sites(nlist().unitcell_index(l)).data(),
-          end_ptr(nlist().sites(nlist().unitcell_index(l))), sublat, curr_occ,
-          new_occ, dCorr_comp.data(), end_ptr(dCorr_comp), begin, end);
-    }
-  } else {
-    Eigen::VectorXd before{Eigen::VectorXd::Zero(dCorr_comp.size())};
-    Eigen::VectorXd after{Eigen::VectorXd::Zero(dCorr_comp.size())};
-
-    // Calculate the change in points correlations due to this event
-    if (m_all_correlations) {
-      // Calculate before
-      _clexulator().calc_point_corr(
-          _configdof(), nlist().sites(nlist().unitcell_index(l)).data(),
-          end_ptr(nlist().sites(nlist().unitcell_index(l))), sublat,
-          before.data(), end_ptr(before));
-
-      // Apply change
-      _configdof().occ(l) = new_occ;
-
-      // Calculate after
-      _clexulator().calc_point_corr(
-          _configdof(), nlist().sites(nlist().unitcell_index(l)).data(),
-          end_ptr(nlist().sites(nlist().unitcell_index(l))), sublat,
-          after.data(), end_ptr(after));
-    } else {
-      auto begin = _eci().index().data();
-      auto end = begin + _eci().index().size();
-
-      // Calculate before
-      _clexulator().calc_restricted_point_corr(
-          _configdof(), nlist().sites(nlist().unitcell_index(l)).data(),
-          end_ptr(nlist().sites(nlist().unitcell_index(l))), sublat,
-          before.data(), end_ptr(before), begin, end);
-
-      // Apply change
-      _configdof().occ(l) = new_occ;
-
-      // Calculate after
-      _clexulator().calc_restricted_point_corr(
-          _configdof(), nlist().sites(nlist().unitcell_index(l)).data(),
-          end_ptr(nlist().sites(nlist().unitcell_index(l))), sublat,
-          after.data(), end_ptr(after), begin, end);
-    }
-    dCorr_comp = after - before;
-
-    // Unapply changes
-    _configdof().occ(l) = curr_occ;
-  }
-}
-
 /// \brief Calculate delta correlations for an event
 void Canonical::_set_dCorr(CanonicalEvent &event) const {
-  const OccEvent &e = event.occ_event();
-  const OccTransform &f_a = e.occ_transform[0];
-  const OccTransform &f_b = e.occ_transform[1];
-
-  int curr_occ_a = _configdof().occ(f_a.l);
-  Index new_occ_a = m_convert.occ_index(f_a.asym, f_a.to_species);
-  Index new_occ_b = m_convert.occ_index(f_b.asym, f_b.to_species);
-
-  Eigen::VectorXd dCorr_comp{Eigen::VectorXd::Zero(event.dCorr().size())};
-
-  // calc dCorr for first site
-  _calc_delta_point_corr(f_a.l, new_occ_a, event.dCorr());
-
-  // change occ on first site
-  _configdof().occ(f_a.l) = new_occ_a;
-
-  // calc dCorr for second site
-  _calc_delta_point_corr(f_b.l, new_occ_b, dCorr_comp);
-  event.dCorr() += dCorr_comp;
-
-  // unchange occ on first site
-  _configdof().occ(f_a.l) = curr_occ_a;
+  restricted_delta_corr(event.dCorr(), event.occ_event(), m_convert,
+                        configdof(), supercell().nlist(), _clexulator(),
+                        _eci().index().data(), end_ptr(_eci().index()));
 
   if (debug()) {
-    _print_correlations(event.dCorr(), "delta correlations", "dCorr",
-                        m_all_correlations);
+    _print_correlations(event.dCorr(), "delta correlations", "dCorr");
   }
 }
 
 /// \brief Print correlations to _log()
 void Canonical::_print_correlations(const Eigen::VectorXd &corr,
-                                    std::string title, std::string colheader,
-                                    bool all_correlations) const {
+                                    std::string title,
+                                    std::string colheader) const {
   _log().calculate(title);
   _log() << std::setw(12) << "i" << std::setw(16) << "ECI" << std::setw(16)
          << colheader << std::endl;
@@ -388,7 +294,7 @@ void Canonical::_print_correlations(const Eigen::VectorXd &corr,
     if (index != _eci().index().size()) {
       eci = _eci().value()[index];
     }
-    if (!all_correlations && index == _eci().index().size()) {
+    if (index == _eci().index().size()) {
       calculated = false;
     }
 
@@ -416,8 +322,7 @@ void Canonical::_update_deltas(CanonicalEvent &event) const {
 /// \brief Calculate properties given current conditions
 void Canonical::_update_properties() {
   // initialize properties and store pointers to the data strucures
-  _vector_properties()["corr"] =
-      correlations(_configdof(), supercell(), _clexulator());
+  _vector_properties()["corr"] = correlations(_config(), _clexulator());
   m_corr = &_vector_property("corr");
 
   _vector_properties()["comp_n"] = CASM::comp_n(_configdof(), supercell());
@@ -430,7 +335,7 @@ void Canonical::_update_properties() {
   m_potential_energy = &_scalar_property("potential_energy");
 
   if (debug()) {
-    _print_correlations(corr(), "correlations", "corr", m_all_correlations);
+    _print_correlations(corr(), "correlations", "corr");
 
     auto origin = primclex().composition_axes().origin();
     auto comp_x = primclex().composition_axes().param_composition(comp_n());

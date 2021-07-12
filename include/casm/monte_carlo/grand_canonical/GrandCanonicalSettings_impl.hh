@@ -39,8 +39,17 @@ SamplerInsertIterator GrandCanonicalSettings::samplers(
 
   // find existing measurements
   std::set<std::string> input_measurements;
-  for (auto it = t_measurements.cbegin(); it != t_measurements.cend(); it++) {
-    input_measurements.insert((*it)["quantity"].get<std::string>());
+  for (auto it = t_measurements.begin(); it != t_measurements.end(); it++) {
+    // check for "all_correlations" and replace with "corr"
+    std::string quantity = (*it)["quantity"].get<std::string>();
+    if (quantity == "all_correlations") {
+      CASM::err_log() << "Warning in setting [\"data\"][\"measurements\"]: The "
+                         "quantity \"all_correlations\" is deprecated in favor "
+                         "of \"corr\". Replacing with \"corr\"...";
+      (*it)["quantity"] = "corr";
+      quantity = "corr";
+    }
+    input_measurements.insert(quantity);
   }
 
   std::vector<std::string> required = {"potential_energy", "formation_energy",
@@ -112,12 +121,6 @@ SamplerInsertIterator GrandCanonicalSettings::samplers(
         // construct MonteSamplers for 'atom_frac'
         else if (prop_name == "atom_frac") {
           result = _make_atom_frac_samplers(primclex, it, result);
-
-        }
-
-        // construct MonteSamplers for 'all_correlations'
-        else if (prop_name == "all_correlations") {
-          result = _make_all_correlations_samplers(primclex, it, result);
 
         }
 
@@ -304,41 +307,6 @@ SamplerInsertIterator GrandCanonicalSettings::_make_atom_frac_samplers(
       *result++ =
           std::make_pair(print_name, notstd::cloneable_ptr<MonteSampler>(ptr));
     }
-  }
-
-  return result;
-}
-
-template <typename jsonParserIteratorType, typename SamplerInsertIterator>
-SamplerInsertIterator GrandCanonicalSettings::_make_all_correlations_samplers(
-    const PrimClex &primclex, jsonParserIteratorType it,
-    SamplerInsertIterator result) const {
-  size_type data_maxlength = max_data_length();
-  std::string prop_name;
-  std::string print_name;
-  bool must_converge;
-  double prec;
-  MonteSampler *ptr;
-
-  for (size_type i = 0;
-       i < primclex.clexulator(formation_energy(primclex).bset).corr_size();
-       i++) {
-    prop_name = "corr";
-    print_name = std::string("corr(") + std::to_string(i) + ")";
-
-    std::tie(must_converge, prec) = _get_precision(it);
-
-    // if 'must converge'
-    if (must_converge) {
-      ptr = new VectorMonteSampler(prop_name, i, print_name, prec, confidence(),
-                                   data_maxlength);
-    } else {
-      ptr = new VectorMonteSampler(prop_name, i, print_name, confidence(),
-                                   data_maxlength);
-    }
-
-    *result++ =
-        std::make_pair(print_name, notstd::cloneable_ptr<MonteSampler>(ptr));
   }
 
   return result;

@@ -33,7 +33,8 @@ TEST(NeighborListTest, PrimNeighborListBasics) {
   // construct
   PrimNeighborList nlist(PrimNeighborList::make_weight_matrix(
                              prim.lattice().lat_column_mat(), 10, TOL),
-                         sublat_indices.begin(), sublat_indices.end());
+                         sublat_indices.begin(), sublat_indices.end(),
+                         prim.basis().size());
 
   // weight matrix
   Eigen::Matrix3l W;
@@ -69,7 +70,8 @@ TEST(NeighborListTest, SuperNeighborListBasics) {
   // construct
   PrimNeighborList nlist(PrimNeighborList::make_weight_matrix(
                              prim.lattice().lat_column_mat(), 10, TOL),
-                         sublat_indices.begin(), sublat_indices.end());
+                         sublat_indices.begin(), sublat_indices.end(),
+                         prim.basis().size());
 
   // expand
   std::set<UnitCellCoord> nbors;
@@ -135,9 +137,9 @@ TEST(NeighborListTest, Proj) {
   ProjectSettings const &set = primclex.settings();
 
   // initialize nlist
-  PrimNeighborList nlist(set.nlist_weight_matrix(),
-                         set.nlist_sublat_indices().begin(),
-                         set.nlist_sublat_indices().end());
+  PrimNeighborList nlist(
+      set.nlist_weight_matrix(), set.nlist_sublat_indices().begin(),
+      set.nlist_sublat_indices().end(), shared_prim->basis().size());
 
   // generate orbitree
   jsonParser bspecs_json{proj.bspecs()};

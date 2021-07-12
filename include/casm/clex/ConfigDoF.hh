@@ -148,16 +148,22 @@ class ConfigDoF {
   void setZero();
 
   /// Reference occupation value on site i
-  int &occ(Index i);
+  int &occ(Index i) {  // keep inline
+    return m_occupation.occ(i);
+  }
 
   /// Const reference to occupation value on site i
-  const int &occ(Index i) const;
+  const int &occ(Index i) const {  // keep inline
+    return m_occupation.occ(i);
+  }
 
   /// Set occupation values
   void set_occupation(Eigen::Ref<const Eigen::VectorXi> const &_occupation);
 
   /// Const reference occupation values
-  Eigen::VectorXi const &occupation() const;
+  Eigen::VectorXi const &occupation() const {  // keep inline
+    return m_occupation.values();
+  }
 
   bool has_occupation() const;
 

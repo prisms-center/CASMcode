@@ -42,9 +42,6 @@ class GrandCanonicalSettings : public EquilibriumMonteSettings {
   SamplerInsertIterator samplers(const PrimClex &primclex,
                                  SamplerInsertIterator result) const;
 
-  /// \brief Return true if all correlations should be sampled
-  bool all_correlations() const;
-
  private:
   GrandCanonicalConditions _conditions(std::string name) const;
   GrandCanonicalConditions _conditions(const jsonParser &json) const;
@@ -69,11 +66,6 @@ class GrandCanonicalSettings : public EquilibriumMonteSettings {
 
   template <typename jsonParserIteratorType, typename SamplerInsertIterator>
   SamplerInsertIterator _make_atom_frac_samplers(
-      const PrimClex &primclex, jsonParserIteratorType it,
-      SamplerInsertIterator result) const;
-
-  template <typename jsonParserIteratorType, typename SamplerInsertIterator>
-  SamplerInsertIterator _make_all_correlations_samplers(
       const PrimClex &primclex, jsonParserIteratorType it,
       SamplerInsertIterator result) const;
 

@@ -17,6 +17,7 @@ namespace CASM {
 /// \ingroup DataFormatter
 
 class Configuration;
+struct NeighborhoodInfo;
 template <typename DataObject>
 class Norm;
 class jsonParser;
@@ -231,6 +232,9 @@ class Corr : public VectorXdAttribute<Configuration> {
 
   mutable Clexulator m_clexulator;
   mutable std::string m_clex_name;
+
+  /// Which correlations to calculate
+  mutable std::vector<Clexulator::size_type> m_correlation_indices;
 };
 
 /// \brief Returns correlation values
@@ -380,28 +384,86 @@ class AllCorrContribution : public MatrixXdAttribute<Configuration> {
   mutable std::string m_clex_name;
 };
 
+/// \brief Returns site-centric correlation values
+///
+/// Evaluated basis function values for each site, normalized by cluster orbit
+/// multiplicity. Periodic cluster expansions only.
+///
+class SiteCentricCorrelations
+    : public BaseValueFormatter<jsonParser, Configuration> {
+ public:
+  static const std::string Name;
+
+  static const std::string Desc;
+
+  SiteCentricCorrelations()
+      : BaseValueFormatter<jsonParser, Configuration>(Name, Desc),
+        m_clex_name(""),
+        m_neighborhood_info(nullptr) {}
+
+  SiteCentricCorrelations(const Clexulator &clexulator)
+      : BaseValueFormatter<jsonParser, Configuration>(Name, Desc),
+        m_clexulator(clexulator),
+        m_neighborhood_info(nullptr) {}
+
+  // --- Required implementations -----------
+
+  /// \brief Returns the atom fraction
+  jsonParser evaluate(Configuration const &config) const override;
+
+  /// \brief Clone using copy constructor
+  std::unique_ptr<SiteCentricCorrelations> clone() const {
+    return std::unique_ptr<SiteCentricCorrelations>(this->_clone());
+  }
+
+  // --- Specialized implementation -----------
+
+  /// \brief Returns true if initialization is ok
+  bool validate(const Configuration &config) const override;
+
+  /// \brief If not yet initialized, use the global clexulator from the PrimClex
+  bool init(const Configuration &_tmplt) const override;
+
+  /// \brief Parse arguments
+  bool parse_args(const std::string &args) override;
+
+ private:
+  /// \brief Clone using copy constructor
+  SiteCentricCorrelations *_clone() const override {
+    return new SiteCentricCorrelations(*this);
+  }
+
+  mutable Clexulator m_clexulator;
+  mutable std::string m_clex_name;
+  mutable NeighborhoodInfo const *m_neighborhood_info;
+  mutable std::vector<Index> m_sublattice_to_asymmetric_unit;
+};
+
 /// \brief Returns point correlation values
 ///
 /// Evaluated basis function values for each site, normalized by cluster orbit
 /// multiplicity
 ///
-class AllPointCorr : public MatrixXdAttribute<Configuration> {
+class AllPointCorr : public BaseValueFormatter<jsonParser, Configuration> {
  public:
   static const std::string Name;
 
   static const std::string Desc;
 
   AllPointCorr()
-      : MatrixXdAttribute<Configuration>(Name, Desc), m_clex_name("") {}
+      : BaseValueFormatter<jsonParser, Configuration>(Name, Desc),
+        m_clex_name(""),
+        m_neighborhood_info(nullptr) {}
 
   AllPointCorr(const Clexulator &clexulator)
-      : MatrixXdAttribute<Configuration>(Name, Desc),
-        m_clexulator(clexulator) {}
+      : BaseValueFormatter<jsonParser, Configuration>(Name, Desc),
+        m_clexulator(clexulator),
+        m_neighborhood_info(nullptr) {}
 
   // --- Required implementations -----------
 
   /// \brief Returns the atom fraction
-  Eigen::MatrixXd evaluate(const Configuration &config) const override;
+  jsonParser evaluate(Configuration const &config) const override;
 
   /// \brief Clone using copy constructor
   std::unique_ptr<AllPointCorr> clone() const {
@@ -410,12 +472,13 @@ class AllPointCorr : public MatrixXdAttribute<Configuration> {
 
   // --- Specialized implementation -----------
 
+  /// \brief Returns true if initialization is ok
+  bool validate(const Configuration &config) const override;
+
   /// \brief If not yet initialized, use the global clexulator from the PrimClex
   bool init(const Configuration &_tmplt) const override;
 
-  /// \brief Expects 'all_point_corr', 'all_point_corr(clex_name)',
-  /// 'all_point_corr(index_expression)', or
-  /// 'all_point_corr(clex_name,index_expression)'
+  /// \brief Parse arguments
   bool parse_args(const std::string &args) override;
 
  private:
@@ -424,6 +487,7 @@ class AllPointCorr : public MatrixXdAttribute<Configuration> {
 
   mutable Clexulator m_clexulator;
   mutable std::string m_clex_name;
+  mutable NeighborhoodInfo const *m_neighborhood_info;
 };
 
 /// \brief Returns correlation values

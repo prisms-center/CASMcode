@@ -12,7 +12,7 @@ namespace CASM {
 template <typename FunctorType>
 void for_all_orbits(ClusterSpecs const &cluster_specs,
                     std::vector<IntegralCluster> const &generating_elements,
-                    FunctorType const &f) {
+                    FunctorType f) {
   if (cluster_specs.periodicity_type() ==
       CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC) {
     auto orbits = cluster_specs.make_periodic_orbits(generating_elements);
@@ -36,7 +36,7 @@ void for_all_orbits(ClusterSpecs const &cluster_specs,
 
 template <typename FunctorType>
 void for_all_orbits(ClusterSpecs const &cluster_specs, std::ostream &status,
-                    FunctorType const &f) {
+                    FunctorType f) {
   if (cluster_specs.periodicity_type() ==
       CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC) {
     auto orbits = cluster_specs.make_periodic_orbits(status);

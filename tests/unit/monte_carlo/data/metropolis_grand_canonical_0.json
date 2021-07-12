@@ -14,7 +14,7 @@
   "data" : {
     "sample_by" : "pass",
     "sample_period" : 1,
-    "_N_sample" : 1000, 
+    "_N_sample" : 1000,
     "_N_pass" : 1000,
     "_N_step" : 1000,
     "_max_pass" : 10000,
@@ -23,29 +23,29 @@
     "_max_sample" : 500,
     "_min_sample" : 100,
     "confidence" : 0.95,
-    "measurements" : [ 
-      { 
+    "measurements" : [
+      {
         "quantity" : "formation_energy",
         "precision" : 1e-2
       },
-      { 
+      {
         "quantity" : "potential_energy"
       },
-      { 
+      {
         "quantity" : "atom_frac"
       },
-      { 
+      {
         "quantity" : "site_frac"
       },
-      { 
+      {
         "quantity" : "comp",
         "precision" : 1e-2
       },
-      { 
+      {
         "quantity" : "comp_n"
       },
       {
-        "quantity" : "all_correlations"
+        "quantity" : "non_zero_eci_correlations"
       },
       {
         "quantity" : "scel_size"
@@ -67,7 +67,7 @@
   },
   "driver" : {
     "mode" : "incremental",
-    "dependent_runs" : false, 
+    "dependent_runs" : false,
     "motif" : {
       "configname" : "restricted_auto",
       "_configname" : "SCEL3_3_1_1_0_2_2/0",

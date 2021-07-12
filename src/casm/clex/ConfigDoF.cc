@@ -30,12 +30,6 @@ void ConfigDoF::setZero() {
   }
 }
 
-/// Reference occupation value on site i
-int &ConfigDoF::occ(Index i) { return m_occupation.occ(i); }
-
-/// Const reference to occupation value on site i
-const int &ConfigDoF::occ(Index i) const { return m_occupation.values()[i]; }
-
 /// Set occupation values
 ///
 /// \throws std::runtime_error ("Size mismatch in ConfigDoF::set_occupation...")
@@ -50,11 +44,6 @@ void ConfigDoF::set_occupation(
     throw std::runtime_error(msg.str());
   }
   m_occupation.set_values(_occupation);
-}
-
-/// Const reference occupation values
-Eigen::VectorXi const &ConfigDoF::occupation() const {
-  return m_occupation.values();
 }
 
 bool ConfigDoF::has_occupation() const {

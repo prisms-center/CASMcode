@@ -339,6 +339,12 @@ OutputIterator flower_neighborhood(ClusterOrbitIterator begin,
                                    ClusterOrbitIterator end,
                                    OutputIterator result);
 
+/// \brief Return index of asymmetric unit containing unitcellcoord
+template <typename ClusterOrbitIterator>
+Index find_asymmetric_unit_index(xtal::UnitCellCoord const &unitcellcoord,
+                                 ClusterOrbitIterator begin,
+                                 ClusterOrbitIterator end);
+
 }  // namespace CASM
 
 #endif

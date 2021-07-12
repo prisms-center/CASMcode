@@ -54,7 +54,14 @@ class LocalDiscreteConfigDoFValues : public ConfigDoFValues {
                                std::vector<SymGroupRepID> const &_symrep_IDs);
 
   /// Reference occupation value on site i
-  int &occ(Index i);
+  int &occ(Index i) {  // keep inline
+    return m_vals(i);
+  }
+
+  /// Const reference occupation value on site i
+  int const &occ(Index i) const {  // keep inline
+    return m_vals(i);
+  }
 
   /// Set occupation values (values are indices into Site::occupant_dof())
   void set_values(Eigen::Ref<ValueType const> const &_values);
@@ -64,7 +71,9 @@ class LocalDiscreteConfigDoFValues : public ConfigDoFValues {
 
   /// Const access occupation values (values are indices into
   /// Site::occupant_dof())
-  Eigen::VectorXi const &values() const;
+  Eigen::VectorXi const &values() const {  // keep inline
+    return m_vals;
+  }
 
   /// Access vector block of values for all sites on one sublattice
   SublatReference sublat(Index b);
@@ -211,7 +220,9 @@ class GlobalContinuousConfigDoFValues : public ConfigDoFValues {
   void setZero();
 
   /// Const access global DoF values
-  Eigen::VectorXd const &values() const;
+  Eigen::VectorXd const &values() const {  // keep inline
+    return m_vals;
+  }
 
   /// Set global DoF values from standard DoF values
   void from_standard_values(
@@ -229,6 +240,61 @@ class GlobalContinuousConfigDoFValues : public ConfigDoFValues {
   DoFSetInfo m_info;
   ValueType m_vals;
 };
+
+/// Access site DoF value vector
+///
+/// Note:
+/// - This is the vector of DoF values associated with a single site, in the
+///   prim DoF basis
+/// - If the prim DoF basis dimension for this site is less than dim(), this
+///   includes a tail of zeros (for rows >= this->info()[b].dim(), where b is
+///   the sublattice index for site_index l). The tail of zeros should not be
+///   modified.
+inline  // keep inline
+    LocalContinuousConfigDoFValues::SiteReference
+    LocalContinuousConfigDoFValues::site_value(Index l) {
+  return m_vals.col(l);
+}
+
+/// Const access site DoF value vector
+///
+/// Note:
+/// - This is the vector of DoF values associated with a single site, in the
+///   prim DoF basis
+/// - If the prim DoF basis dimension for this site is less than dim(), this
+///   includes a tail of zeros (for rows >= this->info()[b].dim(), where b is
+///   the sublattice index for site_index l). The tail of zeros should not be
+///   modified.
+inline  // keep inline
+    LocalContinuousConfigDoFValues::ConstSiteReference
+    LocalContinuousConfigDoFValues::site_value(Index l) const {
+  return m_vals.col(l);
+}
+
+/// Set global DoF values
+///
+/// \throws std::runtime_error ("Invalid size in
+/// GlobalContinuousConfigDoFValues...") if size is not valid
+inline  // keep inline
+    void
+    GlobalContinuousConfigDoFValues::set_values(
+        Eigen::Ref<const Eigen::MatrixXd> const &_values) {
+  _throw_if_invalid_size(_values);
+  m_vals = _values;
+}
+
+inline  // keep inline
+    void
+    GlobalContinuousConfigDoFValues::_throw_if_invalid_size(
+        Eigen::Ref<ValueType const> const &_values) const {
+  if (_values.size() != m_vals.size()) {
+    std::stringstream msg;
+    msg << "Invalid size in LocalContinuousConfigDoFValues: "
+        << "Expected size=" << m_info.basis().cols()
+        << ", received size=" << _values.size();
+    throw std::runtime_error(msg.str());
+  }
+}
 
 }  // namespace CASM
 

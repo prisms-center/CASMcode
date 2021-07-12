@@ -36,10 +36,18 @@ class Base {
   /// \brief Number of correlations
   size_type corr_size() const { return m_corr_size; }
 
-  /// \brief Valid range for `neighbor_ind` argument to calc_point_corr
+  /// \brief Number of distinct point correlations per unit cell
   ///
-  /// - For periodic clex, this is the number of sublattices.
-  /// - For local clex, this is the neighbor list size.
+  /// Note:
+  /// - This is not the number of point functions
+  /// - [0, n_point_corr()) is the valid range for the `neighbor_ind`
+  /// argument to for the point correlation calculating member functions
+  /// (calc_point_corr, calc_restricted_point_corr, calc_delta_point_corr, and
+  /// calc_restricted_delta_point_corr)
+  /// - For periodic clex, this is number of prim basis sites with site degrees
+  /// of freedom included in the cluster functions.
+  /// - For local clex, this is the number of sites in the local neighborhood
+  /// with site degrees of freedom included in the cluster functions  .
   size_type n_point_corr() const { return m_n_point_corr; }
 
   /// \brief Clone the Clexulator
@@ -300,6 +308,7 @@ class Base {
   void _set_configdof(ConfigDoF const &_input_configdof) const {
     if (m_config_ptr != &_input_configdof) {
       m_config_ptr = &_input_configdof;
+      m_occ_ptr = _input_configdof.occupation().data();
       for (auto const &dof : m_local_dof_registry) {
         m_local_dof_ptrs[dof.second] = &(_configdof().local_dof(dof.first));
       }
@@ -384,6 +393,11 @@ class Base {
   /// \brief access reference to internally pointed ConfigDoF
   Index const &_l(Index nlist_ind) const { return *(m_nlist_ptr + nlist_ind); }
 
+  /// \brief access reference to internally pointed occupation list
+  int const &_occ(Index nlist_ind) const {
+    return *(m_occ_ptr + *(m_nlist_ptr + nlist_ind));
+  }
+
   /// \brief Set pointer to neighbor list
   ///
   /// Call using:
@@ -424,6 +438,9 @@ class Base {
 
   /// \brief Pointer to neighbor list
   mutable long int const *m_nlist_ptr;
+
+  /// \brief Pointer to occupation list
+  mutable int const *m_occ_ptr;
 };
 }  // namespace Clexulator_impl
 
