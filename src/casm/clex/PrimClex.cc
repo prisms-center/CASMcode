@@ -527,6 +527,23 @@ struct WriteBasisSetDataImpl {
     clexwriter.print_clexulator(clexulator_name, clex_basis, orbits,
                                 prim_neighbor_list, outfile, xtal_tol);
     outfile.close();
+
+    // if local cluster expansion, now transform clex_basis and write
+    // clexulators for each equivalent of the phenomenal cluster
+    if (cluster_specs.periodicity_type() == CLUSTER_PERIODICITY_TYPE::LOCAL) {
+      // get phenomenal cluster
+      // get local clusters generating group
+      // determine the phenomenal cluster orbit generating group
+      // generate the phenomenal cluster orbit
+      // apply first element in each row of equivalence map to generate the
+      // equivalent clex_basis
+      {
+        ClexBasis equiv_clex_basis = sym::copy_apply(clex_basis, op);
+
+        // generate subdirectory /basis_sets/bset.<name>/<equivalent_index>/
+        // write source code to that subdirectory
+      }
+    }
   }
 };
 
