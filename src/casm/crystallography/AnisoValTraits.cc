@@ -309,12 +309,12 @@ AnisoValTraits AnisoValTraits::cost() {
 ///
 /// Required and non-default values:
 /// - name(): "selectivedynamics"
-/// - standard_var_names(): {"xflag", "yflag", "zflag"}
+/// - standard_var_names(): {"aflag", "bflag", "cflag"}
 /// - options(): LOCAL
 /// - SymRepBuilderInterface: SymRepBuilder::Identity()
 /// - is_default(): true
 AnisoValTraits AnisoValTraits::selective_dynamics() {
-  return AnisoValTraits("selectivedynamics", {"xflag", "yflag", "zflag"}, LOCAL,
+  return AnisoValTraits("selectivedynamics", {"aflag", "bflag", "cflag"}, LOCAL,
                         SymRepBuilder::Identity(), {}, {}, {}, {}, true);
 }
 
