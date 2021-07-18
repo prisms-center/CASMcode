@@ -58,8 +58,10 @@ void write_symgroup(SymGroup const &grp, jsonParser &json) {
     json_info["name"] = grp.get_name();
     json_info["latex_name"] = grp.get_latex_name();
     json_info["periodicity"] = grp.periodicity();
-    if (grp.periodicity() == PERIODIC)
-      json_info["possible_space_groups"] = grp.possible_space_groups();
+
+    // TODO: fix this
+    // if (grp.periodicity() == PERIODIC)
+    //   json_info["possible_space_groups"] = grp.possible_space_groups();
   }
 
   {
