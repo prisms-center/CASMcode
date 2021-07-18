@@ -43,23 +43,20 @@ ENUM_JSON_IO_DEF(PARAM_PACK_TYPE)
 ///         differentiating.
 ///     dof_specs: object (required for some dofs)
 ///         Provides DoF-particular specifications for constructing basis
-///         functions. Not all DoF types require their own DoFSpecs. See
-///         documentation for a particular DoF type to determine if it is
-///         required.
+///         functions. Not all DoF types require their own specifications. The
+///         options are:
 ///
 ///         For "occ": (required if occupation dof included)
 ///             site_basis_functions: string or array (required)
 ///                 Must be one of:
 ///                 - "chebychev": For basis functions generated about the
-///                 random alloy.
+///                   random alloy.
 ///                 - "occupation": For basis functions generated about the
-///                 order alloy generated
-///                   by the first occupant listed for every sublattice in the
-///                   prim structure.
+///                   order alloy defined by the first occupant listed for
+///                   every sublattice in the prim structure.
 ///                 - An array specifying sublat compositions, for "composition"
-///                 basis functions
-///                   generated about an average composition speficified for
-///                   each sublattice.
+///                   basis functions generated about an average composition
+///                   speficified for each sublattice.
 ///
 ///                   Example sublattice composition specification, for a prim
 ///                   structure with four sublattices and two allowed occupants

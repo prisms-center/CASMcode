@@ -10,9 +10,10 @@ jsonParser &to_json(const CompositionConverter &f, jsonParser &json) {
   json = jsonParser::object();
   json["components"] = f.components();
   json["independent_compositions"] = f.independent_compositions();
-  json["origin"] = f.origin();
+  to_json(f.origin(), json["origin"], CASM::jsonParser::as_array());
   for (int i = 0; i < f.independent_compositions(); i++) {
-    json[CompositionConverter::comp_var(i)] = f.end_member(i);
+    to_json(f.end_member(i), json[CompositionConverter::comp_var(i)],
+            CASM::jsonParser::as_array());
   }
   json["mol_formula"] = f.mol_formula();
   json["param_formula"] = f.param_formula();
