@@ -409,11 +409,13 @@ const std::string AllCorrContribution::Desc =
     "normalized), for every unitcell in the supercell. The output is a matrix, "
     "with each row corresponding to a unitcell. The mean over rows is equal to "
     "the `corr` output. The arguments follow the same conventions as `corr` "
-    "accepting any of `all_corr_contribution` or "
-    "`all_corr_contribution(clex_name)` or `all_corr_contribution(indices)`, "
-    "or `all_corr_contribution(clex_name, indices)`. Coordinates of unit cells "
-    "can be obtained from the `unitcells` information of the `info -m "
-    "SupercellInfo` command.";
+    "accepting any of:\n"
+    "- `all_corr_contribution`\n"
+    "- `all_corr_contribution(clex_name)`\n"
+    "- `all_corr_contribution(indices)`\n"
+    "- `all_corr_contribution(clex_name, indices)`. \n"
+    "Coordinates of unit cells can be obtained from the `unitcells` "
+    "information of the `info -m SupercellInfo` command.";
 
 Eigen::MatrixXd AllCorrContribution::evaluate(
     const Configuration &config) const {
@@ -700,9 +702,9 @@ const std::string GradCorr::Desc =
     "is taken [e.g., 'gradcorr(disp)']. "
     "Basis functions are the basis set for the default cluster expansion, as "
     "listed by 'casm settings -l', "
-    "unless otherwise specified. Accepts up to three additional arguments:\n"
+    "unless otherwise specified. Accepts up to three additional arguments: "
     "1) a cluster expansion name, e.g. 'gradcorr(disp,formation_energy)' "
-    "and/or\n"
+    "and/or "
     "2) a pair of indices, or index ranges, e.g. 'gradcorr(disp,5,2)', "
     "'gradcorr(disp,:,3:5)', 'gradcorr(disp,0:4,3)'";
 

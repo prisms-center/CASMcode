@@ -535,7 +535,7 @@ jsonParser &to_json(const ProjectSettings &set, jsonParser &json) {
   _write_path_if("boost_libdir", set.boost_libdir());
 
   json["view_command"] = set.view_command();
-  json["view_command_video"] = set.view_command_video();
+  // json["view_command_video"] = set.view_command_video();
   json["crystallography_tol"] = set.crystallography_tol();
   json["crystallography_tol"].set_scientific();
   json["lin_alg_tol"] = set.lin_alg_tol();

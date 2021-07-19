@@ -48,7 +48,7 @@ void QueryOption::initialize() {
       "alias",
       po::value<std::vector<std::string>>(&m_new_alias_vec)->multitoken(),
       "Create an alias for a query that will persist within this project. "
-      "Ex: 'casm query --alias is_Ni_dilute = lt(atom_frac(Ni),0.10001)'")(
+      "Ex: `casm query --alias is_Ni_dilute = 'lt(atom_frac(Ni),0.10001)'`")(
 
       "write-pos",
       "Write POS file (VASP structure format) for each configuration")(
@@ -249,6 +249,41 @@ QueryCommandImpl<DataObject>::QueryCommandImpl(const QueryCommand &cmd)
 }
 
 template <typename DataObject>
+void print_help(DataFormatterDictionary<QueryData<DataObject>> const &dict,
+                std::ostream &sout, DatumFormatterClass ftype) {
+  auto it_begin = dict.cbegin();
+  auto it_end = dict.cend();
+  std::string::size_type len(0);
+  for (auto it = it_begin; it != it_end; ++it) {
+    if (ftype == it->type()) len = max(len, it->name().size());
+  }
+
+  int verbosity = Log::standard;
+  bool show_clock = false;
+  int indent_space = 4;
+  Log log(sout, verbosity, show_clock, indent_space);
+  log.set_width(60 + indent_space);
+  log.increase_indent();
+  for (auto it = it_begin; it != it_end; ++it) {
+    if (ftype != it->type()) continue;
+    log.indent() << it->name() << std::endl;
+    log.increase_indent();
+
+    std::vector<std::string> paragraphs;
+    boost::split(paragraphs, it->description(), boost::is_any_of("\n"),
+                 boost::token_compress_on);
+    for (auto const &paragraph : paragraphs) {
+      log.paragraph(paragraph);
+    }
+
+    // log.paragraph(it->description());
+
+    log.decrease_indent();
+    log << std::endl;
+  }
+}
+
+template <typename DataObject>
 int QueryCommandImpl<DataObject>::help() const {
   if (!m_cmd.opt().help_opt_vec().size()) {
     return QueryCommandImplBase::help();
@@ -269,11 +304,15 @@ int QueryCommandImpl<DataObject>::help() const {
     }
 
     if (str[0] == 'o') {
-      log() << "Available operators for use within queries:" << std::endl;
-      _dict().print_help(log(), DatumFormatterClass::Operator);
+      log() << "Available operators for use within queries:" << std::endl
+            << std::endl;
+      // _dict().print_help(log(), DatumFormatterClass::Operator);
+      print_help(_dict(), log(), DatumFormatterClass::Operator);
     } else if (str[0] == 'p') {
-      log() << "Available property tags are currently:" << std::endl;
-      _dict().print_help(log(), DatumFormatterClass::Property);
+      log() << "Available property tags are currently:" << std::endl
+            << std::endl;
+      //_dict().print_help(log(), DatumFormatterClass::Property);
+      print_help(_dict(), log(), DatumFormatterClass::Property);
     }
     log() << std::endl;
   }
