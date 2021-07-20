@@ -13,6 +13,7 @@
 #include "casm/clex/SimpleStructureTools.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/io/json/Configuration_json_io.hh"
+#include "casm/clex/io/stream/Configuration_stream_io.hh"
 #include "casm/crystallography/CanonicalForm.hh"
 #include "casm/crystallography/LatticeEnumEquivalents.hh"
 #include "casm/crystallography/LatticeIsEquivalent.hh"
@@ -22,6 +23,7 @@
 #include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/io/BasicStructureIO.hh"
 #include "casm/crystallography/io/SimpleStructureIO.hh"
+#include "casm/crystallography/io/VaspIO.hh"
 #include "casm/symmetry/SupercellSymInfo.hh"
 #include "casm/symmetry/io/data/SupercellSymInfo_data_io.hh"
 
@@ -519,6 +521,55 @@ SupercellInfoFormatter<jsonParser> default_structure_with_vacancies() {
       });
 }
 
+SupercellInfoFormatter<std::string> default_poscar() {
+  return SupercellInfoFormatter<std::string>(
+      "default_poscar",
+      "Structure resulting from the default configuration in the supercell, "
+      "formatted as a VASP POSCAR.",
+      [](SupercellInfoData const &data) -> std::string {
+        std::shared_ptr<Supercell const> shared_supercell =
+            std::make_shared<Supercell const>(
+                data.shared_prim, data.supercell_sym_info.supercell_lattice());
+        std::string supercell_name =
+            make_supercell_name(data.shared_prim->point_group(),
+                                data.supercell_sym_info.prim_lattice(),
+                                data.supercell_sym_info.supercell_lattice());
+        Configuration configuration{shared_supercell};
+        std::stringstream ss;
+        VaspIO::PrintPOSCAR p{make_simple_structure(configuration),
+                              supercell_name};
+        // Va are ignored by default
+        p.sort();
+        p.print(ss);
+        return ss.str();
+      });
+}
+
+SupercellInfoFormatter<std::string> default_poscar_with_vacancies() {
+  return SupercellInfoFormatter<std::string>(
+      "default_poscar_with_vacancies",
+      "Structure resulting from the default configuration in the supercell, "
+      "formatted as a VASP POSCAR.",
+      [](SupercellInfoData const &data) -> std::string {
+        std::shared_ptr<Supercell const> shared_supercell =
+            std::make_shared<Supercell const>(
+                data.shared_prim, data.supercell_sym_info.supercell_lattice());
+        std::string supercell_name =
+            make_supercell_name(data.shared_prim->point_group(),
+                                data.supercell_sym_info.prim_lattice(),
+                                data.supercell_sym_info.supercell_lattice());
+        Configuration configuration{shared_supercell};
+        std::stringstream ss;
+        VaspIO::PrintPOSCAR p{make_simple_structure(configuration),
+                              supercell_name};
+        // Va are ignored by default
+        p.ignore() = {};  // do not ignore vacancies
+        p.sort();
+        p.print(ss);
+        return ss.str();
+      });
+}
+
 }  // namespace
 
 namespace adapter {
@@ -549,7 +600,8 @@ DataFormatterDictionary<SupercellInfoData> make_supercell_info_dict() {
       minimal_commensurate_superlattice_of(),
       fully_commensurate_superlattice_of(), enforce_minimum_size(),
       default_configuration(), default_structure(),
-      default_structure_with_vacancies());
+      default_structure_with_vacancies(), default_poscar(),
+      default_poscar_with_vacancies());
 
   // properties that only require supercell_sym_info
   auto sym_info_dict = make_dictionary<SupercellSymInfo>();

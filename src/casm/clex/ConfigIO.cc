@@ -29,6 +29,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/io/SimpleStructureIO.hh"
 #include "casm/crystallography/io/UnitCellCoordIO.hh"
+#include "casm/crystallography/io/VaspIO.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/database/Selected.hh"
 
@@ -1117,6 +1118,22 @@ ConfigIO::GenericConfigFormatter<std::string> poscar() {
       });
 }
 
+ConfigIO::GenericConfigFormatter<std::string> poscar_with_vacancies() {
+  return GenericConfigFormatter<std::string>(
+      "poscar_with_vacancies",
+      "Structure resulting from application of DoF, including vacancies, "
+      "formatted as VASP POSCAR",
+      [](Configuration const &configuration) {
+        std::stringstream ss;
+        VaspIO::PrintPOSCAR p{make_simple_structure(configuration),
+                              configuration.name()};
+        p.ignore() = {};
+        p.sort();
+        p.print(ss);
+        return ss.str();
+      });
+}
+
 /*End ConfigIO*/
 }  // namespace ConfigIO
 
@@ -1128,7 +1145,8 @@ make_string_dictionary<Configuration>() {
 
   dict.insert(name<Configuration>(), configname(), alias<Configuration>(),
               alias_or_name<Configuration>(), scelname(), calc_status(),
-              failure_type(), point_group_name(), poscar());
+              failure_type(), point_group_name(), poscar(),
+              poscar_with_vacancies());
 
   return dict;
 }
