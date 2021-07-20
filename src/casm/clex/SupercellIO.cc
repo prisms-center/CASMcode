@@ -288,9 +288,9 @@ GenericVectorXdScelFormatter lattice_params() {
       });
 }
 
-GenericScelFormatter<jsonParser> structure() {
+GenericScelFormatter<jsonParser> default_structure() {
   return GenericScelFormatter<jsonParser>(
-      "structure",
+      "default_structure",
       "Structure of the default configuration in the supercell, formatted as "
       "JSON",
       [](Supercell const &supercell) {
@@ -301,9 +301,9 @@ GenericScelFormatter<jsonParser> structure() {
       });
 }
 
-GenericScelFormatter<jsonParser> structure_with_vacancies() {
+GenericScelFormatter<jsonParser> default_structure_with_vacancies() {
   return GenericScelFormatter<jsonParser>(
-      "structure_with_vacancies",
+      "default_structure_with_vacancies",
       "Structure of the default configuration in the supercell, including "
       "vacancies, formatted as JSON",
       [](Supercell const &supercell) {
@@ -315,9 +315,9 @@ GenericScelFormatter<jsonParser> structure_with_vacancies() {
       });
 }
 
-GenericScelFormatter<jsonParser> config() {
+GenericScelFormatter<jsonParser> default_configuration() {
   return GenericScelFormatter<jsonParser>(
-      "config",
+      "default_configuration",
       "Degrees of freedom (DoF) for the default configuration in the "
       "supercell, formatted as JSON",
       [](Supercell const &supercell) {
@@ -406,8 +406,8 @@ make_json_dictionary<Supercell>() {
   typedef BaseValueFormatter<jsonParser, Supercell> json_formatter_type;
   DataFormatterDictionary<Supercell, json_formatter_type> dict;
 
-  dict.insert(ScelIO::config(), ScelIO::structure(),
-              ScelIO::structure_with_vacancies());
+  dict.insert(ScelIO::default_configuration(), ScelIO::default_structure(),
+              ScelIO::default_structure_with_vacancies());
 
   return dict;
 }

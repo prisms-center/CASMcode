@@ -8,15 +8,20 @@
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
 #include "casm/casm_io/dataformatter/DatumFormatterAdapter.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
+#include "casm/clex/Configuration.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/SimpleStructureTools.hh"
 #include "casm/clex/Supercell.hh"
+#include "casm/clex/io/json/Configuration_json_io.hh"
 #include "casm/crystallography/CanonicalForm.hh"
 #include "casm/crystallography/LatticeEnumEquivalents.hh"
 #include "casm/crystallography/LatticeIsEquivalent.hh"
+#include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/io/BasicStructureIO.hh"
+#include "casm/crystallography/io/SimpleStructureIO.hh"
 #include "casm/symmetry/SupercellSymInfo.hh"
 #include "casm/symmetry/io/data/SupercellSymInfo_data_io.hh"
 
@@ -465,6 +470,55 @@ SupercellInfoFormatter<jsonParser> enforce_minimum_size() {
       });
 }
 
+SupercellInfoFormatter<jsonParser> default_configuration() {
+  return SupercellInfoFormatter<jsonParser>(
+      "default_configuration",
+      "All degrees of freedom (DoF) of the default configuration in the "
+      "supercell, formatted as JSON.",
+      [](SupercellInfoData const &data) -> jsonParser {
+        std::shared_ptr<Supercell const> shared_supercell =
+            std::make_shared<Supercell const>(
+                data.shared_prim, data.supercell_sym_info.supercell_lattice());
+        jsonParser json = jsonParser::object();
+        Configuration configuration{shared_supercell};
+        to_json(configuration, json);
+        return json;
+      });
+}
+
+SupercellInfoFormatter<jsonParser> default_structure() {
+  return SupercellInfoFormatter<jsonParser>(
+      "default_structure",
+      "Structure resulting from the default configuration in the supercell, "
+      "formatted as JSON.",
+      [](SupercellInfoData const &data) -> jsonParser {
+        std::shared_ptr<Supercell const> shared_supercell =
+            std::make_shared<Supercell const>(
+                data.shared_prim, data.supercell_sym_info.supercell_lattice());
+        jsonParser json = jsonParser::object();
+        Configuration configuration{shared_supercell};
+        to_json(make_simple_structure(configuration), json);
+        return json;
+      });
+}
+
+SupercellInfoFormatter<jsonParser> default_structure_with_vacancies() {
+  return SupercellInfoFormatter<jsonParser>(
+      "default_structure_with_vacancies",
+      "Structure resulting from the default configuration in the supercell, "
+      "including vacancies, formatted as JSON.",
+      [](SupercellInfoData const &data) -> jsonParser {
+        std::shared_ptr<Supercell const> shared_supercell =
+            std::make_shared<Supercell const>(
+                data.shared_prim, data.supercell_sym_info.supercell_lattice());
+        jsonParser json = jsonParser::object();
+        Configuration configuration{shared_supercell};
+        std::set<std::string> const &excluded_species = {};
+        to_json(make_simple_structure(configuration), json, excluded_species);
+        return json;
+      });
+}
+
 }  // namespace
 
 namespace adapter {
@@ -493,7 +547,9 @@ DataFormatterDictionary<SupercellInfoData> make_supercell_info_dict() {
       is_supercell_of(), is_unitcell_of(), is_equivalent_to(),
       is_equivalent_to_a_supercell_of(), commensurate_superlattice_of(),
       minimal_commensurate_superlattice_of(),
-      fully_commensurate_superlattice_of(), enforce_minimum_size());
+      fully_commensurate_superlattice_of(), enforce_minimum_size(),
+      default_configuration(), default_structure(),
+      default_structure_with_vacancies());
 
   // properties that only require supercell_sym_info
   auto sym_info_dict = make_dictionary<SupercellSymInfo>();
