@@ -7,8 +7,10 @@
 #include "casm/clex/SupercellIO_impl.hh"
 #include "casm/clex/Supercell_impl.hh"
 #include "casm/clex/io/json/Configuration_json_io.hh"
+#include "casm/clex/io/stream/Configuration_stream_io.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/io/SimpleStructureIO.hh"
+#include "casm/crystallography/io/VaspIO.hh"
 #include "casm/database/Selected_impl.hh"
 #include "casm/symmetry/SymOp.hh"
 
@@ -328,6 +330,41 @@ GenericScelFormatter<jsonParser> default_configuration() {
       });
 }
 
+GenericScelFormatter<std::string> default_poscar() {
+  return GenericScelFormatter<std::string>(
+      "default_poscar",
+      "Structure of the default configuration in the supercell, formatted as a "
+      "VASP POSCAR",
+      [](Supercell const &supercell) {
+        Configuration configuration{supercell};
+        std::stringstream ss;
+        VaspIO::PrintPOSCAR p{make_simple_structure(configuration),
+                              supercell.name()};
+        // Va are ignored by default
+        p.sort();
+        p.print(ss);
+        return ss.str();
+      });
+}
+
+GenericScelFormatter<std::string> default_poscar_with_vacancies() {
+  return GenericScelFormatter<std::string>(
+      "default_poscar_with_vacancies",
+      "Structure of the default configuration in the supercell, including "
+      "vacancies, formatted as a VASP POSCAR",
+      [](Supercell const &supercell) {
+        Configuration configuration{supercell};
+        std::stringstream ss;
+        VaspIO::PrintPOSCAR p{make_simple_structure(configuration),
+                              supercell.name()};
+        // Va are ignored by default
+        p.ignore() = {};  // do not ignore vacancies
+        p.sort();
+        p.print(ss);
+        return ss.str();
+      });
+}
+
 }  // namespace ScelIO
 
 template <>
@@ -336,7 +373,8 @@ StringAttributeDictionary<Supercell> make_string_dictionary<Supercell>() {
   StringAttributeDictionary<Supercell> dict;
 
   dict.insert(name<Supercell>(), alias<Supercell>(), alias_or_name<Supercell>(),
-              pointgroup_name());
+              pointgroup_name(), default_poscar(),
+              default_poscar_with_vacancies());
 
   return dict;
 }
