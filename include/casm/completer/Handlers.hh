@@ -930,12 +930,14 @@ class InfoOption : public OptionHandlerBase {
 
 class QueryOption : public OptionHandlerBase {
  public:
+  using OptionHandlerBase::config_strs;
   using OptionHandlerBase::db_type;
   using OptionHandlerBase::db_type_opts;
   using OptionHandlerBase::gzip_flag;
   using OptionHandlerBase::help_opt_vec;
   using OptionHandlerBase::output_path;
   using OptionHandlerBase::selection_path;
+  using OptionHandlerBase::supercell_strs;
 
   QueryOption();
 
