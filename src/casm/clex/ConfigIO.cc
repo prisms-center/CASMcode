@@ -1075,11 +1075,26 @@ ConfigIO::GenericConfigFormatter<jsonParser> structure() {
       });
 }
 
+ConfigIO::GenericConfigFormatter<jsonParser> structure_with_vacancies() {
+  return GenericConfigFormatter<jsonParser>(
+      "structure_with_vacancies",
+      "Structure resulting from application of DoF, including vacancies, "
+      "formatted as JSON",
+      [](Configuration const &configuration) {
+        jsonParser json = jsonParser::object();
+        std::set<std::string> const &excluded_species = {};
+        to_json(make_simple_structure(configuration), json, excluded_species);
+        return json;
+      });
+}
+
 ConfigIO::GenericConfigFormatter<jsonParser> config() {
   return GenericConfigFormatter<jsonParser>(
       "config", "All degrees of freedom (DoF), formatted as JSON",
       [](Configuration const &configuration) {
-        return jsonParser{configuration};
+        jsonParser json = jsonParser::object();
+        to_json(configuration, json);
+        return json;
       });
 }
 
@@ -1198,8 +1213,8 @@ make_json_dictionary<Configuration>() {
                           BaseValueFormatter<jsonParser, Configuration>>
       dict;
 
-  dict.insert(structure(), config(), properties(), SiteCentricCorrelations(),
-              AllPointCorr());
+  dict.insert(structure(), structure_with_vacancies(), config(), properties(),
+              SiteCentricCorrelations(), AllPointCorr());
 
   return dict;
 }

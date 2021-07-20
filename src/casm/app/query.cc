@@ -24,6 +24,8 @@ void QueryOption::initialize() {
   add_selection_suboption();
   add_db_type_suboption(traits<Configuration>::short_name, DB::types_short());
   add_output_suboption();
+  add_scelnames_suboption();
+  add_confignames_suboption();
   add_gzip_suboption();
 
   m_desc.add_options()(
@@ -236,6 +238,39 @@ void _update_query_dict<Configuration>(
   query_dict.insert(QueryIO::permute_translation<QueryData<DataObject>>());
 }
 
+// Used to add --scelnames or --confignames input to selection to query
+template <typename DataObject>
+void _update_selection(DB::Selection<DataObject> &selection,
+                       Completer::QueryOption const &opt) {}
+
+template <>
+void _update_selection<Supercell>(DB::Selection<Supercell> &selection,
+                                  Completer::QueryOption const &opt) {
+  for (std::string supercell_name : opt.supercell_strs()) {
+    if (selection.db().count(supercell_name)) {
+      selection.data()[supercell_name] = true;
+    } else {
+      std::stringstream msg;
+      msg << "Supercell name not found in database: " << supercell_name;
+      throw CASM::runtime_error(msg.str(), ERR_INVALID_ARG);
+    }
+  }
+}
+
+template <>
+void _update_selection<Configuration>(DB::Selection<Configuration> &selection,
+                                      Completer::QueryOption const &opt) {
+  for (std::string configuration_name : opt.config_strs()) {
+    if (selection.db().count(configuration_name)) {
+      selection.data()[configuration_name] = true;
+    } else {
+      std::stringstream msg;
+      msg << "Configuration name not found in database: " << configuration_name;
+      throw CASM::runtime_error(msg.str(), ERR_INVALID_ARG);
+    }
+  }
+}
+
 template <typename DataObject>
 QueryCommandImpl<DataObject>::QueryCommandImpl(const QueryCommand &cmd)
     : QueryCommandImplBase(cmd), m_data(cmd) {
@@ -246,6 +281,7 @@ QueryCommandImpl<DataObject>::QueryCommandImpl(const QueryCommand &cmd)
             formatter));
   }
   _update_query_dict(m_query_dict);
+  _update_selection(_sel(), m_cmd.opt());
 }
 
 template <typename DataObject>

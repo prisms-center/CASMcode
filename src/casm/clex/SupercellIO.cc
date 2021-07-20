@@ -2,8 +2,13 @@
 
 #include "casm/casm_io/dataformatter/DataFormatterTools_impl.hh"
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
+#include "casm/clex/Configuration.hh"
+#include "casm/clex/SimpleStructureTools.hh"
 #include "casm/clex/SupercellIO_impl.hh"
 #include "casm/clex/Supercell_impl.hh"
+#include "casm/clex/io/json/Configuration_json_io.hh"
+#include "casm/crystallography/SimpleStructure.hh"
+#include "casm/crystallography/io/SimpleStructureIO.hh"
 #include "casm/database/Selected_impl.hh"
 #include "casm/symmetry/SymOp.hh"
 
@@ -283,6 +288,46 @@ GenericVectorXdScelFormatter lattice_params() {
       });
 }
 
+GenericScelFormatter<jsonParser> structure() {
+  return GenericScelFormatter<jsonParser>(
+      "structure",
+      "Structure of the default configuration in the supercell, formatted as "
+      "JSON",
+      [](Supercell const &supercell) {
+        jsonParser json = jsonParser::object();
+        Configuration configuration{supercell};
+        to_json(make_simple_structure(configuration), json);
+        return json;
+      });
+}
+
+GenericScelFormatter<jsonParser> structure_with_vacancies() {
+  return GenericScelFormatter<jsonParser>(
+      "structure_with_vacancies",
+      "Structure of the default configuration in the supercell, including "
+      "vacancies, formatted as JSON",
+      [](Supercell const &supercell) {
+        jsonParser json = jsonParser::object();
+        Configuration configuration{supercell};
+        std::set<std::string> const &excluded_species = {};
+        to_json(make_simple_structure(configuration), json, excluded_species);
+        return json;
+      });
+}
+
+GenericScelFormatter<jsonParser> config() {
+  return GenericScelFormatter<jsonParser>(
+      "config",
+      "Degrees of freedom (DoF) for the default configuration in the "
+      "supercell, formatted as JSON",
+      [](Supercell const &supercell) {
+        jsonParser json = jsonParser::object();
+        Configuration configuration{supercell};
+        to_json(configuration, json);
+        return json;
+      });
+}
+
 }  // namespace ScelIO
 
 template <>
@@ -357,8 +402,14 @@ MatrixXdAttributeDictionary<Supercell> make_matrixxd_dictionary<Supercell>() {
 template <>
 DataFormatterDictionary<Supercell, BaseValueFormatter<jsonParser, Supercell>>
 make_json_dictionary<Supercell>() {
-  return DataFormatterDictionary<Supercell,
-                                 BaseValueFormatter<jsonParser, Supercell>>();
+  using namespace ScelIO;
+  typedef BaseValueFormatter<jsonParser, Supercell> json_formatter_type;
+  DataFormatterDictionary<Supercell, json_formatter_type> dict;
+
+  dict.insert(ScelIO::config(), ScelIO::structure(),
+              ScelIO::structure_with_vacancies());
+
+  return dict;
 }
 
 }  // namespace CASM
