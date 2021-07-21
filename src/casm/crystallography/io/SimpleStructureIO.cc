@@ -186,14 +186,32 @@ static void _properties_from_json(
 ///
 /// \param simple_structure xtal::SimpleStructure to read from JSON
 /// \param json A JSON object, from which the xtal::SimpleStructure JSON is
-/// read. Expects JSON
-///        formatted as documented for `to_json` for xtal::SimpleStructure.
+///     read. Expects JSON formatted as documented for `to_json` for
+///     xtal::SimpleStructure.
 ///
+/// Notes:
+/// - Also accepts:
+///   - "lattice" in place of "lattice_vectors" (same meaning, an array of
+///     lattice vectors)
+///   - suffixes "_dofs", "_vals", or "_values" in place of "_properties" for
+///     reading global, atom, and mol properties.
 static void _from_json_current(xtal::SimpleStructure &simple_structure,
                                const jsonParser &json) {
   COORD_TYPE coordinate_mode = json["coord_mode"].get<COORD_TYPE>();
-  simple_structure.lat_column_mat =
-      json["lattice"].get<Eigen::Matrix3d>().transpose();
+
+  if (json.contains("lattice_vectors")) {
+    simple_structure.lat_column_mat =
+        json["lattice_vectors"].get<Eigen::Matrix3d>().transpose();
+  } else if (json.contains("lattice")) {  // deprecated
+    std::cout << "CASM structure format deprecation warning: \"lattice\" is "
+                 "deprecated in favor of \"lattice_vectors\", with the same "
+                 "meaning (an array of lattice vectors).";
+    simple_structure.lat_column_mat =
+        json["lattice"].get<Eigen::Matrix3d>().transpose();
+  } else {
+    throw std::runtime_error(
+        "Error reading xtal::SimpleStructure: \"lattice_vectors\" not found.");
+  }
 
   // Input coordinate mode to cartesian coordinate transformation matrix:
   //   cart_coord = to_cartesian_matrix * input_mode_coord
@@ -204,22 +222,26 @@ static void _from_json_current(xtal::SimpleStructure &simple_structure,
   }
 
   // Read global properties (if exists)
-  ::_properties_from_json(simple_structure.properties, json,
-                          {"global_dofs", "global_vals"});
+  ::_properties_from_json(
+      simple_structure.properties, json,
+      {"global_dofs", "global_vals", "global_values", "global_properties"});
 
   // Read atom_info (if exists)
   auto &atom_info = simple_structure.atom_info;
   ::_types_from_json(atom_info.names, json, "atom_type");
   ::_coords_from_json(atom_info.coords, json, "atom_coords",
                       to_cartesian_matrix);
-  ::_properties_from_json(atom_info.properties, json,
-                          {"atom_dofs", "atom_vals"});
+  ::_properties_from_json(
+      atom_info.properties, json,
+      {"atom_dofs", "atom_vals", "atom_values", "atom_properties"});
 
   // Read mol_info (if exists)
   auto &mol_info = simple_structure.mol_info;
   ::_types_from_json(mol_info.names, json, "mol_type");
   ::_coords_from_json(mol_info.coords, json, "mol_coords", to_cartesian_matrix);
-  ::_properties_from_json(mol_info.properties, json, {"mol_dofs", "mol_vals"});
+  ::_properties_from_json(
+      mol_info.properties, json,
+      {"mol_dofs", "mol_vals", "mol_values", "mol_properties"});
 }
 
 /// Check consistency of <atom/mol>_info.names and coords and properties size
@@ -278,18 +300,18 @@ namespace CASM {
 ///     <molecule type name>,
 ///     ...
 ///   ],
-///   "lattice": [
+///   "lattice_vectors": [
 ///      [<first lattice vector>],
 ///      [<second lattice vector>],
 ///      [<third lattice vector>]
 ///   ],
-///   "global_dofs": { // corresponds to simple_struc.properties
+///   "global_properties": { // corresponds to simple_struc.properties
 ///      <property name>: {
 ///        "value": [<property vector>]
 ///      },
 ///      ...
 ///   }
-///   "atom_dofs": { // corresponds to simple_struc.atom_info.properties
+///   "atom_properties": { // corresponds to simple_struc.atom_info.properties
 ///      <property name>: {
 ///        "value": [
 ///          [<property vector for site 0>],
@@ -299,7 +321,7 @@ namespace CASM {
 ///      },
 ///      ...
 ///   },
-///   "mol_dofs": { // corresponds to simple_struc.mol_info.properties
+///   "mol_properties": { // corresponds to simple_struc.mol_info.properties
 ///      <property name>: {
 ///        "value": [
 ///          [<property vector for site 0>],
@@ -335,11 +357,11 @@ jsonParser &to_json(xtal::SimpleStructure const &simple_structure,
     json["coord_mode"] = "Cartesian";
   }
 
-  json["lattice"] = simple_structure.lat_column_mat.transpose();
+  json["lattice_vectors"] = simple_structure.lat_column_mat.transpose();
 
   // Output global properties
   for (auto const &dof : simple_structure.properties) {
-    to_json_array(dof.second, json["global_dofs"][dof.first]["value"]);
+    to_json_array(dof.second, json["global_properties"][dof.first]["value"]);
   }
 
   // Note: _types_to_json checks excluded_species and populates
@@ -355,16 +377,18 @@ jsonParser &to_json(xtal::SimpleStructure const &simple_structure,
                    atom_permute);
   ::_coords_to_json(atom_info.coords, json, "atom_coords", atom_permute,
                     to_coord_mode_matrix);
-  ::_properties_to_json(atom_info.properties, json, "atom_dofs", atom_permute);
+  ::_properties_to_json(atom_info.properties, json, "atom_properties",
+                        atom_permute);
 
   // Output mol_info
   auto const &mol_info = simple_structure.mol_info;
   std::vector<Index> mol_permute;
-  ::_types_to_json(atom_info.names, json, "mol_type", excluded_species,
+  ::_types_to_json(mol_info.names, json, "mol_type", excluded_species,
                    mol_permute);
   ::_coords_to_json(mol_info.coords, json, "mol_coords", mol_permute,
                     to_coord_mode_matrix);
-  ::_properties_to_json(mol_info.properties, json, "mol_dofs", mol_permute);
+  ::_properties_to_json(mol_info.properties, json, "mol_properties",
+                        mol_permute);
 
   return json;
 }
