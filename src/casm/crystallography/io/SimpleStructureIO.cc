@@ -23,7 +23,7 @@ using namespace CASM;
 ///     1,
 ///     2
 ///   ],
-///   "coord_mode": "direct",
+///   "coordinate_mode": "direct",
 ///   "relaxed_basis": [
 ///     [0.6666667, 0.6666667, 0.6666667],
 ///     [0.00255632, 0.99488736, 0.00255632],
@@ -53,7 +53,7 @@ using namespace CASM;
 static void _from_json_legacy(xtal::SimpleStructure &simple_structure,
                               const jsonParser &json) {
   try {
-    COORD_TYPE coordinate_mode = json["coord_mode"].get<COORD_TYPE>();
+    COORD_TYPE coordinate_mode = json["coordinate_mode"].get<COORD_TYPE>();
     simple_structure.lat_column_mat =
         json["relaxed_lattice"].get<Eigen::Matrix3d>().transpose();
 
@@ -189,25 +189,13 @@ static void _properties_from_json(
 ///     read. Expects JSON formatted as documented for `to_json` for
 ///     xtal::SimpleStructure.
 ///
-/// Notes:
-/// - Also accepts:
-///   - "lattice" in place of "lattice_vectors" (same meaning, an array of
-///     lattice vectors)
-///   - suffixes "_dofs", "_vals", or "_values" in place of "_properties" for
-///     reading global, atom, and mol properties.
 static void _from_json_current(xtal::SimpleStructure &simple_structure,
                                const jsonParser &json) {
-  COORD_TYPE coordinate_mode = json["coord_mode"].get<COORD_TYPE>();
+  COORD_TYPE coordinate_mode = json["coordinate_mode"].get<COORD_TYPE>();
 
   if (json.contains("lattice_vectors")) {
     simple_structure.lat_column_mat =
         json["lattice_vectors"].get<Eigen::Matrix3d>().transpose();
-  } else if (json.contains("lattice")) {  // deprecated
-    std::cout << "CASM structure format deprecation warning: \"lattice\" is "
-                 "deprecated in favor of \"lattice_vectors\", with the same "
-                 "meaning (an array of lattice vectors).";
-    simple_structure.lat_column_mat =
-        json["lattice"].get<Eigen::Matrix3d>().transpose();
   } else {
     throw std::runtime_error(
         "Error reading xtal::SimpleStructure: \"lattice_vectors\" not found.");
@@ -222,26 +210,21 @@ static void _from_json_current(xtal::SimpleStructure &simple_structure,
   }
 
   // Read global properties (if exists)
-  ::_properties_from_json(
-      simple_structure.properties, json,
-      {"global_dofs", "global_vals", "global_values", "global_properties"});
+  ::_properties_from_json(simple_structure.properties, json,
+                          {"global_properties"});
 
   // Read atom_info (if exists)
   auto &atom_info = simple_structure.atom_info;
   ::_types_from_json(atom_info.names, json, "atom_type");
   ::_coords_from_json(atom_info.coords, json, "atom_coords",
                       to_cartesian_matrix);
-  ::_properties_from_json(
-      atom_info.properties, json,
-      {"atom_dofs", "atom_vals", "atom_values", "atom_properties"});
+  ::_properties_from_json(atom_info.properties, json, {"atom_properties"});
 
   // Read mol_info (if exists)
   auto &mol_info = simple_structure.mol_info;
   ::_types_from_json(mol_info.names, json, "mol_type");
   ::_coords_from_json(mol_info.coords, json, "mol_coords", to_cartesian_matrix);
-  ::_properties_from_json(
-      mol_info.properties, json,
-      {"mol_dofs", "mol_vals", "mol_values", "mol_properties"});
+  ::_properties_from_json(mol_info.properties, json, {"mol_properties"});
 }
 
 /// Check consistency of <atom/mol>_info.names and coords and properties size
@@ -289,8 +272,8 @@ namespace CASM {
 /// Expected output:
 /// \code
 /// {
-///   "coord_mode": ("Cartesian" (default), or "Direct" depending on 'mode')
-///   "atom_type": [  // array of atom type names
+///   "coordinate_mode": ("Cartesian" (default), or "Direct" depending on
+///   'mode') "atom_type": [  // array of atom type names
 ///     <atom type name>,
 ///     <atom type name>,
 ///     ...
@@ -330,12 +313,12 @@ namespace CASM {
 ///      },
 ///      ...
 ///   },
-///   "atom_coords": [ // atom coordinates, according to "coord_mode"
+///   "atom_coords": [ // atom coordinates, according to "coordinate_mode"
 ///      [<coordinate for site 0>],
 ///      [<coordinate for site 1>],
 ///      ...
 ///   ],
-///   "mol_coords": [ // molecule coordinates, according to "coord_mode"
+///   "mol_coords": [ // molecule coordinates, according to "coordinate_mode"
 ///      [<coordinate for site 0>],
 ///      [<coordinate for site 1>],
 ///      ...
@@ -351,10 +334,10 @@ jsonParser &to_json(xtal::SimpleStructure const &simple_structure,
   // Matrix to transform Cartesian coordinates to 'coordinate_mode' coordinates
   Eigen::Matrix3d to_coord_mode_matrix = Eigen::Matrix3d::Identity();
   if (coordinate_mode == FRAC) {
-    json["coord_mode"] = "Direct";
+    json["coordinate_mode"] = FRAC;
     to_coord_mode_matrix = simple_structure.lat_column_mat.inverse();
   } else {
-    json["coord_mode"] = "Cartesian";
+    json["coordinate_mode"] = CART;
   }
 
   json["lattice_vectors"] = simple_structure.lat_column_mat.transpose();

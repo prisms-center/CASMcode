@@ -478,10 +478,10 @@ void write_prim(const xtal::BasicStructure &prim, jsonParser &json,
   Eigen::Matrix3d c2f_mat;
   if (mode == FRAC) {
     c2f_mat = prim.lattice().inv_lat_column_mat();
-    json["coordinate_mode"] = "Fractional";
+    json["coordinate_mode"] = FRAC;
   } else if (mode == CART) {
     c2f_mat.setIdentity();
-    json["coordinate_mode"] = "Cartesian";
+    json["coordinate_mode"] = CART;
   }
 
   // Global DoFs
