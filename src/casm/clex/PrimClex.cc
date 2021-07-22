@@ -530,18 +530,45 @@ struct WriteBasisSetDataImpl {
 
     // if local cluster expansion, now transform clex_basis and write
     // clexulators for each equivalent of the phenomenal cluster
-    if (cluster_specs.periodicity_type() == CLUSTER_PERIODICITY_TYPE::LOCAL) {
+    if (basis_set_specs.cluster_specs->periodicity_type() == CLUSTER_PERIODICITY_TYPE::LOCAL) {
       // get phenomenal cluster
+      IntegralCluster const &phenomenal_cluster = basis_set_specs.cluster_specs->get_phenomenal_cluster();
+
       // get local clusters generating group
+      SymGroup const &local_clusters_generating_group = basis_set_specs.cluster_specs->get_generating_group();
+
       // determine the phenomenal cluster orbit generating group
-      // generate the phenomenal cluster orbit
+      // TODO: calculate the correct group from the prim factor group and the local clusters generating group
+      SymGroup phenomenal_cluster_orbit_generating_group = shared_prim->factor_group();
+
+      // generate the phenomenal cluster orbit (TODO: not sure if I'm doing this correctly)
+      LocalSymCompare<IntegralCluster> sym_compare(shared_prim, xtal_tol);
+      LocalOrbit<IntegralCluster> phenomenal_cluster_orbit(phenomenal_cluster, phenomenal_cluster_orbit_generating_group, sym_compare);
+
       // apply first element in each row of equivalence map to generate the
-      // equivalent clex_basis
+      // equivalent clex_basis and orbits
+      auto const &equivalence_map = phenomenal_cluster_orbit.equivalence_map();
+      for (int equivalent_index = 0; equivalent_index < equivalence_map.size(); ++equivalent_index)
       {
-        ClexBasis equiv_clex_basis = sym::copy_apply(clex_basis, op);
+        // TODO: actually apply symop to clex_basis and orbits
+        auto const &op = equivalence_map[equivalent_index][0];
+        ClexBasis equivalent_clex_basis = sym::copy_apply(op, clex_basis);
+        auto equivalent_orbits = orbits;
+//        auto equivalent_orbits = sym::copy_apply(op, orbits);
 
         // generate subdirectory /basis_sets/bset.<name>/<equivalent_index>/
+        dir.new_equivalent_clexulator_dir(basis_set_name, equivalent_index);
+
         // write source code to that subdirectory
+        fs::path equivalent_clexulator_src_path =
+            dir.equivalent_clexulator_src(settings.project_name(), basis_set_name, equivalent_index);
+        fs::ofstream outfile;
+        outfile.open(equivalent_clexulator_src_path);
+        clexwriter.print_clexulator(clexulator_name,
+                                    equivalent_clex_basis,
+                                    equivalent_orbits,
+                                    prim_neighbor_list, outfile, xtal_tol);
+        outfile.close();
       }
     }
   }

@@ -173,6 +173,12 @@ BasisSet construct_proto_dof_basis(OrbitType const &_orbit,
 // std::map<UnitCellCoord, std::set<UnitCellCoord> > unique_ucc(UCCIterType
 // begin, UCCIterType end, IntegralClusterSymCompareType const &sym_compare);
 }  // namespace ClexBasis_impl
+
+/// \brief Copy and apply SymOp to a Site.
+namespace sym {
+ClexBasis copy_apply(const SymOp &op, ClexBasis clex_basis);
+}  // namespace sym
 }  // namespace CASM
+
 
 #endif

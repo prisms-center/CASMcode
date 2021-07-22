@@ -280,6 +280,18 @@ fs::path DirectoryStructure::clexulator_so(std::string project_name,
   return bset_dir(bset) / (project_name + "_Clexulator.so");
 }
 
+/// \brief Returns path to directory containing equivalent clexulator files
+fs::path DirectoryStructure::equivalent_clexulator_dir(std::string bset, int equivalent_index) const {
+    return bset_dir(bset) / std::to_string(equivalent_index);
+}
+
+// \brief Returns path to equivalent clexulator source file
+fs::path DirectoryStructure::equivalent_clexulator_src(std::string project_name,
+                                                       std::string bset,
+                                                       int equivalent_index) const {
+  return equivalent_clexulator_dir(bset, equivalent_index) / (project_name + "_Clexulator.cc");
+}
+
 /// \brief Returns path to eci.in, in bset directory
 fs::path DirectoryStructure::eci_in(std::string bset) const {
   return bset_dir(bset) / "eci.in";
@@ -456,6 +468,10 @@ bool DirectoryStructure::new_reports_dir() const {
 
 bool DirectoryStructure::new_bset_dir(std::string bset) const {
   return fs::create_directories(bset_dir(bset));
+}
+
+bool DirectoryStructure::new_equivalent_clexulator_dir(std::string bset, int equivalent_index) const {
+  return fs::create_directories(equivalent_clexulator_dir(bset, equivalent_index));
 }
 
 bool DirectoryStructure::new_clex_dir(std::string property) const {

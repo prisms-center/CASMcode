@@ -134,4 +134,11 @@ void ClexBasis::_populate_site_bases() {
 
 namespace ClexBasis_impl {}
 
+namespace sym {
+ClexBasis copy_apply(const SymOp &op, ClexBasis clex_basis) {
+  ClexBasis new_clex_basis = clex_basis;
+  return new_clex_basis;
+}
+} // namespace sym
+
 }  // namespace CASM
