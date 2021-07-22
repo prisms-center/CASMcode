@@ -13,7 +13,7 @@ namespace CASM {
 /// - Site and global properties in xtal::SimpleStructure
 /// - Degrees of freedoms in xtal::BasicStructure through xtal::DoFSet and
 /// xtal::SiteDoFSet
-/// - Molecule properties in xtal::SpeciesAttribute
+/// - Molecule properties in xtal::SpeciesProperty
 /// - Calculated properties in MappedProperties
 ///
 /// Examples of various property types, and their name strings, include:

@@ -318,8 +318,8 @@ BasicStructure &BasicStructure::operator-=(const Coordinate &shift) {
 
 //***********************************************************
 
-/// \brief Returns true if structure has attributes affected by time reversal
-// private for now, expose if necessary
+/// \brief Returns true if structure has DoF or properties affected by time
+/// reversal private for now, expose if necessary
 bool BasicStructure::is_time_reversal_active() const {
   for (auto const &dof : m_global_dof_map)
     if (dof.second.traits().time_reversal_active()) return true;

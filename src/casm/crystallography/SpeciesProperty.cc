@@ -1,4 +1,4 @@
-#include "casm/crystallography/SpeciesAttribute.hh"
+#include "casm/crystallography/SpeciesProperty.hh"
 
 #include "casm/crystallography/SymType.hh"
 #include "casm/external/Eigen/Core"
@@ -7,8 +7,8 @@
 namespace CASM {
 namespace xtal {
 
-bool SpeciesAttribute::identical(SpeciesAttribute const &other,
-                                 double _tol) const {
+bool SpeciesProperty::identical(SpeciesProperty const &other,
+                                double _tol) const {
   return name() == other.name() && almost_equal(value(), other.value(), _tol);
 }
 }  // namespace xtal
@@ -17,8 +17,8 @@ bool SpeciesAttribute::identical(SpeciesAttribute const &other,
 
 namespace CASM {
 namespace sym {
-xtal::SpeciesAttribute &apply(const xtal::SymOp &op,
-                              xtal::SpeciesAttribute &mutating_attribute) {
+xtal::SpeciesProperty &apply(const xtal::SymOp &op,
+                             xtal::SpeciesProperty &mutating_attribute) {
   Eigen::MatrixXd symop_matrix_representation =
       mutating_attribute.traits().symop_to_matrix(
           get_matrix(op), get_translation(op), get_time_reversal(op));
@@ -27,8 +27,8 @@ xtal::SpeciesAttribute &apply(const xtal::SymOp &op,
   return mutating_attribute;
 }
 
-xtal::SpeciesAttribute copy_apply(const xtal::SymOp &op,
-                                  xtal::SpeciesAttribute attribute) {
+xtal::SpeciesProperty copy_apply(const xtal::SymOp &op,
+                                 xtal::SpeciesProperty attribute) {
   apply(op, attribute);
   return attribute;
 }

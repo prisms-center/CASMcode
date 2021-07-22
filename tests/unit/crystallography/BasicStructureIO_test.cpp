@@ -14,18 +14,18 @@ TEST(SelectiveDynamicsTest, ConstructorTest1) {
 
   AnisoValTraits selectivedynamics("selectivedynamics");
 
-  xtal::SpeciesAttribute selective_dynamics_on(selectivedynamics,
-                                               Eigen::Vector3d(1., 1., 1.));
-  xtal::SpeciesAttribute selective_dynamics_off(selectivedynamics,
-                                                Eigen::Vector3d(0., 0., 0.));
-  // std::map<std::string, xtal::SpeciesAttribute> attr_map;
+  xtal::SpeciesProperty selective_dynamics_on(selectivedynamics,
+                                              Eigen::Vector3d(1., 1., 1.));
+  xtal::SpeciesProperty selective_dynamics_off(selectivedynamics,
+                                               Eigen::Vector3d(0., 0., 0.));
+  // std::map<std::string, xtal::SpeciesProperty> prop_map;
 
   Molecule Zr = Molecule::make_atom("Zr");
-  Zr.set_attributes({{selective_dynamics_off.name(), selective_dynamics_off}});
+  Zr.set_properties({{selective_dynamics_off.name(), selective_dynamics_off}});
   SiteDoFSet disp_xyz{AnisoValTraits::disp()};
 
   Molecule H = Molecule::make_atom("H");
-  H.set_attributes({{selective_dynamics_on.name(), selective_dynamics_on}});
+  H.set_properties({{selective_dynamics_on.name(), selective_dynamics_on}});
 
   // SiteDoFSet disp_xyz {
   //     AnisoValTraits::disp(),  // AnisoVal type
@@ -74,14 +74,14 @@ TEST(SelectiveDynamicsTest, JsonIOTest1) {
     ],
     "species" : {
       "H": {
-        "attributes": {
+        "properties": {
           "selectivedynamics": {
             "value": [1, 1, 1]
           }
         }
       },
       "Zr": {
-        "attributes": {
+        "properties": {
           "selectivedynamics": {
             "value": [0, 0, 0]
           }
@@ -115,18 +115,18 @@ TEST(SelectiveDynamicsTest, JsonIOTest1) {
   // for (auto const &site : prim.basis()) {
   //   for (auto const &mol : site.occupant_dof()) {
   //     for (auto const &atom_position : mol.atoms()) {
-  //       for (auto const &attr_name_value_pair : atom_position.attributes()) {
-  //         std::cout << "atom_position attr_name_value_pair" << std::endl;
-  //         to_json(attr_name_value_pair.second, tjson);
+  //       for (auto const &prop_name_value_pair : atom_position.properties()) {
+  //         std::cout << "atom_position prop_name_value_pair" << std::endl;
+  //         to_json(prop_name_value_pair.second, tjson);
   //         std::cout << tjson << std::endl;
   //       }
   //       std::cout << "atom_position" << std::endl;
   //       to_json(atom_position, tjson, inv_lat_column_mat);
   //       std::cout << tjson << std::endl;
   //     }
-  //     for (auto const &attr_name_value_pair : mol.attributes()) {
-  //       std::cout << "mol attr_name_value_pair" << std::endl;
-  //       to_json(attr_name_value_pair.second, tjson);
+  //     for (auto const &prop_name_value_pair : mol.properties()) {
+  //       std::cout << "mol prop_name_value_pair" << std::endl;
+  //       to_json(prop_name_value_pair.second, tjson);
   //       std::cout << tjson << std::endl;
   //     }
   //     std::cout << "molecule" << std::endl;

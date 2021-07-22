@@ -3,7 +3,7 @@
 #include <type_traits>
 #include <vector>
 
-#include "casm/crystallography/SpeciesAttribute.hh"
+#include "casm/crystallography/SpeciesProperty.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 
 namespace CASM {
@@ -17,14 +17,14 @@ bool AtomPosition::identical(AtomPosition const &RHS, double _tol) const {
 //****************************************************
 
 bool compare_type(AtomPosition const &A, AtomPosition const &B, double tol) {
-  // compare number of attributes
-  if (A.attributes().size() != B.attributes().size()) return false;
+  // compare number of properties
+  if (A.properties().size() != B.properties().size()) return false;
   if (A.name() != B.name()) return false;
-  // compare attributes
-  auto it_A(A.attributes().cbegin()), end_it(A.attributes().cend());
+  // compare properties
+  auto it_A(A.properties().cbegin()), end_it(A.properties().cend());
   for (; it_A != end_it; ++it_A) {
-    auto it_B = B.attributes().find(it_A->first);
-    if (it_B == B.attributes().cend() ||
+    auto it_B = B.properties().find(it_A->first);
+    if (it_B == B.properties().cend() ||
         !(it_A->second).identical(it_B->second, tol))
       return false;
   }
@@ -33,10 +33,10 @@ bool compare_type(AtomPosition const &A, AtomPosition const &B, double tol) {
 
 bool Molecule::is_atomic() const {
   if (size() != 1) return false;
-  if (!attributes().empty()) return false;
+  if (!properties().empty()) return false;
   for (AtomPosition const &atom : atoms()) {
     if (atom.cart().norm() > TOL) return false;
-    if (!atom.attributes().empty()) return false;
+    if (!atom.properties().empty()) return false;
   }
   return true;
 }
@@ -46,8 +46,8 @@ bool Molecule::is_vacancy() const {
 }
 
 bool Molecule::identical(Molecule const &RHS, double _tol) const {
-  // compare number of attributes
-  if (m_attribute_map.size() != RHS.m_attribute_map.size()) return false;
+  // compare number of properties
+  if (m_property_map.size() != RHS.m_property_map.size()) return false;
 
   // compare number of atoms
   if (size() != RHS.size()) return false;
@@ -61,11 +61,11 @@ bool Molecule::identical(Molecule const &RHS, double _tol) const {
     if (j == size()) return false;
   }
 
-  // compare attributes
-  auto it(m_attribute_map.cbegin()), end_it(m_attribute_map.cend());
+  // compare properties
+  auto it(m_property_map.cbegin()), end_it(m_property_map.cend());
   for (; it != end_it; ++it) {
-    auto it_RHS = RHS.m_attribute_map.find(it->first);
-    if (it_RHS == RHS.m_attribute_map.cend() ||
+    auto it_RHS = RHS.m_property_map.find(it->first);
+    if (it_RHS == RHS.m_property_map.cend() ||
         !(it->second).identical(it_RHS->second, _tol))
       return false;
   }
@@ -96,12 +96,12 @@ xtal::AtomPosition copy_apply(const xtal::SymOp &op,
   Eigen::Vector3d transformed_position = get_matrix(op) * atom_pos.cart();
   xtal::AtomPosition transformed_atom_pos(transformed_position,
                                           atom_pos.name());
-  std::map<std::string, xtal::SpeciesAttribute> transformed_attribute_map;
-  for (const auto &name_attr_pr : atom_pos.attributes()) {
-    transformed_attribute_map.emplace(name_attr_pr.first,
-                                      sym::copy_apply(op, name_attr_pr.second));
+  std::map<std::string, xtal::SpeciesProperty> transformed_property_map;
+  for (const auto &name_property_pr : atom_pos.properties()) {
+    transformed_property_map.emplace(
+        name_property_pr.first, sym::copy_apply(op, name_property_pr.second));
   }
-  transformed_atom_pos.set_attributes(transformed_attribute_map);
+  transformed_atom_pos.set_properties(transformed_property_map);
 
   return transformed_atom_pos;
 }
@@ -113,12 +113,12 @@ xtal::Molecule &apply(const xtal::SymOp &op, xtal::Molecule &mutating_mol) {
   }
   mutating_mol.set_atoms(transformed_atoms);
 
-  std::map<std::string, xtal::SpeciesAttribute> transformed_attribute_map;
-  for (const auto &name_attr_pr : mutating_mol.attributes()) {
-    transformed_attribute_map.emplace(name_attr_pr.first,
-                                      copy_apply(op, name_attr_pr.second));
+  std::map<std::string, xtal::SpeciesProperty> transformed_property_map;
+  for (const auto &name_property_pr : mutating_mol.properties()) {
+    transformed_property_map.emplace(name_property_pr.first,
+                                     copy_apply(op, name_property_pr.second));
   }
-  mutating_mol.set_attributes(transformed_attribute_map);
+  mutating_mol.set_properties(transformed_property_map);
 
   return mutating_mol;
 }

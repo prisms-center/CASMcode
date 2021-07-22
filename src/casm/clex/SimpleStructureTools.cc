@@ -65,8 +65,8 @@ xtal::SimpleStructure make_simple_structure(
     for (Index v = 0; v < _dof.n_vol(); ++v, ++l) {
       Molecule const &mol = _scel.prim().basis()[b].occupant_dof()[_dof.occ(l)];
 
-      // Fill up the molecule's SpeciesAttributes
-      for (auto const &attr : mol.attributes()) {
+      // Fill up the molecule's SpeciesProperties
+      for (auto const &attr : mol.properties()) {
         // Has this attribute been encountered yet??
         auto it = result.mol_info.properties.find(attr.first);
         /// If not, initialize it
