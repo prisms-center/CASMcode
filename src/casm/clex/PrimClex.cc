@@ -1,4 +1,5 @@
 #include <memory>
+#include <set>
 
 #include "casm/app/ClexDescription.hh"
 #include "casm/app/DirectoryStructure.hh"
@@ -30,6 +31,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/database/DatabaseHandler_impl.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
+#include "casm/symmetry/SubOrbits_impl.hh"
 
 namespace CASM {
 
@@ -537,21 +539,45 @@ struct WriteBasisSetDataImpl {
       // get local clusters generating group
       SymGroup const &local_clusters_generating_group = basis_set_specs.cluster_specs->get_generating_group();
 
-      // determine the phenomenal cluster orbit generating group
-      // TODO: calculate the correct group from the prim factor group and the local clusters generating group
-      SymGroup phenomenal_cluster_orbit_generating_group = shared_prim->factor_group();
+      // Invariant group of phenomenal cluster sites, excluding any other considerations like symmetry-breaking due to hop type
+      PrimPeriodicSymCompare<IntegralCluster> prim_periodic_sym_compare(shared_prim, xtal_tol);
+      SymGroup sites_invariant_group = make_invariant_subgroup(phenomenal_cluster, shared_prim->factor_group(), prim_periodic_sym_compare);
+
+      // Need to find how many other clexulators we need at the same location as the phenomenal cluster, along with on other equivalent clusters
+      std::set<SymOp, SubOrbits_impl::OpCompare> equivalents_on_phenomenal;
+      for(auto const &op : sites_invariant_group) {
+        Index min = op.index();
+        SymOp min_op = op;
+        for(auto const &subgroup_op : local_clusters_generating_group) {
+          SymOp product = subgroup_op * op;
+          if( product.index() < min_op.index()) {
+            min = product.index();
+            min_op = product;
+          }
+        }
+        equivalents_on_phenomenal.insert(min_op);
+      }
 
       // generate the phenomenal cluster orbit (TODO: not sure if I'm doing this correctly)
-      LocalSymCompare<IntegralCluster> sym_compare(shared_prim, xtal_tol);
-      LocalOrbit<IntegralCluster> phenomenal_cluster_orbit(phenomenal_cluster, phenomenal_cluster_orbit_generating_group, sym_compare);
-
-      // apply first element in each row of equivalence map to generate the
-      // equivalent clex_basis and orbits
+      SymGroup phenomenal_cluster_orbit_generating_group = shared_prim->factor_group();
+      PrimPeriodicOrbit<IntegralCluster> phenomenal_cluster_orbit(phenomenal_cluster, phenomenal_cluster_orbit_generating_group, prim_periodic_sym_compare);
       auto const &equivalence_map = phenomenal_cluster_orbit.equivalence_map();
-      for (int equivalent_index = 0; equivalent_index < equivalence_map.size(); ++equivalent_index)
-      {
+
+      // operations to generate all equivalent clexulators at all clusters in phenomenal cluster orbit
+      // TODO: Store equivalents_generating_ops somewhere, it will tell us how to construct all the equivalent hops corresponding to the clexulators
+      std::set<SymOp, SubOrbits_impl::OpCompare> equivalents_generating_ops;
+      for(SymOp const &cluster_op: equivalents_on_phenomenal) {
+        for(int equivalent_index=0; equivalent_index < equivalence_map.size(); ++equivalent_index) {
+          SymOp const &op = equivalence_map[equivalent_index][0] * cluster_op;
+          equivalents_generating_ops.insert(op);
+        }
+      }
+
+      // apply each element in equivalents_generating_ops to generate the
+      // equivalent clex_basis and orbits
+      int equivalent_index = 0;
+      for (SymOp const &op : equivalents_generating_ops) {
         // TODO: actually apply symop to clex_basis and orbits
-        auto const &op = equivalence_map[equivalent_index][0];
         ClexBasis equivalent_clex_basis = sym::copy_apply(op, clex_basis);
         auto equivalent_orbits = orbits;
 //        auto equivalent_orbits = sym::copy_apply(op, orbits);
@@ -569,6 +595,7 @@ struct WriteBasisSetDataImpl {
                                     equivalent_orbits,
                                     prim_neighbor_list, outfile, xtal_tol);
         outfile.close();
+        ++equivalent_index;
       }
     }
   }
