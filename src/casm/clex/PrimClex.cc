@@ -31,6 +31,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/database/DatabaseHandler_impl.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
+//#include "casm/global/definitions.hh"
 #include "casm/symmetry/SubOrbits_impl.hh"
 
 namespace CASM {
@@ -558,7 +559,7 @@ struct WriteBasisSetDataImpl {
         equivalents_on_phenomenal.insert(min_op);
       }
 
-      // generate the phenomenal cluster orbit (TODO: not sure if I'm doing this correctly)
+      // generate the phenomenal cluster orbit
       SymGroup phenomenal_cluster_orbit_generating_group = shared_prim->factor_group();
       PrimPeriodicOrbit<IntegralCluster> phenomenal_cluster_orbit(phenomenal_cluster, phenomenal_cluster_orbit_generating_group, prim_periodic_sym_compare);
       auto const &equivalence_map = phenomenal_cluster_orbit.equivalence_map();
@@ -577,10 +578,12 @@ struct WriteBasisSetDataImpl {
       // equivalent clex_basis and orbits
       int equivalent_index = 0;
       for (SymOp const &op : equivalents_generating_ops) {
-        // TODO: actually apply symop to clex_basis and orbits
-        ClexBasis equivalent_clex_basis = sym::copy_apply(op, clex_basis);
-        auto equivalent_orbits = orbits;
-//        auto equivalent_orbits = sym::copy_apply(op, orbits);
+        // TODO: actually apply symop to clex_basis
+        ClexBasis equivalent_clex_basis = clex_basis;
+        OrbitVecType equivalent_orbits;
+        for (auto orbit : orbits) {
+          equivalent_orbits.push_back(orbit.apply_sym(op));
+        }
 
         // generate subdirectory /basis_sets/bset.<name>/<equivalent_index>/
         dir.new_equivalent_clexulator_dir(basis_set_name, equivalent_index);
