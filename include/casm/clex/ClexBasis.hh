@@ -109,6 +109,9 @@ class ClexBasis {
   template <typename OrbitIterType>
   void generate(OrbitIterType _begin, OrbitIterType _end);
 
+  /// \brief Apply symmetry to ClexBasis
+  ClexBasis& apply_sym(const SymOp& op);
+
  private:
   template <typename OrbitType>
   BasisSet _construct_prototype_basis(OrbitType const &_orbit,

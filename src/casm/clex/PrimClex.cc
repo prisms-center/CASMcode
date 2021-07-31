@@ -31,7 +31,6 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/database/DatabaseHandler_impl.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
-//#include "casm/global/definitions.hh"
 #include "casm/symmetry/SubOrbits_impl.hh"
 
 namespace CASM {
@@ -578,8 +577,15 @@ struct WriteBasisSetDataImpl {
       // equivalent clex_basis and orbits
       int equivalent_index = 0;
       for (SymOp const &op : equivalents_generating_ops) {
-        // TODO: actually apply symop to clex_basis
+        std::cout << "equivalent_index: " << equivalent_index << std::endl;
+        std::cout << op.matrix() << std::endl;
+        // apply symop to clex_basis
         ClexBasis equivalent_clex_basis = clex_basis;
+        std::cout << "transforming clex_basis" << std::endl;
+        equivalent_clex_basis.apply_sym(op);
+
+        // apply symop to orbits
+        std::cout << "transforming orbits" << std::endl;
         OrbitVecType equivalent_orbits;
         for (auto orbit : orbits) {
           equivalent_orbits.push_back(orbit.apply_sym(op));
