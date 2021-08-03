@@ -156,6 +156,9 @@ class Configuration : public ConfigurationBase {
   /// \brief Get the Supercell for this Configuration
   const Supercell &supercell() const;
 
+  /// \brief Get the Supercell for this Configuration
+  std::shared_ptr<Supercell const> const &shared_supercell() const;
+
   const Lattice &ideal_lattice() const;
 
   /// Returns number of sites, NOT the number of primitives that fit in here

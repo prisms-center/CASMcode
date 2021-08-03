@@ -398,6 +398,11 @@ Index Configuration::size() const { return supercell().num_sites(); }
 
 const Supercell &Configuration::supercell() const { return *m_supercell; }
 
+std::shared_ptr<Supercell const> const &Configuration::shared_supercell()
+    const {
+  return m_supercell_ptr;
+}
+
 UnitCellCoord Configuration::uccoord(Index site_l) const {
   return supercell().uccoord(site_l);
 }

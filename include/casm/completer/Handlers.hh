@@ -57,7 +57,8 @@ class ArgHandler {
     ECI,
     PROPERTY,
     DOF,
-    INFOMETHOD
+    INFOMETHOD,
+    MONTEMETHOD
   };
 
   /// Translate the stored boost value_name into an ARG_TYPE for the completer
@@ -117,6 +118,9 @@ class ArgHandler {
 
   /// Get value_type string for infomethod mode completion
   static std::string infomethod();
+
+  /// Get value_type string for montemethod mode completion
+  static std::string montemethod();
 
   /// Fill the output strings with bash completion appropriate values for VOID
   /// (i.e. do nothing)
@@ -181,6 +185,10 @@ class ArgHandler {
   /// Fill the output strings with bash completion appropriate values for
   /// INFOMETHOD
   static void infomethod_to_bash(std::vector<std::string> &arguments);
+
+  /// Fill the output strings with bash completion appropriate values for
+  /// MONTEMETHOD
+  static void montemethod_to_bash(std::vector<std::string> &arguments);
 
  private:
   /// List of pairs relating the value type name of po::option_description to
@@ -557,6 +565,29 @@ class MonteOption : public OptionHandlerBase {
   void initialize() override;
 
   Index m_condition_index;
+};
+
+/**
+ * Options set for `casm monte2`. Get your Monte Carlo completion here.
+ */
+
+class Monte2Option : public OptionHandlerBase {
+ public:
+  using OptionHandlerBase::input_str;
+  using OptionHandlerBase::settings_path;
+  using OptionHandlerBase::verbosity_str;
+
+  Monte2Option();
+
+  const std::vector<std::string> &desc_vec() const { return m_desc_vec; }
+
+  std::string method() const { return m_method; }
+
+ private:
+  void initialize() override;
+
+  std::vector<std::string> m_desc_vec;
+  std::string m_method;
 };
 
 //*****************************************************************************************************//

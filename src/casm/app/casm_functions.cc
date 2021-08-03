@@ -15,6 +15,7 @@
 #include "casm/app/info.hh"
 #include "casm/app/init.hh"
 #include "casm/app/monte.hh"
+#include "casm/app/monte2.hh"
 #include "casm/app/query.hh"
 #include "casm/app/ref.hh"
 #include "casm/app/rm.hh"
@@ -134,6 +135,7 @@ CommandMap &command_map() {
       {"files", files_command},
       {ImportCommand::name, run_api_command<ImportCommand>},
       {"monte", monte_command},
+      {Monte2Command::name, run_api_command<Monte2Command>},
       {"view", view_command},
       {"help", help_command}};
 
