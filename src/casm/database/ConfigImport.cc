@@ -171,9 +171,9 @@ StructureMap<Configuration>::map(
       res.properties.init_config = hint_config->name();
     }
 
+    res.has_data = false;
+    res.has_complete_data = true;
     for (std::string const &propname : req_properties) {
-      res.has_data = false;
-      res.has_complete_data = true;
       if (res.properties.global.count(propname) ||
           res.properties.site.count(propname)) {
         res.has_data = true;
@@ -241,49 +241,35 @@ const std::string Import<Configuration>::desc =
     "  'casm import' of Configuration proceeds in two steps: \n\n"
 
     "  1) For each file: \n"
-    "     - Read structure from VASP POSCAR type file or CASM "
-    "properties.calc.json \n"
-    "       file. \n"
+    "     - Read structure from a CASM structure file (typically namd \n"
+    "       structure.json or properties.calc.json) or VASP POSCAR type file.\n"
     "     - Map the structure onto a Configuration of the primitive crystal \n"
     "       structure. \n"
     "     - Record relaxation data (lattice & basis deformation cost). \n\n"
 
-    "  2) If data import is requested, iterate over each import record and do "
-    "\n"
-    "     the following:\n"
-    "     - If multiple imported structures map onto a configuration for which "
-    "\n"
-    "       there is no calculation data, import calculation data from the     "
-    "\n"
-    "       structure with the lowest \"conflict_score\".                      "
-    "\n"
-    "     - If one or more imported structures map onto a configuration for    "
-    "\n"
-    "       which calculation data already exist, do not import any new data   "
-    "\n"
-    "       unless the \"overwrite\" option is given, in which case data and   "
-    "\n"
-    "       files are imported if the \"conflict_score\" will be improved. \n"
-    "     - If data is imported, the corresponding properties.calc.json file "
-    "is\n"
-    "       copied into the directory of the mapped configuration. Optionally, "
-    "\n"
-    "       additional files in the directory of the imported structure file "
-    "may\n"
-    "       also be copied. \n"
+    "  2) If properties or files import is requested (--properties, \n"
+    "     --copy-structure-files, or --copy-additional-files), iterate over \n"
+    "     each import record and do the following:\n"
+    "     - If proeperty import is requested, properties are imported from \n"
+    "       all successfully mapped structures. \n"
+    "     - If multiple imported structures map onto the same configuration, \n"
+    "       the properties from the structure with the best for \n"
+    "       \"conflict_score\" are used when querying properties of the \n"
+    "       configuration. By default, property \"energy\" is used for the \n"
+    "       conflict score, minimum being best.\n"
+    "     - If it is requested that the structure file or additional files \n"
+    "       are copied into the training_data directories, copying \n"
+    "       occurs if either the configuration being mapped to has no \n"
+    "       properties or files, or if the structure being imported has the \n"
+    "       best conflict score and the \"overwrite\" option is given. \n"
     "     - Reports are generated detailing the results of the import: \n"
-    "       - import_map_fail: Structures that could not be mapped onto the    "
-    " \n"
+    "       - map_fail: Structures that could not be mapped onto the \n"
     "         primitive crystal structure. \n"
-    "       - import_map_success: Configurations that were successfully mapped "
-    " \n"
-    "         and imported into the Configuration database (or already "
-    "existed).\n"
-    "       - import_data_fail: Structures with data that would be imported    "
-    " \n"
+    "       - map_success: Configurations that were successfully mapped and\n"
+    "         imported into the Configuration database (or already existed).\n"
+    "       - import_data_fail: Structures with data that would be imported\n"
     "         except preexisting data prevents it. \n"
-    "       - import_conflict: Configurations that were mapped to by multiple  "
-    " \n"
+    "       - import_conflict: Configurations that were mapped to by multiple\n"
     "         structures. \n\n"
 
     "Settings: \n\n"
@@ -386,39 +372,41 @@ const std::string Import<Configuration>::desc =
     "calculated \n"
     "      properties are updated.\n\n"
 
-    "    import: bool (optional, default=false)\n"
-    "        If true (default), attempt to import calculation results. Results "
-    "are \n"
-    "        added from a \"properties.calc.json\" file which is checked for "
-    "in the\n"
-    "        following locations, relative to the input file path, 'pos': \n"
+    "    import_properties: bool (optional, default=false)\n"
+    "        If true (default), attempt to import structure properties. \n"
+    "        Properties are read from a CASM structure file which is checked \n"
+    "        for in the following locations, relative to the input structure \n"
+    "        file path, 'pos': \n"
 
-    "        1) Is 'pos' a JSON file? If 'pos' ends in \".json\" or \".JSON\", "
-    "then\n"
-    "           it is assumed to be a 'properties.calc.json' file.\n"
+    "        1) Is 'pos' a JSON file? If 'pos' ends in \".json\" or \n"
+    "           \".JSON\", then it is assumed to be a CASM structure file.\n"
     "        2) If / path / to / pos, checks for / path / to / "
     "calctype.current / properties.calc.json\n"
     "        3) If / path / to / pos, checks for / path / to / "
     "properties.calc.json \n\n"
 
-    "        If false, only configuration structure is imported.\n\n"
+    "        If no CASM structure file is found, no properties are imported \n"
+    "        for the mapped configuration.\n\n"
+
+    "    copy_structure_files: bool (optional, default = false)\n"
+    "        If true, attempt to copy structure files. Files will only by \n"
+    "        copied if there are no existing files or data for the \n"
+    "        configuration the structure has been mapped to, or it is the \n"
+    "        best scoring mapping and \"overwrite\"=true.\n\n"
 
     "    additional_files: bool (optional, default = false)\n"
-    "        If true, attempt to copy all files & directories in the same "
-    "directory\n"
-    "        as the structure file or , if it exists, the properties.calc.json "
-    "file.\n"
-    "        Files & directories will only by copied if there are no existing "
-    "files\n"
-    "        or directories in the 'training_data' directory for the "
-    "configuration \n"
-    "        the structure as been mapped to or \"overwrite\"=true.\n\n"
+    "        If true, attempt to copy all files & directories in the same \n"
+    "        directory as the structure file or, if it exists, the \n"
+    "        properties.calc.json file. Files & directories will only by \n"
+    "        copied if there are no existing files or directories for the \n"
+    "        configuration the structure as been mapped to, or it is the \n"
+    "        best scoring mapping and \"overwrite\"=true.\n\n"
 
     "    overwrite: bool (optional, default=false)\n"
     "        If true, data and files will be imported that overwrite existing\n"
-    "        data and files, if the score calculated by the "
-    "\"conflict_score\"\n"
-    "        for the configuration being mapped to will be improved.\n\n";
+    "        data and files, if the score calculated by the \n"
+    "        \"conflict_score\" for the configuration being mapped to will be\n"
+    "        improved.\n\n";
 
 int Import<Configuration>::run(const PrimClex &primclex,
                                const jsonParser &kwargs,
@@ -694,14 +682,17 @@ DataFormatter<ConfigIO::Result> Import<Configuration>::_import_formatter()
                                   "to_configname",
                                   "final_path",
                                   "is_new_config",
-                                  "has_data",
-                                  "has_complete_data",
+                                  "has_any_required_properties",
+                                  "has_all_required_properties",
                                   "preexisting_data",
-                                  "import_data",
+                                  "preexisting_files",
+                                  "import_properties",
+                                  "properties_origin",
+                                  "import_structure_file",
                                   "import_additional_files",
                                   "score",
                                   "best_score",
-                                  "is_best",
+                                  "is_new_best",
                                   "lattice_deformation_cost",
                                   "atomic_deformation_cost",
                                   "energy"};
@@ -714,25 +705,24 @@ DataFormatter<ConfigIO::Result> Import<Configuration>::_import_formatter()
 /// \brief Constructor
 Update<Configuration>::Update(const PrimClex &primclex,
                               const StructureMap<Configuration> &mapper,
+                              UpdateSettings const &set,
                               std::string const &report_dir)
-    : UpdateT(primclex, mapper, report_dir) {}
+    : UpdateT(primclex, mapper, set, report_dir) {}
 
 int Update<Configuration>::run(const PrimClex &primclex,
                                const jsonParser &kwargs,
                                const Completer::UpdateOption &update_opt) {
   // -- collect input settings --
 
-  const po::variables_map &vm = update_opt.vm();
   jsonParser used;
 
   // general settings
   bool force;
-  if (vm.count("force")) {
-    force = true;
-  } else {
-    kwargs.get_else(force, "force", false);
-  }
+  kwargs.get_else(force, "force", false);
   used["force"] = force;
+
+  // TODO: this could take more settings, for now output_as_json fixed true
+  UpdateSettings update_settings;
 
   // 'mapping' subsettings are used to construct ConfigMapper and return 'used'
   // settings values still need to figure out how to specify this in general
@@ -740,7 +730,6 @@ int Update<Configuration>::run(const PrimClex &primclex,
   kwargs.get_else(map_json, "mapping", jsonParser());
   ConfigMapping::Settings map_settings =
       map_json.get<ConfigMapping::Settings>();
-  map_settings.primitive_only = true;
 
   StructureMap<Configuration> mapper(map_settings, primclex);
   used["mapping"] = mapper.settings();
@@ -762,7 +751,7 @@ int Update<Configuration>::run(const PrimClex &primclex,
   report_dir = create_report_dir(report_dir);
 
   // -- construct Update --
-  Update<Configuration> f(primclex, mapper, report_dir);
+  Update<Configuration> f(primclex, mapper, update_settings, report_dir);
 
   // -- read selection --
   DB::Selection<Configuration> sel(primclex, update_opt.selection_path());
@@ -779,14 +768,14 @@ DataFormatter<ConfigIO::Result> Update<Configuration>::_update_formatter()
   DataFormatterDictionary<ConfigIO::Result> dict;
   ConfigIO::default_update_formatters(dict, db_props());
 
-  std::vector<std::string> col = {"data_origin",
+  std::vector<std::string> col = {"properties_origin",
                                   "selected",
                                   "to_configname",
-                                  "has_data",
-                                  "has_complete_data",
+                                  "has_any_required_properties",
+                                  "has_all_required_properties",
                                   "score",
                                   "best_score",
-                                  "is_best",
+                                  "is_new_best",
                                   "lattice_deformation_cost",
                                   "atomic_deformation_cost",
                                   "energy"};

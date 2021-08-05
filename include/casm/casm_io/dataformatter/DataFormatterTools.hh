@@ -76,7 +76,11 @@ class DataFormatterOperator : public BaseDatumFormatter<DataObject> {
 
   jsonParser &to_json(const DataObject &_data_obj,
                       jsonParser &json) const override {
-    if (validate(_data_obj)) json = _evaluate(_data_obj);
+    if (validate(_data_obj)) {
+      json = _evaluate(_data_obj);
+    } else {
+      json = jsonParser::null();
+    }
     return json;
   }
 
@@ -846,7 +850,11 @@ class BaseValueFormatter : public BaseDatumFormatter<DataObject> {
   /// - Does nothing if validation fails
   virtual jsonParser &to_json(const DataObject &_data_obj,
                               jsonParser &json) const override {
-    if (this->validate(_data_obj)) json = this->evaluate(_data_obj);
+    if (this->validate(_data_obj)) {
+      json = this->evaluate(_data_obj);
+    } else {
+      json = jsonParser::null();
+    }
     return json;
   }
 

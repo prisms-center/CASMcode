@@ -46,6 +46,31 @@ void RemoveT<_ConfigType>::erase(const DB::Selection<ConfigType> &selection,
   db_config<ConfigType>().commit();
 }
 
+/// \brief Erase properties via structure origin file path
+template <typename _ConfigType>
+void RemoveT<_ConfigType>::erase_properties_via_origin(
+    std::vector<std::string> const &origins, bool dry_run) {
+  std::vector<std::string> fail;
+  for (auto origin : origins) {
+    if (db_props().erase_via_origin(origin)) {
+      log() << "Removed properties from: " << origin << std::endl;
+    } else {
+      log() << "Could not remove: " << origin << std::endl;
+      fail.push_back(origin);
+    }
+  }
+
+  if (fail.size()) {
+    _erase_report(fail);
+    log() << "Could not remove properties from " << fail.size() << " structures"
+          << std::endl;
+    log() << "  See " << fs::path(m_report_dir) / "remove_fail" << std::endl;
+  }
+  if (!dry_run) {
+    db_props().commit();
+  }
+}
+
 /// \brief Erase data and files (permanently), but not Configuration
 template <typename _ConfigType>
 void RemoveT<_ConfigType>::erase_data(
@@ -85,9 +110,7 @@ void RemoveT<_ConfigType>::erase_all(const DB::Selection<ConfigType> &selection,
 
 template <typename _ConfigType>
 void RemoveT<_ConfigType>::_erase_report(const std::vector<std::string> &fail) {
-  std::string prefix{"remove_"};
-  prefix += traits<ConfigType>::short_name;
-  fs::ofstream file(fs::path(m_report_dir) / (prefix + "_fail"));
+  fs::ofstream file(fs::path(m_report_dir) / ("remove_fail"));
   for (const auto &val : fail) {
     file << val << std::endl;
   }
@@ -111,17 +134,25 @@ std::string Remove<ConfigType>::desc() {
 
       "  - Configurations to be erased can be specified with the --names and \n"
       "    --selection options.\n"
-      "  - Use without additional options to only remove enumerated "
-      "configurations\n"
-      "    that do not have any associated files or data.\n"
-      "  - Use --data (-d) to remove data only, not enumerated configurations. "
-      "\n"
-      "  - Use --force (-f) to remove data and enumerated configurations. \n"
+      "  - Use without additional options to only remove enumerated \n"
+      "    configurations that do not have any associated files or \n"
+      "    properties.\n"
+      "  - Use --data (-d) to remove data only (includes files and \n"
+      "    properties), not enumerated configurations. Removes any properties\n"
+      "    mapped to the specified configurations, properties mapped from the\n"
+      "    `properties.calc.json` file in the configurations' training_data \n"
+      "    directory, and all files from the configurations' training_data \n"
+      "    directory. \n"
+      "  - Use --force (-f) to remove data (includes files and \n"
+      "    properties) and enumerated configurations. \n"
       "  - Use --dry-run (-n) to do a \"dry-run\". \n\n"
 
+      "  - Properties imported by mapping from a particular structure file \n"
+      "    may be removed from the properties database using \n"
+      "    --structure-properties.\n\n"
+
       "  After removing a configuration it may be re-enumerated but will have "
-      "a new\n"
-      "  index because indices will not be repeated.\n\n";
+      "  a new index because indices will not be repeated.\n\n";
 
   return res;
 }
@@ -129,20 +160,6 @@ std::string Remove<ConfigType>::desc() {
 template <typename ConfigType>
 int Remove<ConfigType>::run(const PrimClex &primclex,
                             const Completer::RmOption &opt) {
-  // -- read selection --
-  DB::Selection<ConfigType> selection(primclex, opt.selection_path());
-
-  // Add command-line options
-  for (const auto &name : opt.name_strs()) {
-    if (primclex.db<ConfigType>().count(name)) {
-      selection.data()[name] = true;
-    } else {
-      std::stringstream msg;
-      msg << "Invalid Configuration name: " << name;
-      throw CASM::runtime_error(msg.str(), ERR_INVALID_ARG);
-    }
-  }
-
   // get remove report_dir, check if exists, and create new report_dir.i if
   // necessary
   std::string report_dir =
@@ -152,12 +169,38 @@ int Remove<ConfigType>::run(const PrimClex &primclex,
   // -- erase --
   Remove<ConfigType> f(primclex, report_dir);
 
-  if (opt.force()) {
-    f.erase_all(selection, opt.dry_run());
-  } else if (opt.data()) {
-    f.erase_data(selection, opt.dry_run());
-  } else {
-    f.erase(selection, opt.dry_run());
+  if (opt.vm().count("structure-properties")) {
+    f.erase_properties_via_origin(opt.structure_properties(), opt.dry_run());
+  }
+
+  if (opt.vm().count("selection") || opt.vm().count("names")) {
+    // -- read selection --
+    fs::path selection_path;
+    if (opt.vm().count("selection")) {
+      selection_path = opt.selection_path();
+    } else {
+      selection_path = "NONE";
+    }
+    DB::Selection<ConfigType> selection(primclex, selection_path);
+
+    // Add command-line options
+    for (const auto &name : opt.name_strs()) {
+      if (primclex.db<ConfigType>().count(name)) {
+        selection.data()[name] = true;
+      } else {
+        std::stringstream msg;
+        msg << "Invalid Configuration name: " << name;
+        throw CASM::runtime_error(msg.str(), ERR_INVALID_ARG);
+      }
+    }
+
+    if (opt.force()) {
+      f.erase_all(selection, opt.dry_run());
+    } else if (opt.data()) {
+      f.erase_data(selection, opt.dry_run());
+    } else {
+      f.erase(selection, opt.dry_run());
+    }
   }
   return 0;
 }

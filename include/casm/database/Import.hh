@@ -32,29 +32,31 @@ std::pair<OutputIterator, int> construct_pos_paths(
 /// Specifies default parameters for all values, in order to simplify
 /// parsing from JSON
 struct ImportSettings {
-  ImportSettings(bool _import = false, bool _copy_files = false,
-                 bool _additional_files = false, bool _overwrite = false)
-      : import(_import),
-        copy_files(_copy_files),
-        additional_files(_additional_files),
-        overwrite(_overwrite) {}
+  ImportSettings() {}
 
-  void set_default() { *this = ImportSettings(); }
+  // /// Import mapped structures into the configuration database
+  // bool import_configurations = true;
 
-  // attempt to import calculation results into database, else just insert
-  // configurations w/out data
-  bool import;
+  /// If true, only import the primitive configuration.
+  bool primitive_only = false;
 
-  // attempt to copy properties.calc.json file to training directory of best
-  // configuration else just import data
-  bool copy_files;
+  /// Import properties into database, else just insert configurations w/out
+  /// properties. Properties from non-primitive configurations are never
+  /// imported for primitive configurations.
+  bool import_properties = false;
 
-  // attempt to copy extra files from the directory where the structure is
-  // being imported from to the training_data directory
-  bool additional_files;
+  /// Copy structure file to training_data directory
+  bool copy_structure_files = false;
 
-  // Allow overwriting of existing data by 'casm import'
-  bool overwrite;
+  /// Copy extra files from the directory where the structure is
+  /// being imported from to the training_data directory
+  bool copy_additional_files = false;
+
+  /// Allow overwriting of existing data or files by 'casm import'
+  bool overwrite = false;
+
+  /// Output reports as JSON instead of columns
+  bool output_as_json = true;
 };
 
 jsonParser &to_json(ImportSettings const &_set, jsonParser &_json);

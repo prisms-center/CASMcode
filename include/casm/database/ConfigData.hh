@@ -41,15 +41,26 @@ namespace ConfigIO {
 struct ImportData {
   ImportData()
       : preexisting(false),
-        copy_data(false),
-        copy_more(false),
-        is_best(false) {}
+        copy_structure(false),
+        copy_additional_files(false),
+        is_new_best(false) {}
 
   // base responsibility:
+
+  /// If configuration has preexisting data in properties database
   bool preexisting;
-  bool copy_data;
-  bool copy_more;
-  bool is_best;
+
+  /// If configuration has preexistin files in the calctype directory
+  bool preexisting_files;
+
+  /// If the structure file is copied to the calctype directory
+  bool copy_structure;
+
+  /// If the additional files are copied to the calctype directory
+  bool copy_additional_files;
+
+  /// If structure has properties, and it is the best scoring
+  bool is_new_best;
 };
 
 /// Data structure for mapping / import results
@@ -83,7 +94,7 @@ GenericDatumFormatter<std::string, Result> final_path();
 
 GenericDatumFormatter<std::string, Result> fail_msg();
 
-GenericDatumFormatter<std::string, Result> data_origin();
+GenericDatumFormatter<std::string, Result> properties_origin();
 
 GenericDatumFormatter<std::string, Result> to_configname();
 
@@ -93,7 +104,11 @@ GenericDatumFormatter<bool, Result> has_complete_data();
 
 GenericDatumFormatter<bool, Result> preexisting_data();
 
-GenericDatumFormatter<bool, Result> import_data();
+GenericDatumFormatter<bool, Result> preexisting_files();
+
+GenericDatumFormatter<bool, Result> import_properties();
+
+GenericDatumFormatter<bool, Result> import_structure_file();
 
 GenericDatumFormatter<bool, Result> import_additional_files();
 
@@ -107,7 +122,7 @@ GenericDatumFormatter<double, Result> score();
 
 GenericDatumFormatter<double, Result> best_score();
 
-GenericDatumFormatter<bool, Result> is_best();
+GenericDatumFormatter<bool, Result> is_new_best();
 
 GenericDatumFormatter<bool, Result> is_new_config();
 

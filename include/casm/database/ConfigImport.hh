@@ -99,7 +99,7 @@ class Update<Configuration> : public UpdateT<Configuration> {
 
   /// \brief Constructor
   Update(const PrimClex &primclex, const StructureMap<ConfigType> &mapper,
-         std::string const &report_dir);
+         UpdateSettings const &_set, std::string const &report_dir);
 
   static const std::string desc;
   static int run(const PrimClex &primclex, const jsonParser &kwargs,
