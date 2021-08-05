@@ -163,7 +163,7 @@ int Remove<ConfigType>::run(const PrimClex &primclex,
   // get remove report_dir, check if exists, and create new report_dir.i if
   // necessary
   std::string report_dir =
-      (primclex.dir().root_dir() / "remove_report").string();
+      (fs::path(primclex.dir().reports_dir()) / "remove_report").string();
   report_dir = create_report_dir(report_dir);
 
   // -- erase --

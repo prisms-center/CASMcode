@@ -374,19 +374,10 @@ const std::string Import<Configuration>::desc =
 
     "    import_properties: bool (optional, default=false)\n"
     "        If true (default), attempt to import structure properties. \n"
-    "        Properties are read from a CASM structure file which is checked \n"
-    "        for in the following locations, relative to the input structure \n"
-    "        file path, 'pos': \n"
-
-    "        1) Is 'pos' a JSON file? If 'pos' ends in \".json\" or \n"
-    "           \".JSON\", then it is assumed to be a CASM structure file.\n"
-    "        2) If / path / to / pos, checks for / path / to / "
-    "calctype.current / properties.calc.json\n"
-    "        3) If / path / to / pos, checks for / path / to / "
-    "properties.calc.json \n\n"
-
-    "        If no CASM structure file is found, no properties are imported \n"
-    "        for the mapped configuration.\n\n"
+    "        Properties are read from the structure files indicated by --pos \n"
+    "        or --batch. If the file ends in \".json\" or \".JSON\" it is \n"
+    "        read as a CASM structure file, otherwise it is read as a VASP \n"
+    "        POSCAR.\n\n"
 
     "    copy_structure_files: bool (optional, default = false)\n"
     "        If true, attempt to copy structure files. Files will only by \n"

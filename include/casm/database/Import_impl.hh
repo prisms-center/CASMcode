@@ -112,16 +112,14 @@ void ImportT<_ConfigType>::import(PathIterator begin, PathIterator end) {
   Log &log = CASM::log();
   auto it = begin;
   for (; it != end; ++it) {
-    log << "Importing " << resolve_struc_path(it->string(), primclex())
-        << std::endl;
+    log << "Importing " << it->string() << std::endl;
 
     std::vector<ConfigIO::Result> tvec;
 
     // Outputs one or more mapping results from the structure located at specied
     // path
     //   See _import documentation for more.
-    m_structure_mapper.map(resolve_struc_path(it->string(), primclex()),
-                           required_properties, nullptr,
+    m_structure_mapper.map(it->string(), required_properties, nullptr,
                            std::back_inserter(tvec));
 
     // if successfully mapped:
@@ -183,6 +181,11 @@ void ImportT<_ConfigType>::import(PathIterator begin, PathIterator end) {
     if (res.properties.origin == calc_dir_origin) continue;
 
     auto all_origins = db_props().all_origins(res.properties.to);
+    if (all_origins.size() == 0) {
+      res.import_data.is_new_best = true;
+      continue;
+    }
+
     auto first_origin = *all_origins.begin();
     if (first_origin != res.properties.origin) continue;
     if (all_origins.size() == 1) {

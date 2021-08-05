@@ -1126,7 +1126,6 @@ ConfigIO::GenericConfigFormatter<jsonParser> all_mapped_properties() {
         json["mapped_properties"].put_array();
         for (std::string origin_name : all_origins) {
           jsonParser tjson;
-          tjson["origin"] = origin_name;
           auto it = db.find_via_origin(origin_name);
           if (it != db.end()) {
             tjson["properties"] = *it;

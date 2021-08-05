@@ -61,7 +61,7 @@ std::string create_report_dir(std::string report_dir) {
     ++i;
   }
   report_dir += ("." + std::to_string(i));
-  fs::create_directory(report_dir);
+  fs::create_directories(report_dir);
   return report_dir;
 }
 
@@ -321,35 +321,30 @@ void ConfigData::cp_files(ConfigIO::Result &res, bool dry_run,
   res.import_data.copy_structure = false;
   res.import_data.copy_additional_files = false;
 
-  fs::path p = calc_dir(res.properties.to);
-  if (!fs::exists(p)) {
+  fs::path target_dir = calc_dir(res.properties.to);
+  if (!fs::exists(target_dir)) {
     if (!dry_run) {
-      fs::create_directories(p);
+      fs::create_directories(target_dir);
     }
   }
 
-  fs::path origin_props_path = Local::_resolve_properties_path(
-      res.properties.file_data.path(), primclex());
-  if (origin_props_path.empty()) {
-    return;
-  }
-
+  fs::path src = res.properties.origin;
+  fs::path dest = target_dir / src.filename();
   log().custom(std::string("Copy calculation files: ") + res.properties.to);
   if (!copy_additional_files) {
-    log() << "cp " << origin_props_path << " " << p / "properties.calc.json"
-          << std::endl;
+    log() << "cp " << src << " " << dest << std::endl;
     res.import_data.copy_structure = true;
     if (!dry_run) {
-      fs::copy_file(origin_props_path, p / "properties.calc.json");
+      fs::copy_file(src, dest);
     }
   } else {
-    Index count =
-        recurs_cp_files(origin_props_path.remove_filename(), p, dry_run, log());
+    fs::path src_dir = src.remove_filename();
+    Index count = recurs_cp_files(src_dir, target_dir, dry_run, log());
     if (count) {
       res.import_data.copy_additional_files = true;
     }
   }
-  res.properties.file_data = FileData((p / "properties.calc.json").string());
+  res.properties.file_data = FileData(dest.string());
   log() << std::endl;
   return;
 }
