@@ -116,7 +116,7 @@ ConfigDoF jsonConstructor<ConfigDoF>::from_json(const jsonParser &json,
 ///
 ///           "global_dofs": {
 ///             "GLstrain": {
-///               "values": [Exx, Eyy, Ezz, sqrt(2)Exz, sqrt(2)Eyz, sqrt(2)Exy]
+///               "values": [Exx, Eyy, Ezz, sqrt(2)Eyz, sqrt(2)Exz, sqrt(2)Exy]
 ///             }
 ///           }
 ///
