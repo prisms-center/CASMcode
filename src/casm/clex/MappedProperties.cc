@@ -104,12 +104,22 @@ ScoreMappedProperties::ScoreMappedProperties(ScoreMappedProperties::Option _opt)
 double ScoreMappedProperties::operator()(const MappedProperties &obj) const {
   switch (m_opt.method) {
     case Method::minimum: {
+      if (!obj.has_scalar(m_opt.name)) {
+        return std::numeric_limits<double>::max();
+      }
       return obj.scalar(m_opt.name);
     }
     case Method::maximum: {
+      if (!obj.has_scalar(m_opt.name)) {
+        return std::numeric_limits<double>::max();
+      }
       return -obj.scalar(m_opt.name);
     }
     case Method::deformation_cost: {
+      if (!obj.has_scalar("lattice_deformation_cost") ||
+          !obj.has_scalar("atomic_deformation_cost")) {
+        return std::numeric_limits<double>::max();
+      }
       return obj.scalar("lattice_deformation_cost") * m_opt.lattice_weight +
              obj.scalar("atomic_deformation_cost") *
                  (1.0 - m_opt.lattice_weight);

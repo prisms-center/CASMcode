@@ -8,26 +8,26 @@ namespace CASM {
 namespace DB {
 
 jsonParser &to_json(ImportSettings const &_set, jsonParser &_json) {
-  _json["import"] = _set.import;
-  _json["copy_files"] = _set.copy_files;
-  _json["additional_files"] = _set.additional_files;
+  //_json["import_configurations"] = _set.import_configurations;
+  //_json["primitive_only"] = _set.primitive_only;
+  _json["import_properties"] = _set.import_properties;
+  _json["copy_structure_files"] = _set.copy_structure_files;
+  _json["copy_additional_files"] = _set.copy_additional_files;
   _json["overwrite"] = _set.overwrite;
+  //_json["output_as_json"] = _set.output_as_json;
   return _json;
 }
 
 jsonParser const &from_json(ImportSettings &_set, jsonParser const &_json) {
-  _set.set_default();
+  _set = ImportSettings();
 
-  if (_json.contains("import")) _set.import = _json["import"].get<bool>();
-
-  if (_json.contains("copy_files"))
-    _set.copy_files = _json["copy_files"].get<bool>();
-
-  if (_json.contains("additional_files"))
-    _set.additional_files = _json["additional_files"].get<bool>();
-
-  if (_json.contains("overwrite"))
-    _set.overwrite = _json["overwrite"].get<bool>();
+  // _json.get_if(_set.import_configurations, "import_configurations");
+  //_json.get_if(_set.primitive_only, "primitive_only");
+  _json.get_if(_set.import_properties, "import_properties");
+  _json.get_if(_set.copy_structure_files, "copy_structure_files");
+  _json.get_if(_set.copy_additional_files, "copy_additional_files");
+  _json.get_if(_set.overwrite, "overwrite");
+  //_json.get_if(_set.output_as_json, "output_as_json");
 
   return _json;
 }

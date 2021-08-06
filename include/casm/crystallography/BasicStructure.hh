@@ -113,7 +113,8 @@ class BasicStructure {
   /// Manually set the basis sites
   void push_back(Site const &_site, COORD_TYPE mode = CART);
 
-  /// \brief Returns true if structure has attributes affected by time reversal
+  /// \brief Returns true if structure has DoF or properties affected by time
+  /// reversal
   bool is_time_reversal_active() const;
 
   /// Translates all atoms in cell

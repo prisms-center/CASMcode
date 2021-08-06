@@ -31,6 +31,7 @@
 #include "casm/crystallography/io/UnitCellCoordIO.hh"
 #include "casm/crystallography/io/VaspIO.hh"
 #include "casm/database/ConfigDatabase.hh"
+#include "casm/database/PropertiesDatabase.hh"
 #include "casm/database/Selected.hh"
 
 namespace CASM {
@@ -1101,9 +1102,107 @@ ConfigIO::GenericConfigFormatter<jsonParser> config() {
 
 ConfigIO::GenericConfigFormatter<jsonParser> properties() {
   return GenericConfigFormatter<jsonParser>(
-      "properties", "All mapped properties, by calctype, formatted as JSON",
+      "properties",
+      "Configuration properties, formatted as JSON. In case of multiple "
+      "structures mapping to the same configuration, the conflict score is "
+      "used to determine which properties are returned.",
       [](Configuration const &configuration) {
-        return jsonParser{configuration.calc_properties_map()};
+        return jsonParser{configuration.calc_properties()};
+      });
+}
+
+ConfigIO::GenericConfigFormatter<jsonParser> all_mapped_properties() {
+  return GenericConfigFormatter<jsonParser>(
+      "all_mapped_properties",
+      "All properties mapped to a configuration, for the current calctype, "
+      "sorted by conflict score, and formatted as JSON.",
+      [](Configuration const &configuration) {
+        PrimClex const &primclex = configuration.primclex();
+        std::string calctype = primclex.settings().default_clex().calctype;
+        auto const &db = primclex.const_db_props<Configuration>(calctype);
+        auto all_origins = db.all_origins(configuration.name());
+        jsonParser json;
+        json["conflict_score_method"] = db.score_method(configuration.name());
+        json["mapped_properties"].put_array();
+        for (std::string origin_name : all_origins) {
+          jsonParser tjson;
+          auto it = db.find_via_origin(origin_name);
+          if (it != db.end()) {
+            tjson["properties"] = *it;
+            double conflict_score = db.score(origin_name);
+            if (conflict_score != std::numeric_limits<double>::max()) {
+              tjson["conflict_score"] = db.score(origin_name);
+            } else {
+              tjson["conflict_score"] = jsonParser::null();
+            }
+          } else {
+            tjson["properties"] = jsonParser::null();
+            tjson["conflict_score"] = jsonParser::null();
+          }
+          json["mapped_properties"].push_back(tjson);
+        }
+        return json;
+      });
+}
+
+ConfigIO::GenericConfigFormatter<jsonParser> mapped_structure() {
+  return GenericConfigFormatter<jsonParser>(
+      "mapped_structure",
+      "Mapped structure, formed by application of DoF and properties, and "
+      "formatted as JSON. In case of multiple structures mapping to the same "
+      "configuration, the conflict score is used to determine which properties "
+      "are returned. The structure is written in the `mapped` orientation, a "
+      "rigid transformation from the original`unmapped` orientation.",
+      [](Configuration const &configuration) {
+        jsonParser json = jsonParser::object();
+        bool apply_properties = true;
+        to_json(make_simple_structure(configuration, {}, apply_properties),
+                json);
+        return json;
+      });
+}
+
+ConfigIO::GenericConfigFormatter<jsonParser> all_mapped_structures() {
+  return GenericConfigFormatter<jsonParser>(
+      "all_mapped_structures",
+      "All structures that have been mapped to a configuration, formed by "
+      "application of DoF and properties, sorted by conflict score, and "
+      "formatted as JSON. The structures are written in the `mapped` "
+      "orientation, a rigid transformation from their original `unmapped` "
+      "orientations.",
+      [](Configuration const &configuration) {
+        PrimClex const &primclex = configuration.primclex();
+        std::string calctype = primclex.settings().default_clex().calctype;
+        auto const &db = primclex.const_db_props<Configuration>(calctype);
+        auto all_origins = db.all_origins(configuration.name());
+        jsonParser json;
+        json["conflict_score_method"] = db.score_method(configuration.name());
+        json["mapped_structures"].put_array();
+        for (std::string origin_name : all_origins) {
+          jsonParser tjson;
+          tjson["origin"] = origin_name;
+          auto it = db.find_via_origin(origin_name);
+          if (it != db.end()) {
+            jsonParser json = jsonParser::object();
+            auto const &supercell = configuration.supercell();
+            auto const &configdof = configuration.configdof();
+            bool apply_properties = true;
+            to_json(make_simple_structure(supercell, configdof, *it, {},
+                                          apply_properties),
+                    tjson["structure"]);
+            double conflict_score = db.score(origin_name);
+            if (conflict_score != std::numeric_limits<double>::max()) {
+              tjson["conflict_score"] = db.score(origin_name);
+            } else {
+              tjson["conflict_score"] = jsonParser::null();
+            }
+          } else {
+            tjson["structure"] = jsonParser::null();
+            tjson["conflict_score"] = jsonParser::null();
+          }
+          json["mapped_structures"].push_back(tjson);
+        }
+        return json;
       });
 }
 
@@ -1232,7 +1331,9 @@ make_json_dictionary<Configuration>() {
       dict;
 
   dict.insert(structure(), structure_with_vacancies(), config(), properties(),
-              SiteCentricCorrelations(), AllPointCorr());
+              all_mapped_properties(), mapped_structure(),
+              all_mapped_structures(), SiteCentricCorrelations(),
+              AllPointCorr());
 
   return dict;
 }

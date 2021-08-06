@@ -118,10 +118,10 @@ void Calculable<_Base>::_refresh_calc_properties(std::string calctype) const {
     return;
   }
   const PrimClex &primclex = derived().primclex();
-  const auto &db = primclex.const_db_props<MostDerived>(calctype);
   if (calctype.empty()) {
     calctype = primclex.settings().default_clex().calctype;
   }
+  const auto &db = primclex.const_db_props<MostDerived>(calctype);
   auto it = db.find_via_to(this->name());
   if (it != db.end()) {
     m_calc_properties_map[calctype] = *it;

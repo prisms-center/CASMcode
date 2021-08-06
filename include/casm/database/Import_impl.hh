@@ -102,6 +102,7 @@ void ImportT<_ConfigType>::import(PathIterator begin, PathIterator end) {
   // map of data import results
   //   'configname' -> 'preexisting?
   std::map<std::string, bool> preexisting;
+  std::map<std::string, bool> preexisting_files;
 
   auto const &project_settings = this->primclex().settings();
   auto calctype = project_settings.default_clex().calctype;
@@ -111,61 +112,104 @@ void ImportT<_ConfigType>::import(PathIterator begin, PathIterator end) {
   Log &log = CASM::log();
   auto it = begin;
   for (; it != end; ++it) {
-    log << "Importing " << resolve_struc_path(it->string(), primclex())
-        << std::endl;
-    ;
+    log << "Importing " << it->string() << std::endl;
 
     std::vector<ConfigIO::Result> tvec;
 
     // Outputs one or more mapping results from the structure located at specied
     // path
     //   See _import documentation for more.
-    m_structure_mapper.map(resolve_struc_path(it->string(), primclex()),
-                           required_properties, nullptr,
+    m_structure_mapper.map(it->string(), required_properties, nullptr,
                            std::back_inserter(tvec));
-    for (auto &res : tvec) {
-      // reasons to import data or not:
-      //
-      // could not map || no data || !m_import_data:
-      //   do not import
-      // !has_existing_data_or_files:
-      //   import
-      // has_existing_data_or_files:
-      //   new_data:
-      //     better_score:
-      //       import
-      //     !better_score:
-      //       do not import
-      //   !new_data:
-      //      better_score:
-      //        overwrite:
-      //          import
-      //        !overwrite:
-      //          do not import
-      //      !better_score:
-      //        do not import
-      // if could not map, no data, or do not import data, continue
-      if (!res.properties.to.empty() && res.has_data && settings().import) {
-        // std::cout << "res.properties.to: "  << res.properties.to << ";
-        // res.has_data: "
-        //<< res.has_data << " settings().import: " << settings.import << "\n";
-        // we will try to import data
 
-        // note if preexisting data before this batch
+    // if successfully mapped:
+    // - check for preexisting properties and files
+    for (auto &res : tvec) {
+      if (!res.properties.to.empty()) {
+        // note if preexisting properties before this batch
         auto p_it = preexisting.find(res.properties.to);
         if (p_it == preexisting.end()) {
           p_it = preexisting
                      .emplace(res.properties.to,
-                              has_existing_data_or_files(res.properties.to))
+                              has_existing_data(res.properties.to))
                      .first;
         }
         res.import_data.preexisting = p_it->second;
-
-        // insert properties
-        db_props().insert(res.properties);
       }
 
+      if (!res.properties.to.empty()) {
+        // note if preexisting files before this batch
+        auto p_it = preexisting_files.find(res.properties.to);
+        if (p_it == preexisting_files.end()) {
+          p_it = preexisting_files
+                     .emplace(res.properties.to,
+                              has_existing_files(res.properties.to))
+                     .first;
+        }
+        res.import_data.preexisting_files = p_it->second;
+      }
+    }
+
+    // import properties if:
+    // - could map structure
+    // - import_properties == true
+    for (auto &res : tvec) {
+      if (!res.properties.to.empty() && settings().import_properties) {
+        // we will try to import data
+        // insert properties
+        // - first erase in case properties from structure already inserted
+        // - assume no "force" necessary
+        db_props().erase_via_origin(res.properties.origin);
+        db_props().insert(res.properties);
+      }
+    }
+
+    // add individual structure mapping results to batch results map
+    for (auto &res : tvec) {
       results.push_back(res);
+    }
+  }
+
+  // Check if result is the new best conflict scoring mapping
+  double tol = this->primclex().settings().lin_alg_tol();
+  for (auto &res : results) {
+    res.import_data.is_new_best = false;
+    if (res.properties.to.empty()) continue;
+
+    fs::path p = calc_dir(res.properties.to);
+    std::string calc_dir_origin = (p / "properties.calc.json").string();
+    if (res.properties.origin == calc_dir_origin) continue;
+
+    auto all_origins = db_props().all_origins(res.properties.to);
+    if (all_origins.size() == 0) {
+      res.import_data.is_new_best = true;
+      continue;
+    }
+
+    auto first_origin = *all_origins.begin();
+    if (first_origin != res.properties.origin) continue;
+    if (all_origins.size() == 1) {
+      res.import_data.is_new_best = true;
+      continue;
+    }
+
+    auto db_it = db_props().find_via_origin(calc_dir_origin);
+    if (db_it == db_props().end()) {
+      res.import_data.is_new_best = true;
+      continue;
+    }
+
+    if (!all_origins.count(calc_dir_origin)) {
+      res.import_data.is_new_best = true;
+      continue;
+    } else {
+      // check for approximate ties -- not a new best if approx equal
+      double preexisting_score = db_props().score(calc_dir_origin);
+      double score = db_props().score(first_origin);
+      if (score + tol < preexisting_score) {
+        res.import_data.is_new_best = true;
+        continue;
+      }
     }
   }
 
@@ -184,36 +228,55 @@ void ImportT<_ConfigType>::import(PathIterator begin, PathIterator end) {
 template <typename _ConfigType>
 void ImportT<_ConfigType>::_copy_files(
     std::vector<ConfigIO::Result> &results) const {
-  if (!settings().import ||
-      !(settings().copy_files || settings().additional_files))
+  if (!settings().copy_structure_files) {
     return;
+  }
 
-  for (auto res : results) {
-    std::string to_config = res.properties.to;
-    if (to_config.empty()) continue;
-
-    auto db_it = db_props().find_via_to(to_config);
-    std::string origin = db_it->origin;
-
-    if (origin != res.properties.origin) continue;
-
-    // note that this import to configuration is best in case of conflicts
-    res.import_data.is_best = true;
-
-    // if preexisting data, do not import new data unless overwrite option set
-    // if last_insert is not empty, it means the existing data was from this
-    // batch and we can overwrite
-    if (res.import_data.preexisting && !settings().overwrite) {
-      continue;
+  // Check for new best scoring data
+  for (auto &res : results) {
+    if (!res.import_data.is_new_best) continue;
+    if (res.import_data.preexisting || res.import_data.preexisting_files) {
+      if (!settings().overwrite) continue;
     }
 
-    db_props().erase(db_it);
+    // at this point we are:
+    // - going to copy structure files and maybe additional files into
+    //   the training data directory for the "res.properties.to" configuration
+    // - going to update the properties database to reflect the changes
+
+    fs::path p = calc_dir(res.properties.to);
+    std::string calc_dir_origin = (p / "properties.calc.json").string();
+
+    // check existing properties in training_data
+    auto db_it = db_props().find_via_origin(calc_dir_origin);
+    if (db_it != db_props().end()) {
+      db_props().erase(db_it);
+    }
+
+    // also, erase properties that were inserted from res origin, because
+    // after copy we will re-insert with new origin
+    db_it = db_props().find_via_origin(res.properties.origin);
+    if (db_it != db_props().end()) {
+      db_props().erase(db_it);
+    }
+
     // copy files:
     //   there might be existing files in cases of import conflicts
     //   cp_files() will update res.properties.file_data
-    rm_files(to_config, false);
-    this->cp_files(res, false, settings().additional_files);
-    db_props().insert(res.properties);
+    bool dry_run = false;
+    rm_files(res.properties.to, dry_run);
+    this->cp_files(res, dry_run, settings().copy_additional_files);
+
+    // update origin to new location and re-insert
+    res.properties.origin = calc_dir_origin;
+    auto insert_result = db_props().insert(res.properties);
+    if (!insert_result.second) {
+      std::stringstream msg;
+      msg << "Unknown properties insert error after copying data into "
+             "training_data directory for structure imported from "
+          << res.pos_path;
+      throw std::runtime_error(msg.str());
+    }
   }
 }
 
@@ -240,9 +303,6 @@ void ImportT<_ConfigType>::_import_report(
   // it
   std::vector<ConfigIO::Result> import_data_fail;
 
-  std::string prefix = "import_";
-  prefix += traits<ConfigType>::short_name;
-
   std::map<std::string, int> all_to;
 
   for (auto const &res : results) {
@@ -256,7 +316,7 @@ void ImportT<_ConfigType>::_import_report(
       ++(it->second);
 
       map_success.push_back(res);
-      if (res.has_data && settings().import &&
+      if (res.has_data && settings().import_properties &&
           db_props().find_via_to(res.properties.to) != db_props().end() &&
           db_props().score(res.properties) <
               db_props().best_score(res.properties.to)) {
@@ -273,42 +333,68 @@ void ImportT<_ConfigType>::_import_report(
     }
   }
 
-  // output a 'batch' file with paths to structures that could not be imported
+  // output a 'batch' file with paths to structures that could not be mapped
   if (map_fail.size()) {
-    fs::path p = fs::path(m_report_dir) / (prefix + "_fail");
+    fs::path p = fs::path(m_report_dir) / ("map_fail");
+    if (settings().output_as_json) {
+      p += ".json";
+    }
     fs::ofstream sout(p);
 
-    log() << "WARNING: Could not import " << map_fail.size() << " structures."
+    log() << "WARNING: Could not map " << map_fail.size() << " structures."
           << std::endl;
     log() << "  See detailed report: " << p << std::endl << std::endl;
 
     DataFormatterDictionary<ConfigIO::Result> dict;
     dict.insert(ConfigIO::initial_path(), ConfigIO::fail_msg());
     auto formatter = dict.parse({"initial_path", "fail_msg"});
-    sout << formatter(map_fail.begin(), map_fail.end());
+    if (settings().output_as_json) {
+      jsonParser json;
+      json = formatter(map_fail.begin(), map_fail.end());
+      sout << json;
+    } else {
+      sout << formatter(map_fail.begin(), map_fail.end());
+    }
   }
 
   // - pos, config, score_method, import data?, import additional files?, score,
   // best_score, is_preexisting?
   auto formatter = _import_formatter();
+  auto write_report = [&](std::vector<ConfigIO::Result> const &results,
+                          std::ostream &sout) {
+    if (settings().output_as_json) {
+      jsonParser json;
+      json = formatter(results.begin(), results.end());
+      sout << json;
+    } else {
+      sout << formatter(results.begin(), results.end());
+    }
+  };
 
   if (map_success.size()) {
-    fs::path p = fs::path(m_report_dir) / (prefix + "_success");
+    fs::path p = fs::path(m_report_dir) / ("map_success");
+    if (settings().output_as_json) {
+      p += ".json";
+    }
     fs::ofstream sout(p);
 
-    log() << "Successfully imported " << map_success.size() << " structures."
+    log() << "Successfully mapped " << map_success.size() << " structures."
           << std::endl;
     log() << "  See detailed report: " << p << std::endl << std::endl;
 
-    sout << formatter(map_success.begin(), map_success.end());
+    write_report(map_success, sout);
   }
 
   if (import_data_fail.size()) {
-    fs::path p = fs::path(m_report_dir) / (prefix + "_data_fail");
+    fs::path p = fs::path(m_report_dir) / ("import_data_fail");
+    if (settings().output_as_json) {
+      p += ".json";
+    }
     fs::ofstream sout(p);
 
-    log() << "WARNING: Did not import data from " << import_data_fail.size()
-          << " structures which have are a mapping score"
+    log() << "WARNING: Did not import data or copy files from "
+          << import_data_fail.size()
+          << " structures which have a mapping score"
              " better than the existing data."
           << std::endl;
     log() << "  You may wish to inspect these structures and allow overwriting "
@@ -316,11 +402,14 @@ void ImportT<_ConfigType>::_import_report(
           << std::endl;
     log() << "  See detailed report: " << p << std::endl << std::endl;
 
-    sout << formatter(import_data_fail.begin(), import_data_fail.end());
+    write_report(import_data_fail, sout);
   }
 
   if (conflict.size()) {
-    fs::path p = fs::path(m_report_dir) / (prefix + "_conflict");
+    fs::path p = fs::path(m_report_dir) / ("import_conflict");
+    if (settings().output_as_json) {
+      p += ".json";
+    }
     fs::ofstream sout(p);
 
     log()
@@ -337,7 +426,7 @@ void ImportT<_ConfigType>::_import_report(
         << std::endl;
     log() << "  See detailed report: " << p << std::endl << std::endl;
 
-    sout << formatter(conflict.begin(), conflict.end());
+    write_report(conflict, sout);
   }
 }
 

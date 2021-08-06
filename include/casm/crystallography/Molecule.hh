@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "casm/crystallography/Adapter.hh"
-#include "casm/crystallography/SpeciesAttribute.hh"
+#include "casm/crystallography/SpeciesProperty.hh"
 #include "casm/global/definitions.hh"
 #include "casm/misc/Comparisons.hh"
 
@@ -40,9 +40,9 @@ class AtomPosition {
 
   bool time_reversal_active() const;
 
-  std::map<std::string, SpeciesAttribute> const &attributes() const;
+  std::map<std::string, SpeciesProperty> const &properties() const;
 
-  void set_attributes(std::map<std::string, SpeciesAttribute> _attr);
+  void set_properties(std::map<std::string, SpeciesProperty> _property);
 
   /// \brief Comparison with tolerance (max allowed distance between LHS and
   /// RHS, in Angstr.)
@@ -55,7 +55,7 @@ class AtomPosition {
   /// Cartesian position; origin is centered at site
   Eigen::Vector3d m_position;
 
-  std::map<std::string, SpeciesAttribute> m_attribute_map;
+  std::map<std::string, SpeciesProperty> m_property_map;
 };
 
 bool compare_type(AtomPosition const &A, AtomPosition const &B, double tol);
@@ -105,30 +105,30 @@ class Molecule {
   ///\brief returns i'th atom position
   AtomPosition const &atom(Index i) const;
 
-  ///\brief True if Molecule is atom with no other attributes
+  ///\brief True if Molecule is atom with no other properties
   bool is_atomic() const;
 
   ///\brief True if Molecule represents vacancy
   bool is_vacancy() const;
 
-  ///\brief True if Molecule contains attributes that are affected by time
+  ///\brief True if Molecule contains properties that are affected by time
   /// reversal
   bool time_reversal_active() const;
 
-  ///\brief Returns dictionary of all constituent attributes of the Molecule
-  /// Does not include attributes associated with individual atoms
-  std::map<std::string, SpeciesAttribute> const &attributes() const;
+  ///\brief Returns dictionary of all constituent properties of the Molecule
+  /// Does not include properties associated with individual atoms
+  std::map<std::string, SpeciesProperty> const &properties() const;
 
-  ///\brief Set all constitutent attributes of Molecule
-  /// overwrites any existing attributes
-  void set_attributes(std::map<std::string, SpeciesAttribute> _attr);
+  ///\brief Set all constitutent properties of Molecule
+  /// overwrites any existing properties
+  void set_properties(std::map<std::string, SpeciesProperty> _property);
 
   ///\brief set all constituent atoms of Molecule
   /// overwrites any existing atoms
   void set_atoms(std::vector<AtomPosition> _atoms);
 
   /// \brief Check equality of two molecules, within specified tolerance.
-  /// Compares atoms, irrespective of order, and attributes (name is not
+  /// Compares atoms, irrespective of order, and properties (name is not
   /// checked)
   bool identical(Molecule const &RHS, double _tol) const;
 
@@ -144,7 +144,7 @@ class Molecule {
   std::vector<AtomPosition> m_atoms;
   bool m_divisible;
 
-  std::map<std::string, SpeciesAttribute> m_attribute_map;
+  std::map<std::string, SpeciesProperty> m_property_map;
 };
 
 bool operator==(Molecule const &A, Molecule const &B);
@@ -175,20 +175,20 @@ inline std::string const &AtomPosition::name() const { return m_species; }
 inline Eigen::Vector3d const &AtomPosition::cart() const { return m_position; }
 
 inline bool AtomPosition::time_reversal_active() const {
-  for (auto const &_attr : attributes()) {
-    if (_attr.second.traits().time_reversal_active()) return true;
+  for (auto const &_property : properties()) {
+    if (_property.second.traits().time_reversal_active()) return true;
   }
   return false;
 }
 
-inline std::map<std::string, SpeciesAttribute> const &AtomPosition::attributes()
+inline std::map<std::string, SpeciesProperty> const &AtomPosition::properties()
     const {
-  return m_attribute_map;
+  return m_property_map;
 }
 
-inline void AtomPosition::set_attributes(
-    std::map<std::string, SpeciesAttribute> _attr) {
-  m_attribute_map = std::move(_attr);
+inline void AtomPosition::set_properties(
+    std::map<std::string, SpeciesProperty> _property) {
+  m_property_map = std::move(_property);
 }
 
 inline Molecule Molecule::make_atom(std::string const &atom_name) {
@@ -226,30 +226,30 @@ inline std::vector<AtomPosition> const &Molecule::atoms() const {
 ///\brief returns i'th atom position
 inline AtomPosition const &Molecule::atom(Index i) const { return m_atoms[i]; }
 
-///\brief True if Molecule contains attributes that are affected by time
+///\brief True if Molecule contains properties that are affected by time
 /// reversal
 inline bool Molecule::time_reversal_active() const {
   for (auto const &_atom : atoms()) {
     if (_atom.time_reversal_active()) return true;
   }
-  for (auto const &_attr : attributes()) {
-    if (_attr.second.traits().time_reversal_active()) return true;
+  for (auto const &_property : properties()) {
+    if (_property.second.traits().time_reversal_active()) return true;
   }
   return false;
 }
 
-///\brief Returns dictionary of all constituent attributes of the Molecule
-/// Does not include attributes associated with individual atoms
-inline std::map<std::string, SpeciesAttribute> const &Molecule::attributes()
+///\brief Returns dictionary of all constituent properties of the Molecule
+/// Does not include properties associated with individual atoms
+inline std::map<std::string, SpeciesProperty> const &Molecule::properties()
     const {
-  return m_attribute_map;
+  return m_property_map;
 }
 
-///\brief Set all constitutent attributes of Molecule
-/// overwrites any existing attributes
-inline void Molecule::set_attributes(
-    std::map<std::string, SpeciesAttribute> _attr) {
-  m_attribute_map = std::move(_attr);
+///\brief Set all constitutent properties of Molecule
+/// overwrites any existing properties
+inline void Molecule::set_properties(
+    std::map<std::string, SpeciesProperty> _property) {
+  m_property_map = std::move(_property);
 }
 
 ///\brief set all constituent atoms of Molecule

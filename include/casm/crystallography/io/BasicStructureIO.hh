@@ -12,7 +12,7 @@
 namespace CASM {
 namespace xtal {
 class Lattice;
-class SpeciesAttribute;
+class SpeciesProperty;
 class AtomPosition;
 class Molecule;
 class Site;
@@ -31,12 +31,12 @@ class jsonParser;
 // --------- PrimIO Declarations
 // --------------------------------------------------
 
-/// \brief Read SpeciesAttribute from json
-jsonParser const &from_json(xtal::SpeciesAttribute &_attr,
+/// \brief Read SpeciesProperty from json
+jsonParser const &from_json(xtal::SpeciesProperty &_attr,
                             jsonParser const &json);
 
-/// \brief From SpeciesAttribute to json
-jsonParser &to_json(xtal::SpeciesAttribute const &_attr, jsonParser &json);
+/// \brief From SpeciesProperty to json
+jsonParser &to_json(xtal::SpeciesProperty const &_attr, jsonParser &json);
 
 /// \brief Print AtomPosition to json after applying affine transformation
 /// cart2frac*cart()+trans

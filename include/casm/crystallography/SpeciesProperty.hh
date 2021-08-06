@@ -1,5 +1,5 @@
-#ifndef CASM_SpeciesAttribute
-#define CASM_SpeciesAttribute
+#ifndef CASM_SpeciesProperty
+#define CASM_SpeciesProperty
 
 #include "casm/crystallography/Adapter.hh"
 #include "casm/crystallography/AnisoValTraits.hh"
@@ -12,33 +12,33 @@ namespace CASM {
 class jsonParser;
 namespace xtal {
 struct SymOp;
-class SpeciesAttribute;
+class SpeciesProperty;
 
-namespace SpeciesAttribute_impl {
+namespace SpeciesProperty_impl {
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-/// \brief  Parsing dictionary for obtaining the correct SpeciesAttribute given
+/// \brief  Parsing dictionary for obtaining the correct SpeciesProperty given
 /// a name
 using TraitsDictionary = ParsingDictionary<AnisoValTraits>;
 
-}  // namespace SpeciesAttribute_impl
+}  // namespace SpeciesProperty_impl
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-class SpeciesAttribute {
+class SpeciesProperty {
  public:
   using BasicTraits = AnisoValTraits;
   using KeyType = std::string;
 
   BasicTraits const &traits(KeyType const &key);
 
-  SpeciesAttribute(AnisoValTraits const &_traits,
-                   Eigen::Ref<const Eigen::VectorXd> const &_value)
+  SpeciesProperty(AnisoValTraits const &_traits,
+                  Eigen::Ref<const Eigen::VectorXd> const &_value)
       : m_traits(_traits), m_value(_value) {}
 
-  SpeciesAttribute(AnisoValTraits const &_traits)
-      : SpeciesAttribute(_traits, Eigen::VectorXd::Zero(_traits.dim())) {}
+  SpeciesProperty(AnisoValTraits const &_traits)
+      : SpeciesProperty(_traits, Eigen::VectorXd::Zero(_traits.dim())) {}
 
   std::string const &name() const { return traits().name(); }
 
@@ -48,7 +48,7 @@ class SpeciesAttribute {
     m_value = _value;
   }
 
-  bool identical(SpeciesAttribute const &other, double _tol) const;
+  bool identical(SpeciesProperty const &other, double _tol) const;
 
   BasicTraits const &traits() const { return m_traits; }
 
@@ -62,14 +62,14 @@ class SpeciesAttribute {
 
 namespace CASM {
 namespace sym {
-xtal::SpeciesAttribute &apply(const xtal::SymOp &op,
-                              xtal::SpeciesAttribute &mutating_attribute);
-xtal::SpeciesAttribute copy_apply(const xtal::SymOp &op,
-                                  xtal::SpeciesAttribute attribute);
+xtal::SpeciesProperty &apply(const xtal::SymOp &op,
+                             xtal::SpeciesProperty &mutating_attribute);
+xtal::SpeciesProperty copy_apply(const xtal::SymOp &op,
+                                 xtal::SpeciesProperty attribute);
 
 template <typename ExternSymOp>
-xtal::SpeciesAttribute copy_apply(const ExternSymOp &op,
-                                  xtal::SpeciesAttribute attribute) {
+xtal::SpeciesProperty copy_apply(const ExternSymOp &op,
+                                 xtal::SpeciesProperty attribute) {
   return sym::copy_apply(adapter::Adapter<xtal::SymOp, ExternSymOp>()(op),
                          attribute);
 }

@@ -860,8 +860,6 @@ void SupercellInfoInterface::run(jsonParser const &json_options,
   ParentInputParser parser{json_options};
   std::runtime_error error_if_invalid{"Error reading SupercellInfo input"};
 
-  std::cout << "root: " << root << std::endl;
-
   // read "prim"
   std::shared_ptr<Structure const> shared_prim;
   if (parser.self.contains("prim")) {

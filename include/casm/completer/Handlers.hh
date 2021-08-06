@@ -1025,8 +1025,12 @@ class RmOption : public OptionHandlerBase {
 
   bool data() const;
 
+  std::vector<std::string> const &structure_properties() const;
+
  private:
   void initialize() override;
+
+  std::vector<std::string> m_structure_properties;
 };
 
 //*****************************************************************************************************//

@@ -315,7 +315,7 @@ int format_command(const CommandArgs &args) {
 
            "\"species\" [OPTIONAL] (JSON dictionary of Molecule JSON "
            "objects):\n"
-           "  A dictionary used to define extended attributes of any species \n"
+           "  A dictionary used to define extended properties of any species \n"
            "  listed as an allowed occupant in \"basis\"/\"occupants\". \n\n\n"
 
            "DoF JSON object:\n"
@@ -339,7 +339,7 @@ int format_command(const CommandArgs &args) {
            "Molecule JSON object:\n"
            "  Used to define species the comprise multiple atoms, "
            "off-centered\n"
-           "  atoms, or species with attributes such as a magnetic spin or or\n"
+           "  atoms, or species with properties such as a magnetic spin or or\n"
            "  charge state.\n\n"
 
            "  Allowed fields:\n"
@@ -352,22 +352,22 @@ int format_command(const CommandArgs &args) {
            "it\n"
            "      is placed. Coordinate mode is same as rest of prim.json.\n\n"
 
-           "    /\"attributes\" [OPTIONAL] (JSON dictionary of "
-           "SpeciesAttribute)\n"
-           "      Additonal fixed attributes of the atom, such as magnetic "
+           "    /\"properties\" [OPTIONAL] (JSON dictionary of "
+           "SpeciesProperty)\n"
+           "      Additonal fixed properties of the atom, such as magnetic "
            "moment,\n"
            "      charge state, or selective dynamics flags. The name of each\n"
            "      attribute must correspond to a CASM-supported "
-           "SpeciesAttribute.\n\n"
+           "SpeciesProperty.\n\n"
 
-           "  /\"attributes\" [OPTIONAL] (JSON dictionary of "
-           "SpeciesAttribute)\n"
-           "    Additonal fixed attributes of the molecule as a whole, such as "
+           "  /\"properties\" [OPTIONAL] (JSON dictionary of "
+           "SpeciesProperty)\n"
+           "    Additonal fixed properties of the molecule as a whole, such as "
            "\n"
            "    magnetic spin, charge state, or selective dynamics flags. The "
            "\n"
            "    name of each attribute must correspond to a CASM-supported \n"
-           "    SpeciesAttribute.\n\n\n"
+           "    SpeciesProperty.\n\n\n"
 
            "  /\"name\" [OPTIONAL] (string)\n"
            "    Chemical name of molecule, used to override its name in the\n"
@@ -377,13 +377,13 @@ int format_command(const CommandArgs &args) {
            "not\n"
            "    dependent on molecule names.\n\n\n"
 
-           "SpeciesAttribute JSON object:\n"
+           "SpeciesProperty JSON object:\n"
            "  Associates the discrete value of a vector property to an Atom or "
            "Moleule.\n\n"
            "  Allowed fields:\n"
            "  \"value\" (JSON Array of doubles):\n"
            "    Dimension of array must match the dimension of the specified \n"
-           "    SpeciesAttribute.\n\n";
+           "    SpeciesProperty.\n\n";
 
     log() << "prim.json EXAMPLE 1: FCC ternary alloy of elements A, B, and C\n"
              "-------\n"

@@ -30,6 +30,10 @@ class RemoveT : protected ConfigData {
 
   RemoveT(const PrimClex &primclex, std::string report_dir);
 
+  /// \brief Erase properties via structure origin file path
+  void erase_properties_via_origin(std::vector<std::string> const &origins,
+                                   bool dry_run);
+
   /// \brief Erase Configurations that have no data
   void erase(const DB::Selection<ConfigType> &selection, bool dry_run);
 
