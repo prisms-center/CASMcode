@@ -21,7 +21,7 @@ build_conda_package () {
   echo
 
   BUILD_FLAGS="--override-channels -c $CASM_CONDA_CHANNEL "
-  BUILD_FLAGS+="-c defaults -c conda-forge -c prisms-center "
+  BUILD_FLAGS+="-c conda-forge -c defaults -c prisms-center "
   BUILD_FLAGS+="--python $CASM_PYTHON_VERSION "
   echo "BUILD_FLAGS: $BUILD_FLAGS"
 
