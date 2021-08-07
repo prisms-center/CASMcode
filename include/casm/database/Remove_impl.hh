@@ -28,6 +28,7 @@ void RemoveT<_ConfigType>::erase(const DB::Selection<ConfigType> &selection,
                                  bool dry_run) {
   std::vector<std::string> fail;
   for (const auto &val : selection.data()) {
+    if (!val.second) continue;
     if (!has_existing_data_or_files(val.first)) {
       db_config<ConfigType>().erase(val.first);
     } else {
@@ -77,6 +78,7 @@ void RemoveT<_ConfigType>::erase_data(
     const DB::Selection<ConfigType> &selection, bool dry_run) {
   // erase data
   for (const auto &val : selection.data()) {
+    if (!val.second) continue;
     for (auto it = db_props().find_via_to(val.first); it != db_props().end();
          it = db_props().find_via_to(val.first)) {
       db_props().erase(it);
