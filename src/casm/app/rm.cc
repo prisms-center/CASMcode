@@ -159,7 +159,7 @@ int RmCommandImpl<DataObject>::help() const {
 
 template <typename DataObject>
 int RmCommandImpl<DataObject>::desc() const {
-  log() << DB::Remove<DataObject>::desc << std::endl;
+  log() << DB::Remove<DataObject>::desc() << std::endl;
   return 0;
 }
 
