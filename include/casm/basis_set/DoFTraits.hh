@@ -21,10 +21,14 @@ using xtal::SimpleStructure;
 using xtal::Site;
 using xtal::UnitCellCoord;
 
+namespace clexulator {
+class PrimNeighborList;
+}
+using clexulator::PrimNeighborList;
+
 template <typename T>
 class InputParser;
 class jsonParser;
-class PrimNeighborList;
 struct BasisFunctionSpecs;
 class BasisSet;
 class Structure;

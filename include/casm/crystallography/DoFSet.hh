@@ -40,6 +40,13 @@ class DoFSet {
     assert(m_basis.cols() == this->dim());
     assert(m_basis.rows() ==
            this->traits().dim());  // TODO: This makes sense I think?
+    if (basis().cols() > 0 && basis().rows() > 0) {
+      m_inv_basis = basis()
+                        .transpose()
+                        .colPivHouseholderQr()
+                        .solve(Eigen::MatrixXd::Identity(dim(), dim()))
+                        .transpose();
+    }
   }
 
   DoFSet(const BasicTraits &init_traits)
@@ -66,6 +73,16 @@ class DoFSet {
   /// Matrix that relates DoFSet variables to a conventional coordiante system
   Eigen::MatrixXd const &basis() const { return m_basis; }
 
+  /// The pseudoinverse of DoFSet coordinate axes
+  ///
+  /// The pseudoinverse is useful for transforming from standard basis to this
+  /// DoFSet's basis. A standard coordinate column-vector value, 'v_standard',
+  /// can be represented in this DoFSet's space by:
+  ///
+  ///     v = inv_basis * v_standard
+  ///
+  Eigen::MatrixXd const &inv_basis() const { return m_inv_basis; }
+
  private:
   /// AnisoValTraits. Describes the type of DoF, and can convert Cartesian
   /// symmetry representations into the appropriate representation
@@ -80,6 +97,9 @@ class DoFSet {
   /// you may want to define displacements that only happen along a particular
   /// direction
   Eigen::MatrixXd m_basis;
+
+  /// The pseudoinverse of DoFSet coordinate axes
+  Eigen::MatrixXd m_inv_basis;
 };
 
 /// Returns descriptive names of the components in a DoFSet, using

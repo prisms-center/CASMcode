@@ -72,10 +72,11 @@ enum_methods_ConfigEnumStrainInterfaceTest::
 }
 
 TEST_F(enum_methods_ConfigEnumStrainInterfaceTest, Test1) {
-  ScopedNullLogging logging;
+  // ScopedNullLogging logging;
   CASM::log().set_verbosity(Log::debug);
 
   {
+    EXPECT_EQ(primclex.db<Configuration>().size(), 0);
     fs::path test_dir = test::proj_dir(primclex.dir().root_dir() /
                                        "ConfigEnumStrainInterfaceTest");
     std::string cli_str = "casm enum --method ConfigEnumStrain";

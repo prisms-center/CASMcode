@@ -30,7 +30,6 @@ ConfigDoF jsonConstructor<ConfigDoF>::from_json(const jsonParser &json,
 /// Format:
 /// \code
 /// {
-///   "volume": <int>,
 ///   "occ": <array of integer>,
 ///   "global_dofs": {
 ///     <dof_name>: {

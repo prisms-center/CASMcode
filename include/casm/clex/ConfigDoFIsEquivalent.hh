@@ -4,6 +4,7 @@
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/clexulator/ConfigDoFValuesTools.hh"
 
 namespace CASM {
 
@@ -335,7 +336,9 @@ class Local : public Float {
  public:
   Local(ConfigDoF const &_configdof, DoFKey const &_key, double _tol)
       : Float(_tol, _key),
-        m_values_ptr(&(_configdof.local_dof(_key))),
+        m_n_sublat(_configdof.n_sublat()),
+        m_n_vol(_configdof.n_vol()),
+        m_values_ptr(&(_configdof.local_dof(_key).values())),
         m_tmp_valid(true),
         m_zeros(*m_values_ptr),
         m_fg_index_A(0),
@@ -350,16 +353,16 @@ class Local : public Float {
 
   /// \brief Return config == other, store config < other
   bool operator()(ConfigDoF const &other) const override {
-    LocalContinuousConfigDoFValues const *other_ptr;
+    Eigen::MatrixXd const *other_ptr;
     if (other.has_local_dof(key())) {
-      other_ptr = &(other.local_dof(key()));
+      other_ptr = &(other.local_dof(key()).values());
     } else {
       other_ptr = &m_zeros;
     }
 
     return _for_each(
-        [&](Index i, Index j) { return this->_values().values()(i, j); },
-        [&](Index i, Index j) { return (*other_ptr).values()(i, j); });
+        [&](Index i, Index j) { return this->_values()(i, j); },
+        [&](Index i, Index j) { return (*other_ptr)(i, j); });
   }
 
   /// \brief Return config == B*config, store config < B*config
@@ -368,7 +371,7 @@ class Local : public Float {
     m_tmp_valid = true;
 
     return _for_each(
-        [&](Index i, Index j) { return this->_values().values()(i, j); },
+        [&](Index i, Index j) { return this->_values()(i, j); },
         [&](Index i, Index j) { return this->new_dof_B(i, B.permute_ind(j)); });
   }
 
@@ -386,9 +389,9 @@ class Local : public Float {
   /// \brief Return config == B*other, store config < B*other
   bool operator()(PermuteIterator const &B,
                   ConfigDoF const &other) const override {
-    LocalContinuousConfigDoFValues const *other_ptr;
+    Eigen::MatrixXd const *other_ptr;
     if (other.has_local_dof(key())) {
-      other_ptr = &(other.local_dof(key()));
+      other_ptr = &(other.local_dof(key()).values());
     } else {
       other_ptr = &m_zeros;
     }
@@ -397,16 +400,16 @@ class Local : public Float {
     m_tmp_valid = false;
 
     return _for_each(
-        [&](Index i, Index j) { return this->_values().values()(i, j); },
+        [&](Index i, Index j) { return this->_values()(i, j); },
         [&](Index i, Index j) { return this->new_dof_B(i, B.permute_ind(j)); });
   }
 
   /// \brief Return A*config == B*other, store A*config < B*other
   bool operator()(PermuteIterator const &A, PermuteIterator const &B,
                   ConfigDoF const &other) const override {
-    LocalContinuousConfigDoFValues const *other_ptr;
+    Eigen::MatrixXd const *other_ptr;
     if (other.has_local_dof(key())) {
-      other_ptr = &(other.local_dof(key()));
+      other_ptr = &(other.local_dof(key()).values());
     } else {
       other_ptr = &m_zeros;
     }
@@ -420,50 +423,51 @@ class Local : public Float {
   }
 
  private:
-  LocalContinuousConfigDoFValues const &_values() const {
+  Eigen::MatrixXd const &_values() const {
     return *m_values_ptr;
   }
 
   void _update_A(PermuteIterator const &A,
-                 LocalContinuousConfigDoFValues const &before) const {
+                 Eigen::MatrixXd const &before) const {
+    using clexulator::sublattice_block;
     if (A.factor_group_index() != m_fg_index_A || !m_tmp_valid) {
-      for (Index b = 0; b < m_values_ptr->n_sublat(); ++b) {
+      for (Index b = 0; b < m_n_sublat; ++b) {
         m_fg_index_A = A.factor_group_index();
-        Index rows = A.local_dof_rep(key(), b).MatrixXd()->rows();
-        m_new_dof_A.sublat(b).topRows(rows) =
-            *(A.local_dof_rep(key(), b).MatrixXd()) *
-            before.sublat(b).topRows(rows);
+        Eigen::MatrixXd const &M = *(A.local_dof_rep(key(), b).MatrixXd());
+        Index dim = M.cols();
+        sublattice_block(m_new_dof_A, b, m_n_vol).topRows(dim) =
+            M * sublattice_block(before, b, m_n_vol).topRows(dim);
       }
     }
   }
 
   void _update_B(PermuteIterator const &B,
-                 LocalContinuousConfigDoFValues const &before) const {
+                 Eigen::MatrixXd const &before) const {
+    using clexulator::sublattice_block;
     if (B.factor_group_index() != m_fg_index_B || !m_tmp_valid) {
-      for (Index b = 0; b < m_values_ptr->n_sublat(); ++b) {
+      for (Index b = 0; b < m_n_sublat; ++b) {
         m_fg_index_B = B.factor_group_index();
-        Index rows = B.local_dof_rep(key(), b).MatrixXd()->rows();
-
-        m_new_dof_B.sublat(b).topRows(rows) =
-            *(B.local_dof_rep(key(), b).MatrixXd()) *
-            before.sublat(b).topRows(rows);
+        Eigen::MatrixXd const &M = *(B.local_dof_rep(key(), b).MatrixXd());
+        Index dim = M.cols();
+        sublattice_block(m_new_dof_B, b, m_n_vol).topRows(dim) =
+            M * sublattice_block(before, b, m_n_vol).topRows(dim);
       }
     }
   }
 
   double new_dof_A(Index i, Index j) const {
-    return m_new_dof_A.values()(i, j);
+    return m_new_dof_A(i, j);
   }
 
   double new_dof_B(Index i, Index j) const {
-    return m_new_dof_B.values()(i, j);
+    return m_new_dof_B(i, j);
   }
 
   template <typename F, typename G>
   bool _for_each(F f, G g) const {
     Index i, j;
-    for (j = 0; j < _values().values().cols(); j++) {
-      for (i = 0; i < _values().values().rows(); i++) {
+    for (j = 0; j < _values().cols(); j++) {
+      for (i = 0; i < _values().rows(); i++) {
         if (!_check(f(i, j), g(i, j))) {
           return false;
         }
@@ -474,24 +478,30 @@ class Local : public Float {
 
   Base *_clone() const override { return new Local(*this); }
 
+  // Number of sublattices
+  Index m_n_sublat;
+
+  // Integer supercell volume
+  Index m_n_vol;
+
   // Points to LocalContinuousConfigDoFValues of ConfigDoF this was constructed
   // with
-  LocalContinuousConfigDoFValues const *m_values_ptr;
+  Eigen::MatrixXd const *m_values_ptr;
 
   // Set to false when comparison is made to "other" ConfigDoF, to force update
   // of temporary dof during the next comparison
   mutable bool m_tmp_valid;
 
   // Used when "other" ConfigDoF does not have local DoF==this->key()
-  mutable LocalContinuousConfigDoFValues m_zeros;
+  mutable Eigen::MatrixXd m_zeros;
 
   // Store temporary DoFValues under fg operation only:
 
   mutable Index m_fg_index_A;
-  mutable LocalContinuousConfigDoFValues m_new_dof_A;
+  mutable Eigen::MatrixXd m_new_dof_A;
 
   mutable Index m_fg_index_B;
-  mutable LocalContinuousConfigDoFValues m_new_dof_B;
+  mutable Eigen::MatrixXd m_new_dof_B;
 };
 
 /// Compare continuous global DoF values
@@ -501,7 +511,7 @@ class Global : public Float {
  public:
   Global(ConfigDoF const &_configdof, DoFKey const &_key, double _tol)
       : Float(_tol, _key),
-        m_values_ptr(&_configdof.global_dof(_key)),
+        m_values_ptr(&_configdof.global_dof(_key).values()),
         m_tmp_valid(true),
         m_zeros(*m_values_ptr),
         m_fg_index_A(0),
@@ -516,15 +526,15 @@ class Global : public Float {
 
   /// \brief Return config == other, store config < other
   bool operator()(ConfigDoF const &other) const override {
-    GlobalContinuousConfigDoFValues const *other_ptr;
+    Eigen::VectorXd const *other_ptr;
     if (other.has_global_dof(key())) {
-      other_ptr = &(other.global_dof(key()));
+      other_ptr = &(other.global_dof(key()).values());
     } else {
       other_ptr = &m_zeros;
     }
 
     return _for_each([&](Index i) { return this->_values(i); },
-                     [&](Index i) { return other_ptr->values()[i]; });
+                     [&](Index i) { return (*other_ptr)[i]; });
   }
 
   /// \brief Return config == B*config, store config < B*config
@@ -548,24 +558,24 @@ class Global : public Float {
   /// \brief Return config == B*other, store config < B*other
   bool operator()(PermuteIterator const &B,
                   ConfigDoF const &other) const override {
-    GlobalContinuousConfigDoFValues const *other_ptr;
+    Eigen::VectorXd const *other_ptr;
     if (other.has_global_dof(key())) {
-      other_ptr = &(other.global_dof(key()));
+      other_ptr = &(other.global_dof(key()).values());
     } else {
       other_ptr = &m_zeros;
     }
     _update_B(B, *other_ptr);
     m_tmp_valid = false;
-    return _for_each([&](Index i) { return this->_values().values()[i]; },
+    return _for_each([&](Index i) { return this->_values()[i]; },
                      [&](Index i) { return this->_new_dof_B(i); });
   }
 
   /// \brief Return A*config == B*other, store A*config < B*other
   bool operator()(PermuteIterator const &A, PermuteIterator const &B,
                   ConfigDoF const &other) const override {
-    GlobalContinuousConfigDoFValues const *other_ptr;
+    Eigen::VectorXd const *other_ptr;
     if (other.has_global_dof(key())) {
-      other_ptr = &(other.global_dof(key()));
+      other_ptr = &(other.global_dof(key()).values());
     } else {
       other_ptr = &m_zeros;
     }
@@ -580,37 +590,37 @@ class Global : public Float {
   Base *_clone() const override { return new Global(*this); }
 
   void _update_A(PermuteIterator const &A,
-                 GlobalContinuousConfigDoFValues const &before) const {
+                 Eigen::VectorXd const &before) const {
     if (A.factor_group_index() != m_fg_index_A || !m_tmp_valid) {
       m_fg_index_A = A.factor_group_index();
-      m_new_dof_A.set_values(*(A.global_dof_rep(key()).MatrixXd()) *
-                             before.values());
+      Eigen::MatrixXd const &M = *(A.global_dof_rep(key()).MatrixXd());
+      m_new_dof_A = M * before;
     }
   }
 
   void _update_B(PermuteIterator const &B,
-                 GlobalContinuousConfigDoFValues const &before) const {
+                 Eigen::VectorXd const &before) const {
     if (B.factor_group_index() != m_fg_index_B || !m_tmp_valid) {
       m_fg_index_B = B.factor_group_index();
-      m_new_dof_B.set_values(*(B.global_dof_rep(key()).MatrixXd()) *
-                             before.values());
+      Eigen::MatrixXd const &M = *(B.global_dof_rep(key()).MatrixXd());
+      m_new_dof_B = M * before;
     }
   }
 
-  GlobalContinuousConfigDoFValues const &_values() const {
+  Eigen::VectorXd const &_values() const {
     return *m_values_ptr;
   }
 
-  double _values(Index i) const { return _values().values()[i]; }
+  double _values(Index i) const { return _values()[i]; }
 
-  double _new_dof_A(Index i) const { return m_new_dof_A.values()[i]; }
+  double _new_dof_A(Index i) const { return m_new_dof_A[i]; }
 
-  double _new_dof_B(Index i) const { return m_new_dof_B.values()[i]; }
+  double _new_dof_B(Index i) const { return m_new_dof_B[i]; }
 
   template <typename F, typename G>
   bool _for_each(F f, G g) const {
     Index i;
-    for (i = 0; i < _values().values().size(); i++) {
+    for (i = 0; i < _values().size(); i++) {
       if (!_check(f(i), g(i))) {
         return false;
       }
@@ -620,22 +630,22 @@ class Global : public Float {
 
   // Points to GlobalContinuousConfigDoFValues of ConfigDoF this was constructed
   // with
-  GlobalContinuousConfigDoFValues const *m_values_ptr;
+  Eigen::VectorXd const *m_values_ptr;
 
   // Set to false when comparison is made to "other" ConfigDoF, to force update
   // of temporary dof during the next comparison
   mutable bool m_tmp_valid;
 
   // Used when "other" ConfigDoF does not have local DoF==this->key()
-  mutable GlobalContinuousConfigDoFValues m_zeros;
+  mutable Eigen::VectorXd m_zeros;
 
   // Store temporary DoFValues under fg operation only:
 
   mutable Index m_fg_index_A;
-  mutable GlobalContinuousConfigDoFValues m_new_dof_A;
+  mutable Eigen::VectorXd m_new_dof_A;
 
   mutable Index m_fg_index_B;
-  mutable GlobalContinuousConfigDoFValues m_new_dof_B;
+  mutable Eigen::VectorXd m_new_dof_B;
 };
 
 }  // namespace ConfigDoFIsEquivalent

@@ -1,10 +1,10 @@
 #include "casm/clex/ConfigCorrelations.hh"
 
-#include "casm/clex/ClexParamPack.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/NeighborhoodInfo.hh"
 #include "casm/clex/Supercell.hh"
+#include "casm/clexulator/ClexParamPack.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/Structure.hh"
 
@@ -598,9 +598,9 @@ std::vector<Index> make_all_point_corr_linear_unitcell_indices(
 Eigen::MatrixXd gradcorrelations(ConfigDoF const &configdof,
                                  Supercell const &scel,
                                  Clexulator const &clexulator, DoFKey &key) {
-  ClexParamKey paramkey;
-  ClexParamKey corr_key(clexulator.param_pack().key("corr"));
-  ClexParamKey dof_key;
+  clexulator::ClexParamKey paramkey;
+  clexulator::ClexParamKey corr_key(clexulator.param_pack().key("corr"));
+  clexulator::ClexParamKey dof_key;
   if (key == "occ") {
     paramkey = clexulator.param_pack().key("diff/corr/" + key + "_site_func");
     dof_key = clexulator.param_pack().key("occ_site_func");

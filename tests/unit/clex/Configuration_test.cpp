@@ -88,6 +88,88 @@ TEST(ConfigurationTest, Test1) {
   }
 }
 
+TEST(ConfigurationTest, Test1_dof_values) {
+  ScopedNullLogging logging;
+  auto shared_prim =
+      std::make_shared<Structure const>(test::FCC_ternary_GLstrain_disp_prim());
+
+  Eigen::Vector3d a, b, c;
+  std::tie(a, b, c) = shared_prim->lattice().vectors();
+
+  auto shared_supercell =
+      std::make_shared<Supercell const>(shared_prim, Lattice(2 * a, b, c));
+
+  Configuration config(shared_supercell);
+  EXPECT_EQ(config.size(), 2);
+  EXPECT_EQ(config.configdof().has_occupation(), true);
+  EXPECT_EQ(config.configdof().occupation().size(), 2);
+  EXPECT_EQ(config.configdof().occupation().rows(), 2);
+  EXPECT_EQ(config.configdof().occupation().cols(), 1);
+
+  EXPECT_EQ(config.configdof().global_dofs().size(), 1);
+  EXPECT_EQ(config.configdof().has_global_dof("GLstrain"), true);
+  EXPECT_EQ(config.configdof().global_dof("GLstrain").values().size(), 6);
+  EXPECT_EQ(config.configdof().global_dof("GLstrain").values().rows(), 6);
+  EXPECT_EQ(config.configdof().global_dof("GLstrain").values().cols(), 1);
+
+  EXPECT_EQ(config.configdof().local_dofs().size(), 1);
+  EXPECT_EQ(config.configdof().has_local_dof("disp"), true);
+  EXPECT_EQ(config.configdof().local_dof("disp").values().size(), 6);
+  EXPECT_EQ(config.configdof().local_dof("disp").values().rows(), 3);
+  EXPECT_EQ(config.configdof().local_dof("disp").values().cols(), 2);
+
+  // set global dof values
+  Eigen::VectorXd GLstrain(6);
+  GLstrain << 0.0, 0.1, 0.2, 0.0, 0.0, 0.0;
+  config.configdof().set_global_dof("GLstrain", GLstrain);
+
+  EXPECT_EQ(config.configdof().global_dofs().size(), 1);
+  EXPECT_EQ(config.configdof().has_global_dof("GLstrain"), true);
+  EXPECT_EQ(config.configdof().global_dof("GLstrain").values().size(), 6);
+  EXPECT_EQ(config.configdof().global_dof("GLstrain").values().rows(), 6);
+  EXPECT_EQ(config.configdof().global_dof("GLstrain").values().cols(), 1);
+
+  EXPECT_TRUE(almost_equal(config.configdof().global_dof("GLstrain").values(),
+                           GLstrain));
+
+  // copy constructor
+  Configuration config2{config};
+  EXPECT_TRUE(almost_equal(config2.configdof().global_dof("GLstrain").values(),
+                           GLstrain));
+
+  // assignment
+  Configuration config3{shared_supercell};
+  EXPECT_TRUE(almost_equal(config3.configdof().global_dof("GLstrain").values(),
+                           Eigen::VectorXd::Zero(6)));
+  config3 = config;
+  EXPECT_TRUE(almost_equal(config3.configdof().global_dof("GLstrain").values(),
+                           GLstrain));
+
+  // sub_configuration
+  Configuration sub_config = sub_configuration(
+      std::make_shared<Supercell>(shared_prim, shared_prim->lattice()), config);
+  EXPECT_TRUE(almost_equal(
+      sub_config.configdof().global_dof("GLstrain").values(), GLstrain));
+
+  // copy/assign test
+  {
+    Configuration config4{config};
+    EXPECT_TRUE(almost_equal(
+        config4.configdof().global_dof("GLstrain").values(), GLstrain));
+
+    config4 = sub_configuration(
+        std::make_shared<Supercell>(shared_prim, shared_prim->lattice()),
+        config4);
+    EXPECT_TRUE(almost_equal(
+        sub_config.configdof().global_dof("GLstrain").values(), GLstrain));
+  }
+
+  // primitive
+  Configuration prim_config = config.primitive();
+  EXPECT_TRUE(almost_equal(
+      prim_config.configdof().global_dof("GLstrain").values(), GLstrain));
+}
+
 TEST(ConfigurationTest, Test2) {
   // test fill_supercell
   ScopedNullLogging logging;

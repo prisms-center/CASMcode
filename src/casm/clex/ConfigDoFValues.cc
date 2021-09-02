@@ -1,22 +1,24 @@
 #include "casm/clex/ConfigDoFValues.hh"
 
+#include "casm/clexulator/ConfigDoFValuesTools.hh"
+
 namespace CASM {
 
-ConfigDoFValues::ConfigDoFValues(DoF::BasicTraits const &_traits,
-                                 Index _n_sublat, Index _n_vol)
-    : m_type(_traits.name()), m_n_sublat(_n_sublat), m_n_vol(_n_vol) {}
+ConfigDoFValues::ConfigDoFValues(DoFKey const &_type_name, Index _n_sublat,
+                                 Index _n_vol)
+    : m_type_name(_type_name), m_n_sublat(_n_sublat), m_n_vol(_n_vol) {}
 
-std::string const &ConfigDoFValues::type_name() const { return m_type; }
+std::string const &ConfigDoFValues::type_name() const { return m_type_name; }
 
 Index ConfigDoFValues::n_vol() const { return m_n_vol; }
 
 Index ConfigDoFValues::n_sublat() const { return m_n_sublat; }
 
 LocalDiscreteConfigDoFValues::LocalDiscreteConfigDoFValues(
-    DoF::BasicTraits const &_traits, Index _n_sublat, Index _n_vol,
-    std::vector<SymGroupRepID> const &_symrep_IDs)
-    : ConfigDoFValues(_traits, _n_sublat, _n_vol),
-      m_vals(Eigen::VectorXi::Zero(_n_sublat * _n_vol)),
+    DoFKey const &_type_name, Index _n_sublat, Index _n_vol,
+    std::vector<SymGroupRepID> const &_symrep_IDs, ValueType &_values)
+    : ConfigDoFValues(_type_name, _n_sublat, _n_vol),
+      m_vals(_values),
       m_symrep_IDs(_symrep_IDs) {}
 
 /// Set occupation values (values are indices into Site::occupant_dof())
@@ -42,7 +44,7 @@ LocalDiscreteConfigDoFValues::sublat(Index b) {
 /// Const access vector block of values for all sites on one sublattice
 LocalDiscreteConfigDoFValues::ConstSublatReference
 LocalDiscreteConfigDoFValues::sublat(Index b) const {
-  return m_vals.segment(b * n_vol(), n_vol());
+  return const_cast<ValueType const &>(m_vals).segment(b * n_vol(), n_vol());
 }
 
 /// Provides the symmetry representations for transforming `values` (i.e. due
@@ -66,20 +68,16 @@ void LocalDiscreteConfigDoFValues::_throw_if_invalid_size(
 /// local continuous DoF values matrix has #rows == max( DoFSetInfo::dim() )
 Index LocalContinuousConfigDoFValues::matrix_dim(
     std::vector<DoFSetInfo> const &_info) {
-  Index dim = 0;
-  for (auto const &_dof_set_info : _info) {
-    dim = max(dim, _dof_set_info.dim());
-  }
-  return dim;
+  return clexulator::max_dim(_info);
 }
 
 LocalContinuousConfigDoFValues::LocalContinuousConfigDoFValues(
-    DoF::BasicTraits const &_traits, Index _n_sublat, Index _n_vol,
-    std::vector<DoFSetInfo> const &_info)
-    : ConfigDoFValues(_traits, _n_sublat, _n_vol),
+    DoFKey const &_type_name, Index _n_sublat, Index _n_vol,
+    std::vector<DoFSetInfo> const &_info, ValueType &_values)
+    : ConfigDoFValues(_type_name, _n_sublat, _n_vol),
       m_dim(matrix_dim(_info)),
       m_info(_info),
-      m_vals(Eigen::MatrixXd::Zero(m_dim, _n_sublat * _n_vol)) {
+      m_vals(_values) {
   _throw_if_invalid_size(m_vals);
 }
 
@@ -178,7 +176,8 @@ LocalContinuousConfigDoFValues::sublat(Index b) {
 /// Const access matrix block of values for all sites on one sublattice
 LocalContinuousConfigDoFValues::ConstSublatReference
 LocalContinuousConfigDoFValues::sublat(Index b) const {
-  return m_vals.block(0, b * n_vol(), m_vals.rows(), n_vol());
+  return const_cast<ValueType const &>(m_vals).block(0, b * n_vol(),
+                                                     m_vals.rows(), n_vol());
 }
 
 /// DoFSetInfo provides the basis and symmetry representations for `values`
@@ -199,11 +198,11 @@ void LocalContinuousConfigDoFValues::_throw_if_invalid_size(
 }
 
 GlobalContinuousConfigDoFValues::GlobalContinuousConfigDoFValues(
-    DoF::BasicTraits const &_traits, Index _n_sublat, Index _n_vol,
-    DoFSetInfo const &_info)
-    : ConfigDoFValues(_traits, _n_sublat, _n_vol),
+    DoFKey const &_name, Index _n_sublat, Index _n_vol, DoFSetInfo const &_info,
+    ValueType &_values)
+    : ConfigDoFValues(_name, _n_sublat, _n_vol),
       m_info(_info),
-      m_vals(Eigen::VectorXd::Zero(m_info.dim())) {}
+      m_vals(_values) {}
 
 /// Global DoF vector representation dimension
 Index GlobalContinuousConfigDoFValues::dim() const { return m_vals.rows(); }

@@ -249,7 +249,8 @@ const SuperNeighborList &Supercell::nlist() const {
   if (!m_nlist) {
     m_nlist_size_at_construction = primclex().shared_nlist()->size();
     m_nlist = notstd::make_cloneable<SuperNeighborList>(
-        this->sym_info().superlattice(), *primclex().shared_nlist());
+        this->sym_info().superlattice().transformation_matrix_to_super(),
+        *primclex().shared_nlist());
   }
   return *m_nlist;
 }

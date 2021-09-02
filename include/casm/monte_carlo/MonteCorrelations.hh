@@ -9,7 +9,11 @@ namespace CASM {
 class Clexulator;
 class ConfigDoF;
 class Conversions;
+
+namespace clexulator {
 class SuperNeighborList;
+}
+using clexulator::SuperNeighborList;
 
 namespace Monte {
 

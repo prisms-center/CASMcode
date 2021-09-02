@@ -3,9 +3,9 @@
 
 #include "casm/casm_io/dataformatter/DataFormatter.hh"
 #include "casm/casm_io/dataformatter/DataFormatterTools.hh"
-#include "casm/clex/ClexParamPack.hh"
 #include "casm/clex/Clexulator.hh"
 #include "casm/clex/ECIContainer.hh"
+#include "casm/clexulator/ClexParamPack.hh"
 #include "casm/container/ContainerTraits.hh"
 
 namespace CASM {

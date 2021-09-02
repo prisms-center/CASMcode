@@ -338,8 +338,8 @@ std::string Traits::clexulator_private_method_declarations_string(
     // "\n";
     stream << indent << "double eval_" << name()
            << "_var(const int &ind) const {\n"
-           << indent << "  return m_global_dof_ptrs[m_" << name()
-           << "_var_param_key.index()]->values()[ind];\n"
+           << indent << "  return (*(m_global_dof_ptrs[m_" << name()
+           << "_var_param_key.index()]))[ind];\n"
            << indent << "}\n\n";
 
     stream << indent << "template<typename Scalar>\n"
@@ -395,8 +395,7 @@ std::string Traits::clexulator_private_method_declarations_string(
         stream << indent << "double eval_" << name() << "_var_" << nb << '_'
                << a << "(const int &nlist_ind) const {\n"
                << indent << "  return m_local_dof_ptrs[m_" << name()
-               << "_var_param_key.index()]->site_value(_l(nlist_ind))[" << a
-               << "];\n"
+               << "_var_param_key.index()]->col(_l(nlist_ind))[" << a << "];\n"
                << indent << "}\n\n";
       }
 

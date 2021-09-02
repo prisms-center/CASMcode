@@ -22,10 +22,14 @@ using xtal::BasicStructure;
 using xtal::Site;
 using xtal::UnitCell;
 
+namespace clexulator {
+class PrimNeighborList;
+}
+using clexulator::PrimNeighborList;
+
 namespace DoFType {
 class Traits;
 }
-class PrimNeighborList;
 class ClexBasisBuilder;
 
 class ClexBasis {

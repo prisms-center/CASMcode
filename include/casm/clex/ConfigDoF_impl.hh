@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "casm/clex/ConfigDoF.hh"
+#include "casm/clexulator/ConfigDoFValuesTools.hh"
 
 namespace CASM {
 
@@ -26,21 +27,33 @@ ConfigDoF::ConfigDoF(Index _N_sublat, Index _N_vol,
                      LocalInfoContainerType const &local_dof_info,
                      std::vector<SymGroupRepID> const &occ_symrep_IDs,
                      double _tol)
-    : m_occupation(DoF::BasicTraits("occ"), _N_sublat, _N_vol, occ_symrep_IDs),
+    : m_N_sublat(_N_sublat),
+      m_N_vol(_N_vol),
+      m_dof_values(),
+      m_occ_symrep_IDs(occ_symrep_IDs),
       m_tol(_tol) {
+  Index N_sites = m_N_sublat * m_N_vol;
+  m_dof_values.occupation = Eigen::VectorXi::Zero(N_sites);
+
   for (auto const &dof : global_dof_info) {
-    DoF::BasicTraits ttraits(dof.first);
+    std::string const &dof_name = dof.first;
+    DoFSetInfo const &dof_info = dof.second;
+    DoF::BasicTraits ttraits(dof_name);
 
     if (!ttraits.global())
       throw std::runtime_error(
           "Attempting to initialize ConfigDoF global value using local DoF " +
           dof.first);
-    m_global_dofs.emplace(
-        dof.first, GlobalContinuousConfigDoFValues(ttraits, _N_sublat, _N_vol,
-                                                   dof.second));
+    auto result = m_dof_values.global_dof_values.emplace(
+        dof_name, Eigen::VectorXd::Zero(dof_info.dim()));
+    Eigen::VectorXd &values = result.first->second;
+    m_global_dofs.try_emplace(dof_name, ttraits, _N_sublat, _N_vol, dof_info,
+                              values);
   }
   for (auto const &dof : local_dof_info) {
-    DoF::BasicTraits ttraits(dof.first);
+    std::string const &dof_name = dof.first;
+    std::vector<DoFSetInfo> const &dof_info = dof.second;
+    DoF::BasicTraits ttraits(dof_name);
     if (_N_sublat == 0) continue;
     if (ttraits.global())
       throw std::runtime_error(
@@ -52,9 +65,12 @@ ConfigDoF::ConfigDoF(Index _N_sublat, Index _N_vol,
           "' with improperly initialized parameter 'local_dof_info'.");
     }
 
-    m_local_dofs.emplace(
-        dof.first,
-        LocalContinuousConfigDoFValues(ttraits, _N_sublat, _N_vol, dof.second));
+    auto result = m_dof_values.local_dof_values.emplace(
+        dof_name,
+        Eigen::MatrixXd::Zero(clexulator::max_dim(dof_info), N_sites));
+    Eigen::MatrixXd &values = result.first->second;
+    m_local_dofs.try_emplace(dof_name, ttraits, _N_sublat, _N_vol, dof_info,
+                             values);
   }
 }
 

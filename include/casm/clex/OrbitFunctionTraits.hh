@@ -17,10 +17,14 @@ class UnitCellCoord;
 }
 using xtal::UnitCellCoord;
 
+namespace clexulator {
+class PrimNeighborList;
+}
+using clexulator::PrimNeighborList;
+
 class BasisSet;
 class ClexBasis;
 class IntegralCluster;
-class PrimNeighborList;
 class Structure;
 class SymGroup;
 
