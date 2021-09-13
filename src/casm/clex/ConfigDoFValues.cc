@@ -4,20 +4,22 @@
 
 namespace CASM {
 
-ConfigDoFValues::ConfigDoFValues(DoFKey const &_type_name, Index _n_sublat,
-                                 Index _n_vol)
+ConfigDoFValuesBase::ConfigDoFValuesBase(DoFKey const &_type_name,
+                                         Index _n_sublat, Index _n_vol)
     : m_type_name(_type_name), m_n_sublat(_n_sublat), m_n_vol(_n_vol) {}
 
-std::string const &ConfigDoFValues::type_name() const { return m_type_name; }
+std::string const &ConfigDoFValuesBase::type_name() const {
+  return m_type_name;
+}
 
-Index ConfigDoFValues::n_vol() const { return m_n_vol; }
+Index ConfigDoFValuesBase::n_vol() const { return m_n_vol; }
 
-Index ConfigDoFValues::n_sublat() const { return m_n_sublat; }
+Index ConfigDoFValuesBase::n_sublat() const { return m_n_sublat; }
 
 LocalDiscreteConfigDoFValues::LocalDiscreteConfigDoFValues(
     DoFKey const &_type_name, Index _n_sublat, Index _n_vol,
     std::vector<SymGroupRepID> const &_symrep_IDs, ValueType &_values)
-    : ConfigDoFValues(_type_name, _n_sublat, _n_vol),
+    : ConfigDoFValuesBase(_type_name, _n_sublat, _n_vol),
       m_vals(_values),
       m_symrep_IDs(_symrep_IDs) {}
 
@@ -74,7 +76,7 @@ Index LocalContinuousConfigDoFValues::matrix_dim(
 LocalContinuousConfigDoFValues::LocalContinuousConfigDoFValues(
     DoFKey const &_type_name, Index _n_sublat, Index _n_vol,
     std::vector<DoFSetInfo> const &_info, ValueType &_values)
-    : ConfigDoFValues(_type_name, _n_sublat, _n_vol),
+    : ConfigDoFValuesBase(_type_name, _n_sublat, _n_vol),
       m_dim(matrix_dim(_info)),
       m_info(_info),
       m_vals(_values) {
@@ -200,7 +202,7 @@ void LocalContinuousConfigDoFValues::_throw_if_invalid_size(
 GlobalContinuousConfigDoFValues::GlobalContinuousConfigDoFValues(
     DoFKey const &_name, Index _n_sublat, Index _n_vol, DoFSetInfo const &_info,
     ValueType &_values)
-    : ConfigDoFValues(_name, _n_sublat, _n_vol),
+    : ConfigDoFValuesBase(_name, _n_sublat, _n_vol),
       m_info(_info),
       m_vals(_values) {}
 

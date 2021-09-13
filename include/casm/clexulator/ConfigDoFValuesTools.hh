@@ -3,6 +3,8 @@
 #include <algorithm>
 
 #include "casm/clexulator/ConfigDoFValues.hh"
+#include "casm/crystallography/DoFDecl.hh"
+#include "casm/global/definitions.hh"
 
 namespace CASM {
 namespace clexulator {

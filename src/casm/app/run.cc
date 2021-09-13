@@ -5,6 +5,7 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/app/io/file/clex_io.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/completer/Handlers.hh"
 #include "casm/database/DatabaseTypes.hh"

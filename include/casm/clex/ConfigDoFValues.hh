@@ -5,9 +5,9 @@
 #include "casm/crystallography/AnisoValTraits.hh"
 namespace CASM {
 
-class ConfigDoFValues {
+class ConfigDoFValuesBase {
  public:
-  ConfigDoFValues(DoFKey const &_type_name, Index _n_sublat, Index _n_vol);
+  ConfigDoFValuesBase(DoFKey const &_type_name, Index _n_sublat, Index _n_vol);
 
   std::string const &type_name() const;
 
@@ -36,7 +36,7 @@ class ConfigDoFValues {
 /// The vector size is fixed at construction and attempts to change it, other
 /// than via a complete copy, will cause an exception to be thrown.
 ///
-class LocalDiscreteConfigDoFValues : public ConfigDoFValues {
+class LocalDiscreteConfigDoFValues : public ConfigDoFValuesBase {
  public:
   typedef Eigen::VectorXi ValueType;
   typedef Eigen::VectorXi &Reference;
@@ -122,7 +122,7 @@ class LocalDiscreteConfigDoFValues : public ConfigDoFValues {
 /// The matrix size is fixed at construction and attempts to change it, other
 /// than via a complete copy, will cause an exception to be thrown.
 ///
-class LocalContinuousConfigDoFValues : public ConfigDoFValues {
+class LocalContinuousConfigDoFValues : public ConfigDoFValuesBase {
  public:
   typedef Eigen::MatrixXd ValueType;
   typedef Eigen::MatrixXd &Reference;
@@ -217,7 +217,7 @@ class LocalContinuousConfigDoFValues : public ConfigDoFValues {
 /// - This class does not hold the values directly, but includes a reference to
 ///   the plain data structure `clexulator::ConfigDoFValues` which does.
 ///
-class GlobalContinuousConfigDoFValues : public ConfigDoFValues {
+class GlobalContinuousConfigDoFValues : public ConfigDoFValuesBase {
  public:
   typedef Eigen::VectorXd ValueType;
   typedef Eigen::VectorXd &Reference;
