@@ -199,7 +199,7 @@ struct DoFSetIsEquivalent_f {
  * DoFSets are considered equivalent if:
  * - The traits names match
  * - They have the same names for each of the axes
- * - Basis vectors span the same space
+ * - Excluded occupants match
  */
 
 struct SiteDoFSetIsEquivalent_f : private DoFSetIsEquivalent_f {
@@ -215,6 +215,8 @@ struct SiteDoFSetIsEquivalent_f : private DoFSetIsEquivalent_f {
   }
 
  private:
+  mutable Eigen::MatrixXd m_U;
+
   std::unordered_set<std::string> m_reference_excluded_occs;
 
   bool _excluded_occupants_match(const SiteDoFSet &other_value) const {

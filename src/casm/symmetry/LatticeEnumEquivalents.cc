@@ -1,4 +1,4 @@
-#include "casm/crystallography/LatticeEnumEquivalents.hh"
+#include "casm/symmetry/LatticeEnumEquivalents.hh"
 
 #include "casm/crystallography/SymTools.hh"
 #include "casm/symmetry/SymTools.hh"
