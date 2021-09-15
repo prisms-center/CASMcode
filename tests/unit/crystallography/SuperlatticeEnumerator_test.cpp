@@ -6,20 +6,24 @@
 
 /// What is being tested:
 #include "casm/crystallography/Lattice.hh"
-#include "casm/crystallography/Structure.hh"
 
 /// What is being used to test it:
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/casm_io/json/jsonParser.hh"
+#include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/crystallography/CanonicalForm.hh"
 #include "casm/crystallography/Niggli.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
+#include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/SymType.hh"
+#include "casm/crystallography/io/BasicStructureIO.hh"
 #include "casm/external/Eigen/Dense"
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/symmetry/SymGroup.hh"
 
 using namespace CASM;
+using xtal::BasicStructure;
+using xtal::Lattice;
 using xtal::ScelEnumProps;
 using xtal::SuperlatticeEnumerator;
 
@@ -32,15 +36,14 @@ void autofail() {
 
 jsonParser mat_test_case(const std::string &pos_filename, int minvol,
                          int maxvol) {
-  const Structure test_struc(testdir / pos_filename);
+  const BasicStructure test_struc = read_prim(testdir / pos_filename, TOL);
   const Lattice test_lat = test_struc.lattice();
-  const SymGroup effective_pg = test_struc.factor_group();
+  std::vector<xtal::SymOp> effective_pg = xtal::make_factor_group(test_struc);
 
   std::vector<Eigen::Matrix3i> enumerated_mats;
 
   ScelEnumProps enum_props(minvol, maxvol + 1);
-  SuperlatticeEnumerator test_enumerator(
-      effective_pg.begin(), effective_pg.end(), test_lat, enum_props);
+  SuperlatticeEnumerator test_enumerator(test_lat, effective_pg, enum_props);
 
   double tol = TOL;
   for (auto it = test_enumerator.begin(); it != test_enumerator.end(); ++it) {
@@ -120,7 +123,7 @@ jsonParser mat_test_case(const std::string &pos_filename, int minvol,
 
 void trans_enum_test() {
   Lattice testlat(Lattice::fcc());
-  SymGroup pg = SymGroup::lattice_point_group(testlat);
+  std::vector<xtal::SymOp> pg = xtal::make_point_group(testlat);
 
   // int dims = 3;
   Eigen::Matrix3i transmat;
@@ -130,7 +133,7 @@ void trans_enum_test() {
   Lattice bigunit = make_superlattice(testlat, transmat);
 
   ScelEnumProps enum_props(1, 5 + 1, "abc", transmat);
-  SuperlatticeEnumerator enumerator(pg.begin(), pg.end(), testlat, enum_props);
+  SuperlatticeEnumerator enumerator(testlat, pg, enum_props);
 
   std::vector<Lattice> enumerated_lat(enumerator.begin(), enumerator.end());
 
@@ -152,13 +155,12 @@ void restricted_test() {
 
   for (Index t = 0; t < all_test_lats.size(); t++) {
     Lattice testlat = all_test_lats[t];
-    SymGroup pg = SymGroup::lattice_point_group(testlat);
+    std::vector<xtal::SymOp> pg = xtal::make_point_group(testlat);
 
     // int dims = 1;
 
     ScelEnumProps enum_props(1, 15 + 1, "a");
-    SuperlatticeEnumerator enumerator(pg.begin(), pg.end(), testlat,
-                                      enum_props);
+    SuperlatticeEnumerator enumerator(testlat, pg, enum_props);
 
     int l = 1;
     for (auto it = enumerator.begin(); it != enumerator.end(); ++it) {
