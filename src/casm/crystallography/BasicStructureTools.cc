@@ -7,15 +7,13 @@
 #include <utility>
 #include <vector>
 
-#include "casm/basis_set/Adapter.hh"
-#include "casm/basis_set/DoFIsEquivalent.hh"
-#include "casm/basis_set/DoFIsEquivalent_impl.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Coordinate.hh"
 #include "casm/crystallography/DoFSet.hh"
 #include "casm/crystallography/IntegralCoordinateWithin.hh"
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/Niggli.hh"
+#include "casm/crystallography/OccupantDoFIsEquivalent.hh"
 #include "casm/crystallography/Site.hh"
 #include "casm/crystallography/Superlattice.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
@@ -29,7 +27,7 @@
 #include "casm/external/Eigen/src/Core/util/Constants.h"
 #include "casm/global/definitions.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/symmetry/SymOp.hh"
+
 namespace {
 using namespace CASM;
 
@@ -568,7 +566,7 @@ make_permutation_representation(const xtal::BasicStructure &struc,
       auto const &dofref_to =
           struc.basis()[sitemap[b].sublattice()].occupant_dof();
       auto const &dofref_from = struc.basis()[b].occupant_dof();
-      OccupantDoFIsEquivalent<xtal::Molecule> eq(dofref_from);
+      OccupantDoFIsEquivalent eq(dofref_from);
       // adapter::Adapter<SymOp, CASM::SymOp>()(op)
       if (eq(op, dofref_to)) {
         _perm[b] = sitemap[b].sublattice();
