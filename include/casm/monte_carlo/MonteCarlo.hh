@@ -16,7 +16,6 @@ namespace CASM {
 
 class Log;
 class PrimClex;
-class SuperNeighborList;
 
 }  // namespace CASM
 

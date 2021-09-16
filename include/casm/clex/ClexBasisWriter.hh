@@ -7,9 +7,14 @@
 
 namespace CASM {
 
-class ClexBasis;
-class PrimNeighborList;
+namespace clexulator {
 class ParamPackMixIn;
+class PrimNeighborList;
+}  // namespace clexulator
+using clexulator::ParamPackMixIn;
+using clexulator::PrimNeighborList;
+
+class ClexBasis;
 class OrbitFunctionTraits;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1,5 +1,5 @@
-#ifndef BASICCLEXPARAMPACK_HH
-#define BASICCLEXPARAMPACK_HH
+#ifndef CASM_clexulator_BasicClexParamPack
+#define CASM_clexulator_BasicClexParamPack
 #include <cstddef>
 #include <iostream>
 #include <sstream>
@@ -7,10 +7,11 @@
 
 #include "casm/casm_io/enum/json_io.hh"
 #include "casm/casm_io/enum/stream_io.hh"
-#include "casm/clex/ClexParamPack.hh"
+#include "casm/clexulator/ClexParamPack.hh"
 #include "casm/global/definitions.hh"
 
 namespace CASM {
+namespace clexulator {
 /** \ingroup Clexulator
  * @{ */
 
@@ -51,7 +52,7 @@ class BasicClexParamPack : public ClexParamPack {
   using Val = ValAccess<Scalar>;
 
   template <typename Scalar>
-  friend class ValAccess;
+  friend struct ValAccess;
 
   size_type size(ClexParamKey const &_key) const override {
     return size(*static_cast<Key const *>(_key.ptr()));
@@ -189,37 +190,45 @@ struct ValAccess<double> {
   }
 };
 
+}  // namespace clexulator
+
 template <>
-struct traits<BasicClexParamPack::EvalMode> {
+struct traits<clexulator::BasicClexParamPack::EvalMode> {
   static const std::string name;
 
-  static const std::multimap<BasicClexParamPack::EvalMode,
+  static const std::multimap<clexulator::BasicClexParamPack::EvalMode,
                              std::vector<std::string> >
       strval;
 };
 
 std::ostream &operator<<(std::ostream &sout,
-                         const BasicClexParamPack::EvalMode &val) {
-  sout << to_string<BasicClexParamPack::EvalMode>(val);
+                         const clexulator::BasicClexParamPack::EvalMode &val) {
+  sout << to_string<clexulator::BasicClexParamPack::EvalMode>(val);
   return sout;
 }
 
-std::istream &operator>>(std::istream &sin, BasicClexParamPack::EvalMode &val) {
+std::istream &operator>>(std::istream &sin,
+                         clexulator::BasicClexParamPack::EvalMode &val) {
   std::string s;
   sin >> s;
-  val = from_string<BasicClexParamPack::EvalMode>(s);
+  val = from_string<clexulator::BasicClexParamPack::EvalMode>(s);
   return sin;
 }
 
-const std::string traits<BasicClexParamPack::EvalMode>::name = "clex_eval_mode";
+const std::string traits<clexulator::BasicClexParamPack::EvalMode>::name =
+    "clex_eval_mode";
 
-const std::multimap<BasicClexParamPack::EvalMode, std::vector<std::string> >
-    traits<BasicClexParamPack::EvalMode>::strval = {
-        {BasicClexParamPack::EvalMode::DEFAULT,
+const std::multimap<clexulator::BasicClexParamPack::EvalMode,
+                    std::vector<std::string> >
+    traits<clexulator::BasicClexParamPack::EvalMode>::strval = {
+        {clexulator::BasicClexParamPack::EvalMode::DEFAULT,
          {"Default", "DEFAULT", "default"}},
-        {BasicClexParamPack::EvalMode::READ, {"Read", "READ", "read"}},
-        {BasicClexParamPack::EvalMode::DYNAM,
+        {clexulator::BasicClexParamPack::EvalMode::READ,
+         {"Read", "READ", "read"}},
+        {clexulator::BasicClexParamPack::EvalMode::DYNAM,
          {"Dynamic", "Dynam", "DYNAMIC", "DYNAM", "dynamic", "dynam"}}};
+
+namespace clexulator {
 
 const BasicClexParamPack::EvalMode BasicClexParamPack::DEFAULT =
     BasicClexParamPack::EvalMode::DEFAULT;
@@ -229,5 +238,6 @@ const BasicClexParamPack::EvalMode BasicClexParamPack::READ =
     BasicClexParamPack::EvalMode::READ;
 
 /** @} */
+}  // namespace clexulator
 }  // namespace CASM
 #endif

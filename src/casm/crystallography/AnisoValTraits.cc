@@ -13,7 +13,7 @@ namespace CASM {
 /// - Site and global properties in xtal::SimpleStructure
 /// - Degrees of freedoms in xtal::BasicStructure through xtal::DoFSet and
 /// xtal::SiteDoFSet
-/// - Molecule properties in xtal::SpeciesAttribute
+/// - Molecule properties in xtal::SpeciesProperty
 /// - Calculated properties in MappedProperties
 ///
 /// Examples of various property types, and their name strings, include:
@@ -422,14 +422,14 @@ AnisoValTraits AnisoValTraits::isometry() {
 /// - options(): GLOBAL
 /// - SymRepBuilderInterface: Rank2TensorSymRepBuilder()
 /// - must_apply_before(): {"atomize", "disp"}
-/// - variable_descriptions(): {"Exx", "Eyy", "Ezz", "sqrt(2)Exz",
-///   "sqrt(2)Eyz", "sqrt(2)Exy"}
+/// - variable_descriptions(): {"Exx", "Eyy", "Ezz", "sqrt(2)Eyz",
+///   "sqrt(2)Exz", "sqrt(2)Exy"}
 /// - is_default(): true
 AnisoValTraits AnisoValTraits::strain(std::string const &_prefix) {
   return AnisoValTraits(
       _prefix + "strain", {"e_1", "e_2", "e_3", "e_4", "e_5", "e_6"}, GLOBAL,
       Rank2TensorSymRepBuilder(), {}, {"atomize", "disp"}, {},
-      {"Exx", "Eyy", "Ezz", "sqrt(2)Exz", "sqrt(2)Eyz", "sqrt(2)Exy"}, true);
+      {"Exx", "Eyy", "Ezz", "sqrt(2)Eyz", "sqrt(2)Exz", "sqrt(2)Exy"}, true);
 }
 
 /// \brief Non-collinear magnetic spin, with spin-orbit coupling

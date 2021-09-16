@@ -136,8 +136,8 @@ BasicStructure make_basic_structure(
       _allowed_occupants[i].push_back(Molecule::make_atom(info.names[i]));
     }
     if (_allowed_occupants[i].size() == 1) {
-      std::map<std::string, SpeciesAttribute> attr_map =
-          _allowed_occupants[i][0].attributes();
+      std::map<std::string, SpeciesProperty> attr_map =
+          _allowed_occupants[i][0].properties();
       for (auto it = attr_map.begin(); it != attr_map.end(); ++it) {
         if (local_dof.count(it->first)) {
           auto er_it = it++;
@@ -152,9 +152,9 @@ BasicStructure make_basic_structure(
 
         if (!almost_zero(prop.second.col(i)))
           attr_map.emplace(prop.first,
-                           SpeciesAttribute(prop.first, prop.second.col(i)));
+                           SpeciesProperty(prop.first, prop.second.col(i)));
       }
-      _allowed_occupants[i][0].set_attributes(attr_map);
+      _allowed_occupants[i][0].set_properties(attr_map);
     }
   }
 
@@ -280,7 +280,7 @@ void _atomize(SimpleStructure &_sstruc,
       Molecule const &molref =
           _reference.basis()[b].occupant_dof()[_mol_occ[s]];
 
-      // Initialize atom_info.properties for *molecule* attributes
+      // Initialize atom_info.properties for *molecule* properties
       for (auto const &property : _sstruc.mol_info.properties) {
         auto it = _sstruc.atom_info.properties.find(property.first);
         if (it == _sstruc.atom_info.properties.end()) {
@@ -298,8 +298,8 @@ void _atomize(SimpleStructure &_sstruc,
         // Record name of atom
         _sstruc.atom_info.names[a] = molref.atom(ma).name();
 
-        // Initialize atom_info.properties for *atom* attributes
-        for (auto const &attr : molref.atom(ma).attributes()) {
+        // Initialize atom_info.properties for *atom* properties
+        for (auto const &attr : molref.atom(ma).properties()) {
           auto it = _sstruc.atom_info.properties.find(attr.first);
           if (it == _sstruc.atom_info.properties.end()) {
             it = _sstruc.atom_info.properties
@@ -308,12 +308,12 @@ void _atomize(SimpleStructure &_sstruc,
                                                     N_atoms))
                      .first;
           }
-          // Record attributes of atom
+          // Record properties of atom
           it->second.col(a) = attr.second.value();
         }
 
-        // Split molecule attributes into atom attributes using appropriate
-        // extensivity rules If an attribute is specified both at the atom and
+        // Split molecule properties into atom properties using appropriate
+        // extensivity rules If an property is specified both at the atom and
         // molecule levels then the two are added
         for (auto const &property : _sstruc.mol_info.properties) {
           auto it = _sstruc.atom_info.properties.find(property.first);

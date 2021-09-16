@@ -17,9 +17,11 @@ namespace DB {
 template <typename _ConfigType>
 UpdateT<_ConfigType>::UpdateT(const PrimClex &primclex,
                               const StructureMap<ConfigType> &mapper,
+                              UpdateSettings const &_set,
                               std::string report_dir)
     : ConfigData(primclex, TypeTag<ConfigType>()),
       m_structure_mapper(mapper),
+      m_set(_set),
       m_report_dir(report_dir) {}
 
 /// \brief Re-parse calculations 'from' all selected configurations
@@ -151,6 +153,16 @@ void UpdateT<_ConfigType>::_update_report(
   }
 
   auto formatter = _update_formatter();
+  auto write_report = [&](std::vector<ConfigIO::Result> const &results,
+                          std::ostream &sout) {
+    if (settings().output_as_json) {
+      jsonParser json;
+      json = formatter(results.begin(), results.end());
+      sout << json;
+    } else {
+      sout << formatter(results.begin(), results.end());
+    }
+  };
 
   if (fail.size()) {
     fs::path p = fs::path(m_report_dir) / (prefix + "_fail");
@@ -160,7 +172,7 @@ void UpdateT<_ConfigType>::_update_report(
           << std::endl;
     log() << "  See detailed report: " << p << std::endl << std::endl;
 
-    sout << formatter(fail.begin(), fail.end());
+    write_report(fail, sout);
   }
 
   if (success.size()) {
@@ -171,7 +183,7 @@ void UpdateT<_ConfigType>::_update_report(
           << std::endl;
     log() << "  See detailed report: " << p << std::endl << std::endl;
 
-    sout << formatter(success.begin(), success.end());
+    write_report(success, sout);
   }
 
   if (conflict.size()) {
@@ -182,7 +194,7 @@ void UpdateT<_ConfigType>::_update_report(
           << " conflicting relaxation results." << std::endl;
     log() << "  See detailed report: " << p << std::endl << std::endl;
 
-    sout << formatter(conflict.begin(), conflict.end());
+    write_report(conflict, sout);
   }
 
   if (unstable.size()) {
@@ -193,7 +205,7 @@ void UpdateT<_ConfigType>::_update_report(
           << std::endl;
     log() << "  See detailed report: " << p << std::endl << std::endl;
 
-    sout << formatter(unstable.begin(), unstable.end());
+    write_report(unstable, sout);
   }
 
   if (unselected.size()) {
@@ -204,7 +216,7 @@ void UpdateT<_ConfigType>::_update_report(
           << " unstable relaxations to unselected configurations." << std::endl;
     log() << "  See detailed report: " << p << std::endl << std::endl;
 
-    sout << formatter(unselected.begin(), unselected.end());
+    write_report(unselected, sout);
   }
 
   if (new_config.size()) {
@@ -217,7 +229,7 @@ void UpdateT<_ConfigType>::_update_report(
           << std::endl;
     log() << "  See detailed report: " << p << std::endl << std::endl;
 
-    sout << formatter(unselected.begin(), unselected.end());
+    write_report(new_config, sout);
   }
 }
 

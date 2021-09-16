@@ -13,7 +13,7 @@ if conda list -n $CASM_ENV_NAME > /dev/null 2>&1; then
   echo "  conda remove --name $CASM_ENV_NAME --all -y"
 else
   # install conda packages into CASM_ENV_NAME environment
-  conda create -c prisms-center -c defaults -c conda-forge -y -n $CASM_ENV_NAME \
+  conda create -c prisms-center -c conda-forge -c defaults -y -n $CASM_ENV_NAME \
     "python =$CASM_PYTHON_VERSION" \
     "casm-boost-cpp17 =$CASM_BOOST_VERSION $CASM_BOOST_XCODE_BUILD_STR" \
     "m4 >=1.4.18" \
@@ -25,6 +25,7 @@ else
     wget \
     bzip2 \
     six \
+    git \
     gitpython \
     jq
 fi

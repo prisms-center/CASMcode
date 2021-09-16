@@ -25,6 +25,16 @@ namespace DB {
 template <typename T>
 class Selection;
 
+struct UpdateSettings {
+  UpdateSettings(bool _output_as_json = true)
+      : output_as_json(_output_as_json) {}
+
+  void set_default() { *this = UpdateSettings(); }
+
+  // Output reports as JSON instead of columns
+  bool output_as_json;
+};
+
 /// Generic ConfigType-dependent part of Import
 template <typename _ConfigType>
 class UpdateT : protected ConfigData {
@@ -33,10 +43,12 @@ class UpdateT : protected ConfigData {
 
   /// \brief Constructor
   UpdateT(const PrimClex &primclex, const StructureMap<ConfigType> &mapper,
-          std::string report_dir);
+          UpdateSettings const &_set, std::string report_dir);
 
   /// \brief Re-parse calculations 'from' all selected configurations
   void update(const DB::Selection<ConfigType> &selection, bool force);
+
+  UpdateSettings const &settings() const { return m_set; }
 
  protected:
   // Allow ConfigType to specialize the report formatting for 'update'
@@ -47,6 +59,8 @@ class UpdateT : protected ConfigData {
 
  private:
   const StructureMap<ConfigType> &m_structure_mapper;
+
+  UpdateSettings m_set;
 
   std::string m_report_dir;
 };

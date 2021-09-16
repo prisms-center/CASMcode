@@ -7,21 +7,43 @@
 
 namespace CASM {
 
+ConfigDoF::ConfigDoF(ConfigDoF const &RHS)
+    : m_N_sublat(RHS.m_N_sublat),
+      m_N_vol(RHS.m_N_vol),
+      m_dof_values(RHS.m_dof_values),
+      m_occ_symrep_IDs(RHS.m_occ_symrep_IDs),
+      m_tol(RHS.m_tol) {
+  _make_continuous_dof_values(RHS);
+}
+
+ConfigDoF &ConfigDoF::operator=(ConfigDoF const &RHS) {
+  if (this == &RHS) {
+    return *this;
+  }
+  m_N_sublat = RHS.m_N_sublat;
+  m_N_vol = RHS.m_N_vol;
+  m_dof_values = RHS.m_dof_values;
+  m_occ_symrep_IDs = RHS.m_occ_symrep_IDs;
+  m_tol = RHS.m_tol;
+  _make_continuous_dof_values(RHS);
+  return *this;
+}
+
 /// Number of sites in the ConfigDoF
 Index ConfigDoF::size() const { return occupation().size(); }
 
 /// Integer volume of ConfigDoF
-Index ConfigDoF::n_vol() const { return m_occupation.n_vol(); }
+Index ConfigDoF::n_vol() const { return m_N_vol; }
 
 /// Number of sublattices in ConfigDoF
-Index ConfigDoF::n_sublat() const { return m_occupation.n_sublat(); }
+Index ConfigDoF::n_sublat() const { return m_N_sublat; }
 
 /// Tolerance for comparison of continuous DoF values
 double ConfigDoF::tol() const { return m_tol; }
 
 /// Set all DoF values to zero
 void ConfigDoF::setZero() {
-  m_occupation.setZero();
+  m_dof_values.occupation.setZero();
   for (auto &local_dof : m_local_dofs) {
     local_dof.second.setZero();
   }
@@ -43,7 +65,7 @@ void ConfigDoF::set_occupation(
         << ", received size=" << _occupation.size();
     throw std::runtime_error(msg.str());
   }
-  m_occupation.set_values(_occupation);
+  m_dof_values.occupation = _occupation;
 }
 
 bool ConfigDoF::has_occupation() const {
@@ -187,17 +209,19 @@ ConfigDoF &ConfigDoF::apply_sym(PermuteIterator const &it) {
     set_occupation(tperm * occupation());
   }
 
-  for (auto &dof : m_local_dofs) {
-    LocalContinuousConfigDoFValues tmp = dof.second;
+  for (auto &dof : m_dof_values.local_dof_values) {
+    Eigen::MatrixXd const &init_value = dof.second;
+    Eigen::MatrixXd tmp{init_value};
 
-    for (Index b = 0; b < tmp.n_sublat(); ++b) {
-      Index rows = it.local_dof_rep(dof.first, b).MatrixXd()->rows();
-      tmp.sublat(b).topRows(rows) =
-          *(it.local_dof_rep(dof.first, b).MatrixXd()) *
-          dof.second.sublat(b).topRows(rows);
+    for (Index b = 0; b < m_N_sublat; ++b) {
+      Eigen::MatrixXd const &rep = *it.local_dof_rep(dof.first, b).MatrixXd();
+      Index rows = rep.rows();
+      clexulator::sublattice_block(tmp, b, m_N_vol).topRows(rows) =
+          rep *
+          clexulator::sublattice_block(init_value, b, m_N_vol).topRows(rows);
     }
     for (Index l = 0; l < size(); ++l) {
-      dof.second.site_value(l) = tmp.site_value(tperm[l]);
+      dof.second.col(l) = tmp.col(tperm[l]);
     }
   }
 
@@ -216,9 +240,9 @@ ConfigDoF &ConfigDoF::apply_sym_no_permute(SymOp const &_op) {
   if (occupation().size()) {
     Index l = 0;
     for (Index b = 0; b < n_sublat(); ++b) {
-      if (!m_occupation.symrep_IDs()[b].is_identity()) {
+      if (!m_occ_symrep_IDs[b].is_identity()) {
         SymPermutation const &permrep(
-            *_op.get_permutation_rep(m_occupation.symrep_IDs()[b]));
+            *_op.get_permutation_rep(m_occ_symrep_IDs[b]));
         l = b * n_vol();
         for (Index n = 0; n < n_vol(); ++n, ++l) {
           occ(l) = (*permrep.permutation())[occ(l)];
@@ -228,9 +252,7 @@ ConfigDoF &ConfigDoF::apply_sym_no_permute(SymOp const &_op) {
   }
 
   for (auto &dof : m_local_dofs) {
-    LocalContinuousConfigDoFValues tmp = dof.second;
-
-    for (Index b = 0; b < tmp.n_sublat(); ++b)
+    for (Index b = 0; b < m_N_sublat; ++b)
       dof.second.sublat(b) =
           *(_op.representation(dof.second.info()[b].symrep_ID()).MatrixXd()) *
           dof.second.sublat(b);
@@ -239,13 +261,25 @@ ConfigDoF &ConfigDoF::apply_sym_no_permute(SymOp const &_op) {
   return *this;
 }
 
-void ConfigDoF::swap(ConfigDoF &RHS) {
-  std::swap(m_occupation, RHS.m_occupation);
-  std::swap(m_local_dofs, RHS.m_local_dofs);
-  std::swap(m_global_dofs, RHS.m_global_dofs);
-  std::swap(m_tol, RHS.m_tol);
-}
 
-void swap(ConfigDoF &A, ConfigDoF &B) { A.swap(B); }
+/// \brief Populate m_local_dofs and m_global_dofs to reference this object's
+/// m_dof_values
+void ConfigDoF::_make_continuous_dof_values(ConfigDoF const &RHS) {
+  m_global_dofs.clear();
+  for (auto const &pair : RHS.m_global_dofs) {
+    auto const &value = pair.second;
+    m_global_dofs.try_emplace(
+        pair.first, value.type_name(), value.n_sublat(), value.n_vol(),
+        value.info(), m_dof_values.global_dof_values[value.type_name()]);
+  }
+
+  m_local_dofs.clear();
+  for (auto const &pair : RHS.m_local_dofs) {
+    auto const &value = pair.second;
+    m_local_dofs.try_emplace(pair.first, value.type_name(), value.n_sublat(),
+                             value.n_vol(), value.info(),
+                             m_dof_values.local_dof_values[value.type_name()]);
+  }
+}
 
 }  // namespace CASM

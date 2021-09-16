@@ -436,7 +436,7 @@ void OptionHandlerBase::add_selection_no_default_suboption() {
       po::value<fs::path>(&m_selection_path)->value_name(ArgHandler::path()),
       (std::string("Only consider the selected objects from the given "
                    "selection file. ") +
-       singleline_help<DB::SELECTION_TYPE>())
+       standard_singleline_enum_help<DB::SELECTION_TYPE>("nodefault"))
           .c_str());
   return;
 }

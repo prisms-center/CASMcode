@@ -13,7 +13,6 @@ class ProjectSettings;
 struct ClexDescription;
 class CompositionConverter;
 class ChemicalReference;
-class PrimNeighborList;
 struct ClexBasisSpecs;
 class ClusterSpecs;
 class ClexBasis;
@@ -30,6 +29,11 @@ class Database;
 class PropertiesDatabase;
 class DatabaseHandler;
 }  // namespace DB
+
+namespace clexulator {
+class PrimNeighborList;
+}
+using clexulator::PrimNeighborList;
 
 /** \defgroup Clex
  *

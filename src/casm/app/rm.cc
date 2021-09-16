@@ -20,15 +20,27 @@ bool RmOption::force() const { return vm().count("force"); }
 
 bool RmOption::data() const { return vm().count("data"); }
 
+std::vector<std::string> const &RmOption::structure_properties() const {
+  return m_structure_properties;
+}
+
 void RmOption::initialize() {
   add_help_suboption();
   add_names_suboption();
-  add_selection_suboption();
+  add_selection_no_default_suboption();
   add_db_type_suboption(traits<Configuration>::short_name, DB::types_short());
 
-  m_desc.add_options()("data,d", "Remove calculation data only.")(
+  m_desc.add_options()(
+
+      "data,d", "Remove calculation data only.")(
+
       "force,f",
-      "Force remove including data and dependent objects (for --type=scel).");
+      "Force remove including data and dependent objects (for --type=scel).")(
+
+      "structure-properties",
+      po::value<std::vector<std::string> >(&m_structure_properties)
+          ->multitoken(),
+      "Remove properties imported from specified structure files.\n");
 
   add_dry_run_suboption();
 
@@ -147,7 +159,7 @@ int RmCommandImpl<DataObject>::help() const {
 
 template <typename DataObject>
 int RmCommandImpl<DataObject>::desc() const {
-  log() << DB::Remove<DataObject>::desc << std::endl;
+  log() << DB::Remove<DataObject>::desc() << std::endl;
   return 0;
 }
 

@@ -22,28 +22,20 @@ const fs::path &ImportOption::batch_path() const { return m_batch_path; }
 void ImportOption::initialize() {
   add_help_suboption();
 
-  m_desc.add_options()
+  m_desc.add_options()(
 
-      ("pos,p",
-       po::value<std::vector<fs::path> >(&m_pos_vec)
-           ->multitoken()
-           ->value_name(ArgHandler::path()),
-       "Path(s) to structure(s) being imported (multiple allowed, but no "
-       "wild-card matching)")
+      "pos,p",
+      po::value<std::vector<fs::path> >(&m_pos_vec)
+          ->multitoken()
+          ->value_name(ArgHandler::path()),
+      "Path(s) to structure(s) being imported (multiple allowed, but no "
+      "wild-card matching)")(
 
-          ("batch,b",
-           po::value<fs::path>(&m_batch_path)->value_name(ArgHandler::path()),
-           "Path to batch file, which should list one structure file path per "
-           "line "
-           "(can be used in combination with --pos)")
-
-              ("data,d",
-               "Attempt to extract calculation data from the enclosing "
-               "directory of the structure files, if it is available")
-
-                  ("copy-additional-files",
-                   "Recursively copy other files from the same directory as "
-                   "the properties.calc.json file.");
+      "batch,b",
+      po::value<fs::path>(&m_batch_path)->value_name(ArgHandler::path()),
+      "Path to batch file, which should list one structure file path per "
+      "line "
+      "(can be used in combination with --pos)");
 
   add_configtype_suboption(traits<Configuration>::short_name,
                            DB::config_types_short());

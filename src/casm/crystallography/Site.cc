@@ -120,30 +120,6 @@ Index Site::label() const { return m_label; };
 
 //****************************************************
 
-/* Site &Site::_apply_sym_attributes(const SymOp &op) { */
-/*   for(Index i = 0; i < occupant_dof().size(); i++) */
-/*     m_occupant_dof[i].apply_sym(op); */
-
-/*   auto it = m_dof_map.begin(); */
-/*   for(; it != m_dof_map.end(); ++it) */
-/*     it->second = sym::copy_apply(op, it->second); */
-
-/*   m_type_ID = -1; */
-/*   return *this; */
-/* } */
-
-/* Site &Site::apply_sym(const SymOp &op) { */
-/*   Coordinate::apply_sym(op); */
-/*   _apply_sym_attributes(op); */
-/*   return *this; */
-/* } */
-
-//****************************************************
-/**
- *
- */
-//****************************************************
-
 Site &Site::operator+=(const Coordinate &translation) {
   Coordinate::operator+=(translation);
   return *this;

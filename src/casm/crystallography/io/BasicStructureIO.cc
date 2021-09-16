@@ -15,7 +15,7 @@
 
 namespace CASM {
 
-jsonParser const &from_json(xtal::SpeciesAttribute &_attr,
+jsonParser const &from_json(xtal::SpeciesProperty &_attr,
                             jsonParser const &json) {
   _attr.set_value(json["value"].get<Eigen::VectorXd>());
   return json;
@@ -23,7 +23,7 @@ jsonParser const &from_json(xtal::SpeciesAttribute &_attr,
 
 //****************************************************
 
-jsonParser &to_json(xtal::SpeciesAttribute const &_attr, jsonParser &json) {
+jsonParser &to_json(xtal::SpeciesProperty const &_attr, jsonParser &json) {
   json.put_obj();
   to_json_array(_attr.value(), json["value"]);
   return json;
@@ -35,7 +35,7 @@ jsonParser &to_json(xtal::AtomPosition const &apos, jsonParser &json,
   json.put_obj();
   to_json_array(c2f_mat * apos.cart(), json["coordinate"]);
   json["name"] = apos.name();
-  if (apos.attributes().size()) json["attributes"] = apos.attributes();
+  if (apos.properties().size()) json["properties"] = apos.properties();
   return json;
 }
 
@@ -56,7 +56,7 @@ xtal::AtomPosition jsonConstructor<xtal::AtomPosition>::from_json(
     ParsingDictionary<AnisoValTraits> const &_aniso_val_dict) {
   std::string _name;
   Eigen::Vector3d _pos(0., 0., 0.);
-  std::map<std::string, xtal::SpeciesAttribute> attr_map;
+  std::map<std::string, xtal::SpeciesProperty> attr_map;
   if (json.is_obj()) {
     _name = json["name"].get<std::string>();
     if (json.contains("coordinate")) {
@@ -64,8 +64,8 @@ xtal::AtomPosition jsonConstructor<xtal::AtomPosition>::from_json(
       // std::cout << "f2c_mat: \n" << f2c_mat << "\n";
       // std::cout << "_pos: " << _pos.transpose() << "\n";
     }
-    if (json.contains("attributes")) {
-      auto it = json["attributes"].cbegin(), end_it = json["attributes"].cend();
+    if (json.contains("properties")) {
+      auto it = json["properties"].cbegin(), end_it = json["properties"].cend();
       for (; it != end_it; ++it) {
         auto result_pair =
             attr_map.emplace(it.name(), _aniso_val_dict.lookup(it.name()));
@@ -81,7 +81,7 @@ xtal::AtomPosition jsonConstructor<xtal::AtomPosition>::from_json(
         "object.\n");
 
   xtal::AtomPosition result(_pos, _name);
-  result.set_attributes(attr_map);
+  result.set_properties(attr_map);
   return result;
 }
 
@@ -94,7 +94,7 @@ jsonParser &to_json(xtal::Molecule const &mol, jsonParser &json,
   json.put_obj();
   CASM::to_json(mol.atoms(), json["atoms"], c2f_mat);
   json["name"] = mol.name();
-  if (mol.attributes().size()) json["attributes"] = mol.attributes();
+  if (mol.properties().size()) json["properties"] = mol.properties();
 
   return json;
 }
@@ -114,16 +114,16 @@ void from_json(xtal::Molecule &mol, const jsonParser &json,
     mol.set_atoms(_atoms);
   }
 
-  std::map<std::string, xtal::SpeciesAttribute> attr_map;
-  if (json.contains("attributes")) {
-    auto it = json["attributes"].cbegin(), end_it = json["attributes"].cend();
+  std::map<std::string, xtal::SpeciesProperty> attr_map;
+  if (json.contains("properties")) {
+    auto it = json["properties"].cbegin(), end_it = json["properties"].cend();
     for (; it != end_it; ++it) {
       auto result_pair =
           attr_map.emplace(it.name(), _aniso_val_dict.lookup(it.name()));
       from_json(result_pair.first->second, *it);
     }
   }
-  mol.set_attributes(attr_map);
+  mol.set_properties(attr_map);
 
   // jsonParser tjson;
   // to_json(mol,tjson,f2c_mat.inverse());
@@ -243,7 +243,7 @@ void from_json(xtal::Site &site, const jsonParser &json,
     for (std::string const &occ :
          json[occ_key].get<std::vector<std::string> >()) {
       // std::cout << "CREATING OCCUPANT " << occ << "\n";
-      // Have convenience options for attributes like magnetic moment, etc?
+      // Have convenience options for properties like magnetic moment, etc?
       auto it = mol_map.find(occ);
       if (it != mol_map.end())
         t_occ.push_back(it->second);
@@ -478,10 +478,10 @@ void write_prim(const xtal::BasicStructure &prim, jsonParser &json,
   Eigen::Matrix3d c2f_mat;
   if (mode == FRAC) {
     c2f_mat = prim.lattice().inv_lat_column_mat();
-    json["coordinate_mode"] = "Fractional";
+    json["coordinate_mode"] = FRAC;
   } else if (mode == CART) {
     c2f_mat.setIdentity();
-    json["coordinate_mode"] = "Cartesian";
+    json["coordinate_mode"] = CART;
   }
 
   // Global DoFs

@@ -19,12 +19,12 @@
   "title" : "Test"
 }**/
 
-/// \brief Returns a Clexulator_impl::Base* owning a test_Clexulator
-extern "C" CASM::Clexulator_impl::Base *make_test_Clexulator();
+/// \brief Returns a clexulator::BaseClexulator* owning a test_Clexulator
+extern "C" CASM::clexulator::BaseClexulator *make_test_Clexulator();
 
 namespace CASM {
 
-class test_Clexulator : public Clexulator_impl::Base {
+class test_Clexulator : public clexulator::BaseClexulator {
  public:
   test_Clexulator();
 
@@ -372,7 +372,7 @@ class test_Clexulator : public Clexulator_impl::Base {
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-test_Clexulator::test_Clexulator() : Clexulator_impl::Base(177, 75) {
+test_Clexulator::test_Clexulator() : clexulator::BaseClexulator(177, 75) {
   m_occ_func_0_0[0] = 0.0000000000, m_occ_func_0_0[1] = 1.0000000000,
   m_occ_func_0_0[2] = 0.0000000000;
 
@@ -15400,8 +15400,8 @@ double test_Clexulator::delta_site_eval_at_0_bfunc_4_1_9(int occ_i,
 }  // namespace CASM
 
 extern "C" {
-/// \brief Returns a Clexulator_impl::Base* owning a test_Clexulator
-CASM::Clexulator_impl::Base *make_test_Clexulator() {
+/// \brief Returns a clexulator::BaseClexulator* owning a test_Clexulator
+CASM::clexulator::BaseClexulator *make_test_Clexulator() {
   return new CASM::test_Clexulator();
 }
 }

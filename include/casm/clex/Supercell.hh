@@ -24,13 +24,18 @@ using xtal::Coordinate;
 using xtal::Site;
 using xtal::UnitCellCoord;
 
+namespace clexulator {
+class PrimNeighborList;
+class SuperNeighborList;
+}  // namespace clexulator
+using clexulator::PrimNeighborList;
+using clexulator::SuperNeighborList;
+
 template <typename T, typename U>
 class ConfigIterator;
 class PermuteIterator;
 class PrimClex;
 class Clexulator;
-class PrimNeighborList;
-class SuperNeighborList;
 class Structure;
 
 namespace DB {

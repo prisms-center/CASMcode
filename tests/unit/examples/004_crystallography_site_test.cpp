@@ -35,21 +35,21 @@ TEST(ExampleCrystallographySite, SiteConstructor) {
   //      Molecules have:
   //      - a name string
   //      - a vector of atoms, represented as AtomPosition
-  //      - a map of <attribute name string>:<SpeciesAttribute>
+  //      - a map of <attribute name string>:<SpeciesProperty>
   //      - can be made 'divisible' or 'indivisible', for kinetics purposes
   //
   //      AtomPosition have:
   //      - a name string
   //      - a coordinate
-  //      - a map of <attribute name string>:<SpeciesAttribute>
+  //      - a map of <attribute name string>:<SpeciesProperty>
   //
-  //      SpeciesAttribute have:
+  //      SpeciesProperty have:
   //      - AnisoValTraits, which provides the attribute type name, a standard
   //      coordinate system
   //        (the "standard basis"), and specifies how values transform under
   //        application of symmetry.
   //      - a Eigen::VectorXd value, with meaning determined by the type of
-  //      SpeciesAttribute
+  //      SpeciesProperty
   //
   //   Molecules can be compared using the `Molecule::is_identical` function,
   //   which requires that

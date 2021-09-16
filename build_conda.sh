@@ -6,6 +6,10 @@
 #     CASM_GIT_ID_USER
 #     CASM_BRANCH
 #     CASM_CONDA_VERSION (for pre-releases, use X.Y.0-beta.I -> X.Y.devI)
+#     CASM_BOOST_XCODE_BUILD_NUMBER (for osx)
+#     CASM_XCODE_BUILD_NUMBER (for osx)
+#     CASM_BOOST_CONDAGCC_BUILD_NUMBER (for linux)
+#     CASM_CONDAGCC_BUILD_NUMBER (for linux)
 #
 #   notable optional env variable:
 #     CASM_CONDA_FEATURE (typically xcode/condagcc/condagcc_centos6)

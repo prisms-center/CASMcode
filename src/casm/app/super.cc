@@ -2,6 +2,7 @@
 #include <fstream>
 
 #include "casm/app/casm_functions.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/clex/ConfigMapping.hh"
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/clex/FillSupercell.hh"

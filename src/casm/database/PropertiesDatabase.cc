@@ -10,8 +10,12 @@ bool PropertiesDatabase::Compare::operator()(
   if (origin_A == origin_B) {
     return false;
   }
-  return m_score(*m_map->find_via_origin(origin_A)) <
-         m_score(*m_map->find_via_origin(origin_B));
+  double score_A = m_score(*m_map->find_via_origin(origin_A));
+  double score_B = m_score(*m_map->find_via_origin(origin_B));
+  if (score_A == score_B) {
+    return origin_A < origin_B;
+  }
+  return score_A < score_B;
 }
 
 /// \brief Insert data

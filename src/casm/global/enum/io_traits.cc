@@ -8,9 +8,9 @@ const std::string traits<COORD_TYPE>::name = "coordinate_mode";
 const std::multimap<COORD_TYPE, std::vector<std::string> >
     traits<COORD_TYPE>::strval = {
         {COORD_TYPE::FRAC,
-         {"FRAC", "Direct", "direct", "Fractional", "fractional"}},
-        {COORD_TYPE::CART, {"CART", "Cartesian", "cartesian"}},
-        {COORD_TYPE::INTEGRAL, {"INTEGRAL", "Integral", "integral"}}};
+         {"Fractional", "fractional", "Direct", "direct", "FRAC"}},
+        {COORD_TYPE::CART, {"Cartesian", "cartesian", "CART"}},
+        {COORD_TYPE::INTEGRAL, {"Integral", "integral", "INTEGRAL"}}};
 
 const std::string traits<PERIODICITY_TYPE>::name = "periodicity_type";
 
