@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "casm/crystallography/LinearIndexConverter.hh"
 #include "casm/global/definitions.hh"
 
 namespace CASM {
@@ -70,9 +71,9 @@ class Conversions {
 
  private:
   std::shared_ptr<Supercell const> m_unit_supercell;
-  UnitCellCoordIndexConverter m_unitl_and_bijk_converter;
+  xtal::UnitCellCoordIndexConverter m_unitl_and_bijk_converter;
   std::shared_ptr<Supercell const> m_supercell;
-  UnitCellCoordIndexConverter m_l_and_bijk_converter;
+  xtal::UnitCellCoordIndexConverter m_l_and_bijk_converter;
   std::vector<xtal::Molecule> m_struc_mol;
   std::vector<std::string> m_struc_molname;
 

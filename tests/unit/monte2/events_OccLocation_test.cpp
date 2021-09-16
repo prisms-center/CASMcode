@@ -1,3 +1,4 @@
+#include "casm/casm_io/Log.hh"
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/external/MersenneTwister/MersenneTwister.h"
@@ -115,11 +116,12 @@ void run_case(std::shared_ptr<Structure const> shared_prim, ConfigInit f,
   Index count = 0;
   Monte2::OccEvent e;
   ConfigDoF &configdof = config.configdof();
+  clexulator::ConfigDoFValues &dof_values = configdof.values();
   while (count < 1000000) {
     // if(count % 100000 == 0) { std::cout << "count: " << count << std::endl; }
     propose_canonical_event(e, occ_loc, cand_list.canonical_swap(), mtrand);
     check_occ(config, e, occ_loc, convert, cand_list);
-    occ_loc.apply(e, configdof.occupation());
+    occ_loc.apply(e, dof_values.occupation);
     check_occ(config, e, occ_loc, convert, cand_list);
     ++count;
   }
