@@ -65,6 +65,25 @@ ClusterSpecs::LocalOrbitVec ClusterSpecs::_make_local_orbits(
                            name() + "'");
 }
 
+SymGroup const &ClusterSpecs::get_generating_group() const {
+  return this->_get_generating_group();
+}
+
+IntegralCluster const &ClusterSpecs::get_phenomenal_cluster() const {
+  return this->_get_phenomenal_cluster();
+}
+
+SymGroup const &ClusterSpecs::_get_generating_group() const {
+  throw std::runtime_error("Error: get_generating_group not implemented for '" +
+                           name() + "'");
+}
+
+IntegralCluster const &ClusterSpecs::_get_phenomenal_cluster() const
+{
+  throw std::runtime_error("Error: get_phenomenal_cluster not implemented for '" +
+                           name() + "'");
+}
+
 const std::string PeriodicMaxLengthClusterSpecs::method_name =
     "periodic_max_length";
 
@@ -134,6 +153,10 @@ PeriodicMaxLengthClusterSpecs::_make_periodic_orbits(
   make_orbits(specs.begin(), specs.end(), custom_generators,
               std::back_inserter(orbits), status);
   return orbits;
+}
+
+SymGroup const &PeriodicMaxLengthClusterSpecs::_get_generating_group() const {
+  return generating_group;
 }
 
 std::string const LocalMaxLengthClusterSpecs::method_name = "local_max_length";
@@ -212,6 +235,14 @@ ClusterSpecs::LocalOrbitVec LocalMaxLengthClusterSpecs::_make_local_orbits(
   return orbits;
 }
 
+SymGroup const &LocalMaxLengthClusterSpecs::_get_generating_group() const {
+  return generating_group;
+}
+
+IntegralCluster const &LocalMaxLengthClusterSpecs::_get_phenomenal_cluster() const {
+  return phenomenal;
+}
+
 GenericPeriodicClusterSpecs::GenericPeriodicClusterSpecs(
     std::string _method_name, std::shared_ptr<Structure const> _shared_prim,
     SymGroup const &_generating_group, SymCompareType const &_sym_compare,
@@ -270,6 +301,10 @@ GenericPeriodicClusterSpecs::_make_periodic_orbits(std::ostream &status) const {
   make_orbits(specs.begin(), specs.end(), custom_generators,
               std::back_inserter(orbits), status);
   return orbits;
+}
+
+SymGroup const &GenericPeriodicClusterSpecs::_get_generating_group() const {
+  return generating_group;
 }
 
 GenericLocalClusterSpecs::GenericLocalClusterSpecs(
@@ -333,6 +368,10 @@ ClusterSpecs::LocalOrbitVec GenericLocalClusterSpecs::_make_local_orbits(
   make_orbits(specs.begin(), specs.end(), custom_generators,
               std::back_inserter(orbits), status);
   return orbits;
+}
+
+SymGroup const &GenericLocalClusterSpecs::_get_generating_group() const {
+  return generating_group;
 }
 
 namespace ClusterSpecs_impl {

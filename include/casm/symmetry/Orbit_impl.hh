@@ -235,9 +235,6 @@ Orbit<_SymCompareType> &Orbit<_SymCompareType>::apply_sym(const SymOp &op) {
     }
   }
 
-  // transform sym_compare functor
-  m_sym_compare.apply_sym(op);
-
   return *this;
 }
 

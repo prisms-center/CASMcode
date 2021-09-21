@@ -102,6 +102,26 @@ Index ClexBasis::n_functions() const {
   return nf;
 }
 
+ClexBasis &ClexBasis::apply_sym(const SymOp &op) {
+  // TODO: make sure dofs are isotropic
+//  if (_has_anisotropic_DoFs()) {
+//    throw std::runtime_error("Error: apply_sym not implemented for ClexBasis with anisotropic DoFs");
+//  }
+
+  std::cout << "in ClexBasis::apply_sym" << std::endl;
+  // apply symop to m_bset_tree
+  std::vector<BSetOrbit> new_bset_tree;
+  for (BSetOrbit &basis_set_orbit : m_bset_tree) {
+    new_bset_tree.emplace_back();
+    for (BasisSet &basis_set : basis_set_orbit) {
+      std::cout << "applying symop to basis_set" << std::endl;
+      new_bset_tree.back().push_back(op * basis_set);
+    }
+  }
+
+  return *this;
+}
+
 //********************************************************************
 
 void ClexBasis::_populate_site_bases() {
