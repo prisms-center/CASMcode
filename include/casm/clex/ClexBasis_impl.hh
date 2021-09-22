@@ -224,28 +224,27 @@ namespace ClexBasis_impl {
 template <typename OrbitType>
 BasisSet construct_proto_dof_basis(OrbitType const &_orbit,
                                    BasisSet::ArgList const &site_dof_sets) {
-  SymGroup clust_group(_orbit.equivalence_map(0).first,
-                       _orbit.equivalence_map(0).second);
+  SymGroup const &group = _orbit.generating_group();
 
   std::vector<SymGroupRep const *> subspace_reps;
   for (BasisSet const *site_bset_ptr : site_dof_sets) {
     if (site_bset_ptr) {
-      subspace_reps.push_back(SymGroupRep::RemoteHandle(
-                                  clust_group, site_bset_ptr->basis_symrep_ID())
-                                  .rep_ptr());
+      subspace_reps.push_back(
+          SymGroupRep::RemoteHandle(group, site_bset_ptr->basis_symrep_ID())
+              .rep_ptr());
     } else {
       subspace_reps.push_back(
-          SymGroupRep::RemoteHandle(clust_group, SymGroupRepID::identity(0))
+          SymGroupRep::RemoteHandle(group, SymGroupRepID::identity(0))
               .rep_ptr());
     }
   }
   SymGroupRep const *permute_rep =
-      SymGroupRep::RemoteHandle(clust_group, _orbit.canonization_rep_ID())
-          .rep_ptr();
+      SymGroupRep::RemoteHandle(group, _orbit.canonization_rep_ID()).rep_ptr();
 
   BasisSet result = direct_sum(site_dof_sets);
-  result.set_basis_symrep_ID(clust_group.master_group().add_representation(
-      permuted_direct_sum_rep(*(permute_rep), subspace_reps)));
+  SymGroupRepID basis_symrep_ID = group.master_group().add_representation(
+      permuted_direct_sum_rep(*(permute_rep), subspace_reps));
+  result.set_basis_symrep_ID(basis_symrep_ID);
 
   return result;
 }

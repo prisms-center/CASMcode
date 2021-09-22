@@ -247,30 +247,21 @@ bool Orbit<_SymCompareType>::operator<(const Orbit &B) const {
 
 template <typename _SymCompareType>
 void Orbit<_SymCompareType>::_construct_canonization_rep() const {
-  if (equivalence_map().size() == 0)
+  if (!generating_group().size() ||
+      !generating_group().at(0).has_valid_master()) {
     throw libcasm_runtime_error(
-        "In Orbit::_construct_canonization_rep(), equivalence_map is "
-        "uninitialized or empty! Cannot continue.");
-
-  if (size() == 0) {
-    m_canonization_rep_ID = SymGroupRepID::identity(0);
-    return;
+        "In Orbit::_construct_canonization_rep(), cannot continue.");
   }
 
-  m_canonization_rep_ID =
-      equivalence_map()[0][0].master_group().allocate_representation();
-
-  for (Index j = 0; j < equivalence_map()[0].size(); j++) {
+  MasterSymGroup const &master_group = generating_group().master_group();
+  m_canonization_rep_ID = master_group.allocate_representation();
+  for (SymOp const &op : generating_group().master_group()) {
+    auto element = m_sym_compare.copy_apply(op, prototype());
     std::unique_ptr<SymOpRepresentation> new_rep =
-        m_sym_compare
-            .canonical_transform(
-                m_sym_compare.copy_apply(equivalence_map()[0][j], prototype()))
-            ->inverse();
-
-    for (Index i = 0; i < equivalence_map().size(); i++) {
-      equivalence_map()[i][j].set_rep(m_canonization_rep_ID, *new_rep);
-    }
+        m_sym_compare.canonical_transform(element)->inverse();
+    op.set_rep(m_canonization_rep_ID, *new_rep);
   }
+
   return;
 }
 
