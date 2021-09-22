@@ -748,6 +748,18 @@ class Clexulator {
   std::shared_ptr<RuntimeLibrary> m_lib;
 };
 
+/// \brief Clexulator factory function
+Clexulator make_clexulator(std::string name, fs::path dirpath,
+                           PrimNeighborList &nlist, std::string compile_options,
+                           std::string so_options);
+
+/// \brief Local Clexulator factory function
+std::vector<Clexulator> make_local_clexulator(std::string clexulator_name,
+                                              fs::path dirpath,
+                                              PrimNeighborList &nlist,
+                                              std::string compile_options,
+                                              std::string so_options);
+
 /**  @} */
 }  // namespace CASM
 
