@@ -91,6 +91,7 @@ struct PrimClex::PrimClexData {
   typedef std::string BasisSetName;
   mutable std::map<BasisSetName, ClexBasisSpecs> basis_set_specs;
   mutable std::map<BasisSetName, Clexulator> clexulator;
+  mutable std::map<BasisSetName, std::vector<Clexulator>> local_clexulator;
   mutable std::map<BasisSetName, std::unique_ptr<NeighborhoodInfo>>
       neighborhood_info;
   mutable std::map<ClexDescription, ECIContainer> eci;
@@ -431,6 +432,39 @@ Clexulator PrimClex::clexulator(std::string const &basis_set_name) const {
   return it->second;
 }
 
+std::vector<Clexulator> PrimClex::local_clexulator(
+    std::string const &basis_set_name) const {
+  auto it = m_data->local_clexulator.find(basis_set_name);
+  if (it == m_data->local_clexulator.end()) {
+    if (!fs::exists(
+            dir().clexulator_src(settings().project_name(), basis_set_name))) {
+      std::stringstream ss;
+      ss << "Error loading clexulator " << basis_set_name
+         << ". No basis functions exist.";
+      throw std::runtime_error(ss.str());
+    }
+
+    try {
+      std::vector<Clexulator> local_clexulator =
+          make_local_clexulator(settings(), basis_set_name, nlist());
+      it = m_data->local_clexulator.emplace(basis_set_name, local_clexulator)
+               .first;
+    } catch (std::exception &e) {
+      // TODO: if this fails...
+      err_log() << "Error constructing Clexulator. Current settings: \n"
+                << std::endl;
+      print_compiler_settings_summary(settings(), err_log());
+
+      // TODO: then, try this
+      // std::cout << "Error constructing Clexulator. Current settings: \n" <<
+      // std::endl; Log tlog(std::cout);
+      // print_compiler_settings_summary(settings(), tlog);
+      // throw e;
+    }
+  }
+  return it->second;
+}
+
 bool PrimClex::has_eci(const ClexDescription &key) const {
   auto it = m_data->eci.find(key);
   if (it == m_data->eci.end()) {
@@ -532,25 +566,33 @@ struct WriteBasisSetDataImpl {
 
     // if local cluster expansion, now transform clex_basis and write
     // clexulators for each equivalent of the phenomenal cluster
-    if (basis_set_specs.cluster_specs->periodicity_type() == CLUSTER_PERIODICITY_TYPE::LOCAL) {
+    if (basis_set_specs.cluster_specs->periodicity_type() ==
+        CLUSTER_PERIODICITY_TYPE::LOCAL) {
       // get phenomenal cluster
-      IntegralCluster const &phenomenal_cluster = basis_set_specs.cluster_specs->get_phenomenal_cluster();
+      IntegralCluster const &phenomenal_cluster =
+          basis_set_specs.cluster_specs->get_phenomenal_cluster();
 
       // get local clusters generating group
-      SymGroup const &local_clusters_generating_group = basis_set_specs.cluster_specs->get_generating_group();
+      SymGroup const &local_clusters_generating_group =
+          basis_set_specs.cluster_specs->get_generating_group();
 
-      // Invariant group of phenomenal cluster sites, excluding any other considerations like symmetry-breaking due to hop type
-      PrimPeriodicSymCompare<IntegralCluster> prim_periodic_sym_compare(shared_prim, xtal_tol);
-      SymGroup sites_invariant_group = make_invariant_subgroup(phenomenal_cluster, shared_prim->factor_group(), prim_periodic_sym_compare);
+      // Invariant group of phenomenal cluster sites, excluding any other
+      // considerations like symmetry-breaking due to hop type
+      PrimPeriodicSymCompare<IntegralCluster> prim_periodic_sym_compare(
+          shared_prim, xtal_tol);
+      SymGroup sites_invariant_group = make_invariant_subgroup(
+          phenomenal_cluster, shared_prim->factor_group(),
+          prim_periodic_sym_compare);
 
-      // Need to find how many other clexulators we need at the same location as the phenomenal cluster, along with on other equivalent clusters
+      // Need to find how many other clexulators we need at the same location as
+      // the phenomenal cluster, along with on other equivalent clusters
       std::set<SymOp, SubOrbits_impl::OpCompare> equivalents_on_phenomenal;
-      for(auto const &op : sites_invariant_group) {
+      for (auto const &op : sites_invariant_group) {
         Index min = op.index();
         SymOp min_op = op;
-        for(auto const &subgroup_op : local_clusters_generating_group) {
+        for (auto const &subgroup_op : local_clusters_generating_group) {
           SymOp product = subgroup_op * op;
-          if( product.index() < min_op.index()) {
+          if (product.index() < min_op.index()) {
             min = product.index();
             min_op = product;
           }
@@ -559,15 +601,21 @@ struct WriteBasisSetDataImpl {
       }
 
       // generate the phenomenal cluster orbit
-      SymGroup phenomenal_cluster_orbit_generating_group = shared_prim->factor_group();
-      PrimPeriodicOrbit<IntegralCluster> phenomenal_cluster_orbit(phenomenal_cluster, phenomenal_cluster_orbit_generating_group, prim_periodic_sym_compare);
+      SymGroup phenomenal_cluster_orbit_generating_group =
+          shared_prim->factor_group();
+      PrimPeriodicOrbit<IntegralCluster> phenomenal_cluster_orbit(
+          phenomenal_cluster, phenomenal_cluster_orbit_generating_group,
+          prim_periodic_sym_compare);
       auto const &equivalence_map = phenomenal_cluster_orbit.equivalence_map();
 
-      // operations to generate all equivalent clexulators at all clusters in phenomenal cluster orbit
-      // TODO: Store equivalents_generating_ops somewhere, it will tell us how to construct all the equivalent hops corresponding to the clexulators
+      // operations to generate all equivalent clexulators at all clusters in
+      // phenomenal cluster orbit
+      // TODO: Store equivalents_generating_ops somewhere, it will tell us how
+      // to construct all the equivalent hops corresponding to the clexulators
       std::set<SymOp, SubOrbits_impl::OpCompare> equivalents_generating_ops;
-      for(SymOp const &cluster_op: equivalents_on_phenomenal) {
-        for(int equivalent_index=0; equivalent_index < equivalence_map.size(); ++equivalent_index) {
+      for (SymOp const &cluster_op : equivalents_on_phenomenal) {
+        for (int equivalent_index = 0;
+             equivalent_index < equivalence_map.size(); ++equivalent_index) {
           SymOp const &op = equivalence_map[equivalent_index][0] * cluster_op;
           equivalents_generating_ops.insert(op);
         }
@@ -577,15 +625,11 @@ struct WriteBasisSetDataImpl {
       // equivalent clex_basis and orbits
       int equivalent_index = 0;
       for (SymOp const &op : equivalents_generating_ops) {
-        std::cout << "equivalent_index: " << equivalent_index << std::endl;
-        std::cout << op.matrix() << std::endl;
         // apply symop to clex_basis
         ClexBasis equivalent_clex_basis = clex_basis;
-        std::cout << "transforming clex_basis" << std::endl;
         equivalent_clex_basis.apply_sym(op);
 
         // apply symop to orbits
-        std::cout << "transforming orbits" << std::endl;
         OrbitVecType equivalent_orbits;
         for (auto orbit : orbits) {
           equivalent_orbits.push_back(orbit.apply_sym(op));
@@ -595,14 +639,13 @@ struct WriteBasisSetDataImpl {
         dir.new_equivalent_clexulator_dir(basis_set_name, equivalent_index);
 
         // write source code to that subdirectory
-        fs::path equivalent_clexulator_src_path =
-            dir.equivalent_clexulator_src(settings.project_name(), basis_set_name, equivalent_index);
+        fs::path equivalent_clexulator_src_path = dir.equivalent_clexulator_src(
+            settings.project_name(), basis_set_name, equivalent_index);
         fs::ofstream outfile;
         outfile.open(equivalent_clexulator_src_path);
-        clexwriter.print_clexulator(clexulator_name,
-                                    equivalent_clex_basis,
-                                    equivalent_orbits,
-                                    prim_neighbor_list, outfile, xtal_tol);
+        clexwriter.print_clexulator(clexulator_name, equivalent_clex_basis,
+                                    equivalent_orbits, prim_neighbor_list,
+                                    outfile, xtal_tol);
         outfile.close();
         ++equivalent_index;
       }
@@ -625,7 +668,7 @@ void write_basis_set_data(std::shared_ptr<Structure const> shared_prim,
   for_all_orbits(cluster_specs, log, writer);
 }
 
-/// Make Clexulator from existing source code
+/// \brief Make Clexulator from existing source code
 ///
 /// Notes:
 /// - Use `write_basis_set_data` to write Clexulator source code prior to
@@ -637,10 +680,28 @@ Clexulator make_clexulator(ProjectSettings const &settings,
                            PrimNeighborList &prim_neighbor_list) {
   throw_if_no_clexulator_src(settings.project_name(), basis_set_name,
                              settings.dir());
-  return Clexulator{settings.project_name() + "_Clexulator",
-                    settings.dir().clexulator_dir(basis_set_name),
-                    prim_neighbor_list, settings.compile_options(),
-                    settings.so_options() + " -lcasm "};
+  return make_clexulator(settings.project_name() + "_Clexulator",
+                         settings.dir().clexulator_dir(basis_set_name),
+                         prim_neighbor_list, settings.compile_options(),
+                         settings.so_options() + " -lcasm ");
+}
+
+/// \brief Make local Clexulator from existing source code
+///
+/// Notes:
+/// - Use `write_basis_set_data` to write Clexulator source code prior to
+/// calling this function.
+/// - This function will compile the Clexulator source code if that has not yet
+/// been done.
+std::vector<Clexulator> make_local_clexulator(
+    ProjectSettings const &settings, std::string const &basis_set_name,
+    PrimNeighborList &prim_neighbor_list) {
+  throw_if_no_clexulator_src(settings.project_name(), basis_set_name,
+                             settings.dir());
+  return make_local_clexulator(settings.project_name() + "_Clexulator",
+                               settings.dir().clexulator_dir(basis_set_name),
+                               prim_neighbor_list, settings.compile_options(),
+                               settings.so_options() + " -lcasm ");
 }
 
 }  // namespace CASM

@@ -1,5 +1,7 @@
 #include "casm/clex/Clexulator.hh"
 
+#include <boost/filesystem.hpp>
+
 #include "casm/app/LogRuntimeLibrary.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/clexulator/ClexParamPack.hh"
@@ -98,6 +100,34 @@ Clexulator &Clexulator::operator=(Clexulator B) {
 clexulator::ClexParamKey const &Clexulator::param_key(
     std::string const &_param_name) const {
   return m_clex->param_key(_param_name);
+}
+
+/// \brief Clexulator factory function
+Clexulator make_clexulator(std::string name, fs::path dirpath,
+                           PrimNeighborList &nlist, std::string compile_options,
+                           std::string so_options) {
+  return Clexulator(name, dirpath, nlist, compile_options, so_options);
+}
+
+/// \brief Local Clexulator factory function
+std::vector<Clexulator> make_local_clexulator(std::string name,
+                                              fs::path dirpath,
+                                              PrimNeighborList &nlist,
+                                              std::string compile_options,
+                                              std::string so_options) {
+  std::vector<Clexulator> result;
+  Index i = 0;
+  fs::path equiv_dir = dirpath / fs::path(std::to_string(i));
+  while (fs::exists(equiv_dir)) {
+    if (!fs::exists(equiv_dir / (name + ".cc"))) {
+      break;
+    }
+    result.push_back(
+        make_clexulator(name, equiv_dir, nlist, compile_options, so_options));
+    ++i;
+    equiv_dir = dirpath / fs::path(std::to_string(i));
+  }
+  return result;
 }
 
 }  // namespace CASM
