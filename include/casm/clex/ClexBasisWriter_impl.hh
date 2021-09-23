@@ -794,8 +794,28 @@ std::string clexulator_constructor_definition(
   ss << indent << "  m_weight_matrix.row(2) << " << W(2, 0) << ", " << W(2, 1)
      << ", " << W(2, 2) << ";\n\n";
 
+  // Write sublattices included in the neighbor list
   {
-    // Write neighborhood of UnitCellCoord
+    ss << indent << "  m_sublat_indices = std::set<int>{";
+    auto it = _nlist.sublat_indices().begin();
+    auto end = _nlist.sublat_indices().end();
+    while (it != end) {
+      ss << *it;
+      ++it;
+      if (it != end) {
+        ss << ", ";
+      }
+    }
+    ss << "};\n\n";
+  }
+
+  // Write total number of sublattices
+  {
+    ss << indent << "  m_n_sublattices = " << _nlist.n_sublattices() << ";\n\n";
+  }
+
+  {
+    // Write neighborhood of UnitCell
     // expand the _nlist to contain 'global_orbitree' (all that is needed for
     // now)
     std::set<xtal::UnitCellCoord> nbors;  // restricted scope
@@ -822,8 +842,12 @@ std::string clexulator_constructor_definition(
       ss << "\n\n";
     }
   }
+
+  // Write orbit UnitCell and UnitCellCoord neighborhoods
   ss << indent << "  m_orbit_neighborhood.resize(corr_size());\n";
+  ss << indent << "  m_orbit_site_neighborhood.resize(corr_size());\n";
   Index lno = 0;
+  Index lno_site = 0;
   for (Index no = 0; no < clex.n_orbits(); ++no) {
     std::set<xtal::UnitCellCoord> nbors;
     flower_neighborhood(_tree[no], std::inserter(nbors, nbors.begin()));
@@ -841,10 +865,14 @@ std::string clexulator_constructor_definition(
     }
 
     if (ucnbors.empty()) {
-      for (Index nf = 0; nf < clex.bset_orbit(no)[0].size(); ++nf) ++lno;
+      for (Index nf = 0; nf < clex.bset_orbit(no)[0].size(); ++nf) {
+        ++lno;
+        ++lno_site;
+      }
       continue;
     }
 
+    // write UnitCell neighborhoods
     ss << indent << "  m_orbit_neighborhood[" << lno
        << "] = std::set<xtal::UnitCell> {\n";
 
@@ -865,6 +893,31 @@ std::string clexulator_constructor_definition(
          << "] = m_orbit_neighborhood[" << proto_index << "];\n";
     }
     ss << "\n";
+
+    // also write UnitCellCoord neighborhoods
+    {
+      ss << indent << "  m_orbit_site_neighborhood[" << lno_site
+         << "] = std::set<xtal::UnitCellCoord> {\n";
+      auto it = nbors.begin();
+      while (it != nbors.end()) {
+        Index b = it->sublattice();
+        UnitCell uc = it->unitcell();
+        ss << indent << "    xtal::UnitCellCoord(" << b << ", " << uc[0] << ", "
+           << uc[1] << ", " << uc[2] << ")";
+        ++it;
+        if (it != nbors.end()) {
+          ss << ",";
+        }
+        ss << "\n";
+      }
+      ss << indent << "  };\n";
+      ++lno_site;
+      for (Index nf = 1; nf < clex.bset_orbit(no)[0].size(); ++nf, ++lno_site) {
+        ss << indent << "  m_orbit_site_neighborhood[" << lno_site
+           << "] = m_orbit_site_neighborhood[" << proto_index << "];\n";
+      }
+      ss << "\n";
+    }
   }
 
   ss << indent << "}\n\n";

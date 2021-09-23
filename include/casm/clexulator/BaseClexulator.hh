@@ -69,10 +69,23 @@ class BaseClexulator {
     return m_orbit_neighborhood[linear_orbit_index];
   }
 
+  /// \brief The UnitCellCoord involved in calculating the basis functions
+  /// for a particular orbit, relative origin UnitCell
+  const std::set<xtal::UnitCellCoord> &site_neighborhood(
+      size_type linear_orbit_index) const {
+    return m_orbit_site_neighborhood[linear_orbit_index];
+  }
+
   /// \brief The weight matrix used for ordering the neighbor list
   const PrimNeighborList::Matrix3Type &weight_matrix() const {
     return m_weight_matrix;
   }
+
+  /// \brief The sublattice indices included in the neighbor list
+  std::set<int> const &sublat_indices() const { return m_sublat_indices; }
+
+  /// \brief The total number of sublattices in the prim
+  size_type n_sublattices() const { return m_n_sublattices; }
 
   // Note: The following all require setting the DoFValues and NeighborList
   // prior to use. This can be done with:
@@ -84,10 +97,15 @@ class BaseClexulator {
 
   /// \brief Set internal pointers to correct DoF values
   ///
+  /// \param _configdofvalues DoF values to be used as input to the basis
+  ///      functions
+  /// \param _force
+  ///
   /// Notes:
-  /// - This must be done before calling a `calc_X` method
-  void set_configdofvalues(ConfigDoFValues const &_configdofvalues) const {
-    if (m_configdofvalues_ptr != &_configdofvalues) {
+  /// - In the vast majority of cases this is handled by the `calc_X` method
+  void set_configdofvalues(ConfigDoFValues const &_configdofvalues,
+                           bool _force = false) const {
+    if (m_configdofvalues_ptr != &_configdofvalues || _force) {
       m_configdofvalues_ptr = &_configdofvalues;
       m_occ_ptr = _configdofvalues.occupation.data();
       for (auto const &dof : m_local_dof_registry) {
@@ -315,16 +333,26 @@ class BaseClexulator {
     return *(m_occ_ptr + *(m_nlist_ptr + nlist_ind));
   }
 
-  /// \brief The UnitCellCoord involved in calculating the basis functions,
+  /// \brief The UnitCell involved in calculating the basis functions,
   /// relative origin UnitCell
   std::set<xtal::UnitCell> m_neighborhood;
 
-  /// \brief The UnitCellCoord involved in calculating the basis functions
+  /// \brief The UnitCell involved in calculating the basis functions
   /// for a particular orbit, relative origin UnitCell
   std::vector<std::set<xtal::UnitCell> > m_orbit_neighborhood;
 
+  /// \brief The UnitCellCoord involved in calculating the basis functions
+  /// for a particular orbit, relative origin UnitCell
+  std::vector<std::set<xtal::UnitCellCoord> > m_orbit_site_neighborhood;
+
   /// \brief The weight matrix used for ordering the neighbor list
   PrimNeighborList::Matrix3Type m_weight_matrix;
+
+  /// \brief The sublattice indices included in the neighbor list
+  std::set<int> m_sublat_indices;
+
+  /// \brief The total number of sublattices in the prim
+  size_type m_n_sublattices;
 
   mutable std::vector<Eigen::MatrixXd const *> m_local_dof_ptrs;
 
