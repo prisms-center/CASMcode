@@ -232,6 +232,17 @@ class LocalMaxLengthClusterSpecs : public ClusterSpecs {
   IntegralCluster const &_get_phenomenal_cluster() const override;
 };
 
+/// \brief A set of SymOp that construct distinct equivalent phenomenal clusters
+std::vector<SymOp> make_equivalents_generating_ops(
+    std::shared_ptr<Structure const> const &shared_prim,
+    IntegralCluster const &phenomenal, SymGroup const &generating_group);
+
+/// \brief The extended equivalence map maps a prototype to equivalent
+///     clusters in the current and equivalent orbitrees
+multivector<SymOp>::X<3> make_extended_equivalence_map(
+    multivector<SymOp>::X<2> const &equivalence_map,
+    std::vector<SymOp> const &equivalents_generating_ops);
+
 /// Parameters for the most generic orbit generation method currently
 /// implemented
 class GenericPeriodicClusterSpecs : public ClusterSpecs {

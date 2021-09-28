@@ -3,7 +3,7 @@
 
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/casm_io/Log.hh"
-#include "casm/clex/ClexBasis.hh"
+#include "casm/clex/ClexBasis_impl.hh"
 #include "casm/clex/io/ProtoFuncsPrinter_impl.hh"
 #include "casm/clex/io/stream/ClexBasis_stream_io.hh"
 #include "casm/clusterography/io/OrbitPrinter_impl.hh"

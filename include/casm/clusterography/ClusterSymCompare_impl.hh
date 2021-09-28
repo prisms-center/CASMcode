@@ -75,8 +75,8 @@ ClusterSymCompare<Base>::canonical_transform_impl(Element const &obj) const {
 /// \param tol Tolerance for invariants_compare of site-to-site distances
 ///
 template <typename Element>
-AperiodicSymCompare<Element>::AperiodicSymCompare(PrimType_ptr prim_ptr,
-                                                  double tol)
+AperiodicSymCompare<Element>::AperiodicSymCompare(
+    std::shared_ptr<Structure const> const &prim_ptr, double tol)
     : m_prim(prim_ptr), m_tol(tol) {}
 
 /// \brief Prepare an element for comparison
@@ -112,8 +112,8 @@ Element AperiodicSymCompare<Element>::representation_prepare_impl(
 /// \param tol Tolerance for invariants_compare of site-to-site distances
 ///
 template <typename Element>
-PrimPeriodicSymCompare<Element>::PrimPeriodicSymCompare(PrimType_ptr prim_ptr,
-                                                        double tol)
+PrimPeriodicSymCompare<Element>::PrimPeriodicSymCompare(
+    std::shared_ptr<Structure const> const &prim_ptr, double tol)
     : m_prim(prim_ptr), m_tol(tol) {}
 
 /// \brief Prepare an element for comparison
@@ -163,7 +163,8 @@ Element PrimPeriodicSymCompare<Element>::representation_prepare_impl(
 ///
 template <typename Element>
 ScelPeriodicSymCompare<Element>::ScelPeriodicSymCompare(
-    PrimType_ptr prim_ptr, transf_mat_type transf_mat, double tol)
+    std::shared_ptr<Structure const> const &prim_ptr,
+    transf_mat_type transf_mat, double tol)
     : m_prim(prim_ptr),
       m_transf_mat(transf_mat),
       m_bring_within_f(transf_mat),

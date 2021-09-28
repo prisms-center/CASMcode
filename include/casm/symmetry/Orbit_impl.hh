@@ -245,26 +245,6 @@ bool Orbit<_SymCompareType>::operator<(const Orbit &B) const {
                                            B.prototype(), B.invariants());
 }
 
-template <typename _SymCompareType>
-void Orbit<_SymCompareType>::_construct_canonization_rep() const {
-  if (!generating_group().size() ||
-      !generating_group().at(0).has_valid_master()) {
-    throw libcasm_runtime_error(
-        "In Orbit::_construct_canonization_rep(), cannot continue.");
-  }
-
-  MasterSymGroup const &master_group = generating_group().master_group();
-  m_canonization_rep_ID = master_group.allocate_representation();
-  for (SymOp const &op : generating_group().master_group()) {
-    auto element = m_sym_compare.copy_apply(op, prototype());
-    std::unique_ptr<SymOpRepresentation> new_rep =
-        m_sym_compare.canonical_transform(element)->inverse();
-    op.set_rep(m_canonization_rep_ID, *new_rep);
-  }
-
-  return;
-}
-
 /// \brief Find orbit containing an element in a range of Orbit<ClusterType>
 ///
 /// \param begin,end Range of Orbit

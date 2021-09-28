@@ -129,17 +129,17 @@ class AperiodicSymCompare<Element>
     : public ClusterSymCompare<
           SymCompare<CRTPBase<AperiodicSymCompare<Element>>>> {
  public:
-  typedef Structure PrimType;
-  typedef std::shared_ptr<PrimType const> PrimType_ptr;
-
   /// \brief Constructor
   ///
   /// \param prim_ptr Prim structure
   /// \param tol Tolerance for invariants_compare of site-to-site distances
   ///
-  AperiodicSymCompare(PrimType_ptr prim_ptr, double tol);
+  AperiodicSymCompare(std::shared_ptr<Structure const> const &prim_ptr,
+                      double tol);
 
-  const PrimType &prim() const { return *m_prim; }
+  Structure const &prim() const { return *m_prim; }
+
+  std::shared_ptr<Structure const> const &shared_prim() const { return m_prim; }
 
   /// \brief Return tolerance
   double tol() const { return this->m_tol; }
@@ -169,7 +169,7 @@ class AperiodicSymCompare<Element>
   /// - Returns sorted
   Element representation_prepare_impl(Element obj) const;
 
-  PrimType_ptr m_prim;
+  std::shared_ptr<Structure const> m_prim;
 
   double m_tol;
 
@@ -202,17 +202,17 @@ class PrimPeriodicSymCompare<Element>
     : public ClusterSymCompare<
           SymCompare<CRTPBase<PrimPeriodicSymCompare<Element>>>> {
  public:
-  typedef Structure PrimType;
-  typedef std::shared_ptr<PrimType const> PrimType_ptr;
-
   /// \brief Constructor
   ///
   /// \param prim_ptr Prim structure
   /// \param tol Tolerance for invariants_compare of site-to-site distances
   ///
-  PrimPeriodicSymCompare(PrimType_ptr prim_ptr, double tol);
+  PrimPeriodicSymCompare(std::shared_ptr<Structure const> const &prim_ptr,
+                         double tol);
 
-  const PrimType &prim() const { return *m_prim; }
+  Structure const &prim() const { return *m_prim; }
+
+  std::shared_ptr<Structure const> const &shared_prim() const { return m_prim; }
 
   /// \brief Return tolerance
   double tol() const { return this->m_tol; }
@@ -244,7 +244,7 @@ class PrimPeriodicSymCompare<Element>
 
   /// Pointer to the primitive structure, necessary to apply symmetry to the
   /// Element
-  PrimType_ptr m_prim;
+  std::shared_ptr<Structure const> m_prim;
 
   double m_tol;
 
@@ -280,8 +280,6 @@ class ScelPeriodicSymCompare<Element>
     : public ClusterSymCompare<
           SymCompare<CRTPBase<ScelPeriodicSymCompare<Element>>>> {
  public:
-  typedef Structure PrimType;
-  typedef std::shared_ptr<PrimType const> PrimType_ptr;
   typedef Eigen::Matrix3l transf_mat_type;
 
   /// \brief Constructor
@@ -290,10 +288,12 @@ class ScelPeriodicSymCompare<Element>
   /// \param transf_mat Prim to supercell transformation matrix
   /// \param tol Tolerance for invariants_compare of site-to-site distances
   ///
-  ScelPeriodicSymCompare(PrimType_ptr prim_ptr, transf_mat_type transf_mat,
-                         double tol);
+  ScelPeriodicSymCompare(std::shared_ptr<Structure const> const &prim_ptr,
+                         transf_mat_type transf_mat, double tol);
 
-  const PrimType &prim() const { return *m_prim; }
+  Structure const &prim() const { return *m_prim; }
+
+  std::shared_ptr<Structure const> const &shared_prim() const { return m_prim; }
 
   /// Prim to supercell transformation matrix
   transf_mat_type const &transf_mat() const { return m_transf_mat; }
@@ -328,7 +328,7 @@ class ScelPeriodicSymCompare<Element>
 
   /// Pointer to the primitive structure, necessary to apply symmetry to the
   /// Element
-  PrimType_ptr m_prim;
+  std::shared_ptr<Structure const> m_prim;
 
   /// Prim to supercell transformation matrix
   transf_mat_type m_transf_mat;

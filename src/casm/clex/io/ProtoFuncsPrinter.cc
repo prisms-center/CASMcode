@@ -1,4 +1,5 @@
 #include "casm/basis_set/DoFTraits.hh"
+#include "casm/clex/ClexBasis_impl.hh"
 #include "casm/clex/io/ProtoFuncsPrinter_impl.hh"
 #include "casm/clusterography/ClusterOrbits_impl.hh"
 #include "casm/clusterography/ClusterSpecs_impl.hh"

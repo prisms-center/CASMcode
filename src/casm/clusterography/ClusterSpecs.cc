@@ -7,6 +7,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/symmetry/OrbitGeneration_impl.hh"
 #include "casm/symmetry/Orbit_impl.hh"
+#include "casm/symmetry/SubOrbits_impl.hh"
 #include "casm/symmetry/SupercellSymInfo.hh"
 
 namespace CASM {
@@ -78,10 +79,9 @@ SymGroup const &ClusterSpecs::_get_generating_group() const {
                            name() + "'");
 }
 
-IntegralCluster const &ClusterSpecs::_get_phenomenal_cluster() const
-{
-  throw std::runtime_error("Error: get_phenomenal_cluster not implemented for '" +
-                           name() + "'");
+IntegralCluster const &ClusterSpecs::_get_phenomenal_cluster() const {
+  throw std::runtime_error(
+      "Error: get_phenomenal_cluster not implemented for '" + name() + "'");
 }
 
 const std::string PeriodicMaxLengthClusterSpecs::method_name =
@@ -239,8 +239,107 @@ SymGroup const &LocalMaxLengthClusterSpecs::_get_generating_group() const {
   return generating_group;
 }
 
-IntegralCluster const &LocalMaxLengthClusterSpecs::_get_phenomenal_cluster() const {
+IntegralCluster const &LocalMaxLengthClusterSpecs::_get_phenomenal_cluster()
+    const {
   return phenomenal;
+}
+
+/// \brief A set of SymOp that construct distinct equivalent phenomenal clusters
+///
+/// \param shared_prim Prim structure
+/// \param phenomenal Phenomenal cluster about which local clusters are
+///     generated
+/// \param generating_group Local clusters generating group. Must leave the
+///     phenomenal cluster sites invariant.
+std::vector<SymOp> make_equivalents_generating_ops(
+    std::shared_ptr<Structure const> const &shared_prim,
+    IntegralCluster const &phenomenal, SymGroup const &generating_group) {
+  PrimPeriodicSymCompare<IntegralCluster> periodic_sym_compare(
+      shared_prim, shared_prim->lattice().tol());
+
+  // this should already be the case, and will be problematic if it is not
+  IntegralCluster canonical_phenomenal =
+      periodic_sym_compare.prepare(phenomenal);
+  if (!periodic_sym_compare.equal(canonical_phenomenal, phenomenal)) {
+    throw std::runtime_error(
+        "Error constructing a local ClexBasis: the canonical phenomenal "
+        "cluster was not used to generate local orbits.");
+  }
+
+  // Invariant group of phenomenal cluster sites, excluding any other
+  // considerations like symmetry-breaking due to hop type
+  SymGroup sites_invariant_group = make_invariant_subgroup(
+      phenomenal, shared_prim->factor_group(), periodic_sym_compare);
+
+  // If generating_group is a subgroup of sites_invariant_group, then there
+  // may be some distinct phenomenal clusters on the same sites (ex: distinct
+  // orientations of local cluster expansions about the same phenomenal cluster)
+  std::set<SymOp, SubOrbits_impl::OpCompare> equivalents_on_phenomenal;
+  for (auto const &op : sites_invariant_group) {
+    Index min = op.index();
+    SymOp min_op = op;
+    for (auto const &subgroup_op : generating_group) {
+      SymOp product = subgroup_op * op;
+      if (product.index() < min_op.index()) {
+        min = product.index();
+        min_op = product;
+      }
+    }
+    equivalents_on_phenomenal.insert(min_op);
+  }
+
+  // generate the phenomenal cluster orbit
+  PrimPeriodicOrbit<IntegralCluster> phenomenal_cluster_orbit(
+      phenomenal, shared_prim->factor_group(), periodic_sym_compare);
+  auto const &equivalence_map = phenomenal_cluster_orbit.equivalence_map();
+
+  // operations to generate all equivalent clexulators at all clusters in
+  // phenomenal cluster orbit
+  std::set<SymOp, SubOrbits_impl::OpCompare> equivalents_generating_ops;
+  for (SymOp const &cluster_op : equivalents_on_phenomenal) {
+    for (int equivalent_index = 0; equivalent_index < equivalence_map.size();
+         ++equivalent_index) {
+      equivalents_generating_ops.insert(equivalence_map[equivalent_index][0] *
+                                        cluster_op);
+    }
+  }
+
+  return std::vector<SymOp>(equivalents_generating_ops.begin(),
+                            equivalents_generating_ops.end());
+}
+
+/// \brief The extended equivalence map maps a prototype to equivalent
+///     clusters in the current and equivalent orbitrees
+///
+/// Usage:
+/// \code
+/// IntegralCluster equiv_cluster = sym_compare.copy_apply(
+///     extended_equivalence_map[phenom_index][cluster_index][symop_index],
+///     prototype)
+/// \endcode
+/// Where `equiv_cluster` is the cluster_index-th cluster around the
+/// phenom_index-th equivalent phenomenal cluster, for all symop_index.
+///
+multivector<SymOp>::X<3> make_extended_equivalence_map(
+    multivector<SymOp>::X<2> const &equivalence_map,
+    std::vector<SymOp> const &equivalents_generating_ops) {
+  multivector<SymOp>::X<3> extended_equivalence_map;
+  for (SymOp const &equiv_phenom_op : equivalents_generating_ops) {
+    multivector<SymOp>::X<2> equiv_equivalence_map;
+    // now use equiv_local_op and the local cluster orbit equivalence map to
+    // generate new rows in the exteneded equivalence map corresponding to local
+    // clusters around `equiv_phenomenal`
+    for (auto const &row : equivalence_map) {
+      std::vector<SymOp> extended_equivalence_map_row;
+      for (SymOp const &local_orbit_op : row) {
+        extended_equivalence_map_row.push_back(equiv_phenom_op *
+                                               local_orbit_op);
+      }
+      equiv_equivalence_map.push_back(extended_equivalence_map_row);
+    }
+    extended_equivalence_map.push_back(equiv_equivalence_map);
+  }
+  return extended_equivalence_map;
 }
 
 GenericPeriodicClusterSpecs::GenericPeriodicClusterSpecs(

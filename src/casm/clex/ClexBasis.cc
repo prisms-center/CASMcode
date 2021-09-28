@@ -12,22 +12,6 @@
 
 namespace CASM {
 
-template void
-    ClexBasis::generate<std::vector<AperiodicIntegralClusterOrbit>::iterator>(
-        std::vector<AperiodicIntegralClusterOrbit>::iterator,
-        std::vector<AperiodicIntegralClusterOrbit>::iterator);
-
-template void ClexBasis::generate<
-    std::vector<PrimPeriodicIntegralClusterOrbit>::iterator>(
-    std::vector<PrimPeriodicIntegralClusterOrbit>::iterator,
-    std::vector<PrimPeriodicIntegralClusterOrbit>::iterator);
-
-template BasisSet
-ClexBasis::_construct_prototype_basis<AperiodicIntegralClusterOrbit>(
-    AperiodicIntegralClusterOrbit const &_orbit,
-    std::vector<DoFKey> const &local_keys,
-    std::vector<DoFKey> const &global_keys, Index max_poly_order) const;
-
 ClexBasis::ClexBasis(PrimType_ptr _prim_ptr,
                      ClexBasisSpecs const &_basis_set_specs,
                      ParsingDictionary<DoFType::Traits> const *_dof_dict)
@@ -35,7 +19,8 @@ ClexBasis::ClexBasis(PrimType_ptr _prim_ptr,
       m_basis_set_specs(_basis_set_specs),
       m_dof_dict(_dof_dict),
       m_basis_builder(std::unique_ptr<ClexBasisBuilder>(
-          new InvariantPolyBasisBuilder("invariant_poly"))) {
+          new InvariantPolyBasisBuilder("invariant_poly"))),
+      m_tree_index(0) {
   _populate_site_bases();
 }
 
@@ -90,33 +75,16 @@ DoFType::Traits const &ClexBasis::lookup_dof_type_traits(
 Index ClexBasis::n_sublat() const { return prim().basis().size(); }
 
 /// \brief Total number of cluster orbits
-Index ClexBasis::n_orbits() const { return m_bset_tree.size(); }
+Index ClexBasis::n_orbits() const { return m_bset_tree[m_tree_index].size(); }
 
 /// \brief Total number of basis functions
 Index ClexBasis::n_functions() const {
   Index nf = 0;
 
-  for (auto const &bo : m_bset_tree) {
+  for (auto const &bo : m_bset_tree[m_tree_index]) {
     if (bo.size()) nf += bo[0].size();
   }
   return nf;
-}
-
-ClexBasis &ClexBasis::apply_sym(const SymOp &op) {
-  // TODO: how to deal with anisotropic site bases?
-  // if (_has_anisotropic_DoFs()) {
-  //   throw std::runtime_error("Error: ClexBasis::apply_sym not implemented for
-  //   ClexBasis with anisotropic DoFs");
-  // }
-
-  // // apply symop to m_bset_tree
-  for (BSetOrbit &basis_set_orbit : m_bset_tree) {
-    for (BasisSet &basis_set : basis_set_orbit) {
-      basis_set.apply_sym(op);
-    }
-  }
-
-  return *this;
 }
 
 //********************************************************************
