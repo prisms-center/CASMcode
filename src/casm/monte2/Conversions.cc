@@ -3,43 +3,105 @@
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/crystallography/BasicStructure.hh"
+#include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/misc/algorithm.hh"
 
 namespace CASM {
 namespace Monte2 {
 
-Conversions::Conversions(std::shared_ptr<Supercell const> const &supercell)
-    : Conversions(Configuration{supercell}, supercell) {}
-
-Conversions::Conversions(Configuration const &unit_config,
-                         std::shared_ptr<Supercell const> const &supercell)
-    : m_unit_supercell(unit_config.shared_supercell()),
-      m_unitl_and_bijk_converter(unit_config.shared_supercell()
-                                     ->sym_info()
-                                     .unitcellcoord_index_converter()),
-      m_supercell(supercell),
-      m_l_and_bijk_converter(
-          supercell->sym_info().unitcellcoord_index_converter()),
-      m_struc_mol(xtal::struc_molecule(m_supercell->prim())),
-      m_struc_molname(xtal::struc_molecule_name(m_supercell->prim())) {
-  // make m_unitl_to_asym, m_Nasym
+namespace {
+/// Return indices of equivalent basis sites
+std::vector<Index> make_b_to_asym(const xtal::BasicStructure &struc) {
+  std::vector<Index> b_to_asym(struc.basis().size());
+  std::set<std::set<Index>> asym_unit = xtal::make_asymmetric_unit(struc);
   Index asym = 0;
-  Index unit_Nsites = m_unit_supercell->num_sites();
-  m_unitl_to_asym.resize(unit_Nsites, -1);
-  std::vector<PermuteIterator> fg = unit_config.factor_group();
-  for (Index unitl = 0; unitl < unit_Nsites; ++unitl) {
-    if (m_unitl_to_asym[unitl] == -1) {
-      for (auto it = fg.begin(); it != fg.end(); ++it) {
-        // permutation defined by: after[i] = before[it->permute_ind(i)]
-        m_unitl_to_asym[it->permute_ind(unitl)] = asym;
-      }
-      ++asym;
+  for (auto const &orbit : asym_unit) {
+    for (Index b : orbit) {
+      b_to_asym[b] = asym;
     }
+    ++asym;
   }
-  m_Nasym = asym;
+  return b_to_asym;
+}
+}  // namespace
+
+/// \brief Constructor (uses asymmetric unit determined from prim factor group)
+///
+/// \param prim The primitive structure
+/// \param transformation_matrix_to_super Defines a supercell lattice,
+///     S = P * T, where S = supercell lattice column matrix, P = prim lattice
+///     column matrix, T = transformation_matrix_to_super.
+///
+/// This overload uses the prim factor group symmetry to determine the
+/// asymmetric unit.
+Conversions::Conversions(xtal::BasicStructure const &prim,
+                         Eigen::Matrix3l const &transformation_matrix_to_super)
+    : Conversions(prim, transformation_matrix_to_super,
+                  Eigen::Matrix3l::Identity(), make_b_to_asym(prim)) {}
+
+/// \brief Constructor (user specified asymmetric unit with reduced symmetry)
+///
+/// \param prim The primitive structure
+/// \param transformation_matrix_to_super Defines a supercell lattice,
+///     S = P * T, where S = supercell lattice column matrix, P = prim lattice
+///     column matrix, T = transformation_matrix_to_super.
+/// \param b_to_asym Specifies the asymmetric unit orbit index
+///     corresponding to each sublattice in the prim. Asymmetric unit orbit
+///     indices are distinct indices `(0, 1, ...)` indicating that sites with
+///     the same index map onto each other via symmetry operations.
+///
+/// This overload allows specifying lower symmetry than the prim factor group
+/// (but same periodicity) to determine the asymmetric unit.
+///
+Conversions::Conversions(xtal::BasicStructure const &prim,
+                         Eigen::Matrix3l const &transformation_matrix_to_super,
+                         std::vector<Index> const &b_to_asym)
+    : Conversions(prim, transformation_matrix_to_super,
+                  Eigen::Matrix3l::Identity(), b_to_asym) {}
+
+/// \brief Constructor (user specified asymmetric unit with reduced
+/// translational symmetry)
+///
+/// \param prim The primitive structure
+/// \param transformation_matrix_to_super Defines a supercell lattice,
+///     S = P * T, where S = supercell lattice column matrix, P = prim lattice
+///     column matrix, T = transformation_matrix_to_super.
+/// \param unit_transformation_matrix_to_super Defines a sub-supercell lattice,
+///     U = P * T, where U = supercell lattice column matrix, P = prim lattice
+///     column matrix, T_unit = unit_transformation_matrix_to_super. U must
+///     tile into S (i.e. S = U * T', where T' is an integer matrix). Allows
+///     specifying an asymmetric unit which does not fit in the primitive cell.
+/// \param unitl_to_asym Specifies the asymmetric unit orbit index
+///     corresponding to each site in the supercell U. Asymmetric unit orbit
+///     indices are distinct indices `(0, 1, ...)` indicating that sites with
+///     the same index map onto each other via symmetry operations.
+///
+/// This overload allows specifying an asymmetric unit which does not fit in
+/// the primitive cell.
+///
+Conversions::Conversions(
+    xtal::BasicStructure const &prim,
+    Eigen::Matrix3l const &transformation_matrix_to_super,
+    Eigen::Matrix3l const &unit_transformation_matrix_to_super,
+    std::vector<Index> const &unitl_to_asym)
+    : m_unit_transformation_matrix_to_super(
+          unit_transformation_matrix_to_super),
+      m_unitl_and_bijk_converter(unit_transformation_matrix_to_super,
+                                 prim.basis().size()),
+      m_transformation_matrix_to_super(transformation_matrix_to_super),
+      m_l_and_bijk_converter(transformation_matrix_to_super,
+                             prim.basis().size()),
+      m_struc_mol(xtal::struc_molecule(prim)),
+      m_struc_molname(xtal::struc_molecule_name(prim)),
+      m_unitl_to_asym(unitl_to_asym) {
+  // find m_Nasym
+  m_Nasym =
+      *std::max_element(m_unitl_to_asym.begin(), m_unitl_to_asym.end()) + 1;
 
   // make m_asym_to_unitl & m_asym_to_b
+  Index unit_Nsites =
+      unit_transformation_matrix_to_super.determinant() * prim.basis().size();
   m_asym_to_unitl.resize(m_Nasym);
   m_asym_to_b.resize(m_Nasym);
   for (Index unitl = 0; unitl < unit_Nsites; ++unitl) {
@@ -51,12 +113,11 @@ Conversions::Conversions(Configuration const &unit_config,
   // make m_occ_to_species and m_species_to_occ
 
   // [b][occ] -> species
-  auto index_converter =
-      make_index_converter(m_supercell->prim(), m_struc_molname);
+  auto index_converter = make_index_converter(prim, m_struc_molname);
 
   // [b][species] -> occ, index_converter[b].size() if not allowed
   auto index_converter_inv =
-      make_index_converter_inverse(m_supercell->prim(), m_struc_molname);
+      make_index_converter_inverse(prim, m_struc_molname);
 
   m_occ_to_species.resize(m_Nasym);
   m_species_to_occ.resize(m_Nasym);
@@ -118,14 +179,6 @@ std::set<Index> const &Conversions::asym_to_b(Index asym) const {
 
 std::set<Index> const &Conversions::asym_to_unitl(Index asym) const {
   return m_asym_to_unitl[asym];
-}
-
-std::shared_ptr<Supercell const> const &Conversions::unit_supercell() const {
-  return m_unit_supercell;
-}
-
-std::shared_ptr<Supercell const> const &Conversions::supercell() const {
-  return m_supercell;
 }
 
 Index Conversions::occ_size(Index asym) const {

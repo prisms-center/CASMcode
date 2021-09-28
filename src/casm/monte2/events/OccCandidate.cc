@@ -171,7 +171,7 @@ std::ostream &operator<<(
   const OccCandidateList &list = value.first;
 
   sout << "Unit cell for determining equivalent swaps: \n"
-       << convert.unit_supercell()->transf_mat() << "\n\n";
+       << convert.unit_transformation_matrix_to_super() << "\n\n";
 
   sout << "Asymmetric Unit: " << std::endl;
   for (Index asym = 0; asym != convert.asym_size(); ++asym) {

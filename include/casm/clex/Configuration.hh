@@ -591,6 +591,11 @@ Eigen::VectorXi num_each_molecule(const ConfigDoF &configdof,
 /// ordered as Structure::get_struc_molecule()
 Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel);
 
+/// \brief Generate a lookup table for configuration site index to asymmetric
+///     unit orbit index
+std::vector<Index> make_site_index_to_asym_index(
+    Index config_n_sites, std::vector<PermuteIterator> config_factor_group);
+
 /** @} */
 
 }  // namespace CASM

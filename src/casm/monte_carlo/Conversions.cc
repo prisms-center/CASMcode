@@ -60,11 +60,11 @@ Conversions::Conversions(const Configuration &unit_config,
 
   // [b][occ] -> species
   auto index_converter =
-      make_index_converter(m_mc_scel->prim(), m_struc_molname);
+      xtal::make_index_converter(m_mc_scel->prim(), m_struc_molname);
 
   // [b][species] -> occ, index_converter[b].size() if not allowed
   auto index_converter_inv =
-      make_index_converter_inverse(m_mc_scel->prim(), m_struc_molname);
+      xtal::make_index_converter_inverse(m_mc_scel->prim(), m_struc_molname);
 
   m_occ_to_species.resize(m_Nasym);
   m_species_to_occ.resize(m_Nasym);

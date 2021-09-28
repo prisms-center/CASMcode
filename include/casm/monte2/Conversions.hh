@@ -20,22 +20,40 @@ class Configuration;
 
 namespace Monte2 {
 
-/// l: linear index into supercell sites (site_index into `supercell` sites)
-/// b: prim basis site index (sublattice_index into prim.basis())
-/// ijk: prim unit cell indices
-/// bijk: prim basis site index + unit cell indices
-/// unitl: ref config basis site index (site_index in `unit_config`)
-/// asym: asymmetric unit index
-/// occ_index: Index into occupant list for a site (index into
-///    prim.basis()[b].occupant_dof())
-/// species_index: Index into the molecule list for the prim (index into vector
-///    returned from xtal::struc_molecule)
+/// \brief Performs conversions between various coordinate and asymmetric unit
+///     orbit representations.
+///
+/// Conventions:
+/// - l: linear index into supercell sites (site_index into `supercell` sites)
+/// - b: prim basis site index (sublattice_index into prim.basis())
+/// - ijk: prim unit cell indices
+/// - bijk: prim basis site index + unit cell indices
+/// - unitl: ref config basis site index (site_index in supercell speficied by
+///   `unit_transformation_matrix_to_super()`)
+/// - asym: asymmetric unit orbit index (value is the same for all sites which
+///   are symmetrically equivalent according to some group)
+/// - occ_index: Index into occupant list for a site (index into
+///   prim.basis()[b].occupant_dof(), for some b or asym)
+/// - species_index: Index into the molecule list for the prim (index into
+///   vector returned from xtal::struc_molecule)
 class Conversions {
  public:
-  Conversions(std::shared_ptr<Supercell const> const &supercell);
+  /// \brief Constructor (uses asymmetric unit determined from prim factor
+  ///     group)
+  Conversions(xtal::BasicStructure const &prim,
+              Eigen::Matrix3l const &transformation_matrix_to_super);
 
-  Conversions(Configuration const &unit_config,
-              std::shared_ptr<Supercell const> const &supercell);
+  /// \brief Constructor (user specified asymmetric unit with reduced symmetry)
+  Conversions(xtal::BasicStructure const &prim,
+              Eigen::Matrix3l const &transformation_matrix_to_super,
+              std::vector<Index> const &b_to_asym);
+
+  /// \brief Constructor (user specified asymmetric unit with reduced
+  ///     translational symmetry)
+  Conversions(xtal::BasicStructure const &prim,
+              Eigen::Matrix3l const &transformation_matrix_to_super,
+              Eigen::Matrix3l const &unit_transformation_matrix_to_super,
+              std::vector<Index> const &unitl_to_asym);
 
   Index l_to_b(Index l) const;
   xtal::UnitCell l_to_ijk(Index l) const;
@@ -55,8 +73,8 @@ class Conversions {
   std::set<Index> const &asym_to_b(Index asym) const;
   std::set<Index> const &asym_to_unitl(Index asym) const;
 
-  std::shared_ptr<Supercell const> const &unit_supercell() const;
-  std::shared_ptr<Supercell const> const &supercell() const;
+  Eigen::Matrix3l const &unit_transformation_matrix_to_super() const;
+  Eigen::Matrix3l const &transformation_matrix_to_super() const;
 
   Index occ_size(Index asym) const;
   Index species_index(Index asym, Index occ_index) const;
@@ -70,10 +88,12 @@ class Conversions {
   Index components_size(Index species_index) const;
 
  private:
-  std::shared_ptr<Supercell const> m_unit_supercell;
+  Eigen::Matrix3l m_unit_transformation_matrix_to_super;
   xtal::UnitCellCoordIndexConverter m_unitl_and_bijk_converter;
-  std::shared_ptr<Supercell const> m_supercell;
+
+  Eigen::Matrix3l m_transformation_matrix_to_super;
   xtal::UnitCellCoordIndexConverter m_l_and_bijk_converter;
+
   std::vector<xtal::Molecule> m_struc_mol;
   std::vector<std::string> m_struc_molname;
 

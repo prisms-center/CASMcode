@@ -98,7 +98,7 @@ void run_case(std::shared_ptr<Structure const> shared_prim, ConfigInit f,
   Eigen::Matrix3l T;
   T << 9, 0, 0, 0, 9, 0, 0, 0, 9;
   auto shared_supercell = std::make_shared<Supercell const>(shared_prim, T);
-  Monte2::Conversions convert(shared_supercell);
+  Monte2::Conversions convert(*shared_prim, T);
 
   // config with random occupation
   Configuration config(shared_supercell);
