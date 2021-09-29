@@ -1,7 +1,6 @@
 #include "casm/monte2/events/OccCandidate.hh"
 
 #include "casm/casm_io/json/jsonParser.hh"
-#include "casm/clex/Supercell.hh"
 #include "casm/crystallography/UnitCellCoord.hh"
 #include "casm/monte2/Conversions.hh"
 

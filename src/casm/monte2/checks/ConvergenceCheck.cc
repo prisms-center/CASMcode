@@ -120,7 +120,7 @@ ConvergenceCheckResults convergence_check(
     std::map<SamplerComponent, ConvergenceCheckParams> const
         &convergence_check_params,
     CountType N_samples_for_equilibration,
-    std::map<std::string, Sampler> const &samplers) {
+    std::map<std::string, std::shared_ptr<Sampler>> const &samplers) {
   ConvergenceCheckResults results;
   CountType N_samples = get_n_samples(samplers);
 
@@ -151,7 +151,7 @@ ConvergenceCheckResults convergence_check(
 
     // do convergence check
     IndividualConvergenceCheckResult current = convergence_check(
-        sampler_it->second.component(key.component_index),  // observations
+        sampler_it->second->component(key.component_index),  // observations
         value.precision, value.confidence);
 
     // combine results

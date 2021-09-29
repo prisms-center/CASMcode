@@ -1,9 +1,9 @@
 #ifndef CASM_monte2_EquilibrationCheck
 #define CASM_monte2_EquilibrationCheck
 
-#include "casm/monte2/Definitions.hh"
-#include "casm/monte2/Sampling.hh"
 #include "casm/monte2/checks/ConvergenceCheck.hh"
+#include "casm/monte2/definitions.hh"
+#include "casm/monte2/sampling/Sampler.hh"
 
 namespace CASM {
 namespace Monte2 {
@@ -50,7 +50,8 @@ struct EquilibrationCheckResults {
 EquilibrationCheckResults equilibration_check(
     std::map<SamplerComponent, ConvergenceCheckParams> const
         &convergence_check_params,
-    std::map<std::string, Sampler> const &samplers, bool check_all);
+    std::map<std::string, std::shared_ptr<Sampler>> const &samplers,
+    bool check_all);
 
 }  // namespace Monte2
 }  // namespace CASM

@@ -1,5 +1,3 @@
-#include "casm/monte2/Sampling.hh"
-
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/crystallography/Structure.hh"
@@ -8,13 +6,15 @@
 #include "casm/monte2/events/OccCandidate.hh"
 #include "casm/monte2/events/OccEventProposal.hh"
 #include "casm/monte2/events/OccLocation.hh"
+#include "casm/monte2/state/State.hh"
+#include "casm/monte2/state/StateSampler.hh"
 #include "crystallography/TestStructures.hh"
 #include "gtest/gtest.h"
 
 using namespace CASM;
 
 void run_case(std::shared_ptr<Structure const> shared_prim, MTRand &mtrand,
-              Monte2::Sampler &sampler) {
+              Monte2::StateSampler<CASM::Configuration> &sampler) {
   ScopedNullLogging logging;
 
   Eigen::Matrix3l T;
@@ -24,25 +24,25 @@ void run_case(std::shared_ptr<Structure const> shared_prim, MTRand &mtrand,
 
   // config with default occupation
   Configuration config(shared_supercell);
-  Monte2::State state{config};
+  Monte2::State<Configuration> state{config};
+  Eigen::VectorXi &occupation =
+      state.configuration.configdof().values().occupation;
 
   // construct OccCandidateList
   Monte2::OccCandidateList cand_list(convert);
 
   // construct OccLocation
   Monte2::OccLocation occ_loc(convert, cand_list);
-  occ_loc.initialize(state.configuration.occupation());
+  occ_loc.initialize(occupation);
 
   Index count = 0;
   Monte2::OccEvent e;
-  ConfigDoF &configdof = state.configuration.configdof();
-  clexulator::ConfigDoFValues &dof_values = configdof.values();
   while (count < 1000000) {
     if (count % 1000 == 0) {
       sampler.sample(state);
     }
     propose_canonical_event(e, occ_loc, cand_list.canonical_swap(), mtrand);
-    occ_loc.apply(e, dof_values.occupation);
+    occ_loc.apply(e, occupation);
     ++count;
   }
 }
@@ -51,11 +51,13 @@ TEST(SamplingTest, CompNSamplingTest) {
   MTRand mtrand;
   auto shared_prim = std::make_shared<Structure const>(test::ZrO_prim());
 
-  Monte2::StateSamplingFunction comp_n_sampling_f(
+  Monte2::StateSamplingFunction<Configuration> comp_n_sampling_f(
       "comp_n", "Composition per unit cell",
-      [](Monte2::State const &state) { return comp_n(state.configuration); });
+      [](Monte2::State<Configuration> const &state) {
+        return comp_n(state.configuration);
+      });
 
-  Monte2::Sampler comp_n_sampler(comp_n_sampling_f);
+  Monte2::StateSampler<Configuration> comp_n_sampler(comp_n_sampling_f);
 
   run_case(shared_prim, mtrand, comp_n_sampler);
 

@@ -1,8 +1,8 @@
 #ifndef CASM_monte2_ConvergenceCheck
 #define CASM_monte2_ConvergenceCheck
 
-#include "casm/monte2/Definitions.hh"
-#include "casm/monte2/Sampling.hh"
+#include "casm/monte2/definitions.hh"
+#include "casm/monte2/sampling/Sampler.hh"
 
 namespace CASM {
 namespace Monte2 {
@@ -65,7 +65,7 @@ ConvergenceCheckResults convergence_check(
     std::map<SamplerComponent, ConvergenceCheckParams> const
         &convergence_check_params,
     CountType N_samples_for_equilibration,
-    std::map<std::string, Sampler> const &samplers);
+    std::map<std::string, std::shared_ptr<Sampler>> const &samplers);
 
 }  // namespace Monte2
 }  // namespace CASM

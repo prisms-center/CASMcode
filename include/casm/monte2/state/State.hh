@@ -6,14 +6,17 @@
 
 #include "casm/clex/Configuration.hh"
 #include "casm/global/eigen.hh"
-#include "casm/monte2/Definitions.hh"
+#include "casm/monte2/definitions.hh"
 
 namespace CASM {
 namespace Monte2 {
 
 /// A state of a Monte Carlo calculation
+template <typename _ConfigType>
 struct State {
-  State(Configuration const &_configuration,
+  typedef _ConfigType ConfigType;
+
+  State(ConfigType const &_configuration,
         VectorValueMap _conditions = VectorValueMap(),
         VectorValueMap _properties = VectorValueMap())
       : configuration(_configuration),
@@ -21,7 +24,7 @@ struct State {
         properties(_properties) {}
 
   /// Current configuration
-  Configuration configuration;
+  ConfigType configuration;
 
   /// Conditions of the state
   ///

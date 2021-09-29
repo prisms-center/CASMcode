@@ -15,9 +15,6 @@ class UnitCellCoord;
 class Molecule;
 }  // namespace xtal
 
-class Supercell;
-class Configuration;
-
 namespace Monte2 {
 
 /// \brief Performs conversions between various coordinate and asymmetric unit

@@ -18,7 +18,7 @@ struct Configuration {
 
   std::shared_ptr<Supercell const> supercell;
 
-  clexulator::ConfigDoFValues dof_values;
+  clexulator::ConfigDoFValues *dof_values;
 };
 
 }  // namespace config

@@ -3,11 +3,12 @@
 
 #include <optional>
 
-#include "casm/monte2/Definitions.hh"
-#include "casm/monte2/Sampling.hh"
 #include "casm/monte2/checks/ConvergenceCheck.hh"
 #include "casm/monte2/checks/CutoffCheck.hh"
 #include "casm/monte2/checks/EquilibrationCheck.hh"
+#include "casm/monte2/definitions.hh"
+#include "casm/monte2/sampling/SampledData.hh"
+#include "casm/monte2/sampling/Sampler.hh"
 
 namespace CASM {
 namespace Monte2 {
@@ -48,16 +49,33 @@ class CompletionCheck {
  public:
   CompletionCheck(CompletionCheckParams params);
 
-  // --- Begin required CompletionCheck interface ---
+  bool is_complete(
+      std::map<std::string, std::shared_ptr<Sampler>> const &samplers);
+
+  bool is_complete(
+      std::map<std::string, std::shared_ptr<Sampler>> const &samplers,
+      CountType count);
+
+  bool is_complete(
+      std::map<std::string, std::shared_ptr<Sampler>> const &samplers,
+      TimeType time);
+
+  bool is_complete(
+      std::map<std::string, std::shared_ptr<Sampler>> const &samplers,
+      CountType count, TimeType time);
 
   bool is_complete(SampledData const &sampled_data);
 
   CompletionCheckResults const &results() const { return m_results; }
 
-  // --- End required CompletionCheck interface ---
-
  private:
-  void _check(SampledData const &sampled_data);
+  bool _is_complete(
+      std::map<std::string, std::shared_ptr<Sampler>> const &samplers,
+      std::optional<CountType> count, std::optional<TimeType> time);
+
+  void _check(std::map<std::string, std::shared_ptr<Sampler>> const &samplers,
+              std::optional<CountType> count, std::optional<TimeType> time,
+              CountType n_samples);
 
   CompletionCheckParams m_params;
 
@@ -66,13 +84,43 @@ class CompletionCheck {
 
 // --- Inline definitions ---
 
+inline bool CompletionCheck::is_complete(
+    std::map<std::string, std::shared_ptr<Sampler>> const &samplers) {
+  return _is_complete(samplers, std::nullopt, std::nullopt);
+}
+
+inline bool CompletionCheck::is_complete(
+    std::map<std::string, std::shared_ptr<Sampler>> const &samplers,
+    CountType count) {
+  return _is_complete(samplers, count, std::nullopt);
+}
+
+inline bool CompletionCheck::is_complete(
+    std::map<std::string, std::shared_ptr<Sampler>> const &samplers,
+    TimeType time) {
+  return _is_complete(samplers, std::nullopt, time);
+}
+
+inline bool CompletionCheck::is_complete(
+    std::map<std::string, std::shared_ptr<Sampler>> const &samplers,
+    CountType count, TimeType time) {
+  return _is_complete(samplers, count, time);
+}
+
 inline bool CompletionCheck::is_complete(SampledData const &sampled_data) {
-  CountType n_samples = get_n_samples(sampled_data);
+  return _is_complete(sampled_data.samplers, get_count(sampled_data),
+                      get_time(sampled_data));
+}
+
+inline bool CompletionCheck::_is_complete(
+    std::map<std::string, std::shared_ptr<Sampler>> const &samplers,
+    std::optional<CountType> count, std::optional<TimeType> time) {
+  CountType n_samples = get_n_samples(samplers);
   if (n_samples < m_params.min_sample ||
       n_samples % m_params.check_frequency != 0) {
     return false;
   }
-  _check(sampled_data);
+  _check(samplers, count, time, n_samples);
   return m_results.is_complete;
 }
 

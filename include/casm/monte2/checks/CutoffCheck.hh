@@ -3,7 +3,7 @@
 
 #include <optional>
 
-#include "casm/monte2/Definitions.hh"
+#include "casm/monte2/definitions.hh"
 
 namespace CASM {
 namespace Monte2 {
@@ -25,16 +25,19 @@ struct CutoffCheckParams {
   std::optional<CountType> max_sample;
 };
 
-bool all_minimums_met(CutoffCheckParams const &cutoff_params, CountType count,
-                      TimeType time, CountType n_samples);
+bool all_minimums_met(CutoffCheckParams const &cutoff_params,
+                      std::optional<CountType> count,
+                      std::optional<TimeType> time, CountType n_samples);
 
-bool any_maximum_met(CutoffCheckParams const &cutoff_params, CountType count,
-                     TimeType time, CountType n_samples);
+bool any_maximum_met(CutoffCheckParams const &cutoff_params,
+                     std::optional<CountType> count,
+                     std::optional<TimeType> time, CountType n_samples);
 
 // --- inline definitions ---
 
 inline bool all_minimums_met(CutoffCheckParams const &cutoff_params,
-                             CountType count, TimeType time,
+                             std::optional<CountType> count,
+                             std::optional<TimeType> time,
                              CountType n_samples) {
   auto const &p = cutoff_params;
 
@@ -42,11 +45,13 @@ inline bool all_minimums_met(CutoffCheckParams const &cutoff_params,
     return false;
   }
 
-  if (p.min_count.has_value() && count < p.min_count.value()) {
+  if (p.min_count.has_value() && count.has_value() &&
+      count.value() < p.min_count.value()) {
     return false;
   }
 
-  if (p.min_time.has_value() && time < p.min_time.value()) {
+  if (p.min_time.has_value() && time.has_value() &&
+      time.value() < p.min_time.value()) {
     return false;
   }
 
@@ -54,19 +59,21 @@ inline bool all_minimums_met(CutoffCheckParams const &cutoff_params,
 }
 
 inline bool any_maximum_met(CutoffCheckParams const &cutoff_params,
-                            CountType count, TimeType time,
-                            CountType n_samples) {
+                            std::optional<CountType> count,
+                            std::optional<TimeType> time, CountType n_samples) {
   auto const &p = cutoff_params;
 
   if (p.max_sample.has_value() && n_samples >= p.max_sample.value()) {
     return true;
   }
 
-  if (p.max_count.has_value() && count >= p.max_count.value()) {
+  if (p.max_count.has_value() && count.has_value() &&
+      count.value() >= p.max_count.value()) {
     return true;
   }
 
-  if (p.max_time.has_value() && time >= p.max_time.value()) {
+  if (p.max_time.has_value() && time.has_value() &&
+      time.value() >= p.max_time.value()) {
     return true;
   }
 

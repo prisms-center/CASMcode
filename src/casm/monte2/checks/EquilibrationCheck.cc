@@ -128,7 +128,8 @@ IndividualEquilibrationCheckResult equilibration_check(
 EquilibrationCheckResults equilibration_check(
     std::map<SamplerComponent, ConvergenceCheckParams> const
         &convergence_check_params,
-    std::map<std::string, Sampler> const &samplers, bool check_all) {
+    std::map<std::string, std::shared_ptr<Sampler>> const &samplers,
+    bool check_all) {
   EquilibrationCheckResults results;
 
   if (!convergence_check_params.size()) {
@@ -148,13 +149,13 @@ EquilibrationCheckResults equilibration_check(
 
     // do equilibration check
     IndividualEquilibrationCheckResult current = equilibration_check(
-        sampler_it->second.component(key.component_index),  // observations
+        sampler_it->second->component(key.component_index),  // observations
         value.precision);
 
     // combine results
     results.N_samples_for_all_to_equilibrate =
-        max(results.N_samples_for_all_to_equilibrate,
-            current.N_samples_for_equilibration);
+        std::max(results.N_samples_for_all_to_equilibrate,
+                 current.N_samples_for_equilibration);
     results.all_equilibrated &= current.is_equilibrated;
     results.individual_results.emplace(key, current);
 

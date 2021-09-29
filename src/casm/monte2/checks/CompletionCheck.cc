@@ -9,15 +9,14 @@ CompletionCheck::CompletionCheck(CompletionCheckParams params)
     : m_params(params) {}
 
 /// \brief Check for equilibration and convergence, then set m_results
-void CompletionCheck::_check(SampledData const &sampled_data) {
+void CompletionCheck::_check(
+    std::map<std::string, std::shared_ptr<Sampler>> const &samplers,
+    std::optional<CountType> count, std::optional<TimeType> time,
+    CountType n_samples) {
   m_results = CompletionCheckResults();
 
-  CountType count = get_count(sampled_data);
-  TimeType time = get_time(sampled_data);
-  CountType N_samples = get_n_samples(sampled_data);
-
   // if minimums not met -> continue
-  if (!all_minimums_met(m_params.cutoff_params, count, time, N_samples)) {
+  if (!all_minimums_met(m_params.cutoff_params, count, time, n_samples)) {
     m_results.is_complete = false;
     return;
   }
@@ -27,7 +26,7 @@ void CompletionCheck::_check(SampledData const &sampled_data) {
     // check for equilibration
     bool check_all = false;
     m_results.equilibration_check_results = equilibration_check(
-        m_params.convergence_check_params, sampled_data.samplers, check_all);
+        m_params.convergence_check_params, samplers, check_all);
 
     // if all requested to converge are equilibrated, then check convergence
     if (m_results.equilibration_check_results.all_equilibrated) {
@@ -35,7 +34,7 @@ void CompletionCheck::_check(SampledData const &sampled_data) {
           convergence_check(m_params.convergence_check_params,
                             m_results.equilibration_check_results
                                 .N_samples_for_all_to_equilibrate,
-                            sampled_data.samplers);
+                            samplers);
     }
 
     // if all requested to converge are converged, then complete
@@ -46,7 +45,7 @@ void CompletionCheck::_check(SampledData const &sampled_data) {
   }
 
   // if any maximum met, stop
-  if (any_maximum_met(m_params.cutoff_params, count, time, N_samples)) {
+  if (any_maximum_met(m_params.cutoff_params, count, time, n_samples)) {
     m_results.is_complete = true;
   }
 }
