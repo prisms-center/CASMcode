@@ -1,5 +1,6 @@
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/Configuration_impl.hh"
+#include "casm/composition/CompositionCalculator.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/external/MersenneTwister/MersenneTwister.h"
 #include "casm/monte2/Conversions.hh"
@@ -13,18 +14,21 @@
 
 using namespace CASM;
 
-void run_case(std::shared_ptr<Structure const> shared_prim, MTRand &mtrand,
+void random_config(Configuration &config, Monte2::Conversions &convert,
+                   MTRand &mtrand);
+
+void run_case(std::shared_ptr<Structure const> shared_prim, Eigen::Matrix3l T,
+              MTRand &mtrand,
               Monte2::StateSampler<CASM::Configuration> &sampler) {
   ScopedNullLogging logging;
 
-  Eigen::Matrix3l T;
-  T << 9, 0, 0, 0, 9, 0, 0, 0, 9;
   auto shared_supercell = std::make_shared<Supercell const>(shared_prim, T);
   Monte2::Conversions convert(*shared_prim, T);
 
   // config with default occupation
   Configuration config(shared_supercell);
   Monte2::State<Configuration> state{config};
+  random_config(state.configuration, convert, mtrand);
   Eigen::VectorXi &occupation =
       state.configuration.configdof().values().occupation;
 
@@ -51,16 +55,36 @@ TEST(SamplingTest, CompNSamplingTest) {
   MTRand mtrand;
   auto shared_prim = std::make_shared<Structure const>(test::ZrO_prim());
 
+  Eigen::Matrix3l T;
+  T << 9, 0, 0, 0, 9, 0, 0, 0, 9;
+  xtal::UnitCellCoordIndexConverter unitcellcoord_index_converter(
+      T, shared_prim->basis().size());
+  std::vector<std::string> components = xtal::struc_molecule_name(*shared_prim);
+
+  CompositionCalculator composition_calculator(
+      unitcellcoord_index_converter, components,
+      xtal::make_index_converter(*shared_prim, components));
+
   Monte2::StateSamplingFunction<Configuration> comp_n_sampling_f(
       "comp_n", "Composition per unit cell",
-      [](Monte2::State<Configuration> const &state) {
-        return comp_n(state.configuration);
+      [&](Monte2::State<Configuration> const &state) {
+        return composition_calculator.mean_num_each_component(
+            state.configuration.occupation());
       });
 
   Monte2::StateSampler<Configuration> comp_n_sampler(comp_n_sampling_f);
 
-  run_case(shared_prim, mtrand, comp_n_sampler);
+  std::map<std::string, std::shared_ptr<Monte2::Sampler>> samplers;
+  samplers["comp_n"] = std::make_shared<Monte2::Sampler>();
 
-  EXPECT_EQ(comp_n_sampler.n_samples(), 1000);
-  EXPECT_EQ(comp_n_sampler.n_components(), 3);
+  std::map<std::string, Monte2::StateSampler<Configuration>> state_samplers;
+  state_samplers.emplace(
+      std::piecewise_construct, std::forward_as_tuple("comp_n"),
+      std::forward_as_tuple(comp_n_sampling_f, samplers["comp_n"]));
+
+  run_case(shared_prim, T, mtrand, state_samplers.at("comp_n"));
+
+  Monte2::Sampler const &sampler = *samplers.at("comp_n");
+  EXPECT_EQ(sampler.n_samples(), 1000);
+  EXPECT_EQ(sampler.n_components(), 3);
 }

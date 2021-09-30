@@ -53,6 +53,11 @@ OccSwap const &choose_canonical_swap(OccLocation const &occ_location,
             ((double)occ_location.cand_size(canonical_swap[i].cand_b));
   }
 
+  if (m_tsum.back() == 0.0) {
+    throw std::runtime_error(
+        "Error in choose_canonical_swap: No events possible.");
+  }
+
   // Choose a random number on [0, m_tsum[canonical_swap.size()])
   // Swap type canonical_swap[i] occurs if the random number is between
   // m_tsum[i] and m_tsum[i+1]
@@ -64,7 +69,7 @@ OccSwap const &choose_canonical_swap(OccLocation const &occ_location,
     }
   }
 
-  throw std::runtime_error("OccLocation::propose_canonical error");
+  throw std::runtime_error("Error in choose_canonical_swap");
 }
 
 /// Propose canonical OccEvent, given choice of OccSwap
@@ -177,6 +182,11 @@ OccSwap const &choose_grand_canonical_swap(
         ((double)occ_location.cand_size(grand_canonical_swap[i].cand_a));
   }
 
+  if (m_tsum.back() == 0.0) {
+    throw std::runtime_error(
+        "Error in choose_grand_canonical_swap: No events possible.");
+  }
+
   // Choose a random number on [0, m_tsum[grand_canonical_swap.size()])
   // Swap type grand_canonical_swap[i] occurs if the random number is between
   // m_tsum[i] and m_tsum[i+1]
@@ -188,7 +198,7 @@ OccSwap const &choose_grand_canonical_swap(
     }
   }
 
-  throw std::runtime_error("OccLocation::choose_grand_canonical_swap");
+  throw std::runtime_error("Error in choose_grand_canonical_swap");
 }
 
 /// Propose grand canonical OccEvent

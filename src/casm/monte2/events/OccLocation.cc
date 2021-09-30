@@ -134,6 +134,11 @@ Mol &OccLocation::mol(Index mol_id) { return m_mol[mol_id]; }
 
 const Mol &OccLocation::mol(Index mol_id) const { return m_mol[mol_id]; }
 
+/// Access the OccCandidateList
+OccCandidateList const &OccLocation::candidate_list() const {
+  return m_candidate_list;
+}
+
 /// Total number of mutating sites, of OccCandidate type, specified by index
 OccLocation::size_type OccLocation::cand_size(Index cand_index) const {
   return m_loc[cand_index].size();

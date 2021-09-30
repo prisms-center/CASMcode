@@ -1,8 +1,8 @@
 #ifndef CASM_monte2_StateSampler
 #define CASM_monte2_StateSampler
 
-#include "casm/monte2/state/State.hh"
 #include "casm/monte2/sampling/Sampler.hh"
+#include "casm/monte2/state/State.hh"
 
 namespace CASM {
 namespace Monte2 {
@@ -72,7 +72,21 @@ std::unique_ptr<StateSampler<ConfigType>> make_configuration_sampler(
 namespace CASM {
 namespace Monte2 {
 
-/// \brief Sampler constructor
+/// \brief StateSamplingFunction constructor
+template <typename _ConfigType>
+StateSamplingFunction<_ConfigType>::StateSamplingFunction(
+    std::string _name, std::string _description,
+    std::function<Eigen::VectorXd(State<ConfigType> const &)> _function)
+    : name(_name), description(_description), function(_function) {}
+
+/// \brief Take a sample
+template <typename _ConfigType>
+Eigen::VectorXd StateSamplingFunction<_ConfigType>::operator()(
+    State<ConfigType> const &state) const {
+  return function(state);
+}
+
+/// \brief StateSampler constructor
 template <typename _ConfigType>
 StateSampler<_ConfigType>::StateSampler(
     StateSamplingFunction<ConfigType> _function,
@@ -87,7 +101,7 @@ void StateSampler<_ConfigType>::sample(State<ConfigType> const &state) {
 
 /// Get sampling function
 template <typename _ConfigType>
-StateSamplingFunction<ConfigType> const &StateSampler<_ConfigType>::function()
+StateSamplingFunction<_ConfigType> const &StateSampler<_ConfigType>::function()
     const {
   return m_function;
 }
