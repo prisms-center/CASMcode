@@ -159,7 +159,7 @@ class ClexBasis {
   /// \brief An equivalence map for bset_tree
   ///
   /// Bset tree are equivalent according to:
-  /// - m_bset_tree[i] == m_equivalents_generating_ops[i] * m_bset_tree[0]
+  /// - m_bset_tree[i] == m_bset_tree_equivalence_map[i] * m_bset_tree[0]
   std::vector<SymOp> m_bset_tree_equivalence_map;
 
   /// \brief Collections of all cluster BasisSets, one per cluster orbit (may
@@ -167,6 +167,12 @@ class ClexBasis {
   std::vector<std::vector<BSetOrbit>> m_bset_tree;
 
   /// \brief Determines which bset_tree information is returned about
+  ///
+  /// Note:
+  /// - This is used as `m_bset_tree[tree_index]` to give one of the equivalent
+  ///   bset_tree (i.e. an Orbitree / cluster expansion)
+  /// - Iterate, varying this via `set_tree_index`, to print out equivalent
+  ///   local clexulator
   Index m_tree_index;
 
   /// \brief Dictionary of all site BasisSets, initialized on construction
