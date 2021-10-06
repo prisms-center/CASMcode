@@ -24,13 +24,12 @@ struct CompletionCheckParams {
   std::map<SamplerComponent, ConvergenceCheckParams> convergence_check_params;
 
   /// \brief Minimum number of samples before checking for completion
-  CountType min_sample = 0;
+  CountType check_begin = 0;
 
   /// \brief How often to check for completion
   ///
   /// Check for completion performed if:
-  /// - n_samples % check_frequency == 0
-  /// - and n_samples >= min_sample
+  /// - n_samples % check_frequency == 0 && n_samples >= check_begin
   CountType check_frequency = 0;
 };
 
@@ -116,7 +115,7 @@ inline bool CompletionCheck::_is_complete(
     std::map<std::string, std::shared_ptr<Sampler>> const &samplers,
     std::optional<CountType> count, std::optional<TimeType> time) {
   CountType n_samples = get_n_samples(samplers);
-  if (n_samples < m_params.min_sample ||
+  if (n_samples < m_params.check_begin ||
       n_samples % m_params.check_frequency != 0) {
     return false;
   }

@@ -12,8 +12,12 @@ namespace Monte2 {
 /// \brief Sampler stores vector valued samples in a matrix
 class Sampler {
  public:
-  /// \brief Sampler constructor
-  Sampler(CountType _capacity_increment = 1000);
+  /// \brief Sampler constructor - default component names
+  Sampler(Index n_components, CountType _capacity_increment = 1000);
+
+  /// \brief Sampler constructor - custom component names
+  Sampler(std::vector<std::string> const &_component_names,
+          CountType _capacity_increment = 1000);
 
   /// \brief Add a new sample
   void push_back(Eigen::VectorXd const &vector);
@@ -24,17 +28,16 @@ class Sampler {
   /// Clear values - preserves n_components, set n_samples to 0
   void clear();
 
-  /// Non-conservative resize - sets n_samples to 0
-  void resize(Index n_components);
-
   /// Conservative resize, to increase capacity for more samples
   void set_sample_capacity(CountType sample_capacity);
 
   /// Set capacity increment (used when push_back requires more capacity)
   void set_capacity_increment(CountType _capacity_increment);
 
-  /// Number of components (vector size) of samples
-  Index n_components() const;
+  std::vector<std::string> component_names()
+
+      /// Number of components (vector size) of samples
+      Index n_components() const;
 
   /// Current number of samples taken
   CountType n_samples() const;
@@ -55,6 +58,12 @@ class Sampler {
   Eigen::Block<const Eigen::MatrixXd> sample(CountType sample_index) const;
 
  private:
+  /// Size of vectors to be sampled
+  Index m_n_components;
+
+  /// Names to use for components. Size == m_n_components
+  std::vector<std::string> m_component_names;
+
   /// Current number of samples taken
   Index m_n_samples;
 
@@ -70,8 +79,12 @@ class Sampler {
 };
 
 struct SamplerComponent {
-  /// Name (i.e. "comp_n(Mg)", "corr(0)", etc.)
-  std::string name = "";
+  /// \brief Constructor
+  ///
+  /// \param _sampler_name Name of Sampler
+  /// \param _component_index Index into sampler output vector
+  SamplerComponent(std::string _sampler_name, Index _component_index)
+      : sampler_name(_sampler_name), component_index(_component_index) {}
 
   /// Sampler name (i.e. "comp_n", "corr", etc.)
   std::string sampler_name = "";
@@ -82,10 +95,104 @@ struct SamplerComponent {
   bool operator<(SamplerComponent const &other) const;
 };
 
-std::map<std::string, std::shared_ptr<Sampler>>::const_iterator
-find_and_validate(
-    SamplerComponent const &key,
-    std::map<std::string, std::shared_ptr<Sampler>> const &samplers);
+struct SamplerConvergenceParams {
+  SamplerConvergenceParams(double _precision, double _confidence = 0.95)
+      : precision(_precision), confidence(_confidence) {}
+
+  double precision;
+
+  double confidence;
+};
+
+/// \brief Helper for compact construction of sampler convergence params
+///
+/// Usage:
+/// - This class is intended as a temporary intermediate constructed by the
+/// `converge` function. See `converge` documentation for intended usage.
+struct SamplerConvergenceParamsConstructor {
+  /// \brief Constructor
+  ///
+  /// \param _sampler_name Sampler name
+  /// \param _sampler Sampler reference
+  ///
+  /// Note:
+  /// - Constructs `values` to include convergence parameters for all
+  ///   components of the specified sampler, with initial values precision =
+  ///   `std::numeric_limits<double>::infinity()`, confidence = `0.95`.
+  SamplerConvergenceParamsConstructor(std::string _sampler_name,
+                                      Sampler const &_sampler)
+      : sampler_name(_sampler_name), sampler(_sampler) {
+    for (Index i = 0; i < sampler.n_components(); ++i) {
+      values.emplace(
+          SamplerComponent(sampler_name, i),
+          SamplerConvergenceParams(std::numeric_limits<double>::infinity()));
+    }
+  }
+
+  /// \brief Select only the specified component - by index
+  SamplerConvergenceParamsConstructor &component(Index component_index) {
+    if (component_index >= sampler.component_names().size()) {
+      std::stringstream msg;
+      msg << "Error constructing sampler convergence parameters: Component "
+             "index '"
+          << component_name << "' out of range for sampler '" << sampler_name
+          << "'";
+      throw std::runtime_error(msg.str());
+    }
+    SamplerComponent component(sampler_name, component_index);
+    SamplerConvergenceParams chosen = values.at(component);
+    values.clear();
+    values.emplace(component, chosen);
+    return *this;
+  }
+
+  /// \brief Select only the specified component - by name
+  SamplerConvergenceParamsConstructor &component(Index component_name) {
+    auto begin = sampler.component_names().begin();
+    auto end = sampler.component_names().end();
+    auto it = std::find(begin, end, component_name);
+    if (it == end) {
+      std::stringstream msg;
+      msg << "Error constructing sampler convergence parameters: Cannot find "
+             "component '"
+          << component_name << "' for sampler '" << sampler_name << "'";
+      throw std::runtime_error(msg.str());
+    }
+    Index component_index = std::distance(begin, it);
+    SamplerComponent component(sampler_name, component_index);
+    SamplerConvergenceParams chosen = values.at(component);
+    values.clear();
+    values.emplace(component, chosen);
+    return *this;
+  }
+
+  /// \brief Set the requested convergence precision for all selected components
+  SamplerConvergenceParamsConstructor &precision(double _precision) {
+    for (auto &value : values) {
+      value.second.precision = _precision;
+    }
+    return *this;
+  }
+
+  /// \brief Set the requested convergence confidence level
+  SamplerConvergenceParamsConstructor &confidence(double _confidence) {
+    for (auto &value : values) {
+      value.second.confidence = _confidence;
+    }
+    return *this;
+  }
+
+  std::string sampler_name;
+  Sampler const &sampler;
+  std::map<SamplerComponent, SamplerConvergenceParams> values;
+};
+
+std::vector<std::map<SamplerComponent, SamplerConvergence>> converge
+
+    std::map<std::string, std::shared_ptr<Sampler>>::const_iterator
+    find_and_validate(
+        SamplerComponent const &key,
+        std::map<std::string, std::shared_ptr<Sampler>> const &samplers);
 
 /// \brief Get Sampler::n_samples() value (assumes same for all)
 /// (else 0)
@@ -100,15 +207,34 @@ CountType get_n_samples(
 namespace CASM {
 namespace Monte2 {
 
-/// \brief Sampler constructor
+/// \brief Sampler constructor - default component names
 ///
-/// \param _name Name of value that will be sampled
-/// \param _description Extended description of sampler, to be printed with
-///     help output
+/// \param _n_components Size of vectors to be sampled
 /// \param _capacity_increment How much to resize the underlying matrix by
 ///     whenever space runs out.
-inline Sampler::Sampler(CountType _capacity_increment)
-    : m_n_samples(0), m_capacity_increment(_capacity_increment) {}
+///
+/// Notes:
+/// - Components are given default names ["0", "1", "2", ...)
+inline Sampler::Sampler(Index _n_components, CountType _capacity_increment)
+    : m_n_components(_n_components),
+      m_n_samples(0),
+      m_capacity_increment(_capacity_increment) {
+  for (Index i = 0; i < m_n_components; ++i) {
+    m_component_names.push_back(std::to_string(i));
+  }
+}
+
+/// \brief Sampler constructor - custom component names
+///
+/// \param _component_names Names to give to each sampled vector element
+/// \param _capacity_increment How much to resize the underlying matrix by
+///     whenever space runs out.
+inline Sampler::Sampler(std::vector<std::string> const &_component_names,
+                        CountType _capacity_increment)
+    : m_n_components(_component_names.size()),
+      m_component_names(_component_names),
+      m_n_samples(0),
+      m_capacity_increment(_capacity_increment) {}
 
 /// \brief Add a new sample
 inline void Sampler::push_back(Eigen::VectorXd const &vector) {
@@ -129,11 +255,8 @@ inline void Sampler::set_values(Eigen::MatrixXd const &values) {
 }
 
 /// Clear values - preserves n_components, set n_samples to 0
-inline void Sampler::clear() { resize(n_components()); }
-
-/// Non-conservative resize - sets n_samples to 0
-inline void Sampler::resize(Index n_components) {
-  m_values.resize(m_capacity_increment, n_components);
+inline void Sampler::clear() {
+  m_values.resize(m_capacity_increment, m_n_components);
   m_n_samples = 0;
 }
 
@@ -148,7 +271,7 @@ inline void Sampler::set_capacity_increment(CountType _capacity_increment) {
 }
 
 /// Number of components (vector size) of samples
-inline Index Sampler::n_components() const { return m_values.cols(); }
+inline Index Sampler::n_components() const { return m_n_components; }
 
 /// Current number of samples taken
 inline CountType Sampler::n_samples() const { return m_n_samples; }
@@ -180,7 +303,7 @@ inline bool SamplerComponent::operator<(SamplerComponent const &other) const {
   if (this->sampler_name == other.sampler_name) {
     return this->component_index < other.component_index;
   }
-  return this->component_index < other.component_index;
+  return this->sampler_name < other.sampler_name;
 }
 
 inline std::map<std::string, std::shared_ptr<Sampler>>::const_iterator

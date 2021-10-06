@@ -22,6 +22,10 @@ struct StateSamplingFunction {
   Eigen::VectorXd operator()(State<ConfigType> const &state) const;
 };
 
+template <typename ConfigType>
+using StateSamplingFunctionMap =
+    std::map<std::string, StateSamplingFunction<ConfigType>>;
+
 /// StateSampler stores vector valued samples in a matrix
 ///
 /// This just holds a StateSamplingFunction and a Sampler together
