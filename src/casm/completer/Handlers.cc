@@ -10,8 +10,6 @@
 #include "casm/app/enum/standard_enumerator_interfaces.hh"
 #include "casm/app/info/InfoInterface.hh"
 #include "casm/app/info/standard_info_method_interfaces.hh"
-#include "casm/app/monte2/Monte2Interface.hh"
-#include "casm/app/monte2/standard_monte2_method_interfaces.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/dataformatter/DataFormatter.hh"
 #include "casm/casm_io/enum/stream_io.hh"
@@ -265,14 +263,6 @@ void ArgHandler::dof_to_bash(std::vector<std::string> &arguments) {
 void ArgHandler::infomethod_to_bash(std::vector<std::string> &arguments) {
   auto info_method_interfaces = make_standard_info_method_interfaces();
   for (auto const &e : info_method_interfaces) {
-    arguments.push_back(e->name());
-  }
-  return;
-}
-
-void ArgHandler::montemethod_to_bash(std::vector<std::string> &arguments) {
-  auto method_interfaces = make_standard_monte2_method_interfaces();
-  for (auto const &e : method_interfaces) {
     arguments.push_back(e->name());
   }
   return;

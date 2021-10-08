@@ -567,29 +567,6 @@ class MonteOption : public OptionHandlerBase {
   Index m_condition_index;
 };
 
-/**
- * Options set for `casm monte2`. Get your Monte Carlo completion here.
- */
-
-class Monte2Option : public OptionHandlerBase {
- public:
-  using OptionHandlerBase::input_str;
-  using OptionHandlerBase::settings_path;
-  using OptionHandlerBase::verbosity_str;
-
-  Monte2Option();
-
-  const std::vector<std::string> &desc_vec() const { return m_desc_vec; }
-
-  std::string method() const { return m_method; }
-
- private:
-  void initialize() override;
-
-  std::vector<std::string> m_desc_vec;
-  std::string m_method;
-};
-
 //*****************************************************************************************************//
 
 /**
