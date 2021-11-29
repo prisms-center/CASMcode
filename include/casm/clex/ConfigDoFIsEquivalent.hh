@@ -404,7 +404,7 @@ class Local {
   Index m_n_vol;
 
   // Tolerance for comparisons
-  bool m_tol;
+  double m_tol;
 
   // Set to false when comparison is made to "other" ConfigDoF, to force update
   // of temporary dof during the next comparison
