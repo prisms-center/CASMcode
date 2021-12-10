@@ -1113,6 +1113,20 @@ class Base1DDatumFormatter : public BaseValueFormatter<Container, DataObject>,
     }
   }
 
+  /// \brief Default implementation calls jsonParser& to_json(const ValueType&,
+  /// jsonParser&, jsonParser::as_array)
+  ///
+  /// - Does nothing if validation fails
+  virtual jsonParser &to_json(const DataObject &_data_obj,
+                              jsonParser &json) const override {
+    if (this->validate(_data_obj)) {
+      CASM::to_json(this->evaluate(_data_obj), json, jsonParser::as_array());
+    } else {
+      json = jsonParser::null();
+    }
+    return json;
+  }
+
  protected:
   using BaseDatumFormatter<DataObject>::_add_rule;
   using BaseDatumFormatter<DataObject>::_index_rules;
