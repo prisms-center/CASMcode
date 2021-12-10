@@ -10,10 +10,6 @@
 #include "casm/symmetry/Orbit.hh"
 #include "casm/symmetry/SymGroup.hh"
 
-// #include "casm/casm_io/Log.hh"
-// #include "casm/casm_io/json/jsonParser.hh"
-// #include "casm/casm_io/container/json_io.hh"
-
 namespace CASM {
 
 namespace Orbit_impl {

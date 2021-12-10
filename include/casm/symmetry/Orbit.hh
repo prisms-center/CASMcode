@@ -101,12 +101,6 @@ class Orbit : public Comparisons<CRTPBase<Orbit<_SymCompareType>>> {
                           m_equivalence_map[index].end());
   }
 
-  /// \brief Return the canonization symmetry representation ID
-  SymGroupRepID canonization_rep_ID() const {
-    if (m_canonization_rep_ID.empty()) _construct_canonization_rep();
-    return m_canonization_rep_ID;
-  }
-
   /// \brief Find element in Orbit
   ///
   /// - Assumes 'e' is 'prepared', uses SymCompare<Element>::intra_orbit_equal
@@ -140,8 +134,6 @@ class Orbit : public Comparisons<CRTPBase<Orbit<_SymCompareType>>> {
   bool operator<(const Orbit &B) const;
 
  private:
-  void _construct_canonization_rep() const;
-
   /// \brief Construct an Orbit from a generating_element Element, using
   /// provided symmetry rep
   template <typename SymOpIterator>
@@ -159,10 +151,6 @@ class Orbit : public Comparisons<CRTPBase<Orbit<_SymCompareType>>> {
 
   /// \brief Group used to generate the orbit
   SymGroup m_generating_group;
-
-  /// \brief ID of symmetry representation that describes the effect of each
-  /// SymOp with respect to the canonical equivalent
-  mutable SymGroupRepID m_canonization_rep_ID;
 
   /// \brief Functor used to check compare Element, including symmetry rules,
   /// and make canonical forms
