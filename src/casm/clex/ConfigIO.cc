@@ -13,6 +13,7 @@
 #include "casm/clex/ClexBasisSpecs.hh"
 #include "casm/clex/ConfigCorrelations.hh"
 #include "casm/clex/ConfigIOHull.hh"
+#include "casm/clex/ConfigIOLocalCorr.hh"
 #include "casm/clex/ConfigIONovelty.hh"
 #include "casm/clex/ConfigIOStrain.hh"
 #include "casm/clex/ConfigIOStrucScore.hh"
@@ -1333,7 +1334,7 @@ make_json_dictionary<Configuration>() {
   dict.insert(structure(), structure_with_vacancies(), config(), properties(),
               all_mapped_properties(), mapped_structure(),
               all_mapped_structures(), SiteCentricCorrelations(),
-              AllPointCorr());
+              AllPointCorr(), LocalCorr());
 
   return dict;
 }
