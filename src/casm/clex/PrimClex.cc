@@ -555,7 +555,8 @@ struct WriteBasisSetDataImpl {
     // write source code
     fs::path clexulator_src_path =
         dir.clexulator_src(settings.project_name(), basis_set_name);
-    std::string clexulator_name = settings.global_clexulator_name();
+    std::string clexulator_name =
+        settings.global_clexulator_name() + "_" + basis_set_name;
     auto param_pack_type = basis_set_specs.basis_function_specs.param_pack_type;
     fs::ofstream outfile;
     outfile.open(clexulator_src_path);
@@ -588,7 +589,9 @@ struct WriteBasisSetDataImpl {
             settings.project_name(), basis_set_name, equivalent_index);
         fs::ofstream outfile;
         outfile.open(equivalent_clexulator_src_path);
-        clexwriter.print_clexulator(clexulator_name, clex_basis,
+        std::string equiv_clexulator_name =
+            clexulator_name + "_" + std::to_string(equivalent_index);
+        clexwriter.print_clexulator(equiv_clexulator_name, clex_basis,
                                     equivalent_orbits, prim_neighbor_list,
                                     outfile, xtal_tol);
         outfile.close();
@@ -624,7 +627,9 @@ Clexulator make_clexulator(ProjectSettings const &settings,
                            PrimNeighborList &prim_neighbor_list) {
   throw_if_no_clexulator_src(settings.project_name(), basis_set_name,
                              settings.dir());
-  return make_clexulator(settings.project_name() + "_Clexulator",
+  std::string clexulator_name =
+      settings.project_name() + "_Clexulator_" + basis_set_name;
+  return make_clexulator(clexulator_name,
                          settings.dir().clexulator_dir(basis_set_name),
                          prim_neighbor_list, settings.compile_options(),
                          settings.so_options() + " -lcasm ");
@@ -642,7 +647,9 @@ std::vector<Clexulator> make_local_clexulator(
     PrimNeighborList &prim_neighbor_list) {
   throw_if_no_clexulator_src(settings.project_name(), basis_set_name,
                              settings.dir());
-  return make_local_clexulator(settings.project_name() + "_Clexulator",
+  std::string clexulator_name =
+      settings.project_name() + "_Clexulator_" + basis_set_name;
+  return make_local_clexulator(clexulator_name,
                                settings.dir().clexulator_dir(basis_set_name),
                                prim_neighbor_list, settings.compile_options(),
                                settings.so_options() + " -lcasm ");

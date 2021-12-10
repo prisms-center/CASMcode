@@ -186,7 +186,8 @@ TEST_F(FCCTernaryProjectClexBasisTest, MakeClexulator) {
   EXPECT_TRUE(fs::exists(dir.clexulator_so(project_name, basis_set_name)));
 
   // Check clexulator
-  EXPECT_EQ(clexulator.name(), "FCCTernaryProjectClexBasisTest_Clexulator");
+  EXPECT_EQ(clexulator.name(),
+            "FCCTernaryProjectClexBasisTest_Clexulator_default");
   EXPECT_EQ(clexulator.nlist_size(), 176);
   EXPECT_EQ(clexulator.corr_size(), 75);
   EXPECT_EQ(clexulator.neighborhood().size(), 75);

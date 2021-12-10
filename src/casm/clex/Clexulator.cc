@@ -11,8 +11,11 @@ namespace CASM {
 
 /// \brief Construct a Clexulator
 ///
-/// \param name Class name for the Clexulator, typically 'X_Clexulator', with X
-///             referring to the system of interest (i.e. 'NiAl_Clexulator')
+/// \param name Class name for the Clexulator, typically
+///     'X_Clexulator_<basis_set_name>', with X referring to the system of
+///     interest (i.e. 'NiAl_Clexulator'), or
+///     'X_Clexulator_<basis_set_name>_<index>' for local clexulators, where
+///     `<index>` is an equivalent local cluster expansion index.
 /// \param dirpath Directory containing the source code and compiled object
 /// file. \param nlist, A PrimNeighborList to be updated to include the
 /// neighborhood
@@ -20,10 +23,10 @@ namespace CASM {
 /// \param compile_options Compilation options
 /// \param so_options Shared library compilation options
 ///
-/// If 'name' is 'X_Clexulator', and 'dirpath' is '/path/to':
-/// - Looks for '/path/to/X_Clexulator.so' and tries to load it.
-/// - If not found, looks for 'path/to/X_Clexulator.cc' and tries to compile and
-/// load it.
+/// If 'name' is 'X_Clexulator_default', and 'dirpath' is '/path/to':
+/// - Looks for '/path/to/X_Clexulator_default.so' and tries to load it.
+/// - If not found, looks for 'path/to/X_Clexulator_default.cc' and tries to
+//    compile and load it.
 /// - If unsuccesful, will throw std::runtime_error.
 ///
 /// The Clexulator has shared ownership of the loaded library,
@@ -119,11 +122,12 @@ std::vector<Clexulator> make_local_clexulator(std::string name,
   Index i = 0;
   fs::path equiv_dir = dirpath / fs::path(std::to_string(i));
   while (fs::exists(equiv_dir)) {
-    if (!fs::exists(equiv_dir / (name + ".cc"))) {
+    std::string equiv_name = name + "_" + std::to_string(i);
+    if (!fs::exists(equiv_dir / (equiv_name + ".cc"))) {
       break;
     }
-    result.push_back(
-        make_clexulator(name, equiv_dir, nlist, compile_options, so_options));
+    result.push_back(make_clexulator(equiv_name, equiv_dir, nlist,
+                                     compile_options, so_options));
     ++i;
     equiv_dir = dirpath / fs::path(std::to_string(i));
   }
