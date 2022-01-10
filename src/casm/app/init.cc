@@ -49,7 +49,7 @@ std::pair<double, ValueType> find_upper_tol(double init_tol, double step,
     value = f(std::pow(base, tol + step));
     if (value == init_value) {
       tol += step;
-      if (tol >= -1.00001) {
+      if (tol >= -2.00001) {
         break;
       }
     } else {
