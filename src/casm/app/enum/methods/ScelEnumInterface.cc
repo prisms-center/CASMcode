@@ -3,10 +3,13 @@
 #include "casm/app/APICommand.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/QueryHandler_impl.hh"
+#include "casm/app/enum/dataformatter/ScelEnumIO_impl.hh"
 #include "casm/app/enum/enumerate_supercells_impl.hh"
 #include "casm/app/enum/io/enumerate_supercells_json_io.hh"
+#include "casm/casm_io/dataformatter/DatumFormatterAdapter.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clex/ScelEnum.hh"
+#include "casm/clex/SupercellIO.hh"
 #include "casm/enumerator/io/json/ConfigEnumInput_json_io.hh"
 
 namespace CASM {
@@ -82,6 +85,28 @@ std::string ScelEnumInterface::desc() const {
       "  dry_run: bool (optional, default=false, override with --dry-run)\n"
       "    Perform dry run.\n"
       "\n"
+      "  output_supercells: bool (optional, default=false)\n"
+      "    If true, write formatted data for each enumerated supercell. "
+      "Formatting options are \n"
+      "    given by `output_supercells_options`. \n\n"
+
+      "  output_supercells_options: object (optional) \n"
+      "    Set output options for when `output_supercells==true`. \n\n"
+
+      "      path: string (optional, default=\"enum.out\") Output file "
+      "name.\n"
+      "      json: bool (optional, default=false) If true, write JSON "
+      "output files. Else CSV style.\n"
+      "      json_arrays: bool (optional, default=false) If true, write "
+      "data in JSON arrays. \n"
+      "      compress: bool (optional, default=false) If true, compress "
+      "data using gz. If `path` \n"
+      "      does not end in '.gz' it will be appended. \n"
+      "      output_filtered_supercells: bool (optional, default=false) "
+      "If true, also include \n"
+      "      output from supercells that were excluded by the `filter` "
+      "option.\n"
+      "\n"
       "Examples:\n"
       "\n"
       "    To enumerate supercells up to and including size 4:\n"
@@ -133,8 +158,22 @@ void ScelEnumInterface::run(PrimClex &primclex, jsonParser const &json_options,
   xtal::ScelEnumProps const &scel_enum_props =
       *scel_enum_props_parser_ptr->value;
 
+  // `output_supercells` formatter
+  typedef ScelEnumData<ScelEnumByProps> ScelEnumDataType;
+  DataFormatter<ScelEnumDataType> formatter;
+  formatter.push_back(
+      ScelEnumIO::name<ScelEnumDataType>(),
+      ScelEnumIO::selected<ScelEnumDataType>(),
+      ScelEnumIO::is_new<ScelEnumDataType>(),
+      ScelEnumIO::is_existing<ScelEnumDataType>(),
+      ScelEnumIO::transformation_matrix_to_super<ScelEnumDataType>());
+  if (options.filter) {
+    formatter.push_back(ScelEnumIO::is_excluded_by_filter<ScelEnumDataType>());
+  }
+
   ScelEnumByProps enumerator{primclex.shared_prim(), scel_enum_props};
-  enumerate_supercells(options, enumerator, primclex.db<Supercell>());
+  enumerate_supercells(options, enumerator, primclex.db<Supercell>(),
+                       formatter);
 }
 
 }  // namespace CASM

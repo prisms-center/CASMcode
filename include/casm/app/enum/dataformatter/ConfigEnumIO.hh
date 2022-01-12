@@ -90,8 +90,6 @@ template <typename ConfigEnumDataType>
 Generic1DDatumFormatter<Eigen::VectorXd, ConfigEnumDataType>
 normal_coordinate();
 
-template <typename ConfigEnumDataType>
-DataFormatter<ConfigEnumDataType> make_standard_data_formatter();
 }  // namespace ConfigEnumIO
 }  // namespace CASM
 

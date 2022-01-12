@@ -3,6 +3,7 @@
 #include "casm/app/enum/enumerate_supercells.hh"
 #include "casm/casm_io/dataformatter/DataFormatterFilter_impl.hh"
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
+#include "casm/casm_io/dataformatter/FormattedDataFile_impl.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
 
 namespace CASM {
@@ -54,6 +55,41 @@ void parse(InputParser<EnumerateSupercellsOptions> &parser,
   parser.optional(filter_expression, "filter");
   if (filter_expression.size()) {
     options.filter = make_data_formatter_filter(filter_expression, dict);
+  }
+
+  parser.optional_else(options.output_supercells, "output_supercells", false);
+
+  if (options.output_supercells) {
+    // TODO: separate parser for FormattedDataFileOptions
+
+    fs::path base{"output_supercells_options"};
+
+    std::string file_path_str;
+    parser.optional_else<std::string>(file_path_str, base / "path", "enum.out");
+    fs::path file_path{file_path_str};
+
+    bool json_output;
+    parser.optional_else(json_output, base / "json", false);
+
+    bool json_arrays_output;
+    parser.optional_else(json_arrays_output, base / "json_arrays", false);
+
+    bool compress;
+    parser.optional_else(compress, base / "compress", false);
+
+    if (compress) {
+      if (file_path.extension() != ".gz" && file_path.extension() != ".GZ") {
+        file_path += ".gz";
+      }
+    }
+
+    bool output_filtered_supercells;
+    parser.optional_else(output_filtered_supercells,
+                         base / "output_filtered_supercells", false);
+
+    options.output_options = FormattedDataFileOptions{
+        file_path, json_output, json_arrays_output, compress};
+    options.output_filtered_supercells = output_filtered_supercells;
   }
 }
 
