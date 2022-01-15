@@ -14,12 +14,13 @@ namespace CASM {
 ClexBasisFunctionPrinter::ClexBasisFunctionPrinter(
     Log &_log, std::shared_ptr<Structure const> _shared_prim,
     ClexBasisSpecs const &_basis_set_specs, bool align,
-    OrbitPrinterOptions _opt)
+    OrbitPrinterOptions _opt, bool _json)
     : m_shared_prim(_shared_prim),
       m_basis_set_specs(_basis_set_specs),
       m_log(_log),
       m_align(align),
-      m_orbit_printer_opt(_opt) {}
+      m_orbit_printer_opt(_opt),
+      m_json(_json) {}
 
 /// Pretty-print basis functions -- generate, then print
 void print_basis_functions(Log &log,
