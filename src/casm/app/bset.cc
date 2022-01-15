@@ -62,6 +62,10 @@ void BsetOption::initialize() {
       "basis function source code but to re-compile it if the .so and .o files "
       "do not exist.")(
       //
+      "json",
+      "Use with --orbits, --clusters, or --functions to print using "
+      "JSON format.")(
+      //
       "force,f", "Force overwrite");
   return;
 }
@@ -164,7 +168,7 @@ void update_bset(const BsetCommand &cmd) {
 template <typename PrinterType>
 class OrbitPrinterAdapter {
  public:
-  OrbitPrinterAdapter(Log &_log, OrbitPrinterOptions _opt);
+  OrbitPrinterAdapter(Log &_log, OrbitPrinterOptions _opt, bool _json);
 
   template <typename OrbitVecType>
   void operator()(OrbitVecType const &orbits) const;
@@ -172,6 +176,7 @@ class OrbitPrinterAdapter {
  private:
   Log &m_log;
   PrinterType m_printer;
+  bool m_json;
 };
 
 /// Implements `casm bset --orbits --clusters --functions` (any combination is
@@ -203,12 +208,16 @@ void print_bset(const BsetCommand &cmd) {
     orbit_printer_options.print_equivalence_map = true;
   }
 
+  bool output_json = vm.count("json");
+
   if (vm.count("orbits")) {
-    OrbitPrinterAdapter<ProtoSitesPrinter> printer{log, orbit_printer_options};
+    OrbitPrinterAdapter<ProtoSitesPrinter> printer{log, orbit_printer_options,
+                                                   output_json};
     for_all_orbits(cluster_specs, prototypes, printer);
   }
   if (vm.count("clusters")) {
-    OrbitPrinterAdapter<FullSitesPrinter> printer{log, orbit_printer_options};
+    OrbitPrinterAdapter<FullSitesPrinter> printer{log, orbit_printer_options,
+                                                  output_json};
     for_all_orbits(cluster_specs, prototypes, printer);
   }
   if (vm.count("functions")) {
@@ -216,8 +225,9 @@ void print_bset(const BsetCommand &cmd) {
     if (align) {
       orbit_printer_options.itemize_orbits = true;
     }
-    ClexBasisFunctionPrinter printer{log, shared_prim, basis_set_specs, align,
-                                     orbit_printer_options};
+    ClexBasisFunctionPrinter printer{
+        log,   shared_prim,           basis_set_specs,
+        align, orbit_printer_options, output_json};
     for_all_orbits(cluster_specs, prototypes, printer);
   }
 }
@@ -314,14 +324,21 @@ namespace bset_impl {
 
 template <typename PrinterType>
 OrbitPrinterAdapter<PrinterType>::OrbitPrinterAdapter(Log &_log,
-                                                      OrbitPrinterOptions _opt)
-    : m_log(_log), m_printer(_opt) {}
+                                                      OrbitPrinterOptions _opt,
+                                                      bool _json)
+    : m_log(_log), m_printer(_opt), m_json(_json) {}
 
 template <typename PrinterType>
 template <typename OrbitVecType>
 void OrbitPrinterAdapter<PrinterType>::operator()(
     OrbitVecType const &orbits) const {
-  print_clust(orbits.begin(), orbits.end(), m_log, m_printer);
+  if (m_json) {
+    jsonParser json;
+    write_clust(orbits.begin(), orbits.end(), json, m_printer);
+    m_log << json << std::endl;
+  } else {
+    print_clust(orbits.begin(), orbits.end(), m_log, m_printer);
+  }
 }
 
 }  // namespace bset_impl
