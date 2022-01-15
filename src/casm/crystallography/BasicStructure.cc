@@ -28,7 +28,8 @@ BasicStructure::BasicStructure(const BasicStructure &RHS)
     : m_lattice(RHS.lattice()),
       m_title(RHS.title()),
       m_basis(RHS.basis()),
-      m_global_dof_map(RHS.m_global_dof_map) {
+      m_global_dof_map(RHS.m_global_dof_map),
+      m_unique_names(RHS.m_unique_names) {
   for (Index i = 0; i < basis().size(); i++) {
     m_basis[i].set_lattice(lattice(), CART);
   }
@@ -41,6 +42,7 @@ BasicStructure &BasicStructure::operator=(const BasicStructure &RHS) {
   m_title = RHS.title();
   set_basis(RHS.basis());
   m_global_dof_map = RHS.m_global_dof_map;
+  m_unique_names = RHS.m_unique_names;
 
   for (Index i = 0; i < basis().size(); i++)
     m_basis[i].set_lattice(lattice(), CART);
@@ -101,6 +103,18 @@ void BasicStructure::set_basis(std::vector<Site> const &_basis,
 void BasicStructure::push_back(Site const &_site, COORD_TYPE mode) {
   m_basis.push_back(_site);
   m_basis.back().set_lattice(lattice(), mode);
+}
+
+/// Set the names used to distinguish occupants with the same chemical name
+void BasicStructure::set_unique_names(
+    std::vector<std::vector<std::string>> const &_unique_names) {
+  m_unique_names = _unique_names;
+}
+
+/// Get the unique names
+std::vector<std::vector<std::string>> const &BasicStructure::unique_names()
+    const {
+  return m_unique_names;
 }
 
 //************************************************************

@@ -42,6 +42,9 @@ class BasicStructure {
   /// continuous global degrees of freedom
   std::map<DoFKey, DoFSet> m_global_dof_map;
 
+  /// Names to distinguish occupants with the same chemical name
+  std::vector<std::vector<std::string>> m_unique_names;
+
  private:
   void main_print(std::ostream &stream, COORD_TYPE mode, bool version5,
                   int option) const;
@@ -109,6 +112,13 @@ class BasicStructure {
 
   /// Manually set the basis sites
   void set_basis(std::vector<Site> const &_basis, COORD_TYPE mode = CART);
+
+  /// Set the names used to distinguish occupants with the same chemical name
+  void set_unique_names(
+      std::vector<std::vector<std::string>> const &_unique_names);
+
+  /// Get the unique names
+  std::vector<std::vector<std::string>> const &unique_names() const;
 
   /// Manually set the basis sites
   void push_back(Site const &_site, COORD_TYPE mode = CART);
