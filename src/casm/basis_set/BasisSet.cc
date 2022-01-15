@@ -405,8 +405,8 @@ bool BasisSet::_update_dof_IDs(std::vector<Index> before_IDs,
 
 //*******************************************************************************************
 
-std::vector<std::set<Index> > BasisSet::independent_sub_bases() const {
-  std::vector<std::set<Index> > result;
+std::vector<std::set<Index>> BasisSet::independent_sub_bases() const {
+  std::vector<std::set<Index>> result;
   std::vector<bool> unclaimed(size(), true);
   for (Index i = 0; i < dof_sub_bases().size(); i++) {
     if (dof_sub_basis(i).size() == 0) continue;
@@ -458,9 +458,9 @@ void BasisSet::construct_polynomials_by_order(BasisSet::ArgList const &tsubs,
   PolynomialFunction tpoly(m_argument);
   Array<Index> curr_expon(tpoly.poly_coeffs().depth(), 0);
 
-  IsoCounter<Array<Index> > exp_count(Array<Index>(tsubs[0]->size(), 0),
-                                      Array<Index>(tsubs[0]->size(), order), 1,
-                                      order);
+  IsoCounter<Array<Index>> exp_count(Array<Index>(tsubs[0]->size(), 0),
+                                     Array<Index>(tsubs[0]->size(), order), 1,
+                                     order);
 
   do {
     for (int i = 0; i < exp_count.size(); i++) {
@@ -512,7 +512,7 @@ void BasisSet::construct_invariant_polynomials(BasisSet::ArgList const &tsubs,
   PolynomialFunction *tpoly;
   Array<Index> curr_exp;
   typedef BasisSet::SubBasis SubBasis;
-  typedef IsoCounter<Array<Index> > OrderCount;
+  typedef IsoCounter<Array<Index>> OrderCount;
   typedef MultiCounter<OrderCount> ExpCount;
 
   // Add constraints that set a minimum combined order for each local dofset
@@ -605,6 +605,68 @@ void BasisSet::construct_invariant_polynomials(BasisSet::ArgList const &tsubs,
   // for(Index i = 0; i < size(); i++)
   // std::cout << "F_" << i << " = " << at(i)->tex_formula() << "\n\n";
   return;
+}
+
+/// \brief Directly specify site basis functions
+///
+/// \param site_basis_functions The non-constant site basis functions. Of size
+///     (allowed_occs.size()-1 x allowed_occs.size()). Use
+///     site_basis_functions[i] as phi_i.
+///
+void BasisSet::construct_discrete_functions(
+    const DiscreteDoF &allowed_occs,
+    std::vector<std::vector<double>> site_basis_functions, Index basis_ind,
+    const SymGroup &symgroup) {
+  m_argument.clear();
+  set_name(allowed_occs.type_name());
+  m_max_poly_order = 1;
+  Index N = allowed_occs.size();
+  if (N <= 1) {
+    m_basis_symrep_ID = SymGroupRepID::identity(0);
+    return;
+  }
+
+  if (!allowed_occs.is_locked()) {
+    set_dof_IDs(std::vector<Index>(1, allowed_occs.ID()));
+    m_dof_subbases[0] = Array<Index>::sequence(0, N - 2);
+  }
+
+  Eigen::MatrixXd B = Eigen::MatrixXd::Zero(N, N);
+  B.col(0) = Eigen::VectorXd::Constant(N, 1.0);
+  if (site_basis_functions.size() != N - 1) {
+    throw std::runtime_error(
+        "Error in BasisSet::construct_discrete_functions: number of site basis "
+        "functions is incorrect");
+  }
+  for (Index j = 0; j < site_basis_functions.size(); ++j) {
+    if (site_basis_functions[j].size() != N) {
+      throw std::runtime_error(
+          "Error in BasisSet::construct_discrete_functions: site basis "
+          "function size is incorrect");
+    }
+    for (Index i = 0; i < site_basis_functions[j].size(); ++i) {
+      B(i, j + 1) = site_basis_functions[j][i];
+    }
+  }
+
+  // Columns of B are our basis functions
+  for (Index i = 1; i < N; i++) {
+    OccupantFunction tOF(allowed_occs, B.col(i), size(), basis_ind,
+                         allowed_occs.symrep_ID());
+
+    push_back(tOF.copy());
+  }
+
+  // Calculate BasisSet symmetry representation, based on
+  // allowed_occs.symrep_ID() && B matrix Q*B.T=B.T*S, where we know S (how to
+  // transform a column vector), and we want Q (how to transform row vector) so
+  // Q=B.T*S*inv(B.T)
+  if (allowed_occs.symrep_ID().is_identity())
+    m_basis_symrep_ID = SymGroupRepID::identity(N - 1);
+  else
+    m_basis_symrep_ID = symgroup.master_group().add_transformed_rep(
+        allowed_occs.symrep_ID(),
+        Eigen::MatrixXd(B.rightCols(N - 1).transpose()));
 }
 
 //*******************************************************************************************

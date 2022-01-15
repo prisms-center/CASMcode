@@ -19,6 +19,21 @@
 
 namespace CASM {
 
+namespace parse_OccupationDoFSpecs_impl {
+
+/// Reads std::vector<DoF_impl::SublatValues> from JSON
+void from_json(std::vector<DoF_impl::SublatValues> &sublat_values,
+               const jsonParser &json, std::string key);
+
+void to_json(std::vector<DoF_impl::SublatValues> const &sublat_values,
+             jsonParser &json);
+
+/// Reads the "sites_basis_functions" parameter from JSON
+void _require_site_basis_functions(
+    InputParser<DoF_impl::OccupationDoFSpecs> &parser, const Structure &prim);
+
+}  // namespace parse_OccupationDoFSpecs_impl
+
 namespace DoF_impl {
 
 namespace {
@@ -48,27 +63,31 @@ std::vector<double> occupation_sublat_prob_vec(Index occupant_dof_size) {
   return tprob;
 }
 
-std::vector<double> composition_sublat_prob_vec(
-    const OccupationDoFSpecs &occ_specs, Index sublat_index,
-    const std::vector<std::string> &allowed_occupants) {
-  for (const auto &sublat_comp : occ_specs.sublat_composition) {
-    if (sublat_comp.indices.find(sublat_index) != sublat_comp.indices.end()) {
+/// \brief Returns sublat_values for the given sublattice, ordered to match the
+/// order of allowed_occupants
+std::vector<double> sublat_values_vec(
+    std::vector<SublatValues> const &sublat_values, Index sublat_index,
+    std::string key, const std::vector<std::string> &allowed_occupants,
+    bool normalize) {
+  for (const auto &sublat_value : sublat_values) {
+    if (sublat_value.indices.find(sublat_index) != sublat_value.indices.end()) {
       std::vector<double> tprob(allowed_occupants.size(), 0.);
       double tsum{0};
       for (Index ns = 0; ns < allowed_occupants.size(); ns++) {
-        auto it = sublat_comp.values.find(allowed_occupants[ns]);
-        if (it == sublat_comp.values.end()) {
-          throw std::runtime_error(
-              "BasisFunctionSpecs error: basis site " +
-              std::to_string(sublat_index) +
-              " must have a composition specified for species " +
-              allowed_occupants[ns] + "\n");
+        auto it = sublat_value.values.at(key).find(allowed_occupants[ns]);
+        if (it == sublat_value.values.at(key).end()) {
+          throw std::runtime_error("BasisFunctionSpecs error: basis site " +
+                                   std::to_string(sublat_index) +
+                                   " must have a value specified for species " +
+                                   allowed_occupants[ns] + "\n");
         }
         tprob[ns] = it->second;
         tsum += tprob[ns];
       }
-      for (Index j = 0; j < tprob.size(); j++) {
-        tprob[j] /= tsum;
+      if (normalize) {
+        for (Index j = 0; j < tprob.size(); j++) {
+          tprob[j] /= tsum;
+        }
       }
       return tprob;
     }
@@ -91,7 +110,7 @@ struct OccupationDoFSpecsValidator : public Validator {
   std::vector<std::set<std::string>> allowed_molecule_names;
 
   void check_sublat_molecule_names(
-      Index b, DoF_impl::SublatComp const &sublat_comp,
+      Index b, DoF_impl::SublatValues const &sublat_value,
       const std::set<std::string> &allowed_molecule_names);
   void check_molecule_names();
   void check_sublat_indices();
@@ -117,42 +136,47 @@ OccupationDoFSpecsValidator::OccupationDoFSpecsValidator(
 }
 
 void OccupationDoFSpecsValidator::check_sublat_molecule_names(
-    Index b, DoF_impl::SublatComp const &sublat_comp,
+    Index b, DoF_impl::SublatValues const &sublat_value,
     std::set<std::string> const &allowed_molecule_names) {
-  for (const auto &name : allowed_molecule_names) {
-    if (sublat_comp.values.find(name) == sublat_comp.values.end()) {
-      error.insert("No composition is given for '" + name + " on sublattice " +
-                   std::to_string(b) + ". Allowed molecules are: " +
-                   to_string(allowed_molecule_names) + ".");
+  for (const auto &pair : sublat_value.values) {
+    std::string key = pair.first;
+    for (const auto &name : allowed_molecule_names) {
+      if (sublat_value.values.at(key).find(name) ==
+          sublat_value.values.at(key).end()) {
+        error.insert("No '" + key + "' is given for '" + name +
+                     " on sublattice " + std::to_string(b) +
+                     ". Allowed molecules are: " +
+                     to_string(allowed_molecule_names) + ".");
+      }
     }
-  }
-  auto begin = allowed_molecule_names.begin();
-  auto end = allowed_molecule_names.end();
-  for (const auto &pair : sublat_comp.values) {
-    if (std::find(begin, end, pair.first) == end) {
-      error.insert(to_string(pair.first) + " is not allowed on sublattice " +
-                   std::to_string(b) + ". Allowed molecules are: " +
-                   to_string(allowed_molecule_names) + ".");
+    auto begin = allowed_molecule_names.begin();
+    auto end = allowed_molecule_names.end();
+    for (const auto &pair : sublat_value.values.at(key)) {
+      if (std::find(begin, end, pair.first) == end) {
+        error.insert(to_string(pair.first) + " is not allowed on sublattice " +
+                     std::to_string(b) + ". Allowed molecules are: " +
+                     to_string(allowed_molecule_names) + ".");
+      }
     }
   }
 }
 
 void OccupationDoFSpecsValidator::check_molecule_names() {
-  for (const auto &sublat_comp : occ_specs.sublat_composition) {
-    for (const auto &b : sublat_comp.indices) {
+  for (const auto &sublat_value : occ_specs.sublat_values) {
+    for (const auto &b : sublat_value.indices) {
       if (b >= allowed_molecule_names.size()) {
         error.insert("Sublattice index " + std::to_string(b) +
                      " is out of range.");
       }
-      check_sublat_molecule_names(b, sublat_comp, allowed_molecule_names[b]);
+      check_sublat_molecule_names(b, sublat_value, allowed_molecule_names[b]);
     }
   }
 }
 
 void OccupationDoFSpecsValidator::check_sublat_indices() {
   std::set<Index> found;
-  for (const auto &sublat_comp : occ_specs.sublat_composition) {
-    for (const auto &b : sublat_comp.indices) {
+  for (const auto &sublat_value : occ_specs.sublat_values) {
+    for (const auto &b : sublat_value.indices) {
       if (b >= allowed_molecule_names.size()) {
         error.insert("Sublattice index " + std::to_string(b) +
                      " is out of range.");
@@ -178,21 +202,22 @@ Validator validate(OccupationDoFSpecs const &occ_specs, const Structure &prim) {
 }
 
 // helper for _construct_orthonormal_discrete_functions
-std::vector<double> _make_occ_probs(const Site &site, Index b_ind,
-                                    OccupationDoFSpecs const &occ_specs) {
+std::vector<double> _make_occ_probs(
+    Index b_ind, std::vector<std::string> const &site_unique_names,
+    OccupationDoFSpecs const &occ_specs) {
   std::vector<double> tprob;
 
   // options: CHEBYCHEV, OCCUPATION, COMPOSITION
   if (occ_specs.site_basis_function_type ==
       SITE_BASIS_FUNCTION_TYPE::CHEBYCHEV) {
-    return chebychev_sublat_prob_vec(site.occupant_dof().size());
+    return chebychev_sublat_prob_vec(site_unique_names.size());
   } else if (occ_specs.site_basis_function_type ==
              SITE_BASIS_FUNCTION_TYPE::OCCUPATION) {
-    return occupation_sublat_prob_vec(site.occupant_dof().size());
+    return occupation_sublat_prob_vec(site_unique_names.size());
   } else if (occ_specs.site_basis_function_type ==
              SITE_BASIS_FUNCTION_TYPE::COMPOSITION) {
-    return composition_sublat_prob_vec(occ_specs, b_ind,
-                                       site.allowed_occupants());
+    return sublat_values_vec(occ_specs.sublat_values, b_ind, "composition",
+                             site_unique_names, true);
   } else {
     throw std::runtime_error(
         "BasisFunctionSpecs error: unknown SITE_BASIS_FUNCTION_TYPE");
@@ -207,7 +232,11 @@ void _construct_orthonormal_discrete_functions(
   UnitCellCoord const &uccoord = orbit.prototype()[0];
   Site const &site = uccoord.sublattice_site(prim);
   Index sublattice_index = uccoord.sublattice();
-
+  std::vector<std::vector<std::string>> unique_names =
+      prim.structure().unique_names();
+  if (unique_names.empty()) {
+    unique_names = xtal::allowed_molecule_unique_names(prim);
+  }
   // convert vector<xtal::Molecule> to OccupantDoF<xtal::Molecule>
   adapter::Adapter<OccupantDoF<xtal::Molecule>, std::vector<xtal::Molecule>>
       adapter_f;
@@ -215,33 +244,57 @@ void _construct_orthonormal_discrete_functions(
       adapter_f(site.occupant_dof(),
                 prim.occupant_symrep_IDs()[sublattice_index], sublattice_index);
 
-  // construct reference occupation probabilities
-  std::vector<double> tprob =
-      _make_occ_probs(site, sublattice_index, occ_specs);
-
-  if (tprob.size() != allowed_occs.size()) {
-    std::stringstream ss;
-    ss << "Error in OccupationDoFTraits::construct_site_bases: occ_probs "
-          "error.";
-    ss << "  sublattice_index=" << sublattice_index << "  ";
-    ss << "  occ_probs=[";
-    for (Index i = 0; i < tprob.size(); ++i) {
-      if (i != 0) ss << ",";
-      ss << tprob[i];
-    }
-    ss << "]";
-    throw std::runtime_error(ss.str());
-  }
-
   // construct site invariant group
   auto eq_map_range = orbit.equivalence_map(0);
   SymGroup invariant_group{eq_map_range.first, eq_map_range.second};
 
-  // construct site bases for the prototype site
-  site_basis.construct_orthonormal_discrete_functions(
-      allowed_occs, tprob, sublattice_index, invariant_group);
+  if (occ_specs.site_basis_function_type == SITE_BASIS_FUNCTION_TYPE::DIRECT) {
+    Index b = sublattice_index;
+    Index N = unique_names[b].size();
+    // expect N-1 functions (phi0, phi1, etc.) of size N
+    std::vector<std::vector<double>> site_basis_functions;
 
-  return;
+    for (Index i = 0; i < N - 1; ++i) {
+      std::string key = "phi" + std::to_string(i);
+      site_basis_functions.push_back(sublat_values_vec(
+          occ_specs.sublat_values, b, key, unique_names[b], false));
+    }
+
+    jsonParser tmp;
+    to_json(site_basis_functions, tmp["site_basis_functions"]);
+    parse_OccupationDoFSpecs_impl::to_json(occ_specs.sublat_values,
+                                           tmp["sublat_values"]);
+
+    // construct site bases for the prototype site
+    site_basis.construct_discrete_functions(allowed_occs, site_basis_functions,
+                                            sublattice_index, invariant_group);
+    return;
+  }
+  // SITE_BASIS_FUNCTION_TYPE::CHEBYCHEV, ::OCCUPATION, or ::COMPOSITION
+  else {
+    // construct reference occupation probabilities
+    std::vector<double> tprob = _make_occ_probs(
+        sublattice_index, unique_names[sublattice_index], occ_specs);
+
+    if (tprob.size() != unique_names[sublattice_index].size()) {
+      std::stringstream ss;
+      ss << "Error in OccupationDoFTraits::construct_site_bases: occ_probs "
+            "error.";
+      ss << "  sublattice_index=" << sublattice_index << "  ";
+      ss << "  occ_probs=[";
+      for (Index i = 0; i < tprob.size(); ++i) {
+        if (i != 0) ss << ",";
+        ss << tprob[i];
+      }
+      ss << "]";
+      throw std::runtime_error(ss.str());
+    }
+
+    // construct site bases for the prototype site
+    site_basis.construct_orthonormal_discrete_functions(
+        allowed_occs, tprob, sublattice_index, invariant_group);
+    return;
+  }
 }
 
 /// \brief Construct the site basis (if DOF_MODE is LOCAL) for a DoF, given its
@@ -604,16 +657,17 @@ std::unique_ptr<DoFSpecs> occupation_bfuncs() {
 }
 
 std::unique_ptr<DoFSpecs> composition_bfuncs(
-    std::vector<DoF_impl::SublatComp> sublat_composition) {
-  return notstd::make_unique<DoF_impl::OccupationDoFSpecs>(sublat_composition);
+    std::vector<DoF_impl::SublatValues> sublat_values) {
+  return notstd::make_unique<DoF_impl::OccupationDoFSpecs>(
+      DoF_impl::SITE_BASIS_FUNCTION_TYPE::COMPOSITION, sublat_values);
 }
 }  // namespace DoFType
 
 namespace parse_OccupationDoFSpecs_impl {
 
-/// Reads std::vector<DoF_impl::SublatComp> from JSON
+/// Reads std::vector<DoF_impl::SublatValues> from JSON
 ///
-/// Example form:
+/// Example form: (using sublat compositions)
 /// \code
 /// [
 ///   {
@@ -626,25 +680,50 @@ namespace parse_OccupationDoFSpecs_impl {
 ///   }
 /// ]
 /// \endcode
-void from_json(std::vector<DoF_impl::SublatComp> &sublat_composition,
-               const jsonParser &json) {
-  sublat_composition.clear();
+///
+/// Example form: (using site basis functions, phi0, phi1,)
+/// \code
+/// [
+///   {
+///     "sublat_indices": [0, 1],
+///     "phi0": {"A": 0.0, "B": 1.0}
+///   },
+///   {
+///     "sublat_indices": [2, 3],
+///     "phi0": {"A": 0.0, "B": 1.0, "C": 0.0}
+///     "phi1": {"A": 0.0, "B": 0.0, "C": 1.0}
+///   }
+/// ]
+/// \endcode
+void from_json(std::vector<DoF_impl::SublatValues> &sublat_values,
+               const jsonParser &json, std::string key) {
+  sublat_values.clear();
   for (auto it = json.begin(); it != json.end(); ++it) {
+    std::map<std::string, std::map<std::string, double>> all_values;
     std::set<Index> sublat_indices;
     it->find("sublat_indices")->get(sublat_indices);
-    std::map<std::string, double> sublat_values;
-    it->find("composition")->get(sublat_values);
-    sublat_composition.emplace_back(sublat_indices, sublat_values);
+    for (auto inner_it = it->begin(); inner_it != it->end(); ++inner_it) {
+      std::string key = inner_it.name();
+      if (key == "sublat_indices") {
+        continue;
+      }
+      std::map<std::string, double> single_values;
+      inner_it->get(single_values);
+      all_values[key] = single_values;
+    }
+    sublat_values.emplace_back(sublat_indices, all_values);
   }
 }
 
-void to_json(std::vector<DoF_impl::SublatComp> const &sublat_composition,
+void to_json(std::vector<DoF_impl::SublatValues> const &sublat_values,
              jsonParser &json) {
   json.put_array();
-  for (auto const &sublat_comp : sublat_composition) {
+  for (auto const &sublat_value : sublat_values) {
     jsonParser tjson;
-    tjson["sublat_indices"] = sublat_comp.indices;
-    tjson["composition"] = sublat_comp.values;
+    tjson["sublat_indices"] = sublat_value.indices;
+    for (auto const &pair : sublat_value.values) {
+      tjson[pair.first] = pair.second;
+    }
     json.push_back(tjson);
   }
 }
@@ -662,14 +741,33 @@ void _require_site_basis_functions(
     if (it->is_string()) {
       DoF_impl::SITE_BASIS_FUNCTION_TYPE site_basis_function_type;
       it->get<DoF_impl::SITE_BASIS_FUNCTION_TYPE>(site_basis_function_type);
-      parser.value = notstd::make_unique<DoF_impl::OccupationDoFSpecs>(
-          site_basis_function_type);
-    } else if (it->is_array()) {
-      try {
-        std::vector<DoF_impl::SublatComp> sublat_composition;
-        parse_OccupationDoFSpecs_impl::from_json(sublat_composition, *it);
+
+      if (site_basis_function_type ==
+              DoF_impl::SITE_BASIS_FUNCTION_TYPE::CHEBYCHEV ||
+          site_basis_function_type ==
+              DoF_impl::SITE_BASIS_FUNCTION_TYPE::OCCUPATION) {
         parser.value = notstd::make_unique<DoF_impl::OccupationDoFSpecs>(
-            sublat_composition);
+            site_basis_function_type);
+      } else {
+        // For SITE_BASIS_FUNCTION_TYPE::COMPOSITION and ::DIRECT
+        auto sublat_values_it = parser.self.find("sublat_values");
+        if (sublat_values_it == parser.self.end()) {
+          parser.error.insert("Error: missing required 'sublat_values'");
+        } else {
+          std::vector<DoF_impl::SublatValues> sublat_values;
+          parse_OccupationDoFSpecs_impl::from_json(sublat_values,
+                                                   *sublat_values_it, "values");
+          parser.value = notstd::make_unique<DoF_impl::OccupationDoFSpecs>(
+              site_basis_function_type, sublat_values);
+        }
+      }
+    } else if (it->is_array()) {  // deprecated
+      try {
+        std::vector<DoF_impl::SublatValues> sublat_values;
+        parse_OccupationDoFSpecs_impl::from_json(sublat_values, *it,
+                                                 "composition");
+        parser.value = notstd::make_unique<DoF_impl::OccupationDoFSpecs>(
+            DoF_impl::SITE_BASIS_FUNCTION_TYPE::COMPOSITION, sublat_values);
       } catch (std::exception &e) {
         parser.error.insert(
             "Error: 'site_basis_functions' is an array, but failed to read "
@@ -677,11 +775,11 @@ void _require_site_basis_functions(
       }
     } else {
       parser.error.insert(
-          "Error: 'site_basis_functions' is neither a string nor an array with "
-          "sublattice compositions.");
+          "Error: 'site_basis_functions' is not a recognized value.");
     }
   }
 }
+
 }  // namespace parse_OccupationDoFSpecs_impl
 
 // -- OccupationDoFSpecs IO --
@@ -697,7 +795,9 @@ const std::multimap<DoF_impl::SITE_BASIS_FUNCTION_TYPE,
         {DoF_impl::SITE_BASIS_FUNCTION_TYPE::OCCUPATION,
          {"OCCUPATION", "Occupation", "occupation"}},
         {DoF_impl::SITE_BASIS_FUNCTION_TYPE::COMPOSITION,
-         {"COMPOSITION", "Composition", "composition"}}};
+         {"COMPOSITION", "Composition", "composition"}},
+        {DoF_impl::SITE_BASIS_FUNCTION_TYPE::DIRECT,
+         {"DIRECT", "Direct", "direct"}}};
 
 ENUM_IO_DEF(DoF_impl::SITE_BASIS_FUNCTION_TYPE)
 ENUM_JSON_IO_DEF(DoF_impl::SITE_BASIS_FUNCTION_TYPE)
@@ -714,13 +814,13 @@ void parse(InputParser<DoF_impl::OccupationDoFSpecs> &parser,
 void to_json(DoF_impl::OccupationDoFSpecs const &occupation_dof_specs,
              jsonParser &json) {
   json.put_obj();
-  if (occupation_dof_specs.site_basis_function_type !=
-      DoF_impl::SITE_BASIS_FUNCTION_TYPE::COMPOSITION) {
-    json["site_basis_functions"] =
-        occupation_dof_specs.site_basis_function_type;
-  } else {
-    parse_OccupationDoFSpecs_impl::to_json(
-        occupation_dof_specs.sublat_composition, json["site_basis_functions"]);
+  json["site_basis_functions"] = occupation_dof_specs.site_basis_function_type;
+  if (occupation_dof_specs.site_basis_function_type ==
+          DoF_impl::SITE_BASIS_FUNCTION_TYPE::COMPOSITION ||
+      occupation_dof_specs.site_basis_function_type ==
+          DoF_impl::SITE_BASIS_FUNCTION_TYPE::DIRECT) {
+    parse_OccupationDoFSpecs_impl::to_json(occupation_dof_specs.sublat_values,
+                                           json["sublat_values"]);
   }
 }
 

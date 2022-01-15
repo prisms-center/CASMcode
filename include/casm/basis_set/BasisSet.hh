@@ -73,7 +73,7 @@ class BasisSet : private Array<Function *>,
 
   const std::string &name() const { return m_name; }
 
-  std::vector<std::shared_ptr<BasisSet> > const &arguments() const {
+  std::vector<std::shared_ptr<BasisSet>> const &arguments() const {
     return m_argument;
   }
 
@@ -147,7 +147,7 @@ class BasisSet : private Array<Function *>,
 
   const Array<SubBasis> &dof_sub_bases() const { return m_dof_subbases; }
 
-  std::vector<std::set<Index> > independent_sub_bases() const;
+  std::vector<std::set<Index>> independent_sub_bases() const;
 
   ///\brief Append contents of @param RHS onto this BasisSet
   /// RHS must have the same arguments as *this and must not introduce anynew
@@ -170,6 +170,12 @@ class BasisSet : private Array<Function *>,
   // order 1). makes a basis set of all of the combinations of polynomials with
   // order spcecified by order.
   // void construct_polynomials_by_order(ArgList const &tsubs, Index order);
+
+  /// \brief Directly specify site basis functions
+  void construct_discrete_functions(
+      const DiscreteDoF &allowed_occs,
+      std::vector<std::vector<double>> site_basis_functions, Index basis_ind,
+      const SymGroup &symgroup);
 
   void construct_orthonormal_discrete_functions(const DiscreteDoF &allowed_occs,
                                                 const Eigen::MatrixXd &gram_mat,
@@ -249,7 +255,7 @@ class BasisSet : private Array<Function *>,
   std::string m_name;
   Index m_basis_ID;
 
-  std::vector<std::shared_ptr<BasisSet> > m_argument;
+  std::vector<std::shared_ptr<BasisSet>> m_argument;
 
   // When forming tensor products with other basis sets,
   // what is the minimum and maximum order of polynomial function
@@ -293,7 +299,7 @@ class BasisSet : private Array<Function *>,
   Function *_linear_combination(const Eigen::VectorXd &coeffs) const;
 
   void _set_arguments(const ArgList &new_args);
-  void _set_arguments(const std::vector<std::shared_ptr<BasisSet> > &new_args) {
+  void _set_arguments(const std::vector<std::shared_ptr<BasisSet>> &new_args) {
     m_argument = new_args;
   }
 
