@@ -439,11 +439,17 @@ void parse(
   if (parser.self.contains("config_list")) {
     try {
       auto it = parser.self.find("config_list");
-      auto end = parser.self.end();
-      for (; it != end; ++it) {
-        auto config_ptr = it->make<Configuration>(shared_prim);
+      auto config_it = it->begin();
+      auto config_end = it->end();
+      for (; config_it != config_end; ++config_it) {
+        auto config_ptr = config_it->make<Configuration>(shared_prim);
+        std::string default_identifier = "unknown";
+        if (primclex != nullptr) {
+          config_ptr->supercell().set_primclex(primclex);
+          default_identifier = config_ptr->name();
+        }
         std::string identifier =
-            it->get_if_else("identifier", config_ptr->name());
+            config_it->get_if_else("identifier", default_identifier);
         config_list.emplace_back(identifier, std::move(*config_ptr));
       }
     } catch (std::exception &e) {
