@@ -178,7 +178,7 @@ std::string parse_ConfigEnumInput_desc() {
          "    a supercell. Ex:                                                 "
          "               \n\n"
 
-         "        \"configs\" : [                                              "
+         "        \"config_list\" : [                                          "
          "               \n"
          "          {                                                          "
          "               \n"
