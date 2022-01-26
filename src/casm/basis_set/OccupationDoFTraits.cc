@@ -93,7 +93,7 @@ std::vector<double> sublat_values_vec(
     }
   }
   throw std::runtime_error(
-      "BasisFunctionSpecs error: compositions are not specified for basis "
+      "BasisFunctionSpecs error: values are not specified for basis "
       "site " +
       std::to_string(sublat_index) + "\n");
 }

@@ -95,18 +95,12 @@ std::vector<double> chebychev_sublat_prob_vec(Index occupant_dof_size);
 
 std::vector<double> occupation_sublat_prob_vec(Index occupant_dof_size);
 
-/// Get the sublattice probability vector for composition based functions
-///
-/// Note:
-/// - The values in the probability vector are ordered according to
-/// allowed_occupants
-/// - Will throw if missing sublattice (w/ >1 occupant) or missing occupant
-/// composition value
-/// - Before calling this, for complete checking of occ_specs, validate with:
-///    `validate(OccupationDoFSpecs const &occ_specs, const Structure &prim)`
-std::vector<double> composition_sublat_prob_vec(
-    const OccupationDoFSpecs &occ_specs, Index sublat_index,
-    const std::vector<std::string> &allowed_occupants);
+/// \brief Returns sublat_values for the given sublattice, ordered to match the
+/// order of allowed_occupants
+std::vector<double> sublat_values_vec(
+    std::vector<SublatValues> const &sublat_values, Index sublat_index,
+    std::string key, const std::vector<std::string> &allowed_occupants,
+    bool normalize);
 
 /// Validates OccupationDoFSpecs against a prim Structure
 ///

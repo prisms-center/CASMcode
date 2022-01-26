@@ -26,8 +26,3 @@ check_var "CASM_NCPU" "Compiler -j option" 2
 bash $CASM_BUILD_DIR/build_scripts/make-cpp.sh
 
 make install
-if [[ "$CASM_OS_NAME" == "osx" ]]; then
-  echo "install_name_tool -add_rpath $CASM_PREFIX/lib $CASM_PREFIX/bin/ccasm"
-  install_name_tool -add_rpath "$CASM_PREFIX/lib" "$CASM_PREFIX/bin/ccasm" \
-    || { echo "  already set"; }
-fi
