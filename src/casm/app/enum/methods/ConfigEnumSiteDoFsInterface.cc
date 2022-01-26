@@ -322,15 +322,14 @@ void parse(InputParser<ConfigEnumSiteDoFsParams> &parser,
   auto grid_parser = parser.parse_as<AxesCounterParams>(dof_space_dimension);
   if (grid_parser->valid()) {
     axes_params = *grid_parser->value;
-  }
-
-  if ((sym_axes_option || exclude_homogeneous_modes) &&
-      !axes_params.scalar_input) {
-    std::stringstream msg;
-    msg << "Error: Vector input for enumeration ranges (\"min\", \"max\", "
-           "\"increment\" or \"num\") is not allowed with `\"sym_axes\": true` "
-           "or `\"exclude_homogeneous_modes\": true`.";
-    throw std::runtime_error(msg.str());
+    if ((sym_axes_option || exclude_homogeneous_modes) &&
+        !axes_params.scalar_input) {
+      std::stringstream msg;
+      msg << "Error: Vector input for enumeration ranges (\"min\", \"max\", "
+             "\"increment\" or \"num\") is not allowed with `\"sym_axes\": "
+             "true` or `\"exclude_homogeneous_modes\": true`.";
+      throw std::runtime_error(msg.str());
+    }
   }
 
   // 3) get min/max nonzero amplitudes -----------------------------------
