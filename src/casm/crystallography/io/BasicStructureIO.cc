@@ -145,9 +145,13 @@ xtal::Molecule jsonConstructor<xtal::Molecule>::from_json(
 xtal::Site jsonConstructor<xtal::Site>::from_json(
     const jsonParser &json, xtal::Lattice const &_home, COORD_TYPE coordtype,
     std::map<std::string, xtal::Molecule> const &mol_map,
+    std::vector<std::vector<std::string>> &unique_names,
     ParsingDictionary<AnisoValTraits> const &_aniso_val_dict) {
   xtal::Site result(_home);
-  CASM::from_json(result, json, _home, coordtype, mol_map, _aniso_val_dict);
+  std::vector<std::string> site_unique_names;
+  CASM::from_json(result, json, _home, coordtype, mol_map, site_unique_names,
+                  _aniso_val_dict);
+  unique_names.push_back(site_unique_names);
   return result;
 }
 
@@ -184,6 +188,7 @@ jsonParser &to_json(const xtal::Site &site, jsonParser &json,
 void from_json(xtal::Site &site, const jsonParser &json,
                xtal::Lattice const &_home, COORD_TYPE coordtype,
                std::map<std::string, xtal::Molecule> const &mol_map,
+               std::vector<std::string> &site_unique_names,
                ParsingDictionary<AnisoValTraits> const &_aniso_val_dict) {
   site.set_lattice(_home, coordtype);
   if (coordtype == FRAC)
@@ -241,9 +246,10 @@ void from_json(xtal::Site &site, const jsonParser &json,
 
   if (!occ_key.empty()) {
     for (std::string const &occ :
-         json[occ_key].get<std::vector<std::string> >()) {
+         json[occ_key].get<std::vector<std::string>>()) {
       // std::cout << "CREATING OCCUPANT " << occ << "\n";
       // Have convenience options for properties like magnetic moment, etc?
+      site_unique_names.push_back(occ);
       auto it = mol_map.find(occ);
       if (it != mol_map.end())
         t_occ.push_back(it->second);
@@ -436,9 +442,11 @@ xtal::BasicStructure read_prim(
 
   try {
     // read basis sites
+    std::vector<std::vector<std::string>> unique_names;
     for (jsonParser const &bjson : json["basis"])
       prim.push_back(bjson.get<xtal::Site>(prim.lattice(), mode, mol_map,
-                                           *_aniso_val_dict));
+                                           unique_names, *_aniso_val_dict));
+    prim.set_unique_names(unique_names);
   } catch (std::exception &e) {
     log() << e.what() << std::endl;
     throw std::runtime_error(
@@ -489,7 +497,10 @@ void write_prim(const xtal::BasicStructure &prim, jsonParser &json,
     json["dofs"][_dof.first] = _dof.second;
   }
 
-  auto mol_names = allowed_molecule_unique_names(prim);
+  std::vector<std::vector<std::string>> mol_names = prim.unique_names();
+  if (mol_names.empty()) {
+    mol_names = allowed_molecule_unique_names(prim);
+  }
   jsonParser &bjson = (json["basis"].put_array());
   for (int i = 0; i < prim.basis().size(); i++) {
     if (!include_va && prim.basis()[i].occupant_dof().size() == 1 &&

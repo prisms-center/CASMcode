@@ -1,13 +1,11 @@
-#ifndef CASM_LatticeEnumEquivalents
-#define CASM_LatticeEnumEquivalents
+#ifndef CASM_symmetry_LatticeEnumEquivalents
+#define CASM_symmetry_LatticeEnumEquivalents
 
 #include "casm/crystallography/Lattice.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "casm/symmetry/EnumEquivalents.hh"
 #include "casm/symmetry/SymOp.hh"
 #include "casm/symmetry/SymOpRepresentation.hh"
-
-// TODO: Move to symmetry
 
 namespace CASM {
 class SymGroup;

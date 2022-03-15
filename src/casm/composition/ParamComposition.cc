@@ -1,4 +1,4 @@
-#include "casm/clex/ParamComposition.hh"
+#include "casm/composition/ParamComposition.hh"
 
 #include <unistd.h>
 

@@ -1,13 +1,13 @@
-#include "casm/clex/NeighborList.hh"
+#include "casm/clexulator/NeighborList.hh"
 
 #include "casm/container/Counter.hh"
 #include "casm/crystallography/LinearIndexConverter.hh"
-#include "casm/crystallography/Superlattice.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/CASM_math.hh"
 #include "casm/misc/algorithm.hh"
 
 namespace CASM {
+namespace clexulator {
 
 /// \brief Return the weighting matrix used to define the canonical order
 PrimNeighborList::Matrix3Type PrimNeighborList::weight_matrix() const {
@@ -15,12 +15,12 @@ PrimNeighborList::Matrix3Type PrimNeighborList::weight_matrix() const {
 }
 
 /// \brief Expand the neighbor list to include the given UnitCellCoord
-void PrimNeighborList::expand(UnitCellCoord const &uccoord) {
+void PrimNeighborList::expand(xtal::UnitCellCoord const &uccoord) {
   expand(uccoord.unitcell());
 }
 
 /// \brief Expand the neighbor list to include the given UnitCellCoord
-void PrimNeighborList::expand(UnitCell const &uc) {
+void PrimNeighborList::expand(xtal::UnitCell const &uc) {
   // save the old range
   Scalar prev_range = m_range;
 
@@ -34,12 +34,12 @@ void PrimNeighborList::expand(UnitCell const &uc) {
 }
 
 /// \brief Expand the neighbor list to include the given UnitCellCoord
-bool PrimNeighborList::_expand(UnitCellCoord const &uccoord) {
+bool PrimNeighborList::_expand(xtal::UnitCellCoord const &uccoord) {
   return _expand(uccoord.unitcell());
 }
 
 /// \brief Expand the neighbor list to include the given UnitCellCoord
-bool PrimNeighborList::_expand(UnitCell const &uc) {
+bool PrimNeighborList::_expand(xtal::UnitCell const &uc) {
   return m_neighborhood.insert(uc).second;
 }
 
@@ -127,7 +127,7 @@ PrimNeighborList::size_type PrimNeighborList::n_sublattices() const {
 /// \brief Get neighborlist index of UnitCellCoord @param _ucc, expanding
 /// neighborhood if necessary
 PrimNeighborList::Scalar PrimNeighborList::neighbor_index(
-    UnitCellCoord const &_ucc) {
+    xtal::UnitCellCoord const &_ucc) {
   expand(_ucc);
   return _neighbor_index(_ucc);
 }
@@ -135,7 +135,7 @@ PrimNeighborList::Scalar PrimNeighborList::neighbor_index(
 /// \brief Get neighborlist index of UnitCellCoord @param _ucc, without
 /// expanding neighborhood
 PrimNeighborList::Scalar PrimNeighborList::_neighbor_index(
-    UnitCellCoord const &_ucc) const {
+    xtal::UnitCellCoord const &_ucc) const {
   Scalar uc_ind(find_index(m_neighborhood, _ucc.unitcell()));
   Scalar sublat_dist(find_index(sublat_indices(), _ucc.sublattice()));
 
@@ -143,13 +143,14 @@ PrimNeighborList::Scalar PrimNeighborList::_neighbor_index(
 }
 
 /// \brief Calculate A.transpose()*M*A
-PrimNeighborList::Scalar PrimNeighborList::_dist(const UnitCell &A) const {
+PrimNeighborList::Scalar PrimNeighborList::_dist(
+    xtal::UnitCell const &A) const {
   return A.transpose() * m_W * A;
 }
 
 /// \brief Return [r, i, j, k], where r = _dist(A)
 PrimNeighborList::VectorXType PrimNeighborList::_add_dist(
-    const UnitCell &A) const {
+    xtal::UnitCell const &A) const {
   VectorXType vec(4);
   vec(0) = _dist(A);
   vec.segment(1, 3) = A;
@@ -157,14 +158,14 @@ PrimNeighborList::VectorXType PrimNeighborList::_add_dist(
 }
 
 /// \brief Convert [i,j,k] -> [r,i,j,k] and then lexicographically compare
-bool PrimNeighborList::_compare_unitcell(const UnitCell &A,
-                                         const UnitCell &B) const {
+bool PrimNeighborList::_compare_unitcell(xtal::UnitCell const &A,
+                                         xtal::UnitCell const &B) const {
   return _compare_vec(_add_dist(A), _add_dist(B));
 }
 
 /// \brief Lexicographical comparison
-bool PrimNeighborList::_compare_vec(const VectorXType &A,
-                                    const VectorXType &B) {
+bool PrimNeighborList::_compare_vec(VectorXType const &A,
+                                    VectorXType const &B) {
   return std::lexicographical_compare(A.data(), A.data() + A.size(), B.data(),
                                       B.data() + B.size());
 }
@@ -256,7 +257,7 @@ SuperNeighborList::SuperNeighborList(
     // for each neighbor unitcell
     for (auto it = prim_nlist.begin(); it != prim_nlist.end(); ++it) {
       // get the neighbor unitcell's index
-      UnitCell neighbor_unitcell = ijk_index_converter(i) + *it;
+      xtal::UnitCell neighbor_unitcell = ijk_index_converter(i) + *it;
       size_type neighbor_unitcell_index =
           ijk_index_converter(neighbor_unitcell);
 
@@ -300,30 +301,11 @@ SuperNeighborList::SuperNeighborList(
   m_overlaps = std::adjacent_find(nlist.begin(), nlist.end()) != nlist.end();
 }
 
-/// \brief Constructor
-///
-/// \param superlattice The superlattice this neighbor list pertains to, coupled
-/// with its primitive tiling unit \param prim_nlist A reference to a
-/// PrimNeighborList defining the neighborhood for the origin
-///        unit cell. It is only used in the constructor, any changes to the
-///        PrimNeighborList will not be reflected in this SuperNeighborList.
-///
-/// - The canonical order of UnitCellCoord is obtained by lexicographically
-/// sorting [r, i, j, k, b],
-///   where r = (i,j,k).transpose() * W * (i,j,k).
-/// - The canonical order of UnitCell is obtained by lexicographically sorting
-/// [r, i, j, k]
-/// - The sublattice iterators enable restricting the neighbor list to only
-/// sites that have degrees of freedom
-///
-SuperNeighborList::SuperNeighborList(const xtal::Superlattice &superlattice,
-                                     const PrimNeighborList &prim_nlist)
-    : SuperNeighborList(superlattice.transformation_matrix_to_super(),
-                        prim_nlist) {}
-
 /// \brief Clone
 std::unique_ptr<SuperNeighborList> SuperNeighborList::clone() const {
   return std::unique_ptr<SuperNeighborList>(new SuperNeighborList(*this));
 }
+
+}  // namespace clexulator
 
 }  // namespace CASM

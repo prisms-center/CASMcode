@@ -1,5 +1,5 @@
-#ifndef CLEXPARAMPACK_HH
-#define CLEXPARAMPACK_HH
+#ifndef CASM_clexulator_ClexParamPack
+#define CASM_clexulator_ClexParamPack
 #include <cstddef>
 #include <map>
 #include <vector>
@@ -7,6 +7,7 @@
 #include "casm/misc/cloneable_ptr.hh"
 
 namespace CASM {
+namespace clexulator {
 /** \ingroup Clexulator
  * @{ */
 
@@ -68,7 +69,7 @@ class BaseKey {
   /// (Index, int, etc) pair index identifiers must be passed as
   /// std::pair<Index,Index>
   template <typename... Args>
-  void set_identifiers(Args const &... args) {
+  void set_identifiers(Args const &...args) {
     _set_identifiers(0, args...);
   }
 
@@ -87,7 +88,7 @@ class BaseKey {
 
   /// \brief Recursive unrolling of variadic template to set all identifiers
   template <typename T, typename... Args>
-  void _set_identifiers(Index i, T const &_val, Args const &... args) {
+  void _set_identifiers(Index i, T const &_val, Args const &...args) {
     _set_identifiers(i, _val);
     _set_identifiers(++i, args...);
   }
@@ -122,22 +123,31 @@ class ParamPackMixIn {
   /// \brief static factory function for BasicClexParamPack
   static ParamPackMixIn basic_mix_in() {
     return ParamPackMixIn("BasicClexParamPack",
+                          "casm/clexulator/BasicClexParamPack.hh",
                           {{"ParamPack::DEFAULT", "double"}});
   }
 
   /// \brief static factory function for DiffClexParamPack
   static ParamPackMixIn diff_mix_in() {
     return ParamPackMixIn("DiffClexParamPack",
+                          "casm/clexulator/DiffClexParamPack.hh",
                           {{"ParamPack::DEFAULT", "double"},
                            {"ParamPack::DIFF", "ParamPack::DiffScalar"}});
   }
 
   /// \brief Constructor
   /// Constructed with
-  /// \param _name { _name of derived ClexParamPack specialization }
-  ParamPackMixIn(std::string const &_name,
+  /// \param _name Name of derived ClexParamPack specialization. Expected to be
+  ///     a type that exists in the namespace `CASM::clexulator`. Ex:
+  ///     "BasicClexParamPack".
+  /// \param _filename File to include for ClexParamPack specialization. Ex:
+  ///      "casm/clexulator/BasicClexParamPack.hh"
+  /// \param _specializations See `basic_mix_in` and `diff_mix_in` examples.
+  ParamPackMixIn(std::string const &_name, std::string const &_filename,
                  std::map<std::string, std::string> const &_specializations)
-      : m_name(_name), m_scalar_specializations(_specializations) {}
+      : m_name(_name),
+        m_filename(_filename),
+        m_scalar_specializations(_specializations) {}
 
   /// \brief Abstract class must define virtual destructor
   virtual ~ParamPackMixIn() {}
@@ -154,7 +164,7 @@ class ParamPackMixIn {
 
   /// \brief returns string with include directives for Clexulator.
   virtual std::string cpp_includes_string() const {
-    return "#include \"casm/clex/" + name() + ".hh\"\n";
+    return "#include \"" + m_filename + "\"\n";
   }
 
   /// \brief returns string with c++ definitions to be written before
@@ -173,6 +183,7 @@ class ParamPackMixIn {
   virtual ParamPackMixIn *_clone() const { return new ParamPackMixIn(*this); }
 
   std::string m_name;
+  std::string m_filename;
   std::map<std::string, std::string> m_scalar_specializations;
 };
 
@@ -205,7 +216,7 @@ class ClexParamKey {
   ///  std::pair<Index,Index>(j,k)));
   /// \endcode
   template <typename... Args>
-  ClexParamKey &operator()(Args const &... args) {
+  ClexParamKey &operator()(Args const &...args) {
     m_key_ptr->set_identifiers(args...);
     return *this;
   }
@@ -330,6 +341,7 @@ class ClexParamPack {
 };
 
 /** @} */
+}  // namespace clexulator
 }  // namespace CASM
 
 #endif

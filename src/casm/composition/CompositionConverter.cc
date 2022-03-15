@@ -1,9 +1,9 @@
-#include "casm/clex/CompositionConverter.hh"
+#include "casm/composition/CompositionConverter.hh"
 
 #include "casm/misc/CASM_Eigen_math.hh"
 
 // currently still relies on this for getting standard composition axes
-#include "casm/clex/ParamComposition.hh"
+#include "casm/composition/ParamComposition.hh"
 #include "casm/misc/algorithm.hh"
 
 namespace CASM {

@@ -73,7 +73,7 @@ TEST_F(OccStrainClexulatorTest, UseClexulator) {
   print_basis_functions(log(), *primclex_ptr, basis_set_name, align);
 
   // Check clexulator
-  EXPECT_EQ(clexulator.name(), "OccStrainClexulatorTest_Clexulator");
+  EXPECT_EQ(clexulator.name(), "OccStrainClexulatorTest_Clexulator_default");
   EXPECT_EQ(clexulator.nlist_size(), 13);
   EXPECT_EQ(clexulator.corr_size(), 33);
   EXPECT_EQ(clexulator.neighborhood().size(), 13);

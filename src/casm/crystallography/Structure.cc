@@ -14,7 +14,6 @@
 
 #include "casm/basis_set/Adapter.hh"
 #include "casm/basis_set/DoF.hh"
-#include "casm/basis_set/DoFIsEquivalent_impl.hh"
 #include "casm/basis_set/DoFTraits.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/container/algorithm.hh"
@@ -23,6 +22,7 @@
 #include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/crystallography/DoFSet.hh"
 #include "casm/crystallography/IntegralCoordinateWithin.hh"
+#include "casm/crystallography/OccupantDoFIsEquivalent.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "casm/crystallography/SymType.hh"
 #include "casm/external/Eigen/src/Core/Matrix.h"
@@ -212,7 +212,7 @@ void Structure::_generate_basis_symreps() {
       auto const &dofref_from = basis()[b].occupant_dof();
 
       auto &symrep_from = this->m_occupant_symrep_IDs[b];
-      OccupantDoFIsEquivalent<xtal::Molecule> eq(dofref_from);
+      xtal::OccupantDoFIsEquivalent eq(dofref_from);
 
       if (eq(adapter::Adapter<xtal::SymOp, CASM::SymOp>()(op), dofref_to)) {
         if (symrep_from.is_identity()) {
@@ -240,25 +240,21 @@ void Structure::_generate_basis_symreps() {
       for (Index from_b = 0; from_b < basis().size(); ++from_b) {
         if (!basis()[from_b].has_dof(dof_key)) continue;
 
-        xtal::DoFSet const &_dofref_from = basis()[from_b].dof(dof_key);
+        xtal::SiteDoFSet const &dof_from = basis()[from_b].dof(dof_key);
 
         Index to_b = sitemap[from_b].sublattice();
-        xtal::DoFSet const &_dofref_to = basis()[to_b].dof(dof_key);
+        xtal::SiteDoFSet const &dof_to = basis()[to_b].dof(dof_key);
 
-        // Transform the xtal::SiteDoFSet to the CASM::DoFSet version
-        CASM::DoFSet dofref_from =
-            adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(
-                _dofref_from, SymGroupRepID(), from_b);
+        // want to check if:
+        //   copy_apply(op, dof_from.basis()) = dof_to.basis() * U
+        //               transformed_dof_from = dof_to.basis() * U
 
-        CASM::DoFSet dofref_to =
-            adapter::Adapter<CASM::DoFSet, xtal::SiteDoFSet>()(
-                _dofref_to, SymGroupRepID(), to_b);
+        xtal::SiteDoFSet transformed_dof_from = sym::copy_apply(
+            adapter::Adapter<xtal::SymOp, CASM::SymOp>()(op), dof_from);
 
-        DoFIsEquivalent eq(dofref_from);
-        // TODO
-        // Calling the adapter here, because we said we don't want anything
-        // outside of crystallography to invoke crystallography/Adapter.hh
-        if (!eq(adapter::Adapter<xtal::SymOp, CASM::SymOp>()(op), dofref_to)) {
+        xtal::SiteDoFSetIsEquivalent_f dof_equals(dof_to, TOL);
+
+        if (!dof_equals(transformed_dof_from)) {
           throw std::runtime_error(
               "While generating symmetry representation for local DoF \"" +
               dof_key +
@@ -268,9 +264,19 @@ void Structure::_generate_basis_symreps() {
               "symmetry analyses.");
         }
 
+        Eigen::MatrixXd basis_change_representation;
+        try {
+          basis_change_representation = xtal::dofset_transformation_matrix(
+              dof_to.basis(), transformed_dof_from.basis(), TOL);
+        } catch (std::runtime_error &e) {
+          throw std::runtime_error(std::string(e.what()) +
+                                   " Attempted to make representation for " +
+                                   dof_key + ".");
+        }
+
         SymGroupRepID from_symrep_ID =
             this->site_dof_symrep_IDs()[from_b][dof_key];
-        op.set_rep(from_symrep_ID, SymMatrixXd(eq.U()));
+        op.set_rep(from_symrep_ID, SymMatrixXd(basis_change_representation));
       }
     }
   }
@@ -325,71 +331,6 @@ void Structure::_generate_global_symreps() {
   }
 }
 //***********************************************************
-
-/// Returns 'converter' which converts Site::site_occupant indices to 'mol_list'
-/// indices:
-///   mol_list_index = converter[basis_site][site_occupant_index]
-std::vector<std::vector<Index>> make_index_converter(
-    const Structure &struc, std::vector<xtal::Molecule> mol_list) {
-  std::vector<std::vector<Index>> converter(struc.basis().size());
-
-  for (Index i = 0; i < struc.basis().size(); i++) {
-    converter[i].resize(struc.basis()[i].occupant_dof().size());
-
-    for (Index j = 0; j < struc.basis()[i].occupant_dof().size(); j++) {
-      converter[i][j] =
-          CASM::find_index(mol_list, struc.basis()[i].occupant_dof()[j]);
-    }
-  }
-
-  return converter;
-}
-
-/// Returns 'converter' which converts Site::site_occupant indices to
-/// 'mol_name_list' indices:
-///   mol_name_list_index = converter[basis_site][site_occupant_index]
-std::vector<std::vector<Index>> make_index_converter(
-    const Structure &struc, std::vector<std::string> mol_name_list) {
-  std::vector<std::vector<Index>> converter(struc.basis().size());
-
-  for (Index i = 0; i < struc.basis().size(); i++) {
-    converter[i].resize(struc.basis()[i].occupant_dof().size());
-
-    for (Index j = 0; j < struc.basis()[i].occupant_dof().size(); j++) {
-      converter[i][j] = CASM::find_index(
-          mol_name_list, struc.basis()[i].occupant_dof()[j].name());
-    }
-  }
-
-  return converter;
-}
-
-/// Returns 'converter_inverse' which converts 'mol_name_list' indices to
-/// Site::site_occupant indices:
-///  site_occupant_index = converter_inverse[basis_site][mol_name_list_index]
-///
-/// If mol is not allowed on basis_site, return
-/// struc.basis()[basis_site].occupant_dof().size()
-std::vector<std::vector<Index>> make_index_converter_inverse(
-    const Structure &struc, std::vector<std::string> mol_name_list) {
-  std::vector<std::vector<Index>> converter_inv(struc.basis().size());
-
-  for (Index i = 0; i < struc.basis().size(); i++) {
-    converter_inv[i].resize(mol_name_list.size());
-
-    std::vector<std::string> site_occ_name_list;
-    for (Index j = 0; j < struc.basis()[i].occupant_dof().size(); j++) {
-      site_occ_name_list.push_back(struc.basis()[i].occupant_dof()[j].name());
-    }
-
-    for (Index j = 0; j < mol_name_list.size(); j++) {
-      converter_inv[i][j] =
-          CASM::find_index(site_occ_name_list, mol_name_list[j]);
-    }
-  }
-
-  return converter_inv;
-}
 
 std::map<DoFKey, DoFSetInfo> global_dof_info(Structure const &_struc) {
   std::map<DoFKey, DoFSetInfo> result;

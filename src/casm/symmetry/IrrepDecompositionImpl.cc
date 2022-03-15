@@ -250,8 +250,8 @@ bool make_is_block_diagonal(std::vector<Eigen::MatrixXcd> const &rep,
     // right
     if (end != matrix.cols()) {
       if (!almost_zero(
-               matrix.block(begin, end, end - begin, matrix.cols() - end),
-               tol)) {
+              matrix.block(begin, end, end - begin, matrix.cols() - end),
+              tol)) {
         return false;
       }
     }
@@ -264,8 +264,8 @@ bool make_is_block_diagonal(std::vector<Eigen::MatrixXcd> const &rep,
     // bottom
     if (end != matrix.rows()) {
       if (!almost_zero(
-               matrix.block(end, begin, matrix.rows() - end, end - begin),
-               tol)) {
+              matrix.block(end, begin, matrix.rows() - end, end - begin),
+              tol)) {
         return false;
       }
     }
@@ -517,6 +517,9 @@ std::vector<IrrepInfo> make_irrep_info(std::set<PossibleIrrep> const &irreps) {
 
   // set sequential indices to differentiate irreps
   // with identical character vectors
+  if (irrep_info.size() < 2) {
+    return irrep_info;
+  }
   Index irrep_index = 0;
   for (Index i = 0; i < irrep_info.size() - 1; ++i) {
     irrep_info[i].index = irrep_index;

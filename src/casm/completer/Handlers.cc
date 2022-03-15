@@ -89,6 +89,8 @@ std::string ArgHandler::dof() { return m_argument_table[16].first; }
 
 std::string ArgHandler::infomethod() { return m_argument_table[17].first; }
 
+std::string ArgHandler::montemethod() { return m_argument_table[18].first; }
+
 void ArgHandler::void_to_bash(std::vector<std::string> &arguments) { return; }
 
 void ArgHandler::path_to_bash(std::vector<std::string> &arguments) {
@@ -291,7 +293,8 @@ const std::vector<std::pair<std::string, ARG_TYPE> >
          std::make_pair("<eci>", ARG_TYPE::ECI),
          std::make_pair("<property>", ARG_TYPE::PROPERTY),
          std::make_pair("<dof>", ARG_TYPE::DOF),
-         std::make_pair("<infomethod>", ARG_TYPE::INFOMETHOD)});
+         std::make_pair("<infomethod>", ARG_TYPE::INFOMETHOD),
+         std::make_pair("<montemethod>", ARG_TYPE::MONTEMETHOD)});
 
 //*****************************************************************************************************//
 

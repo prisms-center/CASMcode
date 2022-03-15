@@ -158,6 +158,12 @@ class DirectoryStructure {
   /// \brief Returns path to clexulator so file
   fs::path clexulator_so(std::string project_name, std::string bset) const;
 
+  /// \brief Returns path to directory containing equivalent clexulator files
+  fs::path equivalent_clexulator_dir(std::string bset, int equivalent_index) const;
+
+  /// \brief Returns path to equivalent clexulator source file
+  fs::path equivalent_clexulator_src(std::string project_name, std::string bset, int equivalent_index) const;
+
   /// \brief Returns path to eci.in, in bset directory
   fs::path eci_in(std::string bset) const;
 
@@ -268,6 +274,9 @@ class DirectoryStructure {
 
   /// Add a basis set directory
   bool new_bset_dir(std::string bset) const;
+
+  /// Add a new equivalent clexulator directory
+  bool new_equivalent_clexulator_dir(std::string bset, int equivalent_index) const;
 
   /// Add a cluster expansion directory
   bool new_clex_dir(std::string property) const;

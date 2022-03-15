@@ -28,7 +28,8 @@ BasicStructure::BasicStructure(const BasicStructure &RHS)
     : m_lattice(RHS.lattice()),
       m_title(RHS.title()),
       m_basis(RHS.basis()),
-      m_global_dof_map(RHS.m_global_dof_map) {
+      m_global_dof_map(RHS.m_global_dof_map),
+      m_unique_names(RHS.m_unique_names) {
   for (Index i = 0; i < basis().size(); i++) {
     m_basis[i].set_lattice(lattice(), CART);
   }
@@ -41,6 +42,7 @@ BasicStructure &BasicStructure::operator=(const BasicStructure &RHS) {
   m_title = RHS.title();
   set_basis(RHS.basis());
   m_global_dof_map = RHS.m_global_dof_map;
+  m_unique_names = RHS.m_unique_names;
 
   for (Index i = 0; i < basis().size(); i++)
     m_basis[i].set_lattice(lattice(), CART);
@@ -101,6 +103,18 @@ void BasicStructure::set_basis(std::vector<Site> const &_basis,
 void BasicStructure::push_back(Site const &_site, COORD_TYPE mode) {
   m_basis.push_back(_site);
   m_basis.back().set_lattice(lattice(), mode);
+}
+
+/// Set the names used to distinguish occupants with the same chemical name
+void BasicStructure::set_unique_names(
+    std::vector<std::vector<std::string>> const &_unique_names) {
+  m_unique_names = _unique_names;
+}
+
+/// Get the unique names
+std::vector<std::vector<std::string>> const &BasicStructure::unique_names()
+    const {
+  return m_unique_names;
 }
 
 //************************************************************
@@ -420,13 +434,13 @@ std::vector<std::string> struc_molecule_name(BasicStructure const &_struc) {
 
 //************************************************************
 /// Returns an std::vector of each *possible* Molecule in this Structure
-std::vector<std::vector<std::string> > allowed_molecule_unique_names(
+std::vector<std::vector<std::string>> allowed_molecule_unique_names(
     BasicStructure const &_struc) {
   using IPair = std::pair<Index, Index>;
-  std::map<std::string, std::vector<Molecule> > name_map;
+  std::map<std::string, std::vector<Molecule>> name_map;
   std::map<std::string, IPair> imap;
 
-  std::vector<std::vector<std::string> > result(_struc.basis().size());
+  std::vector<std::vector<std::string>> result(_struc.basis().size());
   for (Index b = 0; b < _struc.basis().size(); ++b) {
     for (Index j = 0; j < _struc.basis()[b].occupant_dof().size(); ++j) {
       Molecule const &mol(_struc.basis()[b].occupant_dof()[j]);
@@ -453,9 +467,9 @@ std::vector<std::vector<std::string> > allowed_molecule_unique_names(
 
 //************************************************************
 /// Returns a vector with a list of allowed molecule names at each site
-std::vector<std::vector<std::string> > allowed_molecule_names(
+std::vector<std::vector<std::string>> allowed_molecule_names(
     BasicStructure const &_struc) {
-  std::vector<std::vector<std::string> > result(_struc.basis().size());
+  std::vector<std::vector<std::string>> result(_struc.basis().size());
 
   for (Index b = 0; b < _struc.basis().size(); ++b)
     result[b] = _struc.basis()[b].allowed_occupants();
@@ -555,6 +569,71 @@ DoFKey get_strain_metric(DoFKey strain_dof_key) {
   msg << "Error in get_strain_metric: Failed to get metric name from '"
       << strain_dof_key << "'.";
   throw std::runtime_error(msg.str());
+}
+
+/// Returns 'converter' which converts Site::site_occupant indices to 'mol_list'
+/// indices:
+///   mol_list_index = converter[basis_site][site_occupant_index]
+std::vector<std::vector<Index>> make_index_converter(
+    const BasicStructure &struc, std::vector<xtal::Molecule> mol_list) {
+  std::vector<std::vector<Index>> converter(struc.basis().size());
+
+  for (Index i = 0; i < struc.basis().size(); i++) {
+    converter[i].resize(struc.basis()[i].occupant_dof().size());
+
+    for (Index j = 0; j < struc.basis()[i].occupant_dof().size(); j++) {
+      converter[i][j] =
+          CASM::find_index(mol_list, struc.basis()[i].occupant_dof()[j]);
+    }
+  }
+
+  return converter;
+}
+
+/// Returns 'converter' which converts Site::site_occupant indices to
+/// 'mol_name_list' indices:
+///   mol_name_list_index = converter[basis_site][site_occupant_index]
+std::vector<std::vector<Index>> make_index_converter(
+    const BasicStructure &struc, std::vector<std::string> mol_name_list) {
+  std::vector<std::vector<Index>> converter(struc.basis().size());
+
+  for (Index i = 0; i < struc.basis().size(); i++) {
+    converter[i].resize(struc.basis()[i].occupant_dof().size());
+
+    for (Index j = 0; j < struc.basis()[i].occupant_dof().size(); j++) {
+      converter[i][j] = CASM::find_index(
+          mol_name_list, struc.basis()[i].occupant_dof()[j].name());
+    }
+  }
+
+  return converter;
+}
+
+/// Returns 'converter_inverse' which converts 'mol_name_list' indices to
+/// Site::site_occupant indices:
+///  site_occupant_index = converter_inverse[basis_site][mol_name_list_index]
+///
+/// If mol is not allowed on basis_site, return
+/// struc.basis()[basis_site].occupant_dof().size()
+std::vector<std::vector<Index>> make_index_converter_inverse(
+    const BasicStructure &struc, std::vector<std::string> mol_name_list) {
+  std::vector<std::vector<Index>> converter_inv(struc.basis().size());
+
+  for (Index i = 0; i < struc.basis().size(); i++) {
+    converter_inv[i].resize(mol_name_list.size());
+
+    std::vector<std::string> site_occ_name_list;
+    for (Index j = 0; j < struc.basis()[i].occupant_dof().size(); j++) {
+      site_occ_name_list.push_back(struc.basis()[i].occupant_dof()[j].name());
+    }
+
+    for (Index j = 0; j < mol_name_list.size(); j++) {
+      converter_inv[i][j] =
+          CASM::find_index(site_occ_name_list, mol_name_list[j]);
+    }
+  }
+
+  return converter_inv;
 }
 
 }  // namespace xtal

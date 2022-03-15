@@ -1,5 +1,5 @@
-#ifndef DIFFCLEXPARAMPACK_HH
-#define DIFFCLEXPARAMPACK_HH
+#ifndef CASM_clexulator_DiffClexParamPack
+#define CASM_clexulator_DiffClexParamPack
 #include <cstddef>
 #include <iostream>
 #include <sstream>
@@ -8,12 +8,13 @@
 #include "casm/casm_io/container/stream_io.hh"
 #include "casm/casm_io/enum/json_io.hh"
 #include "casm/casm_io/enum/stream_io.hh"
-#include "casm/clex/ClexParamPack.hh"
+#include "casm/clexulator/ClexParamPack.hh"
 #include "casm/external/fadbad/badiff.h"
 #include "casm/external/fadbad/fadiff.h"
 #include "casm/global/definitions.hh"
 
 namespace CASM {
+namespace clexulator {
 /** \ingroup Clexulator
  * @{ */
 
@@ -258,7 +259,7 @@ class DiffClexParamPack : public ClexParamPack {
   using Val = ValAccess<Scalar>;
 
   template <typename Scalar>
-  friend class ValAccess;
+  friend struct ValAccess;
 
   /// \brief Default constructor initializes evaluation mode and zeros numbers
   /// of managed parameters
@@ -669,32 +670,39 @@ inline DiffClexParamPack::Key DiffClexParamPack::allocate(
   return protokey;
 }
 
-inline std::ostream &operator<<(std::ostream &sout,
-                                const DiffClexParamPack::EvalMode &val) {
-  sout << to_string<DiffClexParamPack::EvalMode>(val);
+}  // namespace clexulator
+
+inline std::ostream &operator<<(
+    std::ostream &sout, const clexulator::DiffClexParamPack::EvalMode &val) {
+  sout << to_string<clexulator::DiffClexParamPack::EvalMode>(val);
   return sout;
 }
 
 inline std::istream &operator>>(std::istream &sin,
-                                DiffClexParamPack::EvalMode &val) {
+                                clexulator::DiffClexParamPack::EvalMode &val) {
   std::string s;
   sin >> s;
-  val = from_string<DiffClexParamPack::EvalMode>(s);
+  val = from_string<clexulator::DiffClexParamPack::EvalMode>(s);
   return sin;
 }
 
-const std::string traits<DiffClexParamPack::EvalMode>::name = "clex_eval_mode";
+const std::string traits<clexulator::DiffClexParamPack::EvalMode>::name =
+    "clex_eval_mode";
 
-const std::multimap<DiffClexParamPack::EvalMode, std::vector<std::string> >
-    traits<DiffClexParamPack::EvalMode>::strval = {
-        {DiffClexParamPack::EvalMode::DEFAULT,
+const std::multimap<clexulator::DiffClexParamPack::EvalMode,
+                    std::vector<std::string> >
+    traits<clexulator::DiffClexParamPack::EvalMode>::strval = {
+        {clexulator::DiffClexParamPack::EvalMode::DEFAULT,
          {"Default", "DEFAULT", "default"}},
-        {DiffClexParamPack::EvalMode::DIFF,
+        {clexulator::DiffClexParamPack::EvalMode::DIFF,
          {"Diff", "DIFF", "diff", "Differential", "differential",
           "DIFFERENTIAL"}},
-        {DiffClexParamPack::EvalMode::READ, {"Read", "READ", "read"}},
-        {DiffClexParamPack::EvalMode::DYNAM,
+        {clexulator::DiffClexParamPack::EvalMode::READ,
+         {"Read", "READ", "read"}},
+        {clexulator::DiffClexParamPack::EvalMode::DYNAM,
          {"Dynamic", "Dynam", "DYNAMIC", "DYNAM", "dynamic", "dynam"}}};
+
+namespace clexulator {
 
 const DiffClexParamPack::EvalMode DiffClexParamPack::DEFAULT =
     DiffClexParamPack::EvalMode::DEFAULT;
@@ -706,5 +714,6 @@ const DiffClexParamPack::EvalMode DiffClexParamPack::READ =
     DiffClexParamPack::EvalMode::READ;
 
 /** @} */
+}  // namespace clexulator
 }  // namespace CASM
 #endif

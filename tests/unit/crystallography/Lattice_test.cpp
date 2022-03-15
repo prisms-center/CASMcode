@@ -5,14 +5,13 @@
 #include "casm/crystallography/LatticeIsEquivalent.hh"
 
 /// What is being used to test it:
-#include "casm/basis_set/DoF.hh"
 #include "casm/crystallography/Molecule.hh"
 #include "casm/crystallography/SuperlatticeEnumerator.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
-#include "casm/symmetry/SymGroup.hh"
 
 using namespace CASM;
+using xtal::Lattice;
 using xtal::ScelEnumProps;
 using xtal::SuperlatticeEnumerator;
 
@@ -20,27 +19,27 @@ void lattice_pg_test() {
   double tol = 1e-5;
 
   {
-    EXPECT_EQ(SymGroup::lattice_point_group(Lattice::fcc()).size(), 48);
+    EXPECT_EQ(xtal::make_point_group(Lattice::fcc()).size(), 48);
 
-    EXPECT_EQ(SymGroup::lattice_point_group(Lattice::bcc()).size(), 48);
+    EXPECT_EQ(xtal::make_point_group(Lattice::bcc()).size(), 48);
 
-    EXPECT_EQ(SymGroup::lattice_point_group(Lattice::cubic()).size(), 48);
+    EXPECT_EQ(xtal::make_point_group(Lattice::cubic()).size(), 48);
 
-    EXPECT_EQ(SymGroup::lattice_point_group(Lattice::hexagonal()).size(), 24);
+    EXPECT_EQ(xtal::make_point_group(Lattice::hexagonal()).size(), 24);
   }
 }
 
 void lattice_is_equivalent_test() {
   {
     Lattice fcc = Lattice::fcc();
-    SymGroup pg = SymGroup::lattice_point_group(fcc);
+    auto pg = xtal::make_point_group(fcc);
     for (const auto &op : pg) {
       EXPECT_TRUE(xtal::is_equivalent(fcc, sym::copy_apply(op, fcc)));
     }
   }
   {
     Lattice bcc = Lattice::bcc();
-    SymGroup pg = SymGroup::lattice_point_group(bcc);
+    auto pg = xtal::make_point_group(bcc);
 
     for (const auto &op : pg) {
       EXPECT_TRUE(xtal::is_equivalent(bcc, sym::copy_apply(op, bcc)));
@@ -48,7 +47,7 @@ void lattice_is_equivalent_test() {
   }
   {
     Lattice cubic = Lattice::cubic();
-    SymGroup pg = SymGroup::lattice_point_group(cubic);
+    auto pg = xtal::make_point_group(cubic);
 
     for (const auto &op : pg) {
       EXPECT_TRUE(xtal::is_equivalent(cubic, sym::copy_apply(op, cubic)));
@@ -56,7 +55,7 @@ void lattice_is_equivalent_test() {
   }
   {
     Lattice hex = Lattice::hexagonal();
-    SymGroup pg = SymGroup::lattice_point_group(hex);
+    auto pg = xtal::make_point_group(hex);
 
     for (const auto &op : pg) {
       EXPECT_TRUE(xtal::is_equivalent(hex, sym::copy_apply(op, hex)));
@@ -79,11 +78,11 @@ void lattice_read_test() {
 
 void lattice_superduper_test() {
   // This point group will remain empty so that it checks more cases
-  SymGroup pg;
+  std::vector<xtal::SymOp> pg;
   Lattice lat(Lattice::fcc());
 
   ScelEnumProps enum_props(1, 6);
-  SuperlatticeEnumerator enumerator(pg.begin(), pg.end(), lat, enum_props);
+  SuperlatticeEnumerator enumerator(lat, pg, enum_props);
 
   std::vector<Lattice> lat_list(enumerator.begin(), enumerator.end());
 

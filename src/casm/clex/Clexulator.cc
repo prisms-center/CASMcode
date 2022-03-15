@@ -1,16 +1,21 @@
 #include "casm/clex/Clexulator.hh"
 
+#include <boost/filesystem.hpp>
+
 #include "casm/app/LogRuntimeLibrary.hh"
 #include "casm/casm_io/Log.hh"
-#include "casm/clex/ClexParamPack.hh"
+#include "casm/clexulator/ClexParamPack.hh"
 #include "casm/system/RuntimeLibrary.hh"
 
 namespace CASM {
 
 /// \brief Construct a Clexulator
 ///
-/// \param name Class name for the Clexulator, typically 'X_Clexulator', with X
-///             referring to the system of interest (i.e. 'NiAl_Clexulator')
+/// \param name Class name for the Clexulator, typically
+///     'X_Clexulator_<basis_set_name>', with X referring to the system of
+///     interest (i.e. 'NiAl_Clexulator'), or
+///     'X_Clexulator_<basis_set_name>_<index>' for local clexulators, where
+///     `<index>` is an equivalent local cluster expansion index.
 /// \param dirpath Directory containing the source code and compiled object
 /// file. \param nlist, A PrimNeighborList to be updated to include the
 /// neighborhood
@@ -18,10 +23,10 @@ namespace CASM {
 /// \param compile_options Compilation options
 /// \param so_options Shared library compilation options
 ///
-/// If 'name' is 'X_Clexulator', and 'dirpath' is '/path/to':
-/// - Looks for '/path/to/X_Clexulator.so' and tries to load it.
-/// - If not found, looks for 'path/to/X_Clexulator.cc' and tries to compile and
-/// load it.
+/// If 'name' is 'X_Clexulator_default', and 'dirpath' is '/path/to':
+/// - Looks for '/path/to/X_Clexulator_default.so' and tries to load it.
+/// - If not found, looks for 'path/to/X_Clexulator_default.cc' and tries to
+//    compile and load it.
 /// - If unsuccesful, will throw std::runtime_error.
 ///
 /// The Clexulator has shared ownership of the loaded library,
@@ -46,8 +51,9 @@ Clexulator::Clexulator(std::string name, fs::path dirpath,
   }
 
   // Get the Clexulator factory function
-  std::function<Clexulator_impl::Base *(void)> factory;
-  factory = m_lib->get_function<Clexulator_impl::Base *(void)>("make_" + name);
+  std::function<clexulator::BaseClexulator *(void)> factory;
+  factory =
+      m_lib->get_function<clexulator::BaseClexulator *(void)>("make_" + name);
 
   // Use the factory to construct the clexulator and store it in m_clex
   m_clex.reset(factory());
@@ -94,91 +100,38 @@ Clexulator &Clexulator::operator=(Clexulator B) {
 }
 
 /// \brief Obtain ClexParamKey for a particular parameter
-ClexParamKey const &Clexulator::param_key(
+clexulator::ClexParamKey const &Clexulator::param_key(
     std::string const &_param_name) const {
   return m_clex->param_key(_param_name);
 }
 
-/// \brief Alter evaluation of parameters specified by @param _param_key, using
-/// a custom double -> double function set
-void Clexulator::set_evaluation(
-    ClexParamKey const _param_key,
-    std::vector<std::function<double(ConfigDoF const &)> > const &_basis_set) {
-  m_clex->set_evaluation(_param_key, _basis_set);
+/// \brief Clexulator factory function
+Clexulator make_clexulator(std::string name, fs::path dirpath,
+                           PrimNeighborList &nlist, std::string compile_options,
+                           std::string so_options) {
+  return Clexulator(name, dirpath, nlist, compile_options, so_options);
 }
 
-/// \brief Alter evaluation of parameters specified by @param _param_key, using
-/// a custom int -> double function set
-void Clexulator::set_evaluation(
-    ClexParamKey const _param_key,
-    std::vector<std::function<double(std::vector<double> const &)> > const
-        &_basis_set) {
-  m_clex->set_evaluation(_param_key, _basis_set);
+/// \brief Local Clexulator factory function
+std::vector<Clexulator> make_local_clexulator(std::string name,
+                                              fs::path dirpath,
+                                              PrimNeighborList &nlist,
+                                              std::string compile_options,
+                                              std::string so_options) {
+  std::vector<Clexulator> result;
+  Index i = 0;
+  fs::path equiv_dir = dirpath / fs::path(std::to_string(i));
+  while (fs::exists(equiv_dir)) {
+    std::string equiv_name = name + "_" + std::to_string(i);
+    if (!fs::exists(equiv_dir / (equiv_name + ".cc"))) {
+      break;
+    }
+    result.push_back(make_clexulator(equiv_name, equiv_dir, nlist,
+                                     compile_options, so_options));
+    ++i;
+    equiv_dir = dirpath / fs::path(std::to_string(i));
+  }
+  return result;
 }
-
-/// \brief Alter evaluation of parameters specified by @param _param_key, using
-/// the string  @param _eval_type, which can be at least either "READ" (i.e.,
-/// read from ClexParamPack) or "DEFAULT" (i.e., the Clexulator's default
-/// implementation)
-void Clexulator::set_evaluation(ClexParamKey const _param_key,
-                                std::string _eval_type) {
-  m_clex->set_evaluation(_param_key, _eval_type);
-}
-
-/// \brief Check evaluation mode of parameters specified by @param _param_key,
-/// which can be one of (at least) "READ" (i.e., read from ClexParamPack),
-/// "CUSTOM", or "DEFAULT" (i.e., the Clexulator's default implementation)
-std::string Clexulator::check_evaluation(ClexParamKey const _param_key) const {
-  return m_clex->check_evaluation(_param_key);
-}
-
-namespace Clexulator_impl {
-
-Base::Base(size_type _nlist_size, size_type _corr_size, size_type _n_point_corr)
-    : m_nlist_size(_nlist_size),
-      m_corr_size(_corr_size),
-      m_n_point_corr(_n_point_corr),
-      m_config_ptr(nullptr) {}
-
-Base::~Base() {}
-
-/// \brief Clone the Clexulator
-std::unique_ptr<Base> Base::clone() const {
-  return std::unique_ptr<Base>(_clone());
-}
-
-/// \brief Alter evaluation of parameters specified by @param _param_key, using
-/// a custom double -> double function set
-void Base::set_evaluation(
-    ClexParamKey const &_param_key,
-    std::vector<std::function<double(ConfigDoF const &)> > const &_basis_set) {}
-
-/// \brief Alter evaluation of parameters specified by @param _param_key, using
-/// a custom int -> double function set
-void Base::set_evaluation(
-    ClexParamKey const &_param_key,
-    std::vector<std::function<double(std::vector<double> const &)> > const
-        &_basis_set) {}
-
-/// \brief Alter evaluation of parameters specified by @param _param_key, using
-/// the string  @param _eval_type,
-// which can be at least either "READ" (i.e., read from ClexParamPack) or
-// "DEFAULT" (i.e., the Clexulator's default implementation)
-void Base::set_evaluation(ClexParamKey const &_param_key,
-                          std::string const &_eval_type) {}
-
-/// \brief Check evaluation mode of parameters specified by @param _param_key,
-/// which can be one of (at least) "READ" (i.e., read from ClexParamPack),
-/// "CUSTOM", or "DEFAULT" (i.e., the Clexulator's default implementation)
-std::string Base::check_evaluation(ClexParamKey const &_param_key) const {
-  return "";
-}
-
-/// \brief Obtain ClexParamKey for a particular parameter
-ClexParamKey const &Base::param_key(std::string const &_param_name) const {
-  return param_pack().key(_param_name);
-}
-
-}  // namespace Clexulator_impl
 
 }  // namespace CASM

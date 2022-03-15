@@ -158,7 +158,7 @@ std::string clexulator_private_method_declarations(
   ss <<
 
       indent << "/// \\brief Clone the " << class_name << "\n"
-     << indent << "Clexulator_impl::Base *_clone() const override {\n"
+     << indent << "BaseClexulator *_clone() const override {\n"
      << indent << "  return new " << class_name << "(*this);\n"
      << indent << "}\n\n"
      <<

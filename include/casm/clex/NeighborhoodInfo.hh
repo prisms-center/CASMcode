@@ -10,7 +10,10 @@
 
 namespace CASM {
 
+namespace clexulator {
 class PrimNeighborList;
+}
+using clexulator::PrimNeighborList;
 
 // Useful neighborhood info for a set of cluster orbits
 struct NeighborhoodInfo {

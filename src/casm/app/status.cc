@@ -1,6 +1,7 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/app/casm_functions.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/completer/Handlers.hh"

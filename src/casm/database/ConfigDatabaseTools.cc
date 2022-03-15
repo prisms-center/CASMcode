@@ -140,6 +140,7 @@ ConfigInsertResult make_canonical_and_insert(
   } else {
     if (primitive_only) {
       res.insert_canonical = false;
+      res.canonical_it = configuration_db.end();
     } else {
       Configuration configuration_in_canon_supercell =
           fill_supercell(configuration, canon_supercell_of_configuration)

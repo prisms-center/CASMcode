@@ -8,6 +8,7 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/basis_set/DoF.hh"
+#include "casm/casm_io/Log.hh"
 #include "casm/casm_io/container/stream_io.hh"
 #include "casm/clex/ChemicalReference.hh"
 #include "casm/clex/CompositionConverter.hh"
@@ -398,6 +399,11 @@ Index Configuration::size() const { return supercell().num_sites(); }
 
 const Supercell &Configuration::supercell() const { return *m_supercell; }
 
+std::shared_ptr<Supercell const> const &Configuration::shared_supercell()
+    const {
+  return m_supercell_ptr;
+}
+
 UnitCellCoord Configuration::uccoord(Index site_l) const {
   return supercell().uccoord(site_l);
 }
@@ -544,7 +550,7 @@ Eigen::VectorXd Configuration::num_each_component() const {
   Eigen::VectorXd num_each_component = Eigen::VectorXd::Zero(components.size());
 
   // [basis_site][site_occupant_index]
-  auto convert = make_index_converter(prim(), components);
+  auto convert = xtal::make_index_converter(prim(), components);
 
   // count the number of each component
   for (Index i = 0; i < size(); i++) {
@@ -1059,7 +1065,7 @@ Eigen::VectorXi num_each_molecule(const ConfigDoF &configdof,
                                   const Supercell &scel) {
   auto mol_names = xtal::struc_molecule_name(scel.prim());
   // [basis_site][site_occupant_index]
-  auto convert = make_index_converter(scel.prim(), mol_names);
+  auto convert = xtal::make_index_converter(scel.prim(), mol_names);
 
   // create an array to count the number of each molecule
   Eigen::VectorXi num_each_molecule = Eigen::VectorXi::Zero(mol_names.size());
@@ -1076,6 +1082,38 @@ Eigen::VectorXi num_each_molecule(const ConfigDoF &configdof,
 /// ordered as Structure::xtal::struc_molecule_name()
 Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel) {
   return num_each_molecule(configdof, scel).cast<double>() / scel.volume();
+}
+
+/// \brief Generate a lookup table for configuration site index to asymmetric
+///     unit orbit index
+///
+/// \param config_n_sites The number of sites in the configuration
+/// \param config_factor_group The operations consistent with the supercell
+///     that leave the configuration DoF values unchanged.
+///
+/// \returns Returns a vector, `site_index_to_asym_index`, specifying the
+///     asymmetriuc unit orbit index assocated with each site in the
+///     Configuration (`asym_index = site_index_to_asym_index[site_index]`).
+///     Asymmetric unit orbit indices are distinct indices `(0, 1, ...)`
+///     indicating that sites with the same index map onto each other via
+///     configuration factor group operations.
+std::vector<Index> make_site_index_to_asym_index(
+    Index config_n_sites, std::vector<PermuteIterator> config_factor_group) {
+  std::vector<Index> l_to_asym;
+  Index n_asym = 0;
+
+  l_to_asym.resize(config_n_sites, -1);
+  for (Index l = 0; l < config_n_sites; ++l) {
+    if (l_to_asym[l] == -1) {
+      for (auto it = config_factor_group.begin();
+           it != config_factor_group.end(); ++it) {
+        // permutation defined by: after[i] = before[it->permute_ind(i)]
+        l_to_asym[it->permute_ind(l)] = n_asym;
+      }
+      ++n_asym;
+    }
+  }
+  return l_to_asym;
 }
 
 }  // namespace CASM

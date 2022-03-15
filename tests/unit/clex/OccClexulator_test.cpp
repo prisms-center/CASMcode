@@ -1,5 +1,6 @@
 #include "ProjectBaseTest.hh"
 #include "casm/casm_io/Log.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/clex/ClexBasisFunctionInfo_impl.hh"
 #include "casm/clex/ClexBasis_impl.hh"
 #include "casm/clex/Clexulator.hh"
@@ -10,6 +11,9 @@
 #include "casm/clex/Supercell.hh"
 #include "casm/clex/io/ProtoFuncsPrinter_impl.hh"
 #include "casm/clex/io/stream/ClexBasis_stream_io.hh"
+#include "casm/clusterography/io/json/IntegralCluster_json_io.hh"
+#include "casm/crystallography/io/UnitCellCoordIO.hh"
+#include "casm/symmetry/SupercellSymInfo.hh"
 #include "crystallography/TestStructures.hh"
 #include "gtest/gtest.h"
 
@@ -83,7 +87,7 @@ TEST_F(OccClexulatorFCCTest, UseClexulator) {
   print_basis_functions(log(), *primclex_ptr, basis_set_name, align);
 
   // Check clexulator
-  EXPECT_EQ(clexulator.name(), "OccClexulatorTest_Clexulator");
+  EXPECT_EQ(clexulator.name(), "OccClexulatorTest_Clexulator_default");
   EXPECT_EQ(clexulator.nlist_size(), 176);
   EXPECT_EQ(clexulator.corr_size(), 75);
   EXPECT_EQ(clexulator.neighborhood().size(), 75);
@@ -137,7 +141,7 @@ TEST_F(OccClexulatorZrOTest, UseClexulator) {
   print_basis_functions(log(), *primclex_ptr, basis_set_name, align);
 
   // Check clexulator
-  EXPECT_EQ(clexulator.name(), "OccClexulatorZrOTest_Clexulator");
+  EXPECT_EQ(clexulator.name(), "OccClexulatorZrOTest_Clexulator_default");
   EXPECT_EQ(clexulator.nlist_size(), 53);
   EXPECT_EQ(clexulator.corr_size(), 16);
   EXPECT_EQ(clexulator.neighborhood().size(), 27);
@@ -170,13 +174,28 @@ class LocalOccClexulatorZrOTest : public test::ProjectBaseTest {
     this->write_basis_set_data();
     this->make_clexulator();
     shared_supercell->set_primclex(primclex_ptr.get());
+
+    // Uncomment to preserve project
+    // tmp_dir.do_not_remove_on_destruction();
+  }
+
+  void use_clexulator_test();
+  void eval_correlations_test();
+  void correlations_correctness_test();
+
+  Eigen::VectorXd local_corr(xtal::UnitCell unitcell,
+                             Configuration const &config,
+                             Clexulator &clexulator) {
+    auto const &scel_sym_info = config.supercell().sym_info();
+    return corr_contribution(scel_sym_info.unitcell_index_converter()(unitcell),
+                             config, clexulator);
   }
 
   // conventional ZrO unit cell
   std::shared_ptr<CASM::Supercell> shared_supercell;
 };
 
-TEST_F(LocalOccClexulatorZrOTest, UseClexulator) {
+void LocalOccClexulatorZrOTest::use_clexulator_test() {
   // Zeros configuration, 6x6x6 supercell
   CASM::Configuration configuration{shared_supercell};
 
@@ -189,7 +208,7 @@ TEST_F(LocalOccClexulatorZrOTest, UseClexulator) {
   print_basis_functions(log(), *primclex_ptr, basis_set_name, align);
 
   // Check clexulator
-  EXPECT_EQ(clexulator.name(), "LocalOccClexulatorZrOTest_Clexulator");
+  EXPECT_EQ(clexulator.name(), "LocalOccClexulatorZrOTest_Clexulator_default");
   EXPECT_EQ(clexulator.nlist_size(), 53);
   EXPECT_EQ(clexulator.corr_size(), 33);
   EXPECT_EQ(clexulator.neighborhood().size(), 26);
@@ -198,7 +217,7 @@ TEST_F(LocalOccClexulatorZrOTest, UseClexulator) {
   EXPECT_EQ(corr.size(), 33);
 }
 
-TEST_F(LocalOccClexulatorZrOTest, CorrelationsTest) {
+void LocalOccClexulatorZrOTest::eval_correlations_test() {
   // Configuration w/ 1 O, 6x6x6 supercell
   CASM::Configuration configuration{shared_supercell};
   configuration.set_occ(2 * 216, 1);  // O
@@ -207,6 +226,113 @@ TEST_F(LocalOccClexulatorZrOTest, CorrelationsTest) {
 
   assert_correlations_equivalence(*primclex_ptr, basis_set_name, configuration,
                                   clexulator);
+}
+
+void LocalOccClexulatorZrOTest::correlations_correctness_test() {
+  std::vector<Clexulator> clexulator =
+      primclex_ptr->local_clexulator(basis_set_name);
+  EXPECT_EQ(clexulator.size(), 2);
+
+  std::vector<IntegralCluster> phenom_orbit = this->make_phenom_orbit();
+  EXPECT_EQ(phenom_orbit.size(), 2);
+
+  // {
+  //     // To see the phenomenal clusters:
+  //     // - phenom_orbit[0]: [{2, 0, 0, 0}, {3, 0, 0, 0}]
+  //     // - phenom_orbit[1]: [{3, 0, 0, 0}, {2, 0, 0, 1}]
+  //     jsonParser json;
+  //     to_json(phenom_orbit, json);
+  //     std::cout << json << std::endl;
+  // }
+
+  // {
+  //   // To see the sites that make up the local orbits:
+  //   jsonParser json = jsonParser::array();
+  //   for (Index e = 0; e < clexulator.size(); ++e) {
+  //     for (Index i = 0; i < clexulator[e].corr_size(); ++i) {
+  //       jsonParser tjson;
+  //       tjson["equivalent_clex"] = e;
+  //       tjson["linear_orbit_index"] = i;
+  //       tjson["sites"] = clexulator[e].site_neighborhood(i);
+  //       json.push_back(tjson);
+  //     }
+  //   }
+  //   std::cout << json << std::endl;
+  // }
+
+  // default corr = constant term & zeros
+  Eigen::VectorXd default_corr = Eigen::VectorXd::Zero(33);
+  default_corr(0) = 1.0;
+
+  Eigen::VectorXd corr;
+  Eigen::VectorXd expected_corr;
+  {
+    // 6x6x6 supercell, w/ 1 O on site (orbit 1)
+
+    // local correlations associated with unitcell {0, 0, 0}
+    // local_corr[0] == 1 0 ... (O is on a phenom site)
+    // local_corr[1] == 1 1/2 0 ...  (O is on orbit 1 point site w/ mult 2)
+    CASM::Configuration configuration{shared_supercell};
+    occ(configuration, {2, 0, 0, 0}) = 1;  // O
+
+    corr = local_corr({0, 0, 0}, configuration, clexulator[0]);
+    expected_corr = default_corr;
+    EXPECT_TRUE(almost_equal(corr, expected_corr));
+
+    corr = local_corr({0, 0, 0}, configuration, clexulator[1]);
+    expected_corr = default_corr;
+    expected_corr(1) = 1. / 2.;
+    EXPECT_TRUE(almost_equal(corr, expected_corr));
+  }
+
+  {
+    // 6x6x6 supercell, w/ 1 O on site (orbit 3; orbit 4)
+
+    // local correlations associated with unitcell {0, 0, 0}
+    // local_corr[0] == 1 0 0 1/12 0 ...
+    // local_corr[1] == 1 0 0 0 1/12 0 ...
+
+    CASM::Configuration configuration{shared_supercell};
+    occ(configuration, {2, -1, -1, 0}) = 1;  // O
+
+    corr = local_corr({0, 0, 0}, configuration, clexulator[0]);
+    expected_corr = default_corr;
+    expected_corr(3) = 1. / 12.;
+    EXPECT_TRUE(almost_equal(corr, expected_corr));
+
+    corr = local_corr({0, 0, 0}, configuration, clexulator[1]);
+    expected_corr = default_corr;
+    expected_corr(4) = 1. / 12.;
+    EXPECT_TRUE(almost_equal(corr, expected_corr));
+  }
+
+  {
+    // 6x6x6 supercell, w/ 2 O
+
+    CASM::Configuration configuration{shared_supercell};
+    occ(configuration, {2, -1, -1, 0}) = 1;  // O
+    occ(configuration, {3, -1, -1, 0}) = 1;  // O
+
+    corr = local_corr({0, 0, 0}, configuration, clexulator[0]);
+    expected_corr = default_corr;
+    expected_corr(3) = 2. / 12.;  // both points in same point orbit
+    expected_corr(8) = 1. / 6.;   // pair orbit
+    EXPECT_TRUE(almost_equal(corr, expected_corr));
+
+    corr = local_corr({0, 0, 0}, configuration, clexulator[1]);
+    expected_corr = default_corr;
+    expected_corr(3) = 1. / 12.;  // points in different point orbits
+    expected_corr(4) = 1. / 12.;
+    expected_corr(9) = 1. / 12.;  // pair orbit
+    EXPECT_TRUE(almost_equal(corr, expected_corr));
+  }
+}
+
+TEST_F(LocalOccClexulatorZrOTest, RunAllTests) {
+  // to avoid re-compiling repeatedly
+  use_clexulator_test();
+  eval_correlations_test();
+  correlations_correctness_test();
 }
 
 std::string OccClexulatorFCCTest::clex_basis_specs_str() {

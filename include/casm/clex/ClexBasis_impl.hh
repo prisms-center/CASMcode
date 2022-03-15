@@ -17,6 +17,63 @@
 
 namespace CASM {
 
+/// \brief The extended equivalence map maps a prototype to equivalent
+///     clusters in the current and equivalent orbitrees
+///
+/// Usage:
+/// \code
+/// IntegralCluster equiv_cluster = sym_compare.copy_apply(
+///     extended_equivalence_map[phenom_index][cluster_index][symop_index],
+///     prototype)
+/// \endcode
+/// Where `equiv_cluster` is the cluster_index-th cluster around the
+/// phenom_index-th equivalent phenomenal cluster, for all symop_index.
+///
+/// For periodic ClexBasis, phenom_index = 0 only, and
+/// extended_equivalence_map[0] == orbit.equivalence_map()
+template <typename OrbitType>
+SymGroupRepID make_canonization_rep(
+    OrbitType const &orbit,
+    multivector<SymOp>::X<3> const &extended_equivalence_map) {
+  auto const &master_group = orbit.generating_group()[0].master_group();
+  Index total_size = 0;
+  for (auto const &table : extended_equivalence_map) {
+    for (auto const &row : table) {
+      total_size += row.size();
+    }
+  }
+
+  if (master_group.size() != total_size) {
+    std::stringstream msg;
+    msg << "Error in make_canonization_rep: "
+        << "extended_equivalence_map total size  (" << total_size
+        << ") != master group size (" << master_group.size() << ")";
+    throw libcasm_runtime_error(msg.str());
+  }
+
+  if (orbit.size() == 0) {
+    return SymGroupRepID::identity(0);
+  }
+
+  SymGroupRepID canonization_rep_ID = master_group.allocate_representation();
+
+  for (Index k = 0; k < extended_equivalence_map[0][0].size(); k++) {
+    IntegralCluster equiv_cluster = orbit.sym_compare().copy_apply(
+        extended_equivalence_map[0][0][k], orbit.prototype());
+
+    std::unique_ptr<SymOpRepresentation> new_rep =
+        orbit.sym_compare().canonical_transform(equiv_cluster)->inverse();
+
+    for (Index i = 0; i < extended_equivalence_map.size(); i++) {
+      for (Index j = 0; j < extended_equivalence_map[i].size(); j++) {
+        extended_equivalence_map[i][j][k].set_rep(canonization_rep_ID,
+                                                  *new_rep);
+      }
+    }
+  }
+  return canonization_rep_ID;
+}
+
 /// allow basis_function_specs to specify max_poly_order by branch, orbit, etc.
 template <typename OrbitType>
 Index _orbit_max_poly_order(OrbitType const &orbit,
@@ -60,18 +117,51 @@ void ClexBasis::generate(OrbitIteratorType _orbit_begin,
       }
     }
   }
-  m_bset_tree.resize(std::distance(_orbit_begin, _orbit_end));
 
-  auto bset_it = m_bset_tree.begin();
-  for (; _orbit_begin != _orbit_end; ++_orbit_begin, ++bset_it) {
+  if (basis_set_specs().cluster_specs->periodicity_type() ==
+      CLUSTER_PERIODICITY_TYPE::LOCAL) {
+    m_bset_tree_equivalence_map = make_equivalents_generating_ops(
+        shared_prim(),
+        basis_set_specs().cluster_specs->get_phenomenal_cluster(),
+        basis_set_specs().cluster_specs->get_generating_group());
+  } else {
+    m_bset_tree_equivalence_map.push_back(SymOp());
+  }
+  Index n_equiv = m_bset_tree_equivalence_map.size();
+
+  m_bset_tree.resize(n_equiv);
+  for (Index i = 0; i < n_equiv; ++i) {
+    m_bset_tree[i].resize(std::distance(_orbit_begin, _orbit_end));
+  }
+
+  Index orbit_index = 0;
+  for (; _orbit_begin != _orbit_end; ++_orbit_begin, ++orbit_index) {
     auto const &orbit = *_orbit_begin;
+
+    // extended equivalence map
+    multivector<SymOp>::X<3> extended_equivalence_map =
+        make_extended_equivalence_map(orbit.equivalence_map(),
+                                      m_bset_tree_equivalence_map);
+    // make canonization rep
+    SymGroupRepID canonization_rep_ID =
+        make_canonization_rep(orbit, extended_equivalence_map);
+
+    // construct prototype cluster basis functions
     Index max_poly_order =
         _orbit_max_poly_order(orbit, basis_set_specs().basis_function_specs);
-    bset_it->reserve(orbit.size());
-    bset_it->push_back(_construct_prototype_basis(orbit, local_keys,
-                                                  global_keys, max_poly_order));
-    for (Index j = 1; j < orbit.size(); j++)
-      bset_it->push_back((*(orbit.equivalence_map(j).first)) * (*bset_it)[0]);
+    BasisSet prototype_basis_set = _construct_prototype_basis(
+        orbit, local_keys, global_keys, max_poly_order, canonization_rep_ID);
+
+    // construct equivalent cluster basis functions
+    for (Index i = 0; i < n_equiv; ++i) {
+      m_bset_tree[i][orbit_index].reserve(orbit.size());
+    }
+    for (Index i = 0; i < n_equiv; ++i) {
+      for (Index j = 0; j < orbit.size(); j++) {
+        m_bset_tree[i][orbit_index].push_back(
+            extended_equivalence_map[i][j][0] * prototype_basis_set);
+      }
+    }
   }
 }
 
@@ -109,7 +199,8 @@ void ClexBasis::generate(OrbitIteratorType _orbit_begin,
 template <typename OrbitType>
 BasisSet ClexBasis::_construct_prototype_basis(
     OrbitType const &_orbit, std::vector<DoFKey> const &local_keys,
-    std::vector<DoFKey> const &global_keys, Index max_poly_order) const {
+    std::vector<DoFKey> const &global_keys, Index max_poly_order,
+    SymGroupRepID canonization_rep_ID) const {
   // std::cout<<"In IntegralCluster::generate_clust_basis, the size of this
   // cluster is:"<<size()<<std::endl; std::cout<<"valid_index evaluates
   // to:"<<valid_index(max_poly_order)<<std::endl;
@@ -158,7 +249,7 @@ BasisSet ClexBasis::_construct_prototype_basis(
     }
 
     all_local.push_back(ClexBasis_impl::construct_proto_dof_basis(
-        _orbit, BasisSet::ArgList(tlocal)));
+        _orbit, BasisSet::ArgList(tlocal), canonization_rep_ID));
 
     if (all_local.back().size()) arg_subsets.push_back(&(all_local.back()));
   }
@@ -223,7 +314,8 @@ void for_clex_basis_and_orbits(
 namespace ClexBasis_impl {
 template <typename OrbitType>
 BasisSet construct_proto_dof_basis(OrbitType const &_orbit,
-                                   BasisSet::ArgList const &site_dof_sets) {
+                                   BasisSet::ArgList const &site_dof_sets,
+                                   SymGroupRepID canonization_rep_ID) {
   SymGroup clust_group(_orbit.equivalence_map(0).first,
                        _orbit.equivalence_map(0).second);
 
@@ -240,8 +332,7 @@ BasisSet construct_proto_dof_basis(OrbitType const &_orbit,
     }
   }
   SymGroupRep const *permute_rep =
-      SymGroupRep::RemoteHandle(clust_group, _orbit.canonization_rep_ID())
-          .rep_ptr();
+      SymGroupRep::RemoteHandle(clust_group, canonization_rep_ID).rep_ptr();
 
   BasisSet result = direct_sum(site_dof_sets);
   result.set_basis_symrep_ID(clust_group.master_group().add_representation(

@@ -33,7 +33,7 @@ MatrixXiSupercellSymInfoFormatter transformation_matrix_to_super() {
   return MatrixXiSupercellSymInfoFormatter(
       "transformation_matrix_to_super",
       "Transformation matrix T, defining the supercell lattice vectors, S, in "
-      "terms of the prim lattice vectors, P: `S = T * P`, where S and P are "
+      "terms of the prim lattice vectors, P: `S = P * T`, where S and P are "
       "column vector matrices.",
       [](SupercellSymInfo const &supercell_sym_info) -> Eigen::MatrixXi {
         return supercell_sym_info.transformation_matrix_to_super().cast<int>();

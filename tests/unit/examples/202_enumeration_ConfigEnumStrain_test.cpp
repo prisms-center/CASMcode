@@ -521,7 +521,10 @@ TEST_F(ExampleEnumerationSimpleCubicConfigEnumStrain, SubSpaceWedgesEnum) {
     auto const &GLstrain =
         initial_config.configdof().global_dof(dof_key).values();
     auto expected_GLstrain = subwedges[0].trans_mat() * min_value;
-    EXPECT_EQ(almost_equal(GLstrain, expected_GLstrain, tol), true);
+    EXPECT_EQ(almost_equal(GLstrain, expected_GLstrain, tol), true)
+        << "GLstrain: " << GLstrain.transpose()
+        << "expected: " << expected_GLstrain.transpose()
+        << "almost_equal?: " << almost_equal(GLstrain, expected_GLstrain, tol);
   }
 }
 

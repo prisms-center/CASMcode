@@ -76,6 +76,7 @@ struct jsonConstructor<xtal::Site> {
   static xtal::Site from_json(
       const jsonParser &json, xtal::Lattice const &_home, COORD_TYPE coordtype,
       std::map<std::string, xtal::Molecule> const &mol_map,
+      std::vector<std::vector<std::string>> &unique_names,
       ParsingDictionary<AnisoValTraits> const &_aniso_val_dict);
 };
 
@@ -85,6 +86,7 @@ jsonParser &to_json(const xtal::Site &value, jsonParser &json,
 void from_json(xtal::Site &value, const jsonParser &json,
                xtal::Lattice const &_home, COORD_TYPE coordtype,
                std::map<std::string, xtal::Molecule> const &mol_map,
+               std::vector<std::string> &site_unique_names,
                ParsingDictionary<AnisoValTraits> const &_aniso_val_dict);
 
 xtal::BasicStructure read_prim(

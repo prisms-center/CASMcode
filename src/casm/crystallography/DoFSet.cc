@@ -63,6 +63,7 @@ Eigen::MatrixXd dofset_transformation_matrix(const Eigen::MatrixXd &from_basis,
 
 namespace CASM {
 namespace sym {
+
 /// \brief Copy and apply SymOp to a DoFSet
 xtal::DoFSet copy_apply(const xtal::SymOp &op, const xtal::DoFSet &dof) {
   Eigen::MatrixXd transformation_matrix = dof.traits().symop_to_matrix(
@@ -70,6 +71,17 @@ xtal::DoFSet copy_apply(const xtal::SymOp &op, const xtal::DoFSet &dof) {
   return xtal::DoFSet(dof.traits(), dof.component_names(),
                       transformation_matrix * dof.basis());
 }
+
+/// \brief Copy and apply SymOp to a SiteDoFSet
+xtal::SiteDoFSet copy_apply(const xtal::SymOp &op,
+                            const xtal::SiteDoFSet &dof) {
+  Eigen::MatrixXd transformation_matrix = dof.traits().symop_to_matrix(
+      get_matrix(op), get_translation(op), get_time_reversal(op));
+  return xtal::SiteDoFSet(dof.traits(), dof.component_names(),
+                          transformation_matrix * dof.basis(),
+                          dof.excluded_occupants());
+}
+
 }  // namespace sym
 
 }  // namespace CASM

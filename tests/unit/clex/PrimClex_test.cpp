@@ -142,7 +142,7 @@ TEST_F(FCCTernaryProjectClexBasisTest, ReadClexBasisSpecs) {
       get<DoF_impl::OccupationDoFSpecs>("occ", basis_function_specs);
   EXPECT_EQ(occ_specs.site_basis_function_type,
             DoF_impl::SITE_BASIS_FUNCTION_TYPE::OCCUPATION);
-  EXPECT_EQ(occ_specs.sublat_composition.size(), 0);
+  EXPECT_EQ(occ_specs.sublat_values.size(), 0);
 
   ClusterSpecs const &cluster_specs = *basis_set_specs.cluster_specs;
   EXPECT_EQ(cluster_specs.name(), "periodic_max_length");
@@ -186,7 +186,8 @@ TEST_F(FCCTernaryProjectClexBasisTest, MakeClexulator) {
   EXPECT_TRUE(fs::exists(dir.clexulator_so(project_name, basis_set_name)));
 
   // Check clexulator
-  EXPECT_EQ(clexulator.name(), "FCCTernaryProjectClexBasisTest_Clexulator");
+  EXPECT_EQ(clexulator.name(),
+            "FCCTernaryProjectClexBasisTest_Clexulator_default");
   EXPECT_EQ(clexulator.nlist_size(), 176);
   EXPECT_EQ(clexulator.corr_size(), 75);
   EXPECT_EQ(clexulator.neighborhood().size(), 75);

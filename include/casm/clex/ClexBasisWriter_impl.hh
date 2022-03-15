@@ -15,7 +15,7 @@
 #include "casm/symmetry/Orbit_impl.hh"
 
 // These are where ParamPackMixIns are defined -- only usage
-#include "casm/clex/ClexParamPack.hh"
+#include "casm/clexulator/ClexParamPack.hh"
 
 namespace CASM {
 //*******************************************************************************************
@@ -30,7 +30,7 @@ void ClexBasisWriter::print_clexulator(std::string class_name,
 
   Index N_corr = clex.n_functions();
 
-  std::map<UnitCellCoord, std::set<UnitCellCoord> > nhood =
+  std::map<xtal::UnitCellCoord, std::set<xtal::UnitCellCoord> > nhood =
       ClexBasisWriter_impl::dependency_neighborhood(_tree.begin(), _tree.end());
 
   Index N_flower = nhood.size();
@@ -183,8 +183,8 @@ void ClexBasisWriter::print_clexulator(std::string class_name,
   // PUT EVERYTHING TOGETHER
   stream
       << "#include <cstddef>\n"
-      << "#include \"casm/clex/Clexulator.hh\"\n"
-      << "#include \"casm/clex/BasicClexParamPack.hh\"\n"
+      << "#include \"casm/clexulator/BaseClexulator.hh\"\n"
+      << "#include \"casm/clexulator/BasicClexParamPack.hh\"\n"
       << "#include \"casm/global/eigen.hh\"\n"
       << (m_param_pack_mix_in->cpp_includes_string()) << "\n"
       << "\n\n\n"
@@ -197,12 +197,13 @@ void ClexBasisWriter::print_clexulator(std::string class_name,
       << basis_set_specs_json << "\n\n"
       << "**/\n\n\n"
 
-      << "/// \\brief Returns a Clexulator_impl::Base* owning a " << class_name
-      << "\n"
-      << "extern \"C\" CASM::Clexulator_impl::Base *make_" + class_name
+      << "/// \\brief Returns a clexulator::BaseClexulator* owning a "
+      << class_name << "\n"
+      << "extern \"C\" CASM::clexulator::BaseClexulator *make_" + class_name
       << "();\n\n"
 
-      << "namespace CASM {\n\n"
+      << "namespace CASM {\n"
+      << "namespace clexulator {\n\n"
 
       << "  /****** GENERATED CLEXPARAMPACK DEFINITION ******/\n\n"
 
@@ -211,7 +212,7 @@ void ClexBasisWriter::print_clexulator(std::string class_name,
       << "  /****** GENERATED CLEXULATOR DEFINITION ******/\n\n"
 
       << indent << "class " << class_name
-      << " : public Clexulator_impl::Base {\n\n"
+      << " : public clexulator::BaseClexulator {\n\n"
 
       << indent << "public:\n\n"
       << public_declarations << "\n"
@@ -230,13 +231,16 @@ void ClexBasisWriter::print_clexulator(std::string class_name,
       << constructor_definition << "\n"
       << interface_declaration << "\n"
       << prepare_methods_definition << "\n"
-      << bfunc_imp_stream.str() << "}\n\n\n"  // close namespace
+      << bfunc_imp_stream.str()
+      << "} // namespace clexulator\n"  // close namespace clexulator
+      << "} // namespace CASM\n\n\n"    // close namespace CASM
 
       << "extern \"C\" {\n"
-      << indent << "/// \\brief Returns a Clexulator_impl::Base* owning a "
+      << indent << "/// \\brief Returns a clexulator::BaseClexulator* owning a "
       << class_name << "\n"
-      << indent << "CASM::Clexulator_impl::Base *make_" + class_name << "() {\n"
-      << indent << "  return new CASM::" + class_name + "();\n"
+      << indent << "CASM::clexulator::BaseClexulator *make_" + class_name
+      << "() {\n"
+      << indent << "  return new CASM::clexulator::" + class_name + "();\n"
       << indent << "}\n\n"
       << "}\n"
 
@@ -304,7 +308,7 @@ std::tuple<std::string, std::string> clexulator_flower_function_strings(
     std::string const &class_name, ClexBasis::BSetOrbit const &_bset_orbit,
     OrbitType const &_clust_orbit,
     std::function<std::string(Index, Index)> method_namer,
-    std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
+    std::map<xtal::UnitCellCoord, std::set<xtal::UnitCellCoord> > const &_nhood,
     PrimNeighborList &_nlist,
     std::vector<std::unique_ptr<FunctionVisitor> > const &visitors,
     std::string const &indent) {
@@ -353,7 +357,7 @@ std::tuple<std::string, std::string> clexulator_dflower_function_strings(
     std::string const &class_name, ClexBasis::BSetOrbit const &_bset_orbit,
     ClexBasis::BSetOrbit const &_site_bases, OrbitType const &_clust_orbit,
     std::function<std::string(Index, Index)> method_namer,
-    std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
+    std::map<xtal::UnitCellCoord, std::set<xtal::UnitCellCoord> > const &_nhood,
     PrimNeighborList &_nlist,
     std::vector<std::unique_ptr<FunctionVisitor> > const &visitors,
     FunctionVisitor const &_site_func_labeler, std::string const &indent) {
@@ -479,26 +483,26 @@ std::vector<std::string> flower_function_cpp_strings(
     ClexBasis::BSetOrbit _bset_orbit,  // used as temporary
     std::function<BasisSet(BasisSet const &)> _bset_transform,
     OrbitType const &_clust_orbit,
-    std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
+    std::map<xtal::UnitCellCoord, std::set<xtal::UnitCellCoord> > const &_nhood,
     PrimNeighborList &_nlist,
     std::vector<std::unique_ptr<FunctionVisitor> > const &visitors,
-    UnitCellCoord const &nbor) {
+    xtal::UnitCellCoord const &nbor) {
   std::vector<std::string> formulae;
 
   std::string prefix, suffix;
 
-  std::set<UnitCellCoord> trans_set;
+  std::set<xtal::UnitCellCoord> trans_set;
 
   // Find ucc's that might be translationally equivalent to current neighbor
   for (IntegralCluster const &equiv : _clust_orbit) {
-    for (UnitCellCoord const &site : equiv.elements()) {
+    for (xtal::UnitCellCoord const &site : equiv.elements()) {
       if (site.sublattice() == nbor.sublattice()) {
         trans_set.insert(site);
       }
     }
   }
 
-  std::set<UnitCellCoord> equiv_ucc = ClexBasisWriter_impl::equiv_ucc(
+  std::set<xtal::UnitCellCoord> equiv_ucc = ClexBasisWriter_impl::equiv_ucc(
       trans_set.begin(), trans_set.end(), nbor, _clust_orbit.prototype().prim(),
       _clust_orbit.sym_compare());
 
@@ -514,7 +518,7 @@ std::vector<std::string> flower_function_cpp_strings(
 
     /// For each equivalent ucc that is in the equivalent cluster, translate the
     /// cluster so that the site coincides with nbor
-    for (UnitCellCoord const &trans : equiv_ucc) {
+    for (xtal::UnitCellCoord const &trans : equiv_ucc) {
       if (!contains(_clust_orbit[ne].elements(), trans)) continue;
 
       typename OrbitType::Element trans_clust =
@@ -613,18 +617,18 @@ void print_proto_clust_funcs(ClexBasis const &clex, std::ostream &out,
 // keys of result are guaranteed to be in canonical translation unit
 // TODO: deprecated
 template <typename OrbitIterType>
-std::map<UnitCellCoord, std::set<UnitCellCoord> > dependency_neighborhood(
-    OrbitIterType begin, OrbitIterType end) {
+std::map<xtal::UnitCellCoord, std::set<xtal::UnitCellCoord> >
+dependency_neighborhood(OrbitIterType begin, OrbitIterType end) {
   return make_site_dependency_neighborhoods(begin, end);
 }
 
 //*******************************************************************************************
 
 template <typename UCCIterType, typename IntegralClusterSymCompareType>
-std::set<UnitCellCoord> equiv_ucc(
-    UCCIterType begin, UCCIterType end, UnitCellCoord const &pivot,
+std::set<xtal::UnitCellCoord> equiv_ucc(
+    UCCIterType begin, UCCIterType end, xtal::UnitCellCoord const &pivot,
     Structure const &prim, IntegralClusterSymCompareType const &sym_compare) {
-  std::set<UnitCellCoord> result;
+  std::set<xtal::UnitCellCoord> result;
 
   typedef IntegralCluster cluster_type;
   typedef Orbit<IntegralClusterSymCompareType> orbit_type;
@@ -665,8 +669,9 @@ template <typename OrbitType>
 std::string clexulator_constructor_definition(
     std::string const &class_name, ClexBasis const &clex,
     std::vector<OrbitType> const &_tree,
-    std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
-    PrimNeighborList &_nlist, ParamPackMixIn const &_param_pack_mix_in,
+    std::map<xtal::UnitCellCoord, std::set<xtal::UnitCellCoord> > const &_nhood,
+    PrimNeighborList &_nlist,
+    clexulator::ParamPackMixIn const &_param_pack_mix_in,
     std::vector<std::string> const &orbit_method_names,
     std::vector<std::vector<std::string> > const &flower_method_names,
     std::vector<std::vector<std::string> > const &dflower_method_names,
@@ -682,7 +687,7 @@ std::string clexulator_constructor_definition(
   // Find exact value of N_flower and N_hood by increasing lower bounds
   for (auto const &nbor : _nhood) {
     N_flower = max(_nlist.neighbor_index(nbor.first) + 1, N_flower);
-    for (UnitCellCoord const &ucc : nbor.second) {
+    for (xtal::UnitCellCoord const &ucc : nbor.second) {
       N_hood = max(_nlist.neighbor_index(ucc) + 1, N_hood);
     }
   }
@@ -690,7 +695,7 @@ std::string clexulator_constructor_definition(
   std::stringstream ss;
   // Write constructor
   ss << indent << class_name << "::" << class_name << "() :\n"
-     << indent << "  Clexulator_impl::Base(" << N_hood << ", " << N_corr << ", "
+     << indent << "  BaseClexulator(" << N_hood << ", " << N_corr << ", "
      << N_flower << ") {\n";
 
   for (auto const &dof : clex.site_bases()) {
@@ -789,24 +794,44 @@ std::string clexulator_constructor_definition(
   ss << indent << "  m_weight_matrix.row(2) << " << W(2, 0) << ", " << W(2, 1)
      << ", " << W(2, 2) << ";\n\n";
 
+  // Write sublattices included in the neighbor list
   {
-    // Write neighborhood of UnitCellCoord
+    ss << indent << "  m_sublat_indices = std::set<int>{";
+    auto it = _nlist.sublat_indices().begin();
+    auto end = _nlist.sublat_indices().end();
+    while (it != end) {
+      ss << *it;
+      ++it;
+      if (it != end) {
+        ss << ", ";
+      }
+    }
+    ss << "};\n\n";
+  }
+
+  // Write total number of sublattices
+  {
+    ss << indent << "  m_n_sublattices = " << _nlist.n_sublattices() << ";\n\n";
+  }
+
+  {
+    // Write neighborhood of UnitCell
     // expand the _nlist to contain 'global_orbitree' (all that is needed for
     // now)
-    std::set<UnitCellCoord> nbors;  // restricted scope
+    std::set<xtal::UnitCellCoord> nbors;  // restricted scope
     flower_neighborhood(_tree.begin(), _tree.end(),
                         std::inserter(nbors, nbors.begin()));
 
-    std::set<UnitCell> ucnbors;
-    for (UnitCellCoord const &ucc : nbors) ucnbors.insert(ucc.unitcell());
+    std::set<xtal::UnitCell> ucnbors;
+    for (xtal::UnitCellCoord const &ucc : nbors) ucnbors.insert(ucc.unitcell());
 
     if (!ucnbors.empty()) {
-      ss << indent << "  m_neighborhood = std::set<UnitCell> {\n";
+      ss << indent << "  m_neighborhood = std::set<xtal::UnitCell> {\n";
       auto it = ucnbors.begin();
       while (it != ucnbors.end()) {
         // ss <<  "  " <<  _nlist.neighbor_index(*it);
-        ss << indent << "    UnitCell(" << (*it)[0] << ", " << (*it)[1] << ", "
-           << (*it)[2] << ")";
+        ss << indent << "    xtal::UnitCell(" << (*it)[0] << ", " << (*it)[1]
+           << ", " << (*it)[2] << ")";
         ++it;
         if (it != ucnbors.end()) {
           ss << ",";
@@ -817,14 +842,18 @@ std::string clexulator_constructor_definition(
       ss << "\n\n";
     }
   }
+
+  // Write orbit UnitCell and UnitCellCoord neighborhoods
   ss << indent << "  m_orbit_neighborhood.resize(corr_size());\n";
+  ss << indent << "  m_orbit_site_neighborhood.resize(corr_size());\n";
   Index lno = 0;
+  Index lno_site = 0;
   for (Index no = 0; no < clex.n_orbits(); ++no) {
-    std::set<UnitCellCoord> nbors;
+    std::set<xtal::UnitCellCoord> nbors;
     flower_neighborhood(_tree[no], std::inserter(nbors, nbors.begin()));
 
-    std::set<UnitCell> ucnbors;
-    for (UnitCellCoord const &ucc : nbors) ucnbors.insert(ucc.unitcell());
+    std::set<xtal::UnitCell> ucnbors;
+    for (xtal::UnitCellCoord const &ucc : nbors) ucnbors.insert(ucc.unitcell());
 
     Index proto_index = lno;
 
@@ -836,17 +865,21 @@ std::string clexulator_constructor_definition(
     }
 
     if (ucnbors.empty()) {
-      for (Index nf = 0; nf < clex.bset_orbit(no)[0].size(); ++nf) ++lno;
+      for (Index nf = 0; nf < clex.bset_orbit(no)[0].size(); ++nf) {
+        ++lno;
+        ++lno_site;
+      }
       continue;
     }
 
+    // write UnitCell neighborhoods
     ss << indent << "  m_orbit_neighborhood[" << lno
-       << "] = std::set<UnitCell> {\n";
+       << "] = std::set<xtal::UnitCell> {\n";
 
     auto it = ucnbors.begin();
     while (it != ucnbors.end()) {
-      ss << indent << "    UnitCell(" << (*it)[0] << ", " << (*it)[1] << ", "
-         << (*it)[2] << ")";
+      ss << indent << "    xtal::UnitCell(" << (*it)[0] << ", " << (*it)[1]
+         << ", " << (*it)[2] << ")";
       ++it;
       if (it != ucnbors.end()) {
         ss << ",";
@@ -860,6 +893,31 @@ std::string clexulator_constructor_definition(
          << "] = m_orbit_neighborhood[" << proto_index << "];\n";
     }
     ss << "\n";
+
+    // also write UnitCellCoord neighborhoods
+    {
+      ss << indent << "  m_orbit_site_neighborhood[" << lno_site
+         << "] = std::set<xtal::UnitCellCoord> {\n";
+      auto it = nbors.begin();
+      while (it != nbors.end()) {
+        Index b = it->sublattice();
+        UnitCell uc = it->unitcell();
+        ss << indent << "    xtal::UnitCellCoord(" << b << ", " << uc[0] << ", "
+           << uc[1] << ", " << uc[2] << ")";
+        ++it;
+        if (it != nbors.end()) {
+          ss << ",";
+        }
+        ss << "\n";
+      }
+      ss << indent << "  };\n";
+      ++lno_site;
+      for (Index nf = 1; nf < clex.bset_orbit(no)[0].size(); ++nf, ++lno_site) {
+        ss << indent << "  m_orbit_site_neighborhood[" << lno_site
+           << "] = m_orbit_site_neighborhood[" << proto_index << "];\n";
+      }
+      ss << "\n";
+    }
   }
 
   ss << indent << "}\n\n";
@@ -873,7 +931,7 @@ std::string clexulator_point_prepare_definition(
     std::vector<OrbitType> const &_tree,
     std::vector<std::unique_ptr<OrbitFunctionTraits> > const
         &_orbit_func_traits,
-    std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
+    std::map<xtal::UnitCellCoord, std::set<xtal::UnitCellCoord> > const &_nhood,
     PrimNeighborList &_nlist, std::string const &indent) {
   std::string result(indent + "template<typename Scalar>\n" + indent + "void " +
                      class_name + "::_point_prepare(int nlist_ind) const {\n");
@@ -906,7 +964,7 @@ std::string clexulator_global_prepare_definition(
     std::vector<OrbitType> const &_tree,
     std::vector<std::unique_ptr<OrbitFunctionTraits> > const
         &_orbit_func_traits,
-    std::map<UnitCellCoord, std::set<UnitCellCoord> > const &_nhood,
+    std::map<xtal::UnitCellCoord, std::set<xtal::UnitCellCoord> > const &_nhood,
     PrimNeighborList &_nlist, std::string const &indent) {
   std::string result(indent + "template<typename Scalar>\n" + indent + "void " +
                      class_name + "::_global_prepare() const {\n");

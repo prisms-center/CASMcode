@@ -15,7 +15,6 @@
 #include "casm/clex/io/json/Configuration_json_io.hh"
 #include "casm/clex/io/stream/Configuration_stream_io.hh"
 #include "casm/crystallography/CanonicalForm.hh"
-#include "casm/crystallography/LatticeEnumEquivalents.hh"
 #include "casm/crystallography/LatticeIsEquivalent.hh"
 #include "casm/crystallography/SimpleStructure.hh"
 #include "casm/crystallography/Structure.hh"
@@ -24,6 +23,7 @@
 #include "casm/crystallography/io/BasicStructureIO.hh"
 #include "casm/crystallography/io/SimpleStructureIO.hh"
 #include "casm/crystallography/io/VaspIO.hh"
+#include "casm/symmetry/LatticeEnumEquivalents.hh"
 #include "casm/symmetry/SupercellSymInfo.hh"
 #include "casm/symmetry/io/data/SupercellSymInfo_data_io.hh"
 

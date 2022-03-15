@@ -21,29 +21,34 @@ std::unique_ptr<SymOpRepresentation> SymOpRepresentation::inverse() const {
 SymOpRepresentation const &SymOpRepresentation::representation(
     SymGroupRepID _rep_ID) const {
   assert(has_valid_master() && !_rep_ID.empty());
-  return *(master_group().representation(_rep_ID)[index()]);
+  SymOpRepresentation const *ptr =
+      master_group().representation(_rep_ID)[index()];
+  if (ptr == nullptr) {
+    std::stringstream msg;
+    msg << "Error in SymOpRepresentation::representation: representation ("
+        << _rep_ID << ") does not exist for operation index=" << index();
+    throw std::runtime_error(msg.str());
+  }
+  return *ptr;
 }
 
 //*******************************************************************************************
 Eigen::MatrixXd const *SymOpRepresentation::get_matrix_rep(
     SymGroupRepID _rep_ID) const {
-  assert(has_valid_master() && !_rep_ID.empty());
-  return (master_group().representation(_rep_ID)[index()])->MatrixXd();
+  return representation(_rep_ID).MatrixXd();
 }
 
 //*******************************************************************************************
 
 SymBasisPermute const *SymOpRepresentation::get_basis_permute_rep(
     SymGroupRepID _rep_ID) const {
-  assert(has_valid_master() && !_rep_ID.empty());
-  return (master_group().representation(_rep_ID)[index()])->ucc_permutation();
+  return representation(_rep_ID).ucc_permutation();
 }
 //*******************************************************************************************
 
 Permutation const *SymOpRepresentation::get_permutation_rep(
     SymGroupRepID _rep_ID) const {
-  assert(has_valid_master() && !_rep_ID.empty());
-  return (master_group().representation(_rep_ID)[index()])->permutation();
+  return representation(_rep_ID).permutation();
 }
 
 //*******************************************************************************************

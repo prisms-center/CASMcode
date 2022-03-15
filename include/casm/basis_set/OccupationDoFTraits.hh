@@ -13,24 +13,37 @@ namespace DoF_impl {
 
 // --- OccupationDoFSpecs ---
 
-enum class SITE_BASIS_FUNCTION_TYPE { CHEBYCHEV, OCCUPATION, COMPOSITION };
+enum class SITE_BASIS_FUNCTION_TYPE {
+  CHEBYCHEV,
+  OCCUPATION,
+  COMPOSITION,
+  DIRECT
+};
 
-/// Specifies the composition on one or more equivalent sublattices
+/// Specifies values associated with species on one or more equivalent
+/// sublattices
 ///
-/// Example, specify sublattices 0 and 1 are "A":0.5, "B":0.5 with:
+/// Example, specify sublattices 0 and 1 have "composition", "A":0.5, "B":0.5
+/// with:
 /// \code
-/// SublatComp sublat_comp { {0, 1}, {{"A", 0.5}, {"B", 0.5}} };
+/// SublatValues sublat_values(
+///   {0, 1},
+///   {{"composition", {{"A", 0.5}, {"B", 0.5}}}});
 /// \endcode
-struct SublatComp {
-  SublatComp(std::initializer_list<Index> _indices,
-             std::initializer_list<std::pair<std::string, double>> _values)
-      : indices(_indices), values(_values.begin(), _values.end()) {}
-
-  SublatComp(std::set<Index> _indices, std::map<std::string, double> _values)
+/// Example for direct setting site basis function values:
+/// \code
+/// SublatValues sublat_values(
+///   {0, 1},
+///   { {"phi0", {{"A", 0.0}, {"B", 1.0}, {"C", 0.0}} },
+///     {"phi1", {{"A", 0.0}, {"B", 0.0}, {"C", 1.0}} } });
+/// \endcode
+struct SublatValues {
+  SublatValues(std::set<Index> _indices,
+               std::map<std::string, std::map<std::string, double>> _values)
       : indices(_indices), values(_values) {}
 
   std::set<Index> indices;
-  std::map<std::string, double> values;
+  std::map<std::string, std::map<std::string, double>> values;
 };
 
 /// Use to specify how to construct site basis functions for occupation DoF
@@ -63,13 +76,14 @@ struct OccupationDoFSpecs : public DoFSpecs {
   OccupationDoFSpecs(SITE_BASIS_FUNCTION_TYPE _site_basis_function_type)
       : site_basis_function_type(_site_basis_function_type) {}
 
-  /// Specialized constructor for SITE_BASIS_FUNCTION_TYPE::COMPOSITION
-  OccupationDoFSpecs(std::vector<SublatComp> _sublat_composition)
-      : site_basis_function_type(SITE_BASIS_FUNCTION_TYPE::COMPOSITION),
-        sublat_composition(_sublat_composition) {}
+  /// Constructor for SITE_BASIS_FUNCTION_TYPE::COMPOSITION and ::DIRECT
+  OccupationDoFSpecs(SITE_BASIS_FUNCTION_TYPE _site_basis_function_type,
+                     std::vector<SublatValues> _sublat_values)
+      : site_basis_function_type(_site_basis_function_type),
+        sublat_values(_sublat_values) {}
 
   SITE_BASIS_FUNCTION_TYPE site_basis_function_type;
-  std::vector<SublatComp> sublat_composition;
+  std::vector<SublatValues> sublat_values;
 
   CLONEABLE(OccupationDoFSpecs)
 
@@ -81,18 +95,12 @@ std::vector<double> chebychev_sublat_prob_vec(Index occupant_dof_size);
 
 std::vector<double> occupation_sublat_prob_vec(Index occupant_dof_size);
 
-/// Get the sublattice probability vector for composition based functions
-///
-/// Note:
-/// - The values in the probability vector are ordered according to
-/// allowed_occupants
-/// - Will throw if missing sublattice (w/ >1 occupant) or missing occupant
-/// composition value
-/// - Before calling this, for complete checking of occ_specs, validate with:
-///    `validate(OccupationDoFSpecs const &occ_specs, const Structure &prim)`
-std::vector<double> composition_sublat_prob_vec(
-    const OccupationDoFSpecs &occ_specs, Index sublat_index,
-    const std::vector<std::string> &allowed_occupants);
+/// \brief Returns sublat_values for the given sublattice, ordered to match the
+/// order of allowed_occupants
+std::vector<double> sublat_values_vec(
+    std::vector<SublatValues> const &sublat_values, Index sublat_index,
+    std::string key, const std::vector<std::string> &allowed_occupants,
+    bool normalize);
 
 /// Validates OccupationDoFSpecs against a prim Structure
 ///
@@ -228,7 +236,7 @@ std::unique_ptr<DoFSpecs> occupation_basis_function_specs();
 ///   prim));
 /// \endcode
 std::unique_ptr<DoFSpecs> composition_basis_function_specs(
-    std::vector<DoF_impl::SublatComp> sublat_composition);
+    std::vector<DoF_impl::SublatValues> sublat_values);
 
 }  // namespace DoFType
 

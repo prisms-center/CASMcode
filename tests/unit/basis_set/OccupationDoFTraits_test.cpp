@@ -82,8 +82,9 @@ TEST(OccupationDoFTraitsTest, ParseJSONcomposition_test2) {
   ASSERT_EQ(occ_specs.site_basis_function_type,
             DoF_impl::SITE_BASIS_FUNCTION_TYPE::COMPOSITION);
 
-  std::vector<double> sublat_prob_vec = composition_sublat_prob_vec(
-      occ_specs, 0, prim.basis()[0].allowed_occupants());
+  std::vector<double> sublat_prob_vec =
+      sublat_values_vec(occ_specs.sublat_values, 0, "composition",
+                        prim.basis()[0].allowed_occupants(), true);
   ASSERT_EQ(sublat_prob_vec, (std::vector<double>{0.25, 0.25, 0.5}));
 }
 
@@ -102,13 +103,15 @@ TEST(OccupationDoFTraitsTest, ParseJSONcomposition_test3) {
 
   ASSERT_EQ(occ_specs.site_basis_function_type,
             DoF_impl::SITE_BASIS_FUNCTION_TYPE::COMPOSITION);
-  ASSERT_EQ(occ_specs.sublat_composition.size(), 1);
+  ASSERT_EQ(occ_specs.sublat_values.size(), 1);
 
-  std::vector<double> sublat_prob_vec_2 = composition_sublat_prob_vec(
-      occ_specs, 2, prim.basis()[2].allowed_occupants());
+  std::vector<double> sublat_prob_vec_2 =
+      sublat_values_vec(occ_specs.sublat_values, 2, "composition",
+                        prim.basis()[2].allowed_occupants(), true);
   ASSERT_EQ(sublat_prob_vec_2, (std::vector<double>{0.8, 0.2}));
 
-  std::vector<double> sublat_prob_vec_3 = composition_sublat_prob_vec(
-      occ_specs, 3, prim.basis()[3].allowed_occupants());
+  std::vector<double> sublat_prob_vec_3 =
+      sublat_values_vec(occ_specs.sublat_values, 3, "composition",
+                        prim.basis()[3].allowed_occupants(), true);
   ASSERT_EQ(sublat_prob_vec_3, (std::vector<double>{0.8, 0.2}));
 }

@@ -42,6 +42,9 @@ class BasicStructure {
   /// continuous global degrees of freedom
   std::map<DoFKey, DoFSet> m_global_dof_map;
 
+  /// Names to distinguish occupants with the same chemical name
+  std::vector<std::vector<std::string>> m_unique_names;
+
  private:
   void main_print(std::ostream &stream, COORD_TYPE mode, bool version5,
                   int option) const;
@@ -110,6 +113,13 @@ class BasicStructure {
   /// Manually set the basis sites
   void set_basis(std::vector<Site> const &_basis, COORD_TYPE mode = CART);
 
+  /// Set the names used to distinguish occupants with the same chemical name
+  void set_unique_names(
+      std::vector<std::vector<std::string>> const &_unique_names);
+
+  /// Get the unique names
+  std::vector<std::vector<std::string>> const &unique_names() const;
+
   /// Manually set the basis sites
   void push_back(Site const &_site, COORD_TYPE mode = CART);
 
@@ -166,11 +176,11 @@ std::vector<std::string> struc_species(BasicStructure const &_struc);
 std::vector<std::string> struc_molecule_name(BasicStructure const &_struc);
 
 /// Returns an Array of each *possible* Molecule in this Structure
-std::vector<std::vector<std::string> > allowed_molecule_unique_names(
+std::vector<std::vector<std::string>> allowed_molecule_unique_names(
     BasicStructure const &_struc);
 
 /// Returns a vector with a list of allowed molecule names at each site
-std::vector<std::vector<std::string> > allowed_molecule_names(
+std::vector<std::vector<std::string>> allowed_molecule_names(
     BasicStructure const &_struc);
 
 std::vector<DoFKey> all_local_dof_types(BasicStructure const &_struc);
@@ -192,6 +202,24 @@ bool has_strain_dof(BasicStructure const &structure);
 DoFKey get_strain_dof_key(BasicStructure const &structure);
 
 std::string get_strain_metric(DoFKey strain_dof_key);
+
+/// Returns 'converter' which converts site_occupant indices to 'mol_list'
+/// indices:
+///   mol_list_index = converter[basis_site][site_occupant_index]
+std::vector<std::vector<Index>> make_index_converter(
+    const BasicStructure &struc, std::vector<xtal::Molecule> mol_list);
+
+/// Returns 'converter' which converts site_occupant indices to 'mol_name_list'
+/// indices:
+///   mol_name_list_index = converter[basis_site][site_occupant_index]
+std::vector<std::vector<Index>> make_index_converter(
+    const BasicStructure &struc, std::vector<std::string> mol_name_list);
+
+/// Returns 'converter_inverse' which converts 'mol_name_list' indices to
+/// Site::site_occupant indices:
+///  site_occupant_index = converter_inverse[basis_site][mol_name_list_index]
+std::vector<std::vector<Index>> make_index_converter_inverse(
+    const BasicStructure &struc, std::vector<std::string> mol_name_list);
 
 /** @} */
 }  // namespace xtal

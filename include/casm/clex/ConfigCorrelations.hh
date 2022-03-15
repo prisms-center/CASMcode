@@ -13,13 +13,17 @@ class Coordinate;
 class UnitCellCoord;
 }  // namespace xtal
 
+namespace clexulator {
+class SuperNeighborList;
+}
+using clexulator::SuperNeighborList;
+
 class Clexulator;
 class ConfigDoF;
 class Configuration;
 class GlobalContinuousConfigDoFValues;
 class LocalContinuousConfigDoFValues;
 struct NeighborhoodInfo;
-class SuperNeighborList;
 class Supercell;
 class SupercellSymInfo;
 

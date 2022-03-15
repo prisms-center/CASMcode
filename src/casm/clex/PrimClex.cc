@@ -1,4 +1,5 @@
 #include <memory>
+#include <set>
 
 #include "casm/app/ClexDescription.hh"
 #include "casm/app/DirectoryStructure.hh"
@@ -30,6 +31,7 @@
 #include "casm/crystallography/Structure.hh"
 #include "casm/database/DatabaseHandler_impl.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
+#include "casm/symmetry/SubOrbits_impl.hh"
 
 namespace CASM {
 
@@ -89,6 +91,7 @@ struct PrimClex::PrimClexData {
   typedef std::string BasisSetName;
   mutable std::map<BasisSetName, ClexBasisSpecs> basis_set_specs;
   mutable std::map<BasisSetName, Clexulator> clexulator;
+  mutable std::map<BasisSetName, std::vector<Clexulator>> local_clexulator;
   mutable std::map<BasisSetName, std::unique_ptr<NeighborhoodInfo>>
       neighborhood_info;
   mutable std::map<ClexDescription, ECIContainer> eci;
@@ -429,6 +432,39 @@ Clexulator PrimClex::clexulator(std::string const &basis_set_name) const {
   return it->second;
 }
 
+std::vector<Clexulator> PrimClex::local_clexulator(
+    std::string const &basis_set_name) const {
+  auto it = m_data->local_clexulator.find(basis_set_name);
+  if (it == m_data->local_clexulator.end()) {
+    if (!fs::exists(
+            dir().clexulator_src(settings().project_name(), basis_set_name))) {
+      std::stringstream ss;
+      ss << "Error loading clexulator " << basis_set_name
+         << ". No basis functions exist.";
+      throw std::runtime_error(ss.str());
+    }
+
+    try {
+      std::vector<Clexulator> local_clexulator =
+          make_local_clexulator(settings(), basis_set_name, nlist());
+      it = m_data->local_clexulator.emplace(basis_set_name, local_clexulator)
+               .first;
+    } catch (std::exception &e) {
+      // TODO: if this fails...
+      err_log() << "Error constructing Clexulator. Current settings: \n"
+                << std::endl;
+      print_compiler_settings_summary(settings(), err_log());
+
+      // TODO: then, try this
+      // std::cout << "Error constructing Clexulator. Current settings: \n" <<
+      // std::endl; Log tlog(std::cout);
+      // print_compiler_settings_summary(settings(), tlog);
+      // throw e;
+    }
+  }
+  return it->second;
+}
+
 bool PrimClex::has_eci(const ClexDescription &key) const {
   auto it = m_data->eci.find(key);
   if (it == m_data->eci.end()) {
@@ -519,7 +555,8 @@ struct WriteBasisSetDataImpl {
     // write source code
     fs::path clexulator_src_path =
         dir.clexulator_src(settings.project_name(), basis_set_name);
-    std::string clexulator_name = settings.global_clexulator_name();
+    std::string clexulator_name =
+        settings.global_clexulator_name() + "_" + basis_set_name;
     auto param_pack_type = basis_set_specs.basis_function_specs.param_pack_type;
     fs::ofstream outfile;
     outfile.open(clexulator_src_path);
@@ -527,6 +564,39 @@ struct WriteBasisSetDataImpl {
     clexwriter.print_clexulator(clexulator_name, clex_basis, orbits,
                                 prim_neighbor_list, outfile, xtal_tol);
     outfile.close();
+
+    // if local cluster expansion, now write clexulators for the local cluster
+    // expansion around each equivalent of the phenomenal cluster
+    if (basis_set_specs.cluster_specs->periodicity_type() ==
+        CLUSTER_PERIODICITY_TYPE::LOCAL) {
+      for (Index equivalent_index = 0;
+           equivalent_index < clex_basis.n_equivalent_tree();
+           ++equivalent_index) {
+        clex_basis.set_current_tree(equivalent_index);
+
+        // apply symop to orbits
+        SymOp op = clex_basis.bset_tree_equivalence_map()[equivalent_index];
+        OrbitVecType equivalent_orbits;
+        for (auto orbit : orbits) {
+          equivalent_orbits.push_back(orbit.apply_sym(op));
+        }
+
+        // generate subdirectory /basis_sets/bset.<name>/<equivalent_index>/
+        dir.new_equivalent_clexulator_dir(basis_set_name, equivalent_index);
+
+        // write source code to that subdirectory
+        fs::path equivalent_clexulator_src_path = dir.equivalent_clexulator_src(
+            settings.project_name(), basis_set_name, equivalent_index);
+        fs::ofstream outfile;
+        outfile.open(equivalent_clexulator_src_path);
+        std::string equiv_clexulator_name =
+            clexulator_name + "_" + std::to_string(equivalent_index);
+        clexwriter.print_clexulator(equiv_clexulator_name, clex_basis,
+                                    equivalent_orbits, prim_neighbor_list,
+                                    outfile, xtal_tol);
+        outfile.close();
+      }
+    }
   }
 };
 
@@ -545,7 +615,7 @@ void write_basis_set_data(std::shared_ptr<Structure const> shared_prim,
   for_all_orbits(cluster_specs, log, writer);
 }
 
-/// Make Clexulator from existing source code
+/// \brief Make Clexulator from existing source code
 ///
 /// Notes:
 /// - Use `write_basis_set_data` to write Clexulator source code prior to
@@ -557,10 +627,32 @@ Clexulator make_clexulator(ProjectSettings const &settings,
                            PrimNeighborList &prim_neighbor_list) {
   throw_if_no_clexulator_src(settings.project_name(), basis_set_name,
                              settings.dir());
-  return Clexulator{settings.project_name() + "_Clexulator",
-                    settings.dir().clexulator_dir(basis_set_name),
-                    prim_neighbor_list, settings.compile_options(),
-                    settings.so_options() + " -lcasm "};
+  std::string clexulator_name =
+      settings.project_name() + "_Clexulator_" + basis_set_name;
+  return make_clexulator(clexulator_name,
+                         settings.dir().clexulator_dir(basis_set_name),
+                         prim_neighbor_list, settings.compile_options(),
+                         settings.so_options() + " -lcasm ");
+}
+
+/// \brief Make local Clexulator from existing source code
+///
+/// Notes:
+/// - Use `write_basis_set_data` to write Clexulator source code prior to
+/// calling this function.
+/// - This function will compile the Clexulator source code if that has not yet
+/// been done.
+std::vector<Clexulator> make_local_clexulator(
+    ProjectSettings const &settings, std::string const &basis_set_name,
+    PrimNeighborList &prim_neighbor_list) {
+  throw_if_no_clexulator_src(settings.project_name(), basis_set_name,
+                             settings.dir());
+  std::string clexulator_name =
+      settings.project_name() + "_Clexulator_" + basis_set_name;
+  return make_local_clexulator(clexulator_name,
+                               settings.dir().clexulator_dir(basis_set_name),
+                               prim_neighbor_list, settings.compile_options(),
+                               settings.so_options() + " -lcasm ");
 }
 
 }  // namespace CASM

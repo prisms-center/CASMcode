@@ -4,6 +4,7 @@
 #include "casm/app/enum/EnumInterface.hh"
 #include "casm/app/enum/enumerate_supercells.hh"
 #include "casm/casm_io/Log.hh"
+#include "casm/casm_io/dataformatter/FormattedDataFile_impl.hh"
 #include "casm/clex/Supercell_impl.hh"
 #include "casm/database/ScelDatabase.hh"
 #include "casm/database/ScelDatabaseTools_impl.hh"
@@ -26,13 +27,21 @@ namespace CASM {
 /// Note:
 /// - Uses CASM::log() for logging progress
 ///
-template <typename EnumeratorType>
+template <typename EnumeratorType, typename ScelEnumDataType>
 void enumerate_supercells(EnumerateSupercellsOptions const &options,
                           EnumeratorType &enumerator,
-                          DB::Database<Supercell> &supercell_db) {
+                          DB::Database<Supercell> &supercell_db,
+                          DataFormatter<ScelEnumDataType> const &formatter) {
   Log &log = CASM::log();
   std::pair<DB::Database<Supercell>::iterator, bool> insert_result;
   std::string dry_run_msg = CASM::dry_run_msg(options.dry_run);
+
+  typedef FormattedDataFile<ScelEnumDataType> FormattedDataFileType;
+  std::unique_ptr<FormattedDataFileType> data_out_ptr;
+  if (options.output_supercells) {
+    data_out_ptr =
+        notstd::make_unique<FormattedDataFileType>(options.output_options);
+  }
 
   log.set_verbosity(options.verbosity);
   log.begin<Log::standard>(options.method_name);
@@ -43,7 +52,10 @@ void enumerate_supercells(EnumerateSupercellsOptions const &options,
       supercell.set_primclex(options.primclex_ptr);
     }
 
+    ScelEnumDataType data{*options.primclex_ptr, enumerator, supercell};
+
     if (options.filter && !options.filter(supercell)) {
+      data.is_excluded_by_filter = true;
       continue;
     }
 
@@ -51,6 +63,7 @@ void enumerate_supercells(EnumerateSupercellsOptions const &options,
     // supercell can be directly inserted, else makes canonical before inserting
     insert_result =
         make_canonical_and_insert(enumerator, supercell, supercell_db);
+    data.insert_result = insert_result;
 
     if (insert_result.second) {
       log << dry_run_msg << "  Generated: " << insert_result.first->name()
@@ -58,6 +71,11 @@ void enumerate_supercells(EnumerateSupercellsOptions const &options,
     } else {
       log << dry_run_msg << "  Generated: " << insert_result.first->name()
           << " (already existed)\n";
+    }
+
+    if (data_out_ptr &&
+        (options.output_filtered_supercells || !data.is_excluded_by_filter)) {
+      (*data_out_ptr)(formatter, data);
     }
   }
   log << dry_run_msg << "  DONE." << std::endl << std::endl;

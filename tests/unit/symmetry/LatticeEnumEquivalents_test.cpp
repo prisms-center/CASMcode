@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
 /// What is being tested:
-#include "casm/crystallography/LatticeEnumEquivalents.hh"
+#include "casm/symmetry/LatticeEnumEquivalents.hh"
 
 /// What is being used to test it:
 #include "casm/crystallography/Structure.hh"

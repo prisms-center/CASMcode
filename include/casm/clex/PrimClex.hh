@@ -13,7 +13,6 @@ class ProjectSettings;
 struct ClexDescription;
 class CompositionConverter;
 class ChemicalReference;
-class PrimNeighborList;
 struct ClexBasisSpecs;
 class ClusterSpecs;
 class ClexBasis;
@@ -30,6 +29,11 @@ class Database;
 class PropertiesDatabase;
 class DatabaseHandler;
 }  // namespace DB
+
+namespace clexulator {
+class PrimNeighborList;
+}
+using clexulator::PrimNeighborList;
 
 /** \defgroup Clex
  *
@@ -163,6 +167,8 @@ class PrimClex {
   NeighborhoodInfo const &neighborhood_info(
       std::string const &basis_set_name) const;
   Clexulator clexulator(std::string const &basis_set_name) const;
+  std::vector<Clexulator> local_clexulator(
+      std::string const &basis_set_name) const;
 
   bool has_eci(const ClexDescription &key) const;
   ECIContainer const &eci(const ClexDescription &key) const;
@@ -190,16 +196,14 @@ void write_basis_set_data(std::shared_ptr<Structure const> shared_prim,
                           ClexBasisSpecs const &basis_set_specs,
                           PrimNeighborList &prim_neighbor_list);
 
-/// Make Clexulator from existing source code
-///
-/// Notes:
-/// - Use `write_basis_set_data` to write Clexulator source code prior to
-/// calling this function.
-/// - This function will compile the Clexulator source code if that has not yet
-/// been done.
+/// \brief Make Clexulator from existing source code
 Clexulator make_clexulator(ProjectSettings const &settings,
                            std::string const &basis_set_name,
                            PrimNeighborList &prim_neighbor_list);
 
+/// \brief Make local Clexulator from existing source code
+std::vector<Clexulator> make_local_clexulator(
+    ProjectSettings const &settings, std::string const &basis_set_name,
+    PrimNeighborList &prim_neighbor_list);
 }  // namespace CASM
 #endif

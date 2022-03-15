@@ -1,7 +1,6 @@
 #include "casm/crystallography/LinearIndexConverter.hh"
 
 #include "casm/crystallography/Lattice.hh"
-#include "casm/symmetry/SymBasisPermute.hh"
 #include "gtest/gtest.h"
 
 using namespace CASM;

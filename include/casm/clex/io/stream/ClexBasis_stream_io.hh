@@ -20,10 +20,17 @@ class ClexBasisFunctionPrinter {
   ClexBasisFunctionPrinter(Log &_log,
                            std::shared_ptr<Structure const> _shared_prim,
                            ClexBasisSpecs const &_basis_set_specs, bool align,
-                           OrbitPrinterOptions _opt = OrbitPrinterOptions());
+                           OrbitPrinterOptions _opt = OrbitPrinterOptions(),
+                           bool _json = false);
 
   template <typename OrbitVecType>
   void operator()(OrbitVecType const &orbits) const;
+
+  template <typename OrbitVecType>
+  void to_stream(OrbitVecType const &orbits) const;
+
+  template <typename OrbitVecType>
+  void to_json(OrbitVecType const &orbits) const;
 
  private:
   std::shared_ptr<Structure const> m_shared_prim;
@@ -31,6 +38,7 @@ class ClexBasisFunctionPrinter {
   Log &m_log;
   bool m_align;
   OrbitPrinterOptions m_orbit_printer_opt;
+  bool m_json;
 };
 
 /// Pretty-print basis functions -- generate, then print

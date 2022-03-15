@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "casm/clex/ConfigDoFValues.hh"
+#include "casm/clexulator/ConfigDoFValues.hh"
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
 
@@ -132,6 +133,10 @@ class ConfigDoF {
             LocalInfoContainerType const &local_dof_info,
             std::vector<SymGroupRepID> const &occ_symrep_IDs, double _tol);
 
+  ConfigDoF(ConfigDoF const &RHS);
+
+  ConfigDoF &operator=(ConfigDoF const &RHS);
+
   /// Number of sites in the ConfigDoF
   Index size() const;
 
@@ -149,12 +154,12 @@ class ConfigDoF {
 
   /// Reference occupation value on site i
   int &occ(Index i) {  // keep inline
-    return m_occupation.occ(i);
+    return m_dof_values.occupation(i);
   }
 
   /// Const reference to occupation value on site i
   const int &occ(Index i) const {  // keep inline
-    return m_occupation.occ(i);
+    return m_dof_values.occupation(i);
   }
 
   /// Set occupation values
@@ -162,7 +167,7 @@ class ConfigDoF {
 
   /// Const reference occupation values
   Eigen::VectorXi const &occupation() const {  // keep inline
-    return m_occupation.values();
+    return m_dof_values.occupation;
   }
 
   bool has_occupation() const;
@@ -199,12 +204,27 @@ class ConfigDoF {
   /// site, without permutation among sites
   ConfigDoF &apply_sym_no_permute(SymOp const &_op);
 
-  void swap(ConfigDoF &RHS);
+  /// Access underlying data structure. *Do not resize DoF value containers*.
+  clexulator::ConfigDoFValues &values() { return m_dof_values; }
+
+  /// Access underlying data structure.
+  clexulator::ConfigDoFValues const &values() const { return m_dof_values; }
 
  private:
-  // ***DON'T FORGET: If you add something here, also update ConfigDoF::swap!!
+  // populate m_local_dofs and m_global_dofs to reference this object's
+  // m_dof_values
+  void _make_continuous_dof_values(ConfigDoF const &RHS);
 
-  LocalDiscreteConfigDoFValues m_occupation;
+
+  Index m_N_sublat;
+
+  Index m_N_vol;
+
+  // this contains raw data structures, without all the methods that
+  // apply symmetry and converting to/from standard values
+  clexulator::ConfigDoFValues m_dof_values;
+
+  std::vector<SymGroupRepID> m_occ_symrep_IDs;
 
   std::map<std::string, GlobalContinuousConfigDoFValues> m_global_dofs;
 
@@ -216,7 +236,6 @@ class ConfigDoF {
   mutable double m_tol;
 };
 
-void swap(ConfigDoF &A, ConfigDoF &B);
 
 inline void reset_properties(ConfigDoF &_dof) { return; }
 

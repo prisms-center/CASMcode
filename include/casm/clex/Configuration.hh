@@ -156,6 +156,9 @@ class Configuration : public ConfigurationBase {
   /// \brief Get the Supercell for this Configuration
   const Supercell &supercell() const;
 
+  /// \brief Get the Supercell for this Configuration
+  std::shared_ptr<Supercell const> const &shared_supercell() const;
+
   const Lattice &ideal_lattice() const;
 
   /// Returns number of sites, NOT the number of primitives that fit in here
@@ -587,6 +590,11 @@ Eigen::VectorXi num_each_molecule(const ConfigDoF &configdof,
 /// \brief Returns comp_n, the number of each molecule per primitive cell,
 /// ordered as Structure::get_struc_molecule()
 Eigen::VectorXd comp_n(const ConfigDoF &configdof, const Supercell &scel);
+
+/// \brief Generate a lookup table for configuration site index to asymmetric
+///     unit orbit index
+std::vector<Index> make_site_index_to_asym_index(
+    Index config_n_sites, std::vector<PermuteIterator> config_factor_group);
 
 /** @} */
 
