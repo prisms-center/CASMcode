@@ -3,6 +3,7 @@
 
 #include <boost/filesystem/path.hpp>
 
+#include <optional>
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/crystallography/DoFDecl.hh"
 #include "casm/global/definitions.hh"

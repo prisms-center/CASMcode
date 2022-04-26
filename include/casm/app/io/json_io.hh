@@ -2,6 +2,7 @@
 #define CASM_app_json_io
 
 #include <map>
+#include <string>
 
 namespace CASM {
 
