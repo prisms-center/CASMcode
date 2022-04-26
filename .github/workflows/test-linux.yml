@@ -23,6 +23,7 @@ jobs:
         shell: bash
 
         run: |
+          git submodule update --init --recursive
           ls -l include/casm/external/
           ls -l submdoules/eigen/Eigen/
           #bash bootstrap.sh
