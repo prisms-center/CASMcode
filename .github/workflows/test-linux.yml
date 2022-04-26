@@ -24,10 +24,11 @@ jobs:
 
         run: |
           ls -l include/casm/external/
-          bash bootstrap.sh
-          mkdir build && cd build
-          ../configure CC='gcc' CXX='g++' CXXFLAGS='-O3'
-          make -j4
+          ls -l submdoules/eigen/Eigen/
+          #bash bootstrap.sh
+          #mkdir build && cd build
+          #../configure CC='gcc' CXX='g++' CXXFLAGS='-O3'
+          #make -j4
         
 
 
