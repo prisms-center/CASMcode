@@ -25,8 +25,8 @@ jobs:
         run: |
           #git submodule update --init --recursive
           ls -l include/casm/external/
-          ls -l submodules/googletest/
-          ls -l submdoules/eigen/Eigen/
+          ls -l submodules/googletest/googletest
+          #ls -l submdoules/eigen/Eigen/
           #bash bootstrap.sh
           #mkdir build && cd build
           #../configure CC='gcc' CXX='g++' CXXFLAGS='-O3'
