@@ -4,6 +4,7 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+#include <ostream>
 
 #include "casm/global/definitions.hh"
 #include "casm/misc/Comparisons.hh"

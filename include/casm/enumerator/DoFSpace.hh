@@ -2,6 +2,7 @@
 #define CASM_DoFSpace
 
 #include "casm/crystallography/DoFDecl.hh"
+#include <optional>
 #include "casm/enumerator/ConfigEnumInput.hh"
 
 namespace CASM {
