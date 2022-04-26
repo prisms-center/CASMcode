@@ -1,0 +1,35 @@
+name: Testing on ubuntu-latest
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up g++/gcc/make/autconf
+        run: |
+          sudo apt install build-essential
+          sudo apt install autoconf
+
+      - name: Set up python 3.10
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.10
+          cache: "pip"
+      
+      - name: Install GitPython
+        run: |
+          pip install --upgrade pip wheel
+          pip install GitPython 
+      
+      - name: Build casm
+        shell: bash
+
+        working-directory: ${{github.workspace}}/build
+        run: |
+          bash ../bootstrap.sh
+          ../configure CC='gcc' CXX='g++' CXXFLAGS='-O3'
+          make -j4
+
