@@ -18,18 +18,11 @@ jobs:
           pip install --upgrade pip wheel
           pip install GitPython 
       
-      - name: Make build directory
-        shell: bash
-        run: |
-          mkdir build
-
       - name: Build casm
         shell: bash
 
-        working-directory: ${{github.workspace}}/build
         run: |
-          cd build
-          bash ../bootstrap.sh
-          ../configure CC='gcc' CXX='g++' CXXFLAGS='-O3'
+          bash bootstrap.sh
+          ./configure CC='gcc' CXX='g++' CXXFLAGS='-O3'
           make -j4
 
