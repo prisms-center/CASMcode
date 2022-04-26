@@ -5,10 +5,11 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v3
       
-      - name: Set up g++/gcc/make/autoconf/boost/GitPython
+      - name: Set up requirements
         run: |
           sudo apt-get install build-essential
           sudo apt-get install autoconf
