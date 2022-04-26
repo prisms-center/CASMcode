@@ -24,3 +24,9 @@ jobs:
           mkdir build && cd build
           ../configure CC='gcc' CXX='g++' CXXFLAGS='-O3'
           make -j4
+
+      - name: Test casm
+        shell: bash
+        run: |
+          pwd
+          #make check -j4
