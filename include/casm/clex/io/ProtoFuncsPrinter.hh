@@ -5,6 +5,7 @@
 
 #include "casm/basis_set/FunctionVisitor.hh"
 #include "casm/clusterography/io/OrbitPrinter.hh"
+#include "casm/clusterography/io/OrbitPrinter_impl.hh"
 #include "casm/global/definitions.hh"
 
 namespace CASM {
