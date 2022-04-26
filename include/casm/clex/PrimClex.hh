@@ -2,6 +2,7 @@
 #define CASM_PrimClex
 
 #include <memory>
+#include <vector>
 
 #include "casm/global/definitions.hh"
 
