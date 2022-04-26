@@ -5,29 +5,31 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
+
     steps:
       - uses: actions/checkout@v3
       
-      - name: Set up g++/gcc/make/autconf/boost
+      - name: Set up g++/gcc/make/autoconf/boost/GitPython
         run: |
-          sudo apt install build-essential
-          sudo apt install autoconf
-          sudo apt install libboost-all-dev
-
-      - name: Install GitPython
-        run: |
+          sudo apt-get install build-essential
+          sudo apt-get install autoconf
+          sudo apt-get install libboost-all-dev
           pip install --upgrade pip wheel
-          pip install GitPython 
+          pip install GitPython
       
       - name: Build casm
         shell: bash
-
         run: |
           git submodule update --init --recursive
           bash bootstrap.sh
           mkdir build && cd build
           ../configure CC='gcc' CXX='g++' CXXFLAGS='-O3'
           make -j4
-        
 
+       - name: Test casm
+         shell: bash
+          pwd
+          #make check -j4
+        
 
