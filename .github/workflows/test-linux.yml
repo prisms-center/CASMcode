@@ -39,4 +39,5 @@ jobs:
         shell: bash
         run: |
           cd build
+          pwd
           #make check -j4
