@@ -27,6 +27,7 @@ jobs:
           bash bootstrap.sh
           mkdir build && cd build
           ../configure CC='gcc' CXX='g++' CXXFLAGS='-O3'
+          make -j4
         
 
 
