@@ -8,10 +8,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: Set up g++/gcc/make/autconf
+      - name: Set up g++/gcc/make/autconf/boost
         run: |
           sudo apt install build-essential
           sudo apt install autoconf
+          sudo apt install libboost-all-dev
 
       - name: Install GitPython
         run: |
