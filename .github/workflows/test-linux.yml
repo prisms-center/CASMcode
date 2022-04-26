@@ -18,6 +18,11 @@ jobs:
           pip install --upgrade pip wheel
           pip install GitPython 
       
+      - name: Make build director
+        shell: bash
+        run: |
+          mkdir build
+
       - name: Build casm
         shell: bash
 
