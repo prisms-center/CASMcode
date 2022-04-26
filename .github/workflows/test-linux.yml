@@ -23,8 +23,9 @@ jobs:
         shell: bash
 
         run: |
-          git submodule update --init --recursive
+          #git submodule update --init --recursive
           ls -l include/casm/external/
+          ls -l submodules/googletest/
           ls -l submdoules/eigen/Eigen/
           #bash bootstrap.sh
           #mkdir build && cd build
