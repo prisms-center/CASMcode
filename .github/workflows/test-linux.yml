@@ -28,5 +28,5 @@ jobs:
       - name: Test casm
         shell: bash
         run: |
-          pwd
+          cd build
           #make check -j4
