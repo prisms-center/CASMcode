@@ -5,6 +5,7 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v3
       - name: Set up requirements
@@ -23,11 +24,3 @@ jobs:
           mkdir build && cd build
           ../configure CC='gcc' CXX='g++' CXXFLAGS='-O3'
           make -j4
-
-       - name: Test casm
-         shell: bash
-         run: |
-           pwd
-          #make check -j4
-        
-
