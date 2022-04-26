@@ -23,6 +23,6 @@ jobs:
         shell: bash
 
         run: |
-          ll include/casm/external/
+          ls -l include/casm/external/
 
 
