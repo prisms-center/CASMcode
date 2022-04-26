@@ -23,7 +23,6 @@ jobs:
         shell: bash
 
         run: |
-          bash bootstrap.sh
-          ./configure CC='gcc' CXX='g++' CXXFLAGS='-O3'
-          make -j4
+          ll include/casm/external/
+
 
