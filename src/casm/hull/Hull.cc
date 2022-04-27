@@ -272,6 +272,15 @@ void _validate_input(const DB::Selection<Configuration> &selection,
                      const Hull::EnergyCalculator &energy_calculator) {
   typedef std::map<std::string, std::pair<bool, bool>> CheckMap;
 
+  if (selection.selected_size() == 0) {
+    std::stringstream ss;
+    ss << "Error in Hull(): No selected configurations. \n"
+          "Make sure you have set composition axes, all selected "
+          "configurations\n"
+          "have calculation results, and you have set your chemical reference.";
+    throw std::runtime_error(ss.str());
+  }
+
   CheckMap invalid_data;
   for (const auto &config : selection.selected()) {
     if (!comp_calculator.validate(config) ||
