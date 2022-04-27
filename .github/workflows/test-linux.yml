@@ -46,6 +46,4 @@ jobs:
         shell: bash
         run: |
           cd build
-          pwd
-          ls -a ~/.ccache
           #make check -j4
