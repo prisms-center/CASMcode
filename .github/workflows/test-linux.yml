@@ -29,8 +29,8 @@ jobs:
       - name: Build casm
         shell: bash
         run: |
-          git submodule update --init --recursive
-          bash bootstrap.sh
+          #git submodule update --init --recursive
+          #bash bootstrap.sh
           cd build
           #../configure CC='ccache gcc' CXX='ccache g++' CXXFLAGS='-O3'
           #make -j4
