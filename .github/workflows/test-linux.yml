@@ -40,5 +40,8 @@ jobs:
         run: |
           cd build
           pwd
-          ls src/casm/global/
+          cat src/casm/clex/Calculable.lo
+          echo "------"
+          cat .libs/libcasm.la
+          ls -a
           #make check -j4
