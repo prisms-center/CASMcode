@@ -32,12 +32,13 @@ jobs:
           git submodule update --init --recursive
           bash bootstrap.sh
           cd build
-          ../configure CC='ccache gcc' CXX='ccache g++' CXXFLAGS='-O3'
-          make -j4
+          #../configure CC='ccache gcc' CXX='ccache g++' CXXFLAGS='-O3'
+          #make -j4
 
       - name: Test casm
         shell: bash
         run: |
           cd build
           pwd
+          ls src/casm/global/
           #make check -j4
