@@ -14,12 +14,19 @@ jobs:
           pip install --upgrade pip wheel
           pip install GitPython
       
-      - name: Cache casm build
+      - name: cache casm build
         id: cache-build
         uses: actions/cache@v3
         with:
           path: build
           key: ${{ runner.os }}-build
+
+      - name: cache ccache
+        id: cache-ccache
+        uses: actions/cache@v3
+        with:
+          path: ~/.ccache
+          key: ${{ runner.os }}-ccache
 
       - name: Create casm build
         shell: bash
@@ -29,20 +36,16 @@ jobs:
       - name: Build casm
         shell: bash
         run: |
-          #git submodule update --init --recursive
-          #bash bootstrap.sh
+          git submodule update --init --recursive
+          bash bootstrap.sh
           cd build
-          #../configure CC='ccache gcc' CXX='ccache g++' CXXFLAGS='-O3'
-          #make -j4
+          ../configure CC='ccache gcc' CXX='ccache g++' CXXFLAGS='-O3'
+          make -j4
 
       - name: Test casm
         shell: bash
         run: |
           cd build
-          ccache --show-stats -v
           pwd
-          cat src/casm/clex/Calculable.lo
-          echo "------"
-          cat .libs/libcasm.la
-          ls -a
+          ls -a ~/.ccache
           #make check -j4
