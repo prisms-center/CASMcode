@@ -3,6 +3,7 @@
 #include "casm/app/io/json_io.hh"
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
+#include "casm/casm_io/json/optional.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
@@ -119,6 +120,13 @@ std::string dof_space_analysis_desc() {
       "down      \n"
       "      analysis).                                                        "
       "         \n\n"
+
+      "    exclude_homogeneous_modes: bool (optional, default=null) "
+      "      Exclude homogeneous modes if this is true, or include if "
+      "      this is false. If this is null (default), only exclude   "
+      "      homogeneous modes for dof==\"disp\" and the input space  "
+      "      includes all supercell sites.                            "
+      "          \n\n"
 
       "    write_symmetry: bool (optional, default=true)                       "
       "         \n"
@@ -244,6 +252,10 @@ void dof_space_analysis(PrimClex &primclex, jsonParser const &json_options,
   // parse "output_dir" (optional, default = current_path)
   fs::path output_dir;
   parser.optional_else(output_dir, "output_dir", fs::current_path());
+
+  // parse "exclude_homogeneous_modes" (optional, default = std::nullopt)
+  parser.optional(options.exclude_homogeneous_modes,
+                  "exclude_homogeneous_modes");
 
   // 2) parse input states
 

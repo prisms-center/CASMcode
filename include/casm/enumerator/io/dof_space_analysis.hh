@@ -2,8 +2,8 @@
 #define CASM_enumerator_io_json_dof_space_analysis
 
 #include <boost/filesystem/path.hpp>
-
 #include <optional>
+
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/crystallography/DoFDecl.hh"
 #include "casm/global/definitions.hh"
@@ -217,6 +217,11 @@ struct DoFSpaceAnalysisOptions {
   bool calc_wedge = false;
   bool write_symmetry = true;
   bool write_structure = true;
+
+  // exclude homogeneous modes if this has_value and value is true
+  // otherwise, only exclude homogeneous modes if the dof=="disp"
+  // and the dof_space includes all sites
+  std::optional<bool> exclude_homogeneous_modes;
 };
 
 void output_dof_space(Index state_index, std::string const &identifier,

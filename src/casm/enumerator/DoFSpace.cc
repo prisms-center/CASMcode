@@ -878,6 +878,14 @@ DoFSpace make_symmetry_adapted_dof_space_v2(
     throw e;
   }
   // check for error occuring for "disp"
+  if (dof_space.basis().cols() == 0) {
+    error_report_v2(dof_space, sym_info, group, calc_wedges, symmetry_report);
+    std::stringstream msg;
+    msg << "Error in make_symmetry_adapted_dof_space_v2: "
+        << "dof_space.basis().cols()==0";
+    throw make_symmetry_adapted_dof_space_error(msg.str());
+  }
+  // check for error occuring for "disp"
   if (symmetry_report->symmetry_adapted_subspace.cols() <
       dof_space.basis().cols()) {
     error_report_v2(dof_space, sym_info, group, calc_wedges, symmetry_report);
@@ -910,8 +918,15 @@ DoFSpace exclude_homogeneous_mode_space(DoFSpace const &dof_space) {
     throw std::runtime_error(msg.str());
   }
 
-  Eigen::MatrixXd null_space =
-      make_homogeneous_mode_space(dof_space).transpose().fullPivLu().kernel();
+  Eigen::MatrixXd homogeneous_mode_space =
+      make_homogeneous_mode_space(dof_space);
+
+  Eigen::MatrixXd null_space;
+  if (homogeneous_mode_space.cols() == dof_space.basis().cols()) {
+    null_space.resize(dof_space.dim(), 0);
+  } else {
+    null_space = homogeneous_mode_space.transpose().fullPivLu().kernel();
+  }
 
   return DoFSpace{dof_space.shared_prim(), dof_space.dof_key(),
                   dof_space.transformation_matrix_to_super(), dof_space.sites(),

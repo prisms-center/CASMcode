@@ -349,6 +349,18 @@ void output_dof_space(Index state_index, std::string const &identifier,
       log << "Working on: " << identifier << " " << dof << std::endl;
     }
     DoFSpace dof_space = make_dof_space(dof, input_state);
+
+    bool exclude_homogeneous_modes = false;
+    if (options.exclude_homogeneous_modes.has_value()) {
+      exclude_homogeneous_modes = options.exclude_homogeneous_modes.value();
+    } else if (dof_space.includes_all_sites() &&
+               dof_space.dof_key() == "disp") {
+      exclude_homogeneous_modes = true;
+    }
+    if (exclude_homogeneous_modes) {
+      dof_space = exclude_homogeneous_mode_space(dof_space);
+    }
+
     std::optional<SymRepTools_v2::VectorSpaceSymReport> report;
     try {
       if (options.sym_axes) {
