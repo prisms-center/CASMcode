@@ -145,8 +145,10 @@ void parse(InputParser<DoFSpace> &parser,
   parser.optional(sites, "sites");
 
   Eigen::MatrixXd tmp;
-  parser.optional(tmp, "basis");
-  std::optional<Eigen::MatrixXd> basis = tmp.transpose();
+  std::optional<Eigen::MatrixXd> basis parser.optional(basis, "basis");
+  if (basis.has_value()) {
+    basis = basis.value().transpose();
+  }
 
   if (parser.valid()) {
     parser.value = notstd::make_unique<DoFSpace>(
