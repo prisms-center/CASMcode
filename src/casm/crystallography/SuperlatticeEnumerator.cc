@@ -41,7 +41,9 @@ SuperlatticeIterator &SuperlatticeIterator::operator=(
 }
 
 bool SuperlatticeIterator::operator==(const SuperlatticeIterator &B) const {
-  return (m_enum == B.m_enum) && (matrix() - B.matrix()).isZero();
+  return (m_enum == B.m_enum) && ((volume() >= m_enum->end_volume() &&
+                                   B.volume() >= m_enum->end_volume()) ||
+                                  (matrix() - B.matrix()).isZero());
 }
 
 bool SuperlatticeIterator::operator!=(const SuperlatticeIterator &B) const {
@@ -81,6 +83,10 @@ SuperlatticeIterator &SuperlatticeIterator::operator++() {
 }
 
 void SuperlatticeIterator::_increment() {
+  // check if this == end
+  if (m_current->determinant() >= m_enum->end_volume()) {
+    return;
+  }
   m_canon_hist.push_back(matrix());
   HermiteCounter::value_type last_determinant = m_current->determinant();
   ++(*m_current);
@@ -89,9 +95,37 @@ void SuperlatticeIterator::_increment() {
     m_canon_hist.clear();
   }
 
-  while (std::find(m_canon_hist.begin(), m_canon_hist.end(), matrix()) !=
-         m_canon_hist.end()) {
-    ++(*m_current);
+  while (true) {
+    Eigen::MatrixXi H = m_current->current();
+    // check diagonal_only criteria
+    if (m_enum->diagonal_only() && !H.isDiagonal()) {
+      ++(*m_current);
+      continue;
+    }
+
+    // check fixed_shape criteria
+    if (m_enum->fixed_shape()) {
+      int dim = m_enum->dimension();
+      bool fixed_shape = true;
+      for (int d = 1; d < dim; ++d) {
+        fixed_shape = fixed_shape && H(d, d) == H(0, 0);
+      }
+      if (!fixed_shape) {
+        ++(*m_current);
+        continue;
+      }
+    }
+
+    Eigen::Matrix3i M = this->matrix();
+
+    // check canonical hnf criteria
+    if (std::find(m_canon_hist.begin(), m_canon_hist.end(), M) !=
+        m_canon_hist.end()) {
+      ++(*m_current);
+      continue;
+    }
+
+    break;
   }
 
   m_super_updated = false;
@@ -116,7 +150,9 @@ SuperlatticeEnumerator::SuperlatticeEnumerator(const Lattice &unit,
       m_begin_volume(enum_props.begin_volume()),
       m_end_volume(enum_props.end_volume()),
       m_gen_mat(enum_props.generating_matrix()),
-      m_dims(enum_props.dims()) {
+      m_dims(enum_props.dims()),
+      m_diagonal_only(enum_props.diagonal_only()),
+      m_fixed_shape(enum_props.fixed_shape()) {
   if (m_gen_mat.determinant() < 1) {
     throw std::runtime_error(
         "The transformation matrix to expand into a 3x3 matrix must have a "
@@ -135,6 +171,10 @@ const Eigen::Matrix3i &SuperlatticeEnumerator::gen_mat() const {
 }
 
 int SuperlatticeEnumerator::dimension() const { return m_dims; }
+
+bool SuperlatticeEnumerator::diagonal_only() const { return m_diagonal_only; }
+
+bool SuperlatticeEnumerator::fixed_shape() const { return m_fixed_shape; }
 
 typename SuperlatticeEnumerator::size_type
 SuperlatticeEnumerator::begin_volume() const {

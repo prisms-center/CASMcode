@@ -82,6 +82,73 @@ Inserter select_cluster_sites(
   return result;
 }
 
+/// Create ConfigEnumInput with unique cluster sites selected, starting from
+/// local orbits
+template <typename Inserter>
+Inserter select_cluster_sites(
+    ConfigEnumInput const &reference_config_enum_input,
+    std::vector<LocalIntegralClusterOrbit> const &orbits, Inserter result) {
+  if (orbits.size() == 0) {
+    return result;
+  }
+
+  // Get objects to be used below
+  Configuration const &ref_config = reference_config_enum_input.configuration();
+  std::shared_ptr<Structure const> shared_prim =
+      ref_config.supercell().shared_prim();
+  SupercellSymInfo const &ref_supercell_sym_info =
+      ref_config.supercell().sym_info();
+
+  // Make generating permute group consistent w/ supercell
+  std::vector<PermuteIterator> generating_permute_group_in_supercell =
+      make_local_permute_group(orbits[0].generating_group(),
+                               shared_prim->factor_group(),
+                               ref_supercell_sym_info);
+
+  // Make generating permute group consistent w/ configuration
+  Configuration prim_ref_config = ref_config.primitive();
+  std::vector<PermuteIterator> prim_ref_config_fg =
+      prim_ref_config.factor_group();
+  std::set<PermuteIterator> prim_ref_config_fg_set{prim_ref_config_fg.begin(),
+                                                   prim_ref_config_fg.end()};
+  std::vector<PermuteIterator> generating_permute_group_in_config =
+      make_allowed_permute(generating_permute_group_in_supercell.begin(),
+                           generating_permute_group_in_supercell.end(),
+                           prim_ref_config_fg_set);
+
+  // Convert generating permute group in config to SymGroup
+  SymGroup generating_group_in_config =
+      make_sym_group(generating_permute_group_in_config.begin(),
+                     generating_permute_group_in_config.end(),
+                     ref_supercell_sym_info.prim_lattice());
+
+  // Get orbit generators after symmetry breaking due to:
+  // - local generating group in prim -> local generating group in config
+  std::vector<IntegralCluster> orbit_generators_in_config;
+  make_suborbit_generators(
+      orbits[0].generating_group().begin(), orbits[0].generating_group().end(),
+      generating_group_in_config.begin(), generating_group_in_config.end(),
+      prototype_iterator(orbits.begin()), prototype_iterator(orbits.end()),
+      orbits[0].sym_compare(), std::back_inserter(orbit_generators_in_config));
+
+  // Construct orbit generating elements for orbits
+  // under periodic boundary conditions
+  std::vector<Permutation> inverse_permutations =
+      make_inverse_permutations(generating_permute_group_in_config.begin(),
+                                generating_permute_group_in_config.end());
+  auto orbit_generators_pbc =
+      make_orbit_generators_under_periodic_boundary_conditions(
+          ref_supercell_sym_info, inverse_permutations.begin(),
+          inverse_permutations.end(), orbit_generators_in_config.begin(),
+          orbit_generators_in_config.end());
+
+  // Construct ConfigEnumInput with ref_config & cluster site indices
+  for (auto const &cluster_site_indices : orbit_generators_pbc) {
+    *result++ = ConfigEnumInput{ref_config, cluster_site_indices};
+  }
+  return result;
+}
+
 }  // namespace CASM
 
 #endif

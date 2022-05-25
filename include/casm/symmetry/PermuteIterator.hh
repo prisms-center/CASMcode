@@ -223,6 +223,19 @@ std::unique_ptr<SymGroup> make_unique_sym_group(
     PermuteIteratorIt begin, PermuteIteratorIt end,
     const Lattice &supercell_lattice);
 
+/// \brief Make permute group for local property symmetry in a supercell
+std::vector<PermuteIterator> make_local_permute_group(
+    SymGroup const &local_generating_group, SymGroup const &factor_group,
+    SupercellSymInfo const &supercell_sym_info);
+
+/// \brief Filter PermuteIterator to keep only operations consistent
+///     with a factor group in a sub-supercell
+template <typename PermuteIteratorIt>
+std::vector<PermuteIterator> make_allowed_permute(
+    PermuteIteratorIt supercell_permute_begin,
+    PermuteIteratorIt supercell_permute_end,
+    std::set<PermuteIterator> const &subsupercell_factor_group);
+
 /// Return true if the permutation does not mix given sites and other sites
 bool site_indices_are_invariant(PermuteIterator const &permute_it,
                                 std::set<Index> const &site_indices);

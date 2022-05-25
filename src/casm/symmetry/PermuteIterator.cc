@@ -312,6 +312,116 @@ template SymGroup make_point_group(std::vector<PermuteIterator>::iterator begin,
                                    std::vector<PermuteIterator>::iterator end,
                                    const Lattice &supercell_lattice);
 
+/// \brief Make permute group for local property symmetry in a supercell
+///
+/// \brief generating_group Local property group. Must be a local property
+///     group, in which each prim factor group operation only appears
+/// \brief factor_group The prim factor group.
+/// \brief supercell_sym_info SupercellSymInfo for the supercell in which
+///     the local permute group is being generated.
+///
+/// \returns local_permute_group, the PermuteIterator consistent with both
+///     the supercell and the local point group
+std::vector<PermuteIterator> make_local_permute_group(
+    const SymGroup &local_generating_group, const SymGroup &factor_group,
+    SupercellSymInfo const &supercell_sym_info) {
+  std::set<Index> generating_group_indices;
+  for (SymOp const &op : local_generating_group) {
+    generating_group_indices.emplace(op.index());
+  }
+
+  std::map<Index, Index> prim_to_super_factor_group_index;
+  Index supercell_factor_group_index = 0;
+  for (SymOp const &op : supercell_sym_info.factor_group()) {
+    prim_to_super_factor_group_index[op.index()] = supercell_factor_group_index;
+    ++supercell_factor_group_index;
+  }
+
+  std::vector<PermuteIterator> result;
+  try {
+    for (SymOp const &op : local_generating_group) {
+      if (generating_group_indices.count(op.index())) {
+        Eigen::Vector3d trans = op.tau() - factor_group[op.index()].tau();
+        PermuteIterator permute = supercell_sym_info.permute_it(
+            prim_to_super_factor_group_index[op.index()],
+            UnitCell::from_cartesian(trans, supercell_sym_info.prim_lattice()));
+        result.push_back(permute);
+      }
+    }
+  } catch (std::exception &e) {
+    std::stringstream msg;
+    msg << "Error in permute_group: failed to generate PermuteIterator: "
+        << e.what();
+    throw e;
+  }
+
+  return result;
+}
+
+/// \brief Filter PermuteIterator to keep only operations consistent
+///     with a factor group in a sub-supercell
+///
+/// \param supercell_permute_begin,supercell_permute_end A range of
+///     PermuteIterator describing the symmetry in a supercell
+/// \param subsupercell_factor_group A set of PermuteIterator in a
+///     sub-supercell, specifying a factor group in a sub-supercell.
+///
+/// \returns allowed_permute, a vector of PermuteIterator containing
+///     the operations in [supercell_permute_begin,supercell_permute_end]
+///     that are equivalent to one of the operations in subsupercell_permute
+///     up to translations of the sub-supercell lattice.
+template <typename PermuteIteratorIt>
+std::vector<PermuteIterator> make_allowed_permute(
+    PermuteIteratorIt supercell_permute_begin,
+    PermuteIteratorIt supercell_permute_end,
+    std::set<PermuteIterator> const &subsupercell_factor_group) {
+  std::vector<PermuteIterator> result;
+  if (!subsupercell_factor_group.size()) {
+    return result;
+  }
+  if (supercell_permute_begin == supercell_permute_end) {
+    return result;
+  }
+  auto const &subsupercell_sym_info =
+      subsupercell_factor_group.begin()->sym_info();
+  auto const &supercell_sym_info = supercell_permute_begin->sym_info();
+
+  if (!is_superlattice(supercell_sym_info.supercell_lattice(),
+                       subsupercell_sym_info.supercell_lattice(),
+                       subsupercell_sym_info.supercell_lattice().tol())
+           .first) {
+    return result;
+  }
+  auto const &subsupercell_converter =
+      subsupercell_sym_info.unitcell_index_converter();
+  auto const &supercell_converter =
+      supercell_sym_info.unitcell_index_converter();
+  for (auto it = supercell_permute_begin; it != supercell_permute_end; ++it) {
+    PermuteIterator test_permute = subsupercell_sym_info.permute_it(
+        it->factor_group_index(),
+        subsupercell_converter(supercell_converter(it->translation_index())));
+    if (subsupercell_factor_group.count(test_permute)) {
+      result.push_back(*it);
+    }
+  }
+  return result;
+}
+
+template std::vector<PermuteIterator> make_allowed_permute(
+    PermuteIterator supercell_permute_begin,
+    PermuteIterator supercell_permute_end,
+    std::set<PermuteIterator> const &subsupercell_permute);
+
+template std::vector<PermuteIterator> make_allowed_permute(
+    std::vector<PermuteIterator>::const_iterator supercell_permute_begin,
+    std::vector<PermuteIterator>::const_iterator supercell_permute_end,
+    std::set<PermuteIterator> const &subsupercell_permute);
+
+template std::vector<PermuteIterator> make_allowed_permute(
+    std::vector<PermuteIterator>::iterator supercell_permute_begin,
+    std::vector<PermuteIterator>::iterator supercell_permute_end,
+    std::set<PermuteIterator> const &subsupercell_permute);
+
 void swap(PermuteIterator &a, PermuteIterator &b) {
   std::swap(a.m_sym_info, b.m_sym_info);
   std::swap(a.m_trans_permute, b.m_trans_permute);

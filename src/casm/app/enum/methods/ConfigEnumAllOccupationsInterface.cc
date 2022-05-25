@@ -9,6 +9,7 @@
 #include "casm/app/enum/io/stream_io_impl.hh"
 #include "casm/app/enum/standard_ConfigEnumInput_help.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
+#include "casm/casm_io/json/optional.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
@@ -17,7 +18,26 @@
 namespace CASM {
 
 std::string ConfigEnumAllOccupationsInterface::desc() const {
-  std::string custom_options = "";
+  std::string custom_options =
+      "  skip_non_primitive: bool (optional)\n"
+      "    If true, non-primitive configurations are skipped in  \n"
+      "    the enumeration. If false, they are included. Whether \n"
+      "    they are included in the database or not is specified \n"
+      "    separately by the \"primitive_only\" option. This     \n"
+      "    option allows including non-primitive configurations  \n"
+      "    in the output generated when \"output_configurations\"==true.\n"
+      "    The default value is true if enumeration is occuring  \n"
+      "    on all sites in the configuration, and false otherwise.\n\n"
+
+      "  skip_non_canonical: bool (optional)\n"
+      "    If true, non-canonical configurations are skipped in  \n"
+      "    the enumeration. If false, they are included. For     \n"
+      "    either choice, only canonical configurations are ever \n"
+      "    inserted into the configuration database. This option \n"
+      "    allows including non-canonical configurations in the  \n"
+      "    output generated when \"output_configurations\"==true.\n"
+      "    The default value is true if enumeration is occuring  \n"
+      "    on all sites in the configuration, and false otherwise.\n\n";
 
   std::string examples =
       "  Examples:\n"
@@ -39,7 +59,7 @@ std::string ConfigEnumAllOccupationsInterface::desc() const {
       "        ]\n"
       "      }' \n\n";
 
-  return name() + ": \n\n" + custom_options + standard_ConfigEnumInput_help() +
+  return name() + ": \n\n" + standard_ConfigEnumInput_help() + custom_options +
          examples;
 }
 
@@ -60,7 +80,7 @@ void ConfigEnumAllOccupationsInterface::run(
 
   log.custom("Checking input");
 
-  // 1) Parse ConfigEnumOptions ------------------
+  // 1a) Parse ConfigEnumOptions ------------------
 
   auto options_parser_ptr = parser.parse_as<ConfigEnumOptions>(
       ConfigEnumAllOccupations::enumerator_name, primclex,
@@ -69,6 +89,28 @@ void ConfigEnumAllOccupationsInterface::run(
   ConfigEnumOptions const &options = *options_parser_ptr->value;
   print_options(log, options);
   log.set_verbosity(options.verbosity);
+
+  // 1b) Parse custom options ---------------------
+  std::optional<bool> skip_non_primitive;
+  parser.optional(skip_non_primitive, "skip_non_primitive");
+
+  std::optional<bool> skip_non_canonical;
+  parser.optional(skip_non_canonical, "skip_non_canonical");
+
+  log << std::boolalpha;
+  log.indent() << "skip_non_primitive:";
+  if (skip_non_primitive.has_value()) {
+    log << skip_non_primitive.value() << std::endl;
+  } else {
+    log << "null" << std::endl;
+  }
+  log.indent() << "skip_non_canonical:";
+  if (skip_non_canonical.has_value()) {
+    log << skip_non_canonical.value() << std::endl;
+  } else {
+    log << "null" << std::endl;
+  }
+  log << std::noboolalpha;
 
   // 2) Parse initial enumeration states ------------------
 
@@ -84,7 +126,23 @@ void ConfigEnumAllOccupationsInterface::run(
 
   auto make_enumerator_f = [&](Index index, std::string name,
                                ConfigEnumInput const &initial_state) {
-    return ConfigEnumAllOccupations{initial_state};
+    // set defaults
+    bool primitive_only = true;
+    bool canonical_only = true;
+    if (initial_state.sites().size() != initial_state.configuration().size()) {
+      primitive_only = false;
+      canonical_only = false;
+    }
+
+    // optionally, override defaults
+    if (skip_non_primitive.has_value()) {
+      primitive_only = skip_non_primitive.value();
+    }
+    if (skip_non_canonical.has_value()) {
+      canonical_only = skip_non_canonical.value();
+    }
+    return ConfigEnumAllOccupations{initial_state, primitive_only,
+                                    canonical_only};
   };
 
   typedef ConfigEnumData<ConfigEnumAllOccupations, ConfigEnumInput>
@@ -102,7 +160,9 @@ void ConfigEnumAllOccupationsInterface::run(
       ConfigEnumIO::initial_state_index<ConfigEnumDataType>(),
       ConfigEnumIO::initial_state_name<ConfigEnumDataType>(),
       ConfigEnumIO::initial_state_configname<ConfigEnumDataType>(),
-      ConfigEnumIO::n_selected_sites<ConfigEnumDataType>());
+      ConfigEnumIO::initial_state<ConfigEnumDataType>(),
+      ConfigEnumIO::n_selected_sites<ConfigEnumDataType>(),
+      ConfigEnumIO::config<ConfigEnumDataType>());
 
   log << std::endl;
   log.begin("ConfigEnumAllOccupations enumeration");

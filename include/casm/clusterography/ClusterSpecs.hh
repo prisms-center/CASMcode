@@ -51,6 +51,7 @@ class ClusterSpecs : public notstd::Cloneable {
   LocalOrbitVec make_local_orbits(std::ostream &status) const;
 
   // valid for either periodic or local
+  void set_generating_group(SymGroup const &generating_group);
   SymGroup const &get_generating_group() const;
 
   // valid for local only
@@ -68,6 +69,7 @@ class ClusterSpecs : public notstd::Cloneable {
       IntegralClusterVec const &generating_elements) const;
   virtual LocalOrbitVec _make_local_orbits(std::ostream &status) const;
 
+  virtual void _set_generating_group(SymGroup const &);
   virtual SymGroup const &_get_generating_group() const;
   virtual IntegralCluster const &_get_phenomenal_cluster() const;
 };
@@ -158,6 +160,7 @@ class PeriodicMaxLengthClusterSpecs : public ClusterSpecs {
       IntegralClusterVec const &generating_elements) const override;
   PeriodicOrbitVec _make_periodic_orbits(std::ostream &status) const override;
 
+  void _set_generating_group(SymGroup const &) override;
   SymGroup const &_get_generating_group() const override;
 };
 
@@ -228,6 +231,7 @@ class LocalMaxLengthClusterSpecs : public ClusterSpecs {
       IntegralClusterVec const &generating_elements) const override;
   LocalOrbitVec _make_local_orbits(std::ostream &status) const override;
 
+  void _set_generating_group(SymGroup const &) override;
   SymGroup const &_get_generating_group() const override;
   IntegralCluster const &_get_phenomenal_cluster() const override;
 };
@@ -297,6 +301,7 @@ class GenericPeriodicClusterSpecs : public ClusterSpecs {
       IntegralClusterVec const &generating_elements) const override;
   PeriodicOrbitVec _make_periodic_orbits(std::ostream &status) const override;
 
+  void _set_generating_group(SymGroup const &) override;
   SymGroup const &_get_generating_group() const override;
 };
 
@@ -354,6 +359,7 @@ class GenericLocalClusterSpecs : public ClusterSpecs {
       IntegralClusterVec const &generating_elements) const override;
   LocalOrbitVec _make_local_orbits(std::ostream &status) const override;
 
+  void _set_generating_group(SymGroup const &) override;
   SymGroup const &_get_generating_group() const override;
 };
 

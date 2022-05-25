@@ -18,8 +18,7 @@ class ConfigEnumInput;
  *  @{
  */
 
-/// Conditionally true for ConfigEnumAllOccupations (true when enumerating on
-/// all sites)
+/// \brief Conditionally true for ConfigEnumAllOccupations
 template <>
 bool is_guaranteed_for_database_insert(
     ConfigEnumAllOccupations const &enumerator);
@@ -31,26 +30,20 @@ class ConfigEnumAllOccupations : public InputEnumeratorBase<Configuration> {
   // -- Required members -------------------
 
  public:
-  /// Construct with a ConfigEnumInput, specifying which sites to enumerate on
-  /// and which to keep fixed
-  ///
-  /// Note:
-  /// - The output configurations are set to fixed occupation matching
-  ///   `config_enum_input.configuration()` on all sites not included in
-  ///   `config_enum_input.sites()`.
-  /// - All allowed occupation values are enumerated on the selected sites
-  ///   (`config_enum_input.sites()`), but Configuration are only output if the
-  ///   are primitive.
-  /// - If all sites are selected, then only canonical Configuration are output.
-  /// This can be
-  ///   checked with `this->canonical_guarantee()`.
+  /// \brief Construct with a ConfigEnumInput, specifying which sites
+  ///     to enumerate on and which to keep fixed
   ConfigEnumAllOccupations(ConfigEnumInput const &config_enum_input);
+
+  /// \brief Constructor allowing direct control of whether
+  ///     non-primitive and non-canonical Configuration are enumerated
+  ConfigEnumAllOccupations(ConfigEnumInput const &config_enum_input,
+                           bool canonical_only, bool primitive_only);
 
   std::string name() const override;
 
-  /// Returns true if enumerator is guaranteed to output canonical
-  /// configurations
-  bool canonical_guarantee() const;
+  /// \brief Returns true if enumerator is guaranteed to output
+  ///     primitive & canonical configurations only
+  bool primitive_canonical_guarantee() const;
 
   static const std::string enumerator_name;
 
@@ -80,6 +73,12 @@ class ConfigEnumAllOccupations : public InputEnumeratorBase<Configuration> {
 
   /// True if enumerating on a subset of supercell sites
   bool m_enumerate_on_a_subset_of_supercell_sites;
+
+  /// True if only enumerating primitive configurations
+  bool m_primitive_only;
+
+  /// True if only enumerating canonical configurations
+  bool m_canonical_only;
 };
 
 /** @}*/

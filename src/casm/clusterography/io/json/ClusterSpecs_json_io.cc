@@ -118,17 +118,18 @@ std::unique_ptr<SymGroup> group_from_indices(const SymGroup &super_group,
   return result;
 }
 
-template <typename SymCompareType>
 std::unique_ptr<SymGroup> local_group_from_indices(
-    const SymGroup &super_group, const std::set<Index> &indices,
+    const SymGroup &super_group,
+    const std::set<Index> &phenomenal_group_indices,
     const IntegralCluster &phenomenal,
-    const SymCompareType &sym_compare) {  // TODO: check this?
-
+    std::shared_ptr<const Structure> const &shared_prim) {
+  PrimPeriodicSymCompare<IntegralCluster> sym_compare{
+      shared_prim, shared_prim->lattice().tol()};
   IntegralCluster e{sym_compare.prepare(phenomenal)};
   auto result = notstd::make_unique<SymGroup>();
   result->set_lattice(super_group.lattice());
   for (SymOp const &op : super_group) {
-    if (indices.count(op.index())) {
+    if (phenomenal_group_indices.count(op.index())) {
       // get translation & check that phenomenal cluster sites remain invariant
       // - note: this is a minimum requirement check that provides the
       // translation, it does not
@@ -174,12 +175,10 @@ std::unique_ptr<SymGroup> parse_generating_group(
   }
 }
 
-template <typename SymCompareType>
 std::unique_ptr<SymGroup> parse_local_generating_group(
     InputParser<LocalMaxLengthClusterSpecs> &parser,
     const std::shared_ptr<const Structure> &shared_prim,
-    const IntegralCluster &phenomenal, const SymGroup &super_group,
-    const SymCompareType &sym_compare) {
+    const IntegralCluster &phenomenal, const SymGroup &super_group) {
   std::set<Index> generating_group_indices;
   parser.require(generating_group_indices, "generating_group");
   if (!parser.valid()) {
@@ -187,7 +186,7 @@ std::unique_ptr<SymGroup> parse_local_generating_group(
   }
   try {
     return local_group_from_indices(super_group, generating_group_indices,
-                                    phenomenal, sym_compare);
+                                    phenomenal, shared_prim);
   } catch (std::exception &e) {
     parser.error.insert(std::string("Error parsing generating_group:") +
                         e.what());
@@ -291,10 +290,8 @@ void parse(InputParser<LocalMaxLengthClusterSpecs> &parser,
   IntegralCluster phenomenal = *phenomenal_subparser_ptr->value;
 
   // parse generating group
-  typedef PrimPeriodicSymCompare<IntegralCluster> SymCompareType;
-  SymCompareType sym_compare{shared_prim, shared_prim->lattice().tol()};
   auto generating_group_ptr = parse_local_generating_group(
-      parser, shared_prim, phenomenal, super_group, sym_compare);
+      parser, shared_prim, phenomenal, super_group);
 
   // parse max_length and cutoff_radius
   auto max_length = parse_orbit_branch_specs_attr(parser, "max_length");

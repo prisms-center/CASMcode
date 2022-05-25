@@ -144,8 +144,8 @@ void parse(InputParser<DoFSpace> &parser,
   std::optional<std::set<Index>> sites;
   parser.optional(sites, "sites");
 
-  Eigen::MatrixXd tmp;
-  std::optional<Eigen::MatrixXd> basis parser.optional(basis, "basis");
+  std::optional<Eigen::MatrixXd> basis;
+  parser.optional(basis, "basis");
   if (basis.has_value()) {
     basis = basis.value().transpose();
   }

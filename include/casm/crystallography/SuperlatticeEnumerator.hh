@@ -44,13 +44,20 @@ class ScelEnumProps {
   ///        supercells. So the generated supercells, S = P*G*T, where S and P
   ///        are column vector matrices of the supercell and primitive cell,
   ///        respectively, and G and T are integer tranformation matrices.
+  /// \param diagonal_only If true, restrict T to diagonal matrices
+  /// \param fixed_shape If true, restrict T to diagonal matrices with
+  ///     diagonal coefficients [m, 1, 1] (1d), [m, m, 1] (2d),
+  ///     or [m, m, m] (3d), where the dimension == dirs.size().
   ScelEnumProps(size_type begin_volume, size_type end_volume,
                 std::string dirs = "abc",
-                Eigen::Matrix3i generating_matrix = Eigen::Matrix3i::Identity())
+                Eigen::Matrix3i generating_matrix = Eigen::Matrix3i::Identity(),
+                bool diagonal_only = false, bool fixed_shape = false)
       : m_begin_volume(begin_volume),
         m_end_volume(end_volume),
         m_dims(dirs.size()),
-        m_dirs(dirs) {
+        m_dirs(dirs),
+        m_diagonal_only(diagonal_only),
+        m_fixed_shape(fixed_shape) {
     if (begin_volume < 1) {
       std::string msg = "Error constructing ScelEnumProps: begin_volume < 1";
       throw std::invalid_argument(msg);
@@ -63,6 +70,10 @@ class ScelEnumProps {
             "or 'c'";
         throw std::invalid_argument(msg);
       }
+    }
+
+    if (fixed_shape) {
+      m_diagonal_only = true;
     }
 
     // add missing directions to 'dirs',
@@ -96,12 +107,18 @@ class ScelEnumProps {
 
   Eigen::Matrix3i generating_matrix() const { return m_gen_mat; }
 
+  bool diagonal_only() const { return m_diagonal_only; }
+
+  bool fixed_shape() const { return m_fixed_shape; }
+
  private:
   size_type m_begin_volume;
   size_type m_end_volume;
   int m_dims;
   std::string m_dirs;
   Eigen::Matrix3i m_gen_mat;
+  bool m_diagonal_only;
+  bool m_fixed_shape;
 };
 
 //******************************************************************************************************************//
@@ -195,6 +212,8 @@ class SuperlatticeIterator {
 
   /// \brief Keep track of the HNF matrices for the current determinant value
   std::vector<Eigen::Matrix3i> m_canon_hist;
+
+  /// \brief If true, only enumerate m_enum->gen_mat() * m_
 };
 
 /// \brief A fake container of supercell matrices
@@ -257,6 +276,14 @@ class SuperlatticeEnumerator {
   /// \brief Get the dimensions of the enumerator (1D, 2D or 3D)
   int dimension() const;
 
+  /// \brief If true, T, of S=P*G*T is restricted to diagonal matrices
+  bool diagonal_only() const;
+
+  /// \brief If true, T, of S=P*G*T is restricted to diagonal matrices with
+  ///     diagonal coefficients [m, 1, 1] (1d), [m, m, 1] (2d),
+  ///     or [m, m, m] (3d).
+  bool fixed_shape() const;
+
   /// \brief A const iterator to the beginning volume, specify here how the
   /// iterator should jump through the enumeration
   const_iterator begin() const;
@@ -297,6 +324,15 @@ class SuperlatticeEnumerator {
 
   /// \brief The number of lattice directions the enumeration is being done in
   const int m_dims;
+
+  /// If true, restrict T to diagonal matrices, in S=P*G*T
+  bool m_diagonal_only;
+
+  /// \param fixed_shape If true, restrict T, in S=P*G*T, to diagonal matrices
+  /// with
+  ///     diagonal coefficients [m, 1, 1] (1d), [m, m, 1] (2d),
+  ///     or [m, m, m] (3d).
+  bool m_fixed_shape;
 };
 
 //********************************************************************************************************//

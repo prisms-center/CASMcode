@@ -66,12 +66,21 @@ ClusterSpecs::LocalOrbitVec ClusterSpecs::_make_local_orbits(
                            name() + "'");
 }
 
+void ClusterSpecs::set_generating_group(SymGroup const &_generating_group) {
+  return this->_set_generating_group(_generating_group);
+}
+
 SymGroup const &ClusterSpecs::get_generating_group() const {
   return this->_get_generating_group();
 }
 
 IntegralCluster const &ClusterSpecs::get_phenomenal_cluster() const {
   return this->_get_phenomenal_cluster();
+}
+
+void ClusterSpecs::_set_generating_group(SymGroup const &_generating_group) {
+  throw std::runtime_error("Error: set_generating_group not implemented for '" +
+                           name() + "'");
 }
 
 SymGroup const &ClusterSpecs::_get_generating_group() const {
@@ -155,6 +164,11 @@ PeriodicMaxLengthClusterSpecs::_make_periodic_orbits(
   return orbits;
 }
 
+void PeriodicMaxLengthClusterSpecs::_set_generating_group(
+    SymGroup const &_generating_group) {
+  this->generating_group = _generating_group;
+}
+
 SymGroup const &PeriodicMaxLengthClusterSpecs::_get_generating_group() const {
   return generating_group;
 }
@@ -233,6 +247,11 @@ ClusterSpecs::LocalOrbitVec LocalMaxLengthClusterSpecs::_make_local_orbits(
   make_orbits(specs.begin(), specs.end(), custom_generators,
               std::back_inserter(orbits), status);
   return orbits;
+}
+
+void LocalMaxLengthClusterSpecs::_set_generating_group(
+    SymGroup const &_generating_group) {
+  this->generating_group = _generating_group;
 }
 
 SymGroup const &LocalMaxLengthClusterSpecs::_get_generating_group() const {
@@ -402,6 +421,11 @@ GenericPeriodicClusterSpecs::_make_periodic_orbits(std::ostream &status) const {
   return orbits;
 }
 
+void GenericPeriodicClusterSpecs::_set_generating_group(
+    SymGroup const &_generating_group) {
+  this->generating_group = _generating_group;
+}
+
 SymGroup const &GenericPeriodicClusterSpecs::_get_generating_group() const {
   return generating_group;
 }
@@ -467,6 +491,11 @@ ClusterSpecs::LocalOrbitVec GenericLocalClusterSpecs::_make_local_orbits(
   make_orbits(specs.begin(), specs.end(), custom_generators,
               std::back_inserter(orbits), status);
   return orbits;
+}
+
+void GenericLocalClusterSpecs::_set_generating_group(
+    SymGroup const &_generating_group) {
+  this->generating_group = _generating_group;
 }
 
 SymGroup const &GenericLocalClusterSpecs::_get_generating_group() const {

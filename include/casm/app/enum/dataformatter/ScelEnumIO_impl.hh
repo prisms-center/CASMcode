@@ -111,6 +111,33 @@ transformation_matrix_to_super() {
       });
 }
 
+template <typename ScelEnumDataType>
+Generic2DDatumFormatter<Eigen::MatrixXd, ScelEnumDataType>
+supercell_lattice_column_matrix() {
+  return Generic2DDatumFormatter<Eigen::MatrixXd, ScelEnumDataType>(
+      "supercell_lattice_column_matrix",
+      "Supercell lattice vectors, as columns of a 3x3 matrix, S = P * T, where "
+      "P are the prim lattice vectors, as columns of a 3x3 matrix, and T is a "
+      "3x3 integer transformation matrix.",
+      [](ScelEnumDataType const &data) -> Eigen::MatrixXd {
+        return data.supercell.sym_info().supercell_lattice().lat_column_mat();
+      });
+}
+
+template <typename ScelEnumDataType>
+Generic2DDatumFormatter<Eigen::MatrixXd, ScelEnumDataType>
+supercell_lattice_row_vectors() {
+  return Generic2DDatumFormatter<Eigen::MatrixXd, ScelEnumDataType>(
+      "supercell_lattice_row_vectors",
+      "Supercell lattice vectors, as rows of a 3x3 matrix.",
+      [](ScelEnumDataType const &data) -> Eigen::MatrixXd {
+        return data.supercell.sym_info()
+            .supercell_lattice()
+            .lat_column_mat()
+            .transpose();
+      });
+}
+
 }  // namespace ScelEnumIO
 
 }  // namespace CASM
