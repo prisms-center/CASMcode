@@ -340,10 +340,10 @@ std::vector<PermuteIterator> make_local_permute_group(
   std::vector<PermuteIterator> result;
   try {
     for (SymOp const &op : local_generating_group) {
-      if (generating_group_indices.count(op.index())) {
+      if (prim_to_super_factor_group_index.count(op.index())) {
         Eigen::Vector3d trans = op.tau() - factor_group[op.index()].tau();
         PermuteIterator permute = supercell_sym_info.permute_it(
-            prim_to_super_factor_group_index[op.index()],
+            prim_to_super_factor_group_index.at(op.index()),
             UnitCell::from_cartesian(trans, supercell_sym_info.prim_lattice()));
         result.push_back(permute);
       }

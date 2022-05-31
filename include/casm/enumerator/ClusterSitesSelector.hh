@@ -9,15 +9,16 @@ namespace CASM {
 /// periodic orbits
 template <typename Inserter>
 Inserter select_cluster_sites(
-    ConfigEnumInput const &reference_config_enum_input,
+    Configuration const &reference_config_enum_input,
     std::vector<PrimPeriodicIntegralClusterOrbit> const &orbits,
     Inserter result);
 
 /// Create ConfigEnumInput with unique cluster sites selected, starting from
 /// local orbits
 template <typename Inserter>
-Inserter select_cluster_sites(
-    ConfigEnumInput const &reference_config_enum_input,
+Inserter select_local_cluster_sites(
+    Configuration const &reference_config_enum_input,
+    bool include_all_inequivalent_reference_configs,
     std::vector<LocalIntegralClusterOrbit> const &orbits, Inserter result);
 
 }  // namespace CASM

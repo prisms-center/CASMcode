@@ -165,7 +165,7 @@ class SuperlatticeIterator {
   pointer operator->() const;
 
   /// \brief constructed supercell matrix
-  Eigen::Matrix3i matrix() const;
+  Eigen::Matrix3i const &matrix() const;
 
   /// \brief current volume
   HermiteCounter::value_type volume() const;
@@ -181,30 +181,29 @@ class SuperlatticeIterator {
   // SuperlatticeIterator<UnitType> operator++(int);  TODO
 
  private:
-  /// \brief Uses _try_increment until the next unique supercell is found.
+  /// \brief Advance m_current until the next unique, valid supercell is found.
   void _increment();
 
-  /// \brief Check if the current supercell matrix hermite normal form is in a
-  /// canonical form
-  // bool _is_canonical() const;
+  /// \brief Check m_current for uniqueness and diagonal_only, fixed_shape
+  /// validity
+  bool _current_is_valid_and_unique() const;
 
-  /// \brief Increment the supercell matrix by one (maintaining hermite normal
-  /// form)
-  void _try_increment();
+  /// \brief Advance m_current by one, updating flags and history
+  void _advance_one();
 
-  /// \brief Update m_super when required
-  void _update_super();
-
-  /// \brief Indicates if m_super reflects the current m_current supercell
-  /// matrix
-  mutable bool m_super_updated;
+  /// \brief Advance m_current if it is invalid, updating flags and history
+  void _advance_if_invalid();
 
   /// \brief Pointer to SuperlatticeEnumerator which holds the unit cell and
   /// point group
   const SuperlatticeEnumerator *m_enum;
 
-  /// \brief Current supercell matrix in HermitCounter form
+  /// \brief Counter over hermite normal form matrices in the dimensions being
+  /// enumerated
   notstd::cloneable_ptr<HermiteCounter> m_current;
+
+  /// \brief Indicates if m_super reflects the current m_current matrix
+  mutable bool m_super_updated;
 
   /// \brief A supercell, stored here so that iterator dereferencing will be OK.
   /// Only used when requested.
@@ -213,7 +212,12 @@ class SuperlatticeIterator {
   /// \brief Keep track of the HNF matrices for the current determinant value
   std::vector<Eigen::Matrix3i> m_canon_hist;
 
-  /// \brief If true, only enumerate m_enum->gen_mat() * m_
+  /// \brief Indicates if m_matrix reflects the current m_current matrix
+  mutable bool m_matrix_updated;
+
+  /// \brief The transformation matrix to m_super; m_super = m_enum->unit() *
+  /// m_matrix
+  mutable Eigen::Matrix3i m_matrix;
 };
 
 /// \brief A fake container of supercell matrices

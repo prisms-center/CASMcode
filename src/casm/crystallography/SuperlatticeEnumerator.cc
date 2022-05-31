@@ -15,9 +15,10 @@ namespace xtal {
 
 SuperlatticeIterator::SuperlatticeIterator(
     const SuperlatticeEnumerator &enumerator, int volume, int dims)
-    : m_super_updated(false),
-      m_enum(&enumerator),
-      m_current(notstd::make_cloneable<HermiteCounter>(volume, dims)) {
+    : m_enum(&enumerator),
+      m_current(notstd::make_cloneable<HermiteCounter>(volume, dims)),
+      m_super_updated(false),
+      m_matrix_updated(false) {
   if (enumerator.begin_volume() > enumerator.end_volume()) {
     throw std::runtime_error(
         "The beginning volume of the SuperlatticeEnumerator cannot be greater "
@@ -28,6 +29,8 @@ SuperlatticeIterator::SuperlatticeIterator(
     throw std::runtime_error(
         "Dimensions to count over must be greater than 0!");
   }
+
+  _advance_if_invalid();
 }
 
 SuperlatticeIterator &SuperlatticeIterator::operator=(
@@ -35,6 +38,7 @@ SuperlatticeIterator &SuperlatticeIterator::operator=(
   m_enum = B.m_enum;
   m_current = B.m_current;
   m_super_updated = false;
+  m_matrix_updated = false;
 
   m_canon_hist = B.m_canon_hist;
   return *this;
@@ -88,55 +92,70 @@ void SuperlatticeIterator::_increment() {
     return;
   }
   m_canon_hist.push_back(matrix());
+  _advance_one();
+  _advance_if_invalid();
+}
+
+/// \brief Advance m_current by one, updating flags and history
+void SuperlatticeIterator::_advance_one() {
   HermiteCounter::value_type last_determinant = m_current->determinant();
   ++(*m_current);
-
   if (last_determinant != m_current->determinant()) {
     m_canon_hist.clear();
   }
-
-  while (true) {
-    Eigen::MatrixXi H = m_current->current();
-    // check diagonal_only criteria
-    if (m_enum->diagonal_only() && !H.isDiagonal()) {
-      ++(*m_current);
-      continue;
-    }
-
-    // check fixed_shape criteria
-    if (m_enum->fixed_shape()) {
-      int dim = m_enum->dimension();
-      bool fixed_shape = true;
-      for (int d = 1; d < dim; ++d) {
-        fixed_shape = fixed_shape && H(d, d) == H(0, 0);
-      }
-      if (!fixed_shape) {
-        ++(*m_current);
-        continue;
-      }
-    }
-
-    Eigen::Matrix3i M = this->matrix();
-
-    // check canonical hnf criteria
-    if (std::find(m_canon_hist.begin(), m_canon_hist.end(), M) !=
-        m_canon_hist.end()) {
-      ++(*m_current);
-      continue;
-    }
-
-    break;
-  }
-
   m_super_updated = false;
+  m_matrix_updated = false;
 }
 
-Eigen::Matrix3i SuperlatticeIterator::matrix() const {
-  Eigen::Matrix3i expanded =
-      HermiteCounter_impl::_expand_dims((*m_current)(), m_enum->gen_mat());
-  return canonical_hnf(expanded, m_enum->point_group(), m_enum->unit());
-  /* return canonical_hnf(expanded, m_enum->point_group(), m_enum->lattice());
-   */
+/// \brief Advance m_current if it is invalid, updating flags and history
+void SuperlatticeIterator::_advance_if_invalid() {
+  while (!_current_is_valid_and_unique()) {
+    if (m_current->determinant() >= m_enum->end_volume()) {
+      break;
+    }
+    _advance_one();
+  }
+}
+
+Eigen::Matrix3i const &SuperlatticeIterator::matrix() const {
+  if (!m_matrix_updated) {
+    Eigen::Matrix3i expanded = HermiteCounter_impl::_expand_dims(
+        m_current->current(), m_enum->gen_mat());
+    m_matrix = canonical_hnf(expanded, m_enum->point_group(), m_enum->unit());
+    m_matrix_updated = true;
+  }
+  return m_matrix;
+}
+
+/// \brief Check m_current for uniqueness and diagonal_only, fixed_shape
+/// validity
+bool SuperlatticeIterator::_current_is_valid_and_unique() const {
+  Eigen::MatrixXi H = m_current->current();
+
+  // check diagonal_only criteria
+  if (m_enum->diagonal_only() && !H.isDiagonal()) {
+    return false;
+  }
+
+  // check fixed_shape criteria
+  if (m_enum->fixed_shape()) {
+    int dim = m_enum->dimension();
+    bool fixed_shape = true;
+    for (int d = 1; d < dim; ++d) {
+      fixed_shape = fixed_shape && H(d, d) == H(0, 0);
+    }
+    if (!fixed_shape) {
+      return false;
+    }
+  }
+
+  // check canonical hnf criteria for uniqueness
+  if (std::find(m_canon_hist.begin(), m_canon_hist.end(), matrix()) !=
+      m_canon_hist.end()) {
+    return false;
+  }
+
+  return true;
 }
 
 //*******************************************************************************************************************//

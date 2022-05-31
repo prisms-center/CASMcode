@@ -13,14 +13,14 @@ namespace CASM {
 ///
 template <typename Inserter>
 Inserter select_cluster_sites(
-    ConfigEnumInput const &reference_config_enum_input,
+    Configuration const &reference_config,
     std::vector<PrimPeriodicIntegralClusterOrbit> const &orbits,
     Inserter result) {
   if (orbits.size() == 0) {
     return result;
   }
 
-  Configuration const &ref_config = reference_config_enum_input.configuration();
+  Configuration const &ref_config = reference_config;
   std::shared_ptr<Structure const> shared_prim =
       ref_config.supercell().shared_prim();
   SupercellSymInfo const &ref_supercell_sym_info =
@@ -82,28 +82,69 @@ Inserter select_cluster_sites(
   return result;
 }
 
-/// Create ConfigEnumInput with unique cluster sites selected, starting from
-/// local orbits
+namespace {
+bool _is_group(std::vector<PermuteIterator> const &permute_group) {
+  std::set<PermuteIterator> check;
+  for (auto const &it_a : permute_group) {
+    for (auto const &it_b : permute_group) {
+      check.insert(it_a * it_b);
+    }
+  }
+  return check.size() == permute_group.size();
+}
+
+/// \brief Return all configurations that are equivalent to reference_config
+///     (as infinite crystals), but inequivalent under permute_group
+///
+/// Usage: use this to generate the background configurations for distinct
+/// combinations of background + phenomenal cluster, where permute_group is
+/// the invariant subgroup of the phenomenal cluster consistent with the
+/// reference_configuration's supercell.
+///
+/// Note: this does not consider distinct phenomenal clusters in the supercell.
+///
+/// \param reference_config A reference configuration
+/// \param permute_group A permute group in the supercell of `reference_config`.
+///
+/// \returns All configurations that are equivalent to reference_config
+///     (generated using `make_all_super_configurations` so they are
+///     equivalent as infinite crystals under the prim factor group), but
+///     inequivalent under the action of permute_group.
+std::set<Configuration> _make_inequivalent_reference_configurations(
+    Configuration const &reference_config,
+    std::vector<PermuteIterator> const &permute_group) {
+  std::shared_ptr<Supercell const> shared_supercell =
+      reference_config.shared_supercell();
+  if (shared_supercell == nullptr) {
+    shared_supercell = std::make_shared<Supercell>(
+        reference_config.supercell().shared_prim(),
+        reference_config.supercell().sym_info().supercell_lattice());
+  }
+  std::vector<Configuration> all_configs;
+  make_all_super_configurations(reference_config, shared_supercell,
+                                std::back_inserter(all_configs));
+  std::set<Configuration> inequivalent_configs;
+  auto begin = permute_group.begin();
+  auto end = permute_group.end();
+  for (auto const &config : all_configs) {
+    inequivalent_configs.insert(config.canonical_form(begin, end));
+  }
+  return inequivalent_configs;
+}
+
 template <typename Inserter>
-Inserter select_cluster_sites(
-    ConfigEnumInput const &reference_config_enum_input,
-    std::vector<LocalIntegralClusterOrbit> const &orbits, Inserter result) {
+Inserter _select_local_cluster_sites_fixed_background(
+    Configuration const &reference_config,
+    std::vector<LocalIntegralClusterOrbit> const &orbits,
+    std::vector<PermuteIterator> const &generating_permute_group_in_supercell,
+    Inserter result) {
   if (orbits.size() == 0) {
     return result;
   }
 
-  // Get objects to be used below
-  Configuration const &ref_config = reference_config_enum_input.configuration();
-  std::shared_ptr<Structure const> shared_prim =
-      ref_config.supercell().shared_prim();
+  Configuration const &ref_config = reference_config;
   SupercellSymInfo const &ref_supercell_sym_info =
       ref_config.supercell().sym_info();
-
-  // Make generating permute group consistent w/ supercell
-  std::vector<PermuteIterator> generating_permute_group_in_supercell =
-      make_local_permute_group(orbits[0].generating_group(),
-                               shared_prim->factor_group(),
-                               ref_supercell_sym_info);
 
   // Make generating permute group consistent w/ configuration
   Configuration prim_ref_config = ref_config.primitive();
@@ -136,6 +177,7 @@ Inserter select_cluster_sites(
   std::vector<Permutation> inverse_permutations =
       make_inverse_permutations(generating_permute_group_in_config.begin(),
                                 generating_permute_group_in_config.end());
+  //
   auto orbit_generators_pbc =
       make_orbit_generators_under_periodic_boundary_conditions(
           ref_supercell_sym_info, inverse_permutations.begin(),
@@ -146,6 +188,49 @@ Inserter select_cluster_sites(
   for (auto const &cluster_site_indices : orbit_generators_pbc) {
     *result++ = ConfigEnumInput{ref_config, cluster_site_indices};
   }
+
+  return result;
+}
+
+}  // namespace
+
+/// Create ConfigEnumInput with unique cluster sites selected, starting from
+/// local orbits
+template <typename Inserter>
+Inserter select_local_cluster_sites(
+    Configuration const &reference_config,
+    std::vector<LocalIntegralClusterOrbit> const &orbits,
+    bool include_all_inequivalent_reference_configs, Inserter result) {
+  if (orbits.size() == 0) {
+    return result;
+  }
+
+  // Get objects to be used below
+  SymGroup const &generating_group = orbits[0].generating_group();
+  SymGroup const &prim_fg =
+      reference_config.supercell().shared_prim()->factor_group();
+  SupercellSymInfo const &ref_supercell_sym_info =
+      reference_config.supercell().sym_info();
+
+  // Make generating permute group consistent w/ supercell
+  std::vector<PermuteIterator> generating_permute_group_in_supercell =
+      make_local_permute_group(generating_group, prim_fg,
+                               ref_supercell_sym_info);
+
+  if (include_all_inequivalent_reference_configs) {
+    std::set<Configuration> backgrounds =
+        _make_inequivalent_reference_configurations(
+            reference_config, generating_permute_group_in_supercell);
+    for (auto const &background : backgrounds) {
+      result = _select_local_cluster_sites_fixed_background(
+          background, orbits, generating_permute_group_in_supercell, result);
+    }
+  } else {
+    result = _select_local_cluster_sites_fixed_background(
+        reference_config, orbits, generating_permute_group_in_supercell,
+        result);
+  }
+
   return result;
 }
 

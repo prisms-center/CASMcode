@@ -111,8 +111,6 @@ void parse(InputParser<xtal::ScelEnumProps> &parser,
 
   parser.optional_else(diagonal_only, "diagonal_only", false);
   parser.optional_else(fixed_shape, "fixed_shape", false);
-  std::cout << "diagonal_only: " << diagonal_only << std::endl;
-  std::cout << "fixed_shape: " << fixed_shape << std::endl;
 
   if (parser.self.contains("existing_only")) {
     std::stringstream msg;
@@ -561,7 +559,6 @@ void parse(
     msg << "Error creating input states from supercells: " << e.what();
     parser.error.insert(msg.str());
   }
-
   // check for "supercells"
   auto scel_enum_props_subparser =
       parser.subparse_if<xtal::ScelEnumProps>("supercells", supercell_db);
@@ -575,7 +572,7 @@ void parse(
     fill_supercells = true;
     // check for "fill/supercell_selection" and "fill/scelnames"
     try {
-      supercell_selection =
+      fill_supercell_selection =
           DB::make_selection<Supercell>(supercell_db, parser.self["fill"],
                                         "scelnames", "supercell_selection");
     } catch (std::exception &e) {
@@ -696,10 +693,8 @@ void parse(
         _fill_supercell(*supercell_it);
       }
     }
-
     config_enum_input = std::move(tmp_config_enum_input);
   }
-
   // select sublattices and individual sites
   if (sublats.size() || sites.size()) {
     for (auto &input_name_value_pair : config_enum_input) {
@@ -727,18 +722,13 @@ void parse(
       auto orbits =
           cluster_specs_subparser->value->make_periodic_orbits(CASM::log());
 
-      std::cout << "TODO: This method does not yet include phenomenal clusters "
-                   "that are equivalent under prim symmetry, but distinct due "
-                   "to the configuration"
-                << std::endl;
-
       // this will generate more ConfigEnumInput, with cluster sites selected
       std::vector<std::pair<std::string, ConfigEnumInput>>
           all_with_cluster_sites;
       for (auto &input_name_value_pair : config_enum_input) {
         std::vector<ConfigEnumInput> with_cluster_sites;
-        select_cluster_sites(input_name_value_pair.second, orbits,
-                             std::back_inserter(with_cluster_sites));
+        select_cluster_sites(input_name_value_pair.second.configuration(),
+                             orbits, std::back_inserter(with_cluster_sites));
 
         // modify name with cluster site indices
         for (auto const &value : with_cluster_sites) {
@@ -754,6 +744,10 @@ void parse(
       std::cout << "WARNING: Local cluster enumeration is a work in progress"
                 << std::endl;
 
+      // TODO: generate inequivalent backgrounds
+      bool include_all_inequivalent_reference_configs = true;
+      // TODO: set phenomenal cluster site dof
+
       // generate orbits from cluster_specs
       auto orbits =
           cluster_specs_subparser->value->make_local_orbits(CASM::log());
@@ -763,8 +757,10 @@ void parse(
           all_with_cluster_sites;
       for (auto &input_name_value_pair : config_enum_input) {
         std::vector<ConfigEnumInput> with_cluster_sites;
-        select_cluster_sites(input_name_value_pair.second, orbits,
-                             std::back_inserter(with_cluster_sites));
+        select_local_cluster_sites(input_name_value_pair.second.configuration(),
+                                   orbits,
+                                   include_all_inequivalent_reference_configs,
+                                   std::back_inserter(with_cluster_sites));
 
         // modify name with cluster site indices
         for (auto const &value : with_cluster_sites) {
