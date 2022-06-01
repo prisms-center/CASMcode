@@ -390,10 +390,11 @@ const std::string Import<Configuration>::desc =
     "        POSCAR.\n\n"
 
     "    copy_structure_files: bool (optional, default = false)\n"
-    "        If true, attempt to copy structure files. Files will only by \n"
-    "        copied if there are no existing files or data for the \n"
-    "        configuration the structure has been mapped to, or it is the \n"
-    "        best scoring mapping and \"overwrite\"=true.\n\n"
+    "        If true, attempt to copy structure files into the project as \n"
+    "        \"properties.calc.json\". Files will only by copied if there \n"
+    "        are no existing files or data for the configuration the      \n"
+    "        structure has been mapped to, or it is the best scoring      \n"
+    "        mapping and \"overwrite\"=true.\n\n"
 
     "    additional_files: bool (optional, default = false)\n"
     "        If true, attempt to copy all files & directories in the same \n"

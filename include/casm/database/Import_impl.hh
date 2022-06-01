@@ -271,7 +271,6 @@ void ImportT<_ConfigType>::_copy_files(
     this->cp_files(res, dry_run, settings().copy_additional_files);
 
     // update origin to new location and re-insert
-    res.properties.origin = calc_dir_origin;
     auto insert_result = db_props().insert(res.properties);
     if (!insert_result.second) {
       std::stringstream msg;
