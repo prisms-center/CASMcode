@@ -1,0 +1,2 @@
+pure_A_large_supercell.json
+AB_Ordering_large_supercell.json

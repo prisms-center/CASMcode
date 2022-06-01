@@ -8,6 +8,7 @@
 #include "casm/crystallography/io/BasicStructureIO.hh"
 #include "casm/database/ConfigImport.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
+#include "casm/database/PropertiesDatabase.hh"
 #include "gtest/gtest.h"
 
 namespace test {
@@ -68,6 +69,10 @@ class ImportTest : public testing::Test {
   std::vector<fs::path> data_files;
 };
 
+/// This test includes:
+/// - "import_properties": false
+/// - "copy_structure_files": false
+/// - "primitive_only": false
 TEST_F(ImportTest, Test1) {
   // ## setup
   title = "ImportTest_test1";
@@ -85,6 +90,7 @@ TEST_F(ImportTest, Test1) {
   // ## pre-condition tests
   EXPECT_EQ(primclex->db<Supercell>().size(), 0);
   EXPECT_EQ(primclex->db<Configuration>().size(), 0);
+  EXPECT_EQ(primclex->db_props<Configuration>("default").size(), 0);
 
   // ## run import
   std::string cli_str =
@@ -124,4 +130,136 @@ TEST_F(ImportTest, Test1) {
 
   EXPECT_EQ(primclex->db<Supercell>().size(), 2);
   EXPECT_EQ(primclex->db<Configuration>().size(), 3);
+
+  // should not import any properties
+  EXPECT_EQ(primclex->db_props<Configuration>("default").size(), 0);
+}
+
+/// This test includes:
+/// - "import_properties": true
+/// - "copy_structure_files":true
+/// - "primitive_only": false
+TEST_F(ImportTest, Test2) {
+  // ## setup
+  title = "ImportTest_test2";
+  data_dir = test::data_dir("database") / "import_test2";
+  data_files = std::vector<fs::path>(
+      {"AB_Ordering_large_supercell.json", "import_list.txt", "import.json",
+       "prim.json", "pure_A_large_supercell.json"});
+  build();
+
+  for (auto const &file : data_files) {
+    EXPECT_TRUE(fs::exists(tmp_dir / file));
+  }
+  EXPECT_TRUE(fs::exists(tmp_dir.path() / ".casm"));
+
+  // ## pre-condition tests
+  EXPECT_EQ(primclex->db<Supercell>().size(), 0);
+  EXPECT_EQ(primclex->db<Configuration>().size(), 0);
+  EXPECT_EQ(primclex->db_props<Configuration>("default").size(), 0);
+
+  // ## run import
+  std::string cli_str =
+      "casm import --batch " + (tmp_dir.path() / "import_list.txt").string();
+  jsonParser json_options{tmp_dir.path() / "import.json"};
+  import(cli_str, json_options);
+
+  // ## post-condition tests
+
+  fs::path report_dir = tmp_dir.path() / "reports" / "import_report.0";
+  fs::path map_fail_report = report_dir / "map_fail.json";
+  fs::path map_success_report = report_dir / "map_success.json";
+  fs::path import_data_fail_report = report_dir / "import_data_fail.json";
+  fs::path import_conflict_report = report_dir / "import_conflict.json";
+
+  // should have a "map_sucess.json" file
+  EXPECT_TRUE(fs::exists(map_success_report));
+
+  // should not have "map_fail.json", "import_data_fail.json", or
+  // "import_conflict.json"
+  EXPECT_FALSE(fs::exists(map_fail_report));
+  EXPECT_FALSE(fs::exists(import_data_fail_report));
+  EXPECT_FALSE(fs::exists(import_conflict_report));
+
+  // should have 3 configurations (original 2, and primitive of pure A)
+  jsonParser map_success_json{map_success_report};
+  EXPECT_EQ(map_success_json.size(), 3);
+
+  auto it = test::find_mapped(map_success_json, "SCEL54_6_3_3_0_3_3/0");
+  EXPECT_TRUE(it != map_success_json.end());
+
+  it = test::find_mapped(map_success_json, "SCEL54_6_3_3_0_3_3/1");
+  EXPECT_TRUE(it != map_success_json.end());
+
+  it = test::find_mapped(map_success_json, "SCEL1_1_1_1_0_0_0/0");
+  EXPECT_TRUE(it != map_success_json.end());
+
+  EXPECT_EQ(primclex->db<Supercell>().size(), 2);
+  EXPECT_EQ(primclex->db<Configuration>().size(), 3);
+
+  // should import properties for original size configurations only
+  EXPECT_EQ(primclex->db_props<Configuration>("default").size(), 2);
+}
+
+/// This test includes:
+/// - "import_properties": true
+/// - "copy_structure_files":true
+/// - "primitive_only": true
+TEST_F(ImportTest, Test3) {
+  // ## setup
+  title = "ImportTest_test3";
+  data_dir = test::data_dir("database") / "import_test3";
+  data_files = std::vector<fs::path>(
+      {"AB_Ordering_large_supercell.json", "import_list.txt", "import.json",
+       "prim.json", "pure_A_large_supercell.json"});
+  build();
+
+  for (auto const &file : data_files) {
+    EXPECT_TRUE(fs::exists(tmp_dir / file));
+  }
+  EXPECT_TRUE(fs::exists(tmp_dir.path() / ".casm"));
+
+  // ## pre-condition tests
+  EXPECT_EQ(primclex->db<Supercell>().size(), 0);
+  EXPECT_EQ(primclex->db<Configuration>().size(), 0);
+  EXPECT_EQ(primclex->db_props<Configuration>("default").size(), 0);
+
+  // ## run import
+  std::string cli_str =
+      "casm import --batch " + (tmp_dir.path() / "import_list.txt").string();
+  jsonParser json_options{tmp_dir.path() / "import.json"};
+  import(cli_str, json_options);
+
+  // ## post-condition tests
+
+  fs::path report_dir = tmp_dir.path() / "reports" / "import_report.0";
+  fs::path map_fail_report = report_dir / "map_fail.json";
+  fs::path map_success_report = report_dir / "map_success.json";
+  fs::path import_data_fail_report = report_dir / "import_data_fail.json";
+  fs::path import_conflict_report = report_dir / "import_conflict.json";
+
+  // should have a "map_sucess.json" file
+  EXPECT_TRUE(fs::exists(map_success_report));
+
+  // should not have "map_fail.json", "import_data_fail.json", or
+  // "import_conflict.json"
+  EXPECT_FALSE(fs::exists(map_fail_report));
+  EXPECT_FALSE(fs::exists(import_data_fail_report));
+  EXPECT_FALSE(fs::exists(import_conflict_report));
+
+  // should have 2 configurations (primitive ordered and primitive of pure A)
+  jsonParser map_success_json{map_success_report};
+  EXPECT_EQ(map_success_json.size(), 2);
+
+  auto it = test::find_mapped(map_success_json, "SCEL54_6_3_3_0_3_3/0");
+  EXPECT_TRUE(it != map_success_json.end());
+
+  it = test::find_mapped(map_success_json, "SCEL1_1_1_1_0_0_0/0");
+  EXPECT_TRUE(it != map_success_json.end());
+
+  EXPECT_EQ(primclex->db<Supercell>().size(), 2);
+  EXPECT_EQ(primclex->db<Configuration>().size(), 2);
+
+  // should import properties for original size configurations only
+  EXPECT_EQ(primclex->db_props<Configuration>("default").size(), 1);
 }

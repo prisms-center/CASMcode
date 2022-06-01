@@ -1,0 +1,35 @@
+{
+    "basis": [
+        {
+            "coordinate": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "occupant_dof": [
+                "A",
+                "B"
+            ]
+        }
+    ],
+    "coordinate_mode": "Fractional",
+    "description": "test",
+    "lattice_vectors": [
+        [
+            -1.6735,
+            1.6735,
+            1.6735
+        ],
+        [
+            1.6735,
+            -1.6735,
+            1.6735
+        ],
+        [
+            1.6735,
+            1.6735,
+            -1.6735
+        ]
+    ],
+    "title": "test"
+}

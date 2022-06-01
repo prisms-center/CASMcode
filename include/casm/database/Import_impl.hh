@@ -153,8 +153,10 @@ void ImportT<_ConfigType>::import(PathIterator begin, PathIterator end) {
     // import properties if:
     // - could map structure
     // - import_properties == true
+    // - there are any global or site properties
     for (auto &res : tvec) {
-      if (!res.properties.to.empty() && settings().import_properties) {
+      if (!res.properties.to.empty() && settings().import_properties &&
+          (res.properties.global.size() || res.properties.site.size())) {
         // we will try to import data
         // insert properties
         // - first erase in case properties from structure already inserted
