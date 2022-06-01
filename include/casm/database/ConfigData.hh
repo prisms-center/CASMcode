@@ -66,10 +66,10 @@ struct ImportData {
 /// Data structure for mapping / import results
 struct Result {
   Result()
-      : has_data(false),
+      : has_files(false),
+        has_data(false),
         has_complete_data(false),
-        is_new_config(false),
-        has_files(false) {}
+        is_new_config(false) {}
 
   // Set 'to'/'from' as empty strings if no mapping possible
   MappedProperties properties;
