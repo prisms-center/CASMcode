@@ -65,13 +65,20 @@ struct ImportData {
 
 /// Data structure for mapping / import results
 struct Result {
-  Result() : has_data(false), has_complete_data(false), is_new_config(false) {}
+  Result()
+      : has_data(false),
+        has_complete_data(false),
+        is_new_config(false),
+        has_files(false) {}
 
   // Set 'to'/'from' as empty strings if no mapping possible
   MappedProperties properties;
 
   // Path to properties.calc.json or POS file that was imported
   std::string pos_path;
+
+  // If there are files to be copied on request
+  bool has_files;
 
   // If a properties.calc.json file is found in standard locations
   bool has_data;

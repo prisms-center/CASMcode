@@ -133,7 +133,10 @@ StructureMap<Configuration>::map(
   res.pos_path = p.string();
 
   if (!fs::exists(res.pos_path)) {
+    res.has_files = false;
     res.fail_msg = "Specified file does not exist!";
+  } else {
+    res.has_files = true;
   }
   // read from structure file or properties.calc.json file (if exists)
   SimpleStructure sstruc = this->_make_structure(res.pos_path);
@@ -192,6 +195,7 @@ StructureMap<Configuration>::map(
     if (insert_result.canonical_it != insert_result.primitive_it) {
       ConfigIO::Result prim_res;
       prim_res.pos_path = res.pos_path;
+      prim_res.has_files = false;
       prim_res.properties.file_data = res.properties.file_data;
       prim_res.properties.origin =
           "prim:" +

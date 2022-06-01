@@ -238,6 +238,7 @@ void ImportT<_ConfigType>::_copy_files(
     if (res.import_data.preexisting || res.import_data.preexisting_files) {
       if (!settings().overwrite) continue;
     }
+    if (!res.has_files) continue;
 
     // at this point we are:
     // - going to copy structure files and maybe additional files into
