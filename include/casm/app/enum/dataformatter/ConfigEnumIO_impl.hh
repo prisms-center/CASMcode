@@ -51,9 +51,9 @@ operator()(
 namespace ConfigEnumIO {
 
 template <typename ConfigEnumDataType>
-GenericDatumFormatter<std::string, ConfigEnumDataType> name() {
+GenericDatumFormatter<std::string, ConfigEnumDataType> canonical_configname() {
   return GenericDatumFormatter<std::string, ConfigEnumDataType>(
-      "name", "Configuration name, if inserted, else \"none\"",
+      "canonical_configname", "Configuration name, if inserted, else \"none\"",
       [](ConfigEnumDataType const &data) -> std::string {
         if (data.is_excluded_by_filter) {
           return "none";

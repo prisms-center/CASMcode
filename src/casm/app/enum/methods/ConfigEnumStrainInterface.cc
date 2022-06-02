@@ -11,6 +11,7 @@
 #include "casm/casm_io/dataformatter/DatumFormatterAdapter.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clex/ConfigEnumStrain.hh"
+#include "casm/clex/ConfigIO.hh"
 #include "casm/clex/ConfigIOStrain.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
@@ -272,7 +273,7 @@ DoFSpace MakeEnumerator::make_and_write_dof_space(
 DataFormatter<ConfigEnumDataType> MakeEnumerator::make_formatter() const {
   DataFormatter<ConfigEnumDataType> formatter;
   std::string prim_strain_metric = xtal::get_strain_metric(params_template.dof);
-  formatter.push_back(ConfigEnumIO::name<ConfigEnumDataType>(),
+  formatter.push_back(ConfigEnumIO::canonical_configname<ConfigEnumDataType>(),
                       ConfigEnumIO::selected<ConfigEnumDataType>(),
                       ConfigEnumIO::is_new<ConfigEnumDataType>(),
                       ConfigEnumIO::is_existing<ConfigEnumDataType>());
@@ -295,6 +296,11 @@ DataFormatter<ConfigEnumDataType> MakeEnumerator::make_formatter() const {
     formatter.push_back(
         make_datum_formatter_adapter<ConfigEnumDataType, Configuration>(
             ConfigIO::DoFStrain("F")));
+  }
+  for (const auto &formatter_ptr : options.output_formatter.formatters()) {
+    formatter.push_back(
+        make_datum_formatter_adapter<ConfigEnumDataType, Configuration>(
+            *formatter_ptr));
   }
   return formatter;
 }

@@ -273,10 +273,11 @@ class TestEnumInterface : public EnumInterfaceBase {
 
     typedef ConfigEnumData<TestEnum, ConfigEnumInput> ConfigEnumDataType;
     DataFormatter<ConfigEnumDataType> formatter;
-    formatter.push_back(ConfigEnumIO::name<ConfigEnumDataType>(),
-                        ConfigEnumIO::selected<ConfigEnumDataType>(),
-                        ConfigEnumIO::is_new<ConfigEnumDataType>(),
-                        ConfigEnumIO::is_existing<ConfigEnumDataType>());
+    formatter.push_back(
+        ConfigEnumIO::canonical_configname<ConfigEnumDataType>(),
+        ConfigEnumIO::selected<ConfigEnumDataType>(),
+        ConfigEnumIO::is_new<ConfigEnumDataType>(),
+        ConfigEnumIO::is_existing<ConfigEnumDataType>());
     if (options.filter) {
       formatter.push_back(
           ConfigEnumIO::is_excluded_by_filter<ConfigEnumDataType>());

@@ -8,8 +8,10 @@
 #include "casm/app/enum/io/enumerate_configurations_json_io.hh"
 #include "casm/app/enum/io/stream_io_impl.hh"
 #include "casm/app/enum/standard_ConfigEnumInput_help.hh"
+#include "casm/casm_io/dataformatter/DatumFormatterAdapter.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clex/ConfigEnumSiteDoFs.hh"
+#include "casm/clex/ConfigIO.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
 #include "casm/enumerator/DoFSpace.hh"
@@ -21,6 +23,14 @@
 #include "casm/symmetry/io/json/SymRepTools.hh"
 
 namespace CASM {
+
+namespace ConfigEnumIO {
+/// Template specialization to get current normal coordinate from enumerator.
+template <>
+Eigen::VectorXd get_normal_coordinate(ConfigEnumSiteDoFs const &enumerator) {
+  return enumerator.normal_coordinate();
+}
+}  // namespace ConfigEnumIO
 
 std::string ConfigEnumSiteDoFsInterface::desc() const {
   std::string description =
@@ -466,7 +476,7 @@ DoFSpace MakeEnumerator::make_and_write_dof_space(
 // constructs a DataFormatter to record enumeration results
 DataFormatter<ConfigEnumDataType> MakeEnumerator::make_formatter() const {
   DataFormatter<ConfigEnumDataType> formatter;
-  formatter.push_back(ConfigEnumIO::name<ConfigEnumDataType>(),
+  formatter.push_back(ConfigEnumIO::canonical_configname<ConfigEnumDataType>(),
                       ConfigEnumIO::selected<ConfigEnumDataType>(),
                       ConfigEnumIO::is_new<ConfigEnumDataType>(),
                       ConfigEnumIO::is_existing<ConfigEnumDataType>());
@@ -478,8 +488,15 @@ DataFormatter<ConfigEnumDataType> MakeEnumerator::make_formatter() const {
       ConfigEnumIO::initial_state_index<ConfigEnumDataType>(),
       ConfigEnumIO::initial_state_name<ConfigEnumDataType>(),
       ConfigEnumIO::initial_state_configname<ConfigEnumDataType>(),
-      ConfigEnumIO::n_selected_sites<ConfigEnumDataType>());
-
+      ConfigEnumIO::n_selected_sites<ConfigEnumDataType>(),
+      ConfigEnumIO::normal_coordinate<ConfigEnumDataType>(),
+      make_datum_formatter_adapter<ConfigEnumDataType, Configuration>(
+          ConfigIO::Corr()));
+  for (const auto &formatter_ptr : options.output_formatter.formatters()) {
+    formatter.push_back(
+        make_datum_formatter_adapter<ConfigEnumDataType, Configuration>(
+            *formatter_ptr));
+  }
   return formatter;
 }
 

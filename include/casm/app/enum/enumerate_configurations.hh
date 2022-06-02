@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 
+#include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
 #include "casm/casm_io/dataformatter/FormattedDataFile.hh"
 #include "casm/clex/Configuration.hh"
 
@@ -48,6 +49,9 @@ struct ConfigEnumOptions {
   /// If true, output a selection file with information about enumerated
   /// configurations
   bool output_configurations = false;
+
+  /// Optional, output formatter
+  DataFormatter<Configuration> output_formatter;
 
   /// Options for construcing FormattedDataFile object
   FormattedDataFileOptions output_options;

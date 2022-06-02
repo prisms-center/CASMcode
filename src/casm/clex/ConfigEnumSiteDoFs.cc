@@ -68,6 +68,14 @@ std::string ConfigEnumSiteDoFs::name() const { return enumerator_name; }
 
 const std::string ConfigEnumSiteDoFs::enumerator_name = "ConfigEnumSiteDoFs";
 
+Eigen::VectorXd ConfigEnumSiteDoFs::normal_coordinate() const {
+  Eigen::VectorXd x = Eigen::VectorXd::Zero(m_axes.cols());
+  for (Index i = 0; i < m_combo.size(); ++i) {
+    x(m_combo[i]) = m_counter[i];
+  }
+  return x;
+}
+
 bool ConfigEnumSiteDoFs::_increment_combo() {
   Index k = max<Index>(m_combo.size(), m_min_nonzero);
   bool invalid = true;
@@ -102,7 +110,6 @@ bool ConfigEnumSiteDoFs::_increment_combo() {
 void ConfigEnumSiteDoFs::_set_dof() {
   Eigen::MatrixXd vals = m_current->configdof().local_dof(m_dof_key).values();
   Eigen::VectorXd pert_vals(Eigen::VectorXd::Zero(m_axes.rows()));
-
   for (Index i = 0; i < m_combo.size(); ++i) {
     pert_vals += m_counter[i] * m_axes.col(m_combo[i]);
   }

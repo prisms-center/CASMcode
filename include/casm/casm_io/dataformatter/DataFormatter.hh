@@ -186,7 +186,7 @@ class DataFormatter {
   }
 
   template <typename... Args>
-  DataFormatter(const Args &... formatters) : DataFormatter() {
+  DataFormatter(const Args &...formatters) : DataFormatter() {
     push_back(formatters...);
   }
 
@@ -282,7 +282,7 @@ class DataFormatter {
 
   template <typename... Args>
   void push_back(const BaseDatumFormatter<DataObject> &new_formatter,
-                 const Args &... formatters) {
+                 const Args &...formatters) {
     push_back(new_formatter);
     push_back(formatters...);
   }
@@ -300,6 +300,11 @@ class DataFormatter {
   void set_header_prefix(const std::string &_prefix) { m_comment += _prefix; }
 
   bool initialize(const DataObject &_tmplt) const;
+
+  std::vector<notstd::cloneable_ptr<BaseDatumFormatter<DataObject> > > const &
+  formatters() const {
+    return m_data_formatters;
+  }
 
  private:
   mutable bool m_initialized;
