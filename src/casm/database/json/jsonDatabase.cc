@@ -470,9 +470,6 @@ jsonDatabase<Configuration>::_on_insert_or_emplace(
     std::pair<base_iterator, bool> &result, bool is_new) {
   if (result.second) {
     const Configuration &config = *result.first;
-    assert(&config.primclex() == &primclex() &&
-           "jsonDatabase<Configuration>::_on_insert_or_emplace primclex does "
-           "not match");
 
     if (is_new) {
       // set the config id, and increment
