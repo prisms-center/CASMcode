@@ -103,6 +103,9 @@ void parse(InputParser<IntegralCluster> &parser, Structure const &prim) {
   double xtal_tol = prim.lattice().tol();
   CASM::COORD_TYPE coord_type;
   parser.optional_else(coord_type, "coordinate_mode", INTEGRAL);
+  if (!parser.valid()) {
+    return;
+  }
 
   parser.value = notstd::make_unique<IntegralCluster>(prim);
   auto &clust = *parser.value;
@@ -110,11 +113,17 @@ void parse(InputParser<IntegralCluster> &parser, Structure const &prim) {
   if (coord_type == INTEGRAL) {
     parser.require(clust.elements(), name);
   } else {
-    std::vector<Eigen::Vector3d> coord_vec;
+    std::vector<Eigen::VectorXd> coord_vec;
     parser.require(coord_vec, name);
 
     try {
       for (const auto &coord : coord_vec) {
+        if (coord.size() != 3) {
+          parser.error.insert(
+              "Error: cluster site coordinates have wrong dimension");
+          parser.value.reset();
+          return;
+        }
         xtal::Coordinate tcoord{coord, prim.lattice(), coord_type};
         clust.elements().emplace_back(
             xtal::UnitCellCoord::from_coordinate(prim, tcoord, xtal_tol));
