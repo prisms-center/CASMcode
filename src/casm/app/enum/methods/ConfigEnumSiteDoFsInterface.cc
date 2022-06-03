@@ -489,9 +489,7 @@ DataFormatter<ConfigEnumDataType> MakeEnumerator::make_formatter() const {
       ConfigEnumIO::initial_state_name<ConfigEnumDataType>(),
       ConfigEnumIO::initial_state_configname<ConfigEnumDataType>(),
       ConfigEnumIO::n_selected_sites<ConfigEnumDataType>(),
-      ConfigEnumIO::normal_coordinate<ConfigEnumDataType>(),
-      make_datum_formatter_adapter<ConfigEnumDataType, Configuration>(
-          ConfigIO::Corr()));
+      ConfigEnumIO::normal_coordinate<ConfigEnumDataType>());
   for (const auto &formatter_ptr : options.output_formatter.formatters()) {
     formatter.push_back(
         make_datum_formatter_adapter<ConfigEnumDataType, Configuration>(
