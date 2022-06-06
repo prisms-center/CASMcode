@@ -49,7 +49,7 @@ struct Adapter<Supercell, ConfigEnumData<EnumeratorType, InitialStateType>> {
 namespace ConfigEnumIO {
 
 template <typename ConfigEnumDataType>
-GenericDatumFormatter<std::string, ConfigEnumDataType> name();
+GenericDatumFormatter<std::string, ConfigEnumDataType> canonical_configname();
 
 template <typename ConfigEnumDataType>
 GenericDatumFormatter<bool, ConfigEnumDataType> selected();

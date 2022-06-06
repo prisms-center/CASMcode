@@ -8,6 +8,7 @@
 #include "casm/app/enum/io/enumerate_configurations_json_io.hh"
 #include "casm/app/enum/io/stream_io_impl.hh"
 #include "casm/app/enum/standard_ConfigEnumInput_help.hh"
+#include "casm/casm_io/dataformatter/DatumFormatterAdapter.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/casm_io/json/optional.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
@@ -148,7 +149,7 @@ void ConfigEnumAllOccupationsInterface::run(
   typedef ConfigEnumData<ConfigEnumAllOccupations, ConfigEnumInput>
       ConfigEnumDataType;
   DataFormatter<ConfigEnumDataType> formatter;
-  formatter.push_back(ConfigEnumIO::name<ConfigEnumDataType>(),
+  formatter.push_back(ConfigEnumIO::canonical_configname<ConfigEnumDataType>(),
                       ConfigEnumIO::selected<ConfigEnumDataType>(),
                       ConfigEnumIO::is_new<ConfigEnumDataType>(),
                       ConfigEnumIO::is_existing<ConfigEnumDataType>());
@@ -160,9 +161,12 @@ void ConfigEnumAllOccupationsInterface::run(
       ConfigEnumIO::initial_state_index<ConfigEnumDataType>(),
       ConfigEnumIO::initial_state_name<ConfigEnumDataType>(),
       ConfigEnumIO::initial_state_configname<ConfigEnumDataType>(),
-      ConfigEnumIO::initial_state<ConfigEnumDataType>(),
-      ConfigEnumIO::n_selected_sites<ConfigEnumDataType>(),
-      ConfigEnumIO::config<ConfigEnumDataType>());
+      ConfigEnumIO::n_selected_sites<ConfigEnumDataType>());
+  for (const auto &formatter_ptr : options.output_formatter.formatters()) {
+    formatter.push_back(
+        make_datum_formatter_adapter<ConfigEnumDataType, Configuration>(
+            *formatter_ptr));
+  }
 
   log << std::endl;
   log.begin("ConfigEnumAllOccupations enumeration");

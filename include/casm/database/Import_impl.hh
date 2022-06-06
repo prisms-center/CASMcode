@@ -153,8 +153,10 @@ void ImportT<_ConfigType>::import(PathIterator begin, PathIterator end) {
     // import properties if:
     // - could map structure
     // - import_properties == true
+    // - there are any global or site properties
     for (auto &res : tvec) {
-      if (!res.properties.to.empty() && settings().import_properties) {
+      if (!res.properties.to.empty() && settings().import_properties &&
+          (res.properties.global.size() || res.properties.site.size())) {
         // we will try to import data
         // insert properties
         // - first erase in case properties from structure already inserted
@@ -238,6 +240,7 @@ void ImportT<_ConfigType>::_copy_files(
     if (res.import_data.preexisting || res.import_data.preexisting_files) {
       if (!settings().overwrite) continue;
     }
+    if (!res.has_files) continue;
 
     // at this point we are:
     // - going to copy structure files and maybe additional files into
@@ -268,7 +271,6 @@ void ImportT<_ConfigType>::_copy_files(
     this->cp_files(res, dry_run, settings().copy_additional_files);
 
     // update origin to new location and re-insert
-    res.properties.origin = calc_dir_origin;
     auto insert_result = db_props().insert(res.properties);
     if (!insert_result.second) {
       std::stringstream msg;

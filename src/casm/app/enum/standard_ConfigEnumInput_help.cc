@@ -30,18 +30,21 @@ std::string standard_ConfigEnumInput_help() {
          "  output_configurations_options: object (optional) \n"
          "    Set output options for when `output_configurations==true`. \n\n"
 
-         "      path: string (optional, default=\"enum.out\") Output file "
-         "name.\n"
-         "      json: bool (optional, default=false) If true, write JSON "
-         "output files. Else CSV style.\n"
-         "      json_arrays: bool (optional, default=false) If true, write "
-         "data in JSON arrays. \n"
-         "      compress: bool (optional, default=false) If true, compress "
-         "data using gz. If `path` \n"
-         "      does not end in '.gz' it will be appended. \n"
+         "      path: string (optional, default=\"enum.out\") \n"
+         "        Output file name.\n"
+         "      json: bool (optional, default=false) \n"
+         "        If true, write JSON output files. Else CSV style.\n"
+         "      json_arrays: bool (optional, default=false) \n"
+         "        If true, write data in JSON arrays. \n"
+         "      compress: bool (optional, default=false) \n"
+         "        If true, compress data using gz. If `path` does not end \n"
+         "        in '.gz' it will be appended. \n"
+         "      properties: array of strain (optional, default=[])        \n"
+         "        Specify additional configuration properties to output,\n"
+         "        using properties available from `casm query`.         \n"
          "      output_filtered_configurations: bool (optional, default=false) "
-         "If true, also include \n"
-         "      output from configurations that excluded by the `filter` "
-         "option.\n\n";
+         "\n"
+         "        If true, also include output from configurations that \n"
+         "        excluded by the `filter` option.\n\n";
 };
 }  // namespace CASM

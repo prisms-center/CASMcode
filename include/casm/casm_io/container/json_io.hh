@@ -16,7 +16,7 @@ namespace CASM {
 // --- Array<T> ------------------------------
 
 template <typename T, typename... Args>
-jsonParser &to_json(const Array<T> &value, jsonParser &json, Args &&... args) {
+jsonParser &to_json(const Array<T> &value, jsonParser &json, Args &&...args) {
   json.put_array();
   for (Index i = 0; i < value.size(); i++) json.push_back(value[i], args...);
   return json;
@@ -24,7 +24,7 @@ jsonParser &to_json(const Array<T> &value, jsonParser &json, Args &&... args) {
 
 /// This requires that 'T::T()' exists, if not, you must do this by hand
 template <typename T, typename... Args>
-void from_json(Array<T> &value, const jsonParser &json, Args &&... args) {
+void from_json(Array<T> &value, const jsonParser &json, Args &&...args) {
   try {
     value.resize(json.size());
     for (int i = 0; i < json.size(); i++) from_json(value[i], json[i], args...);
@@ -126,7 +126,7 @@ void from_json(std::map<K, V> &map, const jsonParser &json) {
 /// Converts to a JSON object
 template <typename T, typename... Args>
 jsonParser &to_json(const std::map<std::string, T> &map, jsonParser &json,
-                    Args &&... args) {
+                    Args &&...args) {
   return json.put_obj(map.begin(), map.end(), std::forward<Args>(args)...);
 }
 
@@ -135,7 +135,7 @@ jsonParser &to_json(const std::map<std::string, T> &map, jsonParser &json,
 /// Clears any previous contents
 template <typename T, typename... Args>
 void from_json(std::map<std::string, T> &map, const jsonParser &json,
-               Args &&... args) {
+               Args &&...args) {
   map.clear();
   for (auto it = json.begin(); it != json.end(); ++it) {
     from_json(map[it.name()], *it, std::forward<Args>(args)...);
@@ -147,7 +147,7 @@ void from_json(std::map<std::string, T> &map, const jsonParser &json,
 /// Converts to a JSON array
 template <typename T, typename... Args>
 jsonParser &to_json(const std::vector<T> &vec, jsonParser &json,
-                    Args &&... args) {
+                    Args &&...args) {
   return json.put_array(vec.begin(), vec.end(), std::forward<Args>(args)...);
 }
 
@@ -155,7 +155,7 @@ jsonParser &to_json(const std::vector<T> &vec, jsonParser &json,
 ///
 /// Clears any previous contents
 template <typename T, typename... Args>
-void from_json(std::vector<T> &vec, const jsonParser &json, Args &&... args) {
+void from_json(std::vector<T> &vec, const jsonParser &json, Args &&...args) {
   vec.clear();
   vec.reserve(json.size());
   for (auto it = json.begin(); it != json.end(); ++it) {
@@ -223,7 +223,7 @@ jsonParser &to_json(const std::set<T, Compare> &set, jsonParser &json) {
 /// Clears any previous contents, constructs via jsonConstructor<T>
 template <typename T, typename Compare, typename... Args>
 void from_json(std::set<T, Compare> &set, const jsonParser &json,
-               Args &&... args) {
+               Args &&...args) {
   set.clear();
   for (auto it = json.begin(); it != json.end(); ++it) {
     set.insert(jsonConstructor<T>::from_json(*it, args...));
@@ -244,7 +244,7 @@ jsonParser &to_json(const std::unordered_set<T, Compare> &set,
 /// Clears any previous contents, constructs via jsonConstructor<T>
 template <typename T, typename Compare, typename... Args>
 void from_json(std::unordered_set<T, Compare> &set, const jsonParser &json,
-               Args &&... args) {
+               Args &&...args) {
   set.clear();
   for (auto it = json.begin(); it != json.end(); ++it) {
     set.insert(jsonConstructor<T>::from_json(*it, args...));
@@ -296,7 +296,7 @@ CASM::jsonParser &to_json(const Eigen::MatrixBase<Derived> &value,
                           CASM::jsonParser::as_flattest) {
   if (value.rows() == 1) {
     if (value.cols() == 1) {
-      json = value(1, 1);
+      json = value(0, 0);
     } else {
       to_json(value, json, jsonParser::as_array());
     }

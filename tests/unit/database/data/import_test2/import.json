@@ -1,0 +1,20 @@
+{
+    "data" : {
+        "import_properties": true,
+        "copy_structure_files":true
+    },
+    "mapping" : {
+        "cost_tol" : 0.000010000000,
+        "fix_lattice" : false,
+        "fix_volume" : false,
+        "ideal" : false,
+        "k_best" : 1,
+        "lattice_weight" : 0.500000000000,
+        "max_va_frac" : 0.00000000000,
+        "max_vol_change" : 0.300000000000,
+        "min_va_frac" : 0.000000000000,
+        "primitive_only" : false,
+        "robust" : true,
+        "strict" : false
+    }
+}

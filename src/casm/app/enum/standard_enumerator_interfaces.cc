@@ -4,6 +4,7 @@
 
 #include "casm/app/enum/EnumInterface.hh"
 #include "casm/app/enum/methods/ConfigEnumAllOccupationsInterface.hh"
+//#include "casm/app/enum/methods/ConfigEnumInterfaceTemplate.hh"
 #include "casm/app/enum/methods/ConfigEnumRandomLocalInterface.hh"
 #include "casm/app/enum/methods/ConfigEnumRandomOccupationsInterface.hh"
 #include "casm/app/enum/methods/ConfigEnumSiteDoFsInterface.hh"
@@ -26,6 +27,7 @@ EnumInterfaceVector make_standard_enumerator_interfaces() {
   vec.emplace_back(notstd::make_cloneable<ConfigEnumStrainInterface>());
   vec.emplace_back(notstd::make_cloneable<ScelEnumInterface>());
   vec.emplace_back(notstd::make_cloneable<SuperConfigEnumInterface>());
+  // vec.emplace_back(notstd::make_cloneable<ConfigEnumInterfaceTemplate>());
 
   return vec;
 }

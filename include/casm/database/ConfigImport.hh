@@ -68,6 +68,7 @@ class StructureMap<Configuration> {
   /// \brief Read SimpleStructure to be imported
   SimpleStructure _make_structure(const fs::path &p) const;
 
+  PrimClex const *m_primclex_ptr;
   std::unique_ptr<ConfigMapper> m_configmapper;
 };
 

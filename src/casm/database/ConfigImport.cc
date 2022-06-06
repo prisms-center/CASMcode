@@ -100,7 +100,8 @@ ConfigMapping::Settings const &StructureMap<Configuration>::settings() const {
 /// Construct with PrimClex and ConfigMapping::Settings (see Import / Update
 /// desc)
 StructureMap<Configuration>::StructureMap(ConfigMapping::Settings const &_set,
-                                          const PrimClex &primclex) {
+                                          const PrimClex &primclex)
+    : m_primclex_ptr(&primclex) {
   // -- construct ConfigMapper --
   m_configmapper.reset(
       new ConfigMapper(primclex, _set, primclex.crystallography_tol()));
@@ -133,7 +134,10 @@ StructureMap<Configuration>::map(
   res.pos_path = p.string();
 
   if (!fs::exists(res.pos_path)) {
+    res.has_files = false;
     res.fail_msg = "Specified file does not exist!";
+  } else {
+    res.has_files = true;
   }
   // read from structure file or properties.calc.json file (if exists)
   SimpleStructure sstruc = this->_make_structure(res.pos_path);
@@ -160,39 +164,45 @@ StructureMap<Configuration>::map(
     ConfigInsertResult insert_result =
         map.second.config.insert(settings().primitive_only);
 
-    res.is_new_config = insert_result.insert_canonical;
+    if (insert_result.canonical_it !=
+        m_primclex_ptr->db<Configuration>().end()) {
+      res.is_new_config = insert_result.insert_canonical;
 
-    res.properties = Local::_make_mapped_properties(map.first, map.second);
-    res.properties.file_data = p.string();
-    res.properties.to = insert_result.canonical_it.name();
-    res.properties.origin = p.string();
+      res.properties = Local::_make_mapped_properties(map.first, map.second);
+      res.properties.file_data = p.string();
+      res.properties.to = insert_result.canonical_it.name();
+      res.properties.origin = p.string();
 
-    if (hint_config) {
-      res.properties.init_config = hint_config->name();
-    }
-
-    res.has_data = false;
-    res.has_complete_data = true;
-    for (std::string const &propname : req_properties) {
-      if (res.properties.global.count(propname) ||
-          res.properties.site.count(propname)) {
-        res.has_data = true;
-      } else {
-        res.has_complete_data = false;
+      if (hint_config) {
+        res.properties.init_config = hint_config->name();
       }
-    }
 
-    // at this point, the mapped structure result is complete
-    *result++ = res;
+      res.has_data = false;
+      res.has_complete_data = true;
+      for (std::string const &propname : req_properties) {
+        if (res.properties.global.count(propname) ||
+            res.properties.site.count(propname)) {
+          res.has_data = true;
+        } else {
+          res.has_complete_data = false;
+        }
+      }
+
+      // at this point, the mapped structure result is complete
+      *result++ = res;
+    }
 
     // it may be the structure was not primitive:
     // - in which case we need to create a result indicating that the primitive
     //   was also inserted in the database,
     // - but don't try to scale the data for the primitive
-    if (insert_result.canonical_it != insert_result.primitive_it) {
+    if ((insert_result.primitive_it !=
+         m_primclex_ptr->db<Configuration>().end()) &&
+        (insert_result.primitive_it != insert_result.canonical_it)) {
       ConfigIO::Result prim_res;
       prim_res.pos_path = res.pos_path;
-      prim_res.properties.file_data = res.properties.file_data;
+      prim_res.has_files = false;
+      prim_res.properties.file_data = p.string();
       prim_res.properties.origin =
           "prim:" +
           res.properties.origin;  // insert_result.primitive_it.name();
@@ -380,10 +390,11 @@ const std::string Import<Configuration>::desc =
     "        POSCAR.\n\n"
 
     "    copy_structure_files: bool (optional, default = false)\n"
-    "        If true, attempt to copy structure files. Files will only by \n"
-    "        copied if there are no existing files or data for the \n"
-    "        configuration the structure has been mapped to, or it is the \n"
-    "        best scoring mapping and \"overwrite\"=true.\n\n"
+    "        If true, attempt to copy structure files into the project as \n"
+    "        \"properties.calc.json\". Files will only by copied if there \n"
+    "        are no existing files or data for the configuration the      \n"
+    "        structure has been mapped to, or it is the best scoring      \n"
+    "        mapping and \"overwrite\"=true.\n\n"
 
     "    additional_files: bool (optional, default = false)\n"
     "        If true, attempt to copy all files & directories in the same \n"

@@ -503,35 +503,37 @@ void write_prim(const xtal::BasicStructure &prim, jsonParser &json,
   }
   jsonParser &bjson = (json["basis"].put_array());
   for (int i = 0; i < prim.basis().size(); i++) {
-    if (!include_va && prim.basis()[i].occupant_dof().size() == 1 &&
-        prim.basis()[i].occupant_dof()[0].is_vacancy())
+    xtal::Site site = prim.basis()[i];
+    if (!include_va && site.occupant_dof().size() == 1 &&
+        site.occupant_dof()[0].is_vacancy())
       continue;
     bjson.push_back(jsonParser::object());
     jsonParser &sjson = bjson[bjson.size() - 1];
+    if (valid_index(site.label())) sjson["label"] = site.label();
     jsonParser &cjson = sjson["coordinate"].put_array();
     if (mode == FRAC) {
-      cjson.push_back(prim.basis()[i].frac(0));
-      cjson.push_back(prim.basis()[i].frac(1));
-      cjson.push_back(prim.basis()[i].frac(2));
+      cjson.push_back(site.frac(0));
+      cjson.push_back(site.frac(1));
+      cjson.push_back(site.frac(2));
     } else if (mode == CART) {
-      cjson.push_back(prim.basis()[i].cart(0));
-      cjson.push_back(prim.basis()[i].cart(1));
-      cjson.push_back(prim.basis()[i].cart(2));
+      cjson.push_back(site.cart(0));
+      cjson.push_back(site.cart(1));
+      cjson.push_back(site.cart(2));
     }
 
-    if (prim.basis()[i].dofs().size()) {
-      sjson["dofs"] = prim.basis()[i].dofs();
+    if (site.dofs().size()) {
+      sjson["dofs"] = site.dofs();
     }
 
-    jsonParser &ojson = (sjson["occupants"] = jsonParser::array(
-                             prim.basis()[i].occupant_dof().size()));
+    jsonParser &ojson =
+        (sjson["occupants"] = jsonParser::array(site.occupant_dof().size()));
 
-    for (int j = 0; j < prim.basis()[i].occupant_dof().size(); j++) {
+    for (int j = 0; j < site.occupant_dof().size(); j++) {
       ojson[j] = mol_names[i][j];
-      if (prim.basis()[i].occupant_dof()[j].name() != mol_names[i][j] ||
-          !prim.basis()[i].occupant_dof()[j].is_atomic()) {
-        to_json(prim.basis()[i].occupant_dof()[j],
-                json["species"][mol_names[i][j]], c2f_mat);
+      if (site.occupant_dof()[j].name() != mol_names[i][j] ||
+          !site.occupant_dof()[j].is_atomic()) {
+        to_json(site.occupant_dof()[j], json["species"][mol_names[i][j]],
+                c2f_mat);
       }
     }
   }

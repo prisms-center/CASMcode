@@ -135,6 +135,8 @@ class ConfigEnumSiteDoFs : public InputEnumeratorBase<Configuration> {
   /// Implements increment over all strain states
   void increment() override;
 
+  Eigen::VectorXd normal_coordinate() const;
+
  private:
   void _set_dof();
 

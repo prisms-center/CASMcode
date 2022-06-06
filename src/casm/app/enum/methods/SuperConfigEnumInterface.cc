@@ -8,6 +8,7 @@
 #include "casm/app/enum/io/enumerate_configurations_json_io.hh"
 #include "casm/app/enum/io/stream_io_impl.hh"
 #include "casm/app/enum/standard_ConfigEnumInput_help.hh"
+#include "casm/casm_io/dataformatter/DatumFormatterAdapter.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clex/FillSupercell_impl.hh"
 #include "casm/clex/PrimClex.hh"
@@ -216,7 +217,7 @@ void SuperConfigEnumInterface::run(
   typedef ConfigEnumData<SuperConfigEnum, std::shared_ptr<Supercell const>>
       ConfigEnumDataType;
   DataFormatter<ConfigEnumDataType> formatter;
-  formatter.push_back(ConfigEnumIO::name<ConfigEnumDataType>(),
+  formatter.push_back(ConfigEnumIO::canonical_configname<ConfigEnumDataType>(),
                       ConfigEnumIO::selected<ConfigEnumDataType>(),
                       ConfigEnumIO::is_new<ConfigEnumDataType>(),
                       ConfigEnumIO::is_existing<ConfigEnumDataType>());
@@ -226,6 +227,11 @@ void SuperConfigEnumInterface::run(
   }
   formatter.push_back(ConfigEnumIO::initial_state_index<ConfigEnumDataType>(),
                       ConfigEnumIO::initial_state_name<ConfigEnumDataType>());
+  for (const auto &formatter_ptr : options.output_formatter.formatters()) {
+    formatter.push_back(
+        make_datum_formatter_adapter<ConfigEnumDataType, Configuration>(
+            *formatter_ptr));
+  }
 
   log << std::endl;
   log.begin("SuperConfigEnum enumeration");

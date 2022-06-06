@@ -110,6 +110,12 @@ void parse(InputParser<ConfigEnumOptions> &parser, std::string method_name,
     bool compress;
     parser.optional_else(compress, base / "compress", false);
 
+    std::vector<std::string> properties;
+    parser.optional(properties, base / "properties");
+    if (properties.size()) {
+      options.output_formatter = dict.parse(properties);
+    }
+
     if (compress) {
       if (file_path.extension() != ".gz" && file_path.extension() != ".GZ") {
         file_path += ".gz";
