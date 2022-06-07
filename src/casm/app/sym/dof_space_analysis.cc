@@ -1,5 +1,7 @@
 #include "casm/app/sym/dof_space_analysis.hh"
 
+#include <optional>
+
 #include "casm/app/io/json_io.hh"
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"

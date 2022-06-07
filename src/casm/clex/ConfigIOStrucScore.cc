@@ -117,6 +117,8 @@ bool StrucScore::init(const Configuration &_tmplt) const {
 
   m_strucmapper = notstd::make_unique<StrucMapper>(
       PrimStrucMapCalculator(*m_altprim), m_strain_weight);
+
+  for (Index i=0; i < m_prop_names.size(); i++) _add_rule(std::vector<Index>({i}));
   return true;
 }
 
@@ -167,11 +169,11 @@ Eigen::VectorXd StrucScore::evaluate(const Configuration &_config) const {
   MappingNode const &mapping(*result.begin());
 
   for (Index i = 0; i < m_prop_names.size(); i++) {
-    if (m_prop_names[i] == "basis_score") {
+    if (m_prop_names[i] == "atomic_deformation_cost") {
       result_vec[i] = mapping.atomic_node.cost;
-    } else if (m_prop_names[i] == "lattice_score") {
+    } else if (m_prop_names[i] == "lattice_deformation_cost") {
       result_vec[i] = mapping.lattice_node.cost;
-    } else if (m_prop_names[i] == "total_score") {
+    } else if (m_prop_names[i] == "total_cost") {
       result_vec[i] = mapping.cost;
     }
   }
