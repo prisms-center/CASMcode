@@ -170,11 +170,11 @@ Eigen::VectorXd StrucScore::evaluate(const Configuration &_config) const {
   MappingNode const &mapping(*result.begin());
 
   for (Index i = 0; i < m_prop_names.size(); i++) {
-    if (m_prop_names[i] == "atomic_deformation_cost") {
+    if (m_prop_names[i] == "basis_score") {
       result_vec[i] = mapping.atomic_node.cost;
-    } else if (m_prop_names[i] == "lattice_deformation_cost") {
+    } else if (m_prop_names[i] == "lattice_score") {
       result_vec[i] = mapping.lattice_node.cost;
-    } else if (m_prop_names[i] == "total_cost") {
+    } else if (m_prop_names[i] == "total_score") {
       result_vec[i] = mapping.cost;
     }
   }
