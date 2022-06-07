@@ -87,6 +87,7 @@ bool StrucScore::parse_args(const std::string &args) {
         splt_vec[i] != "total_score") {
       try {
         _strain_weight = std::stod(splt_vec[i]);
+        m_strain_weight = _strain_weight;
       } catch (...) {
         throw std::runtime_error("Attempted to initialize format tag " +
                                  name() + " with invalid argument '" +
