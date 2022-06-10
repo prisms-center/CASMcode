@@ -1,0 +1,11 @@
+{
+"origin":"Test Configuration",
+"init": "Test Configuraiton",
+"to": "Test Configuration",
+"global":{
+    "atomic_deformation_cost":0.001,
+    "lattice_deformation_cost": 0.01
+},
+"site":{
+}
+}
