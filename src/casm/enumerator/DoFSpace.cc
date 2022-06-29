@@ -191,6 +191,12 @@ DoFSpace::DoFSpace(
     throw std::runtime_error(msg.str());
   }
 
+  m_basis_inv =
+      m_basis.transpose()
+          .colPivHouseholderQr()
+          .solve(Eigen::MatrixXd::Identity(m_basis.rows(), m_basis.rows()))
+          .transpose();
+
   make_dof_space_axis_info(dof_key(), *shared_prim(),
                            transformation_matrix_to_super(), sites(),
                            m_axis_glossary, m_axis_site_index,
@@ -227,6 +233,9 @@ bool DoFSpace::includes_all_sites() const {
 /// The DoF space basis, as a column vector matrix. May be a subspace (cols <=
 /// rows).
 Eigen::MatrixXd const &DoFSpace::basis() const { return m_basis; }
+
+/// The pseudo-inverse of the DoFSpace basis.
+Eigen::MatrixXd const &DoFSpace::basis_inv() const { return m_basis_inv; }
 
 /// The DoF space dimensions (equals to number of rows in basis).
 Index DoFSpace::dim() const { return m_basis.rows(); }
@@ -269,6 +278,16 @@ Index DoFSpace::basis_row_index(Index site_index, Index dof_component) const {
            "dof_component combination for this DoFSpace.";
     throw std::out_of_range(msg.str());
   }
+}
+
+/// \brief Gives the index of basis row corresponding to a given
+/// axis_site_index and axis_dof_component.
+///
+/// Usage:
+/// Index basis_row_index = (*m_basis_row_index)[site_index][dof_component]
+std::optional<std::vector<std::vector<Index>>> const &
+DoFSpace::basis_row_index() const {
+  return m_basis_row_index;
 }
 
 /// Return true if `dof_space` is valid for `config`

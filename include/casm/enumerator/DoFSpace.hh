@@ -1,8 +1,9 @@
 #ifndef CASM_DoFSpace
 #define CASM_DoFSpace
 
-#include "casm/crystallography/DoFDecl.hh"
 #include <optional>
+
+#include "casm/crystallography/DoFDecl.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
 
 namespace CASM {
@@ -84,6 +85,9 @@ class DoFSpace {
   /// rows).
   Eigen::MatrixXd const &basis() const;
 
+  /// The pseudo-inverse of the DoFSpace basis.
+  Eigen::MatrixXd const &basis_inv() const;
+
   /// The DoF space dimension (equal to number of rows in basis).
   Index dim() const;
 
@@ -119,6 +123,10 @@ class DoFSpace {
   /// axis_site_index and axis_dof_component.
   Index basis_row_index(Index site_index, Index dof_component) const;
 
+  /// \brief Gives the index of basis row corresponding to a given
+  /// axis_site_index and axis_dof_component.
+  std::optional<std::vector<std::vector<Index>>> const &basis_row_index() const;
+
  private:
   /// Shared prim structure
   std::shared_ptr<Structure const> m_shared_prim;
@@ -136,6 +144,9 @@ class DoFSpace {
   /// The DoF space basis, as a column vector matrix. May be a subspace (cols <=
   /// rows).
   Eigen::MatrixXd m_basis;
+
+  /// The pseudo-inverse of the DoFSpace basis.
+  Eigen::MatrixXd m_basis_inv;
 
   /// Names the DoF corresponding to each dimension (row) of the basis
   std::vector<std::string> m_axis_glossary;
