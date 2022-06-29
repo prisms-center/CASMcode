@@ -2,7 +2,6 @@
 
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
-#include "autotools.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/basis_set/BasisFunctionSpecs.hh"
 #include "casm/basis_set/OccupationDoFTraits.hh"
@@ -36,9 +35,8 @@ class FCCTernaryProjectTest : public testing::Test {
 
     // Creates a new project directory, appending ".(#)" to ensure it is a new
     // project
-    fs::path tmp_root_dir =
-        autotools::abs_srcdir() + "/tests/unit/test_projects/" + title;
-    fs::path root_dir = test::proj_dir(tmp_root_dir);
+
+    fs::path root_dir = tmp_dir.path();
 
     shared_prim = std::make_shared<Structure const>(test::FCC_ternary_prim());
     project_settings_ptr = notstd::make_unique<ProjectSettings>(
@@ -51,6 +49,7 @@ class FCCTernaryProjectTest : public testing::Test {
     build_project(*project_settings_ptr, *shared_prim);
   }
 
+  test::TmpDir tmp_dir;
   std::shared_ptr<Structure const> shared_prim;
   std::unique_ptr<ProjectSettings> project_settings_ptr;
 };
@@ -77,9 +76,7 @@ class FCCTernaryProjectClexBasisTest : public testing::Test {
 
     // Creates a new project directory, appending ".(#)" to ensure it is a new
     // project
-    fs::path tmp_root_dir =
-        autotools::abs_srcdir() + "/tests/unit/test_projects/" + title;
-    fs::path root_dir = test::proj_dir(tmp_root_dir);
+    fs::path root_dir = tmp_dir.path();
 
     shared_prim = std::make_shared<Structure const>(test::FCC_ternary_prim());
     project_settings_ptr = notstd::make_unique<ProjectSettings>(
@@ -116,6 +113,7 @@ class FCCTernaryProjectClexBasisTest : public testing::Test {
                                basis_set_specs, prim_neighbor_list);
   }
 
+  test::TmpDir tmp_dir;
   std::shared_ptr<Structure const> shared_prim;
   std::unique_ptr<ProjectSettings> project_settings_ptr;
   std::string basis_set_name;

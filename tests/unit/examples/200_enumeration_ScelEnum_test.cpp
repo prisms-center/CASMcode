@@ -1,5 +1,4 @@
 #include "Common.hh"
-#include "autotools.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/app/ProjectSettings.hh"
 #include "casm/clex/PrimClex.hh"

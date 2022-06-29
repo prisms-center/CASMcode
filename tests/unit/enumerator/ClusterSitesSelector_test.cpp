@@ -1,4 +1,4 @@
-#include "autotools.hh"
+
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/clex/FillSupercell.hh"
 #include "casm/clex/Supercell.hh"

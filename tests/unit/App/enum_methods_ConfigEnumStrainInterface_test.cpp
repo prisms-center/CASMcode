@@ -23,6 +23,7 @@
 class enum_methods_ConfigEnumStrainInterfaceTest : public testing::Test {
  protected:
   std::string title;
+  test::TmpDir tmp_dir;
   fs::path proj_dir;
   std::shared_ptr<CASM::Structure const> shared_prim;
   CASM::ProjectSettings project_settings;
@@ -35,17 +36,14 @@ class enum_methods_ConfigEnumStrainInterfaceTest : public testing::Test {
 enum_methods_ConfigEnumStrainInterfaceTest::
     enum_methods_ConfigEnumStrainInterfaceTest()
     : title("ConfigEnumStrainInterfaceTest"),
-      proj_dir(test::proj_dir(autotools::abs_srcdir() +
-                              "/tests/unit/test_projects/" + title)),
+      tmp_dir(),
+      proj_dir(tmp_dir.path()),
       shared_prim(std::make_shared<CASM::Structure const>(
           test::FCC_ternary_GLstrain_disp_prim())),
       project_settings(
           make_default_project_settings(*shared_prim, title, proj_dir)),
-      build_project_placeholder(
-          (build_project(project_settings, *shared_prim),
-           project_settings.set_casm_libdir(autotools::abs_libdir()),
-           project_settings.set_casm_includedir(autotools::abs_includedir()),
-           commit(project_settings), true)),
+      build_project_placeholder((build_project(project_settings, *shared_prim),
+                                 commit(project_settings), true)),
       primclex(project_settings, shared_prim) {
   EXPECT_EQ(primclex.prim().basis().size(), 1);
 

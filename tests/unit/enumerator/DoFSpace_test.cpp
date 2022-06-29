@@ -1,6 +1,5 @@
 #include "casm/enumerator/DoFSpace.hh"
 
-#include "autotools.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/FillSupercell.hh"
 #include "casm/clex/ScelEnum.hh"
