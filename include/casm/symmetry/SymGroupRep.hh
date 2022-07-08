@@ -3,6 +3,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 
 #include "casm/container/multivector.hh"
@@ -227,6 +228,9 @@ class SymGroupRepHandle {  // <-- typedefed as SymGroupRep::RemoteHandle
   /// \param i Index into SymGroup, which may be a subgroup of the
   /// MasterSymGroup
   SymOpRepresentation const *operator[](Index i) const {
+    if (m_group_rep == nullptr){
+        throw std::runtime_error("Error in SymGroupRepHandle: Attempting to use empty SymGroupRepHandle");
+    }
     return m_group_rep->at(m_subgroup_op_inds[i]);
   }
 

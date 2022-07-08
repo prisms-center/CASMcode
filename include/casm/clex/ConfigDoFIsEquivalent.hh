@@ -334,6 +334,12 @@ class Local {
     if (A.factor_group_index() != m_fg_index_A || !m_tmp_valid) {
       for (Index b = 0; b < m_n_sublat; ++b) {
         m_fg_index_A = A.factor_group_index();
+        
+        // check if local dof rep is empty; if empty skip sublattice
+        if (A.local_dof_rep_empty(m_key, b)){
+                continue;
+        }
+
         Eigen::MatrixXd const &M = *(A.local_dof_rep(m_key, b).MatrixXd());
         Index dim = M.cols();
         sublattice_block(m_new_dof_A, b, m_n_vol).topRows(dim) =
@@ -348,6 +354,12 @@ class Local {
     if (B.factor_group_index() != m_fg_index_B || !m_tmp_valid) {
       for (Index b = 0; b < m_n_sublat; ++b) {
         m_fg_index_B = B.factor_group_index();
+
+        // check if local dof rep is empty; if empty skip sublattice
+        if (B.local_dof_rep_empty(m_key, b)){
+            continue;
+        }
+
         Eigen::MatrixXd const &M = *(B.local_dof_rep(m_key, b).MatrixXd());
         Index dim = M.cols();
         sublattice_block(m_new_dof_B, b, m_n_vol).topRows(dim) =
