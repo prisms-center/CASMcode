@@ -257,10 +257,15 @@ ConfigDoF &ConfigDoF::apply_sym_no_permute(SymOp const &_op) {
   }
 
   for (auto &dof : m_local_dofs) {
-    for (Index b = 0; b < m_N_sublat; ++b)
-      dof.second.sublat(b) =
+    for (Index b = 0; b < m_N_sublat; ++b){
+        if (dof.second.info()[b].symrep_ID().empty()){
+            continue;
+        }
+
+        dof.second.sublat(b) =
           *(_op.representation(dof.second.info()[b].symrep_ID()).MatrixXd()) *
           dof.second.sublat(b);
+    }
   }
 
   return *this;
