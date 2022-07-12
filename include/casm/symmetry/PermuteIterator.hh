@@ -103,6 +103,9 @@ class PermuteIterator
   /// corresponding to local DoF specified by _key on sublattice b
   SymOpRepresentation const &local_dof_rep(DoFKey const &_key, Index b) const;
 
+  /// Check if local DoF representation is empty
+  bool local_dof_rep_empty(DoFKey const &_key, Index b) const;
+
   /// Returns representation of current operation corresponding to global DoF
   /// specified by _key
   SymOpRepresentation const &global_dof_rep(DoFKey const &_key) const;

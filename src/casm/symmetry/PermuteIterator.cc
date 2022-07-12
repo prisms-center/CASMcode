@@ -101,6 +101,14 @@ SymOpRepresentation const &PermuteIterator::local_dof_rep(DoFKey const &_key,
   return *sym_info().local_dof_symreps(_key)[b][factor_group_index()];
 }
 
+/// Check if local dof rep is empty
+bool PermuteIterator::local_dof_rep_empty(DoFKey const &_key, Index b) const{
+   if (sym_info().local_dof_symreps(_key)[b].rep_ptr() == nullptr){
+       return true;
+   }
+   return false;
+}
+
 /// Returns representation of current operation corresponding to global DoF
 /// specified by _key
 SymOpRepresentation const &PermuteIterator::global_dof_rep(

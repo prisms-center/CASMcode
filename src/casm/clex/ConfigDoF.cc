@@ -214,6 +214,11 @@ ConfigDoF &ConfigDoF::apply_sym(PermuteIterator const &it) {
     Eigen::MatrixXd tmp{init_value};
 
     for (Index b = 0; b < m_N_sublat; ++b) {
+      // if local dof is empty; skip sublattice
+      if (it.local_dof_rep_empty(dof.first, b)){
+          continue;
+      }
+
       Eigen::MatrixXd const &rep = *it.local_dof_rep(dof.first, b).MatrixXd();
       Index rows = rep.rows();
       clexulator::sublattice_block(tmp, b, m_N_vol).topRows(rows) =
@@ -252,10 +257,15 @@ ConfigDoF &ConfigDoF::apply_sym_no_permute(SymOp const &_op) {
   }
 
   for (auto &dof : m_local_dofs) {
-    for (Index b = 0; b < m_N_sublat; ++b)
-      dof.second.sublat(b) =
+    for (Index b = 0; b < m_N_sublat; ++b){
+        if (dof.second.info()[b].symrep_ID().empty()){
+            continue;
+        }
+
+        dof.second.sublat(b) =
           *(_op.representation(dof.second.info()[b].symrep_ID()).MatrixXd()) *
           dof.second.sublat(b);
+    }
   }
 
   return *this;
