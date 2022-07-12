@@ -1,12 +1,15 @@
 #include "gtest/gtest.h"
+#include <memory>
 
 /// What is being tested:
+#include "casm/clex/ConfigDoF.hh"
 #include "casm/clex/ConfigIO.hh"
 
 /// What is being used to test it:
 
 #include "Common.hh"
 #include "FCCTernaryProj.hh"
+#include "TestConfiguration.hh"
 #include "ZrOProj.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/clex/ConfigIOHull.hh"
@@ -14,14 +17,45 @@
 #include "casm/clex/ConfigIOStrain.hh"
 #include "casm/clex/ConfigIOStrucScore.hh"
 #include "casm/clex/ConfigMapping.hh"
+#include "casm/clex/MappedProperties.hh"
 #include "casm/database/Database.hh"
 #include "casm/database/Selected.hh"
 
+
 using namespace CASM;
+
+TEST(ConfigIOTest, MappedProperties){
+  CASM::MappedProperties mapped_properties;
+  jsonParser config_io_properties(test::data_file("clex", "configIO_data.json"));
+  jsonParser prop = CASM::from_json(mapped_properties, config_io_properties);
+
+  // Create an FCC ternary project
+  test::FCCTernaryProj proj;
+  proj.check_init();
+  
+  // Load primclex
+  CASM::PrimClex primclex(proj.dir);
+  
+  // Set transformation matrix and occupation
+  Eigen::Matrix3l T;
+  T << 1,0,0,0,1,0,0,0,1;
+  Eigen::VectorXi occ(1);
+  occ << 1;
+
+  // Get a configuration;
+  test::TestConfiguration test_configuration(primclex, T, occ);
+  CASM::Configuration config = test_configuration.config;
+
+  // Set mapped properties to the configuration
+  config.set_calc_properties(mapped_properties);
+
+  // Test mapped properties 
+  EXPECT_EQ(atomic_deformation(config), 0.001);
+  EXPECT_EQ(lattice_deformation(config), 0.01);
+}
 
 // TODO: What exactly are we testing here?
 // some tests don't contain any assertions...
-
 TEST(ConfigIOTest, DatumFormatters) {
   using namespace ConfigIO;
 
@@ -32,7 +66,7 @@ TEST(ConfigIOTest, DatumFormatters) {
     dict.insert(formatter);
     EXPECT_TRUE(prev_size + 1 == dict.size()) << formatter.name();
   };
-
+  
   // String
   check(configname());
   check(scelname());

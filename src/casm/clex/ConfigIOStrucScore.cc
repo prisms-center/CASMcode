@@ -94,6 +94,9 @@ bool StrucScore::parse_args(const std::string &args) {
                                  "'. Valid arguments are [ basis_score | "
                                  "lattice_score | total_score ]\n");
       }
+      
+      m_strain_weight = _strain_weight;
+
       if (already_initialized &&
           !almost_equal(_strain_weight, m_strain_weight)) {
         for (; pushed_args > 0; pushed_args--) m_prop_names.pop_back();
@@ -117,6 +120,11 @@ bool StrucScore::init(const Configuration &_tmplt) const {
 
   m_strucmapper = notstd::make_unique<StrucMapper>(
       PrimStrucMapCalculator(*m_altprim), m_strain_weight);
+
+  for (Index i=0; i < m_prop_names.size(); i++) {
+    _add_rule(std::vector<Index>({i}));
+  }
+
   return true;
 }
 

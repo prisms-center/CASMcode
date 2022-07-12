@@ -881,12 +881,12 @@ double formation_energy_per_species(const Configuration &config) {
 /// \brief Cost function that describes the degree to which basis sites have
 /// relaxed
 double atomic_deformation(const Configuration &_config) {
-  return _config.calc_properties().scalar("atomic_deformation");
+  return _config.calc_properties().scalar("atomic_deformation_cost");
 }
 
 /// \brief Cost function that describes the degree to which lattice has relaxed
 double lattice_deformation(const Configuration &_config) {
-  return _config.calc_properties().scalar("lattice_deformation");
+  return _config.calc_properties().scalar("lattice_deformation_cost");
 }
 
 /// \brief Change in volume due to relaxation, expressed as the ratio V/V_0
@@ -1020,11 +1020,11 @@ bool has_rms_force(const Configuration &_config) {
 }
 
 bool has_atomic_deformation(const Configuration &_config) {
-  return _config.calc_properties().has_scalar("atomic_deformation");
+  return _config.calc_properties().has_scalar("atomic_deformation_cost");
 }
 
 bool has_lattice_deformation(const Configuration &_config) {
-  return _config.calc_properties().has_scalar("lattice_deformation");
+  return _config.calc_properties().has_scalar("lattice_deformation_cost");
 }
 
 bool has_volume_relaxation(const Configuration &_config) {
