@@ -1,4 +1,5 @@
 #include "casm/database/ConfigDatabase.hh"
+#include "casm/database/ScelDatabase.hh"
 #include "casm/monte_carlo/MonteCarloEnum_impl.hh"
 #include "casm/monte_carlo/canonical/CanonicalSettings.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh"
@@ -110,14 +111,14 @@ void MonteCarloEnum::save_configs() {
         this->_halloffame().exclude(config);
       }
 
-      // store source info
-      Configuration tconfig{config};
-      tconfig.push_back_source(json_src);
-      this->primclex().db<Configuration>().update(tconfig);
-
       // store info for printing
       this->m_data[config.name()] = std::make_pair(is_new, score);
       output.push_back(config);
+
+      // store source info
+      Configuration tconfig{config};
+      tconfig.push_back_source(json_src);
+      auto it = this->primclex().db<Configuration>().update(tconfig);
     };
 
     lambda(*insert_res.canonical_it, insert_res.insert_canonical);
@@ -128,6 +129,7 @@ void MonteCarloEnum::save_configs() {
   }
 
   primclex().db<Configuration>().commit();
+  primclex().db<Supercell>().commit();
 
   auto formatter = m_dict.parse(
       "configname is_primitive is_new score comp potential_energy");

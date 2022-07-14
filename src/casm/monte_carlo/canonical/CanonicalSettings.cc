@@ -59,7 +59,8 @@ CanonicalConditions CanonicalSettings::final_conditions() const {
 
 /// \brief Expects incremental_conditions
 CanonicalConditions CanonicalSettings::incremental_conditions() const {
-  return _conditions("incremental_conditions");
+  bool incremental = true;
+  return _conditions("incremental_conditions", incremental);
 }
 
 /// \brief Expects incremental_conditions
@@ -137,11 +138,12 @@ ClexDescription CanonicalSettings::formation_energy(
 
 // --- Sampler settings ---------------------
 
-CanonicalConditions CanonicalSettings::_conditions(std::string name) const {
+CanonicalConditions CanonicalSettings::_conditions(std::string name,
+                                                   bool incremental) const {
   std::string level1 = "driver";
   std::string level2 = name;
   try {
-    return _conditions((*this)[level1][level2]);
+    return _conditions((*this)[level1][level2], incremental);
   } catch (std::runtime_error &e) {
     Log &err_log = CASM::err_log();
     err_log.error<Log::standard>("Reading Monte Carlo settings");
@@ -153,10 +155,10 @@ CanonicalConditions CanonicalSettings::_conditions(std::string name) const {
   }
 }
 
-CanonicalConditions CanonicalSettings::_conditions(
-    const jsonParser &json) const {
+CanonicalConditions CanonicalSettings::_conditions(const jsonParser &json,
+                                                   bool incremental) const {
   CanonicalConditions result;
-  from_json(result, primclex(), json);
+  from_json(result, primclex(), json, incremental);
   return result;
 }
 

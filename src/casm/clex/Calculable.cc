@@ -66,6 +66,9 @@ void Calculable<_Base>::set_source(const jsonParser &source) {
 
 template <typename _Base>
 void Calculable<_Base>::push_back_source(const jsonParser &source) {
+  if (!m_source.is_array()) {
+    m_source.put_array();
+  }
   if (source.is_null() || source.size() == 0) {
     return;
   }

@@ -45,8 +45,10 @@ class CanonicalSettings : public EquilibriumMonteSettings {
  private:
   CompositionConverter m_comp_converter;
 
-  CanonicalConditions _conditions(std::string name) const;
-  CanonicalConditions _conditions(const jsonParser &json) const;
+  CanonicalConditions _conditions(std::string name,
+                                  bool incremental = false) const;
+  CanonicalConditions _conditions(const jsonParser &json,
+                                  bool incremental = false) const;
 
   template <typename jsonParserIteratorType>
   std::tuple<bool, double> _get_precision(jsonParserIteratorType it) const;

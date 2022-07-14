@@ -42,11 +42,10 @@ class Database<Supercell> : public ValDatabase<Supercell> {
   size_type size() const override;
 
   std::pair<iterator, bool> insert(const Supercell &obj) override;
-  std::pair<iterator, bool> insert(const Supercell &&obj) override;
   using ValDatabase<Supercell>::insert;
 
   template <typename... Args>
-  std::pair<iterator, bool> emplace(Args &&... args) {
+  std::pair<iterator, bool> emplace(Args &&...args) {
     return _on_insert_or_emplace(
         m_scel_list.emplace(std::forward<Args>(args)...));
   }

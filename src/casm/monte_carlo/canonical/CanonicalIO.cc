@@ -135,7 +135,7 @@ jsonParser &to_json(const CanonicalConditions &conditions, jsonParser &json) {
 /// \endcode
 ///
 void from_json(CanonicalConditions &conditions, const PrimClex &primclex,
-               const jsonParser &json) {
+               const jsonParser &json, bool incremental) {
   double temp = json["temperature"].get<double>();
   double tol = json["tolerance"].get<double>();
 
@@ -166,8 +166,12 @@ void from_json(CanonicalConditions &conditions, const PrimClex &primclex,
       }
     }
 
-    comp_n = comp_n / comp_n.sum() * primclex.prim().basis().size();
-    comp = primclex.composition_axes().param_composition(comp_n);
+    if (!incremental) {
+      comp_n = comp_n / comp_n.sum() * primclex.prim().basis().size();
+      comp = primclex.composition_axes().param_composition(comp_n);
+    } else {
+      comp = primclex.composition_axes().dparam_composition(comp_n);
+    }
   } else {
     throw std::runtime_error(
         "Error reading conditions: No 'comp' or 'comp_n' specified");
