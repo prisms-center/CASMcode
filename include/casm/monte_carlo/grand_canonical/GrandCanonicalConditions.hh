@@ -1,6 +1,8 @@
 #ifndef CASM_GrandCanonicalConditions_HH
 #define CASM_GrandCanonicalConditions_HH
 
+#include <optional>
+
 #include "casm/clex/PrimClex.hh"
 #include "casm/global/eigen.hh"
 
@@ -26,8 +28,19 @@ class GrandCanonicalConditions {
   /// \param _param_chem_pot Parametric composition chemical potential
   /// \param _tol tolerance for comparing conditions
   ///
-  GrandCanonicalConditions(const PrimClex &_primclex, double _temperature,
-                           const Eigen::VectorXd &_param_chem_pot, double _tol);
+  GrandCanonicalConditions(
+      const PrimClex &_primclex, double _temperature,
+      const Eigen::VectorXd &_param_chem_pot, double _tol,
+      std::optional<Eigen::VectorXd> _param_comp_quad_pot_target = std::nullopt,
+      std::optional<Eigen::VectorXd> _param_comp_quad_pot_vector = std::nullopt,
+      std::optional<Eigen::MatrixXd> _param_comp_quad_pot_matrix = std::nullopt,
+      std::optional<Eigen::VectorXd> _order_parameter_pot = std::nullopt,
+      std::optional<Eigen::VectorXd> _order_parameter_quad_pot_target =
+          std::nullopt,
+      std::optional<Eigen::VectorXd> _order_parameter_quad_pot_vector =
+          std::nullopt,
+      std::optional<Eigen::MatrixXd> _order_parameter_quad_pot_matrix =
+          std::nullopt);
 
   // ***************************************ACCESSORS**********************************************
   // //
@@ -52,6 +65,37 @@ class GrandCanonicalConditions {
   double param_chem_pot(Index index) const;
 
   double tolerance() const;
+
+  std::optional<Eigen::VectorXd> const &param_comp_quad_pot_target() const {
+    return m_param_comp_quad_pot_target;
+  }
+
+  std::optional<Eigen::VectorXd> const &param_comp_quad_pot_vector() const {
+    return m_param_comp_quad_pot_vector;
+  }
+
+  std::optional<Eigen::MatrixXd> const &param_comp_quad_pot_matrix() const {
+    return m_param_comp_quad_pot_matrix;
+  }
+
+  std::optional<Eigen::VectorXd> const &order_parameter_pot() const {
+    return m_order_parameter_pot;
+  }
+
+  std::optional<Eigen::VectorXd> const &order_parameter_quad_pot_target()
+      const {
+    return m_order_parameter_quad_pot_target;
+  }
+
+  std::optional<Eigen::VectorXd> const &order_parameter_quad_pot_vector()
+      const {
+    return m_order_parameter_quad_pot_vector;
+  }
+
+  std::optional<Eigen::MatrixXd> const &order_parameter_quad_pot_matrix()
+      const {
+    return m_order_parameter_quad_pot_matrix;
+  }
 
   // ***************************************MUTATORS***********************************************
   // //
@@ -102,10 +146,6 @@ class GrandCanonicalConditions {
   /// Inverse temperature. Includes Boltzmann term
   double m_beta;
 
-  /// Vector of the 'atomic' chemical potentials for each species. Ordered as
-  /// primclex.get_param_comp().get_components()
-  Eigen::VectorXd m_chem_pot;
-
   /// Vector of the parametric chemical potentials conjugate to the parametric
   /// compositions.
   Eigen::VectorXd m_param_chem_pot;
@@ -115,6 +155,15 @@ class GrandCanonicalConditions {
 
   /// Tolerance for comparison operators == and !=
   double m_tolerance;
+
+  std::optional<Eigen::VectorXd> m_param_comp_quad_pot_target;
+  std::optional<Eigen::VectorXd> m_param_comp_quad_pot_vector;
+  std::optional<Eigen::MatrixXd> m_param_comp_quad_pot_matrix;
+
+  std::optional<Eigen::VectorXd> m_order_parameter_pot;
+  std::optional<Eigen::VectorXd> m_order_parameter_quad_pot_target;
+  std::optional<Eigen::VectorXd> m_order_parameter_quad_pot_vector;
+  std::optional<Eigen::MatrixXd> m_order_parameter_quad_pot_matrix;
 };
 
 std::ostream &operator<<(std::ostream &sout,

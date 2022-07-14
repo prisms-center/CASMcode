@@ -15,6 +15,9 @@ class OrderParameter {
   /// \brief Constructor
   OrderParameter(DoFSpace const &dof_space);
 
+  /// \brief Access DoFSpace defining the order parameter
+  DoFSpace const &dof_space() const;
+
   /// \brief Calculate and return order parameter value
   Eigen::VectorXd const &operator()(Configuration const &configuration);
 
@@ -41,6 +44,11 @@ class OrderParameter {
   /// \brief Calculate and return change in order parameter value due to
   ///     an occupation change, relative to the current ConfigDoFValues
   Eigen::VectorXd const &occ_delta(Index linear_site_index, Index new_occ);
+
+  /// \brief Calculate change in order parameter value due to a
+  ///     series of occupation changes
+  Eigen::VectorXd const &occ_delta(std::vector<Index> const &linear_site_index,
+                                   std::vector<int> const &new_occ);
 
   /// \brief Calculate and return change in order parameter value due to
   ///     a local DoF change, relative to the current ConfigDoFValues
@@ -75,6 +83,13 @@ class OrderParameter {
 
   /// Holds delta order parameter value when it has been calculated
   Eigen::VectorXd m_delta_value;
+
+  /// Used to temporarily hold occupation values when calculating delta values
+  std::vector<int> m_tmp_occ;
+
+  /// Holds multi-site change delta order parameter value when it has been
+  /// calculated
+  Eigen::VectorXd m_multisite_delta_value;
 
   /// Holds occupation DoF values as a temporary, for example to do:
   ///     m_value = m_dof_space.basis_inv * m_prim_occ_values

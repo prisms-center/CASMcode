@@ -2,6 +2,7 @@
 #define CASM_Canonical_HH
 
 #include "casm/clex/Clex.hh"
+#include "casm/enumerator/OrderParameter.hh"
 #include "casm/monte_carlo/Conversions.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
 #include "casm/monte_carlo/MonteDefinitions.hh"
@@ -92,6 +93,9 @@ class Canonical : public MonteCarlo {
   /// \brief Number of atoms of each type, normalized per primitive cell
   const Eigen::VectorXd &comp_n() const { return *m_comp_n; }
 
+  /// \brief Order parameters (intensive)
+  const Eigen::VectorXd &eta() const { return *m_eta; }
+
   /// \brief Get potential energy
   double potential_energy(const Configuration &config) const;
 
@@ -107,6 +111,9 @@ class Canonical : public MonteCarlo {
 
   /// \brief Number of atoms of each type, normalized per primitive cell
   Eigen::VectorXd &_comp_n() { return *m_comp_n; }
+
+  /// \brief Order parameters (intensive)
+  Eigen::VectorXd &_eta() { return *m_eta; }
 
   Clexulator const &_clexulator() const {
     return m_formation_energy_clex.clexulator;
@@ -160,6 +167,9 @@ class Canonical : public MonteCarlo {
   /// Holds Clexulator and ECI references
   Clex m_formation_energy_clex;
 
+  /// Holds order parameter calculator
+  std::shared_ptr<OrderParameter> m_order_parameter;
+
   /// Convert sublat/asym_unit and species/occ index
   Conversions m_convert;
 
@@ -189,6 +199,9 @@ class Canonical : public MonteCarlo {
 
   /// \brief Number of atoms of each type, normalized per primitive cell
   Eigen::VectorXd *m_comp_n;
+
+  /// \brief Order parameters (intensive)
+  Eigen::VectorXd *m_eta;
 };
 
 }  // namespace Monte

@@ -1,3 +1,4 @@
+#include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/monte_carlo/canonical/CanonicalConditions.hh"
 #include "casm/monte_carlo/canonical/CanonicalIO.hh"
 #include "casm/monte_carlo/canonical/CanonicalSettings_impl.hh"
@@ -134,6 +135,18 @@ ClexDescription CanonicalSettings::formation_energy(
             << "' exists.\n";
   }
   return set.clex(formation_energy);
+}
+
+/// \brief Make order parameter calculator
+std::shared_ptr<OrderParameter> CanonicalSettings::make_order_parameter(
+    const PrimClex &primclex) const {
+  if (!_is_setting("model", "order_parameter")) {
+    return nullptr;
+  }
+  std::unique_ptr<DoFSpace> value =
+      (*this)["model"]["order_parameter"].make<DoFSpace>(
+          primclex.shared_prim());
+  return std::make_shared<OrderParameter>(*value);
 }
 
 // --- Sampler settings ---------------------

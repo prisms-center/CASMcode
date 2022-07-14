@@ -1,6 +1,7 @@
 #ifndef CASM_GrandCanonicalSettings
 #define CASM_GrandCanonicalSettings
 
+#include "casm/enumerator/OrderParameter.hh"
 #include "casm/monte_carlo/MonteSettings.hh"
 
 namespace CASM {
@@ -34,6 +35,10 @@ class GrandCanonicalSettings : public EquilibriumMonteSettings {
 
   /// \brief Get formation energy cluster expansion
   ClexDescription formation_energy(const PrimClex &primclex) const;
+
+  /// \brief Make order parameter calculator
+  std::shared_ptr<OrderParameter> make_order_parameter(
+      const PrimClex &primclex) const;
 
   // --- Sampler settings ---------------------
 

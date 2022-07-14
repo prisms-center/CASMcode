@@ -26,7 +26,7 @@ class GrandCanonicalEvent {
   /// The total number of correlations that could be calculated (use
   /// Clexulator::corr_size)
   ///
-  GrandCanonicalEvent(size_type Nspecies, size_type Ncorr);
+  GrandCanonicalEvent(size_type Nspecies, size_type Ncorr, size_type Neta = 0);
 
   /// \brief Set the change in (extensive) formation energy associated with this
   /// event
@@ -43,6 +43,12 @@ class GrandCanonicalEvent {
   /// \brief const Access change in number of species per supercell. Order as in
   /// CompositionConverter::components().
   const Eigen::VectorXl &dN() const;
+
+  /// \brief Access change in order parameter (intensive)
+  Eigen::VectorXd &deta();
+
+  /// \brief const Access change in order parameter (intensive)
+  Eigen::VectorXd const &deta() const;
 
   /// \brief Set the change in number of species in supercell. Order as in
   /// CompositionConverter::components().
@@ -90,6 +96,9 @@ class GrandCanonicalEvent {
   ///        primclex.get_param_comp().get_components()
   Eigen::VectorXl m_dN;
 
+  /// \brief Change in order parameter due to this event.
+  Eigen::VectorXd m_deta;
+
   /// \brief The ConfigDoF modification performed by this event
   OccMod m_occ_mod;
 };
@@ -97,13 +106,16 @@ class GrandCanonicalEvent {
 /// \brief Constructor
 ///
 /// \param Nspecies The number of different molecular species in this
-/// calculation (use CompositionConverter::components().size()) \param Ncorr The
-/// total number of correlations that could be calculated (use
-/// Clexulator::corr_size)
+///     calculation (use CompositionConverter::components().size())
+/// \param Ncorr The total number of correlations that could be
+///     calculated (use Clexulator::corr_size)
+/// \param Neta The total number of order parameters
 ///
 inline GrandCanonicalEvent::GrandCanonicalEvent(size_type Nspecies,
-                                                size_type Ncorr)
-    : m_dCorr(Eigen::VectorXd(Ncorr)), m_dN(Eigen::VectorXl(Nspecies)) {}
+                                                size_type Ncorr, size_type Neta)
+    : m_dCorr(Eigen::VectorXd(Ncorr)),
+      m_dN(Eigen::VectorXl(Nspecies)),
+      m_deta(Eigen::VectorXd(Neta)) {}
 
 /// \brief Set the change in total (formation) energy associated with this event
 inline void GrandCanonicalEvent::set_dEf(double dEf) { m_dEf = dEf; }
@@ -118,6 +130,14 @@ inline Eigen::VectorXl &GrandCanonicalEvent::dN() { return m_dN; }
 /// \brief const Access change in number of all species (extensive). Order as in
 /// CompositionConverter::components().
 inline const Eigen::VectorXl &GrandCanonicalEvent::dN() const { return m_dN; }
+
+/// \brief Access change in order parameter
+inline Eigen::VectorXd &GrandCanonicalEvent::deta() { return m_deta; }
+
+/// \brief const Access change in order parameter
+inline Eigen::VectorXd const &GrandCanonicalEvent::deta() const {
+  return m_deta;
+}
 
 /// \brief Set the change in number of species (extensive) described by
 /// size_type. Order as in CompositionConverter::components().

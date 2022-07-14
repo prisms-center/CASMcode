@@ -1,6 +1,7 @@
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh"
 
 #include "casm/app/ProjectSettings.hh"
+#include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalConditions.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh"
 
@@ -128,6 +129,18 @@ ClexDescription GrandCanonicalSettings::formation_energy(
             << "' exists.\n";
   }
   return set.clex(formation_energy);
+}
+
+/// \brief Make order parameter calculator
+std::shared_ptr<OrderParameter> GrandCanonicalSettings::make_order_parameter(
+    const PrimClex &primclex) const {
+  if (!_is_setting("model", "order_parameter")) {
+    return nullptr;
+  }
+  std::unique_ptr<DoFSpace> value =
+      (*this)["model"]["order_parameter"].make<DoFSpace>(
+          primclex.shared_prim());
+  return std::make_shared<OrderParameter>(*value);
 }
 
 // --- Sampler settings ---------------------

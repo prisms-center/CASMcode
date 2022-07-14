@@ -1,9 +1,9 @@
-
 #include "casm/monte_carlo/canonical/Canonical.hh"
 
 #include "casm/clex/ConfigCorrelations.hh"
 #include "casm/clex/FillSupercell.hh"
 #include "casm/database/ConfigDatabase.hh"
+#include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/monte_carlo/MonteCarloEnum_impl.hh"
@@ -38,6 +38,7 @@ Canonical::Canonical(const PrimClex &primclex,
                      const CanonicalSettings &settings, Log &log)
     : MonteCarlo(primclex, settings, log),
       m_formation_energy_clex(make_clex(primclex, settings)),
+      m_order_parameter(settings.make_order_parameter(primclex)),
       m_convert(_supercell()),
       m_cand(m_convert),
       m_occ_loc(m_convert, m_cand),
@@ -53,6 +54,12 @@ Canonical::Canonical(const PrimClex &primclex,
   _log() << std::setw(16) << "ref: " << desc.ref << "\n";
   _log() << std::setw(16) << "bset: " << desc.bset << "\n";
   _log() << std::setw(16) << "eci: " << desc.eci << "\n";
+  if (m_order_parameter != nullptr) {
+    jsonParser json;
+    to_json(m_order_parameter->dof_space(), json);
+    _log().custom("DoF Space");
+    _log() << json << std::endl;
+  }
   _log() << "supercell: \n" << supercell().transf_mat() << "\n";
   _log() << "\nSampling: \n";
   _log() << std::setw(24) << "quantity" << std::setw(24)
@@ -235,7 +242,9 @@ void Canonical::accept(const EventType &event) {
   _potential_energy() += event.dEpot() / supercell().volume();
   _corr() += event.dCorr() / supercell().volume();
   _comp_n() += event.dN().cast<double>() / supercell().volume();
-
+  if (m_order_parameter != nullptr) {
+    _eta() += event.deta();
+  }
   return;
 }
 
@@ -261,11 +270,44 @@ void Canonical::write_results(Index cond_index) const {
 ///
 /// - if(&config == &this->config()) { return potential_energy(); }, else
 ///   calculate potential_energy = formation_energy
+///
+/// \throws If config does not have the same supercell as this
 double Canonical::potential_energy(const Configuration &config) const {
   // if(&config == &this->config()) { return potential_energy(); }
+  if (&this->supercell() != &config.supercell()) {
+    throw std::runtime_error(
+        "Error in Canonical::potential_energy: supercell mismatch");
+  }
 
   auto corr = correlations(config, _clexulator());
-  return _eci() * corr.data();
+  double formation_energy = _eci() * corr.data();
+  double potential_energy = formation_energy;
+
+  if (m_order_parameter != nullptr) {
+    // temporarily reset ConfigDoFValues pointer - requires that the supercell
+    // is unchanged
+    clexulator::ConfigDoFValues const *prev = m_order_parameter->get();
+    m_order_parameter->set(&config.configdof().values());
+    Eigen::VectorXd const &eta = m_order_parameter->value();
+    m_order_parameter->set(prev);
+    if (m_condition.order_parameter_pot().has_value()) {
+      Eigen::VectorXd const &v = *m_condition.order_parameter_pot();
+      potential_energy -= v.dot(eta);
+    }
+    if (m_condition.order_parameter_quad_pot_vector().has_value()) {
+      Eigen::VectorXd x =
+          (eta - *m_condition.order_parameter_quad_pot_target());
+      Eigen::VectorXd const &v = *m_condition.order_parameter_quad_pot_vector();
+      potential_energy += v.dot((x.array() * x.array()).matrix());
+    }
+    if (m_condition.order_parameter_quad_pot_matrix().has_value()) {
+      Eigen::VectorXd x =
+          (eta - *m_condition.order_parameter_quad_pot_target());
+      Eigen::VectorXd const &v = *m_condition.order_parameter_quad_pot_matrix();
+      potential_energy += x.dot(v * x);
+    }
+  }
+  return potential_energy;
 }
 
 /// \brief Calculate delta correlations for an event
@@ -317,6 +359,47 @@ void Canonical::_update_deltas(CanonicalEvent &event) const {
 
   // ---- set dformation_energy --------------
   event.set_dEf(_eci() * event.dCorr().data());
+
+  // ---- set dpotential_energy --------------
+
+  double dEpot = event.dEf();
+
+  if (m_order_parameter != nullptr) {
+    // note: eta and deta are intensive
+    double Nunit = supercell().volume();
+    Eigen::VectorXd const &eta = this->eta();
+    Eigen::VectorXd const &deta = m_order_parameter->occ_delta(
+        event.occ_event().linear_site_index, event.occ_event().new_occ);
+    event.deta() = deta;
+    if (m_condition.order_parameter_pot().has_value()) {
+      Eigen::VectorXd const &v = *m_condition.order_parameter_pot();
+      dEpot -= Nunit * v.dot(deta);
+    }
+    if (m_condition.order_parameter_quad_pot_vector().has_value()) {
+      Eigen::VectorXd const &target =
+          *m_condition.order_parameter_quad_pot_target();
+      Eigen::VectorXd const &v = *m_condition.order_parameter_quad_pot_vector();
+      for (int i = 0; i < eta.size(); ++i) {
+        dEpot += Nunit * v(i) *
+                 (2.0 * (eta(i) - target(i)) * deta(i) + deta(i) * deta(i));
+      }
+    }
+    if (m_condition.order_parameter_quad_pot_matrix().has_value()) {
+      Eigen::VectorXd const &target =
+          *m_condition.order_parameter_quad_pot_target();
+      Eigen::MatrixXd const &v = *m_condition.order_parameter_quad_pot_matrix();
+
+      for (int i = 0; i < deta.size(); ++i) {
+        for (int j = 0; j < deta.size(); ++j) {
+          dEpot += Nunit * v(i, j) *
+                   (eta(i) * deta(j) + eta(j) * deta(i) -
+                    2.0 * target(i) * deta(j) + deta(i) * deta(j));
+        }
+      }
+    }
+  }
+
+  event.set_dEpot(dEpot);
 }
 
 /// \brief Calculate properties given current conditions
@@ -327,6 +410,14 @@ void Canonical::_update_properties() {
 
   _vector_properties()["comp_n"] = CASM::comp_n(_configdof(), supercell());
   m_comp_n = &_vector_property("comp_n");
+
+  if (m_order_parameter != nullptr) {
+    _vector_properties()["eta"] = m_order_parameter->value();
+    m_eta = &_vector_property("eta");
+  } else {
+    _vector_properties()["eta"] = Eigen::VectorXd(0);
+    m_eta = &_vector_property("eta");
+  }
 
   _scalar_properties()["formation_energy"] = _eci() * corr().data();
   m_formation_energy = &_scalar_property("formation_energy");

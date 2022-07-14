@@ -1,4 +1,3 @@
-
 #include "casm/monte_carlo/grand_canonical/GrandCanonical.hh"
 
 #include "casm/basis_set/DoF.hh"
@@ -8,6 +7,7 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "casm/database/ConfigDatabase.hh"
+#include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/monte_carlo/MonteCarloEnum_impl.hh"
@@ -44,8 +44,10 @@ GrandCanonical::GrandCanonical(const PrimClex &primclex,
                                const GrandCanonicalSettings &settings, Log &log)
     : MonteCarlo(primclex, settings, log),
       m_site_swaps(supercell()),
+      m_composition_converter(primclex.composition_axes()),
       m_formation_energy_clex(make_clex(primclex, settings)),
-      m_event(primclex.composition_axes().components().size(),
+      m_order_parameter(settings.make_order_parameter(primclex)),
+      m_event(m_composition_converter.components().size(),
               _clexulator().corr_size()) {
   const auto &desc = settings.formation_energy(primclex);
 
@@ -57,6 +59,13 @@ GrandCanonical::GrandCanonical(const PrimClex &primclex,
   _log() << std::setw(16) << "ref: " << desc.ref << "\n";
   _log() << std::setw(16) << "bset: " << desc.bset << "\n";
   _log() << std::setw(16) << "eci: " << desc.eci << "\n";
+  if (m_order_parameter != nullptr) {
+    m_order_parameter->set(&_configdof().values());
+    jsonParser json;
+    to_json(m_order_parameter->dof_space(), json);
+    _log().custom("Order Parameter DoF Space");
+    _log() << json << std::endl;
+  }
   _log() << "supercell: \n" << supercell().transf_mat() << "\n";
   _log() << "\nSampling: \n";
   _log() << std::setw(24) << "quantity" << std::setw(24)
@@ -227,16 +236,16 @@ const GrandCanonical::EventType &GrandCanonical::propose() {
                  new_occupant);
 
   if (debug()) {
-    auto origin = primclex().composition_axes().origin();
+    auto origin = m_composition_converter.origin();
     auto exchange_chem_pot = m_condition.exchange_chem_pot();
     auto param_chem_pot = m_condition.param_chem_pot();
-    auto Mpinv = primclex().composition_axes().dparam_dmol();
+    auto Mpinv = m_composition_converter.dparam_dmol();
     // auto V = supercell().volume();
     Index curr_species = m_site_swaps.sublat_to_mol()[sublat][current_occupant];
     Index new_species = m_site_swaps.sublat_to_mol()[sublat][new_occupant];
 
     _log() << "  components: "
-           << jsonParser(primclex().composition_axes().components()) << "\n"
+           << jsonParser(m_composition_converter.components()) << "\n"
            << "  d(N): " << m_event.dN().transpose() << "\n"
            << "    dx_dn: \n"
            << Mpinv << "\n"
@@ -304,7 +313,9 @@ void GrandCanonical::accept(const EventType &event) {
   _potential_energy() += event.dEpot() / supercell().volume();
   _corr() += event.dCorr() / supercell().volume();
   _comp_n() += event.dN().cast<double>() / supercell().volume();
-
+  if (m_order_parameter != nullptr) {
+    _eta() += event.deta();
+  }
   return;
 }
 
@@ -449,18 +460,56 @@ void GrandCanonical::write_results(Index cond_index) const {
   // write_pos_trajectory(settings(), *this, cond_index);
 }
 
-/// \brief Get potential energy
+/// \brief Get potential energy, normalized per primitive cell
 ///
 /// - if(&config == &this->config()) { return potential_energy(); }, else
 ///   calculate potential_energy = formation_energy - comp_x.dot(param_chem_pot)
+///
+/// \throws If config does not have the same supercell as this
 double GrandCanonical::potential_energy(const Configuration &config) const {
   // if(&config == &this->config()) { return potential_energy(); }
+  if (&this->supercell() != &config.supercell()) {
+    throw std::runtime_error(
+        "Error in GrandCanonical::potential_energy: supercell mismatch");
+  }
 
   auto corr = correlations(config, _clexulator());
   double formation_energy = _eci() * corr.data();
-  auto comp_x =
-      primclex().composition_axes().param_composition(CASM::comp_n(config));
-  return formation_energy - comp_x.dot(m_condition.param_chem_pot());
+  auto comp_x = m_composition_converter.param_composition(CASM::comp_n(config));
+
+  double potential_energy =
+      formation_energy - m_condition.param_chem_pot().dot(comp_x);
+  if (m_condition.param_comp_quad_pot_vector().has_value()) {
+    Eigen::VectorXd x = (comp_x - *m_condition.param_comp_quad_pot_target());
+    Eigen::VectorXd const &v = *m_condition.param_comp_quad_pot_vector();
+    potential_energy += v.dot((x.array() * x.array()).matrix());
+  }
+  if (m_condition.param_comp_quad_pot_matrix().has_value()) {
+    Eigen::VectorXd x = (comp_x - *m_condition.param_comp_quad_pot_target());
+    Eigen::VectorXd const &V = *m_condition.param_comp_quad_pot_matrix();
+    potential_energy += x.dot(V * x);
+  }
+  if (m_order_parameter != nullptr) {
+    m_order_parameter->set(&config.configdof().values());
+    Eigen::VectorXd const &eta = m_order_parameter->value();
+    if (m_condition.order_parameter_pot().has_value()) {
+      Eigen::VectorXd const &v = *m_condition.order_parameter_pot();
+      potential_energy -= v.dot(eta);
+    }
+    if (m_condition.order_parameter_quad_pot_vector().has_value()) {
+      Eigen::VectorXd x =
+          (eta - *m_condition.order_parameter_quad_pot_target());
+      Eigen::VectorXd const &v = *m_condition.order_parameter_quad_pot_vector();
+      potential_energy += v.dot((x.array() * x.array()).matrix());
+    }
+    if (m_condition.order_parameter_quad_pot_matrix().has_value()) {
+      Eigen::VectorXd x =
+          (eta - *m_condition.order_parameter_quad_pot_target());
+      Eigen::VectorXd const &V = *m_condition.order_parameter_quad_pot_matrix();
+      potential_energy += x.dot(V * x);
+    }
+  }
+  return potential_energy;
 }
 
 /// \brief Calculate delta correlations for an event
@@ -535,8 +584,81 @@ void GrandCanonical::_update_deltas(GrandCanonicalEvent &event,
 
   // ---- set dpotential_energy --------------
 
-  event.set_dEpot(event.dEf() -
-                  m_condition.exchange_chem_pot(new_species, curr_species));
+  double dEpot =
+      event.dEf() - m_condition.exchange_chem_pot(new_species, curr_species);
+
+  if (m_condition.param_comp_quad_pot_vector().has_value()) {
+    // note: `dcomp_x` is extensive (includes Nunit), but `comp_x` and `target`
+    // are intensive
+    double Nunit = supercell().volume();
+    Eigen::VectorXd dcomp_x =
+        m_composition_converter.dparam_dmol() * event.dN().cast<double>();
+    Eigen::VectorXd comp_x =
+        m_composition_converter.param_composition(this->comp_n());
+    Eigen::VectorXd const &target = *m_condition.param_comp_quad_pot_target();
+    Eigen::VectorXd const &v = *m_condition.param_comp_quad_pot_vector();
+
+    for (int i = 0; i < dcomp_x.size(); ++i) {
+      dEpot += v(i) * (2.0 * (comp_x(i) - target(i)) * dcomp_x(i) +
+                       dcomp_x(i) * (dcomp_x(i) / Nunit));
+    }
+  }
+  if (m_condition.param_comp_quad_pot_matrix().has_value()) {
+    // note: `dcomp_x` is extensive (includes Nunit), but `comp_x` and `target`
+    // are intensive
+    double Nunit = supercell().volume();
+    Eigen::VectorXd dcomp_x =
+        m_composition_converter.dparam_dmol() * event.dN().cast<double>();
+    Eigen::VectorXd comp_x =
+        m_composition_converter.param_composition(this->comp_n());
+    Eigen::VectorXd const &target = *m_condition.param_comp_quad_pot_target();
+    Eigen::MatrixXd const &V = *m_condition.param_comp_quad_pot_matrix();
+
+    for (int i = 0; i < dcomp_x.size(); ++i) {
+      for (int j = 0; j < dcomp_x.size(); ++j) {
+        dEpot +=
+            Nunit * V(i, j) *
+            (comp_x(i) * dcomp_x(j) + comp_x(j) * dcomp_x(i) -
+             2.0 * target(i) * dcomp_x(j) + dcomp_x(i) * (dcomp_x(j) / Nunit));
+      }
+    }
+  }
+  if (m_order_parameter != nullptr) {
+    // note: eta and deta are intensive
+    double Nunit = supercell().volume();
+    Eigen::VectorXd const &eta = this->eta();
+    Eigen::VectorXd const &deta =
+        m_order_parameter->occ_delta(mutating_site, new_occupant);
+    event.deta() = deta;
+    if (m_condition.order_parameter_pot().has_value()) {
+      Eigen::VectorXd const &v = *m_condition.order_parameter_pot();
+      dEpot -= Nunit * v.dot(deta);
+    }
+    if (m_condition.order_parameter_quad_pot_vector().has_value()) {
+      Eigen::VectorXd const &target =
+          *m_condition.order_parameter_quad_pot_target();
+      Eigen::VectorXd const &v = *m_condition.order_parameter_quad_pot_vector();
+      for (int i = 0; i < eta.size(); ++i) {
+        dEpot += Nunit * v(i) *
+                 (2.0 * (eta(i) - target(i)) * deta(i) + deta(i) * deta(i));
+      }
+    }
+    if (m_condition.order_parameter_quad_pot_matrix().has_value()) {
+      Eigen::VectorXd const &target =
+          *m_condition.order_parameter_quad_pot_target();
+      Eigen::MatrixXd const &V = *m_condition.order_parameter_quad_pot_matrix();
+
+      for (int i = 0; i < deta.size(); ++i) {
+        for (int j = 0; j < deta.size(); ++j) {
+          dEpot += Nunit * V(i, j) *
+                   (eta(i) * deta(j) + eta(j) * deta(i) -
+                    2.0 * target(i) * deta(j) + deta(i) * deta(j));
+        }
+      }
+    }
+  }
+
+  event.set_dEpot(dEpot);
 }
 
 /// \brief Calculate properties given current conditions
@@ -548,23 +670,31 @@ void GrandCanonical::_update_properties() {
   _vector_properties()["comp_n"] = CASM::comp_n(_configdof(), supercell());
   m_comp_n = &_vector_property("comp_n");
 
+  if (m_order_parameter != nullptr) {
+    _vector_properties()["eta"] = m_order_parameter->value();
+    m_eta = &_vector_property("eta");
+  } else {
+    _vector_properties()["eta"] = Eigen::VectorXd(0);
+    m_eta = &_vector_property("eta");
+  }
+
   _scalar_properties()["formation_energy"] = _eci() * corr().data();
   m_formation_energy = &_scalar_property("formation_energy");
 
   _scalar_properties()["potential_energy"] =
       formation_energy() -
-      primclex().composition_axes().param_composition(comp_n()).dot(
+      m_composition_converter.param_composition(comp_n()).dot(
           m_condition.param_chem_pot());
   m_potential_energy = &_scalar_property("potential_energy");
 
   if (debug()) {
     _print_correlations(corr(), "correlations", "corr");
 
-    auto origin = primclex().composition_axes().origin();
+    auto origin = m_composition_converter.origin();
     auto exchange_chem_pot = m_condition.exchange_chem_pot();
     auto param_chem_pot = m_condition.param_chem_pot();
-    auto comp_x = primclex().composition_axes().param_composition(comp_n());
-    auto M = primclex().composition_axes().dmol_dparam();
+    auto comp_x = m_composition_converter.param_composition(comp_n());
+    auto M = m_composition_converter.dmol_dparam();
 
     _log().custom("Calculate properties");
     _log() << "Semi-grand canonical ensemble: \n"
@@ -576,8 +706,8 @@ void GrandCanonical::_update_properties() {
            << "  potential_energy (per unitcell) = formation_energy - "
               "param_chem_pot*comp_x \n\n"
 
-           << "components: "
-           << jsonParser(primclex().composition_axes().components()) << "\n"
+           << "components: " << jsonParser(m_composition_converter.components())
+           << "\n"
            << "M:\n"
            << M << "\n"
            << "origin: " << origin.transpose() << "\n"

@@ -88,7 +88,7 @@ class MonteCarlo {
 
   /// \brief Set current microstate and clear samplers
   void reset(const ConfigDoF &dof) {
-    _configdof() = dof;
+    _configdof().values() = dof.values();
     clear_samples();
   }
 
@@ -224,8 +224,7 @@ class MonteCarlo {
   /// event property values and then reverted within a const function
   mutable Configuration m_config;
 
-  /// Reference to m_config.configdof(), to avoid invalidating id every time
-  /// used
+  /// Reference to m_config.configdof()
   ConfigDoF &m_configdof;
 
   /// \brief Random number generator

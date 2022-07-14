@@ -4,6 +4,7 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
 #include "casm/monte_carlo/MonteSettings.hh"
+#include "casm/monte_carlo/conditions_functions.hh"
 
 namespace CASM {
 namespace Monte {
@@ -17,11 +18,25 @@ namespace Monte {
 ///
 GrandCanonicalConditions::GrandCanonicalConditions(
     const PrimClex &_primclex, double _temperature,
-    const Eigen::VectorXd &_param_chem_pot, double _tol)
+    const Eigen::VectorXd &_param_chem_pot, double _tol,
+    std::optional<Eigen::VectorXd> _param_comp_quad_pot_target,
+    std::optional<Eigen::VectorXd> _param_comp_quad_pot_vector,
+    std::optional<Eigen::MatrixXd> _param_comp_quad_pot_matrix,
+    std::optional<Eigen::VectorXd> _order_parameter_pot,
+    std::optional<Eigen::VectorXd> _order_parameter_quad_pot_target,
+    std::optional<Eigen::VectorXd> _order_parameter_quad_pot_vector,
+    std::optional<Eigen::MatrixXd> _order_parameter_quad_pot_matrix)
     :
 
       m_primclex(&_primclex),
-      m_tolerance(_tol) {
+      m_tolerance(_tol),
+      m_param_comp_quad_pot_target(_param_comp_quad_pot_target),
+      m_param_comp_quad_pot_vector(_param_comp_quad_pot_vector),
+      m_param_comp_quad_pot_matrix(_param_comp_quad_pot_matrix),
+      m_order_parameter_pot(_order_parameter_pot),
+      m_order_parameter_quad_pot_target(_order_parameter_quad_pot_target),
+      m_order_parameter_quad_pot_vector(_order_parameter_quad_pot_vector),
+      m_order_parameter_quad_pot_matrix(_order_parameter_quad_pot_matrix) {
   // -- set T ----
   set_temperature(_temperature);
 
@@ -71,8 +86,6 @@ void GrandCanonicalConditions::set_temperature(double in_temp) {
 void GrandCanonicalConditions::set_param_chem_pot(
     const Eigen::VectorXd &in_param_chem_pot) {
   m_param_chem_pot = in_param_chem_pot;
-  m_chem_pot = primclex().composition_axes().dparam_dmol().transpose() *
-               m_param_chem_pot;
 
   int Ncomp = primclex().composition_axes().components().size();
   m_exchange_chem_pot = Eigen::MatrixXd(Ncomp, Ncomp);
@@ -103,11 +116,16 @@ void GrandCanonicalConditions::set_param_chem_pot(Index ind,
 GrandCanonicalConditions &GrandCanonicalConditions::operator+=(
     const GrandCanonicalConditions &RHS) {
   m_temperature += RHS.m_temperature;
-  for (int i = 0; i < m_param_chem_pot.size(); i++) {
-    m_param_chem_pot(i) += RHS.m_param_chem_pot(i);
-  }
-  set_param_chem_pot(m_param_chem_pot);
+  set_param_chem_pot(m_param_chem_pot + RHS.m_param_chem_pot);
+  incr(m_order_parameter_pot, RHS.m_order_parameter_pot);
+  incr(m_order_parameter_quad_pot_target,
+       RHS.m_order_parameter_quad_pot_target);
+  incr(m_order_parameter_quad_pot_vector,
+       RHS.m_order_parameter_quad_pot_vector);
+  incr(m_order_parameter_quad_pot_matrix,
+       RHS.m_order_parameter_quad_pot_matrix);
   m_beta = 1.0 / (CASM::KB * m_temperature);
+
   return *this;
 }
 
@@ -120,10 +138,14 @@ GrandCanonicalConditions GrandCanonicalConditions::operator+(
 GrandCanonicalConditions &GrandCanonicalConditions::operator-=(
     const GrandCanonicalConditions &RHS) {
   m_temperature -= RHS.m_temperature;
-  for (int i = 0; i < m_param_chem_pot.size(); i++) {
-    m_param_chem_pot(i) -= RHS.m_param_chem_pot(i);
-  }
-  set_param_chem_pot(m_param_chem_pot);
+  set_param_chem_pot(m_param_chem_pot - RHS.m_param_chem_pot);
+  decr(m_order_parameter_pot, RHS.m_order_parameter_pot);
+  decr(m_order_parameter_quad_pot_target,
+       RHS.m_order_parameter_quad_pot_target);
+  decr(m_order_parameter_quad_pot_vector,
+       RHS.m_order_parameter_quad_pot_vector);
+  decr(m_order_parameter_quad_pot_matrix,
+       RHS.m_order_parameter_quad_pot_matrix);
   m_beta = 1.0 / (CASM::KB * m_temperature);
   return *this;
 }
@@ -135,15 +157,27 @@ GrandCanonicalConditions GrandCanonicalConditions::operator-(
 
 bool GrandCanonicalConditions::operator==(
     const GrandCanonicalConditions &RHS) const {
-  if (!almost_zero(m_temperature - RHS.m_temperature, m_tolerance)) {
+  if (!CASM::almost_equal(m_temperature, RHS.m_temperature, m_tolerance)) {
     return false;
   }
-
-  for (int i = 0; i < m_param_chem_pot.size(); i++) {
-    if (!almost_zero(m_param_chem_pot(i) - RHS.m_param_chem_pot(i),
-                     m_tolerance)) {
-      return false;
-    }
+  if (!almost_equal(m_param_chem_pot, RHS.m_param_chem_pot, m_tolerance)) {
+    return false;
+  }
+  if (!almost_equal(m_order_parameter_pot, RHS.m_order_parameter_pot,
+                    m_tolerance)) {
+    return false;
+  }
+  if (!almost_equal(m_order_parameter_quad_pot_target,
+                    RHS.m_order_parameter_quad_pot_target, m_tolerance)) {
+    return false;
+  }
+  if (!almost_equal(m_order_parameter_quad_pot_vector,
+                    RHS.m_order_parameter_quad_pot_vector, m_tolerance)) {
+    return false;
+  }
+  if (!almost_equal(m_order_parameter_quad_pot_matrix,
+                    RHS.m_order_parameter_quad_pot_matrix, m_tolerance)) {
+    return false;
   }
 
   return true;
@@ -170,6 +204,15 @@ int GrandCanonicalConditions::operator/(
       max_division = temp_division;
     }
   }
+
+  find_max_division(max_division, m_order_parameter_pot,
+                    RHS_inc.m_order_parameter_pot);
+  find_max_division(max_division, m_order_parameter_quad_pot_target,
+                    RHS_inc.m_order_parameter_quad_pot_target);
+  find_max_division(max_division, m_order_parameter_quad_pot_vector,
+                    RHS_inc.m_order_parameter_quad_pot_vector);
+  find_max_division(max_division, m_order_parameter_quad_pot_matrix,
+                    RHS_inc.m_order_parameter_quad_pot_matrix);
 
   return max_division;
 }

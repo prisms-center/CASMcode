@@ -1,6 +1,8 @@
 #ifndef CASM_CanonicalConditions_HH
 #define CASM_CanonicalConditions_HH
 
+#include <optional>
+
 #include "casm/global/definitions.hh"
 #include "casm/global/eigen.hh"
 
@@ -30,8 +32,16 @@ class CanonicalConditions {
   /// \param _param_comp Parametric composition
   /// \param _tol tolerance for comparing conditions
   ///
-  CanonicalConditions(const PrimClex &_primclex, double _temperature,
-                      const Eigen::VectorXd &_param_comp, double _tol);
+  CanonicalConditions(
+      const PrimClex &_primclex, double _temperature,
+      const Eigen::VectorXd &_param_comp, double _tol,
+      std::optional<Eigen::VectorXd> _order_parameter_pot = std::nullopt,
+      std::optional<Eigen::VectorXd> _order_parameter_quad_pot_target =
+          std::nullopt,
+      std::optional<Eigen::VectorXd> _order_parameter_quad_pot_vector =
+          std::nullopt,
+      std::optional<Eigen::MatrixXd> _order_parameter_quad_pot_matrix =
+          std::nullopt);
 
   // ***************************************ACCESSORS**********************************************
   // //
@@ -56,17 +66,24 @@ class CanonicalConditions {
 
   double tolerance() const;
 
-  // ***************************************MUTATORS***********************************************
-  // //
+  std::optional<Eigen::VectorXd> const &order_parameter_pot() const {
+    return m_order_parameter_pot;
+  }
 
-  /// Set the temperature of the current grand canonical condition.
-  void set_temperature(double in_temp);
+  std::optional<Eigen::VectorXd> const &order_parameter_quad_pot_target()
+      const {
+    return m_order_parameter_quad_pot_target;
+  }
 
-  /// Set parametric composition
-  void set_param_composition(const Eigen::VectorXd &in_param_comp);
+  std::optional<Eigen::VectorXd> const &order_parameter_quad_pot_vector()
+      const {
+    return m_order_parameter_quad_pot_vector;
+  }
 
-  /// Set a single parametric composition by specifying an index and a value.
-  void set_param_composition(Index ind, double in_param_comp);
+  std::optional<Eigen::MatrixXd> const &order_parameter_quad_pot_matrix()
+      const {
+    return m_order_parameter_quad_pot_matrix;
+  }
 
   // ***************************************OPERATORS**********************************************
   // //
@@ -108,6 +125,11 @@ class CanonicalConditions {
 
   /// Tolerance for comparison operators == and !=
   double m_tolerance;
+
+  std::optional<Eigen::VectorXd> m_order_parameter_pot;
+  std::optional<Eigen::VectorXd> m_order_parameter_quad_pot_target;
+  std::optional<Eigen::VectorXd> m_order_parameter_quad_pot_vector;
+  std::optional<Eigen::MatrixXd> m_order_parameter_quad_pot_matrix;
 };
 
 std::ostream &operator<<(std::ostream &sout, const CanonicalConditions &cond);
