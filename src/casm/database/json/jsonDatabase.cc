@@ -401,7 +401,7 @@ jsonDatabase<Configuration>::iterator jsonDatabase<Configuration>::update(
   }
   this->erase(it);
   auto result = m_config_list.insert(config);
-  return _on_insert_or_emplace(result, true).first;
+  return _on_insert_or_emplace(result, false).first;
 }
 
 jsonDatabase<Configuration>::iterator jsonDatabase<Configuration>::erase(
