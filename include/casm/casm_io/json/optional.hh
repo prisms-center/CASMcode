@@ -7,7 +7,7 @@ template <typename T>
 struct jsonConstructor;
 class jsonParser;
 
-template <typename T, typename... Args>
+template <typename T>
 jsonParser &to_json(std::optional<T> const &value, jsonParser &json) {
   if (value.has_value()) {
     to_json(value.value(), json);
@@ -18,8 +18,19 @@ jsonParser &to_json(std::optional<T> const &value, jsonParser &json) {
 }
 
 template <typename T, typename... Args>
+jsonParser &to_json(std::optional<T> const &value, jsonParser &json,
+                    Args &&...args) {
+  if (value.has_value()) {
+    to_json(value.value(), json, std::forward<Args>(args)...);
+  } else {
+    json.put_null();
+  }
+  return json;
+}
+
+template <typename T, typename... Args>
 void from_json(std::optional<T> &value, jsonParser const &json,
-               Args &&... args) {
+               Args &&...args) {
   if (json.is_null()) {
     value.reset();
   } else {
@@ -33,7 +44,7 @@ struct jsonConstructor<std::optional<T>> {
   /// \brief Default from_json is equivalent to \code
   /// CASM::from_json<ReturnType>(json) \endcode
   template <typename... Args>
-  static std::optional<T> from_json(jsonParser const &json, Args &&... args) {
+  static std::optional<T> from_json(jsonParser const &json, Args &&...args) {
     if (json.is_null()) {
       return std::nullopt;
     } else {
