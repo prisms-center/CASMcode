@@ -184,6 +184,11 @@ DoFSpace::DoFSpace(
         << ") != expected dimension (" << dof_space_dimension << ").";
     throw std::runtime_error(msg.str());
   }
+  if (m_basis.cols() == 0) {
+    std::stringstream msg;
+    msg << "Error constructing DoFSpace: # basis columns == 0.";
+    throw std::runtime_error(msg.str());
+  }
   if (m_basis.cols() > m_basis.rows()) {
     std::stringstream msg;
     msg << "Error constructing DoFSpace: # basis columns (" << m_basis.cols()
@@ -194,8 +199,11 @@ DoFSpace::DoFSpace(
   m_basis_inv =
       m_basis.transpose()
           .colPivHouseholderQr()
-          .solve(Eigen::MatrixXd::Identity(m_basis.rows(), m_basis.rows()))
+          .solve(Eigen::MatrixXd::Identity(m_basis.cols(), m_basis.cols()))
           .transpose();
+
+  /// QR factorization of basis
+  m_qr.compute(m_basis);
 
   make_dof_space_axis_info(dof_key(), *shared_prim(),
                            transformation_matrix_to_super(), sites(),
@@ -236,6 +244,14 @@ Eigen::MatrixXd const &DoFSpace::basis() const { return m_basis; }
 
 /// The pseudo-inverse of the DoFSpace basis.
 Eigen::MatrixXd const &DoFSpace::basis_inv() const { return m_basis_inv; }
+
+/// Solve for normal coordinates resulting in specified DoF values
+///
+/// \param prim_dof_values A matrix whose columns are DoF values in this
+///     DoF space
+Eigen::MatrixXd DoFSpace::solve(Eigen::MatrixXd const &prim_dof_values) const {
+  return m_qr.solve(prim_dof_values);
+}
 
 /// The DoF space dimensions (equals to number of rows in basis).
 Index DoFSpace::dim() const { return m_basis.rows(); }
@@ -383,6 +399,43 @@ Index DoFSpaceIndexConverter::config_site_index(
   return config_index_converter(bijk);
 }
 
+/// Return `config` DoF value as a unrolled coordinate in the prim basis
+Eigen::VectorXd get_dof_value(Configuration const &config,
+                              DoFSpace const &dof_space) {
+  using namespace DoFSpace_impl;
+  throw_if_invalid_dof_space(config, dof_space);
+
+  auto const &dof_key = dof_space.dof_key();
+  auto const &basis = dof_space.basis();
+
+  if (AnisoValTraits(dof_key).global()) {
+    return config.configdof().global_dof(dof_key).values();
+  } else {
+    Index dim = dof_space.dim();
+    auto const &axis_dof_component = dof_space.axis_dof_component().value();
+    auto const &axis_site_index = dof_space.axis_site_index().value();
+
+    if (dof_key == "occ") {
+      Eigen::VectorXi occ_values = Eigen::VectorXi::Zero(dim);
+      for (Index i = 0; i < dim; ++i) {
+        Index l = axis_site_index[i];
+        occ_values[i] = (config.occupation()[l] == axis_dof_component[i]);
+      }
+      return occ_values.cast<double>();
+    } else {
+      Eigen::VectorXd vector_values = Eigen::VectorXd::Zero(dim);
+      Eigen::MatrixXd const &matrix_values =
+          config.configdof().local_dof(dof_key).values();
+
+      for (Index i = 0; i < dim; ++i) {
+        Index l = axis_site_index[i];
+        vector_values[i] = matrix_values(axis_dof_component[i], l);
+      }
+      return vector_values;
+    }
+  }
+}
+
 /// Return `config` DoF value as a coordinate in the DoFSpace basis
 ///
 /// This method may be used for global DoF or local DoF values if config and
@@ -408,7 +461,7 @@ Eigen::VectorXd get_normal_coordinate(Configuration const &config,
 
   if (AnisoValTraits(dof_key).global()) {
     auto const &dof_values = config.configdof().global_dof(dof_key).values();
-    return basis.colPivHouseholderQr().solve(dof_values);
+    return dof_space.solve(dof_values);
   } else {
     Index dim = dof_space.dim();
     auto const &axis_dof_component = dof_space.axis_dof_component().value();
@@ -420,8 +473,7 @@ Eigen::VectorXd get_normal_coordinate(Configuration const &config,
         Index l = axis_site_index[i];
         occ_values[i] = (config.occupation()[l] == axis_dof_component[i]);
       }
-      Eigen::VectorXd prim_dof_values = occ_values.cast<double>();
-      return basis.colPivHouseholderQr().solve(prim_dof_values);
+      return dof_space.solve(occ_values.cast<double>());
     } else {
       Eigen::VectorXd vector_values = Eigen::VectorXd::Zero(dim);
       Eigen::MatrixXd const &matrix_values =
@@ -431,7 +483,7 @@ Eigen::VectorXd get_normal_coordinate(Configuration const &config,
         Index l = axis_site_index[i];
         vector_values[i] = matrix_values(axis_dof_component[i], l);
       }
-      return basis.colPivHouseholderQr().solve(vector_values);
+      return dof_space.solve(vector_values);
     }
   }
 }
@@ -476,7 +528,7 @@ Eigen::VectorXd get_normal_coordinate_at(
         occ_values[i] = (config.occupation()[l] == axis_dof_component[i]);
       }
       Eigen::VectorXd prim_dof_values = occ_values.cast<double>();
-      return basis.colPivHouseholderQr().solve(prim_dof_values);
+      return dof_space.solve(prim_dof_values);
 
     } else {
       Eigen::VectorXd vector_values = Eigen::VectorXd::Zero(dim);
@@ -488,7 +540,7 @@ Eigen::VectorXd get_normal_coordinate_at(
             axis_site_index[i], integral_lattice_coordinate);
         vector_values[i] = matrix_values(axis_dof_component[i], l);
       }
-      return basis.colPivHouseholderQr().solve(vector_values);
+      return dof_space.solve(vector_values);
     }
   }
 }
@@ -515,7 +567,7 @@ Eigen::VectorXd get_mean_normal_coordinate(Configuration const &config,
 
   if (AnisoValTraits(dof_key).global()) {
     auto const &dof_values = config.configdof().global_dof(dof_key).values();
-    return basis.colPivHouseholderQr().solve(dof_values);
+    return dof_space.solve(dof_values);
   } else {
     Index dim = dof_space.dim();
     xtal::Lattice P = config.supercell().sym_info().prim_lattice();
@@ -917,6 +969,43 @@ DoFSpace make_symmetry_adapted_dof_space_v2(
   return DoFSpace(dof_space.shared_prim(), dof_space.dof_key(),
                   sym_info.transformation_matrix_to_super(), dof_space.sites(),
                   symmetry_report->symmetry_adapted_subspace);
+}
+
+/// Removes the default occupation modes from the DoFSpace basis
+DoFSpace exclude_default_occ_modes(DoFSpace const &dof_space) {
+  if (dof_space.dof_key() != "occ") {
+    throw std::runtime_error(
+        "Error in exclude_default_occ_modes: Not occupation DoF");
+  }
+
+  // Copy current basis
+  Eigen::MatrixXd basis = dof_space.basis();
+
+  // Set entries to zero which correspond to dof_component == 0 (default occ)
+  std::vector<Index> const &axis_dof_component =
+      *dof_space.axis_dof_component();
+  for (Index i = 0; i < basis.rows(); ++i) {
+    for (Index j = 0; j < basis.cols(); ++j) {
+      if (axis_dof_component[i] == 0) {
+        basis(i, j) = 0.0;
+      }
+    }
+  }
+
+  // Copy non-zero columns
+  Eigen::MatrixXd tbasis(basis.rows(), basis.cols());
+  Index non_zero_cols = 0;
+  for (Index j = 0; j < basis.cols(); ++j) {
+    if (!almost_zero(basis.col(j))) {
+      tbasis.col(non_zero_cols) = basis.col(j);
+      ++non_zero_cols;
+    }
+  }
+
+  // Construct with only non-zero columns
+  return DoFSpace(dof_space.shared_prim(), dof_space.dof_key(),
+                  dof_space.transformation_matrix_to_super(), dof_space.sites(),
+                  tbasis.leftCols(non_zero_cols));
 }
 
 /// Removes the homogeneous mode space from the local continuous DoFSpace basis.
