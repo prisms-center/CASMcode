@@ -43,29 +43,33 @@ CanonicalSettings::CanonicalSettings(const PrimClex &_primclex,
 // --- CanonicalConditions settings ---------------------
 
 /// \brief Expects initial_conditions
-CanonicalConditions CanonicalSettings::initial_conditions() const {
+CanonicalConditions CanonicalSettings::initial_conditions(
+    Canonical const &mc) const {
   if (drive_mode() == Monte::DRIVE_MODE::INCREMENTAL) {
-    return _conditions("initial_conditions");
+    return _conditions("initial_conditions", mc);
   } else if (drive_mode() == Monte::DRIVE_MODE::CUSTOM) {
-    return custom_conditions()[0];
+    return custom_conditions(mc)[0];
   } else {
     throw std::runtime_error("ERROR: Invalid drive mode.");
   }
 }
 
 /// \brief Expects final_conditions
-CanonicalConditions CanonicalSettings::final_conditions() const {
-  return _conditions("final_conditions");
+CanonicalConditions CanonicalSettings::final_conditions(
+    Canonical const &mc) const {
+  return _conditions("final_conditions", mc);
 }
 
 /// \brief Expects incremental_conditions
-CanonicalConditions CanonicalSettings::incremental_conditions() const {
+CanonicalConditions CanonicalSettings::incremental_conditions(
+    Canonical const &mc) const {
   bool incremental = true;
-  return _conditions("incremental_conditions", incremental);
+  return _conditions("incremental_conditions", mc, incremental);
 }
 
 /// \brief Expects incremental_conditions
-std::vector<CanonicalConditions> CanonicalSettings::custom_conditions() const {
+std::vector<CanonicalConditions> CanonicalSettings::custom_conditions(
+    Canonical const &mc) const {
   std::string level1 = "driver";
   std::string level2 = "custom_conditions";
 
@@ -73,7 +77,7 @@ std::vector<CanonicalConditions> CanonicalSettings::custom_conditions() const {
     std::vector<CanonicalConditions> cond;
     const jsonParser &json = (*this)[level1][level2];
     for (auto it = json.begin(); it != json.end(); ++it) {
-      cond.push_back(_conditions(*it));
+      cond.push_back(_conditions(*it, mc));
     }
     return cond;
   } catch (std::runtime_error &e) {
@@ -140,23 +144,28 @@ ClexDescription CanonicalSettings::formation_energy(
 /// \brief Make order parameter calculator
 std::shared_ptr<OrderParameter> CanonicalSettings::make_order_parameter(
     const PrimClex &primclex) const {
-  if (!_is_setting("model", "order_parameter")) {
-    return nullptr;
+  if (m_order_parameter_checked) {
+    return m_order_parameter;
   }
-  std::unique_ptr<DoFSpace> value =
-      (*this)["model"]["order_parameter"].make<DoFSpace>(
-          primclex.shared_prim());
-  return std::make_shared<OrderParameter>(*value);
+  if (_is_setting("model", "order_parameter")) {
+    std::unique_ptr<DoFSpace> value =
+        (*this)["model"]["order_parameter"].make<DoFSpace>(
+            primclex.shared_prim());
+    m_order_parameter = std::make_shared<OrderParameter>(*value);
+  }
+  m_order_parameter_checked = true;
+  return m_order_parameter;
 }
 
 // --- Sampler settings ---------------------
 
 CanonicalConditions CanonicalSettings::_conditions(std::string name,
+                                                   Canonical const &mc,
                                                    bool incremental) const {
   std::string level1 = "driver";
   std::string level2 = name;
   try {
-    return _conditions((*this)[level1][level2], incremental);
+    return _conditions((*this)[level1][level2], mc, incremental);
   } catch (std::runtime_error &e) {
     Log &err_log = CASM::err_log();
     err_log.error<Log::standard>("Reading Monte Carlo settings");
@@ -169,9 +178,10 @@ CanonicalConditions CanonicalSettings::_conditions(std::string name,
 }
 
 CanonicalConditions CanonicalSettings::_conditions(const jsonParser &json,
+                                                   Canonical const &mc,
                                                    bool incremental) const {
   CanonicalConditions result;
-  from_json(result, primclex(), json, incremental);
+  from_json(result, primclex(), json, mc, incremental);
   return result;
 }
 

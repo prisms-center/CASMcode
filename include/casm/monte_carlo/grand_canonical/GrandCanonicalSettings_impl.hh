@@ -54,6 +54,9 @@ SamplerInsertIterator GrandCanonicalSettings::samplers(
 
   std::vector<std::string> required = {"potential_energy", "formation_energy",
                                        "comp", "comp_n"};
+  if (this->make_order_parameter(primclex) != nullptr) {
+    required.push_back("order_parameter");
+  }
 
   // add required if not already requested
   for (auto it = required.begin(); it != required.end(); ++it) {
@@ -94,8 +97,9 @@ SamplerInsertIterator GrandCanonicalSettings::samplers(
 
       // scalar quantities that we incrementally update
       std::vector<std::string> vector_possible = {
-          "comp",      "comp_n",           "site_frac",
-          "atom_frac", "all_correlations", "non_zero_eci_correlations"};
+          "comp",           "comp_n",           "site_frac",
+          "atom_frac",      "all_correlations", "non_zero_eci_correlations",
+          "order_parameter"};
 
       // check if property found is in list of possible vector properties
       if (std::find(vector_possible.cbegin(), vector_possible.cend(),
@@ -128,6 +132,11 @@ SamplerInsertIterator GrandCanonicalSettings::samplers(
         else if (prop_name == "non_zero_eci_correlations") {
           result =
               _make_non_zero_eci_correlations_samplers(primclex, it, result);
+        }
+
+        // construct MonteSamplers for 'order_parameter'
+        else if (prop_name == "order_parameter") {
+          result = _make_order_parameter_samplers(primclex, it, result);
         }
         continue;
       }
@@ -334,6 +343,45 @@ GrandCanonicalSettings::_make_non_zero_eci_correlations_samplers(
     size_type i = _eci.index()[ii];
 
     print_name = std::string("corr(") + std::to_string(i) + ")";
+
+    std::tie(must_converge, prec) = _get_precision(it);
+
+    // if 'must converge'
+    if (must_converge) {
+      ptr = new VectorMonteSampler(prop_name, i, print_name, prec, confidence(),
+                                   data_maxlength);
+    } else {
+      ptr = new VectorMonteSampler(prop_name, i, print_name, confidence(),
+                                   data_maxlength);
+    }
+
+    *result++ =
+        std::make_pair(print_name, notstd::cloneable_ptr<MonteSampler>(ptr));
+  }
+
+  return result;
+}
+
+template <typename jsonParserIteratorType, typename SamplerInsertIterator>
+SamplerInsertIterator GrandCanonicalSettings::_make_order_parameter_samplers(
+    const PrimClex &primclex, jsonParserIteratorType it,
+    SamplerInsertIterator result) const {
+  size_type data_maxlength = max_data_length();
+  std::string print_name;
+  bool must_converge;
+  double prec;
+  MonteSampler *ptr;
+
+  int basis_size = 0;
+  std::shared_ptr<OrderParameter> order_parameter =
+      this->make_order_parameter(primclex);
+  if (order_parameter != nullptr) {
+    basis_size = order_parameter->dof_space().subspace_dim();
+  }
+
+  for (size_type i = 0; i < basis_size; i++) {
+    std::string prop_name = "eta";
+    print_name = std::string("order_parameter(") + std::to_string(i) + ")";
 
     std::tie(must_converge, prec) = _get_precision(it);
 

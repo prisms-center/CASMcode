@@ -36,30 +36,32 @@ GrandCanonicalSettings::GrandCanonicalSettings(const PrimClex &_primclex,
 // --- GrandCanonicalConditions settings ---------------------
 
 /// \brief Expects initial_conditions
-GrandCanonicalConditions GrandCanonicalSettings::initial_conditions() const {
+GrandCanonicalConditions GrandCanonicalSettings::initial_conditions(
+    GrandCanonical const &mc) const {
   if (drive_mode() == Monte::DRIVE_MODE::INCREMENTAL) {
-    return _conditions("initial_conditions");
+    return _conditions("initial_conditions", mc);
   } else if (drive_mode() == Monte::DRIVE_MODE::CUSTOM) {
-    return custom_conditions()[0];
+    return custom_conditions(mc)[0];
   } else {
     throw std::runtime_error("ERROR: Invalid drive mode.");
   }
 }
 
 /// \brief Expects final_conditions
-GrandCanonicalConditions GrandCanonicalSettings::final_conditions() const {
-  return _conditions("final_conditions");
+GrandCanonicalConditions GrandCanonicalSettings::final_conditions(
+    GrandCanonical const &mc) const {
+  return _conditions("final_conditions", mc);
 }
 
 /// \brief Expects incremental_conditions
-GrandCanonicalConditions GrandCanonicalSettings::incremental_conditions()
-    const {
-  return _conditions("incremental_conditions");
+GrandCanonicalConditions GrandCanonicalSettings::incremental_conditions(
+    GrandCanonical const &mc) const {
+  return _conditions("incremental_conditions", mc);
 }
 
 /// \brief Expects incremental_conditions
-std::vector<GrandCanonicalConditions>
-GrandCanonicalSettings::custom_conditions() const {
+std::vector<GrandCanonicalConditions> GrandCanonicalSettings::custom_conditions(
+    GrandCanonical const &mc) const {
   std::string level1 = "driver";
   std::string level2 = "custom_conditions";
 
@@ -67,7 +69,7 @@ GrandCanonicalSettings::custom_conditions() const {
     std::vector<GrandCanonicalConditions> cond;
     const jsonParser &json = (*this)[level1][level2];
     for (auto it = json.begin(); it != json.end(); ++it) {
-      cond.push_back(_conditions(*it));
+      cond.push_back(_conditions(*it, mc));
     }
     return cond;
   } catch (std::runtime_error &e) {
@@ -134,23 +136,27 @@ ClexDescription GrandCanonicalSettings::formation_energy(
 /// \brief Make order parameter calculator
 std::shared_ptr<OrderParameter> GrandCanonicalSettings::make_order_parameter(
     const PrimClex &primclex) const {
-  if (!_is_setting("model", "order_parameter")) {
-    return nullptr;
+  if (m_order_parameter_checked) {
+    return m_order_parameter;
   }
-  std::unique_ptr<DoFSpace> value =
-      (*this)["model"]["order_parameter"].make<DoFSpace>(
-          primclex.shared_prim());
-  return std::make_shared<OrderParameter>(*value);
+  if (_is_setting("model", "order_parameter")) {
+    std::unique_ptr<DoFSpace> value =
+        (*this)["model"]["order_parameter"].make<DoFSpace>(
+            primclex.shared_prim());
+    m_order_parameter = std::make_shared<OrderParameter>(*value);
+  }
+  m_order_parameter_checked = true;
+  return m_order_parameter;
 }
 
 // --- Sampler settings ---------------------
 
 GrandCanonicalConditions GrandCanonicalSettings::_conditions(
-    std::string name) const {
+    std::string name, GrandCanonical const &mc) const {
   std::string level1 = "driver";
   std::string level2 = name;
   try {
-    return _conditions((*this)[level1][level2]);
+    return _conditions((*this)[level1][level2], mc);
   } catch (std::runtime_error &e) {
     Log &err_log = CASM::err_log();
     err_log.error<Log::standard>("Reading Monte Carlo settings");
@@ -163,9 +169,9 @@ GrandCanonicalConditions GrandCanonicalSettings::_conditions(
 }
 
 GrandCanonicalConditions GrandCanonicalSettings::_conditions(
-    const jsonParser &json) const {
+    const jsonParser &json, GrandCanonical const &mc) const {
   GrandCanonicalConditions result;
-  from_json(result, primclex(), json);
+  from_json(result, primclex(), json, mc);
   return result;
 }
 

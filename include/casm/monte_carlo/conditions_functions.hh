@@ -10,6 +10,7 @@
 
 namespace CASM {
 namespace Monte {
+namespace conditions {
 
 /// \brief If lhs and rhs have values, do `*lhs += *rhs`
 template <typename MatrixType>
@@ -88,6 +89,24 @@ void find_max_division(int &max_division, std::optional<MatrixType> const &lhs,
   }
 }
 
+/// \brief If lhs and rhs have values, update max_division if round((*lhs)(i) /
+/// (*rhs)(i)) > max_division for any i, and ignoring divide by 0
+template <typename MatrixType>
+void print_param(std::ostream &sout, std::string name,
+                 std::optional<MatrixType> const &param) {
+  if (!param.has_value()) {
+    return;
+  }
+  if (param->cols() == 1) {
+    jsonParser json;
+    sout << name << ": " << to_json_array(*param, json) << "\n";
+  } else {
+    jsonParser json;
+    sout << name << ": " << to_json(*param, json) << "\n";
+  }
+}
+
+}  // namespace conditions
 }  // namespace Monte
 }  // namespace CASM
 

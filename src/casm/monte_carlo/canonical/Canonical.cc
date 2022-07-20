@@ -2,6 +2,7 @@
 
 #include "casm/clex/ConfigCorrelations.hh"
 #include "casm/clex/FillSupercell.hh"
+#include "casm/clusterography/io/OrbitPrinter_impl.hh"
 #include "casm/database/ConfigDatabase.hh"
 #include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
@@ -29,6 +30,20 @@ Clex make_clex(PrimClex const &primclex, CanonicalSettings const &settings) {
   ClexDescription const &clex_desc = settings.formation_energy(primclex);
   return Clex{primclex.clexulator(clex_desc.bset), primclex.eci(clex_desc)};
 }
+// note: the construction process needs refactoring
+std::shared_ptr<RandomAlloyCorrCalculator> make_random_alloy_corr_f(
+    PrimClex const &primclex, CanonicalSettings const &settings) {
+  auto shared_prim = primclex.shared_prim();
+  ClexDescription const &clex_desc = settings.formation_energy(primclex);
+  std::string basis_set_name = clex_desc.bset;
+
+  std::vector<IntegralCluster> prototypes;
+  jsonParser clust_json{primclex.dir().clust(basis_set_name)};
+  read_clust(std::back_inserter(prototypes), clust_json, *shared_prim);
+
+  return std::make_shared<RandomAlloyCorrCalculator>(
+      shared_prim, primclex.basis_set_specs(basis_set_name), prototypes);
+}
 
 /// \brief Constructs a Canonical object and prepares it for running based on
 /// MonteSettings
@@ -39,6 +54,7 @@ Canonical::Canonical(const PrimClex &primclex,
     : MonteCarlo(primclex, settings, log),
       m_formation_energy_clex(make_clex(primclex, settings)),
       m_order_parameter(settings.make_order_parameter(primclex)),
+      m_random_alloy_corr_f(make_random_alloy_corr_f(primclex, settings)),
       m_convert(_supercell()),
       m_cand(m_convert),
       m_occ_loc(m_convert, m_cand),
@@ -59,6 +75,7 @@ Canonical::Canonical(const PrimClex &primclex,
     to_json(m_order_parameter->dof_space(), json);
     _log().custom("DoF Space");
     _log() << json << std::endl;
+    m_order_parameter->update(config());
   }
   _log() << "supercell: \n" << supercell().transf_mat() << "\n";
   _log() << "\nSampling: \n";
@@ -111,8 +128,7 @@ void Canonical::set_configdof(const ConfigDoF &configdof,
   }
   _log() << std::endl;
 
-  reset(_enforce_conditions(configdof));
-  _update_properties();
+  reset(configdof);
 }
 
 /// \brief Set configdof and conditions and clear previously collected data
@@ -192,6 +208,34 @@ void Canonical::set_state(const CanonicalConditions &new_conditions,
 const Canonical::EventType &Canonical::propose() {
   m_occ_loc.propose_canonical(m_event.occ_event(), m_cand.canonical_swap(),
                               _mtrand());
+
+  if (debug()) {
+    _log().custom("Propose event");
+
+    for (int i = 0; i < m_event.occ_event().linear_site_index.size(); ++i) {
+      Index l = m_event.occ_event().linear_site_index[i];
+      Index asym = m_convert.l_to_asym(l);
+      Index current_occupant = _configdof().occ(l);
+      Index current_species = m_convert.species_index(asym, current_occupant);
+      std::string current_species_name =
+          m_convert.species_name(current_species);
+      Index new_occupant = m_event.occ_event().new_occ[i];
+      Index new_species = m_convert.species_index(asym, new_occupant);
+      std::string new_species_name = m_convert.species_name(new_species);
+      _log() << "- Mutating site (linear index): " << l << "\n"
+             << "  Mutating site (b, i, j, k): " << m_convert.l_to_bijk(l)
+             << "\n"
+             << "  Current occupant: " << current_occupant << " ("
+             << current_species_name << ")\n"
+             << "  Proposed occupant: " << new_occupant << " ("
+             << new_species_name << ")\n";
+    }
+    _log() << "\n";
+    _log() << "  beta: " << m_condition.beta() << "\n"
+           << "  T: " << m_condition.temperature() << std::endl
+           << std::endl;
+  }
+
   _update_deltas(m_event);
   return m_event;
 }
@@ -273,39 +317,95 @@ void Canonical::write_results(Index cond_index) const {
 ///
 /// \throws If config does not have the same supercell as this
 double Canonical::potential_energy(const Configuration &config) const {
-  // if(&config == &this->config()) { return potential_energy(); }
-  if (&this->supercell() != &config.supercell()) {
-    throw std::runtime_error(
-        "Error in Canonical::potential_energy: supercell mismatch");
+  if (debug()) {
+    _log().calculate("Potential energy");
   }
+  // if(&config == &this->config()) { return potential_energy(); }
 
   auto corr = correlations(config, _clexulator());
-  double formation_energy = _eci() * corr.data();
-  double potential_energy = formation_energy;
 
+  if (debug()) {
+    _print_correlations(corr, "correlations", "corr");
+  }
+
+  double potential_energy = 0;
+
+  if (m_condition.include_formation_energy()) {
+    potential_energy += _eci() * corr.data();
+    if (debug()) {
+      _log() << "  potential_energy (w/ formation_energy): " << potential_energy
+             << std::endl;
+    }
+  }
+  if (m_condition.corr_matching_pot().has_value()) {
+    potential_energy +=
+        corr_matching_potential(corr, *m_condition.corr_matching_pot());
+    if (debug()) {
+      _log() << "  potential_energy (w/ corr_matching_pot): "
+             << potential_energy << std::endl;
+    }
+  }
+  if (m_condition.random_alloy_corr_matching_pot().has_value()) {
+    potential_energy += corr_matching_potential(
+        corr, *m_condition.random_alloy_corr_matching_pot());
+    if (debug()) {
+      _log() << "  potential_energy (w/ random_alloy_corr_matching_pot): "
+             << potential_energy << std::endl;
+    }
+  }
   if (m_order_parameter != nullptr) {
-    // temporarily reset ConfigDoFValues pointer - requires that the supercell
-    // is unchanged
-    clexulator::ConfigDoFValues const *prev = m_order_parameter->get();
-    m_order_parameter->set(&config.configdof().values());
-    Eigen::VectorXd const &eta = m_order_parameter->value();
-    m_order_parameter->set(prev);
+    // ---
+    // this is a hack to allow Canonical::potential to be
+    // used on any Configuration
+    Eigen::VectorXd eta;
+    if (&this->supercell() != &config.supercell()) {
+      OrderParameter tmp = *m_order_parameter;
+      eta = tmp(config);
+    } else {
+      // temporarily reset ConfigDoFValues pointer
+      // - requires that the supercell is unchanged
+      clexulator::ConfigDoFValues const *prev = m_order_parameter->get();
+      m_order_parameter->set(&config.configdof().values());
+      eta = m_order_parameter->value();
+      m_order_parameter->set(prev);
+    }
+    // ---
+    if (debug()) {
+      _log() << "  eta: " << eta.transpose() << std::endl;
+    }
+
     if (m_condition.order_parameter_pot().has_value()) {
       Eigen::VectorXd const &v = *m_condition.order_parameter_pot();
       potential_energy -= v.dot(eta);
+      if (debug()) {
+        _log() << "  potential_energy (w/ order_parameter_pot): "
+               << potential_energy << std::endl;
+      }
     }
     if (m_condition.order_parameter_quad_pot_vector().has_value()) {
       Eigen::VectorXd x =
           (eta - *m_condition.order_parameter_quad_pot_target());
       Eigen::VectorXd const &v = *m_condition.order_parameter_quad_pot_vector();
       potential_energy += v.dot((x.array() * x.array()).matrix());
+      if (debug()) {
+        _log() << "  potential_energy (w/ order_parameter_quad_pot_vector): "
+               << potential_energy << std::endl;
+      }
     }
     if (m_condition.order_parameter_quad_pot_matrix().has_value()) {
       Eigen::VectorXd x =
           (eta - *m_condition.order_parameter_quad_pot_target());
       Eigen::VectorXd const &v = *m_condition.order_parameter_quad_pot_matrix();
       potential_energy += x.dot(v * x);
+      if (debug()) {
+        _log() << "  potential_energy (w/ order_parameter_quad_pot_matrix): "
+               << potential_energy << std::endl;
+      }
     }
+  }
+
+  if (debug()) {
+    _log() << std::endl;
   }
   return potential_energy;
 }
@@ -354,26 +454,68 @@ void Canonical::_print_correlations(const Eigen::VectorXd &corr,
 
 /// \brief Update delta properties in 'event'
 void Canonical::_update_deltas(CanonicalEvent &event) const {
-  // ---- set dcorr --------------
+  if (debug()) {
+    _log().custom("Update deltas");
+  }
+  // ---- set dCorr (extensive) --------------
   _set_dCorr(event);
 
-  // ---- set dformation_energy --------------
+  // ---- set dformation_energy (extensive) --------------
   event.set_dEf(_eci() * event.dCorr().data());
 
-  // ---- set dpotential_energy --------------
+  // ---- set deta (intensive) -------------
+  if (m_order_parameter != nullptr) {
+    event.deta() = m_order_parameter->occ_delta(
+        event.occ_event().linear_site_index, event.occ_event().new_occ);
+  }
 
-  double dEpot = event.dEf();
+  if (debug()) {
+    _log() << "  dEf: " << event.dEf() << std::endl;
+    if (m_order_parameter != nullptr) {
+      _log() << "  eta: " << this->eta().transpose() << std::endl;
+      _log() << "  deta: " << event.deta().transpose() << std::endl;
+    }
+  }
 
+  // ---- set dpotential_energy (extensive) --------------
+  double dEpot = 0;
+  if (m_condition.include_formation_energy()) {
+    dEpot += event.dEf();
+    if (debug()) {
+      _log() << "  dEpot (w/ formation_energy): " << dEpot << std::endl;
+    }
+  }
+  if (m_condition.corr_matching_pot()) {
+    dEpot += delta_corr_matching_potential(this->corr(),
+                                           event.dCorr() / supercell().volume(),
+                                           *m_condition.corr_matching_pot());
+    if (debug()) {
+      _log() << "  dEpot (w/ corr_matching_pot): " << dEpot << std::endl;
+    }
+  }
+  if (m_condition.random_alloy_corr_matching_pot()) {
+    dEpot += delta_corr_matching_potential(
+        this->corr(), event.dCorr() / supercell().volume(),
+        *m_condition.random_alloy_corr_matching_pot());
+    if (debug()) {
+      _log() << "  dEpot (w/ random_alloy_corr_matching_pot): " << dEpot
+             << std::endl;
+    }
+  }
   if (m_order_parameter != nullptr) {
     // note: eta and deta are intensive
     double Nunit = supercell().volume();
     Eigen::VectorXd const &eta = this->eta();
-    Eigen::VectorXd const &deta = m_order_parameter->occ_delta(
-        event.occ_event().linear_site_index, event.occ_event().new_occ);
-    event.deta() = deta;
+    Eigen::VectorXd const &deta = event.deta();
     if (m_condition.order_parameter_pot().has_value()) {
       Eigen::VectorXd const &v = *m_condition.order_parameter_pot();
       dEpot -= Nunit * v.dot(deta);
+      if (debug()) {
+        auto expected = -Nunit * v.dot(deta);
+
+        _log() << "  dEpot (w/ order_parameter_pot): " << dEpot << "  ("
+               << expected << ")" << std::endl;
+      }
     }
     if (m_condition.order_parameter_quad_pot_vector().has_value()) {
       Eigen::VectorXd const &target =
@@ -383,22 +525,42 @@ void Canonical::_update_deltas(CanonicalEvent &event) const {
         dEpot += Nunit * v(i) *
                  (2.0 * (eta(i) - target(i)) * deta(i) + deta(i) * deta(i));
       }
+      if (debug()) {
+        auto x2 = (eta + deta - target);
+        auto x1 = (eta - target);
+        auto expected = Nunit * (v.dot((x2.array() * x2.array()).matrix()) -
+                                 v.dot((x1.array() * x1.array()).matrix()));
+
+        _log() << "  dEpot (w/ order_parameter_quad_pot_vector): " << dEpot
+               << "  (" << expected << ")" << std::endl;
+      }
     }
     if (m_condition.order_parameter_quad_pot_matrix().has_value()) {
       Eigen::VectorXd const &target =
           *m_condition.order_parameter_quad_pot_target();
-      Eigen::MatrixXd const &v = *m_condition.order_parameter_quad_pot_matrix();
+      Eigen::MatrixXd const &V = *m_condition.order_parameter_quad_pot_matrix();
 
       for (int i = 0; i < deta.size(); ++i) {
         for (int j = 0; j < deta.size(); ++j) {
-          dEpot += Nunit * v(i, j) *
+          dEpot += Nunit * V(i, j) *
                    (eta(i) * deta(j) + eta(j) * deta(i) -
                     2.0 * target(i) * deta(j) + deta(i) * deta(j));
         }
       }
+      if (debug()) {
+        auto x2 = (eta + deta - target);
+        auto x1 = (eta - target);
+        auto expected = Nunit * (x2.dot(V * x2) - x1.dot(V * x1));
+
+        _log() << "  dEpot (w/ order_parameter_quad_pot_matrix): " << dEpot
+               << "  (" << expected << ")" << std::endl;
+      }
     }
   }
 
+  if (debug()) {
+    _log() << std::endl;
+  }
   event.set_dEpot(dEpot);
 }
 
@@ -422,34 +584,8 @@ void Canonical::_update_properties() {
   _scalar_properties()["formation_energy"] = _eci() * corr().data();
   m_formation_energy = &_scalar_property("formation_energy");
 
-  _scalar_properties()["potential_energy"] = formation_energy();
+  _scalar_properties()["potential_energy"] = this->potential_energy(config());
   m_potential_energy = &_scalar_property("potential_energy");
-
-  if (debug()) {
-    _print_correlations(corr(), "correlations", "corr");
-
-    auto origin = primclex().composition_axes().origin();
-    auto comp_x = primclex().composition_axes().param_composition(comp_n());
-    auto M = primclex().composition_axes().dmol_dparam();
-
-    _log().custom("Calculate properties");
-    _log() << "Canonical ensemble: \n"
-           << "  Thermodynamic potential (per unitcell), phi = -kT*ln(Z)/N \n"
-           << "  Partition function, Z = sum_i exp(-N*potential_energy_i/kT) \n"
-           << "  composition, comp_n = origin + M * comp_x \n"
-           << "  potential_energy (per unitcell) = formation_energy \n\n"
-
-           << "components: "
-           << jsonParser(primclex().composition_axes().components()) << "\n"
-           << "M:\n"
-           << M << "\n"
-           << "origin: " << origin.transpose() << "\n"
-           << "comp_n: " << comp_n().transpose() << "\n"
-           << "comp_x: " << comp_x.transpose() << "\n"
-           << "formation_energy: " << formation_energy() << "\n"
-           << "potential_energy: " << potential_energy() << "\n"
-           << std::endl;
-  }
 }
 
 /// \brief Generate supercell filling ConfigDoF from default configuration
@@ -483,7 +619,12 @@ ConfigDoF Canonical::_configname_motif(const std::string &configname) const {
   _log() << "motif configname: " << configname << "\n";
   _log() << "using configation: " << configname << "\n" << std::endl;
 
-  Configuration config = *primclex().db<Configuration>().find(configname);
+  auto it = primclex().db<Configuration>().find(configname);
+  if (it == primclex().db<Configuration>().end()) {
+    throw std::runtime_error(std::string("Error: did not find motif '") +
+                             configname + "'");
+  }
+  Configuration config = *it;
   return fill_supercell(config, _supercell()).configdof();
 }
 

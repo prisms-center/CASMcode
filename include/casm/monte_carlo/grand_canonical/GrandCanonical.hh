@@ -3,6 +3,7 @@
 
 #include "casm/clex/Clex.hh"
 #include "casm/enumerator/OrderParameter.hh"
+#include "casm/monte_carlo/Conversions.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
 #include "casm/monte_carlo/MonteCarloEnum.hh"
 #include "casm/monte_carlo/MonteDefinitions.hh"
@@ -103,6 +104,20 @@ class GrandCanonical : public MonteCarlo {
   /// \brief Get potential energy, normalized per primitive cell
   double potential_energy(const Configuration &config) const;
 
+  Clexulator const &clexulator() const {
+    return m_formation_energy_clex.clexulator;
+  }
+
+  /// \brief Get the order parameter calculator (must be copied to be used)
+  std::shared_ptr<OrderParameter const> order_parameter() const {
+    return m_order_parameter;
+  }
+
+  /// \brief Get the random alloy correlation calculator
+  std::shared_ptr<RandomAlloyCorrCalculator> random_alloy_corr_f() const {
+    return m_random_alloy_corr_f;
+  }
+
  private:
   /// \brief Formation energy, normalized per primitive cell
   double &_formation_energy() { return *m_formation_energy; }
@@ -170,6 +185,12 @@ class GrandCanonical : public MonteCarlo {
 
   /// Holds order parameter calculator
   std::shared_ptr<OrderParameter> m_order_parameter;
+
+  /// Holds random alloy corr calculator
+  std::shared_ptr<RandomAlloyCorrCalculator> m_random_alloy_corr_f;
+
+  /// Convert sublat/asym_unit and species/occ index
+  Conversions m_convert;
 
   /// Event to propose, check, accept/reject:
   EventType m_event;

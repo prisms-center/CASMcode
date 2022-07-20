@@ -22,33 +22,84 @@ MonteCarloEnum::MonteCarloEnum(const PrimClex &primclex,
       m_metric_args(set.enumeration_metric_args()),
       m_check_existence(set.enumeration_check_existence()),
       m_insert_canonical(set.enumeration_insert_canonical()),
-      m_dict(primclex.settings().query_handler<Configuration>().dict()) {
-  m_dict.insert(ConfigIO::GenericConfigFormatter<double>(
+      m_order_parameter(
+          mc.order_parameter() == nullptr
+              ? std::shared_ptr<OrderParameter>()
+              : std::make_shared<OrderParameter>(*mc.order_parameter())) {
+  // Configuration query dict
+  auto config_query_dict =
+      primclex.settings().query_handler<Configuration>().dict();
+  config_query_dict.insert(GenericDatumFormatter<double, Configuration>(
       "potential_energy", "potential_energy",
-      [&](const Configuration &config) { return mc.potential_energy(config); },
-      [&](const Configuration &config) { return true; }));
+      [&](Configuration const &config) { return mc.potential_energy(config); },
+      [&](Configuration const &config) { return true; }));
 
-  m_dict.insert(ConfigIO::GenericConfigFormatter<bool>(
+  config_query_dict.insert(
+      Generic1DDatumFormatter<Eigen::VectorXd, Configuration>(
+          "corr_matching_error", "corr_matching_error",
+          [&](Configuration const &config) {
+            return make_corr_matching_error(
+                correlations(config, mc.clexulator()),
+                *mc.conditions().corr_matching_pot());
+          },
+          [&](Configuration const &config) {
+            return mc.conditions().corr_matching_pot().has_value();
+          }));
+
+  config_query_dict.insert(
+      Generic1DDatumFormatter<Eigen::VectorXd, Configuration>(
+          "random_alloy_corr_matching_error",
+          "random_alloy_corr_matching_error",
+          [&](Configuration const &config) {
+            return make_corr_matching_error(
+                correlations(config, mc.clexulator()),
+                *mc.conditions().random_alloy_corr_matching_pot());
+          },
+          [&](Configuration const &config) {
+            return mc.conditions().random_alloy_corr_matching_pot().has_value();
+          }));
+
+  config_query_dict.insert(
+      Generic1DDatumFormatter<Eigen::VectorXd, Configuration>(
+          "order_parameter", "order_parameter",
+          [&](Configuration const &config) {
+            return (*m_order_parameter)(config);
+          },
+          [&](Configuration const &config) {
+            return m_order_parameter != nullptr;
+          }));
+
+  config_query_dict.insert(GenericDatumFormatter<bool, Configuration>(
       "is_new", "is_new",
-      [&](const Configuration &config) { return m_data[config.name()].first; },
-      [&](const Configuration &config) {
+      [&](Configuration const &config) { return m_data[config.name()].first; },
+      [&](Configuration const &config) {
         return m_data.find(config.name()) != m_data.end();
       }));
 
-  m_dict.insert(ConfigIO::GenericConfigFormatter<double>(
-      "score", "score",
-      [&](const Configuration &config) { return m_data[config.name()].second; },
-      [&](const Configuration &config) {
-        return m_data.find(config.name()) != m_data.end();
-      }));
+  config_query_dict.insert(GenericDatumFormatter<bool, Configuration>(
+      "selected", "selected", [](Configuration const &config) { return true; },
+      [](Configuration const &config) { return true; }));
 
+  // set hall of fame metric
   m_halloffame.unique().reset(new HallOfFameType(
-      MonteCarloEnumMetric(m_dict.parse(metric_args())),
+      MonteCarloEnumMetric(config_query_dict.parse(metric_args())),
       std::less<Configuration>(), set.enumeration_N_halloffame(),
       set.enumeration_tol()));
 
-  m_enum_check.unique().reset(
-      new MonteCarloEnumCheck(m_dict.parse(set.enumeration_check_args())));
+  // set pre-check function
+  m_enum_check.unique().reset(new MonteCarloEnumCheck(
+      config_query_dict.parse(set.enumeration_check_args())));
+
+  // std::pair<double, Configuration> query dict
+  for (const auto &datum_formatter : config_query_dict) {
+    m_dict.insert(
+        make_datum_formatter_adapter<PairType, Configuration>(datum_formatter));
+  }
+
+  m_dict.insert(GenericDatumFormatter<double, PairType>(
+      "score", "score",
+      [&](PairType const &score_and_config) { return score_and_config.first; },
+      [&](PairType const &score_and_config) { return true; }));
 
   reset();
 

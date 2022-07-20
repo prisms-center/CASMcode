@@ -38,7 +38,7 @@ jsonParser &to_json(const GrandCanonicalConditions &conditions,
 
 /// \brief Read GrandCanonicalConditions from JSON format
 void from_json(GrandCanonicalConditions &conditions, const PrimClex &primclex,
-               const jsonParser &json);
+               const jsonParser &json, GrandCanonical const &mc);
 
 /// \brief Print single spin flip LTE
 GenericDatumFormatter<double, ConstMonteCarloPtr> GrandCanonicalLTEFormatter(

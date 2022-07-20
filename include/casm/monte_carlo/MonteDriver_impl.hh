@@ -6,6 +6,8 @@
 #include <string>
 
 #include "casm/casm_io/container/json_io.hh"
+#include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
+#include "casm/casm_io/dataformatter/FormattedDataFile_impl.hh"
 #include "casm/clex/io/json/ConfigDoF_json_io.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
 #include "casm/monte_carlo/MonteCarloEnum.hh"
@@ -30,7 +32,10 @@ MonteDriver<RunType>::MonteDriver(const PrimClex &primclex,
       m_debug(m_settings.debug()),
       m_enum(m_settings.is_enumeration()
                  ? new MonteCarloEnum(primclex, settings, _log, m_mc)
-                 : nullptr) {}
+                 : nullptr),
+      m_enum_output_options(settings.enumeration_output_options()),
+      m_enum_output_properties(settings.enumeration_output_properties()),
+      m_enum_output_period(settings.enumeration_output_period()) {}
 
 /// \brief Run calculations for all conditions, outputting data as you finish
 /// each one
@@ -317,6 +322,11 @@ void MonteDriver<RunType>::single_run(Index cond_index) {
 
     if (res && m_enum && m_enum->on_accept()) {
       m_enum->insert(m_mc.config());
+
+      if (run_counter.step() != 0 &&
+          run_counter.step() % m_enum_output_period == 0) {
+        write_enum_output(cond_index);
+      }
     }
 
     run_counter++;
@@ -332,6 +342,17 @@ void MonteDriver<RunType>::single_run(Index cond_index) {
       run_counter.increment_samples();
       if (m_enum && m_enum->on_sample()) {
         m_enum->insert(m_mc.config());
+
+        if (run_counter.samples() != 0 &&
+                m_log << "samples: " << run_counter.samples()
+                      << " / output_period: " << m_enum_output_period
+                      << std::endl;
+            run_counter.samples() % m_enum_output_period == 0) {
+          write_enum_output(cond_index);
+        } else {
+          m_log << "samples: " << run_counter.samples()
+                << " / output_period: " << m_enum_output_period << std::endl;
+        }
       }
     }
   }
@@ -356,10 +377,60 @@ void MonteDriver<RunType>::single_run(Index cond_index) {
   m_log << std::endl;
 
   if (m_enum) {
-    m_enum->save_configs();
+    write_enum_output(cond_index);
   }
 
   return;
+}
+
+/// Save & write enumerated configurations
+template <typename RunType>
+void MonteDriver<RunType>::write_enum_output(Index cond_index) {
+  if (m_settings.enumeration_save_configs()) {
+    m_enum->save_configs(m_settings.enumeration_dry_run());
+  }
+
+  if (!m_enum_output_options.file_path.empty()) {
+    m_log.write("Enumerated configurations");
+    m_log << "number of configurations: " << m_enum->halloffame().size()
+          << std::endl;
+    if (m_enum->halloffame().size()) {
+      m_log << "best score: " << m_enum->halloffame().begin()->first
+            << std::endl;
+    }
+    FormattedDataFileOptions tmp_options = m_enum_output_options;
+    tmp_options.file_path =
+        m_dir.conditions_dir(cond_index) / m_enum_output_options.file_path;
+
+    FormattedDataFile<std::pair<double, Configuration>> data_out(tmp_options);
+
+    std::vector<std::string> args = {
+        "selected", "is_primitive", "score",     "potential_energy",
+        "comp",     "comp_n",       "atom_frac", "corr"};
+    if (m_mc.order_parameter() != nullptr) {
+      args.push_back("order_parameter");
+    }
+    if (m_settings.enumeration_save_configs()) {
+      args.push_back("is_new");
+      args.push_back("name");
+    }
+    if (m_mc.conditions().corr_matching_pot().has_value()) {
+      args.push_back("corr_matching_error");
+    }
+    if (m_mc.conditions().random_alloy_corr_matching_pot().has_value()) {
+      args.push_back("random_alloy_corr_matching_error");
+    }
+    std::copy(m_enum_output_properties.begin(), m_enum_output_properties.end(),
+              std::back_inserter(args));
+
+    DataFormatter<std::pair<double, Configuration>> formatter =
+        m_enum->dict().parse(args);
+    for (auto const &score_and_config : m_enum->halloffame()) {
+      data_out(formatter, score_and_config);
+    }
+
+    m_log << "write: " << tmp_options.file_path << std::endl << std::endl;
+  }
 }
 
 /**
@@ -382,12 +453,12 @@ MonteDriver<RunType>::make_conditions_list(const PrimClex &primclex,
   switch (m_drive_mode) {
     case Monte::DRIVE_MODE::CUSTOM: {
       // read existing conditions, and check for agreement
-      std::vector<CondType> custom_cond(settings.custom_conditions());
+      std::vector<CondType> custom_cond(settings.custom_conditions(m_mc));
       int i = 0;
       while (fs::exists(m_dir.conditions_json(i))) {
         CondType existing;
         jsonParser json(m_dir.conditions_json(i));
-        from_json(existing, primclex, json);
+        from_json(existing, primclex, json, m_mc);
         if (existing != custom_cond[i]) {
           m_err_log.error("Conditions mismatch");
           m_err_log << "existing conditions: " << m_dir.conditions_json(i)
@@ -404,9 +475,9 @@ MonteDriver<RunType>::make_conditions_list(const PrimClex &primclex,
     }
 
     case Monte::DRIVE_MODE::INCREMENTAL: {
-      CondType init_cond(settings.initial_conditions());
-      CondType final_cond(settings.final_conditions());
-      CondType cond_increment(settings.incremental_conditions());
+      CondType init_cond(settings.initial_conditions(m_mc));
+      CondType final_cond(settings.final_conditions(m_mc));
+      CondType cond_increment(settings.incremental_conditions(m_mc));
 
       CondType incrementing_cond = init_cond;
 
@@ -422,7 +493,7 @@ MonteDriver<RunType>::make_conditions_list(const PrimClex &primclex,
              i < conditions_list.size()) {
         CondType existing;
         jsonParser json(m_dir.conditions_json(i));
-        from_json(existing, primclex, json);
+        from_json(existing, primclex, json, m_mc);
         if (existing != conditions_list[i]) {
           m_err_log.error("Conditions mismatch");
           m_err_log << "existing conditions: " << m_dir.conditions_json(i)

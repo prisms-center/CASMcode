@@ -5,6 +5,7 @@
 
 #include "casm/clex/PrimClex.hh"
 #include "casm/global/eigen.hh"
+#include "casm/monte_carlo/CorrMatchingPotential.hh"
 
 namespace CASM {
 namespace Monte {
@@ -31,6 +32,8 @@ class GrandCanonicalConditions {
   GrandCanonicalConditions(
       const PrimClex &_primclex, double _temperature,
       const Eigen::VectorXd &_param_chem_pot, double _tol,
+      bool _include_formation_energy = true,
+      bool _include_param_chem_pot = true,
       std::optional<Eigen::VectorXd> _param_comp_quad_pot_target = std::nullopt,
       std::optional<Eigen::VectorXd> _param_comp_quad_pot_vector = std::nullopt,
       std::optional<Eigen::MatrixXd> _param_comp_quad_pot_matrix = std::nullopt,
@@ -40,7 +43,10 @@ class GrandCanonicalConditions {
       std::optional<Eigen::VectorXd> _order_parameter_quad_pot_vector =
           std::nullopt,
       std::optional<Eigen::MatrixXd> _order_parameter_quad_pot_matrix =
-          std::nullopt);
+          std::nullopt,
+      std::optional<CorrMatchingParams> _corr_matching_pot = std::nullopt,
+      std::optional<RandomAlloyCorrMatchingParams>
+          _random_alloy_corr_matching_pot = std::nullopt);
 
   // ***************************************ACCESSORS**********************************************
   // //
@@ -65,6 +71,10 @@ class GrandCanonicalConditions {
   double param_chem_pot(Index index) const;
 
   double tolerance() const;
+
+  bool include_formation_energy() const { return m_include_formation_energy; }
+
+  bool include_param_chem_pot() const { return m_include_param_chem_pot; }
 
   std::optional<Eigen::VectorXd> const &param_comp_quad_pot_target() const {
     return m_param_comp_quad_pot_target;
@@ -95,6 +105,15 @@ class GrandCanonicalConditions {
   std::optional<Eigen::MatrixXd> const &order_parameter_quad_pot_matrix()
       const {
     return m_order_parameter_quad_pot_matrix;
+  }
+
+  std::optional<CorrMatchingParams> const &corr_matching_pot() const {
+    return m_corr_matching_pot;
+  }
+
+  std::optional<RandomAlloyCorrMatchingParams> const &
+  random_alloy_corr_matching_pot() const {
+    return m_random_alloy_corr_matching_pot;
   }
 
   // ***************************************MUTATORS***********************************************
@@ -156,6 +175,9 @@ class GrandCanonicalConditions {
   /// Tolerance for comparison operators == and !=
   double m_tolerance;
 
+  bool m_include_formation_energy;
+  bool m_include_param_chem_pot;
+
   std::optional<Eigen::VectorXd> m_param_comp_quad_pot_target;
   std::optional<Eigen::VectorXd> m_param_comp_quad_pot_vector;
   std::optional<Eigen::MatrixXd> m_param_comp_quad_pot_matrix;
@@ -164,6 +186,9 @@ class GrandCanonicalConditions {
   std::optional<Eigen::VectorXd> m_order_parameter_quad_pot_target;
   std::optional<Eigen::VectorXd> m_order_parameter_quad_pot_vector;
   std::optional<Eigen::MatrixXd> m_order_parameter_quad_pot_matrix;
+
+  std::optional<CorrMatchingParams> m_corr_matching_pot;
+  std::optional<RandomAlloyCorrMatchingParams> m_random_alloy_corr_matching_pot;
 };
 
 std::ostream &operator<<(std::ostream &sout,
