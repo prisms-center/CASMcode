@@ -2,6 +2,7 @@
 #define CASM_Canonical_HH
 
 #include "casm/clex/Clex.hh"
+#include "casm/enumerator/OrderParameter.hh"
 #include "casm/monte_carlo/Conversions.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
 #include "casm/monte_carlo/MonteDefinitions.hh"
@@ -92,8 +93,25 @@ class Canonical : public MonteCarlo {
   /// \brief Number of atoms of each type, normalized per primitive cell
   const Eigen::VectorXd &comp_n() const { return *m_comp_n; }
 
+  /// \brief Order parameters (intensive)
+  const Eigen::VectorXd &eta() const { return *m_eta; }
+
   /// \brief Get potential energy
   double potential_energy(const Configuration &config) const;
+
+  Clexulator const &clexulator() const {
+    return m_formation_energy_clex.clexulator;
+  }
+
+  /// \brief Get the order parameter calculator (must be copied to be used)
+  std::shared_ptr<OrderParameter const> order_parameter() const {
+    return m_order_parameter;
+  }
+
+  /// \brief Get the random alloy correlation calculator
+  std::shared_ptr<RandomAlloyCorrCalculator> random_alloy_corr_f() const {
+    return m_random_alloy_corr_f;
+  }
 
  private:
   /// \brief Formation energy, normalized per primitive cell
@@ -107,6 +125,9 @@ class Canonical : public MonteCarlo {
 
   /// \brief Number of atoms of each type, normalized per primitive cell
   Eigen::VectorXd &_comp_n() { return *m_comp_n; }
+
+  /// \brief Order parameters (intensive)
+  Eigen::VectorXd &_eta() { return *m_eta; }
 
   Clexulator const &_clexulator() const {
     return m_formation_energy_clex.clexulator;
@@ -160,6 +181,12 @@ class Canonical : public MonteCarlo {
   /// Holds Clexulator and ECI references
   Clex m_formation_energy_clex;
 
+  /// Holds order parameter calculator
+  std::shared_ptr<OrderParameter> m_order_parameter;
+
+  /// Holds random alloy corr calculator
+  std::shared_ptr<RandomAlloyCorrCalculator> m_random_alloy_corr_f;
+
   /// Convert sublat/asym_unit and species/occ index
   Conversions m_convert;
 
@@ -189,6 +216,9 @@ class Canonical : public MonteCarlo {
 
   /// \brief Number of atoms of each type, normalized per primitive cell
   Eigen::VectorXd *m_comp_n;
+
+  /// \brief Order parameters (intensive)
+  Eigen::VectorXd *m_eta;
 };
 
 }  // namespace Monte

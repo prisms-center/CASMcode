@@ -1,4 +1,4 @@
-#include "autotools.hh"
+
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/clusterography/ClusterSpecs_impl.hh"

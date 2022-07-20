@@ -1,6 +1,5 @@
 #include "casm/crystallography/io/BasicStructureIO.hh"
 
-#include "autotools.hh"
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "gtest/gtest.h"

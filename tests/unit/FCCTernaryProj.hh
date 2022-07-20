@@ -6,7 +6,6 @@
 
 #include "Common.hh"
 #include "Proj.hh"
-#include "autotools.hh"
 #include "casm/basis_set/DoF.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/Configuration_impl.hh"
@@ -27,9 +26,7 @@ namespace test {
 class FCCTernaryProj : public Proj {
  public:
   FCCTernaryProj()
-      : Proj(proj_dir(autotools::abs_srcdir() +
-                      "/tests/unit/test_projects/FCC_ternary"),
-             FCC_ternary_prim(), "FCC_ternary",
+      : Proj(FCC_ternary_prim(), "FCC_ternary",
              "FCC Ternary with A, B, C occupation") {}
 
   static jsonParser bspecs() {

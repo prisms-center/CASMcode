@@ -1,6 +1,7 @@
 #include "casm/app/sym.hh"
 
 #include "casm/app/io/json_io_impl.hh"
+#include "casm/app/sym/config_space_analysis.hh"
 #include "casm/app/sym/dof_space_analysis.hh"
 #include "casm/app/sym/json_io.hh"
 #include "casm/app/sym/symmetrize.hh"
@@ -43,6 +44,9 @@ void SymOption::initialize() {
       "Tolerance in Angstr. Used for --symmetrize (default 1e-5)")(
 
       "dof-space-analysis", "Print DoF Space analysis files")(
+
+      "config-space-analysis", "Run a configuration space analysis")(
+
       "symmetrize",
       po::value<fs::path>(&m_poscar_path)->value_name(ArgHandler::path()),
       "symmetrize a prim to a given tolerance");
@@ -96,6 +100,7 @@ int SymCommand::desc() const {
   log() << write_prim_symmetry_desc();
   log() << symmetrize_desc();
   log() << dof_space_analysis_desc();
+  log() << config_space_analysis_desc();
   return 0;
 }
 
@@ -108,6 +113,8 @@ int SymCommand::run() const {
     symmetrize(json_options, cli_options_as_json);
   } else if (vm().count("dof-space-analysis")) {
     dof_space_analysis(primclex(), json_options, cli_options_as_json);
+  } else if (vm().count("config-space-analysis")) {
+    config_space_analysis(primclex(), json_options, cli_options_as_json);
   } else {
     write_prim_symmetry(primclex(), json_options, cli_options_as_json);
   }

@@ -9,6 +9,7 @@
 #include "casm/casm_io/dataformatter/DatumFormatterAdapter.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/clex/FillSupercell.hh"
 #include "casm/clex/PrimClex.hh"
 #include "casm/clex/SimpleStructureTools.hh"
 #include "casm/clex/Supercell.hh"
@@ -23,9 +24,12 @@
 #include "casm/crystallography/io/BasicStructureIO.hh"
 #include "casm/crystallography/io/SimpleStructureIO.hh"
 #include "casm/crystallography/io/VaspIO.hh"
+#include "casm/enumerator/DoFSpace.hh"
+#include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/symmetry/LatticeEnumEquivalents.hh"
 #include "casm/symmetry/SupercellSymInfo.hh"
 #include "casm/symmetry/io/data/SupercellSymInfo_data_io.hh"
+#include "casm/symmetry/io/json/SymGroup_json_io.hh"
 
 namespace CASM {
 
@@ -570,6 +574,114 @@ SupercellInfoFormatter<std::string> default_poscar_with_vacancies() {
       });
 }
 
+SupercellInfoFormatter<jsonParser> fill_supercell() {
+  return SupercellInfoFormatter<jsonParser>(
+      "fill_supercell",
+      "Return a configuration constructed by tiling a sub-configuration into "
+      "the specified supercell. Requires the following params: "
+      "\"sub_configuration\", (object) the JSON representation of a "
+      "sub-configuration. The output is the JSON representation of a "
+      "configuration.",
+      [](SupercellInfoData const &data) -> jsonParser {
+        ParentInputParser parser{data.params_json};
+        std::unique_ptr<Configuration> sub_configuration_ptr =
+            parser.require<Configuration>("sub_configuration",
+                                          data.shared_prim);
+        std::runtime_error error_if_invalid{
+            "Error reading \"fill_supercell\" input"};
+        report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
+
+        std::shared_ptr<Supercell const> shared_supercell =
+            std::make_shared<Supercell const>(
+                data.shared_prim, data.supercell_sym_info.supercell_lattice());
+
+        jsonParser json = jsonParser::object();
+        Configuration configuration =
+            fill_supercell(*sub_configuration_ptr, shared_supercell);
+        to_json(configuration, json);
+        return json;
+      });
+}
+
+SupercellInfoFormatter<jsonParser> configuration_from_normal_coordinate() {
+  return SupercellInfoFormatter<jsonParser>(
+      "configuration_from_normal_coordinate",
+      "Return a configuration with DoF values corresponding to a normal "
+      "coordinate in a DoF space basis, filled into the specified supercell. "
+      "This method may be used for global DoF or continuous local DoF, not occ "
+      "DoF. A symmetry operation may be applied if necessary to fill the "
+      "requested supercell. Requires the following params: \"dof_space\", (see "
+      "\"normal_coordinate\" property in `casm info --desc "
+      "ConfigurationInfo`); \"normal_coordinate\" (vector) a normal coordinate "
+      "of size equal to the DoF space basis dimension. May include params: "
+      "\"default_configuration\" (object) JSON representation of a "
+      "configuration in the DoF space  to use as the default configuration "
+      "before applying the normal coordinates, this can be used to set other "
+      "types of DoF. The output is: \"configuration\" the JSON "
+      "representation of a configuration; \"symop\", the symmetry operation "
+      "used to fill the supercell. If the requested supercell can not be tiled "
+      "by the DoF space, even upon symmetry application, then a \"Could not "
+      "tile supercell\" error message is returned.",
+      [](SupercellInfoData const &data) -> jsonParser {
+        ParentInputParser parser{data.params_json};
+        std::unique_ptr<DoFSpace> dof_space_ptr =
+            parser.require<DoFSpace>("dof_space", data.shared_prim);
+        Eigen::VectorXd normal_coordinate;
+        parser.require(normal_coordinate, "normal_coordinate");
+        std::unique_ptr<Configuration> default_configuration =
+            parser.optional<Configuration>("default_configuration",
+                                           data.shared_prim);
+        std::runtime_error error_if_invalid{
+            "Error reading \"configuration_from_normal_coordinate\" input"};
+        report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
+
+        DoFSpace const &dof_space = *dof_space_ptr;
+        Eigen::Matrix3l T = Eigen::Matrix3l::Identity();
+        if (dof_space.transformation_matrix_to_super().has_value()) {
+          T = *dof_space.transformation_matrix_to_super();
+        }
+
+        auto shared_supercell =
+            std::make_shared<Supercell const>(data.shared_prim, T);
+        Configuration init_config(shared_supercell);
+
+        if (default_configuration != nullptr) {
+          if (default_configuration->supercell()
+                  .sym_info()
+                  .transformation_matrix_to_super() != T) {
+            jsonParser json;
+            json =
+                "`default_configuration` supercell does not match `dof_space` "
+                "supercell";
+            return json;
+          }
+          init_config = *default_configuration;
+        }
+
+        set_dof_value(init_config, dof_space, normal_coordinate);
+
+        std::shared_ptr<Supercell const> final_shared_supercell =
+            std::make_shared<Supercell const>(
+                data.shared_prim, data.supercell_sym_info.supercell_lattice());
+
+        FillSupercell f(final_shared_supercell);
+        SymOp const *symop_ptr =
+            f.find_symop(init_config.supercell().lattice());
+        if (symop_ptr == nullptr) {
+          jsonParser json;
+          json = "Could not tile supercell";
+          return json;
+        }
+        Configuration final_config = f(init_config);
+
+        jsonParser json;
+        to_json(final_config, json["configuration"]);
+        write_symop(data.shared_prim->factor_group(),
+                    symop_ptr->master_group_index(), json["symop"]);
+        return json;
+      });
+}
+
 }  // namespace
 
 namespace adapter {
@@ -601,7 +713,8 @@ DataFormatterDictionary<SupercellInfoData> make_supercell_info_dict() {
       fully_commensurate_superlattice_of(), enforce_minimum_size(),
       default_configuration(), default_structure(),
       default_structure_with_vacancies(), default_poscar(),
-      default_poscar_with_vacancies());
+      default_poscar_with_vacancies(), fill_supercell(),
+      configuration_from_normal_coordinate());
 
   // properties that only require supercell_sym_info
   auto sym_info_dict = make_dictionary<SupercellSymInfo>();

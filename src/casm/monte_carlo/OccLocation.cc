@@ -129,6 +129,8 @@ OccEvent &OccLocation::propose_grand_canonical(OccEvent &e, const OccSwap &swap,
                                                MTRand &mtrand) const {
   e.occ_transform.resize(1);
   e.species_traj.resize(0);
+  e.linear_site_index.resize(1);
+  e.new_occ.resize(1);
 
   Index index_cand_a = m_cand.index(swap.cand_a);
   Index index_cand_b = m_cand.index(swap.cand_b);
@@ -139,6 +141,9 @@ OccEvent &OccLocation::propose_grand_canonical(OccEvent &e, const OccSwap &swap,
   f_a.asym = m_cand[index_cand_a].asym;
   f_a.from_species = m_cand[index_cand_a].species_index;
   f_a.to_species = m_cand[index_cand_b].species_index;
+
+  e.linear_site_index[0] = f_a.l;
+  e.new_occ[0] = m_convert.occ_index(f_a.asym, f_a.to_species);
 
   return e;
 }
@@ -194,6 +199,8 @@ OccEvent &OccLocation::_propose(OccEvent &e, const OccSwap &swap,
                                 Index size_a, Index size_b) const {
   e.occ_transform.resize(2);
   e.species_traj.resize(0);
+  e.linear_site_index.resize(2);
+  e.new_occ.resize(2);
 
   OccTransform &f_a = e.occ_transform[0];
   f_a.mol_id = m_loc[cand_a][mtrand.randInt(size_a - 1)];
@@ -212,6 +219,12 @@ OccEvent &OccLocation::_propose(OccEvent &e, const OccSwap &swap,
   f_b.to_species = m_cand[cand_a].species_index;
   // std::cout << "size_b: " << size_b << "  loc: " << m_mol[f_b.mol_id].loc <<
   // std::endl;
+
+  for (Index i = 0; i < 2; ++i) {
+    OccTransform const &t = e.occ_transform[i];
+    e.linear_site_index[i] = t.l;
+    e.new_occ[i] = m_convert.occ_index(t.asym, t.to_species);
+  }
 
   return e;
 }

@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "casm/casm_io/dataformatter/FormattedDataFile.hh"
 #include "casm/global/definitions.hh"
 #include "casm/monte_carlo/MonteIO.hh"
 
@@ -54,6 +55,9 @@ class MonteDriver {
   /// Check for existing calculations to find starting conditions
   Index _find_starting_conditions() const;
 
+  /// Save & write enumerated configurations
+  void write_enum_output(Index cond_index);
+
   /// target for log messages
   Log &m_log;
 
@@ -82,6 +86,18 @@ class MonteDriver {
 
   /// Enumerated configurations encountered during Monte Carlo calculations
   notstd::cloneable_ptr<MonteCarloEnum> m_enum;
+
+  /// Option to write enumerated configurations
+  ///
+  /// Write enumerated configurations selection file
+  /// if !m_enum_output_options.file_path.empty()
+  FormattedDataFileOptions m_enum_output_options;
+
+  /// Optional query properties to include in output file
+  std::vector<std::string> m_enum_output_properties;
+
+  /// How often to output enumerated configurations
+  Index m_enum_output_period;
 };
 
 /// Perform a single monte carlo step, return true if accepted

@@ -16,6 +16,7 @@
 #include "casm/clusterography/IntegralCluster.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/symmetry/SupercellSymInfo.hh"
+#include "casm/system/RuntimeLibrary.hh"
 
 namespace test {
 
@@ -30,8 +31,6 @@ ProjectBaseTest::ProjectBaseTest(xtal::BasicStructure const &basic_structure,
       basis_set_name("default"),
       basis_set_specs_json(_basis_set_specs_json) {
   // for tests, need to set compiler search paths to the CASM repository
-  project_settings_ptr->set_casm_libdir(autotools::abs_libdir());
-  project_settings_ptr->set_casm_includedir(autotools::abs_includedir());
   if (!fs::exists(projpath)) {
     build_project(*project_settings_ptr, *shared_prim);
   }
@@ -50,8 +49,6 @@ ProjectBaseTest::ProjectBaseTest(xtal::BasicStructure const &basic_structure,
       basis_set_name("default"),
       basis_set_specs_json(_basis_set_specs_json) {
   // for tests, need to set compiler search paths to the CASM repository
-  project_settings_ptr->set_casm_libdir(autotools::abs_libdir());
-  project_settings_ptr->set_casm_includedir(autotools::abs_includedir());
   build_project(*project_settings_ptr, *shared_prim);
 
   this->write_bspecs_json();
@@ -84,7 +81,7 @@ void ProjectBaseTest::make_clexulator() {
   // Compile clexulator
   auto const &settings = primclex_ptr->settings();
   auto &prim_neighbor_list = primclex_ptr->nlist();
-  Clexulator clexulator =
+  CASM::Clexulator clexulator =
       CASM::make_clexulator(settings, basis_set_name, prim_neighbor_list);
 }
 

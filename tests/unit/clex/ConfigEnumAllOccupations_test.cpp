@@ -1,6 +1,5 @@
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 
-#include "autotools.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"

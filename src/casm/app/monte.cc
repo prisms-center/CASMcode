@@ -370,13 +370,13 @@ int _run_GrandCanonical(PrimClex &primclex,
             << "\n\n"
             << std::endl;
 
-      auto init = gc_settings.initial_conditions();
+      auto init = gc_settings.initial_conditions(gc);
       auto incr = init;
       int num_conditions = 1;
 
       if (monte_settings.drive_mode() == Monte::DRIVE_MODE::INCREMENTAL) {
-        incr = gc_settings.incremental_conditions();
-        auto final = gc_settings.final_conditions();
+        incr = gc_settings.incremental_conditions(gc);
+        auto final = gc_settings.final_conditions(gc);
         num_conditions = (final - init) / incr + 1;
       }
 

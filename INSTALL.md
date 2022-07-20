@@ -21,6 +21,36 @@ bash build_scripts/conda-devel.sh
 This will download and install conda if it doesn't currently exist, and create a conda environment with the boost libraries required for CASM installed.  On OSX, it will use the system-installed clang compiler, while on linux it will install and use GCC.
 
 
+Using a seperate build directory
+--------------------------------
+
+With dependencies installed, CASM can be built using:
+```
+bash bootstrap.sh
+mkdir build && cd build
+../configure
+make -j4
+make install
+```
+
+The configuration step may require customization. Here is an example when building in a conda environment:
+```
+#
+CASM_PREFIX=$CONDA_PREFIX
+
+CASM_CXXFLAGS="-O3 -Wall -DNDEBUG -fcolor-diagnostics -I$CASM_PREFIX/include"
+CASM_CC="ccache cc"
+CASM_CXX="ccache c++"
+CASM_PYTHON="python"
+CASM_LDFLAGS="-L$CASM_PREFIX/lib -Wl,-rpath,$CASM_PREFIX/lib"
+CASM_CONFIGFLAGS="--prefix=$CASM_PREFIX "
+CASM_CONFIGFLAGS+="--with-zlib=$CASM_PREFIX "
+CASM_CONFIGFLAGS+="--with-boost=$CASM_PREFIX "
+
+../configure CXXFLAGS="${CASM_CXXFLAGS}" CC="$CASM_CC" CXX="$CASM_CXX" PYTHON="$CASM_PYTHON" LDFLAGS="${CASM_LDFLAGS}" ${CASM_CONFIGFLAGS}
+
+```
+
 
 Dependencies
 ------------
@@ -145,6 +175,17 @@ To clean up test products:
 
 ```
 bash checkclean.sh
+```
+
+Testing in a seperate build directory
+-------------------------------------
+
+If building in a seperate directory, some additional configuration may be necessary before running `make check` for the CASM tests to properly compile generated code. Here is an example when building in a conda environment:
+```
+export CASM_CXXFLAGS="-O3 -Wall -DNDEBUG -fPIC --std=c++17 -DGZSTREAM_NAMESPACE=gz -I$CONDA_PREFIX/include -I../include"
+export CASM_SOFLAGS="-shared -L$CONDA_PREFIX/lib -L.libs -lz"
+export CASM_PREFIX=$CONDA_PREFIX
+export CASM_BOOST_PREFIX=$CONDA_PREFIX
 ```
 
 

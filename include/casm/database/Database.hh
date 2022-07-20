@@ -205,7 +205,6 @@ class DatabaseIterator :
 /// - iterator end()
 /// - size_type size() const
 /// - std::pair<iterator, bool> insert(const ValueType &obj)
-/// - std::pair<iterator, bool> insert(const ValueType &&obj)
 /// - iterator erase(iterator pos)
 /// - iterator find(const std::string &name_or_alias)
 ///
@@ -250,7 +249,6 @@ class ValDatabase : public DatabaseBase {
   std::string alias(const std::string &name_or_alias) const;
 
   virtual std::pair<iterator, bool> insert(const ValueType &obj) = 0;
-  virtual std::pair<iterator, bool> insert(const ValueType &&obj) = 0;
 
   template <typename InputIt>
   void insert(InputIt first, InputIt last) {

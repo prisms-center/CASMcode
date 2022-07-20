@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "Common.hh"
-#include "autotools.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/BasicStructureTools.hh"
 #include "casm/crystallography/Coordinate.hh"

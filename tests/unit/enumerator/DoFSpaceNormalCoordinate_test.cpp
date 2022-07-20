@@ -1,4 +1,4 @@
-#include "autotools.hh"
+
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/ConfigEnumAllOccupations.hh"
 #include "casm/clex/FillSupercell.hh"

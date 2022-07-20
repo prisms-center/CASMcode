@@ -222,6 +222,12 @@ struct DoFSpaceAnalysisOptions {
   // otherwise, only exclude homogeneous modes if the dof=="disp"
   // and the dof_space includes all sites
   std::optional<bool> exclude_homogeneous_modes;
+
+  // include dof component corresponding to default occupation
+  bool include_default_occ_modes = false;
+
+  // specify a subspace for the DoFSpace explicitly
+  std::optional<Eigen::MatrixXd> basis;
 };
 
 void output_dof_space(Index state_index, std::string const &identifier,

@@ -4,6 +4,8 @@
 #include "casm/clex/PrimClex.hh"
 #include "casm/monte_carlo/MonteCarlo.hh"
 #include "casm/monte_carlo/MonteSettings.hh"
+#include "casm/monte_carlo/conditions_functions.hh"
+#include "casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh"
 
 namespace CASM {
 namespace Monte {
@@ -17,11 +19,31 @@ namespace Monte {
 ///
 GrandCanonicalConditions::GrandCanonicalConditions(
     const PrimClex &_primclex, double _temperature,
-    const Eigen::VectorXd &_param_chem_pot, double _tol)
-    :
-
-      m_primclex(&_primclex),
-      m_tolerance(_tol) {
+    const Eigen::VectorXd &_param_chem_pot, double _tol,
+    bool _include_formation_energy, bool _include_param_chem_pot,
+    std::optional<Eigen::VectorXd> _param_comp_quad_pot_target,
+    std::optional<Eigen::VectorXd> _param_comp_quad_pot_vector,
+    std::optional<Eigen::MatrixXd> _param_comp_quad_pot_matrix,
+    std::optional<Eigen::VectorXd> _order_parameter_pot,
+    std::optional<Eigen::VectorXd> _order_parameter_quad_pot_target,
+    std::optional<Eigen::VectorXd> _order_parameter_quad_pot_vector,
+    std::optional<Eigen::MatrixXd> _order_parameter_quad_pot_matrix,
+    std::optional<CorrMatchingParams> _corr_matching_pot,
+    std::optional<RandomAlloyCorrMatchingParams>
+        _random_alloy_corr_matching_pot)
+    : m_primclex(&_primclex),
+      m_tolerance(_tol),
+      m_include_formation_energy(_include_formation_energy),
+      m_include_param_chem_pot(_include_param_chem_pot),
+      m_param_comp_quad_pot_target(_param_comp_quad_pot_target),
+      m_param_comp_quad_pot_vector(_param_comp_quad_pot_vector),
+      m_param_comp_quad_pot_matrix(_param_comp_quad_pot_matrix),
+      m_order_parameter_pot(_order_parameter_pot),
+      m_order_parameter_quad_pot_target(_order_parameter_quad_pot_target),
+      m_order_parameter_quad_pot_vector(_order_parameter_quad_pot_vector),
+      m_order_parameter_quad_pot_matrix(_order_parameter_quad_pot_matrix),
+      m_corr_matching_pot(_corr_matching_pot),
+      m_random_alloy_corr_matching_pot(_random_alloy_corr_matching_pot) {
   // -- set T ----
   set_temperature(_temperature);
 
@@ -71,8 +93,6 @@ void GrandCanonicalConditions::set_temperature(double in_temp) {
 void GrandCanonicalConditions::set_param_chem_pot(
     const Eigen::VectorXd &in_param_chem_pot) {
   m_param_chem_pot = in_param_chem_pot;
-  m_chem_pot = primclex().composition_axes().dparam_dmol().transpose() *
-               m_param_chem_pot;
 
   int Ncomp = primclex().composition_axes().components().size();
   m_exchange_chem_pot = Eigen::MatrixXd(Ncomp, Ncomp);
@@ -103,11 +123,28 @@ void GrandCanonicalConditions::set_param_chem_pot(Index ind,
 GrandCanonicalConditions &GrandCanonicalConditions::operator+=(
     const GrandCanonicalConditions &RHS) {
   m_temperature += RHS.m_temperature;
-  for (int i = 0; i < m_param_chem_pot.size(); i++) {
-    m_param_chem_pot(i) += RHS.m_param_chem_pot(i);
-  }
-  set_param_chem_pot(m_param_chem_pot);
   m_beta = 1.0 / (CASM::KB * m_temperature);
+  set_param_chem_pot(m_param_chem_pot + RHS.m_param_chem_pot);
+
+  conditions::incr(m_param_comp_quad_pot_target,
+                   RHS.m_param_comp_quad_pot_target);
+  conditions::incr(m_param_comp_quad_pot_vector,
+                   RHS.m_param_comp_quad_pot_vector);
+  conditions::incr(m_param_comp_quad_pot_matrix,
+                   RHS.m_param_comp_quad_pot_matrix);
+
+  conditions::incr(m_order_parameter_pot, RHS.m_order_parameter_pot);
+  conditions::incr(m_order_parameter_quad_pot_target,
+                   RHS.m_order_parameter_quad_pot_target);
+  conditions::incr(m_order_parameter_quad_pot_vector,
+                   RHS.m_order_parameter_quad_pot_vector);
+  conditions::incr(m_order_parameter_quad_pot_matrix,
+                   RHS.m_order_parameter_quad_pot_matrix);
+
+  Monte::incr(m_corr_matching_pot, RHS.m_corr_matching_pot);
+  Monte::incr(m_random_alloy_corr_matching_pot,
+              RHS.m_random_alloy_corr_matching_pot);
+
   return *this;
 }
 
@@ -120,11 +157,28 @@ GrandCanonicalConditions GrandCanonicalConditions::operator+(
 GrandCanonicalConditions &GrandCanonicalConditions::operator-=(
     const GrandCanonicalConditions &RHS) {
   m_temperature -= RHS.m_temperature;
-  for (int i = 0; i < m_param_chem_pot.size(); i++) {
-    m_param_chem_pot(i) -= RHS.m_param_chem_pot(i);
-  }
-  set_param_chem_pot(m_param_chem_pot);
   m_beta = 1.0 / (CASM::KB * m_temperature);
+  set_param_chem_pot(m_param_chem_pot - RHS.m_param_chem_pot);
+
+  conditions::decr(m_param_comp_quad_pot_target,
+                   RHS.m_param_comp_quad_pot_target);
+  conditions::decr(m_param_comp_quad_pot_vector,
+                   RHS.m_param_comp_quad_pot_vector);
+  conditions::decr(m_param_comp_quad_pot_matrix,
+                   RHS.m_param_comp_quad_pot_matrix);
+
+  conditions::decr(m_order_parameter_pot, RHS.m_order_parameter_pot);
+  conditions::decr(m_order_parameter_quad_pot_target,
+                   RHS.m_order_parameter_quad_pot_target);
+  conditions::decr(m_order_parameter_quad_pot_vector,
+                   RHS.m_order_parameter_quad_pot_vector);
+  conditions::decr(m_order_parameter_quad_pot_matrix,
+                   RHS.m_order_parameter_quad_pot_matrix);
+
+  Monte::decr(m_corr_matching_pot, RHS.m_corr_matching_pot);
+  Monte::decr(m_random_alloy_corr_matching_pot,
+              RHS.m_random_alloy_corr_matching_pot);
+
   return *this;
 }
 
@@ -135,15 +189,58 @@ GrandCanonicalConditions GrandCanonicalConditions::operator-(
 
 bool GrandCanonicalConditions::operator==(
     const GrandCanonicalConditions &RHS) const {
-  if (!almost_zero(m_temperature - RHS.m_temperature, m_tolerance)) {
+  if (!CASM::almost_equal(m_temperature, RHS.m_temperature, m_tolerance)) {
+    return false;
+  }
+  if (!CASM::almost_equal(m_param_chem_pot, RHS.m_param_chem_pot,
+                          m_tolerance)) {
     return false;
   }
 
-  for (int i = 0; i < m_param_chem_pot.size(); i++) {
-    if (!almost_zero(m_param_chem_pot(i) - RHS.m_param_chem_pot(i),
-                     m_tolerance)) {
-      return false;
-    }
+  if (!conditions::almost_equal(m_param_comp_quad_pot_target,
+                                RHS.m_param_comp_quad_pot_target,
+                                m_tolerance)) {
+    return false;
+  }
+  if (!conditions::almost_equal(m_param_comp_quad_pot_vector,
+                                RHS.m_param_comp_quad_pot_vector,
+                                m_tolerance)) {
+    return false;
+  }
+  if (!conditions::almost_equal(m_param_comp_quad_pot_matrix,
+                                RHS.m_param_comp_quad_pot_matrix,
+                                m_tolerance)) {
+    return false;
+  }
+
+  if (!conditions::almost_equal(m_order_parameter_pot,
+                                RHS.m_order_parameter_pot, m_tolerance)) {
+    return false;
+  }
+
+  if (!conditions::almost_equal(m_order_parameter_quad_pot_target,
+                                RHS.m_order_parameter_quad_pot_target,
+                                m_tolerance)) {
+    return false;
+  }
+  if (!conditions::almost_equal(m_order_parameter_quad_pot_vector,
+                                RHS.m_order_parameter_quad_pot_vector,
+                                m_tolerance)) {
+    return false;
+  }
+  if (!conditions::almost_equal(m_order_parameter_quad_pot_matrix,
+                                RHS.m_order_parameter_quad_pot_matrix,
+                                m_tolerance)) {
+    return false;
+  }
+
+  if (!Monte::almost_equal(m_corr_matching_pot, RHS.m_corr_matching_pot,
+                           m_tolerance)) {
+    return false;
+  }
+  if (!Monte::almost_equal(m_random_alloy_corr_matching_pot,
+                           RHS.m_random_alloy_corr_matching_pot, m_tolerance)) {
+    return false;
   }
 
   return true;
@@ -171,17 +268,35 @@ int GrandCanonicalConditions::operator/(
     }
   }
 
+  conditions::find_max_division(max_division, m_param_comp_quad_pot_target,
+                                RHS_inc.m_param_comp_quad_pot_target);
+  conditions::find_max_division(max_division, m_param_comp_quad_pot_vector,
+                                RHS_inc.m_param_comp_quad_pot_vector);
+  conditions::find_max_division(max_division, m_param_comp_quad_pot_matrix,
+                                RHS_inc.m_param_comp_quad_pot_matrix);
+
+  conditions::find_max_division(max_division, m_order_parameter_pot,
+                                RHS_inc.m_order_parameter_pot);
+  conditions::find_max_division(max_division, m_order_parameter_quad_pot_target,
+                                RHS_inc.m_order_parameter_quad_pot_target);
+  conditions::find_max_division(max_division, m_order_parameter_quad_pot_vector,
+                                RHS_inc.m_order_parameter_quad_pot_vector);
+  conditions::find_max_division(max_division, m_order_parameter_quad_pot_matrix,
+                                RHS_inc.m_order_parameter_quad_pot_matrix);
+
+  Monte::find_max_division(max_division, m_corr_matching_pot,
+                           RHS_inc.m_corr_matching_pot);
+  Monte::find_max_division(max_division, m_random_alloy_corr_matching_pot,
+                           RHS_inc.m_random_alloy_corr_matching_pot);
+
   return max_division;
 }
 
 std::ostream &operator<<(std::ostream &sout,
                          const GrandCanonicalConditions &cond) {
-  sout << "T: " << cond.temperature() << "\n";
-  for (int i = 0; i < cond.param_chem_pot().size(); i++) {
-    jsonParser json;
-    sout << "param_chem_pot: " << to_json_array(cond.param_chem_pot(), json)
-         << "\n";
-  }
+  jsonParser json;
+  to_json(cond, json);
+  sout << json << std::endl;
   return sout;
 }
 

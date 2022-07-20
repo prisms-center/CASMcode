@@ -31,8 +31,13 @@ MonteCarloDirectoryStructure::MonteCarloDirectoryStructure(fs::path output_dir)
 GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloMeanFormatter(
     std::string prop_name) {
   auto evaluator = [=](const ConstMonteCarloPtr &mc) {
-    return mc->samplers().find(prop_name)->second->mean(
-        mc->is_equilibrated().second);
+    auto it = mc->samplers().find(prop_name);
+    if (it == mc->samplers().end()) {
+      throw std::runtime_error(
+          std::string("Error in MonteCarloMeanFormatter: '") + prop_name +
+          "' not found");
+    }
+    return it->second->mean(mc->is_equilibrated().second);
   };
 
   auto validator = [=](const ConstMonteCarloPtr &mc) {
@@ -49,8 +54,13 @@ GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloMeanFormatter(
 GenericDatumFormatter<double, ConstMonteCarloPtr> MonteCarloPrecFormatter(
     std::string prop_name) {
   auto evaluator = [=](const ConstMonteCarloPtr &mc) {
-    return mc->samplers().find(prop_name)->second->calculated_precision(
-        mc->is_equilibrated().second);
+    auto it = mc->samplers().find(prop_name);
+    if (it == mc->samplers().end()) {
+      throw std::runtime_error(
+          std::string("Error in MonteCarloMeanFormatter: '") + prop_name +
+          "' not found");
+    }
+    return it->second->calculated_precision(mc->is_equilibrated().second);
   };
 
   auto validator = [=](const ConstMonteCarloPtr &mc) {

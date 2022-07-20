@@ -1,6 +1,5 @@
 #include "casm/enumerator/ConfigEnumInput.hh"
 
-#include "autotools.hh"
 #include "casm/clex/Supercell.hh"
 #include "casm/crystallography/Structure.hh"
 #include "crystallography/TestStructures.hh"

@@ -348,7 +348,7 @@ void output_dof_space(Index state_index, std::string const &identifier,
     if (output.output_status()) {
       log << "Working on: " << identifier << " " << dof << std::endl;
     }
-    DoFSpace dof_space = make_dof_space(dof, input_state);
+    DoFSpace dof_space = make_dof_space(dof, input_state, options.basis);
 
     bool exclude_homogeneous_modes = false;
     if (options.exclude_homogeneous_modes.has_value()) {
@@ -359,6 +359,11 @@ void output_dof_space(Index state_index, std::string const &identifier,
     }
     if (exclude_homogeneous_modes) {
       dof_space = exclude_homogeneous_mode_space(dof_space);
+    }
+
+    if (dof_space.dof_key() == "occ" && !options.basis.has_value() &&
+        !options.include_default_occ_modes) {
+      dof_space = exclude_default_occ_modes(dof_space);
     }
 
     std::optional<SymRepTools_v2::VectorSpaceSymReport> report;

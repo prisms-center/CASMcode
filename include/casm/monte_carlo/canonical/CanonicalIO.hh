@@ -24,7 +24,8 @@ jsonParser &to_json(const CanonicalConditions &conditions, jsonParser &json);
 
 /// \brief Read CanonicalConditions from JSON format
 void from_json(CanonicalConditions &conditions, const PrimClex &primclex,
-               const jsonParser &json);
+               const jsonParser &json, Canonical const &mc,
+               bool incremental = false);
 
 }  // namespace Monte
 }  // namespace CASM

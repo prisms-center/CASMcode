@@ -23,7 +23,7 @@ class CanonicalEvent {
   /// The total number of correlations that could be calculated (use
   /// Clexulator::corr_size)
   ///
-  CanonicalEvent(size_type Nspecies, size_type Ncorr);
+  CanonicalEvent(size_type Nspecies, size_type Ncorr, size_type Neta = 0);
 
   /// \brief Set the change in (extensive) formation energy associated with this
   /// event
@@ -37,9 +37,18 @@ class CanonicalEvent {
   /// of CompositionConverter::components().
   const Eigen::VectorXl &dN() const;
 
+  /// \brief Access change in order parameter (intensive)
+  Eigen::VectorXd &deta();
+
+  /// \brief const Access change in order parameter (intensive)
+  Eigen::VectorXd const &deta() const;
+
   /// \brief Return change in number of species in supercell. Zeros, size of
   /// CompositionConverter::components().
   long int dN(size_type species_type_index) const;
+
+  /// \brief Set change in (extensive) potential energy
+  void set_dEpot(double dpot_nrg);
 
   /// \brief Return change in (extensive) potential energy, dEpot = dEf
   double dEpot() const;
@@ -65,13 +74,15 @@ class CanonicalEvent {
   /// \brief Change in (extensive) formation energy due to this event
   double m_dEf;
 
-  /// \brief Change in (extensive) potential energy, dEpot = dEf - sum_i(Nunit *
-  /// param_chem_pot_i * dcomp_x_i)
-  // double m_dEpot; == m_dEf
+  /// \brief Change in (extensive) potential energy due to this event
+  double m_dEpot;
 
   /// \brief Change in number of each species in supercell due to this event.
   ///        Zeros, size of primclex.get_param_comp().get_components()
   Eigen::VectorXl m_dN;
+
+  /// \brief Change in order parameter due to this event.
+  Eigen::VectorXd m_deta;
 
   /// \brief The modifications performed by this event
   OccEvent m_occ_event;

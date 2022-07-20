@@ -147,7 +147,7 @@ void parse(InputParser<DoFSpace> &parser,
   std::optional<Eigen::MatrixXd> basis;
   parser.optional(basis, "basis");
   if (basis.has_value()) {
-    basis = basis.value().transpose();
+    basis->transposeInPlace();
   }
 
   if (parser.valid()) {

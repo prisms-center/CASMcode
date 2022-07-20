@@ -186,6 +186,9 @@ void FillSupercell::_init(Supercell const &_motif_supercell) const {
   m_motif_supercell = &_motif_supercell;
 
   // ------- site dof ----------
+  if (m_symop_ptr == nullptr) {
+    throw std::runtime_error("Error in FillSupercell: cannot tile supercell");
+  }
   Lattice oriented_motif_lat =
       sym::copy_apply(*m_symop_ptr, m_motif_supercell->lattice());
 
