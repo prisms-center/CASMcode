@@ -351,7 +351,7 @@ void parse(InputParser<ConfigEnumSiteDoFsParams> &parser,
   // note that help indicates default==axes.rows(), but that is
   // params.axes.cols()
   parser.optional_else(params.max_nonzero, "max_nonzero",
-                       Index{params.axes.cols()});
+                       Index{axes_params.axes.cols()});
 
   // Throw error if min_nonzero exceeds max_nonzero
   if (params.min_nonzero > params.max_nonzero) {
