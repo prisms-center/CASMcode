@@ -586,6 +586,7 @@ int settings_command(const CommandArgs &args) {
     d.calctype = pair_type(single_input, create);
     d.ref = pair_type("default", create);
     d.eci = pair_type("default", create);
+    d.set.set_required_properties("Configuration",d.calctype.first, {"energy"});
 
     return d.update();
   }
