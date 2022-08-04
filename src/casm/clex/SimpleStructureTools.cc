@@ -125,48 +125,6 @@ std::vector<std::set<Index> > atom_site_compatibility(
 
 namespace clex_SimpleStructureTools_impl {
 
-/// Class that helps manage which order DoF are applied to a SimpleStructure
-/// when building it from a Configuration. Each TransformDirective applies one
-/// DoF type or "atomizes" molecules (populating SimpleStructure::atom_info from
-/// SimpleStructure::mol_info). It is meant to be stored in a
-/// std::set<TransformDirective> and has a comparison operator and uses
-/// information from AnisoValTraits to appropriately order TransformDirective in
-/// the set. Then they can be applied sequentially (using `transform`) to build
-/// the SimpleStructure.
-class TransformDirective {
- public:
-  /// \brief consturct from transformation or DoF type name
-  TransformDirective(std::string const &_name);
-
-  /// \brief Name of DoFType or transformation
-  std::string const &name() const { return m_name; }
-
-  /// \brief Compare with _other TransformDirective. Returns true if this
-  /// TransformDirective has precedence
-  bool operator<(TransformDirective const &_other) const;
-
-  /// \brief Applies transformation to _struc using information contained in
-  /// _config
-  void transform(ConfigDoF const &_config,
-                 xtal::BasicStructure const &_reference,
-                 xtal::SimpleStructure &_struc) const;
-
- private:
-  /// \brief Build m_before object by recursively traversing DoF dependencies
-  void _accumulate_before(std::set<std::string> const &_queue,
-                          std::set<std::string> &_result) const;
-
-  /// \brief Build m_after object by recursively traversing DoF dependencies
-  void _accumulate_after(std::set<std::string> const &_queue,
-                         std::set<std::string> &_result) const;
-
-  std::string m_name;
-  std::set<std::string> m_before;
-  std::set<std::string> m_after;
-
-  DoFType::Traits const *m_traits_ptr;
-};
-
 void _apply_dofs(xtal::SimpleStructure &_sstruc, ConfigDoF const &_config,
                  xtal::BasicStructure const &_reference,
                  std::vector<DoFKey> which_dofs) {

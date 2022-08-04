@@ -446,7 +446,7 @@ AnisoValTraits AnisoValTraits::strain(std::string const &_prefix) {
 /// - is_default(): false
 AnisoValTraits AnisoValTraits::SOmagspin() {
   return AnisoValTraits("SOmagspin", {"sx", "sy", "sz"}, LOCAL | EXTENSIVE,
-                        AngularMomentumSymRepBuilder(), {}, {"atomize"}, {}, {},
+                        AngularMomentumSymRepBuilder(), {}, {}, {"atomize"}, {},
                         true);
 }
 
@@ -463,7 +463,7 @@ AnisoValTraits AnisoValTraits::SOmagspin() {
 AnisoValTraits AnisoValTraits::SOunitmagspin() {
   return AnisoValTraits(
       "SOunitmagspin", {"sx", "sy", "sz"}, LOCAL | UNIT_LENGTH | EXTENSIVE,
-      AngularMomentumSymRepBuilder(), {}, {"atomize"}, {}, {}, true);
+      AngularMomentumSymRepBuilder(), {}, {}, {"atomize"}, {}, true);
 }
 
 /// \brief Non-collinear magnetic spin, without spin-orbit coupling
@@ -477,7 +477,7 @@ AnisoValTraits AnisoValTraits::SOunitmagspin() {
 /// - is_default(): true
 AnisoValTraits AnisoValTraits::NCmagspin() {
   return AnisoValTraits("NCmagspin", {"sx", "sy", "sz"}, LOCAL | EXTENSIVE,
-                        TimeReversalSymRepBuilder(), {}, {"atomize"}, {}, {},
+                        TimeReversalSymRepBuilder(), {}, {}, {"atomize"}, {},
                         true);
 }
 
@@ -495,7 +495,7 @@ AnisoValTraits AnisoValTraits::NCmagspin() {
 AnisoValTraits AnisoValTraits::NCunitmagspin() {
   return AnisoValTraits(
       "NCunitmagspin", {"sx", "sy", "sz"}, LOCAL | UNIT_LENGTH | EXTENSIVE,
-      TimeReversalSymRepBuilder(), {}, {"atomize"}, {}, {}, true);
+      TimeReversalSymRepBuilder(), {}, {}, {"atomize"}, {}, true);
 }
 
 /// \brief Collinear magnetic spin
@@ -509,7 +509,7 @@ AnisoValTraits AnisoValTraits::NCunitmagspin() {
 /// - is_default(): true
 AnisoValTraits AnisoValTraits::Cmagspin() {
   return AnisoValTraits("Cmagspin", {"m"}, LOCAL | EXTENSIVE,
-                        TimeReversalSymRepBuilder(), {}, {"atomize"}, {}, {},
+                        TimeReversalSymRepBuilder(), {}, {}, {"atomize"}, {},
                         true);
 }
 
@@ -524,7 +524,7 @@ AnisoValTraits AnisoValTraits::Cmagspin() {
 /// - is_default(): true
 AnisoValTraits AnisoValTraits::Cunitmagspin() {
   return AnisoValTraits("Cunitmagspin", {"m"}, LOCAL | UNIT_LENGTH | EXTENSIVE,
-                        TimeReversalSymRepBuilder(), {}, {"atomize"}, {}, {},
+                        TimeReversalSymRepBuilder(), {}, {}, {"atomize"}, {},
                         true);
 }
 
