@@ -32,6 +32,7 @@
 #include "casm/database/DatabaseHandler_impl.hh"
 #include "casm/database/DatabaseTypes_impl.hh"
 #include "casm/symmetry/SubOrbits_impl.hh"
+#include "casm/symmetry/json_io.hh"
 
 namespace CASM {
 
@@ -569,6 +570,54 @@ struct WriteBasisSetDataImpl {
     // expansion around each equivalent of the phenomenal cluster
     if (basis_set_specs.cluster_specs->periodicity_type() ==
         CLUSTER_PERIODICITY_TYPE::LOCAL) {
+      // --- begin write equivalents_info.json ---
+      fs::path equivalents_info_json_path =
+          dir.equivalents_info(basis_set_name);
+      jsonParser equivalents_info_json;
+
+      // factor_group
+      write_symgroup(shared_prim->factor_group(),
+                     equivalents_info_json["factor_group"]);
+
+      // prototype
+      IntegralCluster phenomenal =
+          basis_set_specs.cluster_specs->get_phenomenal_cluster();
+      {
+        jsonParser &j = equivalents_info_json["prototype"];
+        j["phenomenal"] = phenomenal;
+        OrbitPrinterOptions orbit_printer_options;
+        FullSitesPrinter sites_printer{orbit_printer_options};
+        write_clust(orbits.begin(), orbits.end(), j, sites_printer);
+      }
+
+      // equivalents
+      equivalents_info_json["equivalent_generating_ops"].put_array();
+      equivalents_info_json["equivalents"].put_array();
+      for (Index equivalent_index = 0;
+           equivalent_index < clex_basis.n_equivalent_tree();
+           ++equivalent_index) {
+        SymOp op = clex_basis.bset_tree_equivalence_map()[equivalent_index];
+        IntegralCluster eq_phenomenal =
+            sym::copy_apply(op, phenomenal, *shared_prim);
+        OrbitVecType eq_orbits;
+        for (auto orbit : orbits) {
+          eq_orbits.push_back(orbit.apply_sym(op));
+        }
+
+        equivalents_info_json["equivalent_generating_ops"].push_back(
+            op.master_group_index());
+
+        jsonParser j;
+        j["phenomenal"] = eq_phenomenal;
+        OrbitPrinterOptions orbit_printer_options;
+        FullSitesPrinter sites_printer{orbit_printer_options};
+        write_clust(eq_orbits.begin(), eq_orbits.end(), j, sites_printer);
+        equivalents_info_json["equivalents"].push_back(j);
+      }
+      equivalents_info_json.write(equivalents_info_json_path);
+
+      // --- finish write equivalents_info.json ---
+
       for (Index equivalent_index = 0;
            equivalent_index < clex_basis.n_equivalent_tree();
            ++equivalent_index) {
