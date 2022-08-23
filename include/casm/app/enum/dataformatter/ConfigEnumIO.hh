@@ -96,6 +96,9 @@ normal_coordinate();
 template <typename ConfigEnumDataType>
 GenericDatumFormatter<jsonParser, ConfigEnumDataType> config();
 
+template <typename ConfigEnumDataType>
+GenericDatumFormatter<jsonParser, ConfigEnumDataType> canonical_config();
+
 }  // namespace ConfigEnumIO
 }  // namespace CASM
 

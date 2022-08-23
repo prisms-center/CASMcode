@@ -215,6 +215,25 @@ GenericDatumFormatter<jsonParser, ConfigEnumDataType> config() {
       });
 }
 
+template <typename ConfigEnumDataType>
+GenericDatumFormatter<jsonParser, ConfigEnumDataType> canonical_config() {
+  return GenericDatumFormatter<jsonParser, ConfigEnumDataType>(
+      "canonical_config",
+      "Output as JSON the canonical form of the enumerated configuration.",
+      [](ConfigEnumDataType const &data) -> jsonParser {
+        jsonParser json;
+        if (data.is_excluded_by_filter) {
+          json = "none";
+        } else if (data.insert_result.canonical_it ==
+                   data.primclex.template db<Configuration>().end()) {
+          json = "none";
+        } else {
+          to_json(*data.insert_result.canonical_it, json);
+        }
+        return json;
+      });
+}
+
 }  // namespace ConfigEnumIO
 
 }  // namespace CASM
