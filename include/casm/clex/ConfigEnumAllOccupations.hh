@@ -37,7 +37,7 @@ class ConfigEnumAllOccupations : public InputEnumeratorBase<Configuration> {
   /// \brief Constructor allowing direct control of whether
   ///     non-primitive and non-canonical Configuration are enumerated
   ConfigEnumAllOccupations(ConfigEnumInput const &config_enum_input,
-                           bool canonical_only, bool primitive_only);
+                           bool primitive_only, bool canonical_only);
 
   std::string name() const override;
 
