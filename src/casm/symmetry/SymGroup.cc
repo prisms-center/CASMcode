@@ -903,7 +903,7 @@ std::map<std::string, std::string> point_group_info(SymGroup const &g) {
     nonmag_info["space_group_range"] = "Magnetic group (not supported)";
     nonmag_info["international_name"] += "1'";
     nonmag_info["name"] += "'";
-    nonmag_info["latex_name"].insert(nonmag_info["latex_name"].find('_'), "'");
+    nonmag_info["latex_name"].append("'");
     return nonmag_info;
   }
 
