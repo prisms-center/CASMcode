@@ -20,36 +20,6 @@
 
 namespace CASM {
 
-namespace {
-struct LocalCanonicalFilter {
-  LocalCanonicalFilter(std::shared_ptr<Structure const> _shared_prim,
-                       SymGroup const *_generating_group,
-                       std::function<bool(Configuration const &)> _orig_filter)
-      : shared_prim(_shared_prim),
-        generating_group(_generating_group),
-        orig_filter(_orig_filter),
-        supercell_ptr(nullptr) {}
-
-  bool operator()(Configuration const &config) const {
-    if (supercell_ptr == nullptr || supercell_ptr != &config.supercell()) {
-      supercell_ptr = &config.supercell();
-      local_permute_group = make_local_permute_group(
-          *generating_group, shared_prim->factor_group(),
-          supercell_ptr->sym_info());
-    }
-    return config.is_canonical(local_permute_group->begin(),
-                               local_permute_group->end()) &&
-           orig_filter(config);
-  }
-
-  std::shared_ptr<Structure const> shared_prim;
-  SymGroup const *generating_group;
-  std::function<bool(Configuration const &)> orig_filter;
-  mutable std::optional<std::vector<PermuteIterator>> local_permute_group;
-  mutable Supercell const *supercell_ptr;
-};
-}  // namespace
-
 std::string ConfigEnumAllOccupationsInterface::desc() const {
   std::string custom_options =
       "  skip_non_primitive: bool (optional)\n"
@@ -70,19 +40,7 @@ std::string ConfigEnumAllOccupationsInterface::desc() const {
       "    allows including non-canonical configurations in the  \n"
       "    output generated when \"output_configurations\"==true.\n"
       "    The default value is true if enumeration is occuring  \n"
-      "    on all sites in the configuration, and false otherwise.\n\n"
-
-      "  skip_equivalent_local_configurations: bool (optional)\n"
-      "    If true, local enumeration skips symmetrically        \n\n"
-      "    equivalent configurations. If false, symmetrically    \n"
-      "    equivalent local environments are included. Local     \n"
-      "    enumeration occurs when \"cluster_specs\" are given   \n"
-      "    with \"method\"==\"local_max_length\". For either     \n"
-      "    choice, only canonical configurations are ever        \n"
-      "    inserted into the configuration database. This option \n"
-      "    allows including all local environments in the output \n"
-      "    generated when \"output_configurations\"==true. The   \n"
-      "    default value is true.\n\n";
+      "    on all sites in the configuration, and false otherwise.\n\n";
 
   std::string examples =
       "  Examples:\n"
@@ -142,28 +100,6 @@ void ConfigEnumAllOccupationsInterface::run(
   std::optional<bool> skip_non_canonical;
   parser.optional(skip_non_canonical, "skip_non_canonical");
 
-  // check for "skip_equivalent_local_configurations"
-  bool skip_equivalent_local_configurations = true;
-  parser.optional(skip_equivalent_local_configurations,
-                  "skip_equivalent_local_configurations");
-
-  // --- This replaces options.filter with a new filter that first filters for
-  // local canonical configurations, then applies the original filter ---
-  auto cluster_specs_subparser =
-      parser.subparse_if<ClusterSpecs>("cluster_specs", primclex.shared_prim(),
-                                       primclex.shared_prim()->factor_group());
-  bool local_enumeration =
-      (cluster_specs_subparser->value != nullptr &&
-       cluster_specs_subparser->value->periodicity_type() ==
-           CLUSTER_PERIODICITY_TYPE::LOCAL);
-  if (local_enumeration && skip_equivalent_local_configurations) {
-    options_parser_ptr->value->filter = LocalCanonicalFilter(
-        primclex.shared_prim(),
-        &cluster_specs_subparser->value->get_generating_group(),
-        options.filter);
-  }
-  // --- end filter replacement ---
-
   log << std::boolalpha;
   log.indent() << "skip_non_primitive:";
   if (skip_non_primitive.has_value()) {
@@ -176,10 +112,6 @@ void ConfigEnumAllOccupationsInterface::run(
     log << skip_non_canonical.value() << std::endl;
   } else {
     log << "null" << std::endl;
-  }
-  if (local_enumeration) {
-    log.indent() << "skip_equivalent_local_configurations:"
-                 << skip_equivalent_local_configurations << std::endl;
   }
   log << std::noboolalpha;
 
