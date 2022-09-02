@@ -20,11 +20,6 @@ std::pair<Database<Supercell>::iterator, bool> Database<Supercell>::insert(
   return _on_insert_or_emplace(m_scel_list.insert(obj));
 }
 
-std::pair<Database<Supercell>::iterator, bool> Database<Supercell>::insert(
-    const Supercell &&obj) {
-  return _on_insert_or_emplace(m_scel_list.insert(std::move(obj)));
-}
-
 Database<Supercell>::iterator Database<Supercell>::erase(iterator pos) {
   typedef DatabaseSetIterator<Supercell, Database<Supercell> > it_type;
   base_iterator base_it = static_cast<it_type *>(pos.get())->base();

@@ -18,12 +18,17 @@ namespace test {
 
 class Proj {
  public:
-  Proj(fs::path _proj_dir, const xtal::BasicStructure &_prim,
-       std::string _title, std::string _desc)
-      : dir(_proj_dir), prim(_prim), title(_title), desc(_desc), m_dirs(dir) {}
+  Proj(const xtal::BasicStructure &_prim, std::string _title, std::string _desc)
+      : tmp_dir(),
+        dir(tmp_dir.path()),
+        prim(_prim),
+        title(_title),
+        desc(_desc),
+        m_dirs(dir) {}
 
   virtual ~Proj() {}
 
+  TmpDir tmp_dir;
   fs::path dir;
   xtal::BasicStructure prim;
   std::string title;

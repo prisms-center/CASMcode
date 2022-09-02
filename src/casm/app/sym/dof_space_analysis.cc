@@ -7,11 +7,13 @@
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/casm_io/json/optional.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/Supercell.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
 #include "casm/enumerator/DoFSpace.hh"
 #include "casm/enumerator/io/dof_space_analysis.hh"
 #include "casm/enumerator/io/json/ConfigEnumInput_json_io.hh"
+#include "casm/enumerator/io/json/DoFSpace.hh"
 
 namespace CASM {
 namespace DoFSpaceIO {
@@ -123,12 +125,49 @@ std::string dof_space_analysis_desc() {
       "      analysis).                                                        "
       "         \n\n"
 
-      "    exclude_homogeneous_modes: bool (optional, default=null) "
-      "      Exclude homogeneous modes if this is true, or include if "
-      "      this is false. If this is null (default), only exclude   "
-      "      homogeneous modes for dof==\"disp\" and the input space  "
-      "      includes all supercell sites.                            "
-      "          \n\n"
+      "    exclude_homogeneous_modes: bool (optional, default=null)       \n"
+      "      Exclude homogeneous modes if this is true, or include if     \n"
+      "      this is false. If this is null (default), only exclude       \n"
+      "      homogeneous modes for dof==\"disp\" and the input space      \n"
+      "      includes all supercell sites.                                \n\n"
+
+      "    include_default_occ_modes: bool (optional, default=false)      \n"
+      "      Include the dof component for the default occupation value on\n"
+      "      each site with occupation DoF. The default is to exclude     \n"
+      "      these modes because they are not independent. This parameter \n"
+      "      is only checked if DoF is \"occ\" and \"axes\" are not       \n"
+      "      included explicitly.  \n\n"
+
+      "    axes: matrix or JSON object (optional)                           \n"
+      "      Coordinate axes of the DoF grid. This parameter is only checked\n"
+      "      when there is a single input state and single \"dof\". The     \n"
+      "      default value is the identity matrix of DoF space dimension.   \n"
+      "      Each element in an axis vector correponds to an individual DoF.\n"
+      "      Each vector corresponds to a collective mode. If not included, \n"
+      "      the \full space is included and a glossary describing which DoF\n"
+      "      is specified by which vector element is generated. The 'axes'  \n"
+      "      may be rank deficient, specifying a subspace of the full DoF   \n"
+      "      space specified by the \"dof\" value and initial state.      \n\n"
+
+      "      Example if matrix (row vector matix): \n"
+      "        \"axes\" : [ \n"
+      "          [1, 1, 1, 1, 1, 1], \n"
+      "          [1,-1, 0,-1, 1, 0], \n"
+      "          [1,-1, 0, 1,-1, 0]  \n"
+      "        ] \n\n"
+
+      "      Example if JSON object (named axis vectors): \n"
+      "          \"axes\": { \n"
+      "            \"q1\": [1, 1, 1, 1, 1, 1], \n"
+      "            \"q2\": [1,-1, 0,-1, 1, 0], \n"
+      "            \"q3\": [1,-1, 0, 1,-1, 0]  \n"
+      "          } \n\n"
+
+      "      Note: \n"
+      "      - If some \"qi\" in the range [1, DoF space dimension] are     \n"
+      "        missing, then the subspace is generated using the axes       \n"
+      "        that are provided.                                           "
+      "\n\n"
 
       "    write_symmetry: bool (optional, default=true)                       "
       "         \n"
@@ -259,6 +298,10 @@ void dof_space_analysis(PrimClex &primclex, jsonParser const &json_options,
   parser.optional(options.exclude_homogeneous_modes,
                   "exclude_homogeneous_modes");
 
+  // parse "include_default_occ_modes" (optional, default = false)
+  parser.optional_else(options.include_default_occ_modes,
+                       "include_default_occ_modes", false);
+
   // 2) parse input states
 
   typedef std::vector<std::pair<std::string, ConfigEnumInput>>
@@ -269,7 +312,26 @@ void dof_space_analysis(PrimClex &primclex, jsonParser const &json_options,
   report_and_throw_if_invalid(parser, log, error_if_invalid);
   auto const &named_inputs = *input_parser_ptr->value;
 
-  // 3) Construct output method implementation and run dof space analysis
+  // 3) parse "axes"
+  if (named_inputs.size() == 1 && options.dofs.size() == 1 &&
+      parser.self.contains("axes")) {
+    ConfigEnumInput const &config_input = named_inputs[0].second;
+    Supercell const &supercell = config_input.configuration().supercell();
+    Index dof_space_dimension = get_dof_space_dimension(
+        options.dofs[0], supercell.prim(),
+        supercell.sym_info().transformation_matrix_to_super(),
+        config_input.sites());
+
+    jsonParser tmp = json_combined;
+    tmp["min"] = 0.0;
+    tmp["max"] = 1.0;
+    tmp["num"] = 1;
+    InputParser<AxesCounterParams> axes_parser(tmp, dof_space_dimension);
+    report_and_throw_if_invalid(axes_parser, log, error_if_invalid);
+    options.basis = axes_parser.value->axes;
+  }
+
+  // 4) Construct output method implementation and run dof space analysis
 
   if (output_type == "combined_json_file") {
     // write all output to one large JSON file:

@@ -4,7 +4,6 @@
 #include <sstream>
 
 #include "Common.hh"
-#include "autotools.hh"
 #include "casm/casm_io/dataformatter/DataFormatter.hh"
 #include "casm/casm_io/json/jsonFile.hh"
 #include "casm/database/Database.hh"

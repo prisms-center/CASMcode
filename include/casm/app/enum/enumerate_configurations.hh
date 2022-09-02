@@ -64,6 +64,15 @@ struct ConfigEnumOptions {
 /// output
 template <typename EnumeratorType, typename InitialStateType>
 struct ConfigEnumData {
+  /// \brief Constructor
+  ///
+  /// \param _primclex CASM project
+  /// \param _initial_state_index Index over initial states for enumeration
+  /// \param _initial_state_name Name of initial state
+  /// \param _enumerator Reference to enumerator method
+  /// \param _configuration Reference to the configuration enumerated
+  ///     by `_enumerator`, before being made primitive and/or canonical for
+  ///     database insertion
   ConfigEnumData(PrimClex const &_primclex, Index _initial_state_index,
                  std::string const &_initial_state_name,
                  InitialStateType const &_initial_state,

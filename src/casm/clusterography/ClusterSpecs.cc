@@ -66,12 +66,21 @@ ClusterSpecs::LocalOrbitVec ClusterSpecs::_make_local_orbits(
                            name() + "'");
 }
 
+void ClusterSpecs::set_generating_group(SymGroup const &_generating_group) {
+  return this->_set_generating_group(_generating_group);
+}
+
 SymGroup const &ClusterSpecs::get_generating_group() const {
   return this->_get_generating_group();
 }
 
 IntegralCluster const &ClusterSpecs::get_phenomenal_cluster() const {
   return this->_get_phenomenal_cluster();
+}
+
+void ClusterSpecs::_set_generating_group(SymGroup const &_generating_group) {
+  throw std::runtime_error("Error: set_generating_group not implemented for '" +
+                           name() + "'");
 }
 
 SymGroup const &ClusterSpecs::_get_generating_group() const {
@@ -155,6 +164,11 @@ PeriodicMaxLengthClusterSpecs::_make_periodic_orbits(
   return orbits;
 }
 
+void PeriodicMaxLengthClusterSpecs::_set_generating_group(
+    SymGroup const &_generating_group) {
+  this->generating_group = _generating_group;
+}
+
 SymGroup const &PeriodicMaxLengthClusterSpecs::_get_generating_group() const {
   return generating_group;
 }
@@ -235,6 +249,11 @@ ClusterSpecs::LocalOrbitVec LocalMaxLengthClusterSpecs::_make_local_orbits(
   return orbits;
 }
 
+void LocalMaxLengthClusterSpecs::_set_generating_group(
+    SymGroup const &_generating_group) {
+  this->generating_group = _generating_group;
+}
+
 SymGroup const &LocalMaxLengthClusterSpecs::_get_generating_group() const {
   return generating_group;
 }
@@ -256,15 +275,6 @@ std::vector<SymOp> make_equivalents_generating_ops(
     IntegralCluster const &phenomenal, SymGroup const &generating_group) {
   PrimPeriodicSymCompare<IntegralCluster> periodic_sym_compare(
       shared_prim, shared_prim->lattice().tol());
-
-  // this should already be the case, and will be problematic if it is not
-  IntegralCluster canonical_phenomenal =
-      periodic_sym_compare.prepare(phenomenal);
-  if (!periodic_sym_compare.equal(canonical_phenomenal, phenomenal)) {
-    throw std::runtime_error(
-        "Error constructing a local ClexBasis: the canonical phenomenal "
-        "cluster was not used to generate local orbits.");
-  }
 
   // Invariant group of phenomenal cluster sites, excluding any other
   // considerations like symmetry-breaking due to hop type
@@ -293,6 +303,27 @@ std::vector<SymOp> make_equivalents_generating_ops(
       phenomenal, shared_prim->factor_group(), periodic_sym_compare);
   auto const &equivalence_map = phenomenal_cluster_orbit.equivalence_map();
 
+  // find the phenomenal cluster in the orbit,
+  // get the operation that transforms phenomenal to prototype
+  Index phenomenal_index = -1;
+  IntegralCluster sorted_phenom =
+      periodic_sym_compare.representation_prepare(phenomenal);
+  for (int i = 0; i < equivalence_map.size(); ++i) {
+    IntegralCluster const &equiv = phenomenal_cluster_orbit.element(i);
+    IntegralCluster sorted_equiv =
+        periodic_sym_compare.representation_prepare(equiv);
+    if (periodic_sym_compare.equal(sorted_phenom, sorted_equiv)) {
+      phenomenal_index = i;
+    }
+  }
+  if (phenomenal_index == -1) {
+    throw std::runtime_error(
+        "Error constructing a local ClexBasis: the phenomenal "
+        "cluster must be in the origin unit cell orbit.");
+  }
+
+  SymOp to_prototype_op = equivalence_map[phenomenal_index][0].inverse();
+
   // operations to generate all equivalent clexulators at all clusters in
   // phenomenal cluster orbit
   std::set<SymOp, SubOrbits_impl::OpCompare> equivalents_generating_ops;
@@ -300,7 +331,7 @@ std::vector<SymOp> make_equivalents_generating_ops(
     for (int equivalent_index = 0; equivalent_index < equivalence_map.size();
          ++equivalent_index) {
       equivalents_generating_ops.insert(equivalence_map[equivalent_index][0] *
-                                        cluster_op);
+                                        to_prototype_op * cluster_op);
     }
   }
 
@@ -402,6 +433,11 @@ GenericPeriodicClusterSpecs::_make_periodic_orbits(std::ostream &status) const {
   return orbits;
 }
 
+void GenericPeriodicClusterSpecs::_set_generating_group(
+    SymGroup const &_generating_group) {
+  this->generating_group = _generating_group;
+}
+
 SymGroup const &GenericPeriodicClusterSpecs::_get_generating_group() const {
   return generating_group;
 }
@@ -467,6 +503,11 @@ ClusterSpecs::LocalOrbitVec GenericLocalClusterSpecs::_make_local_orbits(
   make_orbits(specs.begin(), specs.end(), custom_generators,
               std::back_inserter(orbits), status);
   return orbits;
+}
+
+void GenericLocalClusterSpecs::_set_generating_group(
+    SymGroup const &_generating_group) {
+  this->generating_group = _generating_group;
 }
 
 SymGroup const &GenericLocalClusterSpecs::_get_generating_group() const {

@@ -4,6 +4,7 @@
 #include <string>
 
 #include "casm/casm_io/Log.hh"
+#include "casm/casm_io/dataformatter/FormattedDataFile.hh"
 #include "casm/casm_io/json/jsonParser.hh"
 #include "casm/clex/ECIContainer.hh"
 #include "casm/clex/PrimClex.hh"
@@ -168,6 +169,21 @@ class MonteSettings : protected CASM::jsonParser {
 
   /// \brief Returns enumeration halloffame tolerance (default 1e-8)
   double enumeration_tol() const;
+
+  /// \brief If true, do not save configs in the config list
+  bool enumeration_dry_run() const;
+
+  /// \brief Returns enumeration output options
+  FormattedDataFileOptions enumeration_output_options() const;
+
+  /// \brief Returns enumeration optional output properties
+  std::vector<std::string> enumeration_output_properties() const;
+
+  /// \brief Returns true if configs should be saved in the database
+  bool enumeration_save_configs() const;
+
+  /// \brief How often to output enumerated configurations
+  Index enumeration_output_period() const;
 
  protected:
   /// \brief Returns true if (*this)[level1].contains(level2)

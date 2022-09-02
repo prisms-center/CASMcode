@@ -3,7 +3,9 @@
 
 #include <boost/filesystem.hpp>
 
+#include "Common.hh"
 #include "Proj.hh"
+#include "autotools.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/clex/PrimClex.hh"
@@ -20,9 +22,7 @@ namespace test {
 class ZrOProj : public Proj {
  public:
   ZrOProj()
-      : Proj(
-            proj_dir(autotools::abs_srcdir() + "/tests/unit/test_projects/ZrO"),
-            ZrO_prim(), "ZrO", "HCP Zr with octahedral interstitial O") {}
+      : Proj(ZrO_prim(), "ZrO", "HCP Zr with octahedral interstitial O") {}
 
   /// \brief Check symmetry
   void check_symmetry() override {

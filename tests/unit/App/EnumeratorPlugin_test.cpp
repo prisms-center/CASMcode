@@ -1,7 +1,6 @@
 /// What is being tested:
 ///   the command line executable
 
-#include "autotools.hh"
 #include "gtest/gtest.h"
 
 /// What is being used to test it:

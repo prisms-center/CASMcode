@@ -1,4 +1,7 @@
+#include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
+#include "casm/casm_io/dataformatter/FormattedDataFile_impl.hh"
 #include "casm/database/ConfigDatabase.hh"
+#include "casm/database/ScelDatabase.hh"
 #include "casm/monte_carlo/MonteCarloEnum_impl.hh"
 #include "casm/monte_carlo/canonical/CanonicalSettings.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh"
@@ -80,7 +83,7 @@ const MonteCarloEnum::HallOfFameType &MonteCarloEnum::halloffame() const {
 }
 
 /// \brief Save configurations in the hall of fame to the config list
-void MonteCarloEnum::save_configs() {
+void MonteCarloEnum::save_configs(bool dry_run) {
   if (!halloffame().size()) {
     _log().write("Enumerated configurations to master config list");
     _log() << "No configurations in hall of fame\n";
@@ -105,19 +108,19 @@ void MonteCarloEnum::save_configs() {
     json_src["monte_carlo_enumeration"]["score"] = ss.str();
 
     auto lambda = [&](const Configuration &config, bool is_new) {
-      if (is_new) {
+      if (is_new && this->check_existence()) {
         // necessary if included now, but pushed out of HallOfFame later
         this->_halloffame().exclude(config);
       }
 
-      // store source info
-      Configuration tconfig{config};
-      tconfig.push_back_source(json_src);
-      this->primclex().db<Configuration>().update(tconfig);
-
       // store info for printing
       this->m_data[config.name()] = std::make_pair(is_new, score);
       output.push_back(config);
+
+      // store source info
+      Configuration tconfig{config};
+      tconfig.push_back_source(json_src);
+      auto it = this->primclex().db<Configuration>().update(tconfig);
     };
 
     lambda(*insert_res.canonical_it, insert_res.insert_canonical);
@@ -127,17 +130,26 @@ void MonteCarloEnum::save_configs() {
     }
   }
 
-  primclex().db<Configuration>().commit();
+  if (!dry_run) {
+    primclex().db<Configuration>().commit();
+    primclex().db<Supercell>().commit();
+  }
 
-  auto formatter = m_dict.parse(
-      "configname is_primitive is_new score comp potential_energy");
+  std::string args =
+      "configname is_primitive is_new score potential_energy comp";
+  if (m_order_parameter != nullptr) {
+    args += " order_parameter";
+  }
+
+  auto formatter = m_dict.parse(args);
   auto flag = FormatFlag(_log()).print_header(true);
 
   _log().write("Enumerated configurations to master config list");
   _log() << "configuration enumeration check: " << m_check_args << "\n";
   _log() << "configuration enumeration metric: " << m_metric_args << "\n";
-  _log() << flag << formatter(output.begin(), output.end());
+  _log() << flag << formatter(halloffame().begin(), halloffame().end());
   _log() << std::endl;
+  std::cout << "save_configs 19" << std::endl;
 }
 
 void MonteCarloEnum::print_info() const {

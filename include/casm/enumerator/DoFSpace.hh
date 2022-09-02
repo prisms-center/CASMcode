@@ -1,8 +1,9 @@
 #ifndef CASM_DoFSpace
 #define CASM_DoFSpace
 
-#include "casm/crystallography/DoFDecl.hh"
 #include <optional>
+
+#include "casm/crystallography/DoFDecl.hh"
 #include "casm/enumerator/ConfigEnumInput.hh"
 
 namespace CASM {
@@ -84,6 +85,12 @@ class DoFSpace {
   /// rows).
   Eigen::MatrixXd const &basis() const;
 
+  /// The pseudo-inverse of the DoFSpace basis.
+  Eigen::MatrixXd const &basis_inv() const;
+
+  /// Solve for normal coordinates resulting in specified DoF values
+  Eigen::MatrixXd solve(Eigen::MatrixXd const &prim_dof_values) const;
+
   /// The DoF space dimension (equal to number of rows in basis).
   Index dim() const;
 
@@ -119,6 +126,10 @@ class DoFSpace {
   /// axis_site_index and axis_dof_component.
   Index basis_row_index(Index site_index, Index dof_component) const;
 
+  /// \brief Gives the index of basis row corresponding to a given
+  /// axis_site_index and axis_dof_component.
+  std::optional<std::vector<std::vector<Index>>> const &basis_row_index() const;
+
  private:
   /// Shared prim structure
   std::shared_ptr<Structure const> m_shared_prim;
@@ -136,6 +147,12 @@ class DoFSpace {
   /// The DoF space basis, as a column vector matrix. May be a subspace (cols <=
   /// rows).
   Eigen::MatrixXd m_basis;
+
+  /// The pseudo-inverse of the DoFSpace basis.
+  Eigen::MatrixXd m_basis_inv;
+
+  /// QR factorization of basis
+  Eigen::ColPivHouseholderQR<Eigen::MatrixXd> m_qr;
 
   /// Names the DoF corresponding to each dimension (row) of the basis
   std::vector<std::string> m_axis_glossary;
@@ -209,6 +226,10 @@ struct DoFSpaceIndexConverter {
   Index config_site_index(Index dof_space_site_index,
                           UnitCell const &translation) const;
 };
+
+/// Return `config` DoF value as a unrolled coordinate in the prim basis
+Eigen::VectorXd get_dof_value(Configuration const &config,
+                              DoFSpace const &dof_space);
 
 /// Return `config` DoF value as a coordinate in the DoFSpace basis
 Eigen::VectorXd get_normal_coordinate(Configuration const &config,
@@ -293,6 +314,9 @@ class make_symmetry_adapted_dof_space_error : public std::runtime_error {
       : std::runtime_error(_what) {}
   virtual ~make_symmetry_adapted_dof_space_error() {}
 };
+
+/// Removes the default occupation modes from the DoFSpace basis
+DoFSpace exclude_default_occ_modes(DoFSpace const &dof_space);
 
 /// Removes the homogeneous mode space from the DoFSpace basis
 DoFSpace exclude_homogeneous_mode_space(DoFSpace const &dof_space);

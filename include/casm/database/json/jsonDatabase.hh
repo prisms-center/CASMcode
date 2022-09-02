@@ -98,7 +98,6 @@ class jsonDatabase<Supercell> : public Database<Supercell> {
 /// - iterator end() const
 /// - size_type size() const
 /// - std::pair<iterator, bool> insert(const ValueType &obj)
-/// - std::pair<iterator, bool> insert(const ValueType &&obj)
 /// - iterator erase(iterator pos)
 /// - iterator find(const std::string &name) const
 ///
@@ -134,8 +133,6 @@ class jsonDatabase<Configuration> : public Database<Configuration> {
   size_type size() const override;
 
   std::pair<iterator, bool> insert(const Configuration &config) override;
-
-  std::pair<iterator, bool> insert(const Configuration &&config) override;
 
   iterator update(const Configuration &config) override;
 

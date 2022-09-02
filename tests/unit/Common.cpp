@@ -6,7 +6,6 @@
 #include <thread>
 
 #include "Proj.hh"
-#include "autotools.hh"
 #include "casm/app/ProjectBuilder.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Site.hh"
@@ -83,8 +82,7 @@ fs::path data_file(std::string module_name, std::string file_name) {
 }
 
 TmpDir::TmpDir() : m_remove_on_destruction(true) {
-  fs::path init =
-      fs::path{autotools::abs_srcdir()} / "tests" / "test_projects" / "tmp";
+  fs::path init = fs::current_path() / "CASM_test_projects" / "tmp";
   fs::path result = init;
   int index = 0;
   std::string dot = ".";

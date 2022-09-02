@@ -2,6 +2,7 @@
 
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
+#include "casm/casm_io/json/jsonParser.hh"
 #include "casm/clex/ConfigMapping.hh"
 #include "casm/clex/Configuration_impl.hh"
 #include "casm/clex/io/json/ConfigMapping_json_io.hh"
@@ -155,6 +156,15 @@ StructureMap<Configuration>::map(
   if (map_result.n_optimal() > 1) {
     res.fail_msg = "There were " + std::to_string(map_result.n_optimal()) +
                    " optimal mappings, when only one was expected.";
+    std::cout << "#maps: " << map_result.maps.size() << std::endl;
+    for (auto const &map : map_result.maps) {
+      std::cout << "---" << std::endl;
+      jsonParser json;
+      to_json(map.second.resolved_struc, json["resolved_struc"]);
+      to_json(Local::_make_mapped_properties(map.first, map.second),
+              json["mapped_properties"]);
+      std::cout << "---" << std::endl;
+    }
     *result++ = std::move(res);
     return result;
   }
@@ -681,6 +691,7 @@ DataFormatter<ConfigIO::Result> Import<Configuration>::_import_formatter()
 
   std::vector<std::string> col = {"initial_path",
                                   "selected",
+                                  "fail_msg",
                                   "to_configname",
                                   "final_path",
                                   "is_new_config",
@@ -770,8 +781,10 @@ DataFormatter<ConfigIO::Result> Update<Configuration>::_update_formatter()
   DataFormatterDictionary<ConfigIO::Result> dict;
   ConfigIO::default_update_formatters(dict, db_props());
 
-  std::vector<std::string> col = {"properties_origin",
+  std::vector<std::string> col = {"initial_path",
+                                  "properties_origin",
                                   "selected",
+                                  "fail_msg",
                                   "to_configname",
                                   "has_any_required_properties",
                                   "has_all_required_properties",

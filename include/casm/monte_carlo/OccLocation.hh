@@ -67,6 +67,14 @@ struct SpeciesTraj {
 };
 
 struct OccEvent {
+  /// \brief Linear site indices, indicating on which sites the occupation will
+  ///     be modified
+  std::vector<Index> linear_site_index;
+
+  /// \brief Occupant indices, indicating the new occupation index on the sites
+  ///     being modified
+  std::vector<int> new_occ;
+
   std::vector<OccTransform> occ_transform;
   std::vector<SpeciesTraj> species_traj;
 };

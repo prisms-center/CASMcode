@@ -29,15 +29,30 @@ void set_occupation(Configuration &configuration,
 }
 }  // namespace local_impl
 
-/// Conditionally true for ConfigEnumAllOccupations (true when enumerating on
-/// all sites)
+/// \brief Conditionally true for ConfigEnumAllOccupations
 template <>
 bool is_guaranteed_for_database_insert(
     ConfigEnumAllOccupations const &enumerator) {
-  return enumerator.canonical_guarantee();
+  return enumerator.primitive_canonical_guarantee();
 }
 
-/// \brief Construct with a Supercell, using all permutations
+/// \brief Construct with a ConfigEnumInput, specifying which sites
+///     to enumerate on and which to keep fixed
+///
+/// Note:
+/// - The output configurations are set to fixed occupation matching
+///   `config_enum_input.configuration()` on all sites not included in
+///   `config_enum_input.sites()`.
+/// - All allowed occupation values are enumerated on the selected sites
+///   (`config_enum_input.sites()`), but Configuration are only output if the
+///   are primitive.
+/// - If all sites are selected, then only primitive and canonical
+///   Configuration are output. This can be checked with
+///   `this->canonical_guarantee()`.
+/// - Otherwise, if a subset of sites is selected only primitive
+///   Configuration are output
+/// - Use the alternative constructor for direct control over whether
+///   output configurations are primitive and/or canonical
 ConfigEnumAllOccupations::ConfigEnumAllOccupations(
     const ConfigEnumInput &config_enum_input)
     : m_site_index_selection(config_enum_input.sites()),
@@ -49,6 +64,63 @@ ConfigEnumAllOccupations::ConfigEnumAllOccupations(
       m_enumerate_on_a_subset_of_supercell_sites(
           m_site_index_selection.size() !=
           config_enum_input.configuration().size()) {
+  if (m_enumerate_on_a_subset_of_supercell_sites) {
+    m_primitive_only = true;
+    m_canonical_only = false;
+  } else {
+    m_primitive_only = true;
+    m_canonical_only = true;
+  }
+  local_impl::set_occupation(*m_current, m_site_index_selection, m_counter);
+  reset_properties(*m_current);
+  this->_initialize(&(*m_current));
+
+  // Make sure that current() is a primitive canonical config
+  if (!_current_is_valid_for_output()) {
+    increment();
+  }
+
+  // set step to 0
+  if (valid()) {
+    _set_step(0);
+  }
+  m_current->set_source(this->source(step()));
+}
+
+/// \brief Constructor allowing direct control of whether
+///     non-primitive and non-canonical Configuration are enumerated
+///
+/// \param config_enum_input Specifies the background configuration
+///     and sites where all allowed occupation values are enumerated
+/// \param primitive_only If true, only primitive configuration are
+///     output
+/// \param canonical_only If true, only canonical configuration are
+///     output
+///
+/// Note:
+/// - The output configurations are set to fixed occupation matching
+///   `config_enum_input.configuration()` on all sites not included in
+///   `config_enum_input.sites()`.
+/// - All allowed occupation values are enumerated on the selected sites
+///   (`config_enum_input.sites()`)
+/// - If `primitive_only==true`, then non-primitive configurations are
+///   skipped.
+/// - If `canonical_only==true`, then non-canonical configurations are
+///   skipped.
+ConfigEnumAllOccupations::ConfigEnumAllOccupations(
+    const ConfigEnumInput &config_enum_input, bool primitive_only,
+    bool canonical_only)
+    : m_site_index_selection(config_enum_input.sites()),
+      m_counter(std::vector<int>(config_enum_input.sites().size(), 0),
+                local_impl::max_selected_occupation(config_enum_input),
+                std::vector<int>(config_enum_input.sites().size(), 1)),
+      m_current(notstd::make_cloneable<Configuration>(
+          config_enum_input.configuration())),
+      m_enumerate_on_a_subset_of_supercell_sites(
+          m_site_index_selection.size() !=
+          config_enum_input.configuration().size()),
+      m_primitive_only(primitive_only),
+      m_canonical_only(canonical_only) {
   local_impl::set_occupation(*m_current, m_site_index_selection, m_counter);
   reset_properties(*m_current);
   this->_initialize(&(*m_current));
@@ -67,13 +139,10 @@ ConfigEnumAllOccupations::ConfigEnumAllOccupations(
 
 std::string ConfigEnumAllOccupations::name() const { return enumerator_name; }
 
-/// Returns true if enumerator is guaranteed to output canonical configurations
-///
-/// Output is sometimes canonical (when enumerating on all supercell sites) and
-/// sometimes not (when enumerating on a subset of supercell sites). If this
-/// returns true, then the output is guaranteed to be in canonical form.
-bool ConfigEnumAllOccupations::canonical_guarantee() const {
-  return !m_enumerate_on_a_subset_of_supercell_sites;
+/// \brief Returns true if enumerator is guaranteed to output
+///     primitive & canonical configurations only
+bool ConfigEnumAllOccupations::primitive_canonical_guarantee() const {
+  return m_primitive_only && m_canonical_only;
 }
 
 const std::string ConfigEnumAllOccupations::enumerator_name =
@@ -101,11 +170,13 @@ void ConfigEnumAllOccupations::increment() {
 
 /// Returns true if current() is primitive and canonical
 bool ConfigEnumAllOccupations::_current_is_valid_for_output() const {
-  if (m_enumerate_on_a_subset_of_supercell_sites) {
-    return current().is_primitive();
-  } else {
-    return current().is_primitive() && current().is_canonical();
+  if (m_primitive_only && !current().is_primitive()) {
+    return false;
   }
+  if (m_canonical_only && !current().is_canonical()) {
+    return false;
+  }
+  return true;
 }
 
 }  // namespace CASM

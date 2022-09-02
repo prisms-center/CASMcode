@@ -74,6 +74,9 @@ GenericDatumFormatter<std::string, ConfigEnumDataType>
 initial_state_configname();
 
 template <typename ConfigEnumDataType>
+GenericDatumFormatter<jsonParser, ConfigEnumDataType> initial_state();
+
+template <typename ConfigEnumDataType>
 Generic1DDatumFormatter<std::vector<Index>, ConfigEnumDataType>
 selected_sites();
 
@@ -89,6 +92,12 @@ Eigen::VectorXd get_normal_coordinate(EnumeratorType const &enumerator);
 template <typename ConfigEnumDataType>
 Generic1DDatumFormatter<Eigen::VectorXd, ConfigEnumDataType>
 normal_coordinate();
+
+template <typename ConfigEnumDataType>
+GenericDatumFormatter<jsonParser, ConfigEnumDataType> config();
+
+template <typename ConfigEnumDataType>
+GenericDatumFormatter<jsonParser, ConfigEnumDataType> canonical_config();
 
 }  // namespace ConfigEnumIO
 }  // namespace CASM

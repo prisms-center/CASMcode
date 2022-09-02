@@ -1,10 +1,12 @@
 #include "casm/monte_carlo/canonical/CanonicalIO.hh"
 
 #include "casm/casm_io/dataformatter/DataFormatter.hh"
+#include "casm/casm_io/json/optional.hh"
 #include "casm/crystallography/io/VaspIO.hh"
 #include "casm/global/definitions.hh"
 #include "casm/monte_carlo/MonteIO_impl.hh"
 #include "casm/monte_carlo/canonical/Canonical.hh"
+#include "casm/monte_carlo/io/json/CorrMatchingPotential_json_io.hh"
 
 namespace CASM {
 namespace Monte {
@@ -74,6 +76,16 @@ DataFormatter<ConstMonteCarloPtr> make_results_formatter(const Canonical &mc) {
     exclude.insert(name);
   }
 
+  // if has order parameter, always include order parameter
+  if (mc.order_parameter() != nullptr) {
+    for (int i = 0; i < mc.order_parameter()->dof_space().subspace_dim(); ++i) {
+      name = std::string("order_parameter(") + std::to_string(i) + ")";
+      formatter.push_back(MonteCarloMeanFormatter(name));
+      formatter.push_back(MonteCarloPrecFormatter(name));
+      exclude.insert(name);
+    }
+  }
+
   // include mean/prec of other properties
   for (auto it = mc.samplers().cbegin(); it != mc.samplers().cend(); ++it) {
     if (exclude.find(it->first) == exclude.end()) {
@@ -118,6 +130,22 @@ jsonParser &to_json(const CanonicalConditions &conditions, jsonParser &json) {
 
   json["tolerance"] = conditions.tolerance();
 
+  json["include_formation_energy"] = conditions.include_formation_energy();
+
+  to_json(conditions.order_parameter_pot(), json["order_parameter_pot"],
+          jsonParser::as_array());
+
+  to_json(conditions.order_parameter_quad_pot_target(),
+          json["order_parameter_quad_pot_target"], jsonParser::as_array());
+  to_json(conditions.order_parameter_quad_pot_vector(),
+          json["order_parameter_quad_pot_vector"], jsonParser::as_array());
+  json["order_parameter_quad_pot_matrix"] =
+      conditions.order_parameter_quad_pot_matrix();
+
+  json["corr_matching_pot"] = conditions.corr_matching_pot();
+  json["random_alloy_corr_matching_pot"] =
+      conditions.random_alloy_corr_matching_pot();
+
   return json;
 }
 
@@ -126,16 +154,55 @@ jsonParser &to_json(const CanonicalConditions &conditions, jsonParser &json) {
 /// \code
 /// {
 ///   "temperature" : number,
-///   "tol: number,
+///   "tolerance": number,
 ///   "comp" : {"a": number, "b": number, ...} // option 1: comp object
 ///   "comp" : [number, number, ...] // option 2: comp array
 ///   "comp_n" : {"A": number, "B": number, ...} // option 3: comp_n object
 ///   "comp_n" : [number, number, ...] // option 2: comp_n array
+///
+///   // the following are optional / can also be "null"
+///   "include_formation_energy": bool // default=true, except default=false for
+///   corr_matching_pot "param_comp_quad_pot_target": [number, number, ...] //
+///   option 2: potential minimum "param_comp_quad_pot_vector": [number, number,
+///   ...] // curvature (vector) "param_comp_quad_pot_matrix": [ // curvature
+///   (matrix)
+///     [number, number, ...],
+///     [number, number, ...],
+///     ...]
+///   "order_parameter_pot": [number, number, ...] // linear potential
+///
+///   // potential minimum
+///   "order_parameter_quad_pot_target": [number, number, ...]
+///
+///   // curvature (vector)
+///   "order_parameter_quad_pot_vector": [number, number, ...]
+///   "order_parameter_quad_pot_matrix": [ // curvature (matrix)
+///     [number, number, ...],
+///     [number, number, ...],
+///     ...]
+///   "corr_matching_pot": {
+///     "exact_matching_weight": number // default=0.
+///     "tol": number // default=1e-5
+///     "targets": [
+///       {"index":int, "value":number, "weight":number (default=1.)},
+///       ...
+///     ]
+///   "random_alloy_corr_matching_pot": {
+///     "exact_matching_weight": number // default=0.
+///     "tol": number // default=1e-5
+///     "sublattice_prob": [
+///       [number, number, ...], // sublattice 0
+///       [number, number, ...], // sublattice 1
+///       ...
+///     ]
+///   }
 /// }
 /// \endcode
 ///
 void from_json(CanonicalConditions &conditions, const PrimClex &primclex,
-               const jsonParser &json) {
+               const jsonParser &json, Canonical const &mc, bool incremental) {
+  bool include_formation_energy = true;
+
   double temp = json["temperature"].get<double>();
   double tol = json["tolerance"].get<double>();
 
@@ -166,13 +233,62 @@ void from_json(CanonicalConditions &conditions, const PrimClex &primclex,
       }
     }
 
-    comp_n = comp_n / comp_n.sum() * primclex.prim().basis().size();
-    comp = primclex.composition_axes().param_composition(comp_n);
+    if (!incremental) {
+      comp_n = comp_n / comp_n.sum() * primclex.prim().basis().size();
+      comp = primclex.composition_axes().param_composition(comp_n);
+    } else {
+      comp = primclex.composition_axes().dparam_composition(comp_n);
+    }
   } else {
     throw std::runtime_error(
         "Error reading conditions: No 'comp' or 'comp_n' specified");
   }
-  conditions = CanonicalConditions(primclex, temp, comp, tol);
+
+  // --- linear potential of order parameter
+
+  std::optional<Eigen::VectorXd> order_parameter_pot;
+  json.get_if(order_parameter_pot, "order_parameter_pot");
+
+  // --- quadratic potential of order parameter
+
+  std::optional<Eigen::VectorXd> order_parameter_quad_pot_target;
+  json.get_if(order_parameter_quad_pot_target,
+              "order_parameter_quad_pot_target");
+
+  std::optional<Eigen::VectorXd> order_parameter_quad_pot_vector;
+  json.get_if(order_parameter_quad_pot_vector,
+              "order_parameter_quad_pot_vector");
+
+  std::optional<Eigen::MatrixXd> order_parameter_quad_pot_matrix;
+  json.get_if(order_parameter_quad_pot_matrix,
+              "order_parameter_quad_pot_matrix");
+
+  // --- correlation matching potential
+
+  std::optional<CorrMatchingParams> corr_matching_pot;
+  json.get_if(corr_matching_pot, "corr_matching_pot");
+  if (corr_matching_pot.has_value()) {
+    include_formation_energy = false;
+  }
+
+  std::optional<RandomAlloyCorrMatchingParams> random_alloy_corr_matching_pot;
+  if (json.contains("random_alloy_corr_matching_pot")) {
+    random_alloy_corr_matching_pot = RandomAlloyCorrMatchingParams();
+    random_alloy_corr_matching_pot->random_alloy_corr_f =
+        mc.random_alloy_corr_f();
+    from_json(*random_alloy_corr_matching_pot,
+              json["random_alloy_corr_matching_pot"]);
+    include_formation_energy = false;
+  }
+
+  // --- override inclusion of formation energy ---
+  json.get_if(include_formation_energy, "include_formation_energy");
+
+  conditions = CanonicalConditions(
+      primclex, temp, comp, tol, include_formation_energy, order_parameter_pot,
+      order_parameter_quad_pot_target, order_parameter_quad_pot_vector,
+      order_parameter_quad_pot_matrix, corr_matching_pot,
+      random_alloy_corr_matching_pot);
 }
 
 }  // namespace Monte

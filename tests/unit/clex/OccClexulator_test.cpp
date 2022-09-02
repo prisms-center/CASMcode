@@ -176,7 +176,7 @@ class LocalOccClexulatorZrOTest : public test::ProjectBaseTest {
     shared_supercell->set_primclex(primclex_ptr.get());
 
     // Uncomment to preserve project
-    // tmp_dir.do_not_remove_on_destruction();
+    tmp_dir.do_not_remove_on_destruction();
   }
 
   void use_clexulator_test();

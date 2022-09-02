@@ -4,6 +4,7 @@
 #include "casm/app/enum/dataformatter/ConfigEnumIO.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/io/json/Configuration_json_io.hh"
 #include "casm/database/ConfigDatabaseTools_impl.hh"
 #include "casm/enumerator/ConfigEnumInput_impl.hh"
 #include "casm/misc/TypeInfo.hh"
@@ -144,6 +145,18 @@ initial_state_configname() {
 }
 
 template <typename ConfigEnumDataType>
+GenericDatumFormatter<jsonParser, ConfigEnumDataType> initial_state() {
+  return GenericDatumFormatter<jsonParser, ConfigEnumDataType>(
+      "initial_state",
+      "Output initial enumeration state, as configuration and selected sites.",
+      [](ConfigEnumDataType const &data) -> jsonParser {
+        jsonParser json = jsonParser::object();
+        to_json(data.initial_state, json);
+        return json;
+      });
+}
+
+template <typename ConfigEnumDataType>
 Generic1DDatumFormatter<std::vector<Index>, ConfigEnumDataType>
 selected_sites() {
   return Generic1DDatumFormatter<std::vector<Index>, ConfigEnumDataType>(
@@ -187,6 +200,40 @@ normal_coordinate() {
         return get_normal_coordinate(data.enumerator);
       });
 }
+
+template <typename ConfigEnumDataType>
+GenericDatumFormatter<jsonParser, ConfigEnumDataType> config() {
+  return GenericDatumFormatter<jsonParser, ConfigEnumDataType>(
+      "config",
+      "Output as JSON the as-enumerated configuration, before being made "
+      "primitive and/or canonical for database insertion.",
+      [=](ConfigEnumDataType const &data) -> jsonParser {
+        jsonParser json = jsonParser::object();
+        Configuration const &config = data.configuration;
+        to_json(config, json);
+        return json;
+      });
+}
+
+template <typename ConfigEnumDataType>
+GenericDatumFormatter<jsonParser, ConfigEnumDataType> canonical_config() {
+  return GenericDatumFormatter<jsonParser, ConfigEnumDataType>(
+      "canonical_config",
+      "Output as JSON the canonical form of the enumerated configuration.",
+      [](ConfigEnumDataType const &data) -> jsonParser {
+        jsonParser json;
+        if (data.is_excluded_by_filter) {
+          json = "none";
+        } else if (data.insert_result.canonical_it ==
+                   data.primclex.template db<Configuration>().end()) {
+          json = "none";
+        } else {
+          to_json(*data.insert_result.canonical_it, json);
+        }
+        return json;
+      });
+}
+
 }  // namespace ConfigEnumIO
 
 }  // namespace CASM

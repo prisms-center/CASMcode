@@ -12,6 +12,8 @@ jsonParser &to_json(const xtal::ScelEnumProps &props, jsonParser &json) {
   json["max"] = props.end_volume() - 1;
   json["dirs"] = props.dirs();
   json["unit_cell"] = props.generating_matrix();
+  json["diagonal_only"] = props.diagonal_only();
+  json["fixed_shape"] = props.fixed_shape();
   return json;
 }
 
@@ -26,7 +28,11 @@ jsonParser &to_json(const xtal::ScelEnumProps &props, jsonParser &json) {
 ///         Which lattice vectors of unit cell to enumerate over
 ///     unit_cell: 3x3 matrix of int (optional, default=identity matrix)
 ///         The unit cell to tile into supercells.
-///
+///     diagonal_only: bool (optional, default=false)
+///         Restrict to diagonal multiples of unit_cell
+///     fixed_shape: bool (optional, default=false)
+///         Restrict to diagonal multiple of unit cell, with constant
+///         cofficient for directions indicated by "dirs"
 xtal::ScelEnumProps jsonConstructor<xtal::ScelEnumProps>::from_json(
     const jsonParser &json) {
   jsonParser tjson{json};
@@ -51,11 +57,15 @@ void parse(InputParser<xtal::ScelEnumProps> &parser) {
   std::string default_dirs{"abc"};
   Eigen::Matrix3i generating_matrix;
   Eigen::Matrix3i default_matrix{Eigen::Matrix3i::Identity()};
+  bool diagonal_only;
+  bool fixed_shape;
   parser.require(min, "min");
   parser.require(max, "max");
   parser.optional_else(dirs, "dirs", default_dirs);
   parser.optional_else(generating_matrix, "unit_cell", default_matrix);
-  parser.value = notstd::make_unique<xtal::ScelEnumProps>(min, max + 1, dirs,
-                                                          generating_matrix);
+  parser.optional_else(diagonal_only, "diagonal_only", false);
+  parser.optional_else(fixed_shape, "fixed_shape", false);
+  parser.value = notstd::make_unique<xtal::ScelEnumProps>(
+      min, max + 1, dirs, generating_matrix, diagonal_only, fixed_shape);
 }
 }  // namespace CASM

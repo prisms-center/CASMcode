@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 
-#include "autotools.hh"
 #include "casm/casm_io/container/stream_io.hh"
 #include "casm/clex/SimpleStructureTools.hh"
 #include "casm/crystallography/Adapter.hh"

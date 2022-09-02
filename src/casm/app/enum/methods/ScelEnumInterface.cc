@@ -78,6 +78,17 @@ std::string ScelEnumInterface::desc() const {
       "\n"
       "      \"unit_cell\" : \"SCEL2_1_1_2_0_0_0\"\n"
       "\n"
+      "  diagonal_only: bool (optional, default=false)                  \n"
+      "    If true, restrict enumeration to supercells which are        \n"
+      "    diagonal multiples of the unit cell.                         \n"
+      "\n"
+      "  fixed_shape: bool (optional, default=false)                    \n"
+      "    If true, restrict enumeration to supercells which are        \n"
+      "    diagonal multiples of the unit cell with the same coefficient\n"
+      "    along the directions indicated by \"dirs\". This has the     \n"
+      "    effect of fixing the shape in the dimensions being enumerated\n"
+      "    but increasing the size.                                     \n"
+      "\n"
       "  filter: string (optional, default=None, override with --filter)\n"
       "    A query command to use to filter which Configurations are kept.     "
       "     \n\n"
@@ -166,7 +177,8 @@ void ScelEnumInterface::run(PrimClex &primclex, jsonParser const &json_options,
       ScelEnumIO::selected<ScelEnumDataType>(),
       ScelEnumIO::is_new<ScelEnumDataType>(),
       ScelEnumIO::is_existing<ScelEnumDataType>(),
-      ScelEnumIO::transformation_matrix_to_super<ScelEnumDataType>());
+      ScelEnumIO::transformation_matrix_to_super<ScelEnumDataType>(),
+      ScelEnumIO::supercell_lattice_column_matrix<ScelEnumDataType>());
   if (options.filter) {
     formatter.push_back(ScelEnumIO::is_excluded_by_filter<ScelEnumDataType>());
   }

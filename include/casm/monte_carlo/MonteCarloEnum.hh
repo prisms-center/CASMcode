@@ -6,12 +6,29 @@
 
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/dataformatter/DataFormatter.hh"
+#include "casm/casm_io/dataformatter/DatumFormatterAdapter.hh"
+#include "casm/casm_io/dataformatter/FormattedDataFile.hh"
 #include "casm/clex/Configuration.hh"
+#include "casm/enumerator/OrderParameter.hh"
 #include "casm/misc/HallOfFame.hh"
 #include "casm/misc/cloneable_ptr.hh"
 #include "casm/monte_carlo/MonteDefinitions.hh"
 
 namespace CASM {
+
+namespace adapter {
+template <typename ToType, typename FromType>
+struct Adapter;
+
+template <>
+struct Adapter<CASM::Configuration, std::pair<double, CASM::Configuration>> {
+  CASM::Configuration const &operator()(
+      std::pair<double, CASM::Configuration> const &adaptable) const {
+    return adaptable.second;
+  }
+};
+}  // namespace adapter
+
 namespace Monte {
 
 class MonteCarloEnumMetric {
@@ -43,6 +60,7 @@ class MonteCarloEnumCheck {
 class MonteCarloEnum {
  public:
   typedef HallOfFame<Configuration, MonteCarloEnumMetric> HallOfFameType;
+  typedef typename HallOfFameType::PairType PairType;
 
   template <typename MonteTypeSettings, typename MonteCarloType>
   MonteCarloEnum(const PrimClex &primclex, const MonteTypeSettings &settings,
@@ -76,7 +94,7 @@ class MonteCarloEnum {
   const HallOfFameType &halloffame() const;
 
   /// \brief Save configurations in the hall of fame to the config list
-  void save_configs();
+  void save_configs(bool dry_run = false);
 
   std::string check_args() const { return m_check_args; }
 
@@ -97,6 +115,9 @@ class MonteCarloEnum {
 
   /// \brief Clear hall of fame and reset excluded
   void reset();
+
+  /// \brief Access DataFormatterDictionary
+  DataFormatterDictionary<PairType> const &dict() const { return m_dict; }
 
  private:
   /// \brief Insert in hall of fame if 'check' passes
@@ -140,10 +161,13 @@ class MonteCarloEnum {
   mutable std::map<std::string, Supercell *> m_canon_scel;
 
   /// \brief Used for various purposes
-  DataFormatterDictionary<Configuration> m_dict;
+  DataFormatterDictionary<PairType> m_dict;
+
+  /// \brief Used to hold a copy of the mc object's order parameter calculator
+  std::shared_ptr<OrderParameter> m_order_parameter;
 
   /// \brief holds 'is_new, score' data
-  std::map<std::string, std::pair<bool, double> > m_data;
+  std::map<std::string, std::pair<bool, double>> m_data;
 };
 
 }  // namespace Monte

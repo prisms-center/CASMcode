@@ -1213,7 +1213,15 @@ ConfigIO::GenericConfigFormatter<std::string> poscar() {
       "Structure resulting from application of DoF, formatted as VASP POSCAR",
       [](Configuration const &configuration) {
         std::stringstream ss;
-        print_poscar(configuration, ss);
+        std::string name;
+        if (configuration.id() == "none") {
+          name = configuration.supercell().name() + "/none";
+        } else {
+          name = configuration.name();
+        }
+        VaspIO::PrintPOSCAR p{make_simple_structure(configuration), name};
+        p.sort();
+        p.print(ss);
         return ss.str();
       });
 }
@@ -1225,8 +1233,13 @@ ConfigIO::GenericConfigFormatter<std::string> poscar_with_vacancies() {
       "formatted as VASP POSCAR",
       [](Configuration const &configuration) {
         std::stringstream ss;
-        VaspIO::PrintPOSCAR p{make_simple_structure(configuration),
-                              configuration.name()};
+        std::string name;
+        if (configuration.id() == "none") {
+          name = configuration.supercell().name() + "/none";
+        } else {
+          name = configuration.name();
+        }
+        VaspIO::PrintPOSCAR p{make_simple_structure(configuration), name};
         p.ignore() = {};
         p.sort();
         p.print(ss);

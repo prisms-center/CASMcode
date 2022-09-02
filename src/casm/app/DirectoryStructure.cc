@@ -257,6 +257,11 @@ fs::path DirectoryStructure::basis(std::string bset) const {
   return bset_dir(bset) / "basis.json";
 }
 
+// \brief Returns path to the equivalents_info.json file
+fs::path DirectoryStructure::equivalents_info(std::string bset) const {
+  return bset_dir(bset) / "equivalents_info.json";
+}
+
 /// \brief Returns path to directory containing clexulator
 fs::path DirectoryStructure::clexulator_dir(std::string bset) const {
   return bset_dir(bset);

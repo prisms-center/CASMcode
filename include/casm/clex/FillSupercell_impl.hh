@@ -4,6 +4,9 @@
 #include "casm/clex/ConfigEnumByPermutation.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/FillSupercell.hh"
+#include "casm/clex/Supercell_impl.hh"
+#include "casm/crystallography/Structure.hh"
+#include "casm/symmetry/SymTools.hh"
 
 namespace CASM {
 

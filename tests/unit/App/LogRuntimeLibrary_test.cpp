@@ -1,4 +1,3 @@
-#include "autotools.hh"
 #include "gtest/gtest.h"
 
 /// What is being tested:
@@ -6,11 +5,8 @@
 #include "casm/system/RuntimeLibrary.hh"
 
 /// Dependencies
+#include "Common.hh"
 #include "casm/casm_io/Log.hh"
-
-/// What is being used to test it:
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
 
 using namespace CASM;
 
@@ -18,12 +14,12 @@ TEST(LogRuntimeLibraryTest, FunctionTest) {
   ScopedStringStreamLogging logging;
 
   EXPECT_EQ(true, true);
-  std::string cc_filename_base =
-      autotools::abs_srcdir() + "/tests/unit/system/runtime_lib";
-  fs::path cc_filename{cc_filename_base + ".cc"};
+  test::TmpDir tmpdir;
+  std::string cc_filename_base = (tmpdir.path() / "runtime_lib").string();
+  std::filesystem::path cc_filename{cc_filename_base + ".cc"};
   EXPECT_EQ(true, true);
 
-  fs::ofstream file(cc_filename);
+  std::ofstream file(cc_filename);
   file << "#include <iostream>\n"
           "extern \"C\" int forty_two() {\n"
           "   return 42;\n"
@@ -35,12 +31,12 @@ TEST(LogRuntimeLibraryTest, FunctionTest) {
   file.close();
   EXPECT_EQ(true, true);
 
-  std::string compile_opt = RuntimeLibrary::default_cxx().first + " " +
-                            RuntimeLibrary::default_cxxflags().first;
-  std::string so_opt =
-      RuntimeLibrary::default_cxx().first + " " +
-      RuntimeLibrary::default_soflags().first + " " +
-      link_path(RuntimeLibrary::default_boost_libdir().first.string());
+  std::string compile_opt =
+      RuntimeLibrary::default_cxx().first + " -O3 -Wall -fPIC --std=c++17 ";
+  std::cout << "compile_opt: " << compile_opt << std::endl;
+
+  std::string so_opt = RuntimeLibrary::default_cxx().first + " -shared ";
+  std::cout << "so_opt: " << so_opt << std::endl;
   EXPECT_EQ(true, true);
 
   std::shared_ptr<RuntimeLibrary> lib =

@@ -52,6 +52,8 @@ class ProjectBaseTest : public testing::Test {
   std::unique_ptr<ProjectSettings> project_settings_ptr;
   std::string basis_set_name;
   jsonParser basis_set_specs_json;
+  std::string compile_opt;
+  std::string so_opt;
   std::unique_ptr<PrimClex> primclex_ptr;
 };
 

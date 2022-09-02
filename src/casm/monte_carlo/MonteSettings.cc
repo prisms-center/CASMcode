@@ -4,6 +4,8 @@
 
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/casm_io/container/json_io.hh"
+#include "casm/casm_io/dataformatter/FormattedDataFile.hh"
+#include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clex/io/json/ConfigDoF_json_io.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Structure.hh"
@@ -388,6 +390,112 @@ double MonteSettings::enumeration_tol() const {
     return 1e-8;
   }
   return _get_setting<double>("data", "enumeration", "tolerance", help);
+}
+
+/// \brief If true, do not save configs in the config list
+bool MonteSettings::enumeration_dry_run() const {
+  std::string help =
+      "(bool, optional, default=false)\n"
+      "  If true, do not save configurations in the config list.  \n";
+
+  if (!is_enumeration() || !_is_setting("data", "enumeration", "dry_run")) {
+    return false;
+  }
+  return _get_setting<bool>("data", "enumeration", "dry_run", help);
+}
+
+/// \brief Returns enumeration output options
+FormattedDataFileOptions MonteSettings::enumeration_output_options() const {
+  if (!is_enumeration() ||
+      !_is_setting("data", "enumeration", "output_configurations_options")) {
+    return FormattedDataFileOptions();
+  }
+
+  ParentInputParser parser{
+      (*this)["data"]["enumeration"]["output_configurations_options"]};
+
+  bool output_configurations;
+  parser.optional_else(output_configurations, "output_configurations", false);
+  if (!output_configurations) {
+    return FormattedDataFileOptions();
+  }
+
+  FormattedDataFileOptions options;
+
+  std::string file_path_str = "enum.out";
+  parser.optional(file_path_str, "path");
+  options.file_path = fs::path(file_path_str);
+  parser.optional_else(options.json_output, "json", false);
+  parser.optional_else(options.json_arrays, "json_arrays", false);
+  parser.optional_else(options.compress, "compress", false);
+  std::runtime_error error_if_invalid{
+      "Error reading "
+      "\"data\"/\"enumeration\"/\"output_configurations_options\""};
+  report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
+
+  if (options.compress) {
+    if (options.file_path.extension() != ".gz" &&
+        options.file_path.extension() != ".GZ") {
+      options.file_path += ".gz";
+    }
+  }
+  return options;
+}
+
+/// \brief Returns enumeration optional output properties
+std::vector<std::string> MonteSettings::enumeration_output_properties() const {
+  if (!is_enumeration() ||
+      !_is_setting("data", "enumeration", "output_configurations_options")) {
+    return std::vector<std::string>();
+  }
+
+  ParentInputParser parser{
+      (*this)["data"]["enumeration"]["output_configurations_options"]};
+
+  std::vector<std::string> properties;
+  parser.optional(properties, "properties");
+  std::runtime_error error_if_invalid{
+      "Error reading "
+      "\"data\"/\"enumeration\"/\"output_configurations_options\""};
+  report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
+
+  return properties;
+}
+
+/// \brief Returns true if configs should be saved in the database
+bool MonteSettings::enumeration_save_configs() const {
+  if (!is_enumeration() || !_is_setting("data", "enumeration")) {
+    return false;
+  }
+
+  ParentInputParser parser{(*this)["data"]["enumeration"]};
+
+  bool save_configs = true;
+  parser.optional(save_configs, "save_configs");
+  std::runtime_error error_if_invalid{
+      "Error reading "
+      "\"data\"/\"enumeration\"/\"save_configs\""};
+  report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
+
+  return save_configs;
+}
+
+/// \brief How often to output enumerated configurations
+Index MonteSettings::enumeration_output_period() const {
+  if (!is_enumeration() || !_is_setting("data", "enumeration")) {
+    return 10000;
+  }
+
+  ParentInputParser parser{(*this)["data"]["enumeration"]};
+
+  Index output_period = 10000;
+  parser.optional(output_period, "output_period");
+  std::runtime_error error_if_invalid{
+      "Error reading "
+      "\"data\"/\"enumeration\"/\"output_period\""};
+  report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
+
+  return output_period;
 }
 
 /// \brief Returns true if (*this)[level1].contains(level2)

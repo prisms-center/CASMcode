@@ -1,4 +1,3 @@
-
 #include "casm/monte_carlo/grand_canonical/GrandCanonical.hh"
 
 #include "casm/basis_set/DoF.hh"
@@ -6,8 +5,10 @@
 #include "casm/clex/FillSupercell.hh"
 #include "casm/clex/Norm.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clusterography/io/OrbitPrinter_impl.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "casm/database/ConfigDatabase.hh"
+#include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
 #include "casm/misc/algorithm.hh"
 #include "casm/monte_carlo/MonteCarloEnum_impl.hh"
@@ -35,6 +36,20 @@ Clex make_clex(PrimClex const &primclex,
   ClexDescription const &clex_desc = settings.formation_energy(primclex);
   return Clex{primclex.clexulator(clex_desc.bset), primclex.eci(clex_desc)};
 }
+// note: the construction process needs refactoring
+std::shared_ptr<RandomAlloyCorrCalculator> make_random_alloy_corr_f(
+    PrimClex const &primclex, GrandCanonicalSettings const &settings) {
+  auto shared_prim = primclex.shared_prim();
+  ClexDescription const &clex_desc = settings.formation_energy(primclex);
+  std::string basis_set_name = clex_desc.bset;
+
+  std::vector<IntegralCluster> prototypes;
+  jsonParser clust_json{primclex.dir().clust(basis_set_name)};
+  read_clust(std::back_inserter(prototypes), clust_json, *shared_prim);
+
+  return std::make_shared<RandomAlloyCorrCalculator>(
+      shared_prim, primclex.basis_set_specs(basis_set_name), prototypes);
+}
 
 /// \brief Constructs a GrandCanonical object and prepares it for running based
 /// on MonteSettings
@@ -44,8 +59,12 @@ GrandCanonical::GrandCanonical(const PrimClex &primclex,
                                const GrandCanonicalSettings &settings, Log &log)
     : MonteCarlo(primclex, settings, log),
       m_site_swaps(supercell()),
+      m_composition_converter(primclex.composition_axes()),
       m_formation_energy_clex(make_clex(primclex, settings)),
-      m_event(primclex.composition_axes().components().size(),
+      m_order_parameter(settings.make_order_parameter(primclex)),
+      m_random_alloy_corr_f(make_random_alloy_corr_f(primclex, settings)),
+      m_convert(_supercell()),
+      m_event(m_composition_converter.components().size(),
               _clexulator().corr_size()) {
   const auto &desc = settings.formation_energy(primclex);
 
@@ -57,6 +76,13 @@ GrandCanonical::GrandCanonical(const PrimClex &primclex,
   _log() << std::setw(16) << "ref: " << desc.ref << "\n";
   _log() << std::setw(16) << "bset: " << desc.bset << "\n";
   _log() << std::setw(16) << "eci: " << desc.eci << "\n";
+  if (m_order_parameter != nullptr) {
+    jsonParser json;
+    to_json(m_order_parameter->dof_space(), json);
+    _log().custom("Order Parameter DoF Space");
+    _log() << json << std::endl;
+    m_order_parameter->update(config());
+  }
   _log() << "supercell: \n" << supercell().transf_mat() << "\n";
   _log() << "\nSampling: \n";
   _log() << std::setw(24) << "quantity" << std::setw(24)
@@ -110,7 +136,6 @@ void GrandCanonical::set_configdof(const ConfigDoF &configdof,
   _log() << std::endl;
 
   reset(configdof);
-  _update_properties();
 }
 
 /// \brief Set configdof and conditions and clear previously collected data
@@ -219,40 +244,13 @@ const GrandCanonical::EventType &GrandCanonical::propose() {
            << site_occ[new_occupant].name() << ")\n\n"
 
            << "  beta: " << m_condition.beta() << "\n"
-           << "  T: " << m_condition.temperature() << std::endl;
+           << "  T: " << m_condition.temperature() << std::endl
+           << std::endl;
   }
 
   // Update delta properties in m_event
   _update_deltas(m_event, mutating_site, sublat, current_occupant,
                  new_occupant);
-
-  if (debug()) {
-    auto origin = primclex().composition_axes().origin();
-    auto exchange_chem_pot = m_condition.exchange_chem_pot();
-    auto param_chem_pot = m_condition.param_chem_pot();
-    auto Mpinv = primclex().composition_axes().dparam_dmol();
-    // auto V = supercell().volume();
-    Index curr_species = m_site_swaps.sublat_to_mol()[sublat][current_occupant];
-    Index new_species = m_site_swaps.sublat_to_mol()[sublat][new_occupant];
-
-    _log() << "  components: "
-           << jsonParser(primclex().composition_axes().components()) << "\n"
-           << "  d(N): " << m_event.dN().transpose() << "\n"
-           << "    dx_dn: \n"
-           << Mpinv << "\n"
-           << "    param_chem_pot.transpose() * dx_dn: \n"
-           << param_chem_pot.transpose() * Mpinv << "\n"
-           << "    param_chem_pot.transpose() * dx_dn * dN: "
-           << param_chem_pot.transpose() * Mpinv * m_event.dN().cast<double>()
-           << "\n"
-           << "  d(Nunit * param_chem_pot * x): "
-           << exchange_chem_pot(new_species, curr_species) << "\n"
-           << "  d(Ef): " << m_event.dEf() << "\n"
-           << "  d(Epot): "
-           << m_event.dEf() - exchange_chem_pot(new_species, curr_species)
-           << "\n"
-           << std::endl;
-  }
 
   return m_event;
 }
@@ -304,7 +302,9 @@ void GrandCanonical::accept(const EventType &event) {
   _potential_energy() += event.dEpot() / supercell().volume();
   _corr() += event.dCorr() / supercell().volume();
   _comp_n() += event.dN().cast<double>() / supercell().volume();
-
+  if (m_order_parameter != nullptr) {
+    _eta() += event.deta();
+  }
   return;
 }
 
@@ -418,7 +418,7 @@ double GrandCanonical::lte_grand_canonical_free_energy() const {
     tsum += it->second * exp(-(it->first) * m_condition.beta());
     phi = std::log(tsum) / m_condition.beta() / supercell().volume();
 
-    if (almost_equal(it->first, 0.0, tol)) {
+    if (CASM::almost_equal(it->first, 0.0, tol)) {
       _log() << std::setw(16) << "(gs)"
              << " ";
     } else {
@@ -449,18 +449,134 @@ void GrandCanonical::write_results(Index cond_index) const {
   // write_pos_trajectory(settings(), *this, cond_index);
 }
 
-/// \brief Get potential energy
+/// \brief Get potential energy, normalized per primitive cell
 ///
 /// - if(&config == &this->config()) { return potential_energy(); }, else
 ///   calculate potential_energy = formation_energy - comp_x.dot(param_chem_pot)
+///
+/// \throws If config does not have the same supercell as this
 double GrandCanonical::potential_energy(const Configuration &config) const {
+  if (debug()) {
+    _log().calculate("Potential energy");
+  }
   // if(&config == &this->config()) { return potential_energy(); }
-
   auto corr = correlations(config, _clexulator());
-  double formation_energy = _eci() * corr.data();
-  auto comp_x =
-      primclex().composition_axes().param_composition(CASM::comp_n(config));
-  return formation_energy - comp_x.dot(m_condition.param_chem_pot());
+  auto comp_n = CASM::comp_n(config);
+  auto comp_x = m_composition_converter.param_composition(comp_n);
+
+  if (debug()) {
+    _print_correlations(corr, "correlations", "corr");
+    _log() << "  comp_n: " << comp_n.transpose() << std::endl;
+    _log() << "  comp_x: " << comp_x.transpose() << std::endl;
+  }
+
+  double potential_energy = 0;
+
+  if (m_condition.include_formation_energy()) {
+    double formation_energy = _eci() * corr.data();
+    potential_energy += formation_energy;
+    if (debug()) {
+      _log() << "  formation_energy: " << formation_energy << std::endl;
+      _log() << "  potential_energy (w/ formation_energy): " << potential_energy
+             << std::endl;
+    }
+  }
+  if (m_condition.include_param_chem_pot()) {
+    potential_energy -= m_condition.param_chem_pot().dot(comp_x);
+    if (debug()) {
+      _log() << "  potential_energy (w/ param_chem_pot): " << potential_energy
+             << std::endl;
+    }
+  }
+  if (m_condition.corr_matching_pot().has_value()) {
+    potential_energy +=
+        corr_matching_potential(corr, *m_condition.corr_matching_pot());
+    if (debug()) {
+      _log() << "  potential_energy (w/ corr_matching_pot): "
+             << potential_energy << std::endl;
+    }
+  }
+  if (m_condition.random_alloy_corr_matching_pot().has_value()) {
+    potential_energy += corr_matching_potential(
+        corr, *m_condition.random_alloy_corr_matching_pot());
+    if (debug()) {
+      _log() << "  potential_energy (w/ random_alloy_corr_matching_pot): "
+             << potential_energy << std::endl;
+    }
+  }
+  if (m_condition.param_comp_quad_pot_vector().has_value()) {
+    Eigen::VectorXd x = (comp_x - *m_condition.param_comp_quad_pot_target());
+    Eigen::VectorXd const &v = *m_condition.param_comp_quad_pot_vector();
+    potential_energy += v.dot((x.array() * x.array()).matrix());
+    if (debug()) {
+      _log() << "  potential_energy (w/ param_comp_quad_pot_vector): "
+             << potential_energy << std::endl;
+    }
+  }
+  if (m_condition.param_comp_quad_pot_matrix().has_value()) {
+    Eigen::VectorXd x = (comp_x - *m_condition.param_comp_quad_pot_target());
+    Eigen::VectorXd const &V = *m_condition.param_comp_quad_pot_matrix();
+    potential_energy += x.dot(V * x);
+    if (debug()) {
+      _log() << "  potential_energy (w/ param_comp_quad_pot_matrix): "
+             << potential_energy << std::endl;
+    }
+  }
+  if (m_order_parameter != nullptr) {
+    // ---
+    // this is a hack to allow GrandCanonical::potential to be
+    // used on any Configuration
+    Eigen::VectorXd eta;
+    if (&this->supercell() != &config.supercell()) {
+      OrderParameter tmp = *m_order_parameter;
+      eta = tmp(config);
+    } else {
+      // temporarily reset ConfigDoFValues pointer
+      // - requires that the supercell is unchanged
+      clexulator::ConfigDoFValues const *prev = m_order_parameter->get();
+      m_order_parameter->set(&config.configdof().values());
+      eta = m_order_parameter->value();
+      m_order_parameter->set(prev);
+    }
+    // ---
+    if (debug()) {
+      _log() << "  eta: " << eta.transpose() << std::endl;
+    }
+
+    if (m_condition.order_parameter_pot().has_value()) {
+      Eigen::VectorXd const &v = *m_condition.order_parameter_pot();
+      potential_energy -= v.dot(eta);
+      if (debug()) {
+        _log() << "  potential_energy (w/ order_parameter_pot): "
+               << potential_energy << std::endl;
+      }
+    }
+    if (m_condition.order_parameter_quad_pot_vector().has_value()) {
+      Eigen::VectorXd x =
+          (eta - *m_condition.order_parameter_quad_pot_target());
+      Eigen::VectorXd const &v = *m_condition.order_parameter_quad_pot_vector();
+      potential_energy += v.dot((x.array() * x.array()).matrix());
+      if (debug()) {
+        _log() << "  potential_energy (w/ order_parameter_quad_pot_vector): "
+               << potential_energy << std::endl;
+      }
+    }
+    if (m_condition.order_parameter_quad_pot_matrix().has_value()) {
+      Eigen::VectorXd x =
+          (eta - *m_condition.order_parameter_quad_pot_target());
+      Eigen::VectorXd const &V = *m_condition.order_parameter_quad_pot_matrix();
+      potential_energy += x.dot(V * x);
+      if (debug()) {
+        _log() << "  potential_energy (w/ order_parameter_quad_pot_matrix): "
+               << potential_energy << std::endl;
+      }
+    }
+  }
+
+  if (debug()) {
+    _log() << std::endl;
+  }
+  return potential_energy;
 }
 
 /// \brief Calculate delta correlations for an event
@@ -511,12 +627,13 @@ void GrandCanonical::_update_deltas(GrandCanonicalEvent &event,
                                     Index mutating_site, int sublat,
                                     int current_occupant,
                                     int new_occupant) const {
+  if (debug()) {
+    _log().custom("Update deltas");
+  }
   // ---- set OccMod --------------
-
   event.occupational_change().set(mutating_site, sublat, new_occupant);
 
   // ---- set dspecies --------------
-
   for (int i = 0; i < event.dN().size(); ++i) {
     event.set_dN(i, 0);
   }
@@ -526,17 +643,182 @@ void GrandCanonical::_update_deltas(GrandCanonicalEvent &event,
   event.set_dN(new_species, 1);
 
   // ---- set dcorr --------------
-
   _set_dCorr(mutating_site, new_occupant, event.dCorr());
 
   // ---- set dformation_energy --------------
-
   event.set_dEf(_eci() * event.dCorr().data());
 
-  // ---- set dpotential_energy --------------
+  // ---- set deta -------------
+  if (m_order_parameter != nullptr) {
+    event.deta() = m_order_parameter->occ_delta(mutating_site, new_occupant);
+  }
 
-  event.set_dEpot(event.dEf() -
-                  m_condition.exchange_chem_pot(new_species, curr_species));
+  if (debug()) {
+    _log() << "  dEf: " << event.dEf() << std::endl;
+    // note: `dcomp_x` is extensive (includes Nunit),
+    //       but `comp_x` is intensive
+    double Nunit = supercell().volume();
+    Eigen::VectorXd dcomp_x =
+        m_composition_converter.dparam_dmol() * event.dN().cast<double>();
+    Eigen::VectorXd comp_x =
+        m_composition_converter.param_composition(this->comp_n());
+    _log() << "  dN: " << event.dN().transpose() << std::endl;
+    _log() << "  comp_n: " << this->comp_n().transpose() << std::endl;
+    _log() << "  dcomp_n: "
+           << (event.dN().cast<double>() / supercell().volume()).transpose()
+           << std::endl;
+    _log() << "  comp_x: " << comp_x.transpose() << std::endl;
+    _log() << "  dcomp_x: " << (dcomp_x / Nunit).transpose() << std::endl;
+    if (m_order_parameter != nullptr) {
+      _log() << "  eta: " << this->eta().transpose() << std::endl;
+      _log() << "  deta: " << event.deta().transpose() << std::endl;
+    }
+  }
+
+  // ---- set dpotential_energy --------------
+  double dEpot = 0;
+  if (m_condition.include_formation_energy()) {
+    dEpot += event.dEf();
+    if (debug()) {
+      _log() << "  dEpot (w/ formation_energy): " << dEpot << std::endl;
+    }
+  }
+  if (m_condition.include_param_chem_pot()) {
+    dEpot -= m_condition.exchange_chem_pot(new_species, curr_species);
+    if (debug()) {
+      _log() << "  dEpot (w/ param_chem_pot): " << dEpot << std::endl;
+    }
+  }
+  if (m_condition.corr_matching_pot()) {
+    dEpot += delta_corr_matching_potential(this->corr(),
+                                           event.dCorr() / supercell().volume(),
+                                           *m_condition.corr_matching_pot());
+    if (debug()) {
+      _log() << "  dEpot (w/ corr_matching_pot): " << dEpot << std::endl;
+    }
+  }
+  if (m_condition.random_alloy_corr_matching_pot()) {
+    dEpot += delta_corr_matching_potential(
+        this->corr(), event.dCorr() / supercell().volume(),
+        *m_condition.random_alloy_corr_matching_pot());
+    if (debug()) {
+      _log() << "  dEpot (w/ random_alloy_corr_matching_pot): " << dEpot
+             << std::endl;
+    }
+  }
+  if (m_condition.param_comp_quad_pot_vector().has_value()) {
+    // note: `dcomp_x` is extensive (includes Nunit), but `comp_x` and `target`
+    // are intensive
+    double Nunit = supercell().volume();
+    Eigen::VectorXd dcomp_x =
+        m_composition_converter.dparam_dmol() * event.dN().cast<double>();
+    Eigen::VectorXd comp_x =
+        m_composition_converter.param_composition(this->comp_n());
+    Eigen::VectorXd const &target = *m_condition.param_comp_quad_pot_target();
+    Eigen::VectorXd const &v = *m_condition.param_comp_quad_pot_vector();
+
+    for (int i = 0; i < dcomp_x.size(); ++i) {
+      dEpot += v(i) * (2.0 * (comp_x(i) - target(i)) * dcomp_x(i) +
+                       dcomp_x(i) * (dcomp_x(i) / Nunit));
+    }
+    if (debug()) {
+      auto x2 = (comp_x + dcomp_x / Nunit - target);
+      auto x1 = (comp_x - target);
+      auto expected = Nunit * (v.dot((x2.array() * x2.array()).matrix()) -
+                               v.dot((x1.array() * x1.array()).matrix()));
+
+      _log() << "  dEpot (w/ param_comp_quad_pot_vector): " << dEpot << "  ("
+             << expected << ")" << std::endl;
+    }
+  }
+  if (m_condition.param_comp_quad_pot_matrix().has_value()) {
+    // note: `dcomp_x` is extensive (includes Nunit), but `comp_x` and `target`
+    // are intensive
+    double Nunit = supercell().volume();
+    Eigen::VectorXd dcomp_x =
+        m_composition_converter.dparam_dmol() * event.dN().cast<double>();
+    Eigen::VectorXd comp_x =
+        m_composition_converter.param_composition(this->comp_n());
+    Eigen::VectorXd const &target = *m_condition.param_comp_quad_pot_target();
+    Eigen::MatrixXd const &V = *m_condition.param_comp_quad_pot_matrix();
+
+    for (int i = 0; i < dcomp_x.size(); ++i) {
+      for (int j = 0; j < dcomp_x.size(); ++j) {
+        dEpot +=
+            Nunit * V(i, j) *
+            (comp_x(i) * dcomp_x(j) + comp_x(j) * dcomp_x(i) -
+             2.0 * target(i) * dcomp_x(j) + dcomp_x(i) * (dcomp_x(j) / Nunit));
+      }
+    }
+    if (debug()) {
+      auto x2 = (comp_x + dcomp_x / Nunit - target);
+      auto x1 = (comp_x - target);
+      auto expected = Nunit * (x2.dot(V * x2) - x1.dot(V * x1));
+
+      _log() << "  dEpot (w/ param_comp_quad_pot_matrix): " << dEpot << "  ("
+             << expected << ")" << std::endl;
+    }
+  }
+  if (m_order_parameter != nullptr) {
+    // note: eta and deta are intensive
+    double Nunit = supercell().volume();
+    Eigen::VectorXd const &eta = this->eta();
+    Eigen::VectorXd const &deta = event.deta();
+    if (m_condition.order_parameter_pot().has_value()) {
+      Eigen::VectorXd const &v = *m_condition.order_parameter_pot();
+      dEpot -= Nunit * v.dot(deta);
+      if (debug()) {
+        auto expected = -Nunit * v.dot(deta);
+
+        _log() << "  dEpot (w/ order_parameter_pot): " << dEpot << "  ("
+               << expected << ")" << std::endl;
+      }
+    }
+    if (m_condition.order_parameter_quad_pot_vector().has_value()) {
+      Eigen::VectorXd const &target =
+          *m_condition.order_parameter_quad_pot_target();
+      Eigen::VectorXd const &v = *m_condition.order_parameter_quad_pot_vector();
+      for (int i = 0; i < eta.size(); ++i) {
+        dEpot += Nunit * v(i) *
+                 (2.0 * (eta(i) - target(i)) * deta(i) + deta(i) * deta(i));
+      }
+      if (debug()) {
+        auto x2 = (eta + deta - target);
+        auto x1 = (eta - target);
+        auto expected = Nunit * (v.dot((x2.array() * x2.array()).matrix()) -
+                                 v.dot((x1.array() * x1.array()).matrix()));
+
+        _log() << "  dEpot (w/ order_parameter_quad_pot_vector): " << dEpot
+               << "  (" << expected << ")" << std::endl;
+      }
+    }
+    if (m_condition.order_parameter_quad_pot_matrix().has_value()) {
+      Eigen::VectorXd const &target =
+          *m_condition.order_parameter_quad_pot_target();
+      Eigen::MatrixXd const &V = *m_condition.order_parameter_quad_pot_matrix();
+
+      for (int i = 0; i < deta.size(); ++i) {
+        for (int j = 0; j < deta.size(); ++j) {
+          dEpot += Nunit * V(i, j) *
+                   (eta(i) * deta(j) + eta(j) * deta(i) -
+                    2.0 * target(i) * deta(j) + deta(i) * deta(j));
+        }
+      }
+      if (debug()) {
+        auto x2 = (eta + deta - target);
+        auto x1 = (eta - target);
+        auto expected = Nunit * (x2.dot(V * x2) - x1.dot(V * x1));
+
+        _log() << "  dEpot (w/ order_parameter_quad_pot_matrix): " << dEpot
+               << "  (" << expected << ")" << std::endl;
+      }
+    }
+  }
+
+  if (debug()) {
+    _log() << std::endl;
+  }
+  event.set_dEpot(dEpot);
 }
 
 /// \brief Calculate properties given current conditions
@@ -548,49 +830,19 @@ void GrandCanonical::_update_properties() {
   _vector_properties()["comp_n"] = CASM::comp_n(_configdof(), supercell());
   m_comp_n = &_vector_property("comp_n");
 
+  if (m_order_parameter != nullptr) {
+    _vector_properties()["eta"] = m_order_parameter->value();
+    m_eta = &_vector_property("eta");
+  } else {
+    _vector_properties()["eta"] = Eigen::VectorXd(0);
+    m_eta = &_vector_property("eta");
+  }
+
   _scalar_properties()["formation_energy"] = _eci() * corr().data();
   m_formation_energy = &_scalar_property("formation_energy");
 
-  _scalar_properties()["potential_energy"] =
-      formation_energy() -
-      primclex().composition_axes().param_composition(comp_n()).dot(
-          m_condition.param_chem_pot());
+  _scalar_properties()["potential_energy"] = this->potential_energy(config());
   m_potential_energy = &_scalar_property("potential_energy");
-
-  if (debug()) {
-    _print_correlations(corr(), "correlations", "corr");
-
-    auto origin = primclex().composition_axes().origin();
-    auto exchange_chem_pot = m_condition.exchange_chem_pot();
-    auto param_chem_pot = m_condition.param_chem_pot();
-    auto comp_x = primclex().composition_axes().param_composition(comp_n());
-    auto M = primclex().composition_axes().dmol_dparam();
-
-    _log().custom("Calculate properties");
-    _log() << "Semi-grand canonical ensemble: \n"
-           << "  Thermodynamic potential (per unitcell), phi = -kT*ln(Z)/N \n"
-           << "  Partition function, Z = sum_i exp(-N*potential_energy_i/kT) \n"
-           << "  composition, comp_n = origin + M * comp_x \n"
-           << "  parametric chemical potential, param_chem_pot = M.transpose() "
-              "* chem_pot \n"
-           << "  potential_energy (per unitcell) = formation_energy - "
-              "param_chem_pot*comp_x \n\n"
-
-           << "components: "
-           << jsonParser(primclex().composition_axes().components()) << "\n"
-           << "M:\n"
-           << M << "\n"
-           << "origin: " << origin.transpose() << "\n"
-           << "comp_n: " << comp_n().transpose() << "\n"
-           << "comp_x: " << comp_x.transpose() << "\n"
-           << "param_chem_pot: " << param_chem_pot.transpose() << "\n"
-           << "  param_chem_pot*comp_x: " << param_chem_pot.dot(comp_x) << "\n"
-           << "formation_energy: " << formation_energy() << "\n"
-           << "  formation_energy - param_chem_pot*comp_x: "
-           << formation_energy() - param_chem_pot.dot(comp_x) << "\n"
-           << "potential_energy: " << potential_energy() << "\n"
-           << std::endl;
-  }
 }
 
 /// \brief Generate supercell filling ConfigDoF from default configuration
@@ -737,7 +989,12 @@ ConfigDoF GrandCanonical::_configname_motif(
   _log() << "motif configname: " << configname << "\n";
   _log() << "using configation: " << configname << "\n" << std::endl;
 
-  Configuration config = *primclex().db<Configuration>().find(configname);
+  auto it = primclex().db<Configuration>().find(configname);
+  if (it == primclex().db<Configuration>().end()) {
+    throw std::runtime_error(std::string("Error: did not find motif '") +
+                             configname + "'");
+  }
+  Configuration config = *it;
   return fill_supercell(config, _supercell()).configdof();
 }
 

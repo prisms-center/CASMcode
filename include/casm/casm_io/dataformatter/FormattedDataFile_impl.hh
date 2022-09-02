@@ -5,6 +5,7 @@
 
 #include "casm/casm_io/dataformatter/FormattedDataFile.hh"
 #include "casm/external/gzstream/gzstream.h"
+#include "casm/misc/cloneable_ptr.hh"
 
 namespace CASM {
 

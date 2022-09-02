@@ -2,6 +2,7 @@
 
 #include "casm/casm_io/json/InputParser_impl.hh"
 #include "casm/clex/ConfigDoF.hh"
+#include "casm/clex/FillSupercell_impl.hh"
 #include "casm/clex/ScelEnum.hh"
 #include "casm/clex/io/json/ConfigDoF_json_io.hh"
 #include "casm/clex/io/json/Configuration_json_io.hh"
@@ -83,6 +84,8 @@ void parse(InputParser<xtal::ScelEnumProps> &parser,
   std::string default_dirs{"abc"};
   Eigen::Matrix3i generating_matrix;
   Eigen::Matrix3i default_matrix{Eigen::Matrix3i::Identity()};
+  bool diagonal_only;
+  bool fixed_shape;
 
   parser.optional_else(min, "min", default_min);
   parser.require(max, "max");
@@ -106,6 +109,9 @@ void parse(InputParser<xtal::ScelEnumProps> &parser,
     parser.optional_else(generating_matrix, "unit_cell", default_matrix);
   }
 
+  parser.optional_else(diagonal_only, "diagonal_only", false);
+  parser.optional_else(fixed_shape, "fixed_shape", false);
+
   if (parser.self.contains("existing_only")) {
     std::stringstream msg;
     msg << "The option \"existing_only\" is no longer supported. "
@@ -115,8 +121,8 @@ void parse(InputParser<xtal::ScelEnumProps> &parser,
   }
 
   if (parser.valid()) {
-    parser.value = notstd::make_unique<xtal::ScelEnumProps>(min, max + 1, dirs,
-                                                            generating_matrix);
+    parser.value = notstd::make_unique<xtal::ScelEnumProps>(
+        min, max + 1, dirs, generating_matrix, diagonal_only, fixed_shape);
   }
 }
 
@@ -214,6 +220,38 @@ std::string parse_ConfigEnumInput_desc() {
          "               \n"
          "        ]                                                            "
          "               \n\n"
+
+         "  fill: JSON object (optional, default none)                       \n"
+         "    If present, the \"fill\" option specifies that the input       \n"
+         "    configurations specified previously (by the \"confignames\",   \n"
+         "    \"config_selection\", \"config_list\", \"scelnames\",          \n"
+         "    \"supercell_selection\", and \"supercells\" parameters) should \n"
+         "    be used to fill supercells specified by this object. The       \n"
+         "    supercells to \"fill\"  may be specified by \"scelnames\",     \n"
+         "    \"supercell_selection\", and/or \"supercells\" parameters with \n"
+         "    the same format as described above. Any configurations that    \n"
+         "    cannot exactly tile the specified supercells are skipped, with \n"
+         "    a warning.\n\n"
+
+         "    As an example, in a project with an fcc prim, enumeration of   \n"
+         "    perturbations of a configuration in supercells of the          \n"
+         "    conventional fcc cell can be done with:                        \n"
+         "                                                                   \n"
+         "        \"confignames\": [\"SCEL4_2_2_1_1_1_0/1\"],                \n"
+         "        \"fill\": {                                                \n"
+         "          \"supercells\": {                                        \n"
+         "            \"min\": 1,                                            \n"
+         "            \"max\": 4,                                            \n"
+         "            \"unit_cell\": [                                       \n"
+         "              [ -1,  1,  1 ],                                      \n"
+         "              [  1, -1,  1 ],                                      \n"
+         "              [  1,  1, -1 ]                                       \n"
+         "            ]                                                      \n"
+         "          }                                                        \n"
+         "        },                                                         \n"
+         "        \"cluster_specs\": {                                       \n"
+         "           ...                                                     \n"
+         "        }\n\n"
 
          "  sublats: array of integers (optional, default none)                "
          "               \n"
@@ -326,7 +364,49 @@ std::string parse_ConfigEnumInput_desc() {
          "                  [ 0, 1, 0, 0 ], \n"
          "                  [ 1, 0, 0, 0 ]], \n"
          "                \"include_subclusters\" : true \n"
-         "              } \n\n";
+         "              } \n\n"
+
+         "      For method==\"local_max_length\": \n"
+         "        phenomenal: object (required)\n"
+         "          The \"phenomenal\" cluster about which local clusters are\n"
+         "          generated. See the cluster input format below.\n\n"
+
+         "        generating_group: array of int (required)\n"
+         "          An array of symop indices into the prim structure factor \n"
+         "          group specifying the invariant group of the              \n"
+         "          \"phenomenal\" cluster which should be used to for       \n"
+         "          generating local cluster orbits. In some contexts, the   \n"
+         "          relevant symmetry is lower than that determined from the \n"
+         "          phenomenal cluster sites alone.\n\n"
+
+         "        orbit_branch_specs: object (required)\n"
+         "          All sites within `cutoff_radius` distance of any site in \n"
+         "          the phenomenal cluster are considered candidates for     \n"
+         "          inclusion in clusters of a particular orbit branch.      \n"
+         "          Cluster generation is truncated by specifying the maximum\n"
+         "          distance between sites in a cluster for each orbit       \n"
+         "          branch. The `max_length` parameter is not necessary for  \n"
+         "          1-point clusters and ignored if present.\n\n"
+
+         "            Example:                                               \n"
+         "              \"orbit_branch_specs\": {                            \n"
+         "                \"1\": { \"cutoff_radius\": 6.0 },                 \n"
+         "                \"2\": {                                           \n"
+         "                  \"max_length\": 9.0,                             \n"
+         "                  \"cutoff_radius\": 6.0                           \n"
+         "                },                                                 \n"
+         "                \"3\": {                                           \n"
+         "                  \"max_length\": 8.0,                             \n"
+         "                  \"cutoff_radius\": 6.0                           \n"
+         "                },                                                 \n"
+         "                ...                                                \n"
+         "              }                                                  \n\n"
+
+         "        orbit_specs: array (optional)                              \n"
+         "          An array of clusters which are used to generate and      \n"
+         "          include orbits of clusters whether or not they meet the  \n"
+         "          `cutoff_radius` or `max_length` truncation criteria. See \n"
+         "          the \"periodic_max_length\" docs for an example.\n\n";
 }
 
 /// Parse JSON to construct initial states for enumeration (as
@@ -371,6 +451,13 @@ std::string parse_ConfigEnumInput_desc() {
 ///         matrix)
 ///             The unit cell to tile into supercells. If string, use
 ///             transformation matrix for the supercell with given name.
+///      fill/scelname, fill/supercell_selection, fill/supercells:
+///          When enumerating local clusters using the "local_max_length"
+///          method, prepend "background_" to specify the supercell(s) in which
+///          to do the enumeration. Each supercell specified in this way is
+///          filled with configurations specified using the other parameters.
+///          Any configurations which do not exactly tile the specified
+///          supercells are skipped.
 ///
 /// Specifying all sites, particular sublattices, particular sites, or
 /// particular clusters of sites to enumerate local DoF. The default behavior if
@@ -398,7 +485,10 @@ std::string parse_ConfigEnumInput_desc() {
 ///         supercell or configuration. If there are 4 supercells or
 ///         configurations selected, and there are 10 orbits generated, then
 ///         there will be 4*10=40 ConfigEnumInput generated. The "cluster_specs"
-///         option cannot be used with the "sublats" or "sites" options.
+///         option cannot be used with the "sublats" or "sites" options. For
+///         local clusters there may be even more generated, because of the
+///         presence of distinct phenomenal clusters against the background
+///         configuration.
 ///
 ///
 /// Note:
@@ -469,10 +559,32 @@ void parse(
     msg << "Error creating input states from supercells: " << e.what();
     parser.error.insert(msg.str());
   }
-
   // check for "supercells"
   auto scel_enum_props_subparser =
       parser.subparse_if<xtal::ScelEnumProps>("supercells", supercell_db);
+
+  // check for "fill/"
+  bool fill_supercells = false;
+  DB::Selection<Supercell> fill_supercell_selection;
+  std::shared_ptr<InputParser<xtal::ScelEnumProps>>
+      fill_scel_enum_props_subparser;
+  if (parser.self.contains("fill")) {
+    fill_supercells = true;
+    // check for "fill/supercell_selection" and "fill/scelnames"
+    try {
+      fill_supercell_selection =
+          DB::make_selection<Supercell>(supercell_db, parser.self["fill"],
+                                        "scelnames", "supercell_selection");
+    } catch (std::exception &e) {
+      std::stringstream msg;
+      msg << "Error creating supercells to fill: " << e.what();
+      parser.error.insert(msg.str());
+    }
+
+    // check for "fill/supercells"
+    fill_scel_enum_props_subparser = parser.subparse_if<xtal::ScelEnumProps>(
+        "fill/supercells", supercell_db);
+  }
 
   // check for "sublats"
   std::vector<Index> sublats;
@@ -515,15 +627,6 @@ void parse(
   // check for "cluster_specs"
   auto cluster_specs_subparser = parser.subparse_if<ClusterSpecs>(
       "cluster_specs", shared_prim, shared_prim->factor_group());
-  if (cluster_specs_subparser->value) {
-    if (cluster_specs_subparser->value->periodicity_type() !=
-        CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC) {
-      std::stringstream msg;
-      msg << "Error creating input states: "
-          << "\"cluster_specs\" method must be \"periodic_max_length\"";
-      cluster_specs_subparser->error.insert(msg.str());
-    }
-  }
 
   // at this point we have parsed everything except "cluster_specs",
   //   which is parsed later for each ConfigEnumInput
@@ -551,6 +654,47 @@ void parse(
     }
   }
 
+  // If "fill" is provided, the configurations of config_enum_input are used
+  // to fill the provided supercells, skipping (with warning) any
+  // configurations that do not exactly fill
+  if (fill_supercells) {
+    std::vector<std::pair<std::string, ConfigEnumInput>> tmp_config_enum_input;
+
+    // lambda method fills supercell `scel` with all current
+    // config_enum_input configurations
+    auto _fill_supercell = [&](Supercell const &scel) {
+      FillSupercell f{scel};
+      for (auto const &name_config_pair : config_enum_input) {
+        auto const &config = name_config_pair.second.configuration();
+        SymOp const *op = f.find_symop(config.supercell().lattice());
+        if (op == nullptr) {
+          std::stringstream msg;
+          msg << "Warning: input state " << name_config_pair.first
+              << " cannot fill supercell " << scel.name();
+          parser.warning.insert(msg.str());
+          continue;
+        }
+        std::string name = name_config_pair.first;
+        if (config.supercell().name() != scel.name()) {
+          name = name + "-fill-" + scel.name();
+        }
+        tmp_config_enum_input.emplace_back(name, f(config));
+      }
+    };
+
+    for (const auto &scel : fill_supercell_selection.selected()) {
+      _fill_supercell(scel);
+    }
+    if (fill_scel_enum_props_subparser->value) {
+      ScelEnumByProps enumerator{shared_prim,
+                                 *fill_scel_enum_props_subparser->value};
+      for (auto const &supercell : enumerator) {
+        auto supercell_it = supercell_db.insert(supercell).first;
+        _fill_supercell(*supercell_it);
+      }
+    }
+    config_enum_input = std::move(tmp_config_enum_input);
+  }
   // select sublattices and individual sites
   if (sublats.size() || sites.size()) {
     for (auto &input_name_value_pair : config_enum_input) {
@@ -572,26 +716,38 @@ void parse(
 
   // select clusters
   if (cluster_specs_subparser->value != nullptr) {
-    // generate orbits from cluster_specs
-    auto orbits =
-        cluster_specs_subparser->value->make_periodic_orbits(CASM::log());
+    if (cluster_specs_subparser->value->periodicity_type() ==
+        CLUSTER_PERIODICITY_TYPE::PRIM_PERIODIC) {
+      // generate orbits from cluster_specs
+      auto orbits =
+          cluster_specs_subparser->value->make_periodic_orbits(CASM::log());
 
-    // this will generate more ConfigEnumInput, with cluster sites selected
-    std::vector<std::pair<std::string, ConfigEnumInput>> all_with_cluster_sites;
-    for (auto &input_name_value_pair : config_enum_input) {
-      std::vector<ConfigEnumInput> with_cluster_sites;
-      select_cluster_sites(input_name_value_pair.second, orbits,
-                           std::back_inserter(with_cluster_sites));
+      // this will generate more ConfigEnumInput, with cluster sites selected
+      std::vector<std::pair<std::string, ConfigEnumInput>>
+          all_with_cluster_sites;
+      for (auto &input_name_value_pair : config_enum_input) {
+        std::vector<ConfigEnumInput> with_cluster_sites;
+        select_cluster_sites(input_name_value_pair.second.configuration(),
+                             orbits, std::back_inserter(with_cluster_sites));
 
-      // modify name with cluster site indices
-      for (auto const &value : with_cluster_sites) {
-        std::stringstream ss;
-        ss << ", cluster_sites=" << jsonParser{value.sites()};
-        std::string name = input_name_value_pair.first + ss.str();
-        all_with_cluster_sites.emplace_back(name, value);
+        // modify name with cluster site indices
+        for (auto const &value : with_cluster_sites) {
+          std::stringstream ss;
+          ss << ", cluster_sites=" << jsonParser{value.sites()};
+          std::string name = input_name_value_pair.first + ss.str();
+          all_with_cluster_sites.emplace_back(name, value);
+        }
       }
+      config_enum_input = std::move(all_with_cluster_sites);
+    } else if (cluster_specs_subparser->value->periodicity_type() ==
+               CLUSTER_PERIODICITY_TYPE::LOCAL) {
+      throw std::runtime_error(
+          "Local cluster_specs is not supported in CASM 1.X");
+    } else {
+      std::stringstream msg;
+      msg << "Error creating input states: unknown error using cluster_specs";
+      parser.error.insert(msg.str());
     }
-    config_enum_input = std::move(all_with_cluster_sites);
   }
 
   // Move all constructed ConfigEnumInput into the parser.value

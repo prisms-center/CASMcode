@@ -61,6 +61,14 @@ template <typename ScelEnumDataType>
 Generic2DDatumFormatter<Eigen::MatrixXi, ScelEnumDataType>
 transformation_matrix_to_super();
 
+template <typename ScelEnumDataType>
+Generic2DDatumFormatter<Eigen::MatrixXd, ScelEnumDataType>
+supercell_lattice_column_matrix();
+
+template <typename ScelEnumDataType>
+Generic2DDatumFormatter<Eigen::MatrixXd, ScelEnumDataType>
+supercell_lattice_row_vectors();
+
 }  // namespace ScelEnumIO
 }  // namespace CASM
 

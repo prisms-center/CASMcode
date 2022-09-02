@@ -391,17 +391,17 @@ jsonDatabase<Configuration>::insert(const Configuration &config) {
   return _on_insert_or_emplace(result, true);
 }
 
-std::pair<jsonDatabase<Configuration>::iterator, bool>
-jsonDatabase<Configuration>::insert(const Configuration &&config) {
-  auto result = m_config_list.insert(std::move(config));
-
-  return _on_insert_or_emplace(result, true);
-}
-
 jsonDatabase<Configuration>::iterator jsonDatabase<Configuration>::update(
     const Configuration &config) {
-  ValDatabase<Configuration>::erase(config.name());
-  return insert(config).first;
+  auto it = this->find(config.name());
+  if (it == this->end()) {
+    throw std::runtime_error(
+        "Error in jsonDatabase<Configuration>::update: Configuration not "
+        "found");
+  }
+  this->erase(it);
+  auto result = m_config_list.insert(config);
+  return _on_insert_or_emplace(result, false).first;
 }
 
 jsonDatabase<Configuration>::iterator jsonDatabase<Configuration>::erase(

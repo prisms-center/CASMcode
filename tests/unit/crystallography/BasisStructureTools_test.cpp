@@ -1,4 +1,4 @@
-#include "autotools.hh"
+
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/BasicStructureTools.hh"
 #include "crystallography/TestStructures.hh"

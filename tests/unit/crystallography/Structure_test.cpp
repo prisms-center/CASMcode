@@ -1,5 +1,4 @@
 #include "Common.hh"
-#include "autotools.hh"
 #include "gtest/gtest.h"
 
 /// What is being tested:
