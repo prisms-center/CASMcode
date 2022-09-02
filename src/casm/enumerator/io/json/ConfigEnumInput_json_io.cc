@@ -741,36 +741,8 @@ void parse(
       config_enum_input = std::move(all_with_cluster_sites);
     } else if (cluster_specs_subparser->value->periodicity_type() ==
                CLUSTER_PERIODICITY_TYPE::LOCAL) {
-      std::cout << "WARNING: Local cluster enumeration is a work in progress"
-                << std::endl;
-
-      // TODO: generate inequivalent backgrounds
-      bool include_all_inequivalent_reference_configs = true;
-      // TODO: set phenomenal cluster site dof
-
-      // generate orbits from cluster_specs
-      auto orbits =
-          cluster_specs_subparser->value->make_local_orbits(CASM::log());
-
-      // this will generate more ConfigEnumInput, with cluster sites selected
-      std::vector<std::pair<std::string, ConfigEnumInput>>
-          all_with_cluster_sites;
-      for (auto &input_name_value_pair : config_enum_input) {
-        std::vector<ConfigEnumInput> with_cluster_sites;
-        select_local_cluster_sites(input_name_value_pair.second.configuration(),
-                                   orbits,
-                                   include_all_inequivalent_reference_configs,
-                                   std::back_inserter(with_cluster_sites));
-
-        // modify name with cluster site indices
-        for (auto const &value : with_cluster_sites) {
-          std::stringstream ss;
-          ss << ", cluster_sites=" << jsonParser{value.sites()};
-          std::string name = input_name_value_pair.first + ss.str();
-          all_with_cluster_sites.emplace_back(name, value);
-        }
-      }
-      config_enum_input = std::move(all_with_cluster_sites);
+      throw std::runtime_error(
+          "Local cluster_specs is not supported in CASM 1.X");
     } else {
       std::stringstream msg;
       msg << "Error creating input states: unknown error using cluster_specs";
