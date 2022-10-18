@@ -78,7 +78,8 @@ SymGroupRepID make_canonization_rep(
 template <typename OrbitType>
 Index _orbit_max_poly_order(OrbitType const &orbit,
                             BasisFunctionSpecs const &basis_function_specs) {
-  auto it = basis_function_specs.orbit_branch_max_poly_order.find(orbit.size());
+  auto it = basis_function_specs.orbit_branch_max_poly_order.find(
+      orbit.prototype().size());
   if (it != basis_function_specs.orbit_branch_max_poly_order.end()) {
     return it->second;
   }

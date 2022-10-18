@@ -92,6 +92,9 @@ template <typename Element, typename SymCompareType>
 SymGroup make_invariant_subgroup(const Element &element,
                                  const SymGroup &generating_grp,
                                  const SymCompareType &sym_compare) {
+  if (element.size() == 0) {
+    return generating_grp;
+  }
   SymGroup result = generating_grp;
   result.clear();
   make_invariant_subgroup(element, generating_grp.begin(), generating_grp.end(),
