@@ -7,6 +7,7 @@
 #include "casm/app/DirectoryStructure.hh"
 #include "casm/app/casm_functions.hh"
 #include "casm/app/errors.hh"
+#include "casm/casm_io/FileLog.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/casm_io/json/jsonParser.hh"
@@ -41,6 +42,17 @@ char *casm_ostringstream_strcpy(costream *ptr, char *c_str) {
   auto str = reinterpret_cast<OStringStreamLog *>(ptr)->ss().str();
   std::strcpy(c_str, str.c_str());
   return c_str;
+}
+
+costream *casm_fstream_new(char *path) {
+  std::ofstream fs(path);
+  FileLog *fptr = new FileLog(std::move(fs));
+  costream *ptr = reinterpret_cast<costream *>(fptr);
+  return ptr;
+}
+
+void casm_fstream_delete(costream *ptr) {
+  delete reinterpret_cast<FileLog *>(ptr);
 }
 
 cPrimClex *casm_primclex_null() { return nullptr; }

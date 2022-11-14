@@ -27,6 +27,10 @@ unsigned long casm_ostringstream_size(costream *ptr);
 
 char *casm_ostringstream_strcpy(costream *ptr, char *c_str);
 
+costream *casm_fstream_new(char *path);
+
+void casm_fstream_delete(costream *ptr);
+
 cPrimClex *casm_primclex_null();
 
 cPrimClex *casm_primclex_new(char *path, costream *log, costream *err_log);
