@@ -178,12 +178,7 @@ std::map<std::string, std::string> _acentric_point_group_info(
   }                             // end cubic;
   else if (op_types[5] == 2) {  // Improper 3-fold
     result["crystal_system"] = "Hexagonal";
-    if (op_types[2] == 0) {  // 2-fold
-      result["international_name"] = "-6";
-      result["name"] = "C3h";
-      result["latex_name"] = "C_{3h}";
-      result["space_group_range"] = "174";
-    } else if (op_types[2] == 3) {  // 2-fold
+    if (op_types[2] == 3) {  // 2-fold
       result["international_name"] = "-6m2";
       result["name"] = "D3h";
       result["latex_name"] = "D_{3h}";
@@ -229,6 +224,11 @@ std::map<std::string, std::string> _acentric_point_group_info(
       result["name"] = "C3";
       result["latex_name"] = "C_{3}";
       result["space_group_range"] = "143-146";
+    } else if (op_types[3] == 1) {  // mirror
+      result["international_name"] = "-6";
+      result["name"] = "C3h";
+      result["latex_name"] = "C_{3h}";
+      result["space_group_range"] = "174";
     } else {
       is_error = true;
     }
@@ -321,10 +321,16 @@ std::map<std::string, std::string> _acentric_point_group_info(
   }
 
   if (is_error || result["crystal_system"].empty()) {
+    std::stringstream ss;
+    ss << "op_types: {";
+    for (Index op_type : op_types) {
+      ss << op_type << ", ";
+    }
+    ss << "}";
     throw std::runtime_error(
         "Error finding acentric point group type. Crystal system determined to "
         "be " +
-        result["crystal_system"]);
+        result["crystal_system"] + " " + ss.str());
   }
 
   return result;
