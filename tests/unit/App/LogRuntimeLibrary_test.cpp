@@ -16,10 +16,10 @@ TEST(LogRuntimeLibraryTest, FunctionTest) {
   EXPECT_EQ(true, true);
   test::TmpDir tmpdir;
   std::string cc_filename_base = (tmpdir.path() / "runtime_lib").string();
-  std::filesystem::path cc_filename{cc_filename_base + ".cc"};
+  fs::path cc_filename{cc_filename_base + ".cc"};
   EXPECT_EQ(true, true);
 
-  std::ofstream file(cc_filename);
+  fs::ofstream file(cc_filename);
   file << "#include <iostream>\n"
           "extern \"C\" int forty_two() {\n"
           "   return 42;\n"
