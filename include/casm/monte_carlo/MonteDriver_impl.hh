@@ -448,15 +448,20 @@ template <typename RunType>
 std::vector<typename MonteDriver<RunType>::CondType>
 MonteDriver<RunType>::make_conditions_list(const PrimClex &primclex,
                                            const SettingsType &settings) {
+  m_log.read("Conditions list");
   std::vector<CondType> conditions_list;
 
   switch (m_drive_mode) {
     case Monte::DRIVE_MODE::CUSTOM: {
+      m_log << "Found: custom conditions" << std::endl;
       // read existing conditions, and check for agreement
+      m_log << "Reading custom_conditions..." << std::endl;
       std::vector<CondType> custom_cond(settings.custom_conditions(m_mc));
+      m_log << "Checking existing conditions..." << std::endl;
       int i = 0;
       while (fs::exists(m_dir.conditions_json(i))) {
         CondType existing;
+        m_log << m_dir.conditions_json(i) << std::endl;
         jsonParser json(m_dir.conditions_json(i));
         from_json(existing, primclex, json, m_mc);
         if (existing != custom_cond[i]) {
@@ -471,23 +476,31 @@ MonteDriver<RunType>::make_conditions_list(const PrimClex &primclex,
         }
         ++i;
       }
+      m_log << "Finished reading custom conditions" << std::endl << std::endl;
       return custom_cond;
     }
 
     case Monte::DRIVE_MODE::INCREMENTAL: {
+      m_log << "Found: incremental conditions" << std::endl;
+      m_log << "Reading intial_conditions..." << std::endl;
       CondType init_cond(settings.initial_conditions(m_mc));
+      m_log << "Reading final_conditions..." << std::endl;
       CondType final_cond(settings.final_conditions(m_mc));
+      m_log << "Reading incremental_conditions..." << std::endl;
       CondType cond_increment(settings.incremental_conditions(m_mc));
 
       CondType incrementing_cond = init_cond;
 
       int num_increments = 1 + (final_cond - init_cond) / cond_increment;
+      m_log << "Constructing " << num_increments << " conditions..."
+            << std::endl;
 
       for (int i = 0; i < num_increments; i++) {
         conditions_list.push_back(incrementing_cond);
         incrementing_cond += cond_increment;
       }
 
+      m_log << "Checking existing conditions..." << std::endl;
       int i = 0;
       while (fs::exists(m_dir.conditions_json(i)) &&
              i < conditions_list.size()) {
@@ -508,6 +521,8 @@ MonteDriver<RunType>::make_conditions_list(const PrimClex &primclex,
         ++i;
       }
 
+      m_log << "Finished reading incremental conditions" << std::endl
+            << std::endl;
       return conditions_list;
     }
 

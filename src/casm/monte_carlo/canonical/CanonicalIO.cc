@@ -272,7 +272,8 @@ void from_json(CanonicalConditions &conditions, const PrimClex &primclex,
   }
 
   std::optional<RandomAlloyCorrMatchingParams> random_alloy_corr_matching_pot;
-  if (json.contains("random_alloy_corr_matching_pot")) {
+  if (json.contains("random_alloy_corr_matching_pot") &&
+      !json["random_alloy_corr_matching_pot"].is_null()) {
     random_alloy_corr_matching_pot = RandomAlloyCorrMatchingParams();
     random_alloy_corr_matching_pot->random_alloy_corr_f =
         mc.random_alloy_corr_f();
