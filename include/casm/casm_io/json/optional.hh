@@ -1,6 +1,8 @@
 #ifndef CASM_json_optional
 #define CASM_json_optional
 
+#include <optional>
+
 namespace CASM {
 
 template <typename T>
