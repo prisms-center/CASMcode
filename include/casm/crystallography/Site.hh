@@ -13,6 +13,7 @@
 namespace CASM {
 namespace xtal {
 
+const std::string OCC_DOF = "occ";
 struct SymOp;
 class Molecule;
 

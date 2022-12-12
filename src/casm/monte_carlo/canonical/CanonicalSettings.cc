@@ -1,3 +1,5 @@
+#include <optional>
+
 #include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/monte_carlo/canonical/CanonicalConditions.hh"
 #include "casm/monte_carlo/canonical/CanonicalIO.hh"

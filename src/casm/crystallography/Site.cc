@@ -88,7 +88,7 @@ SiteDoFSet const &Site::dof(std::string const &_dof_type) const {
 
 //****************************************************
 bool Site::has_dof(std::string const &_dof_type) const {
-  return occupant_dof().size() > 1 ||
+  return (_dof_type == OCC_DOF && occupant_dof().size() > 1) ||
          m_dof_map.find(_dof_type) != m_dof_map.end();
 }
 
