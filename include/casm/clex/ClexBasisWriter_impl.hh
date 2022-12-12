@@ -510,6 +510,9 @@ std::vector<std::string> flower_function_cpp_strings(
   if (_clust_orbit.size() > 1) {
     prefix = "(";
     suffix = ") / " + std::to_string(_clust_orbit.size()) + ".";
+  } else if (equiv_ucc.size() > 1) {
+    prefix = "(";
+    suffix = ")";
   }
 
   // loop over equivalent clusters
