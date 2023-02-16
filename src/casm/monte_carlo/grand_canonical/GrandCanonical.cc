@@ -170,13 +170,17 @@ std::pair<ConfigDoF, std::string> GrandCanonical::set_state(
   } else if (settings.is_motif_configdof()) {
     _log().set("DoF");
     _log() << "motif configdof: " << settings.motif_configdof_path() << "\n";
-    _log() << "using configdof: " << settings.motif_configdof_path() << "\n"
-           << std::endl;
     configdof = settings.motif_configdof(supercell().volume());
     configname = settings.motif_configdof_path().string();
+  } else if (settings.is_motif_config()) {
+    _log().set("DoF");
+    _log() << "motif config: \n" << settings.motif_config_json() << "\n";
+    configdof = settings.motif_config(supercell());
+    configname = "fromjson";
   } else {
     throw std::runtime_error(
-        "Error: Must specify motif \"configname\" or \"configdof\"");
+        "Error: Must specify motif \"config\", \"configname\", or "
+        "\"configdof\"");
   }
 
   reset(configdof);

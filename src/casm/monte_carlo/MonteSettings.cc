@@ -6,7 +6,9 @@
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/casm_io/dataformatter/FormattedDataFile.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
+#include "casm/clex/FillSupercell.hh"
 #include "casm/clex/io/json/ConfigDoF_json_io.hh"
+#include "casm/clex/io/json/Configuration_json_io.hh"
 #include "casm/crystallography/BasicStructure.hh"
 #include "casm/crystallography/Structure.hh"
 #include "casm/misc/CASM_Eigen_math.hh"
@@ -98,6 +100,30 @@ ConfigDoF MonteSettings::motif_configdof(Index supercell_volume) const {
 fs::path MonteSettings::motif_configdof_path() const {
   std::string help = "";
   return _get_setting<fs::path>("driver", "motif", "configdof", help);
+}
+
+/// \brief Returns true if Configuration JSON object to use as starting motif
+/// has been specified
+bool MonteSettings::is_motif_config() const {
+  return _is_setting("driver", "motif", "config");
+}
+
+/// \brief ConfigDoF to use as starting motif
+ConfigDoF MonteSettings::motif_config(Supercell const &mc_supercell) const {
+  std::string help =
+      "object\n"
+      "  Configuration JSON object, as from a \"config.json\" file.";
+  jsonParser config_json =
+      _get_setting<jsonParser>("driver", "motif", "config", help);
+  Configuration motif = jsonConstructor<Configuration>::from_json(
+      config_json, mc_supercell.shared_prim());
+  return fill_supercell(motif, mc_supercell).configdof();
+}
+
+/// \brief Configuration JSON to use as starting motif
+jsonParser MonteSettings::motif_config_json() const {
+  std::string help = "";
+  return _get_setting<jsonParser>("driver", "motif", "config", help);
 }
 
 /// \brief Supercell matrix defining the simulation cell
