@@ -21,6 +21,38 @@
 
 namespace CASM {
 
+/// \brief Make a single translation permutation
+///
+/// \param translation_index Index in range [0, n_unitcell)
+/// \param bijk_index_converter Site index converter
+/// \param ijk_index_converter Unitcell index converter
+///
+/// \returns permutation, A permutation that translates all
+///     supercell occupants by a multiple of the lattice vectors
+Permutation make_translation_permutation(
+    Index translation_index,
+    xtal::UnitCellCoordIndexConverter bijk_index_converter,
+    xtal::UnitCellIndexConverter ijk_index_converter) {
+  std::vector<Index> single_translation_permutation(
+      bijk_index_converter.total_sites(), -1);
+  UnitCell translation_uc = ijk_index_converter(translation_index);
+
+  // Loops over all the sites
+  for (Index old_site_ix = 0; old_site_ix < bijk_index_converter.total_sites();
+       ++old_site_ix) {
+    UnitCellCoord old_site_ucc = bijk_index_converter(old_site_ix);
+    Index new_site_ix = bijk_index_converter(old_site_ucc + translation_uc);
+
+    single_translation_permutation[new_site_ix] = old_site_ix;
+  }
+  // You should have given a permutation value to every single site
+  assert(std::find(single_translation_permutation.begin(),
+                   single_translation_permutation.end(),
+                   -1) == single_translation_permutation.end());
+  return Permutation(single_translation_permutation);
+}
+
+/// \brief Make all translation permutations
 std::vector<Permutation> make_translation_permutations(
     const Eigen::Matrix3l &transformation_matrix, int basis_sites_in_prim) {
   xtal::UnitCellCoordIndexConverter bijk_index_converter(transformation_matrix,
@@ -31,24 +63,8 @@ std::vector<Permutation> make_translation_permutations(
   // Loops over lattice points
   for (Index translation_ix = 0;
        translation_ix < ijk_index_converter.total_sites(); ++translation_ix) {
-    std::vector<Index> single_translation_permutation(
-        bijk_index_converter.total_sites(), -1);
-    UnitCell translation_uc = ijk_index_converter(translation_ix);
-
-    // Loops over all the sites
-    for (Index old_site_ix = 0;
-         old_site_ix < bijk_index_converter.total_sites(); ++old_site_ix) {
-      UnitCellCoord old_site_ucc = bijk_index_converter(old_site_ix);
-      Index new_site_ix = bijk_index_converter(old_site_ucc + translation_uc);
-
-      single_translation_permutation[new_site_ix] = old_site_ix;
-    }
-    // You should have given a permutation value to every single site
-    assert(std::find(single_translation_permutation.begin(),
-                     single_translation_permutation.end(),
-                     -1) == single_translation_permutation.end());
-    translation_permutations.push_back(
-        Permutation(single_translation_permutation));
+    translation_permutations.push_back(make_translation_permutation(
+        translation_ix, bijk_index_converter, ijk_index_converter));
   }
   return translation_permutations;
 }
@@ -66,13 +82,16 @@ SupercellSymInfo::SupercellSymInfo(
       m_unitcellcoord_to_index_converter(
           m_supercell_superlattice.transformation_matrix_to_super(),
           num_sites_in_prim),
-      m_translation_permutations(make_translation_permutations(
-          this->superlattice().transformation_matrix_to_super(),
-          num_sites_in_prim)),
       m_factor_group(sym::invariant_subgroup(_prim_factor_group, _super_lat)),
       m_basis_perm_symrep(factor_group(), basis_permutation_symrep_ID),
       m_has_aniso_occs(false),
       m_has_occupation_dofs(false) {
+  if (m_supercell_superlattice.size() <= 100) {
+    m_translation_permutations = make_translation_permutations(
+        this->superlattice().transformation_matrix_to_super(),
+        num_sites_in_prim);
+  }
+
   for (auto const &dofID : global_dof_symrep_IDs)
     m_global_dof_symreps.emplace(std::make_pair(
         dofID.first, SymGroupRep::RemoteHandle(factor_group(), dofID.second)));

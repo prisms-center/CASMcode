@@ -11,21 +11,24 @@
 
 namespace CASM {
 
-PermuteIterator::PermuteIterator() {}
+PermuteIterator::PermuteIterator()
+    : m_tmp_translation_permute(0), m_tmp_translation_index(-1) {}
 
 PermuteIterator::PermuteIterator(const PermuteIterator &iter)
     : m_sym_info(iter.m_sym_info),
-      m_trans_permute(&(m_sym_info->translation_permutations())),
       m_factor_group_index(iter.m_factor_group_index),
-      m_translation_index(iter.m_translation_index) {}
+      m_translation_index(iter.m_translation_index),
+      m_tmp_translation_permute(0),
+      m_tmp_translation_index(-1) {}
 
 PermuteIterator::PermuteIterator(SupercellSymInfo const &_sym_info,
                                  Index _factor_group_index,
                                  Index _translation_index)
     : m_sym_info(&_sym_info),
-      m_trans_permute(&(m_sym_info->translation_permutations())),
       m_factor_group_index(_factor_group_index),
-      m_translation_index(_translation_index) {}
+      m_translation_index(_translation_index),
+      m_tmp_translation_permute(0),
+      m_tmp_translation_index(-1) {}
 
 PermuteIterator &PermuteIterator::operator=(PermuteIterator iter) {
   swap(*this, iter);
@@ -85,7 +88,16 @@ const Permutation &PermuteIterator::factor_group_permute() const {
 
 /// Return the translation permutation being pointed at
 const Permutation &PermuteIterator::translation_permute() const {
-  return m_trans_permute->at(m_translation_index);
+  if (m_sym_info->translation_permutations().size() != 0) {
+    return m_sym_info->translation_permutations()[m_translation_index];
+  }
+  if (m_translation_index != m_tmp_translation_index) {
+    m_tmp_translation_index = m_translation_index;
+    m_tmp_translation_permute = make_translation_permutation(
+        m_tmp_translation_index, m_sym_info->unitcellcoord_index_converter(),
+        m_sym_info->unitcell_index_converter());
+  }
+  return m_tmp_translation_permute;
 }
 
 /// Returns representation of current operation corresponding to species
@@ -102,11 +114,11 @@ SymOpRepresentation const &PermuteIterator::local_dof_rep(DoFKey const &_key,
 }
 
 /// Check if local dof rep is empty
-bool PermuteIterator::local_dof_rep_empty(DoFKey const &_key, Index b) const{
-   if (sym_info().local_dof_symreps(_key)[b].rep_ptr() == nullptr){
-       return true;
-   }
-   return false;
+bool PermuteIterator::local_dof_rep_empty(DoFKey const &_key, Index b) const {
+  if (sym_info().local_dof_symreps(_key)[b].rep_ptr() == nullptr) {
+    return true;
+  }
+  return false;
 }
 
 /// Returns representation of current operation corresponding to global DoF
@@ -149,7 +161,7 @@ bool PermuteIterator::eq_impl(const PermuteIterator &iter) const {
 // prefix ++PermuteIterator
 PermuteIterator &PermuteIterator::operator++() {
   m_translation_index++;
-  if (m_translation_index == m_trans_permute->size()) {
+  if (m_translation_index == m_sym_info->superlattice().size()) {
     m_translation_index = 0;
     m_factor_group_index++;
   }
@@ -167,7 +179,7 @@ PermuteIterator PermuteIterator::operator++(int) {
 PermuteIterator &PermuteIterator::operator--() {
   if (m_translation_index == 0) {
     m_factor_group_index--;
-    m_translation_index = m_trans_permute->size();
+    m_translation_index = m_sym_info->superlattice().size();
   }
   m_translation_index--;
   return *this;
@@ -432,9 +444,10 @@ template std::vector<PermuteIterator> make_allowed_permute(
 
 void swap(PermuteIterator &a, PermuteIterator &b) {
   std::swap(a.m_sym_info, b.m_sym_info);
-  std::swap(a.m_trans_permute, b.m_trans_permute);
   std::swap(a.m_factor_group_index, b.m_factor_group_index);
   std::swap(a.m_translation_index, b.m_translation_index);
+  std::swap(a.m_tmp_translation_permute, b.m_tmp_translation_permute);
+  std::swap(a.m_tmp_translation_index, b.m_tmp_translation_index);
 }
 
 /// Return true if the permutation does not given sites and other sites

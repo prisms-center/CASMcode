@@ -29,7 +29,7 @@ namespace CASM {
 /// \code
 /// SupercellSymInfo sym_info = ...
 /// for( f=0; f<sym_info.factor_group().size(); f++) {
-///   for( t=0; t<sym_info.translation_permutations().size(); t++) {
+///   for( t=0; t<sym_info.superlattice().size(); t++) {
 ///     after_array =
 ///     sym_info.translation_permute(t).permute(sym_info.factor_group_permute(f).permute(before_array));
 ///   }
@@ -44,10 +44,6 @@ class PermuteIterator
     : public std::iterator<std::bidirectional_iterator_tag, PermuteIterator>,
       public Comparisons<CRTPBase<PermuteIterator>> {
   SupercellSymInfo const *m_sym_info;
-
-  /// Pointer to the vector<Permutation> of translation permutations
-  /// inside of m_sym_info (to provide faster access)
-  std::vector<Permutation> const *m_trans_permute;
 
   Index m_factor_group_index;
   Index m_translation_index;
@@ -158,6 +154,12 @@ class PermuteIterator
 
  private:
   friend Comparisons<CRTPBase<PermuteIterator>>;
+
+  /// Allows returning a reference in large supercells
+  mutable Permutation m_tmp_translation_permute;
+
+  /// Translation currently stored in m_tmp_translation_permute
+  mutable Index m_tmp_translation_index;
 
   bool eq_impl(const PermuteIterator &iter) const;
 };
