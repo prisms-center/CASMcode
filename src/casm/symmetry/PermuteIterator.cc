@@ -18,8 +18,8 @@ PermuteIterator::PermuteIterator(const PermuteIterator &iter)
     : m_sym_info(iter.m_sym_info),
       m_factor_group_index(iter.m_factor_group_index),
       m_translation_index(iter.m_translation_index),
-      m_tmp_translation_permute(0),
-      m_tmp_translation_index(-1) {}
+      m_tmp_translation_permute(iter.m_tmp_translation_permute),
+      m_tmp_translation_index(iter.m_tmp_translation_index) {}
 
 PermuteIterator::PermuteIterator(SupercellSymInfo const &_sym_info,
                                  Index _factor_group_index,

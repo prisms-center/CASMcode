@@ -27,8 +27,8 @@ class PermuteIterator;
 /// \brief Make a single translation permutation
 Permutation make_translation_permutation(
     Index translation_index,
-    xtal::UnitCellCoordIndexConverter bijk_index_converter,
-    xtal::UnitCellIndexConverter ijk_index_converter);
+    xtal::UnitCellCoordIndexConverter const &bijk_index_converter,
+    xtal::UnitCellIndexConverter const &ijk_index_converter);
 
 /// \brief Make all translation permutations
 std::vector<Permutation> make_translation_permutations(

@@ -31,8 +31,8 @@ namespace CASM {
 ///     supercell occupants by a multiple of the lattice vectors
 Permutation make_translation_permutation(
     Index translation_index,
-    xtal::UnitCellCoordIndexConverter bijk_index_converter,
-    xtal::UnitCellIndexConverter ijk_index_converter) {
+    xtal::UnitCellCoordIndexConverter const &bijk_index_converter,
+    xtal::UnitCellIndexConverter const &ijk_index_converter) {
   std::vector<Index> single_translation_permutation(
       bijk_index_converter.total_sites(), -1);
   UnitCell translation_uc = ijk_index_converter(translation_index);
