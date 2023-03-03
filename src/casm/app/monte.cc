@@ -328,20 +328,6 @@ int _run_GrandCanonical(PrimClex &primclex,
             "ERROR in LTE1 calculation: dependents_runs must be false");
       }
 
-      bool ok = false;
-      if (gc_settings.is_motif_configname() &&
-          (gc_settings.motif_configname() == "auto" ||
-           gc_settings.motif_configname() == "restricted_auto")) {
-        ok = true;
-      }
-
-      if (!ok) {
-        throw std::invalid_argument(
-            "ERROR in LTE1 calculation: must use one of\n"
-            "  \"driver\"/\"motif\"/\"configname\": \"auto\"\n"
-            "  \"driver\"/\"motif\"/\"configname\": \"restricted_auto\"");
-      }
-
       Monte::MonteCarloDirectoryStructure dir(gc_settings.output_directory());
       if (gc_settings.write_csv()) {
         if (fs::exists(dir.results_csv())) {
