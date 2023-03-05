@@ -455,39 +455,20 @@ void write_lte_results(const MonteSettings &settings, const GrandCanonical &mc,
     MonteCarloDirectoryStructure dir(settings.output_directory());
     auto formatter = make_lte_results_formatter(mc, phi_LTE1, configname);
 
-    // write csv path results
-    if (settings.write_csv()) {
-      fs::path file = dir.results_csv();
-      _log << "write: " << dir.results_csv() << "\n";
-      fs::ofstream sout;
-
-      if (!fs::exists(file)) {
-        sout.open(file);
-        formatter.print_header(&mc, sout);
-      } else {
-        sout.open(file, std::ios::app);
-      }
-
-      formatter.print(&mc, sout);
-
-      sout.close();
-    }
-
     // write json path results
-    if (settings.write_json()) {
-      fs::path file = dir.results_json();
-      _log << "write: " << dir.results_json() << "\n";
+    fs::path file = dir.results_json();
+    _log << "write: " << dir.results_json() << "\n";
 
-      jsonParser results;
-      if (fs::exists(file)) {
-        results.read(file);
-      } else {
-        results = jsonParser::object();
-      }
-
-      formatter.to_json_arrays(&mc, results);
-      results.write(file);
+    jsonParser results;
+    if (fs::exists(file)) {
+      results.read(file);
+    } else {
+      results = jsonParser::object();
     }
+
+    formatter.to_json_arrays(&mc, results);
+    results.write(file);
+
   } catch (...) {
     std::cerr << "ERROR writing results" << std::endl;
     throw;

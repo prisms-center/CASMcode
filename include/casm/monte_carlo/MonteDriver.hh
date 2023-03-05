@@ -52,9 +52,6 @@ class MonteDriver {
   /// Converge the MonteCarlo for conditions 'cond_index'
   void single_run(Index cond_index);
 
-  /// Check for existing calculations to find starting conditions
-  Index _find_starting_conditions() const;
-
   /// Save & write enumerated configurations
   void write_enum_output(Index cond_index);
 

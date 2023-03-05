@@ -284,28 +284,15 @@ void write_observations(const MonteSettings &settings, const MonteCarlo &mc,
       observations.push_back(std::make_pair(ptr, i));
     }
 
-    if (settings.write_csv()) {
-      gz::ogzstream sout(
-          (dir.observations_csv(cond_index).string() + ".gz").c_str());
-      _log << "write: "
-           << fs::path(dir.observations_csv(cond_index).string() + ".gz")
-           << "\n";
-      sout << formatter(observations.cbegin(), observations.cend());
-      sout.close();
-    }
-
-    if (settings.write_json()) {
-      gz::ogzstream sout(
-          (dir.observations_json(cond_index).string() + ".gz").c_str());
-      _log << "write: "
-           << fs::path(dir.observations_json(cond_index).string() + ".gz")
-           << "\n";
-      jsonParser json = jsonParser::object();
-      formatter(observations.cbegin(), observations.cend())
-          .to_json_arrays(json);
-      sout << json;
-      sout.close();
-    }
+    gz::ogzstream sout(
+        (dir.observations_json(cond_index).string() + ".gz").c_str());
+    _log << "write: "
+         << fs::path(dir.observations_json(cond_index).string() + ".gz")
+         << "\n";
+    jsonParser json = jsonParser::object();
+    formatter(observations.cbegin(), observations.cend()).to_json_arrays(json);
+    sout << json;
+    sout.close();
 
   } catch (...) {
     std::cerr << "ERROR writing observations." << std::endl;
@@ -350,82 +337,36 @@ void write_trajectory(const MonteSettings &settings, const MonteCarlo &mc,
       observations.push_back(std::make_pair(ptr, i));
     }
 
-    if (settings.write_csv()) {
-      gz::ogzstream sout(
-          (dir.trajectory_csv(cond_index).string() + ".gz").c_str());
-      _log << "write: "
-           << fs::path(dir.trajectory_csv(cond_index).string() + ".gz") << "\n";
-      sout << formatter(observations.cbegin(), observations.cend());
-      sout.close();
-
-      int max_allowed = 0;
-      for (int i = 0; i < prim.basis().size(); i++) {
-        if (prim.basis()[i].allowed_occupants().size() > max_allowed) {
-          max_allowed = prim.basis()[i].allowed_occupants().size();
-        }
-      }
-
-      // --- Write "occupation_key.csv" ------------
-      //
-      // site_index occ_index_0 occ_index_1 ...
-      // 0          Ni          Al
-      // 1          Ni          -
-      // ...
-      fs::ofstream keyout(dir.occupation_key_csv());
-      _log << "write: " << dir.occupation_key_csv() << "\n";
-      keyout << "site_index";
-      for (int i = 0; i < max_allowed; i++) {
-        keyout << "\tocc_index_" << i;
-      }
-      keyout << "\n";
-
-      for (int i = 0; i < prim.basis().size(); i++) {
-        keyout << i;
-        for (int j = 0; j < max_allowed; j++) {
-          if (j < prim.basis()[i].allowed_occupants().size()) {
-            keyout << "\t" << prim.basis()[i].allowed_occupants()[j];
-          } else {
-            keyout << "\t-";
-          }
-        }
-        keyout << "\n";
-      }
-      keyout.close();
+    jsonParser json = jsonParser::object();
+    json["Pass"] = jsonParser::array();
+    json["Step"] = jsonParser::array();
+    json["DoF"] = jsonParser::array();
+    for (auto it = mc.sample_times().cbegin(); it != mc.sample_times().cend();
+         ++it) {
+      json["Pass"].push_back(it->first);
+      json["Step"].push_back(it->second);
     }
-
-    if (settings.write_json()) {
-      jsonParser json = jsonParser::object();
-      json["Pass"] = jsonParser::array();
-      json["Step"] = jsonParser::array();
-      json["DoF"] = jsonParser::array();
-      for (auto it = mc.sample_times().cbegin(); it != mc.sample_times().cend();
-           ++it) {
-        json["Pass"].push_back(it->first);
-        json["Step"].push_back(it->second);
-      }
-      for (auto it = mc.trajectory().cbegin(); it != mc.trajectory().cend();
-           ++it) {
-        json["DoF"].push_back(*it);
-      }
-      gz::ogzstream sout(
-          (dir.trajectory_json(cond_index).string() + ".gz").c_str());
-      _log << "write: "
-           << fs::path(dir.trajectory_json(cond_index).string() + ".gz")
-           << "\n";
-      sout << json;
-      sout.close();
-
-      // --- Write "occupation_key.json" ------------
-      //
-      // [["A", "B"],["A" "C"], ... ]
-
-      jsonParser key = jsonParser::array();
-      for (int i = 0; i < prim.basis().size(); i++) {
-        key.push_back(prim.basis()[i].allowed_occupants());
-      }
-      key.write(dir.occupation_key_json());
-      _log << "write: " << dir.occupation_key_json() << "\n";
+    for (auto it = mc.trajectory().cbegin(); it != mc.trajectory().cend();
+         ++it) {
+      json["DoF"].push_back(*it);
     }
+    gz::ogzstream sout(
+        (dir.trajectory_json(cond_index).string() + ".gz").c_str());
+    _log << "write: "
+         << fs::path(dir.trajectory_json(cond_index).string() + ".gz") << "\n";
+    sout << json;
+    sout.close();
+
+    // --- Write "occupation_key.json" ------------
+    //
+    // [["A", "B"],["A" "C"], ... ]
+
+    jsonParser key = jsonParser::array();
+    for (int i = 0; i < prim.basis().size(); i++) {
+      key.push_back(prim.basis()[i].allowed_occupants());
+    }
+    key.write(dir.occupation_key_json());
+    _log << "write: " << dir.occupation_key_json() << "\n";
 
   } catch (...) {
     std::cerr << "ERROR writing observations." << std::endl;
@@ -441,17 +382,17 @@ void write_POSCAR_initial(const MonteCarlo &mc, size_type cond_index,
   MonteCarloDirectoryStructure dir(mc.settings().output_directory());
   fs::create_directories(dir.trajectory_dir(cond_index));
 
-  // read initial_state.json
-  ConfigDoF config_dof =
-      jsonParser(dir.initial_state_json(cond_index))
-          .get<ConfigDoF>(mc.supercell().prim(), mc.supercell().volume());
-
   if (!fs::exists(dir.initial_state_json(cond_index))) {
     throw std::runtime_error(
         std::string("ERROR in 'write_POSCAR_initial(const MonteCarlo &mc, "
                     "size_type cond_index)'\n") +
         "  File not found: " + dir.initial_state_json(cond_index).string());
   }
+
+  // read initial_state.json
+  ConfigDoF config_dof =
+      jsonParser(dir.initial_state_json(cond_index))
+          .get<ConfigDoF>(mc.supercell().prim(), mc.supercell().volume());
 
   // write file
   fs::ofstream sout(dir.POSCAR_initial(cond_index));
@@ -469,17 +410,17 @@ void write_POSCAR_final(const MonteCarlo &mc, size_type cond_index, Log &_log) {
   MonteCarloDirectoryStructure dir(mc.settings().output_directory());
   fs::create_directories(dir.trajectory_dir(cond_index));
 
-  // read final_state.json
-  ConfigDoF config_dof =
-      jsonParser(dir.final_state_json(cond_index))
-          .get<ConfigDoF>(mc.supercell().prim(), mc.supercell().volume());
-
   if (!fs::exists(dir.final_state_json(cond_index))) {
     throw std::runtime_error(
         std::string("ERROR in 'write_POSCAR_final(const MonteCarlo &mc, "
                     "size_type cond_index)'\n") +
         "  File not found: " + dir.final_state_json(cond_index).string());
   }
+
+  // read final_state.json
+  ConfigDoF config_dof =
+      jsonParser(dir.final_state_json(cond_index))
+          .get<ConfigDoF>(mc.supercell().prim(), mc.supercell().volume());
 
   // write file
   fs::ofstream sout(dir.POSCAR_final(cond_index));
@@ -503,56 +444,26 @@ void write_POSCAR_trajectory(const MonteCarlo &mc, size_type cond_index,
   std::vector<size_type> step;
   std::vector<ConfigDoF> trajectory;
 
-  if (mc.settings().write_json()) {
-    std::string filename = dir.trajectory_json(cond_index).string() + ".gz";
+  std::string filename = dir.trajectory_json(cond_index).string() + ".gz";
 
-    if (!fs::exists(filename)) {
-      throw std::runtime_error(
-          std::string("ERROR in 'write_POSCAR_trajectory(const MonteCarlo &mc, "
-                      "size_type cond_index)'\n") +
-          "  File not found: " + filename);
-    }
+  if (!fs::exists(filename)) {
+    throw std::runtime_error(
+        std::string("ERROR in 'write_POSCAR_trajectory(const MonteCarlo &mc, "
+                    "size_type cond_index)'\n") +
+        "  File not found: " + filename);
+  }
 
-    gz::igzstream sin(filename.c_str());
-    jsonParser json(sin);
-    for (auto it = json["Pass"].cbegin(); it != json["Pass"].cend(); ++it) {
-      pass.push_back(it->get<size_type>());
-    }
-    for (auto it = json["Step"].cbegin(); it != json["Step"].cend(); ++it) {
-      step.push_back(it->get<size_type>());
-    }
-    for (auto it = json["DoF"].cbegin(); it != json["DoF"].cend(); ++it) {
-      trajectory.push_back(
-          it->get<ConfigDoF>(mc.supercell().prim(), mc.supercell().volume()));
-    }
-
-  } else if (mc.settings().write_csv()) {
-    std::string filename = dir.trajectory_csv(cond_index).string() + ".gz";
-
-    if (!fs::exists(filename)) {
-      throw std::runtime_error(
-          std::string("ERROR in 'write_POSCAR_trajectory(const MonteCarlo &mc, "
-                      "size_type cond_index)'\n") +
-          "  File not found: " + filename);
-    }
-
-    gz::igzstream sin(filename.c_str());
-
-    // skip the header line
-    sin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
-    size_type _pass, _step;
-    ConfigDoF config_dof(Configuration(mc.supercell()).configdof());
-
-    while (sin) {
-      sin >> _pass >> _step;
-      pass.push_back(_pass);
-      step.push_back(_step);
-      for (size_type i = 0; i < config_dof.size(); i++) {
-        sin >> config_dof.occ(i);
-      }
-      trajectory.push_back(config_dof);
-    }
+  gz::igzstream sin(filename.c_str());
+  jsonParser json(sin);
+  for (auto it = json["Pass"].cbegin(); it != json["Pass"].cend(); ++it) {
+    pass.push_back(it->get<size_type>());
+  }
+  for (auto it = json["Step"].cbegin(); it != json["Step"].cend(); ++it) {
+    step.push_back(it->get<size_type>());
+  }
+  for (auto it = json["DoF"].cbegin(); it != json["DoF"].cend(); ++it) {
+    trajectory.push_back(
+        it->get<ConfigDoF>(mc.supercell().prim(), mc.supercell().volume()));
   }
 
   for (size_type i = 0; i < trajectory.size(); i++) {

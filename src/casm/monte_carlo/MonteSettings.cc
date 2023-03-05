@@ -177,6 +177,20 @@ double MonteSettings::confidence() const {
   }
 }
 
+/// \brief Returns true if initial / final state are requested for each
+/// condition
+bool MonteSettings::save_state_details() const {
+  std::string level1 = "data";
+  std::string level2 = "storage";
+  std::string level3 = "save_state_details";
+  std::string help = "bool (default=false)";
+  if (!_is_setting(level1, level2, level3)) {
+    return false;
+  }
+
+  return _get_setting<bool>(level1, level2, level3, help);
+}
+
 /// \brief Returns true if snapshots are requested
 bool MonteSettings::write_trajectory() const {
   std::string level1 = "data";
@@ -215,77 +229,6 @@ bool MonteSettings::write_observations() const {
   }
 
   return _get_setting<bool>(level1, level2, level3, help);
-}
-
-/// \brief Write csv versions of files? (csv is the default format if no
-/// 'output_format' given)
-bool MonteSettings::write_csv() const {
-  std::string level1 = "data";
-  std::string level2 = "storage";
-  std::string level3 = "output_format";
-  std::string help =
-      "(string or JSON array of string, optional, default='csv')\n"
-      "  Accepts: 'csv' or 'CSV' to write .csv files\n"
-      "           'json' or 'JSON' to write .json files\n"
-      "  Use an array to write in multiple formats.\n";
-
-  if (!_is_setting(level1, level2, level3)) {
-    return true;
-  }
-
-  const jsonParser &ref = (*this)[level1][level2][level3];
-
-  if (ref.is_array()) {
-    std::vector<std::string> formats =
-        _get_setting<std::vector<std::string> >(level1, level2, level3, help);
-    for (auto it = formats.begin(); it != formats.end(); ++it) {
-      if (*it == "csv" || *it == "CSV") {
-        return true;
-      }
-    }
-    return false;
-  } else {
-    std::string input = _get_setting<std::string>(level1, level2, level3, help);
-    if (input == "csv" || input == "CSV") {
-      return true;
-    }
-    return false;
-  }
-}
-
-/// \brief Write json versions of files?
-bool MonteSettings::write_json() const {
-  std::string level1 = "data";
-  std::string level2 = "storage";
-  std::string level3 = "output_format";
-  std::string help =
-      "(string or JSON array of string, optional, default='csv')\n"
-      "  Accepts: 'csv' or 'CSV' to write .csv files\n"
-      "           'json' or 'JSON' to write .json files\n"
-      "  Use an array to write in multiple formats.\n";
-
-  if (!_is_setting(level1, level2, level3)) {
-    return false;
-  }
-
-  const jsonParser &ref = (*this)[level1][level2][level3];
-
-  if (ref.is_array()) {
-    std::vector<std::string> formats =
-        _get_setting<std::vector<std::string> >(level1, level2, level3, help);
-    for (auto it = formats.begin(); it != formats.end(); ++it) {
-      if (*it == "json" || *it == "JSON") {
-        return true;
-      }
-    }
-    return false;
-  } else {
-    std::string input = _get_setting<std::string>(level1, level2, level3, help);
-    if (input == "json" || input == "JSON") {
-      return true;
-    }
-    return false;
-  }
 }
 
 // --- Enumerating Configurations ---
