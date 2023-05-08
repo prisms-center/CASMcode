@@ -54,6 +54,7 @@ Canonical::Canonical(const PrimClex &primclex,
     : MonteCarlo(primclex, settings, log),
       m_formation_energy_clex(make_clex(primclex, settings)),
       m_order_parameter(settings.make_order_parameter(primclex)),
+      m_order_parameter_subspaces(settings.make_order_parameter_subspaces()),
       m_random_alloy_corr_f(make_random_alloy_corr_f(primclex, settings)),
       m_convert(_supercell()),
       m_cand(m_convert),
@@ -292,6 +293,17 @@ void Canonical::accept(const EventType &event) {
   _comp_n() += event.dN().cast<double>() / supercell().volume();
   if (m_order_parameter != nullptr) {
     _eta() += event.deta();
+
+    if (m_order_parameter_subspaces != nullptr) {
+      auto const &subspaces = *m_order_parameter_subspaces;
+      for (int i = 0; i < subspaces.size(); ++i) {
+        double x = 0.0;
+        for (int const &j : subspaces[i]) {
+          x += _eta()(j) * _eta()(j);
+        }
+        _eta_subspace()(i) = sqrt(x);
+      }
+    }
   }
   return;
 }
@@ -583,6 +595,26 @@ void Canonical::_update_properties() {
   } else {
     _vector_properties()["eta"] = Eigen::VectorXd(0);
     m_eta = &_vector_property("eta");
+  }
+
+  if (m_order_parameter_subspaces != nullptr) {
+    auto const &subspaces = *m_order_parameter_subspaces;
+    Eigen::VectorXd eta_subspace = Eigen::VectorXd::Zero(subspaces.size());
+    for (int i = 0; i < subspaces.size(); ++i) {
+      double x = 0.0;
+      for (int const &j : subspaces[i]) {
+        if (j < 0 || j >= _eta().size()) {
+          throw std::runtime_error("Invalid order_parameter_subspaces");
+        }
+        x += _eta()(j) * _eta()(j);
+      }
+      eta_subspace(i) = sqrt(x);
+    }
+    _vector_properties()["eta_subspace"] = eta_subspace;
+    m_eta_subspace = &_vector_property("eta_subspace");
+  } else {
+    _vector_properties()["eta_subspace"] = Eigen::VectorXd(0);
+    m_eta_subspace = &_vector_property("eta_subspace");
   }
 
   _scalar_properties()["formation_energy"] = _eci() * corr().data();

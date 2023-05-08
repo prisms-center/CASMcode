@@ -96,6 +96,9 @@ class Canonical : public MonteCarlo {
   /// \brief Order parameters (intensive)
   const Eigen::VectorXd &eta() const { return *m_eta; }
 
+  /// \brief Order parameters (intensive)
+  const Eigen::VectorXd &eta_subspace() const { return *m_eta_subspace; }
+
   /// \brief Get potential energy
   double potential_energy(const Configuration &config) const;
 
@@ -106,6 +109,12 @@ class Canonical : public MonteCarlo {
   /// \brief Get the order parameter calculator (must be copied to be used)
   std::shared_ptr<OrderParameter const> order_parameter() const {
     return m_order_parameter;
+  }
+
+  /// \brief Get the order parameter subspaces
+  std::shared_ptr<std::vector<std::vector<int>>> order_parameter_subspaces()
+      const {
+    return m_order_parameter_subspaces;
   }
 
   /// \brief Get the random alloy correlation calculator
@@ -128,6 +137,9 @@ class Canonical : public MonteCarlo {
 
   /// \brief Order parameters (intensive)
   Eigen::VectorXd &_eta() { return *m_eta; }
+
+  /// \brief Order parameters (intensive)
+  Eigen::VectorXd &_eta_subspace() { return *m_eta_subspace; }
 
   Clexulator const &_clexulator() const {
     return m_formation_energy_clex.clexulator;
@@ -184,6 +196,9 @@ class Canonical : public MonteCarlo {
   /// Holds order parameter calculator
   std::shared_ptr<OrderParameter> m_order_parameter;
 
+  /// Holds order parameter subspaces
+  std::shared_ptr<std::vector<std::vector<int>>> m_order_parameter_subspaces;
+
   /// Holds random alloy corr calculator
   std::shared_ptr<RandomAlloyCorrCalculator> m_random_alloy_corr_f;
 
@@ -219,6 +234,9 @@ class Canonical : public MonteCarlo {
 
   /// \brief Order parameters (intensive)
   Eigen::VectorXd *m_eta;
+
+  /// \brief Order parameters (intensive)
+  Eigen::VectorXd *m_eta_subspace;
 };
 
 }  // namespace Monte

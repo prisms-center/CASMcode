@@ -212,6 +212,30 @@ SamplerInsertIterator CanonicalSettings::_make_order_parameter_samplers(
         std::make_pair(print_name, notstd::cloneable_ptr<MonteSampler>(ptr));
   }
 
+  std::shared_ptr<std::vector<std::vector<int>>> order_parameter_subspaces =
+      this->make_order_parameter_subspaces();
+  if (order_parameter_subspaces != nullptr) {
+    for (size_type i = 0; i < order_parameter_subspaces->size(); i++) {
+      std::string prop_name = "eta_subspace";
+      print_name =
+          std::string("order_parameter_subspace(") + std::to_string(i) + ")";
+
+      std::tie(must_converge, prec) = _get_precision(it);
+
+      // if 'must converge'
+      if (must_converge) {
+        ptr = new VectorMonteSampler(prop_name, i, print_name, prec,
+                                     confidence(), data_maxlength);
+      } else {
+        ptr = new VectorMonteSampler(prop_name, i, print_name, confidence(),
+                                     data_maxlength);
+      }
+
+      *result++ =
+          std::make_pair(print_name, notstd::cloneable_ptr<MonteSampler>(ptr));
+    }
+  }
+
   return result;
 }
 

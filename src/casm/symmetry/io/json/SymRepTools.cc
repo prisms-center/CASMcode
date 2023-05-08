@@ -68,6 +68,7 @@ jsonParser &to_json(VectorSpaceSymReport const &obj, jsonParser &json) {
 
   Index NQ = obj.symmetry_adapted_dof_subspace.cols();
   Index i(0), l(0), q(1);
+  json["irreducible_representations"]["subspaces"].put_array();
   for (Index mult : mults) {
     ++i;
     for (Index m = 0; m < mult; ++m) {
@@ -85,12 +86,15 @@ jsonParser &to_json(VectorSpaceSymReport const &obj, jsonParser &json) {
                 .real()
                 .transpose();
       }
+      jsonParser subspace_json = jsonParser::array();
       json["irreducible_representations"]["irrep_axes"][irrep_name].put_array();
       for (Index a = 0; a < irrep.irrep_dim(); ++a, ++q) {
         std::string axis_name = "q" + to_sequential_string(q, NQ);
         json["irreducible_representations"]["irrep_axes"][irrep_name].push_back(
             axis_name);
+        subspace_json.push_back(q - 1);
       }
+      json["irreducible_representations"]["subspaces"].push_back(subspace_json);
 
       jsonParser &irrep_matrices =
           json["irreducible_representations"]["symop_matrices"]
@@ -217,6 +221,7 @@ jsonParser &to_json(SymRepTools_v2::VectorSpaceSymReport const &obj,
 
   Index NQ = obj.symmetry_adapted_subspace.cols();
   Index i(0), l(0), q(1);
+  json["irreducible_representations"]["subspaces"].put_array();
   for (Index mult : mults) {
     ++i;
     for (Index m = 0; m < mult; ++m) {
@@ -234,12 +239,15 @@ jsonParser &to_json(SymRepTools_v2::VectorSpaceSymReport const &obj,
                 .real()
                 .transpose();
       }
+      jsonParser subspace_json = jsonParser::array();
       json["irreducible_representations"]["irrep_axes"][irrep_name].put_array();
       for (Index a = 0; a < irrep.irrep_dim(); ++a, ++q) {
         std::string axis_name = "q" + to_sequential_string(q, NQ);
         json["irreducible_representations"]["irrep_axes"][irrep_name].push_back(
             axis_name);
+        subspace_json.push_back(q - 1);
       }
+      json["irreducible_representations"]["subspaces"].push_back(subspace_json);
 
       jsonParser &irrep_matrices =
           json["irreducible_representations"]["symop_matrices"]

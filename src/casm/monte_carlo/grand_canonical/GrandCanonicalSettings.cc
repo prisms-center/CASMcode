@@ -1,6 +1,7 @@
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalSettings.hh"
 
 #include "casm/app/ProjectSettings.hh"
+#include "casm/casm_io/container/json_io.hh"
 #include "casm/enumerator/io/json/DoFSpace.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalConditions.hh"
 #include "casm/monte_carlo/grand_canonical/GrandCanonicalIO.hh"
@@ -147,6 +148,16 @@ std::shared_ptr<OrderParameter> GrandCanonicalSettings::make_order_parameter(
   }
   m_order_parameter_checked = true;
   return m_order_parameter;
+}
+
+/// \brief Make order parameter calculator
+std::shared_ptr<std::vector<std::vector<int>>>
+GrandCanonicalSettings::make_order_parameter_subspaces() const {
+  std::vector<std::vector<int>> value;
+  if (_is_setting("model", "order_parameter", "subspaces")) {
+    from_json(value, (*this)["model"]["order_parameter"]["subspaces"]);
+  }
+  return std::make_shared<std::vector<std::vector<int>>>(value);
 }
 
 // --- Sampler settings ---------------------
