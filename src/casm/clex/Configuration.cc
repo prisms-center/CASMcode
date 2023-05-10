@@ -891,7 +891,7 @@ double lattice_deformation(const Configuration &_config) {
 
 /// \brief Change in volume due to relaxation, expressed as the ratio V/V_0
 double volume_relaxation(const Configuration &_config) {
-  StrainConverter tconvert("BIOT");
+  StrainConverter tconvert("STRAIN_B");
   return tconvert.rollup_E(_config.calc_properties().global.at("Ustrain"))
       .determinant();
 }
