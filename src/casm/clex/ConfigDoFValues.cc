@@ -147,13 +147,14 @@ void LocalContinuousConfigDoFValues::from_standard_values(
         << ", received cols=" << _standard_values.cols();
     throw std::runtime_error(msg.str());
   }
-  for (Index b = 0; b < n_sublat(); ++b){
-    if (info()[b].symrep_ID().empty()){
-        continue;
+  for (Index b = 0; b < n_sublat(); ++b) {
+    if (info()[b].symrep_ID().empty()) {
+      continue;
     }
     sublat(b).topRows(info()[b].dim()) =
         info()[b].inv_basis() *
-        _standard_values.block(0, b * n_vol(), m_vals.rows(), n_vol());
+        _standard_values.block(0, b * n_vol(), info().front().basis().rows(),
+                               n_vol());
   }
 }
 
