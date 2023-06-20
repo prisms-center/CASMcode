@@ -485,15 +485,6 @@ class DiffClexParamHessKey : public DiffClexParamKey {
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 template <>
-struct traits<DiffClexParamPack::EvalMode> {
-  static const std::string name;
-
-  static const std::multimap<DiffClexParamPack::EvalMode,
-                             std::vector<std::string> >
-      strval;
-};
-
-template <>
 struct ValAccess<double> {
   using size_type = DiffClexParamPack::size_type;
 
@@ -671,6 +662,15 @@ inline DiffClexParamPack::Key DiffClexParamPack::allocate(
 }
 
 }  // namespace clexulator
+
+template <>
+struct traits<clexulator::DiffClexParamPack::EvalMode> {
+  static const std::string name;
+
+  static const std::multimap<clexulator::DiffClexParamPack::EvalMode,
+                             std::vector<std::string> >
+      strval;
+};
 
 inline std::ostream &operator<<(
     std::ostream &sout, const clexulator::DiffClexParamPack::EvalMode &val) {

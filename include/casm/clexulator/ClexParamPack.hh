@@ -4,6 +4,8 @@
 #include <map>
 #include <vector>
 
+#include "casm/external/Eigen/Core"
+#include "casm/global/definitions.hh"
 #include "casm/misc/cloneable_ptr.hh"
 
 namespace CASM {

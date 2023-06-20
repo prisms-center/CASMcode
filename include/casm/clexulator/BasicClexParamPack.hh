@@ -157,39 +157,6 @@ class BasicClexParamPack : public ClexParamPack {
   std::vector<EvalMode> m_eval;
 };
 
-template <>
-struct ValAccess<double> {
-  using size_type = BasicClexParamPack::size_type;
-
-  static double const &get(BasicClexParamPack const &_pack,
-                           BasicClexParamKey const &_key, size_type i) {
-    return _pack.m_data[_key.index()](i, 0);
-  }
-
-  static double const &get(BasicClexParamPack const &_pack,
-                           BasicClexParamKey const &_key, size_type i,
-                           size_type j) {
-    return _pack.m_data[_key.index()](i, j);
-  }
-
-  static void set(BasicClexParamPack &_pack, BasicClexParamKey const &_key,
-                  Eigen::Ref<const Eigen::MatrixXd> const &_val) {
-    _pack.m_data[_key.index()] = _val;
-  }
-
-  template <typename Scalar2>
-  static void set(BasicClexParamPack &_pack, BasicClexParamKey const &_key,
-                  size_type i, Scalar2 const &_val) {
-    _pack.m_data[_key.index()](i, 0) = _val;
-  }
-
-  template <typename Scalar2>
-  static void set(BasicClexParamPack &_pack, BasicClexParamKey const &_key,
-                  size_type i, size_type j, Scalar2 const &_val) {
-    _pack.m_data[_key.index()](i, j) = _val;
-  }
-};
-
 }  // namespace clexulator
 
 template <>
