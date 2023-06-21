@@ -24,6 +24,16 @@ using xtal::UnitCell;
 
 class PermuteIterator;
 
+/// \brief Make a single translation permutation
+Permutation make_translation_permutation(
+    Index translation_index,
+    xtal::UnitCellCoordIndexConverter const &bijk_index_converter,
+    xtal::UnitCellIndexConverter const &ijk_index_converter);
+
+/// \brief Make all translation permutations
+std::vector<Permutation> make_translation_permutations(
+    const Eigen::Matrix3l &transformation_matrix, int basis_sites_in_prim);
+
 /// \brief A class that collects all symmetry information for for performing
 /// symmetry transformations on the site indices, site DoFs, and global DoFs of
 /// a Supercell or Configuration
@@ -107,7 +117,8 @@ class SupercellSymInfo {
   /// \brief Permutations describing reordering of sites of supercell due to a
   /// lattice translation of the primitive translation_permutation()[l] gives
   /// the site permutation due to translating to origin cell to unitcell[l] of
-  /// the supercell
+  /// the supercell - Note, only constructed for n_unitcells < 100, so check
+  /// size before using.
   const std::vector<Permutation> &translation_permutations() const {
     return m_translation_permutations;
   }

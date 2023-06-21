@@ -328,20 +328,6 @@ int _run_GrandCanonical(PrimClex &primclex,
             "ERROR in LTE1 calculation: dependents_runs must be false");
       }
 
-      bool ok = false;
-      if (gc_settings.is_motif_configname() &&
-          (gc_settings.motif_configname() == "auto" ||
-           gc_settings.motif_configname() == "restricted_auto")) {
-        ok = true;
-      }
-
-      if (!ok) {
-        throw std::invalid_argument(
-            "ERROR in LTE1 calculation: must use one of\n"
-            "  \"driver\"/\"motif\"/\"configname\": \"auto\"\n"
-            "  \"driver\"/\"motif\"/\"configname\": \"restricted_auto\"");
-      }
-
       Monte::MonteCarloDirectoryStructure dir(gc_settings.output_directory());
       if (gc_settings.write_csv()) {
         if (fs::exists(dir.results_csv())) {
@@ -373,17 +359,27 @@ int _run_GrandCanonical(PrimClex &primclex,
       auto init = gc_settings.initial_conditions(gc);
       auto incr = init;
       int num_conditions = 1;
+      std::vector<Monte::GrandCanonicalConditions> custom_cond;
 
       if (monte_settings.drive_mode() == Monte::DRIVE_MODE::INCREMENTAL) {
         incr = gc_settings.incremental_conditions(gc);
         auto final = gc_settings.final_conditions(gc);
         num_conditions = (final - init) / incr + 1;
+      } else if (monte_settings.drive_mode() == Monte::DRIVE_MODE::CUSTOM) {
+        custom_cond = gc_settings.custom_conditions(gc);
+        num_conditions = custom_cond.size();
+      } else {
+        throw std::runtime_error(
+            "Error in casm monte LTE1: invalid driver mode");
       }
 
       std::string configname;
 
       auto cond = init;
       for (int index = 0; index < num_conditions; ++index) {
+        if (monte_settings.drive_mode() == Monte::DRIVE_MODE::CUSTOM) {
+          cond = custom_cond[index];
+        }
         configname = gc.set_state(cond, gc_settings).second;
 
         if (gc.debug()) {
@@ -409,7 +405,9 @@ int _run_GrandCanonical(PrimClex &primclex,
         log().write("Output files");
         write_lte_results(gc_settings, gc, phi_LTE1, configname, log());
         log() << std::endl;
-        cond += incr;
+        if (monte_settings.drive_mode() == Monte::DRIVE_MODE::INCREMENTAL) {
+          cond += incr;
+        }
 
         log() << std::endl;
       }

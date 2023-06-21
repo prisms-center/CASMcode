@@ -146,8 +146,14 @@ SupercellSymInfoFormatter<jsonParser> translation_permutations() {
       "within the supercell, and the inner array (with size is equal to the "
       "total number of sites, prim basis size * supercell volume) describes "
       "how sites permute for the `i`th translation, according to `after[l] = "
-      "before[translation_permutation[i][l]]`.",
+      "before[translation_permutation[i][l]]`. Not valid for large supercells "
+      "(n_unitcells > 100).",
       [](SupercellSymInfo const &supercell_sym_info) -> jsonParser {
+        if (supercell_sym_info.superlattice().size() > 100) {
+          jsonParser json;
+          json = std::string("Supercell is too large (n_unitcells > 100)");
+          return json;
+        }
         jsonParser json = jsonParser::array();
         to_json(supercell_sym_info.translation_permutations(), json);
         return json;

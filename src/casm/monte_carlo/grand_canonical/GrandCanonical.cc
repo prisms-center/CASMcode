@@ -5,6 +5,7 @@
 #include "casm/clex/FillSupercell.hh"
 #include "casm/clex/Norm.hh"
 #include "casm/clex/PrimClex.hh"
+#include "casm/clex/io/json/Configuration_json_io.hh"
 #include "casm/clusterography/io/OrbitPrinter_impl.hh"
 #include "casm/crystallography/SymTools.hh"
 #include "casm/database/ConfigDatabase.hh"
@@ -170,13 +171,17 @@ std::pair<ConfigDoF, std::string> GrandCanonical::set_state(
   } else if (settings.is_motif_configdof()) {
     _log().set("DoF");
     _log() << "motif configdof: " << settings.motif_configdof_path() << "\n";
-    _log() << "using configdof: " << settings.motif_configdof_path() << "\n"
-           << std::endl;
     configdof = settings.motif_configdof(supercell().volume());
     configname = settings.motif_configdof_path().string();
+  } else if (settings.is_motif_config()) {
+    _log().set("DoF");
+    _log() << "motif config: \n" << settings.motif_config_json() << "\n";
+    configdof = settings.motif_config(supercell());
+    configname = "fromjson";
   } else {
     throw std::runtime_error(
-        "Error: Must specify motif \"configname\" or \"configdof\"");
+        "Error: Must specify motif \"config\", \"configname\", or "
+        "\"configdof\"");
   }
 
   reset(configdof);
@@ -381,10 +386,14 @@ double GrandCanonical::lte_grand_canonical_free_energy() const {
       if (dpot_nrg < 0.0) {
         Log &err_log = CASM::err_log();
         err_log.error<Log::standard>("Calculating low temperature expansion");
-        err_log << "  Defect lowered the potential energy. Your motif "
-                   "configuration "
-                << "is not the 0K ground state.\n"
+        err_log << "  Defect lowered the potential energy by dpot_nrg="
+                << dpot_nrg << std::endl;
+        err_log << "  Your motif configuration is not the 0K ground state.\n"
                 << std::endl;
+        err_log << "  Configuration:" << std::endl;
+        jsonParser json;
+        to_json(config(), json);
+        err_log << json << std::endl;
         throw std::runtime_error(
             "Error calculating low temperature expansion. Not in the ground "
             "state.");

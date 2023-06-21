@@ -100,6 +100,16 @@ class MonteSettings : protected CASM::jsonParser {
   /// \brief Path to ConfigDoF file to use as starting motif
   fs::path motif_configdof_path() const;
 
+  /// \brief Returns true if Configuration JSON object to use as starting motif
+  /// has been specified
+  bool is_motif_config() const;
+
+  /// \brief ConfigDoF to use as starting motif
+  ConfigDoF motif_config(Supercell const &mc_supercell) const;
+
+  /// \brief Configuration JSON to use as starting motif
+  jsonParser motif_config_json() const;
+
   /// \brief Supercell matrix defining the simulation cell
   Eigen::Matrix3l simulation_cell_matrix() const;
 
