@@ -184,7 +184,6 @@ void ClexBasisWriter::print_clexulator(std::string class_name,
   stream
       << "#include <cstddef>\n"
       << "#include \"casm/clexulator/BaseClexulator.hh\"\n"
-      << "#include \"casm/clexulator/BasicClexParamPack.hh\"\n"
       << "#include \"casm/global/eigen.hh\"\n"
       << (m_param_pack_mix_in->cpp_includes_string()) << "\n"
       << "\n\n\n"
