@@ -154,7 +154,8 @@ std::shared_ptr<OrderParameter> GrandCanonicalSettings::make_order_parameter(
 std::shared_ptr<std::vector<std::vector<int>>>
 GrandCanonicalSettings::make_order_parameter_subspaces() const {
   std::vector<std::vector<int>> value;
-  if (_is_setting("model", "order_parameter", "subspaces")) {
+  if (_is_setting("model", "order_parameter") &&
+      _is_setting("model", "order_parameter", "subspaces")) {
     from_json(value, (*this)["model"]["order_parameter"]["subspaces"]);
   }
   return std::make_shared<std::vector<std::vector<int>>>(value);

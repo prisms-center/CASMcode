@@ -375,13 +375,11 @@ bool MonteSettings::enumeration_dry_run() const {
 
 /// \brief Returns enumeration output options
 FormattedDataFileOptions MonteSettings::enumeration_output_options() const {
-  if (!is_enumeration() ||
-      !_is_setting("data", "enumeration", "output_configurations_options")) {
+  if (!is_enumeration()) {
     return FormattedDataFileOptions();
   }
 
-  ParentInputParser parser{
-      (*this)["data"]["enumeration"]["output_configurations_options"]};
+  ParentInputParser parser{(*this)["data"]["enumeration"]};
 
   bool output_configurations;
   parser.optional_else(output_configurations, "output_configurations", false);
@@ -389,14 +387,15 @@ FormattedDataFileOptions MonteSettings::enumeration_output_options() const {
     return FormattedDataFileOptions();
   }
 
-  FormattedDataFileOptions options;
+  fs::path opt = "output_configurations_options";
 
+  FormattedDataFileOptions options;
   std::string file_path_str = "enum.out";
-  parser.optional(file_path_str, "path");
+  parser.optional(file_path_str, opt / "path");
   options.file_path = fs::path(file_path_str);
-  parser.optional_else(options.json_output, "json", false);
-  parser.optional_else(options.json_arrays, "json_arrays", false);
-  parser.optional_else(options.compress, "compress", false);
+  parser.optional_else(options.json_output, opt / "json", false);
+  parser.optional_else(options.json_arrays, opt / "json_arrays", false);
+  parser.optional_else(options.compress, opt / "compress", false);
   std::runtime_error error_if_invalid{
       "Error reading "
       "\"data\"/\"enumeration\"/\"output_configurations_options\""};
@@ -418,11 +417,12 @@ std::vector<std::string> MonteSettings::enumeration_output_properties() const {
     return std::vector<std::string>();
   }
 
-  ParentInputParser parser{
-      (*this)["data"]["enumeration"]["output_configurations_options"]};
+  ParentInputParser parser{(*this)["data"]["enumeration"]};
+
+  fs::path opt = "output_configurations_options";
 
   std::vector<std::string> properties;
-  parser.optional(properties, "properties");
+  parser.optional(properties, opt / "properties");
   std::runtime_error error_if_invalid{
       "Error reading "
       "\"data\"/\"enumeration\"/\"output_configurations_options\""};

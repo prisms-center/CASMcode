@@ -241,17 +241,11 @@ void MonteDriver<RunType>::single_run(Index cond_index) {
     }
 
     bool res = monte_carlo_step(m_mc);
+    run_counter++;
 
     if (res && m_enum && m_enum->on_accept()) {
       m_enum->insert(m_mc.config());
-
-      if (run_counter.step() != 0 &&
-          run_counter.step() % m_enum_output_period == 0) {
-        write_enum_output(cond_index);
-      }
     }
-
-    run_counter++;
 
     if (run_counter.sample_time()) {
       m_log.custom<Log::debug>("Sample data");
@@ -264,17 +258,11 @@ void MonteDriver<RunType>::single_run(Index cond_index) {
       run_counter.increment_samples();
       if (m_enum && m_enum->on_sample()) {
         m_enum->insert(m_mc.config());
+      }
 
-        if (run_counter.samples() != 0 &&
-                m_log << "samples: " << run_counter.samples()
-                      << " / output_period: " << m_enum_output_period
-                      << std::endl;
-            run_counter.samples() % m_enum_output_period == 0) {
-          write_enum_output(cond_index);
-        } else {
-          m_log << "samples: " << run_counter.samples()
-                << " / output_period: " << m_enum_output_period << std::endl;
-        }
+      if (run_counter.samples() != 0 &&
+          run_counter.samples() % m_enum_output_period == 0) {
+        write_enum_output(cond_index);
       }
     }
   }
