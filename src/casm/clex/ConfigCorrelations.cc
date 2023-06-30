@@ -655,7 +655,7 @@ Eigen::MatrixXd gradcorrelations(ConfigDoF const &configdof,
       for (Index c = 0; c < clexulator.corr_size(); ++c) {
         gcorr_func = clexulator.param_pack().read(paramkey(c));
 
-        for (Index n = 0; n < scel.nlist().sites(v).size(); ++n) {
+        for (Index n = 0; n < clexulator.nlist_size(); ++n) {
           l = scel.nlist().sites(v)[n];
           // for(Index i=0; i<gcorr_func.cols(); ++i){
           gcorr.block(l * gcorr_func.rows(), c, gcorr_func.rows(), 1) +=
