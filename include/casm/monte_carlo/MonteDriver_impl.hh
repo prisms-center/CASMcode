@@ -52,46 +52,29 @@ template <typename RunType>
 void MonteDriver<RunType>::run() {
   m_log.check("For existing calculations");
 
-  if (!m_settings.write_json() && !m_settings.write_csv()) {
-    throw std::runtime_error(
-        std::string("No valid monte carlo output format.\n") +
-        "  Expected [\"data\"][\"storage\"][\"output_format\"] to contain a "
-        "string or array of strings.\n" +
-        "  Valid options are 'csv' or 'json'.");
+  // // Skip any conditions that have already been calculated and saved
+  // Index start_i = _find_starting_conditions();
+
+  // check json files
+  jsonParser json_results;
+  Index n_results = 0;
+  if (fs::exists(m_dir.results_json())) {
+    json_results.read(m_dir.results_json());
+    n_results = json_results.begin()->size();
   }
 
-  // Skip any conditions that have already been calculated and saved
-  Index start_i = _find_starting_conditions();
-
-  // check if we'll be repeating any calculations that already have files
-  // written
-  std::vector<Index> repeats;
-  for (Index i = start_i; i < m_conditions_list.size(); ++i) {
-    if (fs::exists(m_dir.conditions_dir(i))) {
-      repeats.push_back(i);
-    }
-  }
-
-  if (start_i == m_conditions_list.size()) {
+  if (n_results == m_conditions_list.size()) {
     m_log << "calculations already complete." << std::endl;
     return;
   }
+  Index start_i = n_results;
 
   // if existing calculations
-  if (start_i > 0 || repeats.size() > 0) {
+  if (n_results > 0) {
     m_log << "found existing calculations\n";
     m_log << "will begin with condition " << start_i << "\n";
-
-    if (repeats.size()) {
-      jsonParser json;
-      to_json(repeats, json);
-      m_log << "will overwrite existing results for condition(s): " << json
-            << "\n";
-    }
-  } else {
-    m_log << "did not find existing calculations\n";
+    m_log << std::endl;
   }
-  m_log << std::endl;
 
   if (m_settings.dependent_runs()) {
     // if starting from initial condition
@@ -104,14 +87,16 @@ void MonteDriver<RunType>::run() {
           m_settings.is_equilibration_passes_first_run()) {
         auto equil_passes = m_settings.equilibration_passes_first_run();
 
-        m_log.write("DoF");
-        m_log << "write: " << m_dir.initial_state_firstruneq_json(0) << "\n"
-              << std::endl;
+        if (m_settings.save_state_details()) {
+          m_log.write("DoF");
+          m_log << "write: " << m_dir.initial_state_firstruneq_json(0) << "\n"
+                << std::endl;
 
-        jsonParser json;
-        fs::create_directories(m_dir.conditions_dir(0));
-        to_json(m_mc.configdof(), json)
-            .write(m_dir.initial_state_firstruneq_json(0));
+          jsonParser json;
+          fs::create_directories(m_dir.conditions_dir(0));
+          to_json(m_mc.configdof(), json)
+              .write(m_dir.initial_state_firstruneq_json(0));
+        }
 
         m_log.begin("Equilibration passes");
         m_log << equil_passes << " equilibration passes\n" << std::endl;
@@ -123,14 +108,23 @@ void MonteDriver<RunType>::run() {
         }
       }
     } else {
+      fs::path prev_final_state_path = m_dir.final_state_json(start_i - 1);
+
+      if (!fs::exists(prev_final_state_path)) {
+        std::stringstream ss;
+        m_log << "Error: restart not possible." << std::endl;
+        m_log << "does not exist: " << prev_final_state_path << std::endl;
+        throw std::runtime_error("Error: restart not possible");
+      }
+
       // read end state of previous condition
       ConfigDoF configdof = m_mc.configdof();
-      from_json(configdof, jsonParser(m_dir.final_state_json(
-                               start_i - 1)));  //, m_mc.primclex().n_basis());
+      from_json(
+          configdof,
+          jsonParser(prev_final_state_path));  //, m_mc.primclex().n_basis());
 
-      m_mc.set_configdof(configdof,
-                         std::string("Using: ") +
-                             m_dir.final_state_json(start_i - 1).string());
+      m_mc.set_configdof(
+          configdof, std::string("Using: ") + prev_final_state_path.string());
     }
   }
 
@@ -148,106 +142,31 @@ void MonteDriver<RunType>::run() {
     m_log << std::endl;
   }
 
+  // remove restart files if save_state_details==false
+  if (!m_settings.save_state_details()) {
+    Index cond_index = m_conditions_list.size();
+    if (fs::exists(m_dir.conditions_dir(cond_index - 1))) {
+      fs::remove_all(m_dir.conditions_dir(cond_index - 1));
+    }
+  }
+
   return;
-}
-
-/// \brief Checks existing files to determine where to restart a path
-///
-/// - Will overwrite or cause to overwrite files in cases where the
-///   final state or results summary do not exist for some conditions
-///
-template <typename RunType>
-Index MonteDriver<RunType>::_find_starting_conditions() const {
-  Index start_i = 0;
-  Index start_max = m_conditions_list.size();
-  Index start_json = m_settings.write_json() ? 0 : start_max;
-  Index start_csv = m_settings.write_csv() ? 0 : start_max;
-  jsonParser json_results;
-  fs::ifstream csv_results;
-  std::string str;
-  std::stringstream ss;
-
-  // can start with condition i+1 if results (i) and final_state.json (i) exist
-
-  // check JSON files
-  if (m_settings.write_json() && fs::exists(m_dir.results_json())) {
-    json_results.read(m_dir.results_json());
-
-    // can start with i+1 if results[i] and final_state.json (i) exist
-    while (json_results.begin()->size() > start_json &&
-           fs::exists(m_dir.final_state_json(start_i)) && start_i < start_max) {
-      ++start_json;
-    }
-
-    start_max = start_json;
-  }
-
-  // check CSV files
-  if (m_settings.write_csv() && fs::exists(m_dir.results_csv())) {
-    csv_results.open(m_dir.results_csv());
-
-    // read header
-    std::getline(csv_results, str);
-    ss << str << "\n";
-
-    // can start with i+1 if results[i] and final_state.json (i) exist
-    while (!csv_results.eof() &&
-           fs::exists(m_dir.final_state_json(start_csv)) &&
-           start_i < start_max) {
-      ++start_csv;
-      std::getline(csv_results, str);
-      ss << str << "\n";
-    }
-
-    start_max = start_csv;
-  }
-  csv_results.close();
-
-  // use minimum of allowed starting conditions, in case a difference is found
-  start_i = std::min(start_json, start_csv);
-
-  // update results summary files to remove any conditions that must be
-  // re-calculated
-
-  // for JSON
-  if (m_settings.write_json() && fs::exists(m_dir.results_json())) {
-    // if results size > start_i, must fix results by removing results that will
-    // be re-run
-    jsonParser finished_results;
-    for (auto it = json_results.begin(); it != json_results.end(); ++it) {
-      jsonParser &ref = finished_results[it.name()].put_array();
-      for (Index i = 0; i < start_i; ++i) {
-        ref.push_back((*it)[i]);
-      }
-    }
-    m_log << "update: " << m_dir.results_json() << "\n";
-    finished_results.write(m_dir.results_json());
-  }
-
-  // for csv
-  if (m_settings.write_csv() && fs::exists(m_dir.results_csv())) {
-    m_log << "update: " << m_dir.results_csv() << "\n";
-    fs::ofstream out(m_dir.results_csv());
-    out << ss.rdbuf();
-    out.close();
-  }
-
-  return start_i;
 }
 
 template <typename RunType>
 void MonteDriver<RunType>::single_run(Index cond_index) {
-  fs::create_directories(m_dir.conditions_dir(cond_index));
-
   // perform any requested explicit equilibration passes
   if (m_settings.is_equilibration_passes_each_run()) {
-    m_log.write("DoF");
-    m_log << "write: " << m_dir.initial_state_runeq_json(cond_index) << "\n"
-          << std::endl;
+    if (m_settings.save_state_details()) {
+      fs::create_directories(m_dir.conditions_dir(cond_index));
+      m_log.write("DoF");
+      m_log << "write: " << m_dir.initial_state_runeq_json(cond_index) << "\n"
+            << std::endl;
 
-    jsonParser json;
-    to_json(m_mc.configdof(), json)
-        .write(m_dir.initial_state_runeq_json(cond_index));
+      jsonParser json;
+      to_json(m_mc.configdof(), json)
+          .write(m_dir.initial_state_runeq_json(cond_index));
+    }
     auto equil_passes = m_settings.equilibration_passes_each_run();
 
     m_log.begin("Equilibration passes");
@@ -260,12 +179,15 @@ void MonteDriver<RunType>::single_run(Index cond_index) {
     }
   }
 
-  // initial state (after any equilibriation passes)
-  m_log.write("DoF");
-  m_log << "write: " << m_dir.initial_state_json(cond_index) << "\n"
-        << std::endl;
-  jsonParser json;
-  to_json(m_mc.configdof(), json).write(m_dir.initial_state_json(cond_index));
+  // save initial state? (after any equilibriation passes)
+  if (m_settings.save_state_details()) {
+    fs::create_directories(m_dir.conditions_dir(cond_index));
+    m_log.write("DoF");
+    m_log << "write: " << m_dir.initial_state_json(cond_index) << "\n"
+          << std::endl;
+    jsonParser json;
+    to_json(m_mc.configdof(), json).write(m_dir.initial_state_json(cond_index));
+  }
 
   std::stringstream ss;
   ss << "Conditions " << cond_index;
@@ -319,17 +241,11 @@ void MonteDriver<RunType>::single_run(Index cond_index) {
     }
 
     bool res = monte_carlo_step(m_mc);
+    run_counter++;
 
     if (res && m_enum && m_enum->on_accept()) {
       m_enum->insert(m_mc.config());
-
-      if (run_counter.step() != 0 &&
-          run_counter.step() % m_enum_output_period == 0) {
-        write_enum_output(cond_index);
-      }
     }
-
-    run_counter++;
 
     if (run_counter.sample_time()) {
       m_log.custom<Log::debug>("Sample data");
@@ -342,17 +258,11 @@ void MonteDriver<RunType>::single_run(Index cond_index) {
       run_counter.increment_samples();
       if (m_enum && m_enum->on_sample()) {
         m_enum->insert(m_mc.config());
+      }
 
-        if (run_counter.samples() != 0 &&
-                m_log << "samples: " << run_counter.samples()
-                      << " / output_period: " << m_enum_output_period
-                      << std::endl;
-            run_counter.samples() % m_enum_output_period == 0) {
-          write_enum_output(cond_index);
-        } else {
-          m_log << "samples: " << run_counter.samples()
-                << " / output_period: " << m_enum_output_period << std::endl;
-        }
+      if (run_counter.samples() != 0 &&
+          run_counter.samples() % m_enum_output_period == 0) {
+        write_enum_output(cond_index);
       }
     }
   }
@@ -368,14 +278,27 @@ void MonteDriver<RunType>::single_run(Index cond_index) {
         << "(s/step)\n"
         << std::endl;
 
-  m_log.write("DoF");
-  m_log << "write: " << m_dir.final_state_json(cond_index) << "\n" << std::endl;
-  to_json(m_mc.configdof(), json).write(m_dir.final_state_json(cond_index));
-
+  // write conditions.i/final_state.json
+  // - if save_state_details==true
+  // - if dependent_runs (used as a restart file)
+  if (m_settings.save_state_details() || m_settings.dependent_runs()) {
+    fs::create_directories(m_dir.conditions_dir(cond_index));
+    m_log.write("DoF");
+    m_log << "write: " << m_dir.final_state_json(cond_index) << "\n"
+          << std::endl;
+    jsonParser json;
+    to_json(m_mc.configdof(), json).write(m_dir.final_state_json(cond_index));
+  }
   m_log.write("Output files");
   m_mc.write_results(cond_index);
   m_log << std::endl;
 
+  // if only keeping final_state.json as a restart file, remove the previous
+  if (!m_settings.save_state_details() && cond_index > 0) {
+    if (fs::exists(m_dir.conditions_dir(cond_index - 1))) {
+      fs::remove_all(m_dir.conditions_dir(cond_index - 1));
+    }
+  }
   if (m_enum) {
     write_enum_output(cond_index);
   }
@@ -457,24 +380,26 @@ MonteDriver<RunType>::make_conditions_list(const PrimClex &primclex,
       // read existing conditions, and check for agreement
       m_log << "Reading custom_conditions..." << std::endl;
       std::vector<CondType> custom_cond(settings.custom_conditions(m_mc));
-      m_log << "Checking existing conditions..." << std::endl;
-      int i = 0;
-      while (fs::exists(m_dir.conditions_json(i))) {
-        CondType existing;
-        m_log << m_dir.conditions_json(i) << std::endl;
-        jsonParser json(m_dir.conditions_json(i));
-        from_json(existing, primclex, json, m_mc);
-        if (existing != custom_cond[i]) {
-          m_err_log.error("Conditions mismatch");
-          m_err_log << "existing conditions: " << m_dir.conditions_json(i)
-                    << "\n";
-          m_err_log << existing << "\n\n";
-          m_err_log << "specified custom conditions " << i << ":\n";
-          m_err_log << custom_cond[i] << "\n" << std::endl;
-          throw std::runtime_error(
-              "ERROR: custom_conditions list has changed.");
+      if (m_settings.save_state_details()) {
+        m_log << "Checking existing conditions..." << std::endl;
+        int i = 0;
+        while (fs::exists(m_dir.conditions_json(i))) {
+          CondType existing;
+          m_log << m_dir.conditions_json(i) << std::endl;
+          jsonParser json(m_dir.conditions_json(i));
+          from_json(existing, primclex, json, m_mc);
+          if (existing != custom_cond[i]) {
+            m_err_log.error("Conditions mismatch");
+            m_err_log << "existing conditions: " << m_dir.conditions_json(i)
+                      << "\n";
+            m_err_log << existing << "\n\n";
+            m_err_log << "specified custom conditions " << i << ":\n";
+            m_err_log << custom_cond[i] << "\n" << std::endl;
+            throw std::runtime_error(
+                "ERROR: custom_conditions list has changed.");
+          }
+          ++i;
         }
-        ++i;
       }
       m_log << "Finished reading custom conditions" << std::endl << std::endl;
       return custom_cond;
@@ -500,25 +425,27 @@ MonteDriver<RunType>::make_conditions_list(const PrimClex &primclex,
         incrementing_cond += cond_increment;
       }
 
-      m_log << "Checking existing conditions..." << std::endl;
-      int i = 0;
-      while (fs::exists(m_dir.conditions_json(i)) &&
-             i < conditions_list.size()) {
-        CondType existing;
-        jsonParser json(m_dir.conditions_json(i));
-        from_json(existing, primclex, json, m_mc);
-        if (existing != conditions_list[i]) {
-          m_err_log.error("Conditions mismatch");
-          m_err_log << "existing conditions: " << m_dir.conditions_json(i)
-                    << "\n";
-          m_err_log << existing << "\n";
-          m_err_log << "incremental conditions " << i << ":\n";
-          m_err_log << conditions_list[i] << "\n" << std::endl;
-          throw std::runtime_error(
-              "ERROR: initial_conditions or incremental_conditions has "
-              "changed.");
+      if (m_settings.save_state_details()) {
+        m_log << "Checking existing conditions..." << std::endl;
+        int i = 0;
+        while (fs::exists(m_dir.conditions_json(i)) &&
+               i < conditions_list.size()) {
+          CondType existing;
+          jsonParser json(m_dir.conditions_json(i));
+          from_json(existing, primclex, json, m_mc);
+          if (existing != conditions_list[i]) {
+            m_err_log.error("Conditions mismatch");
+            m_err_log << "existing conditions: " << m_dir.conditions_json(i)
+                      << "\n";
+            m_err_log << existing << "\n";
+            m_err_log << "incremental conditions " << i << ":\n";
+            m_err_log << conditions_list[i] << "\n" << std::endl;
+            throw std::runtime_error(
+                "ERROR: initial_conditions or incremental_conditions has "
+                "changed.");
+          }
+          ++i;
         }
-        ++i;
       }
 
       m_log << "Finished reading incremental conditions" << std::endl

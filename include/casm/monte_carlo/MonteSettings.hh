@@ -133,6 +133,10 @@ class MonteSettings : protected CASM::jsonParser {
   /// \brief Requested confidence level. Default 0.95.
   double confidence() const;
 
+  /// \brief Returns true if initial / final state are requested for each
+  /// condition
+  bool save_state_details() const;
+
   /// \brief Returns true if snapshots are requested
   bool write_trajectory() const;
 
@@ -142,13 +146,6 @@ class MonteSettings : protected CASM::jsonParser {
 
   /// \brief Writes all observations
   bool write_observations() const;
-
-  /// \brief Write csv versions of files? (csv is the default format if no
-  /// 'output_format' given)
-  bool write_csv() const;
-
-  /// \brief Write json versions of files?
-  bool write_json() const;
 
   /// \brief Directory where output should go
   const fs::path output_directory() const;

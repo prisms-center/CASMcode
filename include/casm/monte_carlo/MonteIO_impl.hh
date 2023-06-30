@@ -294,39 +294,19 @@ void write_results(const MonteSettings &settings, const MonteType &mc,
     MonteCarloDirectoryStructure dir(settings.output_directory());
     auto formatter = make_results_formatter(mc);
 
-    // write csv path results
-    if (settings.write_csv()) {
-      _log << "write: " << dir.results_csv() << "\n";
-      fs::path file = dir.results_csv();
-      fs::ofstream sout;
+    _log << "write: " << dir.results_json() << "\n";
+    fs::path file = dir.results_json();
 
-      if (!fs::exists(file)) {
-        sout.open(file);
-        formatter.print_header(&mc, sout);
-      } else {
-        sout.open(file, std::ios::app);
-      }
-
-      formatter.print(&mc, sout);
-
-      sout.close();
+    jsonParser results;
+    if (fs::exists(file)) {
+      results.read(file);
+    } else {
+      results = jsonParser::object();
     }
 
-    // write json path results
-    if (settings.write_json()) {
-      _log << "write: " << dir.results_json() << "\n";
-      fs::path file = dir.results_json();
+    formatter.to_json_arrays(&mc, results);
+    results.write(file);
 
-      jsonParser results;
-      if (fs::exists(file)) {
-        results.read(file);
-      } else {
-        results = jsonParser::object();
-      }
-
-      formatter.to_json_arrays(&mc, results);
-      results.write(file);
-    }
   } catch (...) {
     std::cerr << "ERROR writing results" << std::endl;
     throw;
@@ -338,6 +318,9 @@ template <typename MonteType>
 void write_conditions_json(const MonteSettings &settings, const MonteType &mc,
                            size_type cond_index, Log &_log) {
   try {
+    if (!settings.save_state_details()) {
+      return;
+    }
     MonteCarloDirectoryStructure dir(settings.output_directory());
     fs::create_directories(dir.conditions_dir(cond_index));
     jsonParser json;

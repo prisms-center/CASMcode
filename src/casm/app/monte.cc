@@ -329,19 +329,10 @@ int _run_GrandCanonical(PrimClex &primclex,
       }
 
       Monte::MonteCarloDirectoryStructure dir(gc_settings.output_directory());
-      if (gc_settings.write_csv()) {
-        if (fs::exists(dir.results_csv())) {
-          err_log() << "Existing file at: " << dir.results_csv() << std::endl;
-          err_log() << "  Exiting..." << std::endl;
-          return ERR_EXISTING_FILE;
-        }
-      }
-      if (gc_settings.write_json()) {
-        if (fs::exists(dir.results_json())) {
-          err_log() << "Existing file at: " << dir.results_json() << std::endl;
-          err_log() << "  Exiting..." << std::endl;
-          return ERR_EXISTING_FILE;
-        }
+      if (fs::exists(dir.results_json())) {
+        err_log() << "Existing file at: " << dir.results_json() << std::endl;
+        err_log() << "  Exiting..." << std::endl;
+        return ERR_EXISTING_FILE;
       }
 
       Monte::GrandCanonical gc(primclex, gc_settings, log());

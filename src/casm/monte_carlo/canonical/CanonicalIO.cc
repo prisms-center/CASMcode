@@ -84,6 +84,16 @@ DataFormatter<ConstMonteCarloPtr> make_results_formatter(const Canonical &mc) {
       formatter.push_back(MonteCarloPrecFormatter(name));
       exclude.insert(name);
     }
+    auto subspaces = mc.order_parameter_subspaces();
+    if (subspaces != nullptr) {
+      for (int i = 0; i < subspaces->size(); ++i) {
+        name =
+            std::string("order_parameter_subspace(") + std::to_string(i) + ")";
+        formatter.push_back(MonteCarloMeanFormatter(name));
+        formatter.push_back(MonteCarloPrecFormatter(name));
+        exclude.insert(name);
+      }
+    }
   }
 
   // include mean/prec of other properties

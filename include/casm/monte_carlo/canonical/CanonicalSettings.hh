@@ -41,6 +41,11 @@ class CanonicalSettings : public EquilibriumMonteSettings {
   std::shared_ptr<OrderParameter> make_order_parameter(
       const PrimClex &primclex) const;
 
+  /// \brief Make order parameter subspaces (indices of basis vectors forming
+  /// each subspace)
+  std::shared_ptr<std::vector<std::vector<int>>>
+  make_order_parameter_subspaces() const;
+
   // --- Sampler settings ---------------------
 
   /// \brief Construct MonteSamplers as specified in the MonteSettings
