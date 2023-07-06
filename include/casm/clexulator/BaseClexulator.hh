@@ -99,38 +99,37 @@ class BaseClexulator {
   ///
   /// \param _configdofvalues DoF values to be used as input to the basis
   ///      functions
-  /// \param _force
+  /// \param _force This option is deprecated, pointers are now always reset
+  ///      for safety
   ///
   /// Notes:
   /// - In the vast majority of cases this is handled by the `calc_X` method
   void set_configdofvalues(ConfigDoFValues const &_configdofvalues,
                            bool _force = false) const {
-    if (m_configdofvalues_ptr != &_configdofvalues || _force) {
-      m_configdofvalues_ptr = &_configdofvalues;
-      m_occ_ptr = _configdofvalues.occupation.data();
-      for (auto const &dof : m_local_dof_registry) {
-        auto it = _configdofvalues.local_dof_values.find(dof.first);
-        if (it == _configdofvalues.local_dof_values.end()) {
-          std::stringstream msg;
-          msg << "Clexulator error: ConfigDoFValues missing required local DoF "
-                 "type '"
-              << dof.first << "'";
-          throw std::runtime_error(msg.str());
-        }
-        m_local_dof_ptrs[dof.second] = &it->second;
+    m_configdofvalues_ptr = &_configdofvalues;
+    m_occ_ptr = _configdofvalues.occupation.data();
+    for (auto const &dof : m_local_dof_registry) {
+      auto it = _configdofvalues.local_dof_values.find(dof.first);
+      if (it == _configdofvalues.local_dof_values.end()) {
+        std::stringstream msg;
+        msg << "Clexulator error: ConfigDoFValues missing required local DoF "
+               "type '"
+            << dof.first << "'";
+        throw std::runtime_error(msg.str());
       }
+      m_local_dof_ptrs[dof.second] = &it->second;
+    }
 
-      for (auto const &dof : m_global_dof_registry) {
-        auto it = _configdofvalues.global_dof_values.find(dof.first);
-        if (it == _configdofvalues.global_dof_values.end()) {
-          std::stringstream msg;
-          msg << "Clexulator error: ConfigDoFValues missing required global "
-                 "DoF type '"
-              << dof.first << "'";
-          throw std::runtime_error(msg.str());
-        }
-        m_global_dof_ptrs[dof.second] = &it->second;
+    for (auto const &dof : m_global_dof_registry) {
+      auto it = _configdofvalues.global_dof_values.find(dof.first);
+      if (it == _configdofvalues.global_dof_values.end()) {
+        std::stringstream msg;
+        msg << "Clexulator error: ConfigDoFValues missing required global "
+               "DoF type '"
+            << dof.first << "'";
+        throw std::runtime_error(msg.str());
       }
+      m_global_dof_ptrs[dof.second] = &it->second;
     }
   }
 
