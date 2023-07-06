@@ -137,6 +137,26 @@ class Clexulator {
     return m_clex->weight_matrix();
   }
 
+  /// \brief Return sublat_indices
+  const std::set<int> &sublat_indices() const {
+    return m_clex->sublat_indices();
+  }
+
+  /// \brief Return n_sublattices
+  size_type n_sublattices() const { return m_clex->n_sublattices(); }
+
+  /// \brief Set the pointer to DoF values
+  ///
+  /// Notes:
+  /// - There is a small overhead that could be avoided by setting this
+  ///   manually only when the configuration being calculated is changed, but
+  ///   currently for safety this is called by the `calc_X` methods everytime
+  ///   and no savings are possible.
+  ///
+  void set_configdofvalues(ConfigDoF const &configdof) const {
+    m_clex->set_configdofvalues(configdof.values(), true);
+  }
+
   /// \brief Calculate contribution to global correlations from one unit cell
   ///
   /// \param _corr_begin Pointer to beginning of data structure where

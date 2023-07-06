@@ -149,7 +149,6 @@ void MonteCarloEnum::save_configs(bool dry_run) {
   _log() << "configuration enumeration metric: " << m_metric_args << "\n";
   _log() << flag << formatter(halloffame().begin(), halloffame().end());
   _log() << std::endl;
-  std::cout << "save_configs 19" << std::endl;
 }
 
 void MonteCarloEnum::print_info() const {
