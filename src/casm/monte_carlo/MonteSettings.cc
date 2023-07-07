@@ -297,42 +297,81 @@ Monte::ENUM_SAMPLE_MODE MonteSettings::enumeration_sample_mode() const {
       "data", "enumeration", "sample_mode", help<Monte::ENUM_SAMPLE_MODE>());
 }
 
-/// \brief Insert configurations in their canonical form (default true)
+/// \brief Only insert configurations that are not already enumerated (default
+/// true)
 bool MonteSettings::enumeration_check_existence() const {
   std::string help =
       "(bool, optional, default=true)\n"
-      "  If true, only configurations that do not already exist\n"
-      "  in the config list are inserted into the enumeration  \n"
-      "  hall of fame.";
+      "  If true, only configurations that do not already exist in  \n"
+      "  the config list are inserted into the enumeration hall of  \n"
+      "  fame. If this is true, one of 'insert_canonical' or        \n"
+      "  'insert_primitive_only' must also be true.";
 
-  if (!_is_setting("data", "enumeration", "check_existence")) {
-    return true;
+  bool check_existence = true;
+  if (_is_setting("data", "enumeration", "check_existence")) {
+    check_existence =
+        _get_setting<bool>("data", "enumeration", "check_existence", help);
   }
-  return _get_setting<bool>("data", "enumeration", "check_existence", help);
+
+  // if check_existence, insert_canonical or insert_primitive_only must be true
+  if (check_existence) {
+    if (!enumeration_insert_canonical() &&
+        !enumeration_insert_primitive_only()) {
+      throw std::runtime_error(
+          "Error in Monte Carlo enumeration in settings: "
+          "If 'check_existence' is true, then 'insert_canonical' or "
+          "'insert_primitive_only' must be true");
+    }
+  }
+  return check_existence;
 }
 
 /// \brief Insert configurations in their canonical form (default true)
 bool MonteSettings::enumeration_insert_canonical() const {
   std::string help =
       "(bool, optional, default=true)\n"
-      "  If true, configurations are inserted into the         \n"
-      "  enumeration hall of fame in their canonical form. If  \n"
-      "  'check_existence' is true, this must be set to true.";
+      "  If true, configurations are put into canonical form before \n"
+      "  being inserted into the enumeration hall of fame.";
 
-  bool val;
-  if (!_is_setting("data", "enumeration", "insert_canonical")) {
-    val = true;
-  } else {
-    val = _get_setting<bool>("data", "enumeration", "insert_canonical", help);
+  bool insert_canonical = true;
+  if (_is_setting("data", "enumeration", "insert_canonical")) {
+    insert_canonical =
+        _get_setting<bool>("data", "enumeration", "insert_canonical", help);
   }
+  return insert_canonical;
+}
 
-  // if check_existence, insert_canonical must be true
-  if (enumeration_check_existence() && !val) {
-    throw std::runtime_error(
-        "Error in Monte Carlo enumeration in settings: "
-        "If 'check_existence' is true, then 'insert_canonical' must be true");
+/// \brief Insert primitive configurations (in their canonical form) in
+///     the hall of fame (default true)
+bool MonteSettings::enumeration_insert_primitive_only() const {
+  std::string help =
+      "(bool, optional, default=true)\n"
+      "  If true, configurations are put into primitive and         \n"
+      "  canonical form before being inserted into the enumeration  \n"
+      "  hall of fame.";
+
+  bool insert_primitive_only = true;
+  if (_is_setting("data", "enumeration", "insert_primitive_only")) {
+    insert_primitive_only = _get_setting<bool>("data", "enumeration",
+                                               "insert_primitive_only", help);
   }
-  return val;
+  return insert_primitive_only;
+}
+
+/// \brief If true, only save primitive configurations (in their
+///     canonical form) in the project database (default true)
+bool MonteSettings::enumeration_save_primitive_only() const {
+  std::string help =
+      "(bool, optional, default=true)\n"
+      "  If true, only the primitive form of configurations in the  \n"
+      "  hall of fame are saved into the project database.";
+
+  bool save_primitive_only = true;
+  if (_is_setting("data", "enumeration", "save_primitive_only")) {
+    save_primitive_only =
+        _get_setting<bool>("data", "enumeration", "save_primitive_only", help);
+  }
+  return save_primitive_only;
 }
 
 /// \brief Returns enumeration halloffame max size (default 100)
@@ -449,7 +488,46 @@ bool MonteSettings::enumeration_save_configs() const {
   return save_configs;
 }
 
+/// \brief Returns true if configs should be saved in the database
+///     periodically before completing the run (default=false)
+bool MonteSettings::enumeration_save_configs_periodically() const {
+  if (!is_enumeration() || !_is_setting("data", "enumeration")) {
+    return false;
+  }
+
+  ParentInputParser parser{(*this)["data"]["enumeration"]};
+
+  bool save_configs_periodically = true;
+  parser.optional(save_configs_periodically, "save_configs_periodically");
+  std::runtime_error error_if_invalid{
+      "Error reading "
+      "\"data\"/\"enumeration\"/\"save_configs_periodically\""};
+  report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
+
+  return save_configs_periodically;
+}
+
+/// \brief How often to save configs in the database
+///     periodically before completing the run (default=10000)
+Index MonteSettings::enumeration_save_configs_period() const {
+  if (!is_enumeration() || !_is_setting("data", "enumeration")) {
+    return 10000;
+  }
+
+  ParentInputParser parser{(*this)["data"]["enumeration"]};
+
+  Index save_configs_period = 10000;
+  parser.optional(save_configs_period, "save_configs_period");
+  std::runtime_error error_if_invalid{
+      "Error reading "
+      "\"data\"/\"enumeration\"/\"save_configs_period\""};
+  report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
+
+  return save_configs_period;
+}
+
 /// \brief How often to output enumerated configurations
+///     (default=10000)
 Index MonteSettings::enumeration_output_period() const {
   if (!is_enumeration() || !_is_setting("data", "enumeration")) {
     return 10000;

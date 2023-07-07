@@ -1,6 +1,7 @@
 #include "casm/app/info/methods/ConfigurationInfoInterface.hh"
 
 #include "casm/app/ProjectSettings.hh"
+#include "casm/app/info/InfoInterface_impl.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/container/json_io.hh"
 #include "casm/casm_io/container/stream_io.hh"
@@ -8,6 +9,7 @@
 #include "casm/casm_io/dataformatter/DataFormatter_impl.hh"
 #include "casm/casm_io/dataformatter/DatumFormatterAdapter.hh"
 #include "casm/casm_io/json/InputParser_impl.hh"
+#include "casm/casm_io/json/optional.hh"
 #include "casm/clex/Configuration.hh"
 #include "casm/clex/FillSupercell.hh"
 #include "casm/clex/PrimClex.hh"
@@ -35,19 +37,26 @@ std::shared_ptr<Structure const> open_shared_prim(fs::path root) {
 struct ConfigurationInfoData {
   ConfigurationInfoData(PrimClex const *_primclex, fs::path _root,
                         std::shared_ptr<Structure const> _shared_prim,
-                        Configuration const &_configuration,
+                        std::optional<Configuration> _optional_configuration,
                         jsonParser const &_params_json)
       : shared_prim(_shared_prim),
-        configuration(_configuration),
+        optional_configuration(_optional_configuration),
         params_json(_params_json),
         m_primclex(_primclex),
         m_root(_root) {}
 
   std::shared_ptr<Structure const> shared_prim;
 
-  Configuration const &configuration;
+  std::optional<Configuration> optional_configuration;
 
   jsonParser const &params_json;
+
+  Configuration const &configuration() const {
+    if (!optional_configuration.has_value()) {
+      throw std::runtime_error("Error in ConfigurationInfo: no configuration");
+    }
+    return *optional_configuration;
+  }
 
   PrimClex const &primclex() const {
     if (m_primclex) {
@@ -92,7 +101,7 @@ ConfigurationInfoFormatter<std::string> configuration_name() {
       "A name given to the configuration. Consists of the supercell name and "
       "an index. Requires a CASM project.",
       [](ConfigurationInfoData const &data) -> std::string {
-        return data.configuration.name();
+        return data.configuration().name();
       });
 }
 
@@ -172,13 +181,13 @@ ConfigurationInfoFormatter<jsonParser> slice() {
         jsonParser j;
 
         // Make a super-configuration
-        Supercell const &supercell = data.configuration.supercell();
+        Supercell const &supercell = data.configuration().supercell();
         auto shared_supercell = std::make_shared<Supercell const>(
             supercell.shared_prim(),
             supercell.sym_info().transformation_matrix_to_super() * T);
 
         Configuration superconfig =
-            fill_supercell(data.configuration, shared_supercell);
+            fill_supercell(data.configuration(), shared_supercell);
 
         // Write info about a slice of the super-config
         ConfigDoF const &configdof = superconfig.configdof();
@@ -257,7 +266,7 @@ VectorXdConfigurationInfoFormatter normal_coordinate() {
         report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
 
         DoFSpace const &dof_space = *dof_space_ptr;
-        return get_normal_coordinate(data.configuration, dof_space);
+        return get_normal_coordinate(data.configuration(), dof_space);
       });
 }
 
@@ -284,8 +293,9 @@ ConfigurationInfoFormatter<jsonParser> normal_coordinate_at_each_unitcell() {
         report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
 
         DoFSpace const &dof_space = *dof_space_ptr;
-        DoFSpaceIndexConverter index_converter{data.configuration, dof_space};
-        auto const &unitcell_index_converter = data.configuration.supercell()
+        DoFSpaceIndexConverter index_converter{data.configuration(), dof_space};
+        auto const &unitcell_index_converter = data.configuration()
+                                                   .supercell()
                                                    .sym_info()
                                                    .unitcell_index_converter();
 
@@ -295,7 +305,7 @@ ConfigurationInfoFormatter<jsonParser> normal_coordinate_at_each_unitcell() {
         for (int i = 0; i < unitcell_index_converter.total_sites(); ++i) {
           xtal::UnitCell unitcell = unitcell_index_converter(i);
           Eigen::VectorXd normal_coordinate = get_normal_coordinate_at(
-              data.configuration, dof_space, index_converter, unitcell);
+              data.configuration(), dof_space, index_converter, unitcell);
           {
             jsonParser tjson;
             to_json(unitcell, tjson, jsonParser::as_array());
@@ -333,7 +343,7 @@ VectorXdConfigurationInfoFormatter order_parameter() {
         report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
 
         DoFSpace const &dof_space = *dof_space_ptr;
-        return get_mean_normal_coordinate(data.configuration, dof_space);
+        return get_mean_normal_coordinate(data.configuration(), dof_space);
       });
 }
 
@@ -343,27 +353,18 @@ ConfigurationInfoFormatter<jsonParser> insert() {
       "Insert configurations into the project configuration database. May take "
       "the following params: \"config_list\" (optional, array of configuration "
       "objects), additional configurations to be imported into the "
-      "configuration database; \"insert_primitive_only\" (bool, "
-      "default=false), if true, make and insert primitive configurations only; "
-      "\"dry_run\" (bool) if true, insert configurations and report results, "
-      "but do not save database. The output is an array of JSON objects, "
-      "giving the configurations along with the name they were given when "
-      "inserted.  vector, of size equal to the DoF space basis size.",
+      "configuration database; \"enum_output_file\" (optional, path to JSON "
+      "file containing an array of with \"config\" attributes), additional "
+      "configurations to be imported into the configuration database; "
+      "\"insert_primitive_only\" (bool, default=false), if true, make and "
+      "insert primitive configurations only; \"dry_run\" (bool) if true, "
+      "insert configurations and report results, but do not save database. "
+      "The output is an array of JSON objects, giving the configurations "
+      "along with the name they were given when inserted.",
       [](ConfigurationInfoData const &data) -> jsonParser {
         auto shared_prim = data.primclex().shared_prim();
         auto &configuration_db = data.primclex().db<Configuration>();
         auto &supercell_db = data.primclex().db<Supercell>();
-
-        // --- hack to get input configuration with primclex shared_prim in all
-        // cases ---
-        auto shared_supercell = std::make_shared<Supercell const>(
-            shared_prim, data.configuration.supercell()
-                             .sym_info()
-                             .transformation_matrix_to_super());
-        Configuration configuration(shared_supercell);
-        configuration.configdof().values() =
-            data.configuration.configdof().values();
-        // --- end ---
 
         ParentInputParser parser{data.params_json};
         std::runtime_error error_if_invalid{"Error reading \"insert\" input"};
@@ -375,8 +376,22 @@ ConfigurationInfoFormatter<jsonParser> insert() {
         parser.optional(dry_run, "dry_run");
 
         std::set<Configuration> configs;
-        configs.insert(configuration);
 
+        if (data.optional_configuration.has_value()) {
+          // --- hack to get input configuration with primclex shared_prim in
+          // all cases ---
+          auto shared_supercell = std::make_shared<Supercell const>(
+              shared_prim, data.configuration()
+                               .supercell()
+                               .sym_info()
+                               .transformation_matrix_to_super());
+          Configuration configuration(shared_supercell);
+          configuration.configdof().values() =
+              data.configuration().configdof().values();
+          // --- end ---
+
+          configs.insert(configuration);
+        }
         if (parser.self.contains("config_list")) {
           int n = parser.self["config_list"].size();
           for (int i = 0; i < n; ++i) {
@@ -384,6 +399,35 @@ ConfigurationInfoFormatter<jsonParser> insert() {
                 parser.require<Configuration>(
                     fs::path{"config_list"} / std::to_string(i), shared_prim);
             report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
+            configs.insert(*configuration_ptr);
+          }
+        }
+        if (parser.self.contains("enum_output_file")) {
+          std::string enum_output_file;
+          parser.require(enum_output_file, "enum_output_file");
+          report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
+
+          fs::path filepath{enum_output_file};
+          if (!fs::exists(filepath)) {
+            parser.insert_error("enum_output_file", "File does not exist");
+            report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
+          }
+          jsonParser json{filepath};
+          ParentInputParser enum_output_parser{json};
+          std::runtime_error enum_output_error_if_invalid{
+              "Error reading \"insert\"/\"enum_output_file\" file"};
+          if (!enum_output_parser.self.is_array()) {
+            enum_output_parser.error.insert("Not an array");
+            report_and_throw_if_invalid(enum_output_parser, CASM::log(),
+                                        enum_output_error_if_invalid);
+          }
+          int n = enum_output_parser.self.size();
+          for (int i = 0; i < n; ++i) {
+            std::unique_ptr<Configuration> configuration_ptr =
+                enum_output_parser.require<Configuration>(
+                    fs::path{std::to_string(i)} / "config", shared_prim);
+            report_and_throw_if_invalid(enum_output_parser, CASM::log(),
+                                        enum_output_error_if_invalid);
             configs.insert(*configuration_ptr);
           }
         }
@@ -406,6 +450,14 @@ ConfigurationInfoFormatter<jsonParser> insert() {
           tjson["primitive_name"] = result.primitive_it->name();
           json.push_back(tjson);
         }
+
+        // Set primclex pointer
+        for (auto const &config : configuration_db) {
+          if (!config.supercell().has_primclex()) {
+            config.supercell().set_primclex(&data.primclex());
+          }
+        }
+
         if (!dry_run) {
           configuration_db.commit();
           supercell_db.commit();
@@ -426,7 +478,10 @@ template <>
 struct Adapter<Configuration, ConfigurationInfoData> {
   Configuration const &operator()(
       ConfigurationInfoData const &adaptable) const {
-    return adaptable.configuration;
+    if (!adaptable.optional_configuration.has_value()) {
+      throw std::runtime_error("Error in ConfigurationInfo: no configuration");
+    }
+    return *adaptable.optional_configuration;
   }
 };
 
@@ -479,10 +534,10 @@ std::string ConfigurationInfoInterface::desc() const {
       "    to output. The allowed options are:                            \n\n";
 
   std::stringstream ss;
+  ss << name() + ": \n\n" + description + custom_options;
   auto dict = make_configuration_info_dict();
-  dict.print_help(ss, DatumFormatterClass::Property);
-
-  return name() + ": \n\n" + description + custom_options + ss.str();
+  print_info_desc(dict, ss);
+  return ss.str();
 }
 
 std::string ConfigurationInfoInterface::name() const {
@@ -528,8 +583,8 @@ void ConfigurationInfoInterface::run(jsonParser const &json_options,
   report_and_throw_if_invalid(parser, log, error_if_invalid);
 
   // read "configuration"
-  std::unique_ptr<Configuration> configuration_ptr =
-      parser.require<Configuration>("configuration", shared_prim);
+  std::optional<Configuration> optional_configuration;
+  parser.optional(optional_configuration, "configuration", shared_prim);
 
   // read "properties"
   std::vector<std::string> properties;
@@ -540,18 +595,19 @@ void ConfigurationInfoInterface::run(jsonParser const &json_options,
   parser.optional(params_json, "params");
   report_and_throw_if_invalid(parser, log, error_if_invalid);
 
-  Configuration const &configuration = *configuration_ptr;
   DataFormatterDictionary<ConfigurationInfoData> configuration_info_dict =
       make_configuration_info_dict();
 
   // format
   auto formatter = configuration_info_dict.parse(properties);
   jsonParser json;
-  ConfigurationInfoData data{primclex, root, shared_prim, configuration,
-                             params_json};
-  Supercell const &supercell = configuration.supercell();
-  if (!supercell.has_primclex()) {
-    supercell.set_primclex(&data.primclex());
+  ConfigurationInfoData data{primclex, root, shared_prim,
+                             optional_configuration, params_json};
+  if (data.optional_configuration.has_value()) {
+    Supercell const &supercell = data.configuration().supercell();
+    if (!supercell.has_primclex()) {
+      supercell.set_primclex(&data.primclex());
+    }
   }
   formatter.to_json(data, json);
   log << json << std::endl;

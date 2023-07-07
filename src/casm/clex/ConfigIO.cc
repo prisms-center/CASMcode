@@ -412,11 +412,11 @@ const std::string AllCorrContribution::Desc =
     "normalized), for every unitcell in the supercell. The output is a matrix, "
     "with each row corresponding to a unitcell. The mean over rows is equal to "
     "the `corr` output. The arguments follow the same conventions as `corr` "
-    "accepting any of:\n"
-    "- `all_corr_contribution`\n"
-    "- `all_corr_contribution(clex_name)`\n"
-    "- `all_corr_contribution(indices)`\n"
-    "- `all_corr_contribution(clex_name, indices)`. \n"
+    "accepting any of:\n\n"
+    "- `all_corr_contribution`\n\n"
+    "- `all_corr_contribution(clex_name)`\n\n"
+    "- `all_corr_contribution(indices)`\n\n"
+    "- `all_corr_contribution(clex_name, indices)`. \n\n"
     "Coordinates of unit cells can be obtained from the `unitcells` "
     "information of the `info -m SupercellInfo` command.";
 

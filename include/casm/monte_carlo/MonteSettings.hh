@@ -165,11 +165,20 @@ class MonteSettings : protected CASM::jsonParser {
   /// Monte::ENUM_SAMPLE_MODE::ON_SAMPLE)
   Monte::ENUM_SAMPLE_MODE enumeration_sample_mode() const;
 
-  /// \brief Insert configurations in their canonical form
+  /// \brief Only insert configurations that are not already enumerated (default
+  /// true)
+  bool enumeration_check_existence() const;
+
+  /// \brief Insert configurations in their canonical form (default true)
   bool enumeration_insert_canonical() const;
 
-  /// \brief Only insert configurations that are not already enumerated
-  bool enumeration_check_existence() const;
+  /// \brief Insert primitive configurations (in their canonical form) in
+  ///     the hall of fame (default true)
+  bool enumeration_insert_primitive_only() const;
+
+  /// \brief If true, only save primitive configurations (in their
+  ///     canonical form) in the project database (default true)
+  bool enumeration_save_primitive_only() const;
 
   /// \brief Returns enumeration halloffame max size (default 100)
   Index enumeration_N_halloffame() const;
@@ -189,7 +198,16 @@ class MonteSettings : protected CASM::jsonParser {
   /// \brief Returns true if configs should be saved in the database
   bool enumeration_save_configs() const;
 
+  /// \brief Returns true if configs should be saved in the database
+  ///     periodically before completing the run (default=false)
+  bool enumeration_save_configs_periodically() const;
+
+  /// \brief How often to save configs in the database
+  ///     periodically before completing the run (default=10000)
+  Index enumeration_save_configs_period() const;
+
   /// \brief How often to output enumerated configurations
+  ///     (default=10000)
   Index enumeration_output_period() const;
 
  protected:

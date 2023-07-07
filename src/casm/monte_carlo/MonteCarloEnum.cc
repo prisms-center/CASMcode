@@ -12,11 +12,14 @@ namespace Monte {
 /// \brief Insert in hall of fame if 'check' passes
 MonteCarloEnum::HallOfFameType::InsertResult MonteCarloEnum::_insert(
     const Configuration &config) {
-  if (insert_canonical()) {
-    return m_halloffame->insert(
-        config.in_canonical_supercell().canonical_form());
+  Configuration _config = config;
+  if (insert_primitive_only()) {
+    m_halloffame->insert(
+        config.primitive().in_canonical_supercell().canonical_form());
+  } else if (insert_canonical()) {
+    m_halloffame->insert(config.in_canonical_supercell().canonical_form());
   } else {
-    return m_halloffame->insert(config);
+    m_halloffame->insert(config);
   }
 }
 
@@ -98,7 +101,7 @@ void MonteCarloEnum::save_configs(bool dry_run) {
   // equivalent supercell, and add to project
   for (const auto &val : halloffame()) {
     double score = val.first;
-    auto insert_res = val.second.insert();
+    auto insert_res = val.second.insert(save_primitive_only());
 
     // store config source info
     jsonParser json_src;
@@ -113,8 +116,6 @@ void MonteCarloEnum::save_configs(bool dry_run) {
         this->_halloffame().exclude(config);
       }
 
-      // store info for printing
-      this->m_data[config.name()] = std::make_pair(is_new, score);
       output.push_back(config);
 
       // store source info
@@ -123,7 +124,12 @@ void MonteCarloEnum::save_configs(bool dry_run) {
       auto it = this->primclex().db<Configuration>().update(tconfig);
     };
 
-    lambda(*insert_res.canonical_it, insert_res.insert_canonical);
+    this->m_data[val.second.name()] = std::make_tuple(
+        insert_res.insert_canonical, insert_res.insert_primitive, score);
+
+    if (insert_res.canonical_it != primclex().db<Configuration>().end()) {
+      lambda(*insert_res.canonical_it, insert_res.insert_canonical);
+    }
 
     if (insert_res.canonical_it != insert_res.primitive_it) {
       lambda(*insert_res.primitive_it, insert_res.insert_primitive);
@@ -136,7 +142,8 @@ void MonteCarloEnum::save_configs(bool dry_run) {
   }
 
   std::string args =
-      "configname is_primitive is_new score potential_energy comp";
+      "configname is_primitive is_new is_new_primitive score potential_energy "
+      "comp";
   if (m_order_parameter != nullptr) {
     args += " order_parameter";
   }

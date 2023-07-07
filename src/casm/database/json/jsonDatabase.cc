@@ -399,8 +399,14 @@ jsonDatabase<Configuration>::iterator jsonDatabase<Configuration>::update(
         "Error in jsonDatabase<Configuration>::update: Configuration not "
         "found");
   }
+  bool is_selected = false;
+  auto selection_it = master_selection().data().find(config.name());
+  if (selection_it != master_selection().data().end()) {
+    is_selected = selection_it->second;
+  }
   this->erase(it);
   auto result = m_config_list.insert(config);
+  master_selection().data().emplace(config.name(), is_selected);
   return _on_insert_or_emplace(result, false).first;
 }
 

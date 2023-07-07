@@ -264,6 +264,14 @@ void MonteDriver<RunType>::single_run(Index cond_index) {
           run_counter.samples() % m_enum_output_period == 0) {
         write_enum_output(cond_index);
       }
+
+      if (m_settings.enumeration_save_configs() && run_counter.samples() != 0 &&
+          m_settings.enumeration_save_configs_periodically() == true &&
+          run_counter.samples() %
+                  m_settings.enumeration_save_configs_period() ==
+              0) {
+        m_enum->save_configs(m_settings.enumeration_dry_run());
+      }
     }
   }
   m_log << std::endl;
@@ -291,7 +299,13 @@ void MonteDriver<RunType>::single_run(Index cond_index) {
   }
   m_log.write("Output files");
   m_mc.write_results(cond_index);
+  m_log.end_section();
+  m_log.begin_section();
   m_log << std::endl;
+
+  if (m_settings.enumeration_save_configs()) {
+    m_enum->save_configs(m_settings.enumeration_dry_run());
+  }
 
   // if only keeping final_state.json as a restart file, remove the previous
   if (!m_settings.save_state_details() && cond_index > 0) {
@@ -309,10 +323,6 @@ void MonteDriver<RunType>::single_run(Index cond_index) {
 /// Save & write enumerated configurations
 template <typename RunType>
 void MonteDriver<RunType>::write_enum_output(Index cond_index) {
-  if (m_settings.enumeration_save_configs()) {
-    m_enum->save_configs(m_settings.enumeration_dry_run());
-  }
-
   if (!m_enum_output_options.file_path.empty()) {
     m_log.write("Enumerated configurations");
     m_log << "number of configurations: " << m_enum->halloffame().size()
@@ -328,13 +338,15 @@ void MonteDriver<RunType>::write_enum_output(Index cond_index) {
     FormattedDataFile<std::pair<double, Configuration>> data_out(tmp_options);
 
     std::vector<std::string> args = {
-        "selected", "is_primitive", "score",     "potential_energy",
-        "comp",     "comp_n",       "atom_frac", "corr"};
+        "selected",         "is_primitive", "score",
+        "potential_energy", "comp",         "comp_n",
+        "atom_frac",        "corr",         "config"};
     if (m_mc.order_parameter() != nullptr) {
       args.push_back("order_parameter");
     }
     if (m_settings.enumeration_save_configs()) {
       args.push_back("is_new");
+      args.push_back("is_new_primitive");
       args.push_back("name");
     }
     if (m_mc.conditions().corr_matching_pot().has_value()) {
