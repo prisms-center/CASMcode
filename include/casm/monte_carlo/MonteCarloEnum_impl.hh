@@ -22,6 +22,8 @@ MonteCarloEnum::MonteCarloEnum(const PrimClex &primclex,
       m_metric_args(set.enumeration_metric_args()),
       m_check_existence(set.enumeration_check_existence()),
       m_insert_canonical(set.enumeration_insert_canonical()),
+      m_insert_primitive_only(set.enumeration_insert_primitive_only()),
+      m_save_primitive_only(set.enumeration_save_primitive_only()),
       m_order_parameter(
           mc.order_parameter() == nullptr
               ? std::shared_ptr<OrderParameter>()
@@ -71,7 +73,18 @@ MonteCarloEnum::MonteCarloEnum(const PrimClex &primclex,
 
   config_query_dict.insert(GenericDatumFormatter<bool, Configuration>(
       "is_new", "is_new",
-      [&](Configuration const &config) { return m_data[config.name()].first; },
+      [&](Configuration const &config) {
+        return std::get<0>(m_data[config.name()]);
+      },
+      [&](Configuration const &config) {
+        return m_data.find(config.name()) != m_data.end();
+      }));
+
+  config_query_dict.insert(GenericDatumFormatter<bool, Configuration>(
+      "is_new_primitive", "is_new_primitive",
+      [&](Configuration const &config) {
+        return std::get<1>(m_data[config.name()]);
+      },
       [&](Configuration const &config) {
         return m_data.find(config.name()) != m_data.end();
       }));
@@ -109,6 +122,10 @@ MonteCarloEnum::MonteCarloEnum(const PrimClex &primclex,
   _log() << "  check_existence: " << std::boolalpha << m_check_existence
          << "\n";
   _log() << "  insert_canonical: " << std::boolalpha << m_insert_canonical
+         << "\n";
+  _log() << "  insert_primitive_only: " << std::boolalpha
+         << m_insert_primitive_only << "\n";
+  _log() << "  save_primitive_only: " << std::boolalpha << m_save_primitive_only
          << "\n";
   _log() << "  sample_mode: " << m_sample_mode << "\n";
   _log() << std::endl;

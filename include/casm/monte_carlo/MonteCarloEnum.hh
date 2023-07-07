@@ -105,13 +105,19 @@ class MonteCarloEnum {
   /// \brief return true if running in debug mode
   bool debug() const { return m_debug; }
 
-  /// \brief If true, insert configurations in canonical form.
-  ///
-  /// If m_check_existence == true, this must be true
+  /// \brief If true, only keep configurations that are not enumerated already
   bool check_existence() const { return m_check_existence; }
 
-  /// \brief Map for faster? access of PrimClex's supercells
+  /// \brief If true, insert configurations in canonical form.
   bool insert_canonical() const { return m_insert_canonical; }
+
+  /// \brief If true, make primitive configurations (in canonical form) before
+  ///     inserting in the hall of fame.
+  bool insert_primitive_only() const { return m_insert_primitive_only; }
+
+  /// \brief If true, only save primitive configurations (in canonical form) in
+  ///     the project database when `save_configs` is called.
+  bool save_primitive_only() const { return m_save_primitive_only; }
 
   /// \brief Clear hall of fame and reset excluded
   void reset();
@@ -157,6 +163,14 @@ class MonteCarloEnum {
   /// If m_check_existence == true, this must be true
   bool m_insert_canonical;
 
+  /// \brief If true, make primitive configurations (in canonical form) before
+  ///     inserting in the hall of fame.
+  bool m_insert_primitive_only;
+
+  /// \brief If true, only save primitive configurations (in canonical form) in
+  ///     the project database when `save_configs` is called.
+  bool m_save_primitive_only;
+
   /// \brief Map for faster? access of PrimClex's supercells
   mutable std::map<std::string, Supercell *> m_canon_scel;
 
@@ -166,8 +180,8 @@ class MonteCarloEnum {
   /// \brief Used to hold a copy of the mc object's order parameter calculator
   std::shared_ptr<OrderParameter> m_order_parameter;
 
-  /// \brief holds 'is_new, score' data
-  std::map<std::string, std::pair<bool, double>> m_data;
+  /// \brief holds 'is_new, is_new_primitive, score' data
+  std::map<std::string, std::tuple<bool, bool, double>> m_data;
 };
 
 }  // namespace Monte

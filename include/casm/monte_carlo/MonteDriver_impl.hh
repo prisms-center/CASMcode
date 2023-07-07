@@ -291,7 +291,11 @@ void MonteDriver<RunType>::single_run(Index cond_index) {
   }
   m_log.write("Output files");
   m_mc.write_results(cond_index);
-  m_log << std::endl;
+  m_log << std::endl << std::endl;
+
+  if (m_settings.enumeration_save_configs()) {
+    m_enum->save_configs(m_settings.enumeration_dry_run());
+  }
 
   // if only keeping final_state.json as a restart file, remove the previous
   if (!m_settings.save_state_details() && cond_index > 0) {
@@ -309,10 +313,6 @@ void MonteDriver<RunType>::single_run(Index cond_index) {
 /// Save & write enumerated configurations
 template <typename RunType>
 void MonteDriver<RunType>::write_enum_output(Index cond_index) {
-  if (m_settings.enumeration_save_configs()) {
-    m_enum->save_configs(m_settings.enumeration_dry_run());
-  }
-
   if (!m_enum_output_options.file_path.empty()) {
     m_log.write("Enumerated configurations");
     m_log << "number of configurations: " << m_enum->halloffame().size()

@@ -165,11 +165,20 @@ class MonteSettings : protected CASM::jsonParser {
   /// Monte::ENUM_SAMPLE_MODE::ON_SAMPLE)
   Monte::ENUM_SAMPLE_MODE enumeration_sample_mode() const;
 
-  /// \brief Insert configurations in their canonical form
+  /// \brief Only insert configurations that are not already enumerated (default
+  /// true)
+  bool enumeration_check_existence() const;
+
+  /// \brief Insert configurations in their canonical form (default true)
   bool enumeration_insert_canonical() const;
 
-  /// \brief Only insert configurations that are not already enumerated
-  bool enumeration_check_existence() const;
+  /// \brief Insert primitive configurations (in their canonical form) in
+  ///     the hall of fame (default true)
+  bool enumeration_insert_primitive_only() const;
+
+  /// \brief If true, only save primitive configurations (in their
+  ///     canonical form) in the project database (default true)
+  bool enumeration_save_primitive_only() const;
 
   /// \brief Returns enumeration halloffame max size (default 100)
   Index enumeration_N_halloffame() const;
