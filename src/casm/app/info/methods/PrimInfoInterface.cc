@@ -1,6 +1,7 @@
 #include "casm/app/info/methods/PrimInfoInterface.hh"
 
 #include "casm/app/ProjectSettings.hh"
+#include "casm/app/info/InfoInterface_impl.hh"
 #include "casm/casm_io/Log.hh"
 #include "casm/casm_io/container/stream_io.hh"
 #include "casm/casm_io/dataformatter/DataFormatterTools_impl.hh"
@@ -35,10 +36,10 @@ std::string PrimInfoInterface::desc() const {
       "    The allowed options are:                                       \n\n";
 
   std::stringstream ss;
+  ss << name() + ": \n\n" + description + custom_options;
   auto dict = make_dictionary<std::shared_ptr<Structure const>>();
-  dict.print_help(ss, DatumFormatterClass::Property);
-
-  return name() + ": \n\n" + description + custom_options + ss.str();
+  print_info_desc(dict, ss);
+  return ss.str();
 }
 
 std::string PrimInfoInterface::name() const { return "PrimInfo"; }

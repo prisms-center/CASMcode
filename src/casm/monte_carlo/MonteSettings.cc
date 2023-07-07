@@ -488,7 +488,46 @@ bool MonteSettings::enumeration_save_configs() const {
   return save_configs;
 }
 
+/// \brief Returns true if configs should be saved in the database
+///     periodically before completing the run (default=false)
+bool MonteSettings::enumeration_save_configs_periodically() const {
+  if (!is_enumeration() || !_is_setting("data", "enumeration")) {
+    return false;
+  }
+
+  ParentInputParser parser{(*this)["data"]["enumeration"]};
+
+  bool save_configs_periodically = true;
+  parser.optional(save_configs_periodically, "save_configs_periodically");
+  std::runtime_error error_if_invalid{
+      "Error reading "
+      "\"data\"/\"enumeration\"/\"save_configs_periodically\""};
+  report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
+
+  return save_configs_periodically;
+}
+
+/// \brief How often to save configs in the database
+///     periodically before completing the run (default=10000)
+Index MonteSettings::enumeration_save_configs_period() const {
+  if (!is_enumeration() || !_is_setting("data", "enumeration")) {
+    return 10000;
+  }
+
+  ParentInputParser parser{(*this)["data"]["enumeration"]};
+
+  Index save_configs_period = 10000;
+  parser.optional(save_configs_period, "save_configs_period");
+  std::runtime_error error_if_invalid{
+      "Error reading "
+      "\"data\"/\"enumeration\"/\"save_configs_period\""};
+  report_and_throw_if_invalid(parser, CASM::log(), error_if_invalid);
+
+  return save_configs_period;
+}
+
 /// \brief How often to output enumerated configurations
+///     (default=10000)
 Index MonteSettings::enumeration_output_period() const {
   if (!is_enumeration() || !_is_setting("data", "enumeration")) {
     return 10000;

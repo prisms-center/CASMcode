@@ -198,7 +198,16 @@ class MonteSettings : protected CASM::jsonParser {
   /// \brief Returns true if configs should be saved in the database
   bool enumeration_save_configs() const;
 
+  /// \brief Returns true if configs should be saved in the database
+  ///     periodically before completing the run (default=false)
+  bool enumeration_save_configs_periodically() const;
+
+  /// \brief How often to save configs in the database
+  ///     periodically before completing the run (default=10000)
+  Index enumeration_save_configs_period() const;
+
   /// \brief How often to output enumerated configurations
+  ///     (default=10000)
   Index enumeration_output_period() const;
 
  protected:

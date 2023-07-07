@@ -2062,12 +2062,28 @@ int format_command(const CommandArgs &args) {
 
            "    /\"save_configs\": bool (optional, default=false) \n"
            "      If true, save hall of fame configurations in the project   \n"
-           "      database.\n\n"
+           "      database after the run completes.\n\n"
 
-           "    /\"output_configurations\": bool (optional, default=false) \n"
-           "      If true, output hall of fame as a data file in the       \n"
+           "    /\"save_configs_periodically\": bool (optional, "
+           "default=false) \n"
+           "      When `save_configs==true` and this is also true, save hall \n"
+           "      of fame configurations in the project database periodically\n"
+           "      during the run.\n\n"
+
+           "    /\"save_configs_period\": bool (optional, default=10000)     \n"
+           "      When `save_configs_periodically==true`, this is how often  \n"
+           "      the configurations in the hall of fame are saved in the    \n"
+           "      project database, in terms of the number of Monte Carlo    \n"
+           "      samples taken.                                           \n\n"
+
+           "    /\"output_configurations\": bool (optional, default=false)   \n"
+           "      If true, output hall of fame as a data file in the         \n"
            "      conditions directory. Requires "
-           "`data/storage/save_state_details==true`.\n\n"
+           "`data/storage/save_state_details==true`.\n"
+           "      The \"insert\"/\"enum_output_file\" option of the method   \n"
+           "      `casm info -m ConfigurationInfo` can be used to insert the \n"
+           "      configurations written to this data file into the project  \n"
+           "      database.                                                \n\n"
 
            "    /\"output_period\": int (optional, default=10000) \n"
            "      When `output_configurations==true`, this is how often the  \n"

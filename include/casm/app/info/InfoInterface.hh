@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "casm/casm_io/dataformatter/DataFormatterDecl.hh"
 #include "casm/global/definitions.hh"
 #include "casm/misc/cloneable_ptr.hh"
 
@@ -56,6 +57,10 @@ class InfoInterfaceBase : public notstd::Cloneable {
   virtual void run(jsonParser const &json_options, PrimClex const *primclex,
                    fs::path root) const = 0;
 };
+
+template <typename DataObject>
+void print_info_desc(DataFormatterDictionary<DataObject> const &dict,
+                     std::ostream &sout);
 
 }  // namespace CASM
 
