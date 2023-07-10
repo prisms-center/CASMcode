@@ -151,7 +151,10 @@ void reset_properties(ConfigType &config) {
   config.set_calc_properties(MappedProperties(), "");
 }
 
-/// \brief Status of calculation
+/// \brief Status of calculation.
+/// A calculation that has been run successfully will be marked 'complete'.
+/// Mapped or imported configurations may have 'is_calculated = 1' without
+/// 'calc_status = complete'.
 template <typename ConfigType>
 std::string calc_status(const ConfigType &config, std::string calctype) {
   if (calctype == "") {
