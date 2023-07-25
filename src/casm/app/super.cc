@@ -54,70 +54,59 @@ void SuperOption::initialize() {
   add_configlists_nodefault_suboption();
   add_coordtype_suboption();
 
-  m_desc.add_options()("transf-mat",
-                       po::value<std::vector<fs::path> >(&m_transf_mat_paths)
-                           ->multitoken()
-                           ->value_name(ArgHandler::path()),
-                       "1 or more files containing a 3x3 transformation matrix "
-                       "used to create a supercell.")
+  m_desc.add_options()(
+      "transf-mat",
+      po::value<std::vector<fs::path> >(&m_transf_mat_paths)
+      ->multitoken()
+      ->value_name(ArgHandler::path()),
+      "One or more files containing a 3x3 transformation matrix used to create "
+      "a supercell.")(
 
-      ("get-transf-mat", "If it exists, find the transformation matrix.")
+      "get-transf-mat",
+      "If it exists, find the transformation matrix.")(
 
-          ("structure",
-           po::value<fs::path>(&m_struct_path)->value_name(ArgHandler::path()),
-           "File with structure (POSCAR type) to use.")
+      "structure",
+      po::value<fs::path>(&m_struct_path)->value_name(ArgHandler::path()),
+      "File with structure (POSCAR type) to use.")(
 
-              ("unitcell",
-               po::value<std::string>(&m_unit_scel_str)
-                   ->value_name(ArgHandler::supercell()),
-               "Name of supercell to use as unit cell. For ex. "
-               "'SCEL2_2_1_1_0_0_0'.")
+      "unitcell",
+      po::value<std::string>(&m_unit_scel_str)
+      ->value_name(ArgHandler::supercell()),
+      "Name of supercell to use as unit cell. For ex. 'SCEL2_2_1_1_0_0_0'.")(
 
-                  ("duper",
-                   "Construct the superduperlattice, the minimum supercell of "
-                   "all input supercells "
-                   "and configurations.")
+      "duper",
+      "Construct the superduperlattice, the minimum supercell of all input "
+      "supercells and configurations.")(
 
-                      ("fixed-orientation",
-                       "When constructing the superduperlattice, do not "
-                       "consider other symmetrically "
-                       "equivalent orientations.")
+      "fixed-orientation",
+      "When constructing the superduperlattice, do not consider other "
+      "symmetrically equivalent orientations.")(
 
-                          ("min-volume", po::value<Index>(&m_min_vol),
-                           "Transforms the transformation matrix, T -> T', "
-                           "where T' = T*M, such that "
-                           "(T').determininant() >= V. This has the effect "
-                           "that a supercell has a "
-                           "particular volume.")
+      "min-volume", po::value<Index>(&m_min_vol),
+      "Transforms the transformation matrix, T -> T', where T' = T*M, "
+      "such that (T').determininant() >= V. This has the effect "
+      "that a supercell has a particular volume.")(
 
-                              ("fixed-shape",
-                               "Used with --min-volume to enforce that T' = "
-                               "T*m*I, where I is the identity "
-                               "matrix, and m is a scalar. This has the effect "
-                               "of preserving the shape "
-                               "of the resulting supercell, but increasing the "
-                               "volume.")
+      "fixed-shape",
+      "Used with --min-volume to enforce that T' = T*m*I, where I is the "
+      "identity matrix, and m is a scalar. This has the effect of preserving "
+      "the shape of the resulting supercell, but increasing the volume.")(
 
-                                  ("verbose",
-                                   "When used with --duper, show how the input "
-                                   "lattices are transformed "
-                                   "to tile the superduperlattice.")
+      "verbose",
+      "When used with --duper, show how the input lattices are transformed to "
+      "tile the superduperlattice.")(
 
-                                      ("add-canonical,a",
-                                       "Will add the generated super "
-                                       "configuration in it's "
-                                       "canonical form in the equivalent "
-                                       "niggli supercell.")
+      "add-canonical,a",
+      "Will add the generated super configuration in its canonical form in the "
+      "equivalent niggli supercell.")(
 
-                                          ("vasp5",
-                                           "Print using VASP5 style (include "
-                                           "atom name line)")
+      "vasp5",
+      "Print using VASP5 style (include atom name line).")(
 
-                                              ("tol",
-                                               po::value<double>(&m_tolerance)
-                                                   ->default_value(CASM::TOL),
-                                               "Tolerance used for checking "
-                                               "symmetry");
+      "tol",
+      po::value<double>(&m_tolerance)
+      ->default_value(CASM::TOL),
+      "Tolerance used for checking symmetry");
 
   return;
 }
@@ -222,36 +211,36 @@ int super_command(const CommandArgs &args) {
     }
 
     else {
-          po::notify(vm);  // throws on error, so do after help in case
-	  // there are any problems
+      po::notify(vm);  // throws on error, so do after help in case
+      // there are any problems
 
-	  scelname = super_opt.supercell_strs();
-	  configname = super_opt.config_strs();
-	  unitscelname = super_opt.unit_scel_str();
-	  structfile = super_opt.struct_path();
-	  tmatfile = super_opt.transf_mat_paths();
-	  config_path = super_opt.selection_paths();
-	  min_vol = super_opt.min_vol();
-	  tol = super_opt.tolerance();
-	  coordtype = super_opt.coordtype_enum();      
+      scelname = super_opt.supercell_strs();
+      configname = super_opt.config_strs();
+      unitscelname = super_opt.unit_scel_str();
+      structfile = super_opt.struct_path();
+      tmatfile = super_opt.transf_mat_paths();
+      config_path = super_opt.selection_paths();
+      min_vol = super_opt.min_vol();
+      tol = super_opt.tolerance();
+      coordtype = super_opt.coordtype_enum();
       if (!vm.count("duper")) {
         if (vm.count("transf-mat") + vm.count("get-transf-mat") != 1) {
           err_log() << "Error in 'casm super'. Only one of --transf-mat or "
-                       "--get-transf-mat may be chosen."
+              "--get-transf-mat may be chosen."
                     << std::endl;
           return ERR_INVALID_ARG;
         }
         if (configname.size() > 1 || scelname.size() > 1 ||
             tmatfile.size() > 1) {
           err_log() << "ERROR: more than one --confignames, --scelnames, or "
-                       "--transf-mat argument "
-                       "is only allowed for option --duper"
+              "--transf-mat argument "
+              "is only allowed for option --duper"
                     << std::endl;
           return ERR_INVALID_ARG;
         }
         if (config_path.size() > 0) {
           err_log() << "ERROR: the --configs option is only allowed with "
-                       "option --duper"
+              "option --duper"
                     << std::endl;
           return ERR_INVALID_ARG;
         }
