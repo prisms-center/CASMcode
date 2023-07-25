@@ -699,7 +699,7 @@ int super_command(const CommandArgs &args) {
       super_lat =
           BasicStructure::from_poscar_stream(abs_structfile_stream).lattice();
     } else if (vm.count("scelnames")) {
-      super_lat = primclex.db<Supercell>().find(unitscelname)->lattice();
+      super_lat = primclex.db<Supercell>().find(scelname[0])->lattice();
     } else {
       log() << "Error in 'casm super --get-transf-mat'. No --structure or "
                "--scelnames given."
