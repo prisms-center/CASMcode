@@ -406,26 +406,49 @@ ChemicalReference auto_chemical_reference(const PrimClex &primclex,
                                           double lin_alg_tol) {
   auto closest_calculated_config = [&](const Eigen::VectorXd &target) {
     // return name of Configuration with param_comp closest to target_param_comp
-    //   tie break goes to first Configuration with fewest atoms
     //
-    //   must be Configurations for which the energy has been calculated
+    //   If multiple Configurations have the same composition, the tie
+    //   is broken by the energy (lowest) and number of atoms (fewest)
+    //   with precedence going to the first encountered Configuration.
     auto begin = primclex.db<Configuration>().begin();
     auto end = primclex.db<Configuration>().end();
     auto res = end;
 
-    double close_dist = std::numeric_limits<double>::max();
+    double min_dist = std::numeric_limits<double>::max();
+    double min_energy = std::numeric_limits<double>::max();
+    double curr_dist;
+    double curr_energy;
+    bool accept;
 
     for (auto it = begin; it != end; ++it) {
+      // config must have a calculated energy
       if (!it->calc_properties().has_scalar("energy")) {
         continue;
       }
-      double curr_dist = (target - comp(*it)).norm();
-      if ((res == end) ||
-          (almost_equal(curr_dist, close_dist, TOL) &&
-           it->size() < res->size()) ||
-          (curr_dist < close_dist)) {
+      // accept if one of the following criteria is true:
+      // - config is closer to target composition
+      // - config is not farther and is lower energy
+      // - config is not farther or higher energy and has fewer atoms
+      // almost_equal serves as the equality check
+      accept = false;
+      curr_dist = (target - comp(*it)).norm();
+      curr_energy = energy(*it);
+      if (curr_dist < min_dist) {
+        accept = true;
+      }
+      else if (almost_equal(curr_dist, min_dist, TOL)) {
+        if (curr_energy < min_energy) {
+          accept = true;
+        }
+        else if (almost_equal(curr_energy, min_energy, TOL) &&
+                 (n_species(*it) < n_species(*res))) {
+                   accept = true;
+                 }
+      }
+      if (accept) {
         res = it;
-        close_dist = curr_dist;
+        min_dist = curr_dist;
+        min_energy = curr_energy;
       }
     }
 
