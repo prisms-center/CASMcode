@@ -100,7 +100,7 @@ jsonParser &to_json(VectorSpaceSymReport const &obj, jsonParser &json) {
           json["irreducible_representations"]["symop_matrices"]
               [irrep_name];  //.put_array();
       for (Index o = 0; o < obj.symgroup_rep.size(); ++o) {
-        Eigen::MatrixXd const &op = obj.symgroup_rep[i];
+        Eigen::MatrixXd const &op = obj.symgroup_rep[o];
         std::string op_name =
             "op_" + to_sequential_string(o + 1, obj.symgroup_rep.size());
         irrep_matrices[op_name] =
@@ -253,7 +253,7 @@ jsonParser &to_json(SymRepTools_v2::VectorSpaceSymReport const &obj,
           json["irreducible_representations"]["symop_matrices"]
               [irrep_name];  //.put_array();
       for (Index o = 0; o < obj.symgroup_rep.size(); ++o) {
-        Eigen::MatrixXd const &op = obj.symgroup_rep[i];
+        Eigen::MatrixXd const &op = obj.symgroup_rep[o];
         std::string op_name =
             "op_" + to_sequential_string(o + 1, obj.symgroup_rep.size());
         irrep_matrices[op_name] =
