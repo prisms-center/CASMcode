@@ -1416,8 +1416,8 @@ int format_command(const CommandArgs &args) {
            "bspecs.json file, see the online documentation at:            \n\n"
 
            "  "
-           "https://prisms-center.github.io/CASMcode_docs/pages/formats/casm/"
-           "clex/ClexBasisSpecs.html \n\n";
+           "https://prisms-center.github.io/CASMcode_docs/formats/casm/"
+           "clex/ClexBasisSpecs \n\n";
 
     log() << "EXAMPLE: occupation DoF, periodic cluster expansion \n";
     log() << "-------\n";
