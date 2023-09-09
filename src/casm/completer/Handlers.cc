@@ -438,9 +438,9 @@ void OptionHandlerBase::add_configlist_suboption(const fs::path &_default) {
                            ->value_name(ArgHandler::path()),
                        (std::string("Only consider the selected configurations "
                                     "of the given selection file. ") +
-                        singleline_help<DB::SELECTION_TYPE>())
+                        standard_singleline_enum_help<DB::SELECTION_TYPE>(_default.string(), "filename"))
                            .c_str());
-  return;
+    return;
 }
 
 void OptionHandlerBase::add_selections_suboption(const fs::path &_default) {
