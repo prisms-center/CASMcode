@@ -172,6 +172,7 @@ jsonParser &to_json(const ScoreMappedProperties &score, jsonParser &json) {
       break;
     case ScoreMappedProperties::Method::deformation_cost:
       json["method"] = "deformation_cost";
+      json["lattice_weight"] = score.option().lattice_weight;
       break;
     case ScoreMappedProperties::Method::direct_selection:
       json["method"] = "direct_selection";
@@ -196,6 +197,7 @@ jsonParser const &from_json(ScoreMappedProperties &score,
     } else if (method == "deformation_cost") {
       opt.method = ScoreMappedProperties::Method::deformation_cost;
       opt.name = "";
+      opt.lattice_weight = json["lattice_weight"].get<double>();
     } else if (method == "direct_selection") {
       opt.method = ScoreMappedProperties::Method::direct_selection;
       opt.name = json["name"].get<std::string>();
