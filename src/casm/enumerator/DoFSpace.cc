@@ -1131,7 +1131,11 @@ Eigen::MatrixXd make_homogeneous_mode_space(DoFSpace const &dof_space) {
       Eigen::MatrixXd::Identity(standard_basis_dim, standard_basis_dim);
   Eigen::MatrixXd prod = I;
   for (auto const &sublat_dof : prim_dof_info) {
-    prod = sublat_dof.basis() * sublat_dof.inv_basis() * prod;
+    if (sublat_dof.dim() == 0) {
+      prod *= 0.0;
+    } else {
+      prod = sublat_dof.basis() * sublat_dof.inv_basis() * prod;
+    }
   }
   // common_standard_basis is nullspace of (prod - I):
   Eigen::MatrixXd common_standard_basis =
