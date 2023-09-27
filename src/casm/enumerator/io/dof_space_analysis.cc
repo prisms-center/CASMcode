@@ -215,9 +215,11 @@ fs::path SymmetryDirectoryOutput::_output_dir(
 SequentialDirectoryOutput::SequentialDirectoryOutput(fs::path output_dir)
     : m_output_dir(output_dir) {
   if (fs::exists(m_output_dir / "dof_space")) {
-    throw std::runtime_error(
-        "Error in output_dof_space: \"dof_space\" directory "
-        "already exists. Will not overwrite.");
+    std::stringstream ss;
+    ss << "Error in output_dof_space: "
+       << fs::relative(m_output_dir / "dof_space")
+       << " already exists. Will not overwrite.";
+    throw std::runtime_error(ss.str());
   }
 }
 
