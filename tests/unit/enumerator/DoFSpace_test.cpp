@@ -1527,6 +1527,95 @@ TEST_F(VariableLocalDoFSpaceTest2, ExcludeHomogeneousModeSpace) {
   EXPECT_EQ(dof_space_1.subspace_dim(), 9);
 }
 
+/// Tests on a structure with >1 occupation not allowed on all sites
+class VariableOccDoFSpaceTest1 : public testing::Test {
+ protected:
+  std::shared_ptr<CASM::Structure const> shared_prim;
+  std::shared_ptr<CASM::Supercell> shared_supercell;  // conventional unit cell
+
+  static xtal::BasicStructure make_prim();
+
+  VariableOccDoFSpaceTest1()
+      : shared_prim(std::make_shared<CASM::Structure const>(make_prim())),
+        shared_supercell(std::make_shared<CASM::Supercell>(
+            shared_prim, Eigen::Matrix3l::Identity())) {}
+};
+
+xtal::BasicStructure VariableOccDoFSpaceTest1::make_prim() {
+  // FCC base structure,
+  // - with corner atoms {C}
+  // - with face atoms {A, B}
+  // -> test order parameters
+  using namespace xtal;
+
+  Molecule A = Molecule::make_atom("A");
+  Molecule B = Molecule::make_atom("B");
+  Molecule C = Molecule::make_atom("C");
+
+  Lattice lat{Eigen::Vector3d{4.0, 0.0, 0.0}, Eigen::Vector3d{0.0, 4.0, 0.0},
+              Eigen::Vector3d{0.0, 0.0, 4.0}};
+
+  BasicStructure struc{lat};
+  struc.set_basis({Site{Coordinate{0.0, 0.0, 0.0, lat, FRAC}, {C}},
+                   Site{Coordinate{0.5, 0.5, 0.0, lat, FRAC}, {A, B}},
+                   Site{Coordinate{0.0, 0.5, 0.5, lat, FRAC}, {A, B}},
+                   Site{Coordinate{0.5, 0.0, 0.5, lat, FRAC}, {A, B}}});
+  return struc;
+}
+
+TEST_F(VariableOccDoFSpaceTest1, FactorGroupSize) {
+  auto const &factor_group = shared_prim->factor_group();
+
+  // COORD_TYPE mode = FRAC;
+  // bool include_va = false;
+  // jsonParser prim_json;
+  // write_prim(*shared_prim, prim_json, mode, include_va);
+  // log() << prim_json << std::endl;
+  //
+  // SymInfoOptions opt{CART};
+  // brief_description(log(), factor_group, shared_prim->lattice(), opt);
+
+  EXPECT_EQ(factor_group.size(), 48);
+}
+
+TEST_F(VariableOccDoFSpaceTest1, ExcludeDefaultOccModeSpace) {
+  // print_local_dof_symreps(shared_supercell->sym_info());
+
+  // Construct the occ DoF space.
+  ConfigEnumInput config_input{*shared_supercell};
+  DoFKey dof_key = "occ";
+  DoFSpace dof_space_0 = make_dof_space(dof_key, config_input);
+  // std::cout << "including default occ modes: \n"
+  //           << dof_space_0.basis() << std::endl;
+  EXPECT_EQ(dof_space_0.basis().rows(), 7);
+  EXPECT_EQ(dof_space_0.basis().cols(), 7);
+
+  // check exclude default occupation modes
+  DoFSpace dof_space_1 = exclude_default_occ_modes(dof_space_0);
+  // std::cout << "excluding default occ modes: \n"
+  //           << dof_space_1.basis() << std::endl;
+  EXPECT_EQ(dof_space_1.basis().rows(), 7);
+  EXPECT_EQ(dof_space_1.basis().cols(), 3);
+
+  // check make symmery adapted dof space
+  SupercellSymInfo const &sym_info = shared_supercell->sym_info();
+  std::vector<PermuteIterator> invariant_group =
+      make_invariant_subgroup(config_input);
+  bool calc_wedges = false;
+  std::optional<SymRepTools_v2::VectorSpaceSymReport> sym_report;
+  DoFSpace dof_space_2 = make_symmetry_adapted_dof_space_v2(
+      dof_space_1, sym_info, invariant_group, calc_wedges, sym_report);
+  // std::cout << "excluding default occ modes, symmetry adapted: \n"
+  //           << dof_space_2.basis() << std::endl;
+  EXPECT_EQ(dof_space_2.basis().rows(), 7);
+  EXPECT_EQ(dof_space_2.basis().cols(), 3);
+
+  // // check symmetry report
+  // jsonParser dof_space_json;
+  // to_json(dof_space_2, dof_space_json, "test", config_input, sym_report);
+  // std::cout << dof_space_json << std::endl;
+}
+
 class DebugLocalDoFSpaceTest1 : public testing::Test {
  protected:
   std::shared_ptr<CASM::Structure const> shared_prim;
