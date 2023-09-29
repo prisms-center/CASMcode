@@ -880,7 +880,11 @@ GenericConfigFormatter<std::string> scelname() {
 
 GenericConfigFormatter<std::string> calc_status() {
   return GenericConfigFormatter<std::string>(
-      "calc_status", "Status of calculation.",
+      "calc_status",
+      "Status of calculation."
+      "A calculation that has been run successfully will be marked 'complete'."
+      "Mapped or imported configurations may have 'is_calculated = 1' without "
+      "'calc_status = complete'.",
       [](const Configuration &config) -> std::string {
         return CASM::calc_status<Configuration>(config);
       },
