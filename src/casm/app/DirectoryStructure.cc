@@ -94,7 +94,7 @@ Index recurs_cp_files_impl(const fs::path &from_dir, const fs::path &to_dir,
 Index recurs_cp_files(const fs::path &from_dir, const fs::path &to_dir,
                       bool dry_run, Log &log) {
   Index count = 0;
-  recurs_cp_files_impl(from_dir, to_dir, dry_run, count, log);
+  count = recurs_cp_files_impl(from_dir, to_dir, dry_run, count, log);
   return count;
 }
 
