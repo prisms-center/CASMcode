@@ -405,7 +405,7 @@ const std::string Import<Configuration>::desc =
     "        structure has been mapped to, or it is the best scoring      \n"
     "        mapping and \"overwrite\"=true.\n\n"
 
-    "    additional_files: bool (optional, default=false)\n"
+    "    copy_additional_files: bool (optional, default=false)\n"
     "        If true, attempt to copy all files & directories in the same \n"
     "        directory as the structure file or, if it exists, the \n"
     "        properties.calc.json file. Files & directories will only be \n"
