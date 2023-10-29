@@ -327,27 +327,27 @@ void ConfigData::cp_files(ConfigIO::Result &res, bool dry_run,
       fs::create_directories(target_dir);
     }
   }
+  fs::path src = res.properties.origin;
+  fs::path dest = target_dir / "properties.calc.json";
 
   log().custom(std::string("Copy calculation files: ") + res.properties.to);
 
-  fs::path src = res.properties.origin;
-  if (copy_additional_files) {
+  if (!copy_additional_files) {
+    log() << "cp " << src << " " << dest << std::endl;
+    if (!dry_run) {
+      fs::copy_file(src, dest);
+    }
+  }
+  else {
     fs::path src_dir = src.remove_filename();
     Index count = recurs_cp_files(src_dir, target_dir, dry_run, log());
     if (count) {
       res.import_data.copy_additional_files = true;
     }
   }
-
-  fs::path dest = target_dir / "properties.calc.json";
-  log() << "cp " << src << " " << dest << std::endl;
   res.import_data.copy_structure = true;
-  if (!dry_run) {
-    fs::copy_file(src, dest);
-  }
   res.properties.origin = dest.string();
-
-  res.properties.file_data = FileData(dest.string());
+  res.properties.file_data = FileData(dest.string());  
   log() << std::endl;
   return;
 }

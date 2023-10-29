@@ -403,7 +403,8 @@ const std::string Import<Configuration>::desc =
     "        \"properties.calc.json\". Files will only by copied if there \n"
     "        are no existing files or data for the configuration the      \n"
     "        structure has been mapped to, or it is the best scoring      \n"
-    "        mapping and \"overwrite\"=true.\n\n"
+    "        mapping and \"overwrite\"=true. Copying \"properties.calc.json\" \n"
+    "        implies \"import_properties\"=true.\n\n"
 
     "    copy_additional_files: bool (optional, default=false)\n"
     "        If true, attempt to copy all files & directories in the same \n"
@@ -411,7 +412,8 @@ const std::string Import<Configuration>::desc =
     "        properties.calc.json file. Files & directories will only be \n"
     "        copied if there are no existing files or directories for the \n"
     "        configuration the structure has been mapped to, or it is the \n"
-    "        best scoring mapping and \"overwrite\"=true.\n\n"
+    "        best scoring mapping and \"overwrite\"=true. Note that this \n"
+    "        flag also requires setting \"copy_structure_files\"=true.\n\n"
 
     "    overwrite: bool (optional, default=false)\n"
     "        If true, data and files will be imported that overwrite existing\n"
