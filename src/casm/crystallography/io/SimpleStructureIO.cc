@@ -175,6 +175,23 @@ static void _properties_from_json(
     auto it = json.find(field);
     if (it != json.end()) {
       for (auto it2 = it->begin(); it2 != it->end(); ++it2) {
+        Index min_data_size = 1;
+        bool missing_data = false;
+        if ( (*it2).size() < min_data_size ) { // no "value" field
+          missing_data = true;
+        }
+        else if ( (*it2)["value"].size() < min_data_size ) { // empty "value"
+          missing_data = true;
+        }
+        if (missing_data) {
+          if (it2.name() == "force") {
+            std::cout << "no force data (ignoring)\n";
+            continue;
+          }
+          else {
+            throw std::runtime_error(it2.name());
+          }
+        }
         properties[it2.name()] =
             (*it2)["value"].get<Eigen::MatrixXd>().transpose();
       }
